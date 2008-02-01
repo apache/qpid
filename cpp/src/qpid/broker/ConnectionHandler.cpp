@@ -23,6 +23,7 @@
 #include "ConnectionHandler.h"
 #include "Connection.h"
 #include "qpid/framing/ConnectionStartBody.h"
+#include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
 
 using namespace qpid;
@@ -40,6 +41,7 @@ void ConnectionHandler::init(const framing::ProtocolInitiation& header) {
     FieldTable properties;
     string mechanisms(PLAIN);
     string locales(en_US);
+    handler->serverMode = true;
     handler->client.start(header.getMajor(), header.getMinor(), properties, mechanisms, locales);
 }
 
@@ -52,8 +54,13 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
     try{
-        if (!invoke(*handler.get(), *method))
-            throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
+        if (handler->serverMode) {
+            if (!invoke(static_cast<AMQP_ServerOperations::ConnectionHandler&>(*handler.get()), *method))
+                throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
+        } else {
+            if (!invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method))
+                throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
+        }
     }catch(ConnectionException& e){
         handler->client.close(e.code, e.what(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
@@ -63,9 +70,10 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 
 ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {}
 
-ConnectionHandler::Handler:: Handler(Connection& c) : client(c.getOutput()), connection(c) {}
+ConnectionHandler::Handler:: Handler(Connection& c) : client(c.getOutput()), server(c.getOutput()), 
+                                                      connection(c), serverMode(false) {}
 
-void ConnectionHandler::Handler::startOk(const FieldTable& /*clientProperties*/,
+void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProperties*/,
     const string& mechanism, 
     const string& response, const string& /*locale*/)
 {
@@ -110,3 +118,41 @@ void ConnectionHandler::Handler::close(uint16_t /*replyCode*/, const string& /*r
 void ConnectionHandler::Handler::closeOk(){
     connection.getOutput().close();
 } 
+
+
+void ConnectionHandler::Handler::start(uint8_t /*versionMajor*/,
+                                       uint8_t /*versionMinor*/,
+                                       const FieldTable& /*serverProperties*/,
+                                       const string& /*mechanisms*/,
+                                       const string& /*locales*/)
+{
+    string uid = "qpidd";
+    string pwd = "qpidd";
+    string response = ((char)0) + uid + ((char)0) + pwd;
+    server.startOk(FieldTable(), PLAIN, response, en_US);
+    connection.initMgmt(true);
+}
+
+void ConnectionHandler::Handler::secure(const string& /*challenge*/)
+{
+    server.secureOk("");
+}
+
+void ConnectionHandler::Handler::tune(uint16_t channelMax,
+                                      uint32_t frameMax,
+                                      uint16_t heartbeat)
+{
+    connection.setFrameMax(frameMax);
+    connection.setHeartbeat(heartbeat);
+    server.tuneOk(channelMax, frameMax, heartbeat);
+    server.open("/", "", true);
+}
+
+void ConnectionHandler::Handler::openOk(const string& /*knownHosts*/)
+{
+}
+
+void ConnectionHandler::Handler::redirect(const string& /*host*/, const string& /*knownHosts*/)
+{
+    
+}

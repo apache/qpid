@@ -242,7 +242,7 @@ Manageable* Broker::GetVhostObject(void) const
 }
 
 Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
-                                               Args&    /*_args*/)
+                                               Args&    args)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
@@ -253,6 +253,10 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     case management::Broker::METHOD_ECHO :
         status = Manageable::STATUS_OK;
         break;
+    case management::Broker::METHOD_CONNECT :
+        connect(dynamic_cast<management::ArgsBrokerConnect&>(args));
+        status = Manageable::STATUS_OK;
+        break;
 
     case management::Broker::METHOD_JOINCLUSTER :
     case management::Broker::METHOD_LEAVECLUSTER :
@@ -261,6 +265,11 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     }
 
     return status;
+}
+
+void Broker::connect(management::ArgsBrokerConnect& args)
+{
+    getAcceptor().connect(args.i_host, args.i_port, &factory);
 }
 
 }} // namespace qpid::broker
