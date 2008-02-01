@@ -27,6 +27,8 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Logger.h"
+#include "qpid/Url.h"
+
 
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
@@ -50,8 +52,8 @@ class Cluster : public framing::FrameHandler,
   public:
     /** Details of a cluster member */
     struct Member {
-        Member(const std::string& url_=std::string()) : url(url_) {}
-        std::string url;        ///< Broker address.
+        Member(const Url& url_=Url()) : url(url_) {}
+        Url url;        ///< Broker address.
     };
     
     typedef std::vector<Member> MemberList;
@@ -61,7 +63,7 @@ class Cluster : public framing::FrameHandler,
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
      */
-    Cluster(const std::string& name, const std::string& url, broker::Broker&);
+    Cluster(const std::string& name, const Url& url, broker::Broker&);
 
     virtual ~Cluster();
 
@@ -115,7 +117,7 @@ class Cluster : public framing::FrameHandler,
     mutable sys::Monitor lock;
     Cpg cpg;
     Cpg::Name name;
-    std::string url;
+    Url url;
     Id self;
     MemberMap members;
     sys::Thread dispatcher;

@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(testUrl_str) {
     url.push_back(TcpAddress("foo.com"));
     url.push_back(TcpAddress("bar.com", 6789));
     BOOST_CHECK_EQUAL("amqp:tcp:foo.com:5672,tcp:bar.com:6789", url.str());
-    BOOST_CHECK_EQUAL("amqp:", Url().str());
+    BOOST_CHECK(Url().str().empty());
 }
 
 
