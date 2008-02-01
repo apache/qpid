@@ -7,7 +7,7 @@ commons-logging=lib/commons-logging-1.0.4.jar
 
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
-junit=lib/juint-3.8.1.jar
+junit=lib/junit-3.8.1.jar
 junit-toolkit=lib/junit-toolkit-0.6-SNAPSHOT.jar
 
 log4j=lib/log4j-1.2.12.jar
