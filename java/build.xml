@@ -1,0 +1,138 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ - 
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ - 
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<project name="AMQ Java" default="build">
+
+  <import file="common.xml"/>
+
+  <property name="modules.core"       value="common client broker"/>
+  <property name="modules.tests"      value="systests perftests integrationtests"/>
+  <property name="modules.management" value="management/eclipse-plugin"/>
+
+  <property name="modules"            value="${modules.core} ${modules.tests} ${modules.management}"/>
+
+  <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
+
+  <map property="release.excludes" value="${modules}">
+    <regexpmapper from="(.*)" to="\1/**"/>
+  </map>
+
+  <property name="release.zip"          location="${release}/${project.namever}.zip"/>
+  <property name="release.tar"          location="${release}/${project.namever}.tar"/>
+  <property name="release.tgz"          location="${release}/${project.namever}.tar.gz"/>
+  <property name="release.bz2"          location="${release}/${project.namever}.tar.bz2"/>
+
+  <macrodef name="iterate">
+    <attribute name="target"/>
+    <attribute name="modules" default="${modules}"/>
+    <element name="elements" implicit="true" optional="true"/>
+    <sequential>
+      <subant target="@{target}" antfile="build.xml">
+        <filelist dir="." files="@{modules}"/>
+        <elements/>
+      </subant>
+    </sequential>
+  </macrodef>
+
+  <target name="compile" description="compile sources">
+    <iterate target="compile"/>
+  </target>
+
+  <target name="compile-tests" description="compile unit tests">
+    <iterate target="compile-tests"/>
+  </target>
+
+  <target name="test" description="execute unit tests">
+    <iterate target="test"/>
+  </target>
+
+  <target name="jar" description="create jars">
+    <iterate target="jar"/>
+  </target>
+
+  <target name="jar-tests" description="create unit test jars">
+    <iterate target="jar-tests"/>
+  </target>
+
+  <target name="libs" description="copy dependencies into build directory">
+    <iterate target="libs"/>
+  </target>
+
+  <target name="doc" description="generate api-doc">
+    <iterate target="doc"/>
+  </target>
+
+  <target name="check-manifest">
+    <uptodate property="manifest.done" targetfile="${qpid.jar}">
+      <srcfiles dir="${build.lib}" includes="**/*.jar"/>
+    </uptodate>
+  </target>
+
+  <target name="manifest" depends="jar,libs,check-manifest" unless="manifest.done">
+    <manifestclasspath property="qpid.jar.classpath" jarfile="${qpid.jar}">
+      <classpath>
+        <fileset dir="${build.lib}" includes="**/*.jar"/>
+      </classpath>
+    </manifestclasspath>
+
+    <jar destfile="${qpid.jar}">
+      <manifest>
+        <attribute name="Class-Path" value="${qpid.jar.classpath}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="build" depends="manifest" description="compile and copy resources into build tree">
+    <iterate target="build"/>
+  </target>
+
+  <target name="prepare">
+    <mkdir dir="${release}"/>
+  </target>
+
+  <target name="zip" depends="build,prepare" description="produce a zip archive of the distribution tree">
+    <zip destfile="${release.zip}">
+      <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+    </zip>
+  </target>
+
+  <target name="tar" depends="build,prepare" description="produce a tar archive of the distribution tree">
+    <tar destfile="${release.tar}">
+      <tarfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+    </tar>
+  </target>
+
+  <target name="gzip" depends="tar" description="produce a gzipped tarball of the distribution tree">
+    <gzip src="${release.tar}" destfile="${release.tgz}"/>
+  </target>
+
+  <target name="bzip2" depends="tar" description="produze a bzipped tarball of the distribution tree">
+    <bzip2 src="${release.tar}" destfile="${release.bz2}"/>
+  </target>
+
+  <target name="archive" depends="zip,gzip,bzip2" description="produce all archive formats of the distribution tree"/>
+
+  <target name="clean" description="remove all build artifacts">
+    <iterate target="clean"/>
+    <delete dir="${build}"/>
+    <delete dir="${release}"/>
+  </target>
+
+</project>
