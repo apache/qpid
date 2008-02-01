@@ -33,7 +33,6 @@
 #include "qpid/management/ArgsBrokerEcho.h"
 
 #include "qpid/log/Statement.h"
-#include "qpid/Url.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Acceptor.h"
@@ -61,7 +60,7 @@ namespace broker {
 
 Broker::Options::Options(const std::string& name) :
     qpid::Options(name),
-    port(TcpAddress::DEFAULT_PORT),
+    port(DEFAULT_PORT),
     workerThreads(5),
     maxConnections(500),
     connectionBacklog(10),
@@ -221,10 +220,6 @@ Broker::~Broker() {
 
 uint16_t Broker::getPort() const  { return getAcceptor().getPort(); }
 
-std::string Broker::getUrl() const {
-    return Url(TcpAddress(getAcceptor().getHost(), getPort())).str();
-}
-               
 Acceptor& Broker::getAcceptor() const {
     if (!acceptor) {
         const_cast<Acceptor::shared_ptr&>(acceptor) =

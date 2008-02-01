@@ -15,6 +15,10 @@
  * limitations under the License.
  *
  */
+#include <boost/program_options/value_semantic.hpp>
+
+
+
 #include "qpid/broker/Broker.h"
 #include "qpid/cluster/Cluster.h"
 #include "qpid/Plugin.h"
@@ -24,21 +28,31 @@
 #include <boost/optional.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
+
 namespace qpid {
 namespace cluster {
 
 using namespace std;
 
-struct ClusterPlugin : public Plugin {
+struct ClusterOptions : public Options {
+    string name;
+    string url;
 
-    struct ClusterOptions : public Options {
-        string clusterName;
-        ClusterOptions() : Options("Cluster Options") {
-            addOptions()
-                ("cluster", optValue(clusterName, "NAME"),
-                 "Joins the cluster named NAME");
-        }
-    };
+    ClusterOptions() : Options("Cluster Options") {
+        addOptions()
+            ("cluster-name", optValue(name, "NAME"), "Name of cluster to join")
+            ("cluster-url", optValue(url,"URL"),
+             "URL of this broker, advertized to the cluster.\n"
+             "Defaults to a URL listing all the local IP addresses\n");
+    }
+
+    Url getUrl(uint16_t port) const {
+        if (url.empty()) return Url::getIpAddressesUrl(port);
+        return Url(url);
+    }
+};
+
+struct ClusterPlugin : public Plugin {
 
     ClusterOptions options;
     boost::optional<Cluster> cluster;
@@ -50,10 +64,12 @@ struct ClusterPlugin : public Plugin {
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker, and only if the --cluster config is set.
-        if (broker && !options.clusterName.empty()) {
+        if (broker && !options.name.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
-            cluster = boost::in_place(options.clusterName, broker->getUrl(), boost::ref(*broker));
-            // broker->add(make_shared_ptr(&cluster->getHandlerUpdater(), nullDeleter));
+            cluster = boost::in_place(options.name,
+                                      options.getUrl(broker->getPort()),
+                                      boost::ref(*broker));
+            // FIXME aconway 2008-02-01: Add observer.
         }
     }
 };

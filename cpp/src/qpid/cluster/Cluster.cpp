@@ -47,7 +47,7 @@ ostream& operator <<(ostream& out, const Cluster::MemberMap& members) {
     return out;
 }
 
-Cluster::Cluster(const std::string& name_, const std::string& url_, broker::Broker&) :
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker&) :
     FrameHandler(0),            // FIXME aconway 2008-01-29: handler. + observer
     cpg(*this),
     name(name_),
@@ -87,7 +87,7 @@ void Cluster::handle(AMQFrame& frame) {
 }
 
 void Cluster::notify() {
-    AMQFrame frame(in_place<ClusterNotifyBody>(ProtocolVersion(), url));
+    AMQFrame frame(in_place<ClusterNotifyBody>(ProtocolVersion(), url.str()));
     handle(frame);
 }
 
@@ -143,7 +143,7 @@ void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
     {
         Mutex::ScopedLock l(lock);
         members[from].url=notifyIn->getUrl();
-        if (!self.id && notifyIn->getUrl() == url) 
+        if (!self.id && notifyIn->getUrl() == url.str()) 
             self=from;
         lock.notifyAll();
         QPID_LOG(trace, *this << ": members joined: " << members);
