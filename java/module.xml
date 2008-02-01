@@ -169,7 +169,7 @@
     </junit>
   </target>
 
-  <target name="build" depends="compile" description="compile and copy resources into build tree">
+  <target name="build" depends="jar,libs" description="compile and copy resources into build tree">
     <copy todir="${build.bin}" failonerror="false">
       <fileset dir="${module.bin}"/>
     </copy>
