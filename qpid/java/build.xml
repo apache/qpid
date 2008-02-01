@@ -29,6 +29,7 @@
   <property name="modules"            value="${modules.core} ${modules.tests} ${modules.management}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
+  <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
   <map property="release.excludes" value="${modules}">
     <regexpmapper from="(.*)" to="\1/**"/>
@@ -81,14 +82,14 @@
 
   <target name="check-manifest">
     <uptodate property="manifest.done" targetfile="${qpid.jar}">
-      <srcfiles dir="${build.lib}" includes="**/*.jar"/>
+      <srcfiles dir="${build.lib}" includes="**/*.jar" excludes="**/${qpid.jar.name}"/>
     </uptodate>
   </target>
 
-  <target name="manifest" depends="jar,libs,check-manifest" unless="manifest.done">
+  <target name="manifest" depends="check-manifest" unless="manifest.done">
     <manifestclasspath property="qpid.jar.classpath" jarfile="${qpid.jar}">
       <classpath>
-        <fileset dir="${build.lib}" includes="**/*.jar"/>
+        <fileset dir="${build.lib}" includes="**/*.jar" excludes="**/${qpid.jar.name}"/>
       </classpath>
     </manifestclasspath>
 
@@ -97,10 +98,13 @@
         <attribute name="Class-Path" value="${qpid.jar.classpath}"/>
       </manifest>
     </jar>
+
+    <touch file="${qpid.jar}"/>
   </target>
 
-  <target name="build" depends="manifest" description="compile and copy resources into build tree">
+  <target name="build" description="build distribution">
     <iterate target="build"/>
+    <antcall target="manifest"/>
   </target>
 
   <target name="prepare">
