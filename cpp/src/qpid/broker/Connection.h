@@ -21,6 +21,7 @@
 #ifndef _Connection_
 #define _Connection_
 
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -41,6 +42,7 @@
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Client.h"
+#include "qpid/management/Link.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -87,6 +89,7 @@ class Connection : public sys::ConnectionInputHandler,
     void idleIn();
     void closed();
     bool doOutput();
+    framing::ProtocolInitiation getInitiation() { return framing::ProtocolInitiation(version); }
 
     void closeChannel(framing::ChannelId channel);
 
@@ -98,9 +101,30 @@ class Connection : public sys::ConnectionInputHandler,
     void setUserId(const string& uid);
     const string& getUserId() const;
 
+    void initMgmt(bool asLink = false);
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
+
+    /**
+     * Connection may appear, for the purposes of management, as a
+     * normal client initiated connection or as an agent initiated
+     * inter-broker link. This wrapper abstracts the common interface
+     * for both.
+     */
+    class MgmtWrapper
+    {
+    public:
+        virtual ~MgmtWrapper(){}
+        virtual void received(framing::AMQFrame& frame) = 0;
+        virtual management::ManagementObject::shared_ptr getManagementObject() const = 0;
+        virtual void closing() = 0;
+        virtual void processPending(){}
+        virtual void process(Connection&, const management::Args&){}
+    };
+    class MgmtClient;
+    class MgmtLink;
 
     framing::ProtocolVersion version;
     ChannelMap channels;
@@ -110,9 +134,10 @@ class Connection : public sys::ConnectionInputHandler,
     framing::AMQP_ClientProxy::Connection* client;
     uint64_t stagingThreshold;
     ConnectionHandler adapter;
-    management::Client::shared_ptr mgmtObject;
+    std::auto_ptr<MgmtWrapper> mgmtWrapper;
     bool mgmtClosing;
     string userId;
+    const std::string mgmtId;
 };
 
 }}
