@@ -70,15 +70,17 @@ class Plugin : boost::noncopyable
 
     /**
      * Initialize Plugin functionality on a Target.
-     * 
      * Plugins should ignore targets they don't recognize.
+     *
+     * Called before the target itself is initialized.
      */
     virtual void earlyInitialize(Target&) = 0;
 
     /**
      * Initialize Plugin functionality on a Target.
-     * 
      * Plugins should ignore targets they don't recognize.
+     *
+     * Called after the target is fully initialized.
      */
     virtual void initialize(Target&) = 0;
 

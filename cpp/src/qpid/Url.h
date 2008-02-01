@@ -42,19 +42,16 @@ inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
     return y.host==x.host && y.port == x.port;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
-    return os << "tcp:" << a.host << ":" << a.port;
-}
+std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
 
-/** Address is a variant of all address types. */
+/** Address is a variant of all address types, more coming in future. */
 typedef boost::variant<TcpAddress> Address;
-
 
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {
 
     /** Url with the hostname as returned by gethostname(2)  */
-    static Url getHostnameUrl(uint16_t port);
+    static Url getHostNameUrl(uint16_t port);
 
     /** Url with local IP address(es), may be more than one address
      * on a multi-homed host. */
@@ -79,20 +76,30 @@ struct Url : public std::vector<Address> {
     /** Parse url, throw InvalidUrl if invalid. */
     explicit Url(const char* url) { parse(url); }
 
+    template<class T> Url& operator=(T s) { parse(s); return *this; }
+    
     /** Replace contents with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
      *@exception InvalidUrl if the url is invalid.
      */
     void parse(const char* url);
+    void parse(const std::string& url) { parse(url.c_str()); }
 
     /** Replace contesnts with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
      * url.empty() will be true if url is invalid.
      */
     void parseNoThrow(const char* url);
+
+  private:
+    mutable std::string cache;  // cache string form for efficiency.
 };
 
+inline bool operator==(const Url& a, const Url& b) { return a.str()==b.str(); }
+inline bool operator!=(const Url& a, const Url& b) { return a.str()!=b.str(); }
+
 std::ostream& operator<<(std::ostream& os, const Url& url);
+std::istream& operator>>(std::istream& is, Url& url);
 
 } // namespace qpid
 
