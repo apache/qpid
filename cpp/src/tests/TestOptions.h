@@ -37,8 +37,8 @@ struct TestOptions : public qpid::Options
     TestOptions(const std::string& helpText_=std::string()) :
         Options("Test Options"),
         host("localhost"), port(TcpAddress::DEFAULT_PORT),
-        clientid("cpp"), help(false),
-        helpText(helpText_)
+        clientid("cpp"), username("guest"), password("guest"),
+        help(false), helpText(helpText_)
     {
         addOptions()
             ("host,h", optValue(host, "HOST"), "Broker host to connect to")
