@@ -159,7 +159,7 @@
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
-    <junit fork="yes" printsummary="on" showoutput="no" haltonfailure="no" timeout="90000">
+    <junit fork="yes" haltonfailure="no" printsummary="on" timeout="90000">
       <formatter type="plain"/>
       <formatter type="xml"/>
       <classpath refid="module.test.path"/>
