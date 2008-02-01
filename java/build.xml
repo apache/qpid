@@ -22,7 +22,7 @@
 
   <import file="common.xml"/>
 
-  <property name="modules.core"       value="common client broker"/>
+  <property name="modules.core"       value="common broker client"/>
   <property name="modules.tests"      value="systests perftests integrationtests"/>
   <property name="modules.management" value="management/eclipse-plugin"/>
 
