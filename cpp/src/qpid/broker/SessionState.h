@@ -58,7 +58,7 @@ class Connection;
  * themselves have state. 
  */
 class SessionState : public framing::SessionState,
-    public framing::FrameHandler::InOutHandler,
+    public framing::FrameHandler::Chains,
     public sys::OutputControl,
     public management::Manageable
 {
@@ -90,18 +90,15 @@ class SessionState : public framing::SessionState,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
-  protected:
-    void handleIn(framing::AMQFrame&);
-    void handleOut(framing::AMQFrame&);
-    
-  private:
-    // SessionManager creates sessions.
-    SessionState(SessionManager&,
-                 SessionHandler& out,
+    // Normally SessionManager creates sessions.
+    SessionState(SessionManager*,
+                 SessionHandler* out,
                  uint32_t timeout,
                  uint32_t ackInterval);
     
-    SessionManager& factory;
+
+  private:
+    SessionManager* factory;
     SessionHandler* handler;    
     framing::Uuid id;
     uint32_t timeout;

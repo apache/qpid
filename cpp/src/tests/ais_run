@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# Run AIS tests, assumes that ais_check has passed and we are
+# running with the ais group ID.
+#
+
+# FIXME aconway 2008-01-30: we should valgrind the cluster brokers.
+
+srcdir=`dirname $0`
+$srcdir/start_cluster 4
+./ais_test
+ret=$?
+$srcdir/stop_cluster 
+exit $ret
+

@@ -43,12 +43,13 @@ SessionManager::SessionManager(uint32_t a) : ack(a) {}
 
 SessionManager::~SessionManager() {}
 
+// FIXME aconway 2008-02-01: pass handler*, allow open  unattached.
 std::auto_ptr<SessionState>  SessionManager::open(
     SessionHandler& h, uint32_t timeout_)
 {
     Mutex::ScopedLock l(lock);
     std::auto_ptr<SessionState> session(
-        new SessionState(*this, h, timeout_, ack));
+        new SessionState(this, &h, timeout_, ack));
     active.insert(session->getId());
     for_each(observers.begin(), observers.end(),
              boost::bind(&Observer::opened, _1,boost::ref(*session)));
