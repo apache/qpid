@@ -28,8 +28,6 @@
 #include "qpid/ptr_map.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/management/ManagementAgent.h"
-#include "qpid/management/ArgsLinkBind.h"
-#include "qpid/management/ArgsLinkPull.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
