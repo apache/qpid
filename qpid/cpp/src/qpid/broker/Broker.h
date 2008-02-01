@@ -34,6 +34,7 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/management/Broker.h"
+#include "qpid/management/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/framing/FrameHandler.h"
@@ -123,6 +124,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     Vhost::shared_ptr              vhostObject;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
+    void connect(management::ArgsBrokerConnect& args);
 };
 
 }}

@@ -82,6 +82,11 @@
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
       <arg name="body"     dir="IO" type="lstr"   default=""/>
     </method>
+
+    <method name="connect" desc="Establish a connection to another broker">
+      <arg name="host"     dir="I" type="sstr"   default=""/>
+      <arg name="port" dir="I" type="uint32" default="0"/>
+    </method>
   </class>
 
   <!--
@@ -191,6 +196,51 @@
 
     <method name="close"/> 
   </class>
+
+  <!--
+  ===============================================================
+  Link
+  ===============================================================
+  -->
+  <class name="link">
+    <configElement name="vhostRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="address"  type="sstr"   access="RC" index="y"/>
+
+    <instElement name="closing"          type="bool" desc="This link is closing by management request"/>
+    <instElement name="authIdentity"     type="sstr"/>
+    <instElement name="framesFromPeer"   type="count64"/>
+    <instElement name="framesToPeer"     type="count64"/>
+    <instElement name="bytesFromPeer"    type="count64"/>
+    <instElement name="bytesToPeer"      type="count64"/>
+
+    <method name="close"/> 
+
+    <method name="bridge" desc="Bridge messages over the link">
+      <arg name="src"     dir="I" type="sstr"/>
+      <arg name="dest"     dir="I" type="sstr"/>
+      <arg name="key"     dir="I" type="sstr"   default=""/>
+      <arg name="src_is_queue"     dir="I" type="bool"   default="0"/>
+      <arg name="src_is_local"     dir="I" type="bool"   default="0"/>
+    </method>
+  </class>
+
+
+  <!--
+  ===============================================================
+  Bridge
+  ===============================================================
+  -->
+  <class name="bridge">
+    <configElement name="linkRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="channelId"        type="uint16" access="RC"  index="y"/>
+    <configElement name="src"             type="sstr"   access="RC"/>
+    <configElement name="dest"             type="sstr"   access="RC"/>
+    <configElement name="key"             type="sstr"   access="RC"/>
+    <configElement name="src_is_queue"     type="bool"   access="RC"/>
+    <configElement name="src_is_local"     type="bool"   access="RC"/>
+    <method name="close"/> 
+  </class>
+
 
   <!--
   ===============================================================
