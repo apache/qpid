@@ -78,12 +78,16 @@ struct Callback : public Cpg::Handler {
         cpg_handle_t /*handle*/,
         struct cpg_name *grp,
         struct cpg_address */*members*/, int nMembers,
-        struct cpg_address */*left*/, int /*nLeft*/,
-        struct cpg_address */*joined*/, int /*nJoined*/
+        struct cpg_address */*left*/, int nLeft,
+        struct cpg_address */*joined*/, int nJoined
     )
     {
         BOOST_CHECK_EQUAL(group, Cpg::str(*grp));
         configChanges.push_back(nMembers);
+        BOOST_MESSAGE("configChange: "<<
+                      nLeft<<" left "<<
+                      nJoined<<" joined "<<
+                      nMembers<<" members.");
     }
 };
 
