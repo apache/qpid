@@ -60,11 +60,11 @@
     <iterate target="compile-tests"/>
   </target>
 
-  <target name="test" description="execute unit tests">
+  <target name="test" description="execute tests">
     <iterate target="test"/>
   </target>
 
-  <target name="jar" description="create jars">
+  <target name="jar" description="create module jars">
     <iterate target="jar"/>
   </target>
 
@@ -72,7 +72,7 @@
     <iterate target="jar-tests"/>
   </target>
 
-  <target name="libs" description="copy dependencies into build directory">
+  <target name="libs" description="copy dependencies into build tree">
     <iterate target="libs"/>
   </target>
 
@@ -102,7 +102,7 @@
     <touch file="${qpid.jar}"/>
   </target>
 
-  <target name="build" description="build distribution">
+  <target name="build" description="build the project">
     <iterate target="build"/>
     <antcall target="manifest"/>
   </target>
@@ -111,29 +111,29 @@
     <mkdir dir="${release}"/>
   </target>
 
-  <target name="zip" depends="build,prepare" description="produce a zip archive of the distribution tree">
+  <target name="zip" depends="build,prepare" description="build release archive">
     <zip destfile="${release.zip}">
       <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
     </zip>
   </target>
 
-  <target name="tar" depends="build,prepare" description="produce a tar archive of the distribution tree">
+  <target name="tar" depends="build,prepare" description="build release archive">
     <tar destfile="${release.tar}">
       <tarfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
     </tar>
   </target>
 
-  <target name="gzip" depends="tar" description="produce a gzipped tarball of the distribution tree">
+  <target name="gzip" depends="tar" description="build release archive">
     <gzip src="${release.tar}" destfile="${release.tgz}"/>
   </target>
 
-  <target name="bzip2" depends="tar" description="produze a bzipped tarball of the distribution tree">
+  <target name="bzip2" depends="tar" description="build release archive">
     <bzip2 src="${release.tar}" destfile="${release.bz2}"/>
   </target>
 
-  <target name="archive" depends="zip,gzip,bzip2" description="produce all archive formats of the distribution tree"/>
+  <target name="release" depends="zip,gzip,bzip2" description="build all release archives"/>
 
-  <target name="clean" description="remove all build artifacts">
+  <target name="clean" description="remove build and release artifacts">
     <iterate target="clean"/>
     <delete dir="${build}"/>
     <delete dir="${release}"/>

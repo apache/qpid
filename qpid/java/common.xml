@@ -94,4 +94,105 @@
     </junitreport>
   </target>
 
+  <target name="help" description="display detailed build documentation">
+    <echo>
+  ant build
+
+    This target compiles all sources, creates java archives, and
+    copies scripts and configurations into the build directory:
+
+      ${build}
+
+    The build directory is treated as a live distro which this target
+    will incrementally update. Developers can put the build/bin
+    directory into their path in order to run any scripts or code
+    directly out of the live build:
+
+      ${build.bin}
+
+  ant test [ -Dtest=&lt;pattern&gt; ] [ report ]
+
+    Execute unit tests and place the output in the build results
+    directory:
+
+      ${build.results}
+
+    All test output will be redirected to a file of the form:
+
+      TEST-&lt;class&gt;.txt
+
+    The same output is available using an xml file format:
+
+      TEST-&lt;class&gt;.xml
+
+    The test system property may be used to restrict the number of
+    tests run by a given invocation of the ant test target. The
+    following command will run just the MongooseTest test case:
+
+      ant test -Dtest=MongooseTest
+
+    In addition, patterns may be used to specify more than one test.
+    The following command will run both the MongooseTest and GooseTest
+    test cases:
+
+      ant test -Dtest=*ooseTest
+
+    If no test property is specified, the "ant test" target will
+    default to running all available tests for the project or module
+    depending on the current working directory.
+
+    Finally it can be useful to append the report target in order to
+    generate an html summary of the tests that were just run. The
+    following command will run both the MongooseTest and GooseTest
+    test cases and generate an html summary of the results:
+
+      ant test -Dtest=*ooseTest report
+
+    See the documentation for the "ant report" target for more details
+    on the generated report.
+
+  ant report
+
+    The report target will generate an html summary of the current
+    test results into the report directory:
+
+      ${build.report}
+
+    The report target will operate on all results currently in the
+    build results directory. Results are not cleared unless the clean
+    target is used. This means that several consecutive test runs can
+    be summarized into a single report. The following commands will
+    produce a report summarizing both the MongooseTest and GooseTest
+    test cases:
+
+      ant test -Dtest=MongooseTest
+      ...
+      ant test -Dtest=GooseTest
+      ...
+      ant report
+
+  ant release
+
+    The release target generates binary distribution archives and
+    places them into the release directory:
+
+      ${release}
+
+  ant clean
+
+    The clean target removes build artifacts. When invoked from the
+    project root this target will remove the entire project build and
+    release directories:
+
+      ${build}
+        and
+      ${release}
+
+    When invoked from a specific module, the clean target will delete
+    that modules build root from underneath the project build root:
+
+      ${build}/&lt;module&gt;
+    </echo>
+  </target>
+
 </project>
