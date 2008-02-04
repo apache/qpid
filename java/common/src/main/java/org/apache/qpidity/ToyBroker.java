@@ -272,6 +272,10 @@ class ToyBroker extends SessionDelegate
             {
                 return new ToyBroker(exchange);
             }
+            public void exception(Throwable t)
+            {
+                t.printStackTrace();
+            }
         };
 
         //hack

@@ -110,6 +110,11 @@ public class Connection
         }
     }
 
+    public void exception(Throwable t)
+    {
+        delegate.exception(t);
+    }
+
     public void closed()
     {
         log.debug("connection closed: %s", this);
