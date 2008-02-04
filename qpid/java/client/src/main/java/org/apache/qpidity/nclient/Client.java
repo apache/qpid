@@ -54,6 +54,11 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 return new ClientSessionDelegate();
             }
 
+            public void exception(Throwable t)
+            {
+                // XXX: need to propogate exception
+            }
+
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
                 ErrorCode errorCode = ErrorCode.get(connectionClose.getReplyCode());

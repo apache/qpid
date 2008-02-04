@@ -81,8 +81,8 @@ public class MinaHandler<E> implements IoHandler
 
     public void exceptionCaught(IoSession ssn, Throwable e)
     {
-        log.error(e, "exception caught");
-        throw new RuntimeException("IOException", e);
+        Attachment<E> attachment = (Attachment<E>) ssn.getAttachment();
+        attachment.receiver.exception(e);
     }
 
     public void sessionCreated(final IoSession ssn)
