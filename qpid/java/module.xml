@@ -156,10 +156,17 @@
   </target>
 
   <property name="test" value="*Test"/>
+  <property name="log" value="info"/>
+  <property name="amqj.logging.level" value="${level}"/>
+  <property name="root.logging.level" value="${level}"/>
+  <property name="log4j.configuration" value="file://${project.root}/log4j-test.xml"/>
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
     <junit fork="yes" haltonfailure="no" printsummary="on" timeout="90000">
+      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
+      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
+      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
       <formatter type="plain"/>
       <formatter type="xml"/>
       <classpath refid="module.test.path"/>
