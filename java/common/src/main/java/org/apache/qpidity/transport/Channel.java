@@ -114,6 +114,11 @@ public class Channel extends Invoker
         throw new RuntimeException(error.getMessage());
     }
 
+    public void exception(Throwable t)
+    {
+        session.exception(t);
+    }
+
     public void closed()
     {
         log.debug("channel closed: ", this);

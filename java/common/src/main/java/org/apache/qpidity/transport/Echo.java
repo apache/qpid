@@ -70,6 +70,10 @@ public class Echo extends SessionDelegate
             {
                 return new Echo();
             }
+            public void exception(Throwable t)
+            {
+                t.printStackTrace();
+            }
         };
 
         //hack
