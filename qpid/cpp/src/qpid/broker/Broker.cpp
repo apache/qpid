@@ -65,7 +65,7 @@ Broker::Options::Options(const std::string& name) :
     maxConnections(500),
     connectionBacklog(10),
     stagingThreshold(5000000),
-    enableMgmt(0),
+    enableMgmt(1),
     mgmtPubInterval(10),
     ack(0)
 {
