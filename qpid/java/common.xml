@@ -85,6 +85,7 @@
   </target>
 
   <target name="report" description="generate test report">
+    <delete dir="${build.report}"/>
     <mkdir dir="${build.report}"/>
     <junitreport todir="${build.report}">
       <fileset dir="${build.results}">
