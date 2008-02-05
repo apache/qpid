@@ -44,8 +44,8 @@ class LocalQueue
      *@exception ClosedException if subscription has been closed.
      */
     Message pop();
-    bool empty();
-
+    bool empty() const;
+    size_t size() const;
     void setAckPolicy(AckPolicy);
 
   private:

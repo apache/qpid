@@ -167,5 +167,22 @@ BOOST_FIXTURE_TEST_CASE(testSuspendResume, ClientSessionFixture)
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
 
+BOOST_FIXTURE_TEST_CASE(testSendToSelf, SessionFixture) {
+    // https://bugzilla.redhat.com/show_bug.cgi?id=410551
+    // Deadlock if SubscriptionManager  run() concurrent with session ack.
+    LocalQueue myq;
+    session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
+    subs.subscribe(myq, "myq");
+    string data("msg");
+    Message msg(data, "myq");
+    const int count=100;       // Verified with count=100000 in a loop.
+    for (int i = 0; i < count; ++i)
+        session.messageTransfer(content=msg);
+    for (int j = 0; j < count; ++j) {
+        Message m=myq.pop();
+        BOOST_CHECK_EQUAL(m.getData(), data);
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 

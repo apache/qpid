@@ -43,6 +43,8 @@ struct  BrokerFixture {
     BrokerFixture() {
         Broker::Options opts;
         opts.port=0;
+        // Management doesn't play well with multiple in-process brokers.
+        opts.enableMgmt=false;  
         opts.workerThreads=1;
         broker = Broker::create(opts);
         // TODO aconway 2007-12-05: At one point BrokerFixture
