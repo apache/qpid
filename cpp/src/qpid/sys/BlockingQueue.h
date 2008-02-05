@@ -103,9 +103,13 @@ public:
         return closed;
     }
 
-    bool isEmpty() const {
+    bool empty() const {
         Waitable::ScopedLock l(lock);
         return queue.empty();
+    }    
+    size_t size() const {
+        Waitable::ScopedLock l(lock);
+        return queue.size();
     }    
 
   private:

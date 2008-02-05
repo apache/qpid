@@ -59,7 +59,6 @@ class Timer : private qpid::sys::Runnable {
     bool active;
 
     virtual void run();
-    void signalStop();
 
   public:
     Timer();
