@@ -56,7 +56,14 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             public void exception(Throwable t)
             {
-                // XXX: need to propogate exception
+                if (_closedListner != null)
+                {
+                    _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc());
+                }
+                else
+                {
+                    throw new RuntimeException("Connection closed",t);
+                }
             }
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
@@ -185,7 +192,9 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public void setClosedListener(ClosedListener closedListner)
     {
+
         _closedListner = closedListner;
+        System.out.println("setting connection listener " + _closedListner);
     }
 
 }
