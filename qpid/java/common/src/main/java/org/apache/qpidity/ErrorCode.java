@@ -4,7 +4,8 @@ public enum ErrorCode
 {
     //Qpid specific - for the time being
     UNDEFINED(1,"undefined",true),
-    MESSAGE_REJECTED(1,"message_rejected",true),
+    MESSAGE_REJECTED(2,"message_rejected",true),
+    CONNECTION_ERROR(3,"connection was closed",true),
 
     //This might change in the spec, the error class is not applicable
     NO_ERROR(200,"reply-success",true),
