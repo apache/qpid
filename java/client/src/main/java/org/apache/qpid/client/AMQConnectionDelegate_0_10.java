@@ -111,6 +111,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
             }
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword());
+            _qpidConnection.setClosedListener(this);
         }
         catch (QpidException e)
         {
