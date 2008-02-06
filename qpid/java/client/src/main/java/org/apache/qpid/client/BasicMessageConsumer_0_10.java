@@ -39,6 +39,7 @@ import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Iterator;
 
 /**
  * This is a 0.10 message consumer.
@@ -449,5 +450,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void stop()
     {
         _isStarted = false;
+    }
+
+    public void close() throws JMSException
+    {
+        super.close();
+        // release message that may be staged
+        Iterator messages=_synchronousQueue.iterator();
+        while (messages.hasNext())
+        {
+            AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+            messages.remove();
+            _session.rejectMessage(message, true);
+        }
     }
 }

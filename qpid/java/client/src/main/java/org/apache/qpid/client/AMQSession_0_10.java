@@ -27,6 +27,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.ErrorCode;
@@ -43,6 +44,8 @@ import javax.jms.IllegalStateException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
 import java.util.Map;
+import java.util.Iterator;
+
 /**
  * This is a 0.10 Session
  */
@@ -237,6 +240,25 @@ public class AMQSession_0_10 extends AMQSession
         getQpidSession().sessionClose();
         getCurrentException();
     }
+
+    /**
+     * We need to release message that may be pre-fetched in the local queue
+     *
+     * @throws JMSException
+     */
+    public void close() throws JMSException
+    {
+        super.close();
+        // We need to release pre-fetched messages
+        Iterator messages=_queue.iterator();
+        while (messages.hasNext())
+        {
+            UnprocessedMessage message=(UnprocessedMessage) messages.next();
+            messages.remove();
+            rejectMessage(message, true);
+        }
+    }
+
 
     /**
      * Commit the receipt and the delivery of all messages exchanged by this session resources.
@@ -615,10 +637,13 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-     void stop() throws AMQException
+
+
+
+    void stop() throws AMQException
     {
         super.stop();
-           for(BasicMessageConsumer  c:  _consumers.values())
+        for(BasicMessageConsumer  c:  _consumers.values())
         {
               c.stop();
         }

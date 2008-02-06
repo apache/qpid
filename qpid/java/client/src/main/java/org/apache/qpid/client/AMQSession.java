@@ -195,7 +195,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Weaken the type once {@link FlowControllingBlockingQueue} implements Queue.
      */
-    private final FlowControllingBlockingQueue _queue;
+    protected final FlowControllingBlockingQueue _queue;
 
     /**
      * Holds the highest received delivery tag.
