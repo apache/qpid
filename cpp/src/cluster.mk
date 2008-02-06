@@ -3,7 +3,7 @@
 # 
 lib_LTLIBRARIES += libqpidcluster.la
 
-if CLUSTER
+if CPG
 
 libqpidcluster_la_SOURCES = \
   qpid/cluster/Cluster.cpp \
