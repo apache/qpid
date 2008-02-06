@@ -71,12 +71,26 @@ public class AMQTopic extends AMQDestination implements Topic
               queueName, isDurable);
     }
 
+    protected AMQTopic(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
+                               boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
+    {
+        super(exchangeName, exchangeClass, routingKey, isExclusive, isAutoDelete, queueName, isDurable );
+    }
+
+
     public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
         return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
                             getDurableTopicQueueName(subscriptionName, connection),
                             true);
+    }
+
+    public static AMQTopic createDurable010Topic(AMQTopic topic, String subscriptionName, AMQConnection connection)
+            throws JMSException
+    {
+        return new AMQTopic(topic.getExchangeName(), ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getRoutingKey(), true, false,
+              getDurableTopicQueueName(subscriptionName, connection), false);
     }
 
     public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException

@@ -21,9 +21,8 @@
 package org.apache.qpid.client;
 
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -333,4 +332,70 @@ public class AMQSession_0_8 extends AMQSession
 
         return new AMQTemporaryQueue(this);
     }
+
+    public  TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
+       {
+
+           checkNotClosed();
+           AMQTopic origTopic = checkValidTopic(topic);
+           AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
+           TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
+           if (subscriber != null)
+           {
+               if (subscriber.getTopic().equals(topic))
+               {
+                   throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
+                                                   + name);
+               }
+               else
+               {
+                   unsubscribe(name);
+               }
+           }
+           else
+           {
+               AMQShortString topicName;
+               if (topic instanceof AMQTopic)
+               {
+                   topicName = ((AMQTopic) topic).getRoutingKey();
+               }
+               else
+               {
+                   topicName = new AMQShortString(topic.getTopicName());
+               }
+
+               if (_strictAMQP)
+               {
+                   if (_strictAMQPFATAL)
+                   {
+                       throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
+                   }
+                   else
+                   {
+                       _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
+                                    + "for creation durableSubscriber. Requesting queue deletion regardless.");
+                   }
+
+                   deleteQueue(dest.getAMQQueueName());
+               }
+               else
+               {
+                   // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
+                   // says we must trash the subscription.
+                   if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
+                       && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
+                   {
+                       deleteQueue(dest.getAMQQueueName());
+                   }
+               }
+           }
+
+           subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+
+           _subscriptions.put(name, subscriber);
+           _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+
+           return subscriber;
+       }
+
 }
