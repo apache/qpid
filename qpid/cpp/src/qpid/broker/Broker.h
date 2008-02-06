@@ -37,6 +37,7 @@
 #include "qpid/management/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
+#include "qpid/DataDir.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -59,7 +60,8 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     struct Options : public qpid::Options {
         Options(const std::string& name="Broker Options");
-        
+
+        std::string dataDir;
         uint16_t port;
         int workerThreads;
         int maxConnections;
@@ -99,6 +101,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     ExchangeRegistry& getExchanges() { return exchanges; }
     uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
+    DataDir& getDataDir() { return dataDir; }
 
     SessionManager& getSessionManager() { return sessionManager; }
 
@@ -113,6 +116,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     Options config;
     sys::Acceptor::shared_ptr acceptor;
     MessageStore* store;
+    DataDir dataDir;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
