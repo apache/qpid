@@ -77,7 +77,7 @@ public class Connection
 
     public void received(ConnectionEvent event)
     {
-       log.debug("RECV: %s", event);
+        log.debug("RECV: %s", event);
         Channel channel = getChannel(event.getChannel());
         channel.received(event.getProtocolEvent());
     }

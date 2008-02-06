@@ -1,5 +1,7 @@
  package org.apache.qpidity.nclient;
 
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
@@ -16,17 +18,17 @@ public class JMSTestCase
 
         try
         {
-            javax.jms.Connection con = new AMQConnection("qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
+            javax.jms.Connection con = new AMQConnection("qpid:password=pass;username=name@tcp:localhost:5672");
             con.start();
 
             javax.jms.Session ssn = con.createSession(false, 1);
 
             javax.jms.Destination dest = new AMQQueue(new AMQShortString("direct"),"test");
             javax.jms.MessageConsumer cons = ssn.createConsumer(dest);
-            javax.jms.MessageProducer prod = ssn.createProducer(dest);
+            //javax.jms.MessageProducer prod = ssn.createProducer(dest);
 
-            //javax.jms.TextMessage m = (javax.jms.TextMessage)cons.receive();
-         /*   cons.setMessageListener(new MessageListener()
+            javax.jms.TextMessage m = null; // (javax.jms.TextMessage)cons.receive();
+           cons.setMessageListener(new MessageListener()
             {
                 public void onMessage(Message m)
                 {
@@ -41,9 +43,25 @@ public class JMSTestCase
                     }
                 }
 
-            });*/
+            });
 
-            javax.jms.TextMessage msg = ssn.createTextMessage();
+           con.setExceptionListener(new ExceptionListener()
+           {
+               public void onException(JMSException e)
+               {
+                   e.printStackTrace();
+               }
+           });
+
+           System.out.println("Waiting");
+           while (m == null)
+           {
+
+           }
+
+           System.out.println("Exiting");
+
+            /*javax.jms.TextMessage msg = ssn.createTextMessage();
             msg.setText("This is a test message");
             msg.setBooleanProperty("targetMessage", false);
             prod.send(msg);
@@ -60,7 +78,7 @@ public class JMSTestCase
             else
             {
                System.out.println("message is not null"  + m);
-            }
+            }*/
 
         }
         catch(Exception e)

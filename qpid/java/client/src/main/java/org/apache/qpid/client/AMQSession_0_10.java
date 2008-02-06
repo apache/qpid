@@ -592,7 +592,7 @@ public class AMQSession_0_10 extends AMQSession
      */
     private class QpidSessionExceptionListener implements org.apache.qpidity.nclient.ClosedListener
     {
-        public void onClosed(ErrorCode errorCode, String reason)
+        public void onClosed(ErrorCode errorCode, String reason, Throwable t)
         {
             synchronized (this)
             {
