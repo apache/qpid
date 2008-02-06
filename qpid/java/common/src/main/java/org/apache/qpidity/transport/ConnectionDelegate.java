@@ -69,6 +69,8 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     public abstract void exception(Throwable t);
 
+    public abstract void closed();
+
     public void setCondition(Lock negotiationCompleteLock,Condition negotiationComplete)
     {
         _negotiationComplete = negotiationComplete;

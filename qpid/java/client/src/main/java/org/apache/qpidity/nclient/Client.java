@@ -49,6 +49,8 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
         ConnectionDelegate connectionDelegate = new ConnectionDelegate()
         {
+            private boolean receivedClose = false;
+
             public SessionDelegate getSessionDelegate()
             {
                 return new ClientSessionDelegate();
@@ -62,7 +64,15 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 }
                 else
                 {
-                    throw new RuntimeException("Connection closed",t);
+                    throw new RuntimeException("connection closed",t);
+                }
+            }
+
+            public void closed()
+            {
+                if (_closedListner != null && !this.receivedClose)
+                {
+                    _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc());
                 }
             }
 
@@ -81,6 +91,8 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 {
                     _closedListner.onClosed(errorCode, connectionClose.getReplyText());
                 }
+
+                this.receivedClose = true;
             }
         };
 

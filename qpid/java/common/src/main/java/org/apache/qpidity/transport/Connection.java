@@ -127,6 +127,7 @@ public class Connection
                 it.remove();
             }
         }
+        delegate.closed();
     }
 
     public void close()
