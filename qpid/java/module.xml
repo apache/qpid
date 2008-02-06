@@ -157,8 +157,8 @@
 
   <property name="test" value="*Test"/>
   <property name="log" value="info"/>
-  <property name="amqj.logging.level" value="${level}"/>
-  <property name="root.logging.level" value="${level}"/>
+  <property name="amqj.logging.level" value="${log}"/>
+  <property name="root.logging.level" value="${log}"/>
   <property name="log4j.configuration" value="file://${project.root}/log4j-test.xml"/>
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
