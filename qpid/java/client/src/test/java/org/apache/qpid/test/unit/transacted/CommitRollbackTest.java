@@ -462,15 +462,15 @@ public class CommitRollbackTest extends QpidTestCase
 
         result = _consumer.receive(1000);
 
-       // if( isBroker08() )
-       // {
-             assertNotNull("test message was consumed and rolled back, but is gone", result);
-           //  assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
-       // }
-       // else
-       // {
-        //    assertNull("test message was consumed and not rolled back, but is redelivered", result);
-       // }
+        if (isBroker08())
+        {
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+           // assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        }
+        else
+        {
+            assertNull("test message was consumed and not rolled back, but is redelivered", result);
+        }
 
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);
