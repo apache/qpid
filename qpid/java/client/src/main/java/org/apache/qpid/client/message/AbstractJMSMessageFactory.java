@@ -140,7 +140,9 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         props.setType(mprop.getType());
         props.setUserId(mprop.getUserId());
         props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));        
-        return createMessage(messageNbr, data, exchange, routingKey, props);
+        AbstractJMSMessage message = createMessage(messageNbr, data, exchange, routingKey, props);
+        message.receivedFromServer();
+        return message;
     }
 
 
