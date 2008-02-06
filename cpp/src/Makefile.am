@@ -140,6 +140,7 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/SystemInfo.cpp \
   qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.cpp \
+  qpid/DataDir.cpp \
   qpid/Options.cpp \
   qpid/log/Options.cpp \
   qpid/log/Selector.cpp \
@@ -236,6 +237,7 @@ libqpidclient_la_SOURCES =			\
 nobase_include_HEADERS = \
   $(platform_hdr) \
   qpid/assert.h \
+  qpid/DataDir.h \
   qpid/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \
@@ -437,4 +439,8 @@ nobase_include_HEADERS = \
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
 	$(MAKE) qpidd
+
+# Create the default data directory
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
 
