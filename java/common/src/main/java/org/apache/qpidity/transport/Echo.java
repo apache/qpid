@@ -74,6 +74,7 @@ public class Echo extends SessionDelegate
             {
                 t.printStackTrace();
             }
+            public void closed() {}
         };
 
         //hack

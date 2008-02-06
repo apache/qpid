@@ -20,10 +20,14 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.mina.util.AvailablePortFinder;
+
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.util.Logger;
 
 import junit.framework.TestCase;
+
+import java.util.Random;
 
 /**
  * ConnectionTest
@@ -34,9 +38,14 @@ public class ConnectionTest extends TestCase
 
     private static final Logger log = Logger.get(ConnectionTest.class);
 
-    private static final int PORT = 1234;
+    private int port;
 
-    public void testWriteToClosed() throws Exception {
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+
+        port = AvailablePortFinder.getNextAvailable(12000);
+
         ConnectionDelegate server = new ConnectionDelegate() {
             public void init(Channel ch, ProtocolHeader hdr) {
                 ch.getConnection().close();
@@ -48,24 +57,61 @@ public class ConnectionTest extends TestCase
             public void exception(Throwable t) {
                 log.error(t, "exception caught");
             }
+            public void closed() {}
         };
 
-        MinaHandler.accept("0.0.0.0", PORT, server);
+        MinaHandler.accept("0.0.0.0", port, server);
+    }
 
-        Connection conn = MinaHandler.connect("0.0.0.0", PORT,
-                                              new ConnectionDelegate()
-                                              {
-                                                  public SessionDelegate getSessionDelegate()
-                                                  {
-                                                      return new SessionDelegate() {};
-                                                  }
-                                                  public void exception(Throwable t)
-                                                  {
-                                                      t.printStackTrace();
-                                                  }
-                                              });
+    private class Condition
+    {
+        private boolean value = false;
+
+        public synchronized void set()
+        {
+            value = true;
+            notifyAll();
+        }
+
+        public synchronized boolean get(long timeout) throws InterruptedException
+        {
+            if (!value)
+            {
+                wait(timeout);
+            }
+
+            return value;
+        }
+    }
+
+    private Connection connect(final Condition closed)
+    {
+        Connection conn = MinaHandler.connect("0.0.0.0", port, new ConnectionDelegate()
+        {
+            public SessionDelegate getSessionDelegate()
+            {
+                return new SessionDelegate() {};
+            }
+            public void exception(Throwable t)
+            {
+                t.printStackTrace();
+            }
+            public void closed()
+            {
+                if (closed != null)
+                {
+                    closed.set();
+                }
+            }
+        });
 
         conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
+        return conn;
+    }
+
+    public void testWriteToClosed() throws Exception
+    {
+        Connection conn = connect(null);
         Channel ch = conn.getChannel(0);
         Session ssn = new Session();
         ssn.attach(ch);
@@ -78,6 +124,16 @@ public class ConnectionTest extends TestCase
         catch (TransportException e)
         {
             // expected
+        }
+    }
+
+    public void testClosedNotification() throws Exception
+    {
+        Condition closed = new Condition();
+        Connection conn = connect(closed);
+        if (!closed.get(3000))
+        {
+            fail("never got notified of connection close");
         }
     }
 
