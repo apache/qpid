@@ -58,10 +58,8 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             public void exception(Throwable t)
             {
-                System.out.println("notifying listener");
                 if (_closedListner != null)
                 {
-                    System.out.println("notifying listener2");
                     _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc(),t);
                 }
                 else
@@ -72,7 +70,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             public void closed()
             {
-                System.out.println("notifying listener");
                 if (_closedListner != null && !this.receivedClose)
                 {
                     _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc(),null);
@@ -210,7 +207,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
     {
 
         _closedListner = closedListner;
-        System.out.println("setting connection listener " + _closedListner);
     }
 
 }
