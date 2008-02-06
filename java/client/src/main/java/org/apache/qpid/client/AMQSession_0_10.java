@@ -38,14 +38,11 @@ import org.apache.qpidity.transport.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Destination;
-import javax.jms.TemporaryQueue;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
 import java.util.Map;
-import java.util.HashMap;
-
 /**
  * This is a 0.10 Session
  */
@@ -145,6 +142,25 @@ public class AMQSession_0_10 extends AMQSession
     }
 
     //------- overwritten methods of class AMQSession
+
+     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
+            throws JMSException
+    {
+        checkNotClosed();
+        checkValidTopic(topic);
+        if( _subscriptions.containsKey(name))
+        {
+            _subscriptions.get(name).close();
+        }
+        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
+        BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
+        TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
+        
+        _subscriptions.put(name, subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+
+        return subscriber;
+    }
 
     /**
      * Acknowledge one or many messages.
@@ -362,6 +378,14 @@ public class AMQSession_0_10 extends AMQSession
         getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
+        if(consumer.isStrated())
+        {
+            // set the flow
+            getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                    AMQSession_0_10.MAX_PREFETCH);
+
+        }
         getQpidSession().sync();
         getCurrentException();
     }
@@ -462,11 +486,11 @@ public class AMQSession_0_10 extends AMQSession
                 //only set if msg list is null
                 try
                 {
-                    if (consumer.getMessageListener() != null)
-                    {
+                 //   if (consumer.getMessageListener() != null)
+                 //   {
                         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
                                                      MAX_PREFETCH);
-                    }
+                  //  }
                     getQpidSession()
                     .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
                 }
@@ -579,8 +603,7 @@ public class AMQSession_0_10 extends AMQSession
 
     void start() throws AMQException
     {
-
-        super.suspendChannel(false);
+        suspendChannel(false);
         for(BasicMessageConsumer  c:  _consumers.values())
         {
               c.start();
@@ -601,7 +624,7 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-      synchronized void startDistpatcherIfNecessary()
+   synchronized void startDistpatcherIfNecessary()
     {
         // If IMMEDIATE_PREFETCH is not set then we need to start fetching
         if (!_immediatePrefetch)
@@ -621,5 +644,72 @@ public class AMQSession_0_10 extends AMQSession
         }
 
         startDistpatcherIfNecessary(false);
+    }
+
+
+    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
+    {
+
+        checkNotClosed();
+        AMQTopic origTopic=checkValidTopic(topic);
+        AMQTopic dest=AMQTopic.createDurable010Topic(origTopic, name, _connection);
+
+        TopicSubscriberAdaptor subscriber=_subscriptions.get(name);
+        if (subscriber != null)
+        {
+            if (subscriber.getTopic().equals(topic))
+            {
+                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
+                        + name);
+            }
+            else
+            {
+                unsubscribe(name);
+            }
+        }
+        else
+        {
+            AMQShortString topicName;
+            if (topic instanceof AMQTopic)
+            {
+                topicName=((AMQTopic) topic).getRoutingKey();
+            }
+            else
+            {
+                topicName=new AMQShortString(topic.getTopicName());
+            }
+
+            if (_strictAMQP)
+            {
+                if (_strictAMQPFATAL)
+                {
+                    throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
+                }
+                else
+                {
+                    _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
+                            + "for creation durableSubscriber. Requesting queue deletion regardless.");
+                }
+
+                deleteQueue(dest.getAMQQueueName());
+            }
+            else
+            {
+                // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
+                // says we must trash the subscription.
+                if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
+                        && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
+                {
+                    deleteQueue(dest.getAMQQueueName());
+                }
+            }
+        }
+
+        subscriber=new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createExclusiveConsumer(dest));
+
+        _subscriptions.put(name, subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+
+        return subscriber;
     }
 }
