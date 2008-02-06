@@ -109,7 +109,7 @@ testprogs=		\
 
 check_PROGRAMS += $(testprogs) interop_runner
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
