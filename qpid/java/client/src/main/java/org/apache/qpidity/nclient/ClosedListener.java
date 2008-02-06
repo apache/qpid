@@ -32,8 +32,8 @@ public interface ClosedListener
      * informs the connection's ExceptionListener
      * @param errorCode TODO
      * @param reason TODO
-     *
+     * @param t TODO
      * @see Connection
      */
-    public void onClosed(ErrorCode errorCode, String reason);
+    public void onClosed(ErrorCode errorCode, String reason, Throwable t);
 }

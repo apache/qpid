@@ -142,12 +142,17 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
 
     }
 
-    public void onClosed(ErrorCode errorCode, String reason)
+    public void onClosed(ErrorCode errorCode, String reason, Throwable t)
     {
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Received a connection close from the broker: Error code : " + errorCode.getCode());
         }
-        _conn._exceptionListener.onException(new JMSException(reason,String.valueOf(errorCode.getCode())));
+        JMSException ex = new JMSException(reason,String.valueOf(errorCode.getCode()));
+        if (t != null)
+        {
+            ex.initCause(t);
+        }
+        _conn._exceptionListener.onException(ex);
     }
 }
