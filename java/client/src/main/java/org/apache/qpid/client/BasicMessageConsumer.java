@@ -385,7 +385,23 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public abstract Object getMessageFromQueue(long l) throws InterruptedException;
+    public  Object getMessageFromQueue(long l) throws InterruptedException
+    {
+         Object o;
+         if (l > 0)
+         {
+             o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+         }
+         else if (l < 0)
+         {
+             o = _synchronousQueue.poll();
+         }
+         else
+         {
+             o = _synchronousQueue.take();
+         }
+         return o;
+     }
 
     private boolean closeOnAutoClose() throws JMSException
     {
@@ -977,6 +993,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     public void stop()
     {
         // do nothing as this is a 0_10 feature
+    }
+
+    public boolean isStrated()
+    {
+        // do nothing as this is a 0_10 feature
+        return false;
     }
 
     public AMQShortString getQueuename()
