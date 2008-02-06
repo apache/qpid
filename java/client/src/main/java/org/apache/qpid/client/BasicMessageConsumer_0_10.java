@@ -46,10 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
         implements org.apache.qpidity.nclient.util.MessageListener
 {
-     /**
-     * Number of received message so far
-     */
-    private final AtomicLong _messagesReceived = new AtomicLong(0);
 
     /**
      * This class logger
@@ -118,7 +114,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     public void notifyMessage(AbstractJMSMessage jmsMessage, int channelId)
     {
-        _messagesReceived.incrementAndGet();
         boolean messageOk = false;
         try
         {
@@ -143,20 +138,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
     }
 
-    /**
-     * Require more credit for this consumer
-     */
-    private void requireMoreCreditIfNecessary()
-    {
-        if (_isStarted && _messagesReceived.get() >= AMQSession_0_10.MAX_PREFETCH)
-        {
-            // require more credit
-            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                    Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                    AMQSession_0_10.MAX_PREFETCH);
-            _messagesReceived.set(0);
-        }
-    }
+
 
     /**
      * This method is invoked by the transport layer when a message is delivered for this
@@ -239,14 +221,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         // notify the session
         ((AMQSession_0_10) getSession()).addMessageTag(msg.getDeliveryTag());
-        if (isMessageListenerSet())
-        {
-            requireMoreCreditIfNecessary();
-        }
-        else if (_synchronousQueue.isEmpty())
-        {
-            requireMoreCreditIfNecessary();
-        }
         //if (!Boolean.getBoolean("noAck"))
         //{
             super.postDeliver(msg);
@@ -458,7 +432,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                                                           org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
                                                           0xFFFFFFFF);
                 _0_10session.getQpidSession().sync();
-                _messagesReceived.set(0);
             }
         }
     }
