@@ -189,7 +189,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
 
     void notifyException(QpidException ex)
     {
-        _exceptionListner.onClosed(null, null);
+        _exceptionListner.onClosed(null, null, null);
     }
 
     Map<String,MessagePartListener> getMessageListerners()
