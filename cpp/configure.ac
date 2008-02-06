@@ -138,29 +138,33 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Check for cluster requirements. 
-save_ldflags=$LDFLAGS  
+# Check for optional CPG requirement.
+save_ldflags=$LDFLAGS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
-AC_CHECK_LIB([cpg],[cpg_initialize],[cpg_lib=yes],[cpg_lib=no])
-AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes])
-test x$cpg_lib = xyes -a x$cpg_h = xyes && enable_CLUSTER=yes 
 
-if test x$enable_CLUSTER = xyes; then
-  AC_ARG_ENABLE([cluster],  
-    [AS_HELP_STRING([--disable-cluster],
-      [disable cluster functionality (default enabled)])],
-    [enable_CLUSTER=$enableval])   
-fi
-AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
-if test x$enable_CLUSTER = xyes; then
-  CPPFLAGS+=" -DCLUSTER"
-  SPEC_REQUIRES_OPENAIS="Requires: openais"
-  AC_SUBST(SPEC_REQUIRES_OPENAIS)
-  SPEC_REQUIRES_OPENAIS_DEVEL="Requires: openais-devel"
-  AC_SUBST(SPEC_REQUIRES_OPENAIS_DEVEL)
+AC_ARG_WITH([cpg],  
+  [AS_HELP_STRING([--with-cpg], [Build with CPG support])],
+  [case "${withval}" in
+    yes)			# yes - enable
+    with_CPG=yes
+    AC_CHECK_LIB([cpg],[cpg_initialize],,[AC_MSG_ERROR([libcpg not found, install openais])])
+    AC_CHECK_HEADERS([openais/cpg.h],,[AC_MSG_ERROR([openais/cpg.h not found, install openais-devel])])
+    ;;
+    no)				# no -disable
+    with_CPG=no
+    ;; 
+    *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
+   esac],
+   [ # not specified - enable if libs/headers available.
+    with_CPG=yes
+    AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
+    AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
+   ]
+)
+AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
+if test x$with_CPG = xyes; then
+  CPPFLAGS+=" -DCPG"
 else
-  SPEC_CONFIGURE_OPTS=--disable-cluster  
-  AC_SUBST(SPEC_CONFIGURE_OPTS)
   LDFLAGS=$save_ldflags	    
 fi
 	
