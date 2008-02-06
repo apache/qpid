@@ -24,7 +24,6 @@ package org.apache.qpid.client;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,8 +77,6 @@ import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.framing.TxRollbackBody;
-import org.apache.qpid.framing.TxRollbackOkBody;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.AMQBindingURL;
@@ -183,14 +180,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * keeps a record of subscriptions which have been created in the current instance. It does not remember
      * subscriptions between executions of the client.
      */
-    private final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
+    protected final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
 
     /**
      * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
      * up in the {@link #_subscriptions} map.
      */
-    private final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
+    protected final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
             new ConcurrentHashMap<BasicMessageConsumer, String>();
 
     /**
@@ -271,10 +268,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     protected final boolean _immediatePrefetch;
 
     /** Indicates that warnings should be generated on violations of the strict AMQP. */
-    private final boolean _strictAMQP;
+    protected final boolean _strictAMQP;
 
     /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
-    private final boolean _strictAMQPFATAL;
+    protected final boolean _strictAMQPFATAL;
     private final Object _messageDeliveryLock = new Object();
 
     /**
@@ -459,8 +456,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Closing session: " + this + ":"
-                         + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+            _logger.info("Closing session: " + this );//+ ":"
+                        // + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
         }
 
         synchronized (_messageDeliveryLock)
@@ -673,6 +670,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   false, false);
     }
 
+    public MessageConsumer createExclusiveConsumer(Destination destination) throws JMSException
+    {
+        checkValidDestination(destination);
+
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, true, null, null,
+                                  false, false);
+    }
+
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
         checkValidDestination(destination);
@@ -723,70 +728,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   false);
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
-    {
-
-        checkNotClosed();
-        AMQTopic origTopic = checkValidTopic(topic);
-        AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
-        TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
-        if (subscriber != null)
-        {
-            if (subscriber.getTopic().equals(topic))
-            {
-                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
-                                                + name);
-            }
-            else
-            {
-                unsubscribe(name);
-            }
-        }
-        else
-        {
-            AMQShortString topicName;
-            if (topic instanceof AMQTopic)
-            {
-                topicName = ((AMQTopic) topic).getRoutingKey();
-            }
-            else
-            {
-                topicName = new AMQShortString(topic.getTopicName());
-            }
-
-            if (_strictAMQP)
-            {
-                if (_strictAMQPFATAL)
-                {
-                    throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
-                }
-                else
-                {
-                    _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
-                                 + "for creation durableSubscriber. Requesting queue deletion regardless.");
-                }
-
-                deleteQueue(dest.getAMQQueueName());
-            }
-            else
-            {
-                // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
-                // says we must trash the subscription.
-                if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
-                    && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
-                {
-                    deleteQueue(dest.getAMQQueueName());
-                }
-            }
-        }
-
-        subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
-
-        _subscriptions.put(name, subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
-
-        return subscriber;
-    }
+    public abstract TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException;
 
     /** Note, currently this does not handle reuse of the same name with different topics correctly. */
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
@@ -1800,7 +1742,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    private AMQTopic checkValidTopic(Topic topic) throws JMSException
+    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
     {
         if (topic == null)
         {
@@ -2060,7 +2002,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    private void deleteQueue(final AMQShortString queueName) throws JMSException
+    protected void deleteQueue(final AMQShortString queueName) throws JMSException
     {
         try
         {

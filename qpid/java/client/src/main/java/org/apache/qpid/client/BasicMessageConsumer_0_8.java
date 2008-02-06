@@ -86,22 +86,5 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
 
     }
-
-     public Object getMessageFromQueue(long l) throws InterruptedException
-     {
-         Object o;
-         if (l > 0)
-         {
-             o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
-         }
-         else if (l < 0)
-         {
-             o = _synchronousQueue.poll();
-         }
-         else
-         {
-             o = _synchronousQueue.take();
-         }
-         return o;
-     }
+     
 }
