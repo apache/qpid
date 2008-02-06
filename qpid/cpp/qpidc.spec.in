@@ -52,7 +52,7 @@ in C++ using Qpid.  Qpid implements the AMQP messaging specification.
 Summary: An AMQP message broker daemon
 Group: System Environment/Daemons
 Requires: %name = %version-%release
-@SPEC_REQUIRES_OPENAIS@
+Requires: openais
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
@@ -63,7 +63,7 @@ Summary: Libraries and header files for developing Qpid broker extensions
 Group: Development/System
 Requires: %name-devel = %version-%release
 Requires: %{qpidd} = %version-%release
-@SPEC_REQUIRES_OPENAIS_DEVEL@
+Requires: openais-devel
 
 %description -n %{qpidd}-devel
 Libraries and header files for developing extensions to the
@@ -73,7 +73,7 @@ Qpid broker daemon.
 %setup -q
 
 %build
-%configure --disable-static @SPEC_CONFIGURE_OPTS@ CXXFLAGS="-O3 -DNDEBUG"
+%configure --disable-static --with-cpg CXXFLAGS="-O3 -DNDEBUG"
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox

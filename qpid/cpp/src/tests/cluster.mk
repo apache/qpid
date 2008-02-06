@@ -1,4 +1,4 @@
-if CLUSTER
+if CPG
 #
 # Cluster tests makefile fragment, to be included in Makefile.am
 # 
