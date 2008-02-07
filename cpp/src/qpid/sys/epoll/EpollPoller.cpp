@@ -253,6 +253,9 @@ void Poller::rearmFd(PollerHandle& handle) {
 }
 
 void Poller::shutdown() {
+    // NB: this function must be async-signal safe, it must not
+    // call any function that is not async-signal safe.
+
     // Allow sloppy code to shut us down more than once
     if (impl->isShutdown)
         return;

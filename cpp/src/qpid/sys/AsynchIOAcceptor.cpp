@@ -214,6 +214,8 @@ void AsynchIOAcceptor::connect(const std::string& host, int16_t port, Connection
 
 
 void AsynchIOAcceptor::shutdown() {
+    // NB: this function must be async-signal safe, it must not
+    // call any function that is not async-signal safe.
     poller->shutdown();
 }
 
