@@ -212,13 +212,16 @@ void Broker::run() {
 }
 
 void Broker::shutdown() {
+    // NB: this function must be async-signal safe, it must not
+    // call any function that is not async-signal safe.
+    // Any unsafe shutdown actions should be done in the destructor.
     if (acceptor)
         acceptor->shutdown();
-    ManagementAgent::shutdown ();
 }
 
 Broker::~Broker() {
     shutdown();
+    ManagementAgent::shutdown ();
     delete store;    
 }
 

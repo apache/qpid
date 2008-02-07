@@ -96,6 +96,7 @@ public:
     
     Poller();
     ~Poller();
+    /** Note: this function is async-signal safe */
     void shutdown();
 
     void addFd(PollerHandle& handle, Direction dir);
