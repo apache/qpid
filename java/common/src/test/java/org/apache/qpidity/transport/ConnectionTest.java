@@ -22,6 +22,8 @@ package org.apache.qpidity.transport;
 
 import org.apache.mina.util.AvailablePortFinder;
 
+import org.apache.qpid.util.concurrent.Condition;
+
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.util.Logger;
 
@@ -61,27 +63,6 @@ public class ConnectionTest extends TestCase
         };
 
         MinaHandler.accept("0.0.0.0", port, server);
-    }
-
-    private class Condition
-    {
-        private boolean value = false;
-
-        public synchronized void set()
-        {
-            value = true;
-            notifyAll();
-        }
-
-        public synchronized boolean get(long timeout) throws InterruptedException
-        {
-            if (!value)
-            {
-                wait(timeout);
-            }
-
-            return value;
-        }
     }
 
     private Connection connect(final Condition closed)
