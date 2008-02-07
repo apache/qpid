@@ -120,9 +120,21 @@ struct BootstrapOptions : public qpid::Options {
 shared_ptr<Broker> brokerPtr;
 auto_ptr<QpiddOptions> options;
 
-void shutdownHandler(int signal){
-    QPID_LOG(notice, "Shutting down on signal " << signal);
-    brokerPtr->shutdown();
+void shutdownHandler(int /*signal*/){
+    // FIXME aconway 2008-02-07:
+    // https://bugzilla.redhat.com/show_bug.cgi?id=431928
+    
+    // The following commented code is in no
+    // way async-signal safe and is causing sporadic hangs on
+    // shutdown. This handler should push a shutdown event into the
+    // epoll poller (making sure to use only async-safe functions!)
+    // and let a poller thread actually do the shutdown.
+
+    // QPID_LOG(notice, "Shutting down on signal " << signal);
+    // brokerPtr->shutdown();
+
+    // For now we just die on the signal, no cleanup. 
+    exit(0);
 }
 
 struct QpiddDaemon : public Daemon {
