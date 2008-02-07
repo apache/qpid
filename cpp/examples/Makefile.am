@@ -43,7 +43,7 @@ all-local:
 
 # Verify the examples in the buid tree.
 check-local: all-local
-	cd examples && QPIDD=$(abs_top_builddir)/src/qpidd $(VERIFY)
+	cd examples && QPID_DATA_DIR= QPIDD=$(abs_top_builddir)/src/qpidd $(VERIFY)
 
 # Build and verify the installed examples, then clean up to avoid rpmbuild warnings.
 EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTDIR)$(libdir)
