@@ -73,7 +73,7 @@ Qpid broker daemon.
 %setup -q
 
 %build
-%configure --disable-static --with-cpg CXXFLAGS="-O3 -DNDEBUG"
+%configure --disable-static --without-cpg CXXFLAGS="-O3 -DNDEBUG"
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
