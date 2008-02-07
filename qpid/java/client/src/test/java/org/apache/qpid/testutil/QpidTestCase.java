@@ -122,7 +122,7 @@ public class QpidTestCase extends TestCase
             _brokerProcess.destroy();
             _brokerProcess = null;
         }
-        else   if ( ! _shel.equals(EXT_BROKER))
+        else   if ( _shel.equals(BROKER_VM))
         {
             TransportConnection.killAllVMBrokers();
         }
