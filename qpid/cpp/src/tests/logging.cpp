@@ -367,4 +367,24 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     unlink("logging.tmp");
 }
 
+BOOST_AUTO_TEST_CASE(testQuoteControlChars) {
+    Logger& l=Logger::instance();
+    l.clear();
+    Options opts;
+    opts.outputs.clear();
+    opts.outputs.push_back("logging.tmp");
+    opts.time=false;
+    l.configure(opts, "test");
+    char s[] = "null\0tab\tspace newline\nret\r";
+    string str(s, sizeof(s));
+    QPID_LOG(critical, str); 
+    ifstream log("logging.tmp");
+    string line;
+    getline(log, line);
+    string expect="critical null^@tab^Ispace newline^Jret^M^@";
+    BOOST_CHECK_EQUAL(expect, line);
+    log.close();
+    unlink("logging.tmp");
+}
+
 QPID_AUTO_TEST_SUITE_END()
