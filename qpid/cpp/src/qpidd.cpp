@@ -121,20 +121,9 @@ shared_ptr<Broker> brokerPtr;
 auto_ptr<QpiddOptions> options;
 
 void shutdownHandler(int /*signal*/){
-    // FIXME aconway 2008-02-07:
-    // https://bugzilla.redhat.com/show_bug.cgi?id=431928
-    
-    // The following commented code is in no
-    // way async-signal safe and is causing sporadic hangs on
-    // shutdown. This handler should push a shutdown event into the
-    // epoll poller (making sure to use only async-safe functions!)
-    // and let a poller thread actually do the shutdown.
-
-    // QPID_LOG(notice, "Shutting down on signal " << signal);
-    // brokerPtr->shutdown();
-
-    // For now we just die on the signal, no cleanup. 
-    exit(0);
+    // Note: do not call any async-signal unsafe functions here.
+    // Do any extra shtudown actions in main() after broker->run()
+    brokerPtr->shutdown();
 }
 
 struct QpiddDaemon : public Daemon {
@@ -257,7 +246,8 @@ int main(int argc, char* argv[])
             brokerPtr.reset(new Broker(options->broker));
             if (options->broker.port == 0)
                 cout << uint16_t(brokerPtr->getPort()) << endl; 
-            brokerPtr->run(); 
+            brokerPtr->run();
+            QPID_LOG(notice, "Shutting down.");
         }
         return 0;
     }
