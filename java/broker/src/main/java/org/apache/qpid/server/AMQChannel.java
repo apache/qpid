@@ -215,9 +215,9 @@ public class AMQChannel
         }
         else
         {
-            if (_log.isTraceEnabled())
+            if (_log.isDebugEnabled())
             {
-                _log.trace(debugIdentity() + "Content header received on channel " + _channelId);
+                _log.debug(debugIdentity() + "Content header received on channel " + _channelId);
             }
 
             if (ENABLE_JMSXUserID)
@@ -252,9 +252,9 @@ public class AMQChannel
             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
         }
 
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace(debugIdentity() + "Content body received on channel " + _channelId);
+            _log.debug(debugIdentity() + "Content body received on channel " + _channelId);
         }
 
         try

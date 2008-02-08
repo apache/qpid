@@ -1394,9 +1394,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void rejectMessage(UnprocessedMessage message, boolean requeue)
     {
 
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("Rejecting Unacked message:" + message.getDeliverBody().getDeliveryTag());
+            _logger.debug("Rejecting Unacked message:" + message.getDeliverBody().getDeliveryTag());
         }
 
         rejectMessage(message.getDeliverBody().getDeliveryTag(), requeue);
@@ -1404,9 +1404,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void rejectMessage(AbstractJMSMessage message, boolean requeue)
     {
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("Rejecting Abstract message:" + message.getDeliveryTag());
+            _logger.debug("Rejecting Abstract message:" + message.getDeliveryTag());
         }
 
         rejectMessage(message.getDeliveryTag(), requeue);

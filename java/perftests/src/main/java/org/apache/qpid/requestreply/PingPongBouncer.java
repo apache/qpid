@@ -340,7 +340,7 @@ public class PingPongBouncer implements MessageListener
             {
                 if (_failBeforeCommit)
                 {
-                    _logger.trace("Failing Before Commit");
+                    _logger.debug("Failing Before Commit");
                     doFailover();
                 }
 
@@ -348,11 +348,11 @@ public class PingPongBouncer implements MessageListener
 
                 if (_failAfterCommit)
                 {
-                    _logger.trace("Failing After Commit");
+                    _logger.debug("Failing After Commit");
                     doFailover();
                 }
 
-                _logger.trace("Session Commited.");
+                _logger.debug("Session Commited.");
             }
             catch (JMSException e)
             {

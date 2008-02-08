@@ -551,12 +551,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             if (!_closed.getAndSet(true))
             {
-                if (_logger.isTraceEnabled())
+                if (_logger.isDebugEnabled())
                 {
                     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                     if (_closedStack != null)
                     {
-                        _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
+                        _logger.debug(_consumerTag + " previously:" + _closedStack.toString());
                     }
                     else
                     {
@@ -621,14 +621,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             _closed.set(true);
 
-            if (_logger.isTraceEnabled())
+            if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " markClosed():"
+                    _logger.debug(_consumerTag + " markClosed():"
                                   + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
-                    _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
+                    _logger.debug(_consumerTag + " previously:" + _closedStack.toString());
                 }
                 else
                 {
@@ -845,14 +845,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         // synchronized (_closed)
         {
             _closed.set(true);
-            if (_logger.isTraceEnabled())
+            if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " notifyError():"
+                    _logger.debug(_consumerTag + " notifyError():"
                                   + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
-                    _logger.trace(_consumerTag + " previously" + _closedStack.toString());
+                    _logger.debug(_consumerTag + " previously" + _closedStack.toString());
                 }
                 else
                 {
@@ -982,9 +982,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (tag != null)
             {
-                if (_logger.isTraceEnabled())
+                if (_logger.isDebugEnabled())
                 {
-                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
+                    _logger.debug("Rejecting tag from _receivedDTs:" + tag);
                 }
 
                 _session.rejectMessage(tag, true);
@@ -1025,9 +1025,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 {
                     _session.rejectMessage(((AbstractJMSMessage) o), true);
 
-                    if (_logger.isTraceEnabled())
+                    if (_logger.isDebugEnabled())
                     {
-                        _logger.trace("Rejected message:" + ((AbstractJMSMessage) o).getDeliveryTag());
+                        _logger.debug("Rejected message:" + ((AbstractJMSMessage) o).getDeliveryTag());
                     }
 
                     iterator.remove();
