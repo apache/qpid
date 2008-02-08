@@ -1,0 +1,460 @@
+[INFO] Scanning for projects...
+[INFO] ----------------------------------------------------------------------------
+[INFO] Building Qpid Common Utilities
+[INFO]    task-segment: [install]
+[INFO] ----------------------------------------------------------------------------
+[INFO] [antrun:run {execution: protocol-version}]
+[INFO] Executing tasks
+     [echo] "c:\work\qpid\thegreatmerge\qpid\java\common\target/generated-sources/gentools"
+
+compile_generator:
+
+compile:
+
+generate:
+     [java] XML files: [C:\work\qpid\thegreatmerge\qpid\specs/amqp.0-8.xml, C:\work\qpid\thegreatmerge\qpid\specs/amqp.0-9.xml]
+     [java]   "C:\work\qpid\thegreatmerge\qpid\specs/amqp.0-8.xml": Found version 8-0.
+     [java]   "C:\work\qpid\thegreatmerge\qpid\specs/amqp.0-9.xml": Found version 0-9.
+     [java] Looking for template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\model
+     [java] Looking for vesrion specific template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version
+     [java] model template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version\AmqpConstantsClass.vm
+     [java] model template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version\ClientMethodDispatcherInterface.vm
+     [java] model template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version\MethodDispatcherInterface.vm
+     [java] model template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version\MethodRegistryClass.vm
+     [java] model template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\model\version\ServerMethodDispatcherInterface.vm
+     [java] Looking for template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\class
+     [java] Looking for vesrion specific template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\class\version
+     [java] Looking for template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\method
+     [java] Looking for vesrion specific template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\method\version
+     [java] method template file(s):
+     [java]   C:\work\qpid\thegreatmerge\qpid\java\common\templates\method\version\MethodBodyClass.vm
+     [java] Looking for template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\field
+     [java] Looking for vesrion specific template files in directory: C:\work\qpid\thegreatmerge\qpid\java\common\templates\field\version
+     [java] Generation directory: C:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing
+     [java] Files generated: 0
+     [java] Done.
+[INFO] Executed tasks
+[INFO] Registering compile source root c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools
+[INFO] [jython:jython {execution: jython}]
+[INFO] [resources:resources]
+[INFO] Using default encoding to copy filtered resources.
+[INFO] [compiler:compile]
+Compiling 489 source files to c:\work\qpid\thegreatmerge\qpid\java\common\target\classes
+[INFO] ------------------------------------------------------------------------
+[ERROR] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Compilation failure
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\QueueDeleteBodyImpl.java:[41,70] cannot find symbol
+symbol: class QueueDeleteBody
+public class QueueDeleteBodyImpl extends AMQMethodBody_0_9 implements QueueDeleteBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\QueueDeleteBodyImpl.java:[154,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: class org.apache.qpid.framing.amqp_0_9.QueueDeleteBodyImpl
+
+c:\work\qpid\thegreatmerge\qpid\java\common\src\main\java\org\apache\qpid\framing\AMQMethodBody.java:[82,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: interface org.apache.qpid.framing.AMQMethodBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\StreamQosOkBodyImpl.java:[41,70] cannot find symbol
+symbol: class StreamQosOkBody
+public class StreamQosOkBodyImpl extends AMQMethodBody_0_9 implements StreamQosOkBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\StreamQosOkBodyImpl.java:[101,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: class org.apache.qpid.framing.amqp_0_9.StreamQosOkBodyImpl
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_8_0\TxSelectOkBodyImpl.java:[41,69] cannot find symbol
+symbol: class TxSelectOkBody
+public class TxSelectOkBodyImpl extends AMQMethodBody_8_0 implements TxSelectOkBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_8_0\TxSelectOkBodyImpl.java:[101,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: class org.apache.qpid.framing.amqp_8_0.TxSelectOkBodyImpl
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_8_0\DtxStartOkBodyImpl.java:[41,69] cannot find symbol
+symbol: class DtxStartOkBody
+public class DtxStartOkBodyImpl extends AMQMethodBody_8_0 implements DtxStartOkBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_8_0\DtxStartOkBodyImpl.java:[101,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: class org.apache.qpid.framing.amqp_8_0.DtxStartOkBodyImpl
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ChannelCloseOkBodyImpl.java:[41,73] cannot find symbol
+symbol: class ChannelCloseOkBody
+public class ChannelCloseOkBodyImpl extends AMQMethodBody_0_9 implements ChannelCloseOkBody
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ChannelCloseOkBodyImpl.java:[101,27] cannot find symbol
+symbol  : class MethodDispatcher
+location: class org.apache.qpid.framing.amqp_0_9.ChannelCloseOkBodyImpl
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\MethodDispatcher_0_9.java:[35,12] cannot find symbol
+symbol: class MethodDispatcher
+    extends MethodDispatcher,
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[34,52] cannot find symbol
+symbol: class ServerMethodDispatcher
+public interface ServerMethodDispatcher_0_9 extends ServerMethodDispatcher
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[34,52] cannot find symbol
+symbol: class ClientMethodDispatcher
+public interface ClientMethodDispatcher_0_9 extends ClientMethodDispatcher
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[37,41] cannot find symbol
+symbol  : class AccessRequestBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[38,36] cannot find symbol
+symbol  : class BasicAckBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[39,39] cannot find symbol
+symbol  : class BasicCancelBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[40,40] cannot find symbol
+symbol  : class BasicConsumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[41,36] cannot find symbol
+symbol  : class BasicGetBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[42,40] cannot find symbol
+symbol  : class BasicPublishBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[43,36] cannot find symbol
+symbol  : class BasicQosBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[44,40] cannot find symbol
+symbol  : class BasicRecoverBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[45,44] cannot find symbol
+symbol  : class BasicRecoverSyncBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[46,39] cannot find symbol
+symbol  : class BasicRejectBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[47,40] cannot find symbol
+symbol  : class ChannelCloseBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[48,42] cannot find symbol
+symbol  : class ChannelCloseOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[49,39] cannot find symbol
+symbol  : class ChannelFlowBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[50,41] cannot find symbol
+symbol  : class ChannelFlowOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[51,37] cannot find symbol
+symbol  : class ChannelOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[52,39] cannot find symbol
+symbol  : class ChannelOpenBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[53,39] cannot find symbol
+symbol  : class ChannelPingBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[54,39] cannot find symbol
+symbol  : class ChannelPongBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[55,41] cannot find symbol
+symbol  : class ChannelResumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[56,43] cannot find symbol
+symbol  : class ConnectionCloseBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[57,45] cannot find symbol
+symbol  : class ConnectionCloseOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[58,42] cannot find symbol
+symbol  : class ConnectionOpenBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[59,46] cannot find symbol
+symbol  : class ConnectionSecureOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[60,45] cannot find symbol
+symbol  : class ConnectionStartOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[61,44] cannot find symbol
+symbol  : class ConnectionTuneOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[62,37] cannot find symbol
+symbol  : class DtxSelectBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[63,36] cannot find symbol
+symbol  : class DtxStartBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[64,41] cannot find symbol
+symbol  : class ExchangeBoundBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[65,43] cannot find symbol
+symbol  : class ExchangeDeclareBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[66,42] cannot find symbol
+symbol  : class ExchangeDeleteBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[67,35] cannot find symbol
+symbol  : class FileAckBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[68,38] cannot find symbol
+symbol  : class FileCancelBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[69,39] cannot find symbol
+symbol  : class FileConsumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[70,36] cannot find symbol
+symbol  : class FileOpenBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[71,38] cannot find symbol
+symbol  : class FileOpenOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[72,39] cannot find symbol
+symbol  : class FilePublishBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[73,35] cannot find symbol
+symbol  : class FileQosBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[74,38] cannot find symbol
+symbol  : class FileRejectBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[75,37] cannot find symbol
+symbol  : class FileStageBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[76,41] cannot find symbol
+symbol  : class MessageAppendBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[77,41] cannot find symbol
+symbol  : class MessageCancelBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[78,45] cannot find symbol
+symbol  : class MessageCheckpointBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[79,40] cannot find symbol
+symbol  : class MessageCloseBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[80,42] cannot find symbol
+symbol  : class MessageConsumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[81,40] cannot find symbol
+symbol  : class MessageEmptyBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[82,38] cannot find symbol
+symbol  : class MessageGetBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[83,41] cannot find symbol
+symbol  : class MessageOffsetBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[84,37] cannot find symbol
+symbol  : class MessageOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[85,39] cannot find symbol
+symbol  : class MessageOpenBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[86,38] cannot find symbol
+symbol  : class MessageQosBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[87,42] cannot find symbol
+symbol  : class MessageRecoverBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[88,41] cannot find symbol
+symbol  : class MessageRejectBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[89,41] cannot find symbol
+symbol  : class MessageResumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[90,43] cannot find symbol
+symbol  : class MessageTransferBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[91,37] cannot find symbol
+symbol  : class QueueBindBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[92,40] cannot find symbol
+symbol  : class QueueDeclareBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[93,39] cannot find symbol
+symbol  : class QueueDeleteBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[94,38] cannot find symbol
+symbol  : class QueuePurgeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[95,39] cannot find symbol
+symbol  : class QueueUnbindBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[96,40] cannot find symbol
+symbol  : class StreamCancelBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[97,41] cannot find symbol
+symbol  : class StreamConsumeBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[98,41] cannot find symbol
+symbol  : class StreamPublishBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[99,37] cannot find symbol
+symbol  : class StreamQosBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[100,41] cannot find symbol
+symbol  : class TunnelRequestBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[101,36] cannot find symbol
+symbol  : class TxCommitBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[102,38] cannot find symbol
+symbol  : class TxRollbackBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ServerMethodDispatcher_0_9.java:[103,36] cannot find symbol
+symbol  : class TxSelectBody
+location: interface org.apache.qpid.framing.amqp_0_9.ServerMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[37,43] cannot find symbol
+symbol  : class AccessRequestOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[38,41] cannot find symbol
+symbol  : class BasicCancelOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[39,42] cannot find symbol
+symbol  : class BasicConsumeOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[40,40] cannot find symbol
+symbol  : class BasicDeliverBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[41,41] cannot find symbol
+symbol  : class BasicGetEmptyBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[42,38] cannot find symbol
+symbol  : class BasicGetOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[43,38] cannot find symbol
+symbol  : class BasicQosOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[44,46] cannot find symbol
+symbol  : class BasicRecoverSyncOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[45,39] cannot find symbol
+symbol  : class BasicReturnBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[46,40] cannot find symbol
+symbol  : class ChannelCloseBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[47,42] cannot find symbol
+symbol  : class ChannelCloseOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[48,39] cannot find symbol
+symbol  : class ChannelFlowBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[49,41] cannot find symbol
+symbol  : class ChannelFlowOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[50,37] cannot find symbol
+symbol  : class ChannelOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[51,41] cannot find symbol
+symbol  : class ChannelOpenOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[52,39] cannot find symbol
+symbol  : class ChannelPingBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[53,39] cannot find symbol
+symbol  : class ChannelPongBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[54,43] cannot find symbol
+symbol  : class ConnectionCloseBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+c:\work\qpid\thegreatmerge\qpid\java\common\target\generated-sources\gentools\org\apache\qpid\framing\amqp_0_9\ClientMethodDispatcher_0_9.java:[55,45] cannot find symbol
+symbol  : class ConnectionCloseOkBody
+location: interface org.apache.qpid.framing.amqp_0_9.ClientMethodDispatcher_0_9
+
+
+[INFO] ------------------------------------------------------------------------
+[INFO] For more information, run Maven with the -e switch
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 11 seconds
+[INFO] Finished at: Wed Feb 06 11:27:20 GMT 2008
+[INFO] Final Memory: 7M/30M
+[INFO] ------------------------------------------------------------------------

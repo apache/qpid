@@ -96,8 +96,7 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public boolean isNameRequired()
     {
-        // Topics always rely on a server generated queue name.
-        return false;
+        return !isDurable();
     }
 
     /**
@@ -111,5 +110,18 @@ public class AMQTopic extends AMQDestination implements Topic
      */
     public void setQueueName(String queueName)
     {
+    }
+
+    public boolean equals(Object o)
+    {
+        return (o instanceof AMQTopic)
+               && ((AMQTopic)o).getExchangeName().equals(getExchangeName())
+               && ((AMQTopic)o).getRoutingKey().equals(getRoutingKey());
+
+    }
+
+    public int hashCode()
+    {
+        return getExchangeName().hashCode() + getRoutingKey().hashCode();
     }
 }

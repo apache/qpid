@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TopicPublisher")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Built from svn revision number: ")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("J.P. Morgan Chase & Co.")]
+[assembly: AssemblyCompany("Apache Software Foundation")]
 [assembly: AssemblyProduct("TopicPublisher")]
-[assembly: AssemblyCopyright("Copyright © J.P. Morgan Chase & Co. 2007")]
+[assembly: AssemblyCopyright("Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.1.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]

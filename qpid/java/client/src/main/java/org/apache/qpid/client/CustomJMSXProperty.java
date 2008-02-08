@@ -29,9 +29,10 @@ import org.apache.qpid.framing.AMQShortString;
 public enum CustomJMSXProperty
 {
     JMS_AMQP_NULL,
-    JMS_QPID_DESTTYPE,    
+    JMS_QPID_DESTTYPE,
     JMSXGroupID,
-    JMSXGroupSeq;
+    JMSXGroupSeq,
+    JMSXUserID;
 
 
     private final AMQShortString _nameAsShortString;
@@ -47,7 +48,7 @@ public enum CustomJMSXProperty
     }
 
     private static Enumeration _names;
-    
+
     public static synchronized Enumeration asEnumeration()
     {
         if(_names == null)

@@ -127,7 +127,7 @@ public class VirtualHostConfiguration
                 boolean durable = exchangeConfiguration.getBoolean("durable", false);
                 boolean autodelete = exchangeConfiguration.getBoolean("autodelete", false);
 
-                Exchange newExchange = exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
+                Exchange newExchange = exchangeFactory.createExchange(exchangeName, type, durable, autodelete);
                 exchangeRegistry.registerExchange(newExchange);
             }
 

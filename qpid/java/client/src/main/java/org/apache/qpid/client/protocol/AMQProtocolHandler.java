@@ -21,10 +21,16 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.mina.common.IdleStatus;
+import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
+import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -39,16 +45,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionCloseOkBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -58,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 
@@ -214,6 +212,36 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             e.printStackTrace();
         }
 
+        if (!System.getProperties().containsKey("protectio") || Boolean.getBoolean("protectio"))
+        {
+            try
+            {
+                //Add IO Protection Filters
+                IoFilterChain chain = session.getFilterChain();
+
+                int buf_size = 32768;
+                if (session.getConfig() instanceof SocketSessionConfig)
+                {
+                    buf_size = ((SocketSessionConfig) session.getConfig()).getReceiveBufferSize();
+                }
+                session.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
+
+                ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
+                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.attach(chain);
+
+                WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
+                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.attach(chain);
+                session.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
+
+                _logger.info("Using IO Read/Write Filter Protection");
+            }
+            catch (Exception e)
+            {
+                _logger.error("Unable to attach IO Read/Write Filter Protection :" + e.getMessage());
+            }
+        }
         _protocolSession = new AMQProtocolSession(this, session, _connection, getStateManager());
         _protocolSession.init();
     }
@@ -380,94 +408,109 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageReceived(IoSession session, Object message) throws Exception
     {
-        final boolean debug = _logger.isDebugEnabled();
-        final long msgNumber = ++_messageReceivedCount;
-
-        if (debug && ((msgNumber % 1000) == 0))
+        if(message instanceof AMQFrame)
         {
-            _logger.debug("Received " + _messageReceivedCount + " protocol messages");
-        }
+            final boolean debug = _logger.isDebugEnabled();
+            final long msgNumber = ++_messageReceivedCount;
 
-        AMQFrame frame = (AMQFrame) message;
+            if (debug && ((msgNumber % 1000) == 0))
+            {
+                _logger.debug("Received " + _messageReceivedCount + " protocol messages");
+            }
 
-        final AMQBody bodyFrame = frame.getBodyFrame();
+            AMQFrame frame = (AMQFrame) message;
 
-        HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
+            final AMQBody bodyFrame = frame.getBodyFrame();
 
-        switch (bodyFrame.getFrameType())
-        {
-            case AMQMethodBody.TYPE:
+            HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
 
-                if (debug)
-                {
-                    _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
-                }
+            switch (bodyFrame.getFrameType())
+            {
+                case AMQMethodBody.TYPE:
 
-                final AMQMethodEvent<AMQMethodBody> evt =
-                        new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
-
-                try
-                {
-
-                    boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                    if (!_frameListeners.isEmpty())
+                    if (debug)
                     {
-                        Iterator it = _frameListeners.iterator();
-                        while (it.hasNext())
+                        _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
+                    }
+
+                    final AMQMethodEvent<AMQMethodBody> evt =
+                            new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
+
+                    try
+                    {
+
+                        boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
+                        if (!_frameListeners.isEmpty())
                         {
-                            final AMQMethodListener listener = (AMQMethodListener) it.next();
-                            wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                            Iterator it = _frameListeners.iterator();
+                            while (it.hasNext())
+                            {
+                                final AMQMethodListener listener = (AMQMethodListener) it.next();
+                                wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                            }
+                        }
+
+                        if (!wasAnyoneInterested)
+                        {
+                            throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
+                                                   + _frameListeners, null);
                         }
                     }
-
-                    if (!wasAnyoneInterested)
+                    catch (AMQException e)
                     {
-                        throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
-                                                     + _frameListeners, null);
-                    }
-                }
-                catch (AMQException e)
-                {
-                    getStateManager().error(e);
-                    if (!_frameListeners.isEmpty())
-                    {
-                        Iterator it = _frameListeners.iterator();
-                        while (it.hasNext())
+                        getStateManager().error(e);
+                        if (!_frameListeners.isEmpty())
                         {
-                            final AMQMethodListener listener = (AMQMethodListener) it.next();
-                            listener.error(e);
+                            Iterator it = _frameListeners.iterator();
+                            while (it.hasNext())
+                            {
+                                final AMQMethodListener listener = (AMQMethodListener) it.next();
+                                listener.error(e);
+                            }
                         }
+
+                        exceptionCaught(session, e);
                     }
 
-                    exceptionCaught(session, e);
-                }
+                    break;
 
-                break;
+                case ContentHeaderBody.TYPE:
 
-            case ContentHeaderBody.TYPE:
+                    _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
+                    break;
 
-                _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
-                break;
+                case ContentBody.TYPE:
 
-            case ContentBody.TYPE:
+                    _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
+                    break;
 
-                _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
-                break;
+                case HeartbeatBody.TYPE:
 
-            case HeartbeatBody.TYPE:
+                    if (debug)
+                    {
+                        _logger.debug("Received heartbeat");
+                    }
 
-                if (debug)
-                {
-                    _logger.debug("Received heartbeat");
-                }
+                    break;
 
-                break;
+                default:
 
-            default:
+            }
 
+            _connection.bytesReceived(_protocolSession.getIoSession().getReadBytes());
         }
+        else if (message instanceof ProtocolInitiation)
+        {
+            // We get here if the server sends a response to our initial protocol header
+            // suggesting an alternate ProtocolVersion; the server will then close the
+            // connection.
+            ProtocolInitiation protocolInit = (ProtocolInitiation) message;
+            ProtocolVersion pv = protocolInit.checkVersion();
+            getConnection().setProtocolVersion(pv);
 
-        _connection.bytesReceived(_protocolSession.getIoSession().getReadBytes());
+            // get round a bug in old versions of qpid whereby the connection is not closed
+            _stateManager.changeState(AMQState.CONNECTION_CLOSED);
+        }
     }
 
     private static int _messagesOut;
@@ -505,6 +548,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         getStateManager().attainState(s);
     }
+
+    public AMQState attainState(Set<AMQState> states) throws AMQException
+    {
+        return getStateManager().attainState(states);
+    }
+
 
     /**
      * Convenience method that writes a frame to the protocol session. Equivalent to calling
@@ -600,16 +649,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         getStateManager().changeState(AMQState.CONNECTION_CLOSING);
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame frame =
-                ConnectionCloseBody.createAMQFrame(0, _protocolSession.getProtocolMajorVersion(),
-                                                   _protocolSession.getProtocolMinorVersion(), // AMQP version (major, minor)
-                                                   0, // classId
-                                                   0, // methodId
-                                                   AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                                                   new AMQShortString("JMS client is closing the connection.")); // replyText
+        ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                new AMQShortString("JMS client is closing the connection."),0,0);
+
+
+        final AMQFrame frame = body.generateFrame(0);
 
         try
         {
@@ -708,5 +752,15 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public byte getProtocolMinorVersion()
     {
         return _protocolSession.getProtocolMinorVersion();
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return getStateManager().getMethodRegistry();
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolSession.getProtocolVersion();
     }
 }

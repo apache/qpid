@@ -409,9 +409,9 @@ public class CommitRollbackTest extends QpidTestCase
             }
             else
             {
-                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");                
+                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");
                 assertFalse("Already received message two", _gottwo);
-
+                assertFalse("Already received message redelivered two", _gottwoRedelivered);
                 _gottwo = true;
             }
         }
@@ -419,6 +419,13 @@ public class CommitRollbackTest extends QpidTestCase
         verifyMessages(_consumer.receive(1000));
     }
 
+    /**
+     * This test sends two messages receives on of them but doesn't ack it.
+     * The consumer is then closed
+     * the first message should be returned as redelivered.
+     *  the second message should be delivered normally.
+     * @throws Exception
+     */
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -437,6 +444,7 @@ public class CommitRollbackTest extends QpidTestCase
         assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
         _logger.info("Closing Consumer");
+        
         _consumer.close();
 
         _logger.info("Creating New consumer");
@@ -444,33 +452,19 @@ public class CommitRollbackTest extends QpidTestCase
 
         _logger.info("receiving result");
 
-// NOTE: Both msg 1 & 2 will be marked as redelivered as they have both will have been rejected.
-// Only the occasion where it is not rejected will it mean it hasn't arrived at the client yet.
+
+        // Message 2 may be marked as redelivered if it was prefetched.
         result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
+        assertNotNull("Second message was not consumed, but is gone", result);
 
-// The first message back will be either 1 or 2 being redelivered
-        if (result.getJMSRedelivered())
+        // The first message back will be 2, message 1 has been received but not committed
+        // Closing the consumer does not commit the session.
+
+        // if this is message 1 then it should be marked as redelivered
+        if("1".equals(((TextMessage) result).getText()))
         {
-            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+            fail("First message was recieved again");
         }
-        else // or it will be msg 2 arriving the first time due to latency.
-        {
-            _logger.info("Message 2 wasn't prefetched so wasn't rejected");
-            assertEquals("2", ((TextMessage) result).getText());
-        }
-
-        result = _consumer.receive(1000);
-
-       // if( isBroker08() )
-       // {
-             assertNotNull("test message was consumed and rolled back, but is gone", result);
-           //  assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
-       // }
-       // else
-       // {
-        //    assertNull("test message was consumed and not rolled back, but is redelivered", result);
-       // }
 
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);

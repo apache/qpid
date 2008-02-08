@@ -21,17 +21,25 @@
 package org.apache.qpid.server.protocol;
 
 import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+
+import org.apache.mina.common.IoSession;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.txn.MemoryTransactionManager;
 import org.apache.qpid.server.txn.TransactionManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 
@@ -41,7 +49,10 @@ import javax.management.JMException;
  */
 public class AMQProtocolSessionMBeanTest extends TestCase
 {
-    private MessageStore _messageStore = new MemoryMessageStore();
+    /** Used for debugging. */
+    private static final Logger log = Logger.getLogger(AMQProtocolSessionMBeanTest.class);
+
+    private MessageStore _messageStore = new SkeletonMessageStore();
     private TransactionManager _txm = new MemoryTransactionManager();
     private AMQMinaProtocolSession _protocolSession;
     private AMQChannel _channel;
@@ -84,7 +95,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         }
         catch (JMException ex)
         {
-            System.out.println("expected exception is thrown :" + ex.getMessage());
+            log.debug("expected exception is thrown :" + ex.getMessage());
         }
 
         // check if closing of session works
@@ -100,7 +111,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         }
         catch (AMQException ex)
         {
-            System.out.println("expected exception is thrown :" + ex.getMessage());
+            log.debug("expected exception is thrown :" + ex.getMessage());
         }
     }
 
@@ -110,10 +121,9 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         super.setUp();
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _protocolSession = new AMQMinaProtocolSession(new MockIoSession(),
-                                                      appRegistry.getVirtualHostRegistry(),
-                                                      new AMQCodecFactory(true),
-                                                      null);
+        _protocolSession =
+            new AMQMinaProtocolSession(new MockIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
+                null);
         _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
         _channel = new AMQChannel(_protocolSession, 1, _txm, _messageStore, null);
         _protocolSession.addChannel(_channel);

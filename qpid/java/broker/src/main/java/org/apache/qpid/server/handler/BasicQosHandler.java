@@ -23,6 +23,8 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -38,21 +40,21 @@ public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicQosBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicQosBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        AMQChannel channel = session.getChannel(evt.getChannelId());
+        AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {
-            throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
+            throw body.getChannelNotFoundException(channelId);
         }
 
-        channel.setPrefetchCount(evt.getMethod().prefetchCount);
-        channel.setPrefetchSize(evt.getMethod().prefetchSize);
+        channel.setPrefetchCount(body.getPrefetchCount());
+        channel.setPrefetchSize(body.getPrefetchSize());
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        session.writeFrame(BasicQosOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0));
+        MethodRegistry methodRegistry = session.getMethodRegistry();
+        AMQMethodBody responseBody = methodRegistry.createBasicQosOkBody();
+        session.writeFrame(responseBody.generateFrame(channelId));
+                                  
     }
 }

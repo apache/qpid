@@ -22,7 +22,7 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-public class HeartbeatBody extends AMQBody
+public class HeartbeatBody implements AMQBody
 {
     public static final byte TYPE = 8;
     public static AMQFrame FRAME = new HeartbeatBody().toFrame();
@@ -46,12 +46,12 @@ public class HeartbeatBody extends AMQBody
         return TYPE;
     }
 
-    protected int getSize()
+    public int getSize()
     {
         return 0;//heartbeats we generate have no payload
     }
 
-    protected void writePayload(ByteBuffer buffer)
+    public void writePayload(ByteBuffer buffer)
     {
     }
 

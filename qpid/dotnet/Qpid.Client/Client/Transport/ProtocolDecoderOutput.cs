@@ -35,7 +35,7 @@ namespace Apache.Qpid.Client.Transport
    internal class ProtocolDecoderOutput : IProtocolDecoderOutput
    {
       private IProtocolListener _protocolListener;
-      static readonly ILog _protocolTraceLog = LogManager.GetLogger("Qpid.Client.ProtocolChannel.Tracing");
+      static readonly ILog _protocolTraceLog = LogManager.GetLogger("TRACE.Qpid.Client.ProtocolChannel");
 
       public ProtocolDecoderOutput(IProtocolListener protocolListener)
       {

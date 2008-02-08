@@ -99,8 +99,6 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL));
         }
 
-        
-
         createConnectionFactories(data, environment);
 
         createDestinations(data, environment);

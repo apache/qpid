@@ -22,11 +22,7 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicConsumeOkBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
@@ -54,12 +50,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicConsumeBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        BasicConsumeBody body = evt.getMethod();
-        final int channelId = evt.getChannelId();
+
+
 
         AMQChannel channel = session.getChannel(channelId);
 
@@ -67,29 +63,29 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(evt.getChannelId());
+            throw body.getChannelNotFoundException(channelId);
         }
         else
         {
             if (_log.isDebugEnabled())
             {
-                _log.debug("BasicConsume: from '" + body.queue +
-                           "' for:" + body.consumerTag +
-                           " nowait:" + body.nowait +
-                           " args:" + body.arguments);
+                _log.debug("BasicConsume: from '" + body.getQueue() +
+                           "' for:" + body.getConsumerTag() +
+                           " nowait:" + body.getNowait() +
+                           " args:" + body.getArguments());
             }
 
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
+            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue().intern());
 
             if (queue == null)
             {
                 if (_log.isTraceEnabled())
                 {
-                    _log.trace("No queue for '" + body.queue + "'");
+                    _log.trace("No queue for '" + body.getQueue() + "'");
                 }
-                if (body.queue != null)
+                if (body.getQueue() != null)
                 {
-                    String msg = "No such queue, '" + body.queue + "'";
+                    String msg = "No such queue, '" + body.getQueue() + "'";
                     throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
                 }
                 else
@@ -101,23 +97,27 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             else
             {
 
-                if (body.consumerTag != null)
+                final AMQShortString consumerTagName;
+
+                if (body.getConsumerTag() != null)
                 {
-                    body.consumerTag = body.consumerTag.intern();
+                    consumerTagName = body.getConsumerTag().intern();
+                }
+                else
+                {
+                    consumerTagName = null;
                 }
 
                 try
                 {
-                    AMQShortString consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
-                                                                          body.arguments, body.noLocal, body.exclusive);
-                    if (!body.nowait)
+                    AMQShortString consumerTag = channel.subscribeToQueue(consumerTagName, queue, session, !body.getNoAck(),
+                                                                          body.getArguments(), body.getNoLocal(), body.getExclusive());
+                    if (!body.getNowait())
                     {
-                        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                        // Be aware of possible changes to parameter order as versions change.
-                        session.writeFrame(BasicConsumeOkBody.createAMQFrame(channelId,
-                                                                             (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                             consumerTag));        // consumerTag
+                        MethodRegistry methodRegistry = session.getMethodRegistry();
+                        AMQMethodBody responseBody = methodRegistry.createBasicConsumeOkBody(consumerTag);
+                        session.writeFrame(responseBody.generateFrame(channelId));
+
                     }
 
                     //now allow queue to start async processing of any backlog of messages
@@ -126,33 +126,26 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 catch (org.apache.qpid.AMQInvalidArgumentException ise)
                 {
                     _log.debug("Closing connection due to invalid selector");
-                    // Why doesn't this ChannelException work.
-//                    throw body.getChannelException(AMQConstant.INVALID_ARGUMENT, ise.getMessage());
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                    // Be aware of possible changes to parameter order as versions change.
-                    session.writeFrame(ChannelCloseBody.createAMQFrame(channelId,
-                                                                       (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                       BasicConsumeBody.getClazz((byte) 8, (byte) 0),    // classId
-                                                                       BasicConsumeBody.getMethod((byte) 8, (byte) 0),    // methodId
-                                                                       AMQConstant.INVALID_ARGUMENT.getCode(),    // replyCode
-                                                                       new AMQShortString(ise.getMessage())));        // replyText
+
+                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.INVALID_ARGUMENT.getCode(),
+                                                                                       new AMQShortString(ise.getMessage()),
+                                                                                       body.getClazz(),
+                                                                                       body.getMethod());
+                    session.writeFrame(responseBody.generateFrame(channelId));
+
+
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
-                    AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.consumerTag + "'");
-                    // If the above doesn't work then perhaps this is wrong too.
-//                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-//                                                      "Non-unique consumer tag, '" + body.consumerTag + "'");
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                    // Be aware of possible changes to parameter order as versions change.
-                    session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId,
-                                                                          (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                          BasicConsumeBody.getClazz((byte) 8, (byte) 0),    // classId
-                                                                          BasicConsumeBody.getMethod((byte) 8, (byte) 0),    // methodId
-                                                                          AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
-                                                                          msg));    // replyText
+                    AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
+
+                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    AMQMethodBody responseBody = methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
+                                                             msg,               // replytext
+                                                             body.getClazz(),
+                                                             body.getMethod());
+                    session.writeFrame(responseBody.generateFrame(0));
                 }
                 catch (ExistingExclusiveSubscriptionException e)
                 {

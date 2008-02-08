@@ -34,6 +34,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
@@ -92,20 +93,14 @@ public class NonTransactionalContext implements TransactionalContext
         // Does not apply to this context
     }
 
-    public void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException
+    public void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException
     {
         try
         {
-            //DTX removed  - deliverFirst is to do with the position on the Queue not enqueuing!!
-            // This should be done in routingComplete
-//            if( ! deliverFirst )
-//            {
-//                message.getMessageHandle().enqueue(_storeContext, message.getMessageId(), queue);
-//            }
-            queue.process(_storeContext, message, deliverFirst);
+            entry.process(_storeContext, deliverFirst);
             //following check implements the functionality
             //required by the 'immediate' flag:
-            message.checkDeliveredToConsumer();
+            entry.checkDeliveredToConsumer();
         }
         catch (NoConsumersException e)
         {
@@ -134,7 +129,7 @@ public class NonTransactionalContext implements TransactionalContext
                         {
                             if (_log.isDebugEnabled())
                             {
-                                _log.debug("Discarding message: " + message.message.getMessageId());
+                                _log.debug("Discarding message: " + message.getMessage().getMessageId());
                             }
 
                             //Message has been ack so discard it. This will dequeue and decrement the reference.
@@ -168,7 +163,7 @@ public class NonTransactionalContext implements TransactionalContext
                     {
                         if (_log.isDebugEnabled())
                         {
-                            _log.debug("Discarding message: " + msg.message.getMessageId());
+                            _log.debug("Discarding message: " + msg.getMessage().getMessageId());
                         }
 
                         //Message has been ack so discard it. This will dequeue and decrement the reference.
@@ -198,7 +193,7 @@ public class NonTransactionalContext implements TransactionalContext
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug("Discarding message: " + msg.message.getMessageId());
+                    _log.debug("Discarding message: " + msg.getMessage().getMessageId());
                 }
 
                 //Message has been ack so discard it. This will dequeue and decrement the reference.
@@ -212,7 +207,7 @@ public class NonTransactionalContext implements TransactionalContext
             if (_log.isDebugEnabled())
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
-                           msg.message.getMessageId());
+                           msg.getMessage().getMessageId());
             }
         }
     }

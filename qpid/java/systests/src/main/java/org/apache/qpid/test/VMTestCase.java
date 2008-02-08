@@ -19,23 +19,16 @@
  */
 package org.apache.qpid.test;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
 import junit.framework.TestCase;
-
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
-import javax.jms.Queue;
-import javax.jms.ConnectionFactory;
-import javax.jms.Session;
-import javax.jms.Connection;
-import javax.jms.MessageProducer;
+import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
@@ -85,8 +78,8 @@ public class VMTestCase extends TestCase
             _brokerlist = "vm://:1";
         }
 
-        env.put("connectionfactory.connection", "amqp://guest:guest@" +
-                                                _clientID + _virtualhost + "?brokerlist='" + _brokerlist + "'");
+        env.put("connectionfactory.connection", "amqp://guest:guest@" + _clientID + _virtualhost + "?brokerlist='"
+                                                + _brokerlist + "'");
 
         for (Map.Entry<String, String> c : _connections.entrySet())
         {
@@ -116,6 +109,12 @@ public class VMTestCase extends TestCase
         ApplicationRegistry.remove(1);
         
         super.tearDown();
+    }
+
+    public int getMessageCount(String queueName)
+    {
+        return ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(_virtualhost.substring(1))
+                .getQueueRegistry().getQueue(new AMQShortString(queueName)).getMessageCount();
     }
 
     public void testDummyinVMTestCase()

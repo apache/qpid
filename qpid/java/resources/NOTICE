@@ -10,84 +10,32 @@ This product includes software developed at
 Apache Software Foundation (http://www.apache.org/)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Unnamed - relaxngDatatype:relaxngDatatype:jar:20020414 (http://sourceforge.net/projects/relaxng)
-License: BSD License (http://www.opensource.org/licenses/bsd-license.php)
-
-This product includes/uses software, Apache MINA Core API (http://directory.apache.org/projects/mina/)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Unnamed - isorelax:isorelax:jar:20020414
-License: MIT license (http://www.opensource.org/licenses/mit-license.html)
-
 This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
 developed by QOS.ch  (http://www.qos.ch)
+Source included with binary builds at : http://slf4j.org/dist
 License: MIT License (http://www.slf4j.org/license.html)
-
-This product includes/uses software, Commons Collections - commons-collections:commons-collections:jar:3.1,
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Commons Digester - commons-digester:commons-digester:jar:1.6
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Commons CLI - commons-cli:commons-cli:jar:1.0
-Ideveloped by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Unnamed - msv:msv:jar:20020414
-developed by (https://msv.dev.java.net/)
-License: 
-
-This product includes/uses software, Codec (http://jakarta.apache.org/commons/codec/),
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: The Apache Software License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Commons Logging - commons-logging:commons-logging:jar:1.0
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
 This product includes/uses software, Backport of JSR 166 (http://www.mathcs.emory.edu/dcl/util/backport-util-concurrent/),
 developed by Dawid Kurzyniec (http://www.mathcs.emory.edu/~dawidk/)
 License: Public Domain  (http://creativecommons.org/licenses/publicdomain)
 
-This product includes/uses software, Commons Lang - commons-lang:commons-lang:jar:2.1
-developed by Apache Software Foundation  (http://www.apache.org)
+This product includes/uses software, JUnit Toolkit (http://sourceforge.net/projects/junit-toolkit/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache Log4j (http://logging.apache.org/log4j/1.2)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA Core API (http://directory.apache.org/projects/mina/)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
 This product includes/uses software, Apache MINA SSL Filter (http://directory.apache.org/subprojects/mina/mina-filter-ssl)
 developed by Apache Software Foundation  (http://www.apache.org)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Unnamed - xerces:xercesImpl:jar:2.2.1
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software,  - javax.servlet:servlet-api:jar:2.3
-
-This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
-developed by Apache Software Foundation  (http://www.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, Commons Configuration (http://jakarta.apache.org/commons/),
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
 This product includes/uses software, Apache MINA Java5 Extensions (http://directory.apache.org/subprojects/mina/mina-java5)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Jaxen - jaxen:jaxen:jar:1.0-FCS
-License: Apache License (http://jaxen.org/faq.html)
-
-This product includes/uses software, BeanUtils (http://jakarta.apache.org/commons/beanutils/)
-developed by The Apache Software Foundation  (http://jakarta.apache.org)
-License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
-
-This product includes/uses software, XML Commons External Components XML APIs (http://xml.apache.org/commons/#external),
-developed by Apache Software Foundation  (http://www.apache.org/)
-License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
-
-This product includes/uses software, Commons Beanutils Core - commons-beanutils:commons-beanutils-core:jar:1.7.0
+This product includes/uses software, Commons Configuration (http://jakarta.apache.org/commons/),
 developed by The Apache Software Foundation  (http://jakarta.apache.org)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
@@ -95,11 +43,37 @@ This product includes/uses software, Commons Logging API - commons-logging:commo
 developed by The Apache Software Foundation  (http://jakarta.apache.org)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Dom4j - dom4j:dom4j:jar:1.4
-developed by MetaStuff, Ltd. (http://www.dom4j.org/)
-License: BSD License (http://www.dom4j.org/license.html)
+This product includes/uses software, Commons Collections - commons-collections:commons-collections:jar:3.1,
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
-This product includes/uses software, Saxon - saxpath:saxpath:jar:1.0-FCS
-developed by Michael Kay (http://saxon.sourceforge.net/)
-License: Mozilla Public License v1.0, (http://www.opensource.org/licenses/mozilla1.0.php)
+This product includes/uses software, Commons CLI - commons-cli:commons-cli:jar:1.0
+Ideveloped by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Codec (http://jakarta.apache.org/commons/codec/),
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Lang - commons-lang:commons-lang:jar:2.1
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product uses/references the following software from Eclipse.
+License: Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)
+(Note: the versions are ommited and only the name is specified.)
+org.eclipse.jface
+org.eclipse.core.*
+org.eclipse.equinox.* 
+org.eclipse.osgi
+org.eclipse.swt
+Source available from : http://archive.eclipse.org/eclipse/downloads/drops/R-3.2-200606291905/index.php
+
+This product includes/uses software, ICU4J - ICU4J 3.4.4
+developed by the ICU Project (http://icu-project.org/)
+License: http://source.icu-project.org/repos/icu/icu/trunk/license.html
 

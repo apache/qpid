@@ -27,6 +27,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
 
@@ -113,7 +114,7 @@ public class Show extends AbstractCommand
 
         if (_queue != null)
         {
-            List<AMQMessage> messages = _queue.getMessagesOnTheQueue();
+            List<QueueEntry> messages = _queue.getMessagesOnTheQueue();
             if (messages == null || messages.size() == 0)
             {
                 _console.println("No messages on queue");
@@ -152,7 +153,7 @@ public class Show extends AbstractCommand
      * @param showMessageHeaders show the msg headers be shown
      * @return the formated data lists for printing
      */
-    protected List<List> createMessageData(List<Long> msgids, List<AMQMessage> messages, boolean showHeaders, boolean showRouting,
+    protected List<List> createMessageData(List<Long> msgids, List<QueueEntry> messages, boolean showHeaders, boolean showRouting,
                                            boolean showMessageHeaders)
     {
 
@@ -333,8 +334,9 @@ public class Show extends AbstractCommand
         }
 
         //Add create the table of data
-        for (AMQMessage msg : messages)
+        for (QueueEntry entry : messages)
         {
+            AMQMessage msg = entry.getMessage();
             if (!includeMsg(msg, msgids))
             {
                 continue;

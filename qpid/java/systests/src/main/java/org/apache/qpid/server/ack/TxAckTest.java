@@ -28,6 +28,8 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -132,7 +134,7 @@ public class TxAckTest extends TestCase
                 };
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext);
-                _map.add(deliveryTag, new UnacknowledgedMessage(null, message, null, deliveryTag));
+                _map.add(deliveryTag, new UnacknowledgedMessage(new QueueEntry(null,message), null, deliveryTag));
             }
             _acked = acked;
             _unacked = unacked;
@@ -149,7 +151,7 @@ public class TxAckTest extends TestCase
             {
                 UnacknowledgedMessage u = _map.get(tag);
                 assertTrue("Message not found for tag " + tag, u != null);
-                ((TestMessage) u.message).assertCountEquals(expected);
+                ((TestMessage) u.getMessage()).assertCountEquals(expected);
             }
         }
 

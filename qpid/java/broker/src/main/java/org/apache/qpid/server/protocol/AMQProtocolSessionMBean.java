@@ -61,6 +61,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
@@ -261,17 +262,17 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void closeConnection() throws JMException
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame response =
-            ConnectionCloseBody.createAMQFrame(0, _session.getProtocolMajorVersion(), _session.getProtocolMinorVersion(), // AMQP version (major, minor)
-                0, // classId
-                0, // methodId
-                AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION // replyText
-            );
-        _session.writeFrame(response);
+
+        MethodRegistry methodRegistry = _session.getMethodRegistry();
+        ConnectionCloseBody responseBody =
+                methodRegistry.createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
+                                                         // replyCode
+                                                         BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION,
+                                                         // replyText,
+                                                         0,
+                                                         0);
+
+        _session.writeFrame(responseBody.generateFrame(0));
 
         try
         {

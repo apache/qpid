@@ -139,7 +139,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         }
     }
 
-    public void checkVersion() throws AMQException
+    public ProtocolVersion checkVersion() throws AMQException
     {
 
         if(_protocolHeader.length != 4)
@@ -180,6 +180,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
             throw new AMQProtocolVersionException("Protocol version " +
                                                   _protocolMajor + "." + _protocolMinor + " not suppoerted by this version of the Qpid broker.", null);
         }
+        return pv;
     }
 
     public String toString()

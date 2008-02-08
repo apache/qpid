@@ -215,6 +215,14 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
                 public void remove()
                 {
                     last.remove();
+                    if(last == _mainIterator)
+                    {
+                        _size.decrementAndGet();
+                    }
+                    else
+                    {
+                        _messageHeadSize.decrementAndGet();                        
+                    }
                 }
             };
     }

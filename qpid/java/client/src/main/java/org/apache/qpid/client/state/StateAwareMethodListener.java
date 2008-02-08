@@ -21,6 +21,7 @@
 package org.apache.qpid.client.state;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
@@ -29,8 +30,9 @@ import org.apache.qpid.protocol.AMQMethodEvent;
  * the opportunity to update state.
  *
  */
-public interface StateAwareMethodListener
+public interface StateAwareMethodListener<B extends AMQMethodBody>
 {
-    void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession,
-        AMQMethodEvent evt) throws AMQException;
+
+    void methodReceived(AMQStateManager stateManager, B body, int channelId) throws AMQException;
+
 }

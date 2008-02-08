@@ -52,12 +52,15 @@ namespace Apache.Qpid.Framing
         static ProtocolInitiation()
         {
             AssemblySettings settings = new AssemblySettings();
+
+            /*
             string openAMQ = settings["OpenAMQ1d4Compatibility"];
             if (openAMQ.Equals("true"))
             {
                 _log.Warn("Starting in OpenAMQ-1.0d4 compatibility mode. ProtocolMajorVersion is 7 and Basic.Qos will not be sent.");                
                 CURRENT_PROTOCOL_VERSION_MAJOR = 7;                
-            }            
+            }
+            */
         }
 
         public uint Size

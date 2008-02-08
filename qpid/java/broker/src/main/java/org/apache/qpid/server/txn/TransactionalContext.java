@@ -25,6 +25,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 
 /**
@@ -111,14 +112,13 @@ public interface TransactionalContext
      *
      * <p/>This is an 'enqueue' operation.
      *
-     * @param message      The message to deliver.
-     * @param queue        The queue to deliver the message to.
+     * @param entry        The message to deliver, and the queue to deliver to.
      * @param deliverFirst <tt>true</tt> to place the message on the front of the queue for redelivery, <tt>false</tt>
      *                     for normal FIFO message ordering.
      *
      * @throws AMQException If the message cannot be delivered for any reason.
      */
-    void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException;
+    void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException;
 
     /**
      * Acknowledges a message or many messages as delivered. All messages up to a specified one, may be acknowledged by

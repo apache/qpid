@@ -56,6 +56,7 @@ public class AMQDecoder extends CumulativeProtocolDecoder
 
     /** Flag to indicate whether this decoder needs to handle protocol initiation. */
     private boolean _expectProtocolInitiation;
+    private boolean firstDecode = true;
 
     /**
      * Creates a new AMQP decoder.
@@ -81,14 +82,24 @@ public class AMQDecoder extends CumulativeProtocolDecoder
      */
     protected boolean doDecode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out) throws Exception
     {
-        if (_expectProtocolInitiation)
+
+        boolean decoded;
+        if (_expectProtocolInitiation  
+            || (firstDecode
+                && (in.remaining() > 0)
+                && (in.get(in.position()) == (byte)'A')))
         {
-            return doDecodePI(session, in, out);
+            decoded = doDecodePI(session, in, out);
         }
         else
         {
-            return doDecodeDataBlock(session, in, out);
+            decoded = doDecodeDataBlock(session, in, out);
         }
+        if(firstDecode && decoded)
+        {
+            firstDecode = false;
+        }
+        return decoded;
     }
 
     /**

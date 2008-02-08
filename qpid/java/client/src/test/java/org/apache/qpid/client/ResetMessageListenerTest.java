@@ -29,7 +29,16 @@ import org.apache.qpid.testutil.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
@@ -65,12 +74,15 @@ public class ResetMessageListenerTest extends QpidTestCase
     private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); // all messages Sent Lock
     private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); // all messages Sent Lock
     private final CountDownLatch _allFirstMessagesSent010 = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
-       private final CountDownLatch _allSecondMessagesSent010 = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
+	private final CountDownLatch _allSecondMessagesSent010 = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
+    
+    private String oldImmediatePrefetch;
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
+        oldImmediatePrefetch = System.getProperty(AMQSession.IMMEDIATE_PREFETCH);
         System.setProperty(AMQSession.IMMEDIATE_PREFETCH, "true");
 
         _clientConnection = getConnection("guest", "guest");
@@ -109,8 +121,12 @@ public class ResetMessageListenerTest extends QpidTestCase
     {
         _clientConnection.close();
 
-        _producerConnection.close();
         super.tearDown();
+        if (oldImmediatePrefetch == null)
+        {
+            oldImmediatePrefetch = AMQSession.IMMEDIATE_PREFETCH_DEFAULT;
+        }
+        System.setProperty(AMQSession.IMMEDIATE_PREFETCH, oldImmediatePrefetch);
     }
 
     public void testAsynchronousRecieve()
@@ -238,7 +254,7 @@ public class ResetMessageListenerTest extends QpidTestCase
 
             try
             {
-                _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            _allSecondMessagesSent.await(5000, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e)
             {

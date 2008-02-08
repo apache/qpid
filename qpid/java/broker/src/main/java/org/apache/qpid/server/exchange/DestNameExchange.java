@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -73,6 +74,11 @@ public class DestNameExchange extends AbstractExchange
             DestNameExchange exch = new DestNameExchange();
             exch.initialise(host, name, durable, autoDelete);
             return exch;
+        }
+
+        public AMQShortString getDefaultExchangeName()
+        {
+            return ExchangeDefaults.DIRECT_EXCHANGE_NAME;
         }
     };
 
@@ -174,15 +180,16 @@ public class DestNameExchange extends AbstractExchange
 
         if (!_index.remove(routingKey, queue))
         {
-            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key", null);
+            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName() +
+                                   " with routing key " + routingKey + ". No queue was registered with that _routing key",
+				   null);
         }
     }
 
     public void route(AMQMessage payload) throws AMQException
     {
         final MessagePublishInfo info = payload.getMessagePublishInfo();
-        final AMQShortString routingKey = info.getRoutingKey();
+        final AMQShortString routingKey = info.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : info.getRoutingKey();
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {

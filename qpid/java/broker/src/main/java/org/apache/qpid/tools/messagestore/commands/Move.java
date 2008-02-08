@@ -23,6 +23,7 @@ package org.apache.qpid.tools.messagestore.commands;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 
@@ -166,12 +167,12 @@ public class Move extends AbstractCommand
 
         if (fromQueue != null)
         {
-            List<AMQMessage> messages = fromQueue.getMessagesOnTheQueue();
+            List<QueueEntry> messages = fromQueue.getMessagesOnTheQueue();
             if (messages != null)
             {
-                for (AMQMessage msg : messages)
+                for (QueueEntry msg : messages)
                 {
-                    ids.add(msg.getMessageId());
+                    ids.add(msg.getMessage().getMessageId());
                 }
             }
         }

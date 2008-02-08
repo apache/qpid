@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.test.framework.*;
 import org.apache.qpid.test.framework.distributedtesting.TestClientControlledTest;
-import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
@@ -48,7 +47,15 @@ import javax.jms.*;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Provide a message producer for sending messages.
+ *     <td> {@link CircuitEnd}, {@link LocalCircuitFactory}, {@link TestUtils}
+ * <tr><td> Provide a message consumer for receiving messages.
+ *     <td> {@link CircuitEnd}, {@link LocalCircuitFactory}, {@link TestUtils}
+ * <tr><td> Supply the name of the test case that this implements.
+ * <tr><td> Accept/Reject invites based on test parameters. <td> {@link MessagingTestConfigProperties}
+ * <tr><td> Adapt to assigned roles. <td> {@link TestClientControlledTest.Roles}
+ * <tr><td> Perform test case actions. <td> {@link MessageMonitor}
+ * <tr><td> Generate test reports. <td> {@link MessageMonitor}
  * </table>
  */
 public class TestClientCircuitEnd implements CircuitEnd, TestClientControlledTest
@@ -145,13 +152,15 @@ public class TestClientCircuitEnd implements CircuitEnd, TestClientControlledTes
         connection = TestUtils.createConnection(testProps);
 
         // Create a circuit end that matches the assigned role and test parameters.
+        LocalCircuitFactory circuitFactory = new LocalCircuitFactory();
+
         switch (role)
         {
         // Check if the sender role is being assigned, and set up a message producer if so.
         case SENDER:
 
             // Set up the publisher.
-            circuitEnd = LocalCircuitImpl.createPublisherCircuitEnd(connection, testProps, 0L);
+            circuitEnd = circuitFactory.createPublisherCircuitEnd(connection, testProps, 0L);
 
             // Create a custom message monitor that will be updated on every message sent.
             messageMonitor = new MessageMonitor();
@@ -162,7 +171,7 @@ public class TestClientCircuitEnd implements CircuitEnd, TestClientControlledTes
         case RECEIVER:
 
             // Set up the receiver.
-            circuitEnd = LocalCircuitImpl.createReceiverCircuitEnd(connection, testProps, 0L);
+            circuitEnd = circuitFactory.createReceiverCircuitEnd(connection, testProps, 0L);
 
             // Use the message monitor from the consumer for stats.
             messageMonitor = getMessageMonitor();

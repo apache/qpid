@@ -23,79 +23,42 @@ package org.apache.qpid.framing;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
-public abstract class AMQMethodBody extends AMQBody
+public interface AMQMethodBody extends AMQBody
 {
     public static final byte TYPE = 1;
 
     /** AMQP version */
-    protected byte major;
-    protected byte minor;
+    public byte getMajor();
 
-    public byte getMajor()
-    {
-        return major;
-    }
+    public byte getMinor();
 
-    public byte getMinor()
-    {
-        return minor;
-    }
 
-    public AMQMethodBody(byte major, byte minor)
-    {
-        this.major = major;
-        this.minor = minor;
-    }
-
-    /** unsigned short */
-    protected abstract int getBodySize();
 
     /** @return unsigned short */
-    protected abstract int getClazz();
+    public int getClazz();
 
     /** @return unsigned short */
-    protected abstract int getMethod();
+    public int getMethod();
 
-    protected abstract void writeMethodPayload(ByteBuffer buffer);
+    public void writeMethodPayload(ByteBuffer buffer);
 
-    public byte getFrameType()
-    {
-        return TYPE;
-    }
 
-    protected int getSize()
-    {
-        return 2 + 2 + getBodySize();
-    }
+    public int getSize();
 
-    protected void writePayload(ByteBuffer buffer)
-    {
-        EncodingUtils.writeUnsignedShort(buffer, getClazz());
-        EncodingUtils.writeUnsignedShort(buffer, getMethod());
-        writeMethodPayload(buffer);
-    }
+    public void writePayload(ByteBuffer buffer);
 
-    protected abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
+    //public abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
 
-    protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
-    {
-        populateMethodBodyFromBuffer(buffer);
-    }
+    //public void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException;
 
-    public String toString()
-    {
-        StringBuffer buf = new StringBuffer(getClass().getName());
-        buf.append("[ Class: ").append(getClazz());
-        buf.append(" Method: ").append(getMethod()).append(']');
-        return buf.toString();
-    }
+    public AMQFrame generateFrame(int channelId);
 
-    /**
-     * Creates an AMQChannelException for the corresponding body type (a channel exception should include the class and
-     * method ids of the body it resulted from).
-     */
+    public String toString();
+
+
 
     /**
      * Convenience Method to create a channel not found exception
@@ -104,29 +67,17 @@ public abstract class AMQMethodBody extends AMQBody
      *
      * @return new AMQChannelException
      */
-    public AMQChannelException getChannelNotFoundException(int channelId)
-    {
-        return getChannelException(AMQConstant.NOT_FOUND, "Channel not found for id:" + channelId);
-    }
+    public AMQChannelException getChannelNotFoundException(int channelId);
 
-    public AMQChannelException getChannelException(AMQConstant code, String message)
-    {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, null);
-    }
+    public AMQChannelException getChannelException(AMQConstant code, String message);
 
-    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
-    {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, cause);
-    }
+    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause);
 
-    public AMQConnectionException getConnectionException(AMQConstant code, String message)
-    {
-        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, null);
-    }
+    public AMQConnectionException getConnectionException(AMQConstant code, String message);
 
-    public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)
-    {
-        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, cause);
-    }
 
+    public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause);
+
+
+    public boolean execute(MethodDispatcher methodDispatcher, int channelId) throws AMQException;
 }

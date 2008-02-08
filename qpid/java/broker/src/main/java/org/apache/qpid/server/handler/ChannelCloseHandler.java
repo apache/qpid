@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -47,16 +48,16 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ChannelCloseBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        ChannelCloseBody body = evt.getMethod();
+
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " + body.classId +
-                         " and method " + body.methodId);
+            _logger.info("Received channel close for id " + channelId + " citing class " + body.getClassId() +
+                         " and method " + body.getMethodId());
         }
-        int channelId = evt.getChannelId();
+
 
         AMQChannel channel = session.getChannel(channelId);
 
@@ -69,10 +70,8 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
         // Client requested closure so we don't wait for ok we send it
         stateManager.getProtocolSession().closeChannelOk(channelId);
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0);
-        session.writeFrame(response);
+        MethodRegistry methodRegistry = session.getMethodRegistry();
+        ChannelCloseOkBody responseBody = methodRegistry.createChannelCloseOkBody();
+        session.writeFrame(responseBody.generateFrame(channelId));
     }
 }

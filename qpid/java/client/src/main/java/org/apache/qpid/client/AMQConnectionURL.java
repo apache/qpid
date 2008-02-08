@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
 import org.apache.qpid.client.url.URLParser_0_8;
 import org.apache.qpid.client.url.URLParser_0_10;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
@@ -53,6 +54,7 @@ public class AMQConnectionURL implements ConnectionURL
     private AMQShortString _defaultTopicExchangeName;
     private AMQShortString _temporaryTopicExchangeName;
     private AMQShortString _temporaryQueueExchangeName;
+    private ProtocolVersion _protocolVersion = ProtocolVersion.defaultProtocolVersion();
     private byte _urlVersion;
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
@@ -104,6 +106,15 @@ public class AMQConnectionURL implements ConnectionURL
     public void setURLVersion(byte version)
     {
         _urlVersion = version;
+        if(_options.containsKey(OPTIONS_PROTOCOL_VERSION))
+        {
+            ProtocolVersion pv = ProtocolVersion.parse(_options.get(OPTIONS_PROTOCOL_VERSION));
+            if(pv != null)
+            {
+                _protocolVersion = pv;
+            }
+        }
+
     }
 
     public String getURL()
@@ -264,6 +275,11 @@ public class AMQConnectionURL implements ConnectionURL
     public void setTemporaryTopicExchangeName(AMQShortString temporaryTopicExchangeName)
     {
         _temporaryTopicExchangeName = temporaryTopicExchangeName;
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
     }
 
     public String toString()

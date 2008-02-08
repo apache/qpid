@@ -23,9 +23,7 @@ package org.apache.qpid.server.protocol;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -36,6 +34,8 @@ import java.security.Principal;
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
+
+
 
     public static interface Task
     {
@@ -172,4 +172,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     /** @return a Principal that was used to authorized this session */
     Principal getAuthorizedID();
 
+    public MethodRegistry getMethodRegistry();
+
+    public MethodDispatcher getMethodDispatcher();
+    
 }

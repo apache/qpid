@@ -33,6 +33,7 @@ public interface BrokerDetails
     */
     public static final String OPTIONS_RETRY = "retries";
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
+    public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
     public static final int DEFAULT_PORT = 5672;
 
     public static final String TCP = "tcp";
