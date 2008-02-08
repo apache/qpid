@@ -33,10 +33,10 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-public class TopicTests extends AbstractXATest
+public class TopicTest extends AbstractXATestCase
 {
     /* this clas logger */
-    private static final Logger _logger = LoggerFactory.getLogger(TopicTests.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TopicTest.class);
 
     /**
      * the topic use by all the tests
@@ -81,7 +81,7 @@ public class TopicTests extends AbstractXATest
      */
     public static TestSuite getSuite()
     {
-        return new TestSuite(TopicTests.class);
+        return new TestSuite(TopicTest.class);
     }
 
     /**
@@ -1671,12 +1671,12 @@ public class TopicTests extends AbstractXATest
             long seq = 0;
             try
             {
-                seq = message.getLongProperty(TopicTests._sequenceNumberPropertyName);
+                seq = message.getLongProperty(TopicTest._sequenceNumberPropertyName);
             }
             catch (JMSException e)
             {
                 e.printStackTrace();
-                TopicTests.failure();
+                TopicTest.failure();
                 _lock.set(false);
                 synchronized (_lock)
                 {
@@ -1686,7 +1686,7 @@ public class TopicTests extends AbstractXATest
             if (seq != _counter)
             {
                 System.out.println("received message " + seq + " expected " + _counter);
-                TopicTests.failure();
+                TopicTest.failure();
                 _lock.set(false);
                 synchronized (_lock)
                 {
