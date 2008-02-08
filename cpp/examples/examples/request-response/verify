@@ -2,4 +2,4 @@
 background "Waiting" ./server
 clients ./client
 kill %% 			# Must kill the server.
-outputs "./client.out | remove_uuid" " server.out | remove_uuid"
+outputs "./client.out | remove_uuid" "server.out | remove_uuid"

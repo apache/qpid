@@ -1,0 +1,18 @@
+#!/bin/sh
+# Verify all C++/python example combinations.
+#
+verify=$1; shift
+qpidd=$1; shift
+cpp=$1; shift
+ 
+trap "$qpidd -q" exit
+export QPID_PORT=`$qpidd -dp0 --data-dir ""`
+export PYTHON_EXAMPLES
+
+find="find $cpp"
+test -d $PYTHON_EXAMPLES && find="$find $PYTHON_EXAMPLES"
+find="$find -name verify"
+test -d $PYTHON_EXAMPLES && \
+    find="$find -o -name verify_cpp_python -o -name verify_python_cpp"
+$verify `$find`
+

@@ -36,11 +36,16 @@ background() {
     waitfor $out "$pattern"
 }
 
+name() {
+    for x in $*; do name="$name `basename $x`"; done
+    echo $name;
+}
+
 outputs() {
     wait 2> /dev/null		# Wait for all backgroud processes to complete
     rm -f $script.out
     for f in "$@"; do
-	{ echo "==== $f"; eval "cat $f"; } >> $script.out || fail
+	{ echo "==== `name $f`"; eval "cat $f"; } >> $script.out || fail
     done
 }
 
@@ -49,6 +54,7 @@ verify() {
     if [ -d $1 ]; then dir=$1; script=verify;
     else dir=`dirname $1`; script=`basename $1`; fi
     cd $dir || return 1
+    rm -f *.out
     { source ./$script && diff -ac $script.out $script.in ; } || fail
     test -z "$FAIL" && rm -f *.out
     return $FAIL
@@ -59,7 +65,7 @@ remove_uuid() {
     sed "s/$HEX\{8\}-$HEX\{4\}-$HEX\{4\}-$HEX\{4\}-$HEX\{12\}//g" $*
 }
 remove_uuid64() {
-    sed 's/[-A-Za-z0-9_]\{22\}==$//' $*
+    sed 's/[-A-Za-z0-9_]\{22\}==//g' $*
 }
 
 # Start private broker if QPIDD is set.
