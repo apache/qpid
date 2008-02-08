@@ -1,5 +1,5 @@
 ==== declare_queues.py.out
-==== direct_producer.py.out
+==== fanout_producer.py.out
 ==== listener.out
 Message: message 0
 Message: message 1
