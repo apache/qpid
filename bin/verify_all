@@ -1,0 +1,12 @@
+#!/bin/sh
+# Find example verify scripts and run them.
+# Usage: verify_all search-dir
+
+if [ `basename $1` = examples ]; then exdirs=$1
+else exdirs=`find $1 -name examples -a -type d`; fi
+scripts=`find $exdirs -name verify -o -name verify_cpp_python -o -name verify_cpp_java`
+verify=`dirname $0`/verify
+for s in $scripts; do $verify $s; done
+    
+	
+	
