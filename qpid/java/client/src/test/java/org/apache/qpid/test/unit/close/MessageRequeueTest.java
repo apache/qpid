@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.test.unit.close;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.QpidClientConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
@@ -41,7 +40,7 @@ import javax.jms.Session;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MessageRequeueTest extends TestCase
+public class MessageRequeueTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageRequeueTest.class);
 
@@ -64,7 +63,8 @@ public class MessageRequeueTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-         conn = new QpidClientConnection(BROKER);
+
+        conn = new QpidClientConnection(BROKER);
 
         conn.connect();
         // clear queue
@@ -78,7 +78,6 @@ public class MessageRequeueTest extends TestCase
 
     protected void tearDown() throws Exception
     {
-        super.tearDown();
 
         if (!passed) // clean up
         {
@@ -91,6 +90,7 @@ public class MessageRequeueTest extends TestCase
             conn.disconnect();
         }
 
+        super.tearDown();
     }
 
     /**
@@ -125,7 +125,7 @@ public class MessageRequeueTest extends TestCase
             if (messageLog[msgindex] != 0)
             {
                 _logger.error("Received Message(" + msgindex + ":" + ((AbstractJMSMessage) msg).getDeliveryTag()
-                    + ") more than once.");
+                              + ") more than once.");
             }
 
             if (_logger.isInfoEnabled())
@@ -144,16 +144,18 @@ public class MessageRequeueTest extends TestCase
             msg = consumer.receive(1000);
         }
 
-         _logger.info("consuming done.");
+        _logger.info("consuming done.");
         conn.getSession().commit();
         consumer.close();
-        assertEquals("number of consumed messages does not match initial data", (int) numTestMessages, messagesReceived);
 
         int index = 0;
         StringBuilder list = new StringBuilder();
         list.append("Failed to receive:");
         int failed = 0;
 
+        _logger.info("consumed: " + messagesReceived);
+
+        assertEquals("number of consumed messages does not match initial data", (int) numTestMessages, messagesReceived);
         // wit 0_10 we can have a delivery tag of 0
         if (conn.isBroker08())
         {
@@ -174,7 +176,7 @@ public class MessageRequeueTest extends TestCase
 
             assertEquals(list.toString(), 0, failed);
         }
-        _logger.info("consumed: " + messagesReceived);
+
         conn.disconnect();
         passed = true;
     }
@@ -208,7 +210,7 @@ public class MessageRequeueTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            fail("Uanble to join to Consumer theads");
+            fail("Unable to join to Consumer theads");
         }
 
         _logger.info("consumer 1 count is " + c1.getCount());
