@@ -17,7 +17,11 @@ nobase_pkgdata_DATA=						\
 	examples/direct/listener.cpp				\
 	examples/direct/declare_queues.cpp
 
-VERIFY_SCRIPT=verify \
+VERIFY_SCRIPT= \
+	examples/request-response/verify \
+	examples/fanout/verify \
+	examples/pub-sub/verify \
+	examples/direct/verify \
 	examples/request-response/verify.in \
 	examples/fanout/verify.in \
 	examples/pub-sub/verify.in \
@@ -35,7 +39,17 @@ clean-local:
 abs_top_builddir=@abs_top_builddir@
 abs_top_srcdir=@abs_top_srcdir@
 
-VERIFY=$(abs_top_srcdir)/examples/verify
+VERIFY=$(top_srcdir)/../bin/verify
+PYTHON_EXAMPLES=$(top_srcdir)/../python/examples
+EXAMPLES= \
+	examples/pub-sub \
+	examples/fanout \
+	examples/direct \
+	examples/request-response \
+	$(PYTHON_EXAMPLES)/pubsub \
+	$(PYTHON_EXAMPLES)/fanout \
+	$(PYTHON_EXAMPLES)/direct \
+	$(PYTHON_EXAMPLES)/request-response
 
 # Build the examples in the source tree.
 all-local:
@@ -43,7 +57,7 @@ all-local:
 
 # Verify the examples in the buid tree.
 check-local: all-local
-	cd examples && QPID_DATA_DIR= QPIDD=$(abs_top_builddir)/src/qpidd $(VERIFY)
+	QPID_DATA_DIR= QPIDD=$(top_builddir)/src/qpidd $(VERIFY) $(EXAMPLES)
 
 # Build and verify the installed examples, then clean up to avoid rpmbuild warnings.
 EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTDIR)$(libdir)
