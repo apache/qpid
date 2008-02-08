@@ -20,21 +20,16 @@
  */
 
 /**
- *  direct_config_queues.cpp
+ *  declare_queues.cpp (this program):
  *
  *  This program is one of three programs designed to be used
- *  together. These programs use the "amq.direct" exchange.
+ *  together. These programs use the "amq.fanout" exchange.
  *  
- *  direct_config_queues.cpp (this program):
- *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
- *
- *  direct_publisher.cpp:
+ *  fanout_producer.cpp:
  *
  *      Publishes to a broker, specifying a routing key.
  *
- *  direct_listener.cpp
+ * listener.cpp
  *
  *      Reads from a queue on the broker using a message listener.
  *
@@ -65,9 +60,7 @@ int main(int argc, char** argv) {
 
   //--------- Main body of program --------------------------------------------
 
-      // Create a queue named "message_queue", and route all messages whose
-      // routing key is "routing_key to this newly created queue.
-
+      // Create and bind a queue named "message_queue".
       session.queueDeclare(arg::queue="message_queue");
       session.queueBind(arg::queue="message_queue", arg::exchange="amq.fanout");
 
