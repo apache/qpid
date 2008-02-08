@@ -1,4 +1,4 @@
-==== ./topic_publisher.out
+==== topic_publisher.out
 ==== topic_listener.out | remove_uuid | sort
 Declaring queue: europe
 Declaring queue: news
