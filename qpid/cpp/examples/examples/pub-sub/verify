@@ -1,0 +1,4 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+background "Listening" ./topic_listener
+clients ./topic_publisher
+outputs ./topic_publisher.out "topic_listener.out | remove_uuid | sort"
