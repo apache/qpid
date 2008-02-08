@@ -1,0 +1,2 @@
+clients ./declare_queues ./fanout_producer ./listener
+outputs ./declare_queues.out ./fanout_producer.out ./listener.out

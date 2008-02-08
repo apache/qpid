@@ -7,6 +7,7 @@
 """
 
 import qpid
+import sys
 from qpid.client import Client
 from qpid.content import Content
 from qpid.queue import Empty
@@ -16,8 +17,8 @@ from qpid.queue import Empty
 
 #  Set parameters for login
 
-host="127.0.0.1"
-port=5672
+host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
+port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
 amqp_spec="/usr/share/amqp/amqp.0-10-preview.xml"
 user="guest"
 password="guest"

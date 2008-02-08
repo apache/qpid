@@ -1,0 +1,51 @@
+==== ./topic_publisher.py.out
+==== topic_subscriber.py.out | remove_uuid64 | sort
+message 0
+message 0
+message 0
+message 0
+message 0
+message 0
+message 0
+message 0
+message 1
+message 1
+message 1
+message 1
+message 1
+message 1
+message 1
+message 1
+message 2
+message 2
+message 2
+message 2
+message 2
+message 2
+message 2
+message 2
+message 3
+message 3
+message 3
+message 3
+message 3
+message 3
+message 3
+message 3
+message 4
+message 4
+message 4
+message 4
+message 4
+message 4
+message 4
+message 4
+Messages queue: europe
+Messages queue: news
+Messages queue: usa
+Messages queue: weather
+Queues created - please start the topic producer
+That's all, folks!
+That's all, folks!
+That's all, folks!
+That's all, folks!
