@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
@@ -50,29 +52,27 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicPublishBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicPublishBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        final BasicPublishBody body = evt.getMethod();
+
 
         if (_log.isDebugEnabled())
         {
-            _log.debug("Publish received on channel " + evt.getChannelId());
+            _log.debug("Publish received on channel " + channelId);
         }
 
+        AMQShortString exchange = body.getExchange();
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
-        if (body.exchange == null)
+        if (exchange == null)
         {
-            body.exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
+            exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
 
         }
-        else
-        {
-            body.exchange = body.exchange.intern();
-        }
+
         VirtualHost vHost = session.getVirtualHost();
-        Exchange e = vHost.getExchangeRegistry().getExchange(body.exchange);
+        Exchange e = vHost.getExchangeRegistry().getExchange(exchange);
         // if the exchange does not exist we raise a channel exception
         if (e == null)
         {
@@ -83,22 +83,18 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             // The partially populated BasicDeliver frame plus the received route body
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
-            AMQChannel channel = session.getChannel(evt.getChannelId());
+            AMQChannel channel = session.getChannel(channelId);
 
             if (channel == null)
             {
-                throw body.getChannelNotFoundException(evt.getChannelId());
+                throw body.getChannelNotFoundException(channelId);
             }
 
-            if(body.routingKey != null)
-            {
-                body.routingKey = body.routingKey.intern();
-            }
-            
-            MessagePublishInfo info = session.getRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
+            MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             channel.setPublishFrame(info, session);
         }
     }
+
 }
 
 

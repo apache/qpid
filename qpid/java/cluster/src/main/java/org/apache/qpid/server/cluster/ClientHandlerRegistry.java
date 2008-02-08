@@ -124,7 +124,16 @@ public class ClientHandlerRegistry extends AMQStateManager
     {
         protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist, byte major, byte minor)
         {
-            return super.createConnectionOpenFrame(channel, path, new AMQShortString(ClusterCapability.add(capabilities, _identity)), insist, major, minor);
+            // Be aware of possible changes to parameter order as versions change.
+            return ConnectionOpenBody.createAMQFrame(channel,
+                                                     major,
+                                                     minor,
+                                                     // AMQP version (major, minor)
+                                                     new AMQShortString(ClusterCapability.add(capabilities, _identity)),
+                                                     // capabilities
+                                                     insist,
+                                                     // insist
+                                                     path);
         }
     }
 }

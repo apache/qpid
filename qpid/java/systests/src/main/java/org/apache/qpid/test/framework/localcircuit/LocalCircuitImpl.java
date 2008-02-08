@@ -22,7 +22,6 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.framework.*;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -31,7 +30,6 @@ import javax.jms.*;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * LocalCircuitImpl provides an implementation of the test circuit. This is a local only circuit implementation that
@@ -47,16 +45,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> Apply assertions against the circuits state. <td> {@link Assertion}
  * <tr><td> Send test messages over the circuit.
  * <tr><td> Perform the default test procedure on the circuit.
- * <tr><td> Provide access to connection and controlSession exception monitors <td> {@link ExceptionMonitor}
+ * <tr><td> Provide access to connection and controlSession exception monitors. <td> {@link ExceptionMonitor}
  * </table>
  */
 public class LocalCircuitImpl implements Circuit
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(LocalCircuitImpl.class);
-
-    /** Used to create unique destination names for each test. */
-    private static AtomicLong uniqueDestsId = new AtomicLong();
 
     /** Holds the test configuration for the circuit. */
     private ParsedProperties testProps;
@@ -86,7 +81,7 @@ public class LocalCircuitImpl implements Circuit
      * @param connection                 The connection.
      * @param connectionExceptionMonitor The connection exception monitor.
      */
-    protected LocalCircuitImpl(ParsedProperties testProps, LocalPublisherImpl publisher, LocalReceiverImpl receiver,
+    public LocalCircuitImpl(ParsedProperties testProps, LocalPublisherImpl publisher, LocalReceiverImpl receiver,
         Connection connection, ExceptionMonitor connectionExceptionMonitor)
     {
         this.testProps = testProps;
@@ -99,159 +94,6 @@ public class LocalCircuitImpl implements Circuit
         // Set this as the parent circuit on the publisher and receivers.
         publisher.setCircuit(this);
         receiver.setCircuit(this);
-    }
-
-    /**
-     * Creates a local test circuit from the specified test parameters.
-     *
-     * @param testProps The test parameters.
-     *
-     * @return A connected and ready to start, test circuit.
-     */
-    public static Circuit createCircuit(ParsedProperties testProps)
-    {
-        // Create a standard publisher/receivers test client pair on a shared connection, individual sessions.
-        try
-        {
-            // Cast the test properties into a typed interface for convenience.
-            MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
-
-            // Get a unique offset to append to destination names to make them unique to the connection.
-            long uniqueId = uniqueDestsId.incrementAndGet();
-
-            // Set up the connection.
-            Connection connection = TestUtils.createConnection(testProps);
-
-            // Add the connection exception listener to assert on exception conditions with.
-            // ExceptionMonitor exceptionMonitor = new ExceptionMonitor();
-            // connection.setExceptionListener(exceptionMonitor);
-
-            // Set up the publisher.
-            CircuitEndBase publisherEnd = createPublisherCircuitEnd(connection, props, uniqueId);
-
-            // Set up the receiver.
-            CircuitEndBase receiverEnd = createReceiverCircuitEnd(connection, props, uniqueId);
-
-            // Start listening for incoming messages.
-            connection.start();
-
-            // Package everything up.
-            LocalPublisherImpl publisher = new LocalPublisherImpl(publisherEnd);
-            LocalReceiverImpl receiver = new LocalReceiverImpl(receiverEnd);
-
-            return new LocalCircuitImpl(testProps, publisher, receiver, connection, publisher.getExceptionMonitor());
-        }
-        catch (JMSException e)
-        {
-            throw new RuntimeException("Could not create publisher/receivers pair due to a JMSException.", e);
-        }
-    }
-
-    /**
-     * Builds a circuit end suitable for the publishing side of a test circuit, from standard test parameters.
-     *
-     * @param connection The connection to build the circuit end on.
-     * @param testProps  The test parameters to configure the circuit end construction.
-     * @param uniqueId   A unique number to being numbering destinations from, to make this circuit unique.
-     *
-     * @return A circuit end suitable for the publishing side of a test circuit.
-     *
-     * @throws JMSException Any underlying JMSExceptions are allowed to fall through and fail the creation.
-     */
-    public static CircuitEndBase createPublisherCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId)
-        throws JMSException
-    {
-        log.debug(
-            "public static CircuitEndBase createPublisherCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId = "
-            + uniqueId + "): called");
-
-        // Cast the test properties into a typed interface for convenience.
-        MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
-
-        Session session = connection.createSession(props.getTransacted(), props.getAckMode());
-
-        Destination destination =
-            props.getPubsub() ? session.createTopic(props.getSendDestinationNameRoot() + "_" + uniqueId)
-                              : session.createQueue(props.getSendDestinationNameRoot() + "_" + uniqueId);
-
-        MessageProducer producer =
-            props.getPublisherProducerBind()
-            ? ((props.getImmediate() | props.getMandatory())
-                ? ((AMQSession) session).createProducer(destination, props.getMandatory(), props.getImmediate())
-                : session.createProducer(destination)) : null;
-
-        MessageConsumer consumer =
-            props.getPublisherConsumerBind()
-            ? session.createConsumer(session.createQueue(props.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
-
-        MessageMonitor messageMonitor = new MessageMonitor();
-
-        if (consumer != null)
-        {
-            consumer.setMessageListener(messageMonitor);
-        }
-
-        ExceptionMonitor exceptionMonitor = new ExceptionMonitor();
-        connection.setExceptionListener(exceptionMonitor);
-
-        if (!props.getPublisherConsumerActive() && (consumer != null))
-        {
-            consumer.close();
-        }
-
-        return new CircuitEndBase(producer, consumer, session, messageMonitor, exceptionMonitor);
-    }
-
-    /**
-     * Builds a circuit end suitable for the receiving side of a test circuit, from standard test parameters.
-     *
-     * @param connection The connection to build the circuit end on.
-     * @param testProps  The test parameters to configure the circuit end construction.
-     * @param uniqueId   A unique number to being numbering destinations from, to make this circuit unique.
-     *
-     * @return A circuit end suitable for the receiving side of a test circuit.
-     *
-     * @throws JMSException Any underlying JMSExceptions are allowed to fall through and fail the creation.
-     */
-    public static CircuitEndBase createReceiverCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId)
-        throws JMSException
-    {
-        log.debug(
-            "public static CircuitEndBase createReceiverCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId = "
-            + uniqueId + "): called");
-
-        // Cast the test properties into a typed interface for convenience.
-        MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
-
-        Session session = connection.createSession(props.getTransacted(), props.getAckMode());
-
-        MessageProducer producer =
-            props.getReceiverProducerBind()
-            ? session.createProducer(session.createQueue(props.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
-
-        Destination destination =
-            props.getPubsub() ? session.createTopic(props.getSendDestinationNameRoot() + "_" + uniqueId)
-                              : session.createQueue(props.getSendDestinationNameRoot() + "_" + uniqueId);
-
-        MessageConsumer consumer =
-            props.getReceiverConsumerBind()
-            ? ((props.getDurableSubscription() && props.getPubsub())
-                ? session.createDurableSubscriber((Topic) destination, "testsub") : session.createConsumer(destination))
-            : null;
-
-        MessageMonitor messageMonitor = new MessageMonitor();
-
-        if (consumer != null)
-        {
-            consumer.setMessageListener(messageMonitor);
-        }
-
-        if (!props.getReceiverConsumerActive() && (consumer != null))
-        {
-            consumer.close();
-        }
-
-        return new CircuitEndBase(producer, consumer, session, messageMonitor, null);
     }
 
     /**
@@ -342,7 +184,7 @@ public class LocalCircuitImpl implements Circuit
         }
         catch (JMSException e)
         {
-            throw new RuntimeException("Got JMSException during close.", e);
+            throw new RuntimeException("Got JMSException during close:" + e.getMessage(), e);
         }
     }
 
@@ -351,16 +193,24 @@ public class LocalCircuitImpl implements Circuit
      */
     protected void send()
     {
-        boolean transactional = testProps.getPropertyAsBoolean(MessagingTestConfigProperties.TRANSACTED_PROPNAME);
+        // Cast the test properties into a typed interface for convenience.
+        MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
 
-        // Send an immediate message through the publisher and ensure that it results in a JMSException.
+        boolean transactional = props.getPublisherTransacted();
+        boolean rollback = props.getRollbackPublisher();
+
+        // Send a message through the publisher and log any exceptions raised.
         try
         {
             CircuitEnd end = getLocalPublisherCircuitEnd();
 
             end.send(createTestMessage(end));
 
-            if (transactional)
+            if (rollback)
+            {
+                end.getSession().rollback();
+            }
+            else if (transactional)
             {
                 end.getSession().commit();
             }
@@ -406,11 +256,11 @@ public class LocalCircuitImpl implements Circuit
         // Request a status report.
         check();
 
-        // Apply all of the requested assertions, keeping record of any that fail.
-        List<Assertion> failures = applyAssertions(assertions);
-
         // Clean up the publisher/receivers/controlSession/connections.
         close();
+
+        // Apply all of the requested assertions, keeping record of any that fail.
+        List<Assertion> failures = applyAssertions(assertions);
 
         // Return any failed assertions to the caller.
         return failures;
@@ -427,7 +277,10 @@ public class LocalCircuitImpl implements Circuit
      */
     private Message createTestMessage(CircuitEnd client) throws JMSException
     {
-        return client.getSession().createTextMessage("Hello");
+        // Cast the test properties into a typed interface for convenience.
+        MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
+
+        return TestUtils.createTestMessageOfSize(client.getSession(), props.getMessageSize());
     }
 
     /**
@@ -450,3 +303,4 @@ public class LocalCircuitImpl implements Circuit
         return exceptionMonitor;
     }
 }
+

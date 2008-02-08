@@ -33,6 +33,7 @@
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
         <qpidnio>true</qpidnio>
+        <protectio>true</protectio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
@@ -102,6 +103,10 @@
                 	  <!-- <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> -->
                 	  <class>org.apache.qpid.server.txn.MemoryTransactionManager</class>
                 </txn>
+
+                <housekeeping>
+                    <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
+                </housekeeping>
 
                 <security>
                     <!-- Need protocol changes to allow this-->
@@ -182,5 +187,6 @@
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
+
 
 

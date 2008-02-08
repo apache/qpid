@@ -59,6 +59,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
     private char[] chars;
     private String str;
+    
+    public static final AMQShortString EMPTY_STRING = new AMQShortString((String)null);
 
     public AMQShortString(byte[] data)
     {

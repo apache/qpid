@@ -20,6 +20,7 @@ package org.apache.qpid.server.txn;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -138,16 +139,14 @@ public class DistributedTransactionalContext implements TransactionalContext
         // The message is now fully received, we can stage it before enqueued if necessary
     }
 
-    public void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst)
+    public void deliver(QueueEntry entry, boolean deliverFirst)
             throws
             AMQException
     {
         try
         {
-            //The message has been delivered to the queues
-            message.getMessageHandle().enqueue(_storeContext, message.getMessageId(), queue);
             // add a record in the transaction
-            _transactionManager.getTransaction((Xid) _storeContext.getPayload()).addRecord(new EnqueueRecord(_storeContext, message, queue, deliverFirst));
+            _transactionManager.getTransaction((Xid) _storeContext.getPayload()).addRecord(new EnqueueRecord(_storeContext, entry, deliverFirst));
         } catch (Exception e)
         {
             throw new AMQException(null, "Problem during transaction rollback", e);
@@ -177,7 +176,7 @@ public class DistributedTransactionalContext implements TransactionalContext
                     {
                         if (_log.isDebugEnabled())
                         {
-                            _log.debug("Discarding message: " + message.message.getMessageId());
+                            _log.debug("Discarding message: " + message.entry.debugIdentity());
                         }
 
                         //Message has been ack so discard it. This will dequeue and decrement the reference.
@@ -203,7 +202,7 @@ public class DistributedTransactionalContext implements TransactionalContext
                 {
                     if (_log.isDebugEnabled())
                     {
-                        _log.debug("Discarding message: " + msg.message.getMessageId());
+                        _log.debug("Discarding message: " + msg.entry.debugIdentity());
                     }
                     //Message has been ack so discard it. This will dequeue and decrement the reference.
                     dequeue(msg);
@@ -222,7 +221,7 @@ public class DistributedTransactionalContext implements TransactionalContext
 
             if (_log.isDebugEnabled())
             {
-                _log.debug("Discarding message: " + msg.message.getMessageId());
+                _log.debug("Discarding message: " + msg.entry.debugIdentity());
             }
 
             //Message has been ack so discard it. This will dequeue and decrement the reference.
@@ -231,7 +230,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             if (_log.isDebugEnabled())
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
-                        msg.message.getMessageId());
+                        msg.entry.debugIdentity());
             }
         }
     }

@@ -39,6 +39,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -107,10 +108,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
-    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
+
     private List<Integer> _closingChannelsList = new ArrayList<Integer>();
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
+    private MethodDispatcher _dispatcher;
 
     public ManagedObject getManagedObject()
     {
@@ -235,24 +237,24 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
         try
         {
-            pi.checkVersion(); // Fails if not correct
+            ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
             // This sets the protocol version (and hence framing classes) for this session.
-            setProtocolVersion(pi._protocolMajor, pi._protocolMinor);
+            setProtocolVersion(pv);
 
             String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
 
             String locales = "en_US";
 
-            // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-            AMQFrame response =
-                ConnectionStartBody.createAMQFrame((short) 0, getProtocolMajorVersion(), getProtocolMinorVersion(), // AMQP version (major, minor)
-                    locales.getBytes(), // locales
-                    mechanisms.getBytes(), // mechanisms
-                    null, // serverProperties
-                    (short) getProtocolMajorVersion(), // versionMajor
-                    (short) getProtocolMinorVersion()); // versionMinor
-            _minaProtocolSession.write(response);
+
+            AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
+                                                                                       (short) getProtocolMinorVersion(),
+                                                                                       null,
+                                                                                       mechanisms.getBytes(),
+                                                                                       locales.getBytes());
+            _minaProtocolSession.write(responseBody.generateFrame(0));
+
+
         }
         catch (AMQException e)
         {
@@ -548,6 +550,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public void closeChannelOk(int channelId)
     {
+        removeChannel(channelId);
         _closingChannelsList.remove(new Integer(channelId));
     }
 
@@ -695,18 +698,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    private void setProtocolVersion(byte major, byte minor)
+    private void setProtocolVersion(ProtocolVersion pv)
     {
-        _protocolVersion = new ProtocolVersion(major, minor);
-
-        _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
+        _protocolVersion = pv;
 
         _protocolOutputConverter = ProtocolOutputConverterRegistry.getConverter(this);
+        _dispatcher = ServerMethodDispatcherImpl.createMethodDispatcher(_stateManager, _protocolVersion);
     }
 
     public byte getProtocolMajorVersion()
     {
         return _protocolVersion.getMajorVersion();
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
     }
 
     public byte getProtocolMinorVersion()
@@ -719,9 +726,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         return (getProtocolMajorVersion() == major) && (getProtocolMinorVersion() == minor);
     }
 
-    public VersionSpecificRegistry getRegistry()
+    public MethodRegistry getRegistry()
     {
-        return _registry;
+        return getMethodRegistry();
     }
 
     public Object getClientIdentifier()
@@ -764,6 +771,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public Principal getAuthorizedID()
     {
         return _authorizedID;
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return MethodRegistry.getMethodRegistry(getProtocolVersion());
+    }
+
+    public MethodDispatcher getMethodDispatcher()
+    {
+        return _dispatcher;
     }
 
     public String getClientVersion()

@@ -26,6 +26,7 @@ import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -41,6 +42,8 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,49 +56,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class AMQQueue implements Managable, Comparable, StorableQueue
 {
-    //FROM M2 - think these have been replaced by *Exception in the broker exception package
-//    /**
-//     * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
-//     * already exists.
-//     *
-//     * <p/><table id="crc"><caption>CRC Card</caption>
-//     * <tr><th> Responsibilities <th> Collaborations
-//     * <tr><td> Represent failure to create a subscription, because an exclusive subscription already exists.
-//     * </table>
-//     *
-//     * @todo Not an AMQP exception as no status code.
-//     *
-//     * @todo Move to top level, used outside this class.
-//     */
-//    public static final class ExistingExclusiveSubscription extends AMQException
-//    {
-//
-//        public ExistingExclusiveSubscription()
-//        {
-//            super("");
-//        }
-//    }
-//
-//    /**
-//     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusize subscription, as a subscription
-//     * already exists.
-//     *
-//     * <p/><table id="crc"><caption>CRC Card</caption>
-//     * <tr><th> Responsibilities <th> Collaborations
-//     * <tr><td> Represent failure to create an exclusize subscription, as a subscription already exists.
-//     * </table>
-//     *
-//     * @todo Not an AMQP exception as no status code.
-//     *
-//     * @todo Move to top level, used outside this class.
-//     */
-//    public static final class ExistingSubscriptionPreventsExclusive extends AMQException
-//    {
-//        public ExistingSubscriptionPreventsExclusive()
-//        {
-//            super("");
-    //        }
-    //    }
     public static int s_queueID = 0;
 
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
@@ -188,10 +148,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
      */
     public AtomicLong _totalMessagesReceived = new AtomicLong();
 
-    public int compareTo(Object o)
-    {
-        return _name.compareTo(((AMQQueue) o).getName());
-    }
+
 
     public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -274,6 +231,11 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return _autoDelete;
     }
 
+    public boolean isDeleted()
+    {
+        return _deleted.get();
+    }
+
     /**
      * @return no of messages(undelivered) on the queue.
      */
@@ -285,7 +247,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     /**
      * @return List of messages(undelivered) on the queue.
      */
-    public List<AMQMessage> getMessagesOnTheQueue()
+    public List<QueueEntry> getMessagesOnTheQueue()
     {
         return _deliveryMgr.getMessages();
     }
@@ -297,7 +259,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
      * @param toMessageId
      * @return List of messages
      */
-    public List<AMQMessage> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
+    public List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
     {
         return _deliveryMgr.getMessages(fromMessageId, toMessageId);
     }
@@ -309,11 +271,11 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
 
     /**
      * @param messageId
-     * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
+     * @return QueueEntry with give id if exists. null if QueueEntry with given id doesn't exist.
      */
-    public AMQMessage getMessageOnTheQueue(long messageId)
+    public QueueEntry getMessageOnTheQueue(long messageId)
     {
-        List<AMQMessage> list = getMessagesOnTheQueue(messageId, messageId);
+        List<QueueEntry> list = getMessagesOnTheQueue(messageId, messageId);
         if ((list == null) || (list.size() == 0))
         {
             return null;
@@ -355,15 +317,16 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             toQueue.startMovingMessages();
 
             // Get the list of messages to move.
-            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
+            List<QueueEntry> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
 
             try
             {
                 fromStore.beginTran(storeContext);
 
                 // Move the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
+                for (QueueEntry entry : foundMessagesList)
                 {
+                    AMQMessage message = entry.getMessage();
                     fromStore.dequeueMessage(storeContext, _name, message.getMessageId());
                     toStore.enqueueMessage(storeContext, toQueue._name, message.getMessageId());
                 }
@@ -433,15 +396,16 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             toQueue.startMovingMessages();
 
             // Get the list of messages to move.
-            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
+            List<QueueEntry> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
 
             try
             {
                 fromStore.beginTran(storeContext);
 
                 // Move the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
+                for (QueueEntry entry : foundMessagesList)
                 {
+                    AMQMessage message = entry.getMessage();
                     toStore.enqueueMessage(storeContext, toQueue._name, message.getMessageId());
                     message.takeReference();
                 }
@@ -499,15 +463,16 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             startMovingMessages();
 
             // Get the list of messages to move.
-            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
+            List<QueueEntry> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
 
             try
             {
                 fromStore.beginTran(storeContext);
 
                 // remove the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
+                for (QueueEntry entry : foundMessagesList)
                 {
+                    AMQMessage message = entry.getMessage();
                     fromStore.dequeueMessage(storeContext, _name, message.getMessageId());
                 }
 
@@ -549,7 +514,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         _deliveryMgr.startMovingMessages();
     }
 
-    private void enqueueMovedMessages(StoreContext storeContext, List<AMQMessage> messageList)
+    private void enqueueMovedMessages(StoreContext storeContext, List<QueueEntry> messageList)
     {
         _deliveryMgr.enqueueMovedMessages(storeContext, messageList);
         _totalMessagesReceived.addAndGet(messageList.size());
@@ -621,9 +586,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
 
     }
 
-    /**
-     * Removes the AMQMessage from the top of the queue.
-     */
+    /** Removes the QueueEntry from the top of the queue. */
     public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _deliveryMgr.removeAMessageFromTop(storeContext);
@@ -861,27 +824,28 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     // return _deliveryMgr;
     // }
 
-    public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
+    public void process(StoreContext storeContext, QueueEntry entry, boolean deliverFirst) throws AMQException
     {
-        _deliveryMgr.deliver(storeContext, getName(), msg, deliverFirst);
+        AMQMessage msg = entry.getMessage();
+        _deliveryMgr.deliver(storeContext, getName(), entry, deliverFirst);
         try
         {
             msg.checkDeliveredToConsumer();
-            updateReceivedMessageCount(msg);
+            updateReceivedMessageCount(entry);
         }
         catch (NoConsumersException e)
         {
             // as this message will be returned, it should be removed
             // from the queue:
-            dequeue(storeContext, msg);
+            dequeue(storeContext, entry);
         }
     }
 
-    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
+    public void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException
     {
         try
         {
-            msg.dequeue(storeContext, this);
+            entry.getMessage().dequeue(storeContext, this);
         }
         catch (MessageCleanupException e)
         {
@@ -907,8 +871,10 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
+    protected void updateReceivedMessageCount(QueueEntry entry) throws AMQException
     {
+        AMQMessage msg = entry.getMessage();
+
         if (!msg.isRedelivered())
         {
             _totalMessagesReceived.incrementAndGet();
@@ -996,10 +962,14 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         _maximumMessageAge = maximumMessageAge;
     }
 
-    public void subscriberHasPendingResend(boolean hasContent, SubscriptionImpl subscription, AMQMessage msg)
+    public void subscriberHasPendingResend(boolean hasContent, SubscriptionImpl subscription, QueueEntry entry)
     {
-        _deliveryMgr.subscriberHasPendingResend(hasContent, subscription, msg);
+        _deliveryMgr.subscriberHasPendingResend(hasContent, subscription, entry);
     }
+
+    /*
+     * TGM: wow, this is not going to have a high fun quotient
+     */
 
     // ========================================================================
     // Interface StorableQueue
@@ -1048,5 +1018,27 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     public StorableMessage getEnqueuedMessage(long messageId)
     {
         return _messages.get(messageId);
+    }
+
+    public QueueEntry createEntry(AMQMessage amqMessage)
+    {
+        return new QueueEntry(this, amqMessage);
+    }
+
+    public int compareTo(Object o)
+    {
+        return _name.compareTo(((AMQQueue) o).getName());
+    }
+
+
+    public void removeExpiredIfNoSubscribers() throws AMQException
+    {
+        synchronized(_subscribers.getChangeLock())
+        {
+            if(_subscribers.isEmpty())
+            {
+                _deliveryMgr.removeExpired();
+            }
+        }
     }
 }

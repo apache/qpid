@@ -29,7 +29,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
  * the opportunity to update state.
  *
  */
-public interface StateAwareMethodListener <B extends AMQMethodBody>
+public interface StateAwareMethodListener<B extends AMQMethodBody>
 {
-    void methodReceived(AMQStateManager stateManager,  AMQMethodEvent<B> evt) throws AMQException;
+    void methodReceived(AMQStateManager stateManager,  B evt, int channelId) throws AMQException;
 }

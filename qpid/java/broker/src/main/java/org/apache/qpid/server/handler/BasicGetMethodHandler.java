@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
@@ -49,30 +50,29 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicGetBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicGetBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        BasicGetBody body = evt.getMethod();
-        final int channelId = evt.getChannelId();
+
         VirtualHost vHost = session.getVirtualHost();
 
         AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(evt.getChannelId());
+            throw body.getChannelNotFoundException(channelId);
         }
         else
         {
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
+            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue());
 
             if (queue == null)
             {
-                _log.info("No queue for '" + body.queue + "'");
-                if(body.queue!=null)
+                _log.info("No queue for '" + body.getQueue() + "'");
+                if(body.getQueue()!=null)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_FOUND,
-                                                      "No such queue, '" + body.queue + "'");
+                                                      "No such queue, '" + body.getQueue()+ "'");
                 }
                 else
                 {
@@ -82,12 +82,14 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             }
             else
             {
-                if(!queue.performGet(session, channel, !body.noAck))
+                if(!queue.performGet(session, channel, !body.getNoAck()))
                 {
-
-
+                    MethodRegistry methodRegistry = session.getMethodRegistry();
                     // TODO - set clusterId
-                    session.writeFrame(BasicGetEmptyBody.createAMQFrame(channelId, body.getMajor(), body.getMinor(), null));
+                    BasicGetEmptyBody responseBody = methodRegistry.createBasicGetEmptyBody(null);
+
+
+                    session.writeFrame(responseBody.generateFrame(channelId));
                 }
             }
         }

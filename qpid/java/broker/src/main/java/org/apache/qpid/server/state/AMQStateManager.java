@@ -28,37 +28,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicAckBody;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicGetBody;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.BasicQosBody;
-import org.apache.qpid.framing.BasicRecoverBody;
-import org.apache.qpid.framing.BasicRejectBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ChannelFlowBody;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionCloseOkBody;
-import org.apache.qpid.framing.ConnectionOpenBody;
-import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.framing.ConnectionStartOkBody;
-import org.apache.qpid.framing.ConnectionTuneOkBody;
-import org.apache.qpid.framing.ExchangeBoundBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeleteBody;
-import org.apache.qpid.framing.QueueBindBody;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.QueuePurgeBody;
-import org.apache.qpid.framing.TxCommitBody;
-import org.apache.qpid.framing.TxRollbackBody;
-import org.apache.qpid.framing.TxSelectBody;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.handler.BasicAckMethodHandler;
 import org.apache.qpid.server.handler.BasicCancelMethodHandler;
 import org.apache.qpid.server.handler.BasicConsumeMethodHandler;
@@ -107,43 +81,35 @@ public class AMQStateManager implements AMQMethodListener
      * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
      * AMQFrame.
      */
-    private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
+/*    private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
         new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(
             AMQState.class);
+  */
+
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
     public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        this(AMQState.CONNECTION_NOT_STARTED, true, virtualHostRegistry, protocolSession);
-    }
 
-    protected AMQStateManager(AMQState initial, boolean register, VirtualHostRegistry virtualHostRegistry,
-        AMQProtocolSession protocolSession)
-    {
         _virtualHostRegistry = virtualHostRegistry;
         _protocolSession = protocolSession;
-        _currentState = initial;
-        if (register)
-        {
-            registerListeners();
-        }
+        _currentState = AMQState.CONNECTION_NOT_STARTED;
+
     }
 
+    /*
     protected void registerListeners()
     {
         Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap;
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ConnectionStartOkBody.class, ConnectionStartOkMethodHandler.getInstance());
         _state2HandlersMap.put(AMQState.CONNECTION_NOT_STARTED, frame2handlerMap);
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ConnectionSecureOkBody.class, ConnectionSecureOkMethodHandler.getInstance());
         _state2HandlersMap.put(AMQState.CONNECTION_NOT_AUTH, frame2handlerMap);
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ConnectionTuneOkBody.class, ConnectionTuneOkMethodHandler.getInstance());
         _state2HandlersMap.put(AMQState.CONNECTION_NOT_TUNED, frame2handlerMap);
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
@@ -154,37 +120,41 @@ public class AMQStateManager implements AMQMethodListener
         // ConnectionOpen handlers
         //
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ChannelOpenBody.class, ChannelOpenHandler.getInstance());
-        frame2handlerMap.put(ChannelCloseBody.class, ChannelCloseHandler.getInstance());
-        frame2handlerMap.put(ChannelCloseOkBody.class, ChannelCloseOkHandler.getInstance());
-        frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        frame2handlerMap.put(ExchangeDeclareBody.class, ExchangeDeclareHandler.getInstance());
-        frame2handlerMap.put(ExchangeDeleteBody.class, ExchangeDeleteHandler.getInstance());
-        frame2handlerMap.put(ExchangeBoundBody.class, ExchangeBoundHandler.getInstance());
-        frame2handlerMap.put(BasicAckBody.class, BasicAckMethodHandler.getInstance());
-        frame2handlerMap.put(BasicRecoverBody.class, BasicRecoverMethodHandler.getInstance());
-        frame2handlerMap.put(BasicConsumeBody.class, BasicConsumeMethodHandler.getInstance());
-        frame2handlerMap.put(BasicGetBody.class, BasicGetMethodHandler.getInstance());
-        frame2handlerMap.put(BasicCancelBody.class, BasicCancelMethodHandler.getInstance());
-        frame2handlerMap.put(BasicPublishBody.class, BasicPublishMethodHandler.getInstance());
-        frame2handlerMap.put(BasicQosBody.class, BasicQosHandler.getInstance());
-        frame2handlerMap.put(QueueBindBody.class, QueueBindHandler.getInstance());
-        frame2handlerMap.put(QueueDeclareBody.class, QueueDeclareHandler.getInstance());
-        frame2handlerMap.put(QueueDeleteBody.class, QueueDeleteHandler.getInstance());
-        frame2handlerMap.put(QueuePurgeBody.class, QueuePurgeHandler.getInstance());
-        frame2handlerMap.put(ChannelFlowBody.class, ChannelFlowHandler.getInstance());
-        frame2handlerMap.put(TxSelectBody.class, TxSelectHandler.getInstance());
-        frame2handlerMap.put(TxCommitBody.class, TxCommitHandler.getInstance());
-        frame2handlerMap.put(TxRollbackBody.class, TxRollbackHandler.getInstance());
-        frame2handlerMap.put(BasicRejectBody.class, BasicRejectMethodHandler.getInstance());
+        ChannelOpenHandler.getInstance();
+        ChannelCloseHandler.getInstance();
+        ChannelCloseOkHandler.getInstance();
+        ConnectionCloseMethodHandler.getInstance();
+        ConnectionCloseOkMethodHandler.getInstance();
+        ConnectionTuneOkMethodHandler.getInstance();
+        ConnectionSecureOkMethodHandler.getInstance();
+        ConnectionStartOkMethodHandler.getInstance();
+        ExchangeDeclareHandler.getInstance();
+        ExchangeDeleteHandler.getInstance();
+        ExchangeBoundHandler.getInstance();
+        BasicAckMethodHandler.getInstance();
+        BasicRecoverMethodHandler.getInstance();
+        BasicConsumeMethodHandler.getInstance();
+        BasicGetMethodHandler.getInstance();
+        BasicCancelMethodHandler.getInstance();
+        BasicPublishMethodHandler.getInstance();
+        BasicQosHandler.getInstance();
+        QueueBindHandler.getInstance();
+        QueueDeclareHandler.getInstance();
+        QueueDeleteHandler.getInstance();
+        QueuePurgeHandler.getInstance();
+        ChannelFlowHandler.getInstance();
+        TxSelectHandler.getInstance();
+        TxCommitHandler.getInstance();
+        TxRollbackHandler.getInstance();
+        BasicRejectMethodHandler.getInstance();
 
         _state2HandlersMap.put(AMQState.CONNECTION_OPEN, frame2handlerMap);
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-        frame2handlerMap.put(ConnectionCloseOkBody.class, ConnectionCloseOkMethodHandler.getInstance());
+
         _state2HandlersMap.put(AMQState.CONNECTION_CLOSING, frame2handlerMap);
 
-    }
+    } */
 
     public AMQState getCurrentState()
     {
@@ -214,18 +184,25 @@ public class AMQStateManager implements AMQMethodListener
 
     public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
     {
-        StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
-        if (handler != null)
+        MethodDispatcher dispatcher = _protocolSession.getMethodDispatcher();
+
+        final int channelId = evt.getChannelId();
+        B body = evt.getMethod();
+
+        if(channelId != 0 && _protocolSession.getChannel(channelId)== null)
         {
 
-            checkChannel(evt, _protocolSession);
+            if(! ((body instanceof ChannelOpenBody)
+                  || (body instanceof ChannelCloseOkBody)
+                  || (body instanceof ChannelCloseBody)))
+            {
+                throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "channel is closed");
+            }
 
-            handler.methodReceived(this, evt);
-
-            return true;
         }
 
-        return false;
+        return body.execute(dispatcher, channelId);
+
     }
 
     private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
@@ -239,6 +216,7 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
+/*
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
         B frame)
     // throws IllegalStateTransitionException
@@ -260,6 +238,7 @@ public class AMQStateManager implements AMQMethodListener
             return handler;
         }
     }
+*/
 
     public void addStateListener(StateListener listener)
     {

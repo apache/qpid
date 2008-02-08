@@ -25,7 +25,6 @@ import javax.management.NotCompliantMBeanException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.txn.TransactionManager;
 import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessManagerImpl;
 import org.apache.qpid.server.security.access.Accessable;
@@ -40,8 +39,14 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.TransactionManager;
+import org.apache.qpid.AMQException;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class VirtualHost implements Accessable
 {
@@ -68,7 +73,10 @@ public class VirtualHost implements Accessable
 
     private AccessManager _accessManager;
 
-
+    private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
+     
+    private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
+    
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -114,7 +122,6 @@ public class VirtualHost implements Accessable
      * Used for testing only
      * @param name
      * @param store
-     *
      * @throws Exception
      */
     public VirtualHost(String name, MessageStore store) throws Exception
@@ -124,10 +131,8 @@ public class VirtualHost implements Accessable
 
     /**
      * Normal Constructor
-     *
      * @param name
      * @param hostConfig
-     *
      * @throws Exception
      */
     public VirtualHost(String name, Configuration hostConfig) throws Exception
@@ -135,7 +140,7 @@ public class VirtualHost implements Accessable
         this(name, hostConfig, null);
     }
 
-    private VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
+    public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
         _name = name;
 
@@ -158,8 +163,8 @@ public class VirtualHost implements Accessable
             {
                 throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
             }
-            initialiseTransactionManager(hostConfig);
-            initialiseMessageStore(hostConfig);
+	    initialiseTransactionManager(hostConfig);
+	    initialiseMessageStore(hostConfig);
         }
 
         _exchangeRegistry.initialise();
@@ -170,8 +175,44 @@ public class VirtualHost implements Accessable
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
+        initialiseHouseKeeping(hostConfig);
     }
 
+    
+    private void initialiseHouseKeeping(final Configuration hostConfig)
+    {
+     
+    	long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+    
+    	/* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
+    	if(period != 0L)
+    	{
+    		class RemoveExpiredMessagesTask extends TimerTask
+    		{
+    			public void run()
+    			{
+    				for(AMQQueue q : _queueRegistry.getQueues())
+    				{
+
+    					try
+    					{
+    						q.removeExpiredIfNoSubscribers();
+    					}
+    					catch (AMQException e)
+    					{
+    						_logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
+    						throw new RuntimeException(e);
+    					}
+    				}
+    			}
+    		}
+    		
+    		_houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
+    				period/2,
+    				period);
+    	}
+    }
+    
     private void initialiseMessageStore(Configuration config) throws Exception
     {
         String messageStoreClass = config.getString("store.class");
@@ -185,8 +226,6 @@ public class VirtualHost implements Accessable
                                          " does not.");
         }
         _messageStore = (MessageStore) o;
-          //DTX MessageStore
-//        _messageStore.configure(this, _transactionManager, "store", config);
         _messageStore.configure(this, "store", config);
     }
 
@@ -203,8 +242,7 @@ public class VirtualHost implements Accessable
         }
         _transactionManager = (TransactionManager) o;
     }
-
-
+    
     public <T> T getConfiguredObject(Class<T> instanceType, Configuration config)
     {
         T instance;
@@ -286,4 +324,3 @@ public class VirtualHost implements Accessable
         return _virtualHostMBean;
     }
 }
-

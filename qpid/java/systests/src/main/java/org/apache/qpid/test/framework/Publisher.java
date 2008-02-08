@@ -20,37 +20,56 @@
  */
 package org.apache.qpid.test.framework;
 
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
 /**
- * A Publisher is a {@link CircuitEnd} that represents the status of the publishing side of a test circuit. Its main
- * purpose is to provide assertions that can be applied to test the behaviour of the publishers.
+ * A Publisher represents the status of the publishing side of a test circuit. Its main purpose is to provide assertions
+ * that can be applied to test the behaviour of the publishers.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities
  * <tr><td> Provide assertion that the publishers received no exceptions.
- * <tr><td> Provide assertion that the publishers received a no consumers error code on every message.
- * <tr><td> Provide assertion that the publishers received a no route error code on every message.
  * </table>
+ *
+ * @todo There are mixtures of AMQP and JMS assertions in this interface. Either keep them here, but quietly (or with a
+ *       warning or error) drop them from test cases where they are not relevant, or push them down into sub-classes.
+ *       I am tempted to go with the dropping/warning/error approach, that would imply that it makes sense to pull
+ *       the assertions back from AMQPPublisher to here.
  */
 public interface Publisher
 {
+    // Assertions that are meaningfull to AMQP and to JMS.
+
     /**
      * Provides an assertion that the publisher encountered no exceptions.
      *
+     * @param testProps The test configuration properties.
+     *
      * @return An assertion that the publisher encountered no exceptions.
      */
-    public Assertion noExceptionsAssertion();
+    public Assertion noExceptionsAssertion(ParsedProperties testProps);
+
+    // Assertions that are meaningfull only to AMQP.
 
     /**
-     * Provides an assertion that the publisher got a no consumers exception on every message.
+     * Provides an assertion that the AMQP channel was forcibly closed by an error condition.
      *
-     * @return An assertion that the publisher got a no consumers exception on every message.
+     * @param testProps The test configuration properties.
+     *
+     * @return An assertion that the AMQP channel was forcibly closed by an error condition.
      */
-    public Assertion noConsumersAssertion();
+    public Assertion channelClosedAssertion(ParsedProperties testProps);
+
+    // Assertions that are meaningfull only to Java/JMS.
 
     /**
-     * Provides an assertion that the publisher got a no rout exception on every message.
+     * Provides an assertion that the publisher got a given exception during the test.
      *
-     * @return An assertion that the publisher got a no rout exception on every message.
+     * @param testProps      The test configuration properties.
+     * @param exceptionClass The exception class to check for.
+     *
+     * @return An assertion that the publisher got a given exception during the test.
      */
-    public Assertion noRouteAssertion();
+    public Assertion exceptionAssertion(ParsedProperties testProps, Class<? extends Exception> exceptionClass);
 }
+

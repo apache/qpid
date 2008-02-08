@@ -43,6 +43,7 @@ import java.util.Iterator;
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
 
+
     public static Factory getInstanceFactory()
     {
         return new Factory()
@@ -98,7 +99,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
 
-            AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
+            AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
             CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
             writeFrame(compositeBlock);
@@ -109,7 +110,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             for(int i = 1; i < bodyCount; i++)
             {
                 cb = messageHandle.getContentChunk(storeContext,messageId, i);
-                writeFrame(new AMQFrame(channelId, getProtocolSession().getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
+                writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
 
@@ -149,7 +150,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
 
-            AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
+            AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
             CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
             writeFrame(compositeBlock);
@@ -160,7 +161,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             for(int i = 1; i < bodyCount; i++)
             {
                 cb = messageHandle.getContentChunk(storeContext, messageId, i);
-                writeFrame(new AMQFrame(channelId, getProtocolSession().getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
+                writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
 
@@ -176,11 +177,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final MessagePublishInfo pb = message.getMessagePublishInfo();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
 
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, getProtocolMajorVersion(),
-                                                                getProtocolMinorVersion(),
-                                                                consumerTag,
-                                                                deliveryTag, pb.getExchange(), messageHandle.isRedelivered(),
-                                                                pb.getRoutingKey());
+        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+        BasicDeliverBody deliverBody =
+                methodRegistry.createBasicDeliverBody(consumerTag,
+                                                      deliveryTag,
+                                                      messageHandle.isRedelivered(),
+                                                      pb.getExchange(),
+                                                      pb.getRoutingKey());
+        AMQFrame deliverFrame = deliverBody.generateFrame(channelId);
 
 
         return deliverFrame.toByteBuffer();
@@ -192,13 +196,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final MessagePublishInfo pb = message.getMessagePublishInfo();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
 
-        AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId,
-                                                            getProtocolMajorVersion(),
-                                                            getProtocolMinorVersion(),
-                                                                deliveryTag, pb.getExchange(),
-                                                                queueSize,
-                                                                messageHandle.isRedelivered(),
-                                                                pb.getRoutingKey());
+        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+        BasicGetOkBody getOkBody =
+                methodRegistry.createBasicGetOkBody(deliveryTag,
+                                                    messageHandle.isRedelivered(),
+                                                    pb.getExchange(),
+                                                    pb.getRoutingKey(),
+                                                    queueSize);
+        AMQFrame getOkFrame = getOkBody.generateFrame(channelId);
 
         return getOkFrame.toByteBuffer();
     }
@@ -215,12 +220,13 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     private ByteBuffer createEncodedReturnFrame(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
-        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId,
-                                                              getProtocolMajorVersion(),
-                                                              getProtocolMinorVersion(),
-                                                              message.getMessagePublishInfo().getExchange(),
-                                                              replyCode, replyText,
-                                                              message.getMessagePublishInfo().getRoutingKey());
+        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+        BasicReturnBody basicReturnBody =
+                methodRegistry.createBasicReturnBody(replyCode,
+                                                     replyText,
+                                                     message.getMessagePublishInfo().getExchange(),
+                                                     message.getMessagePublishInfo().getRoutingKey());
+        AMQFrame returnFrame = basicReturnBody.generateFrame(channelId);
 
         return returnFrame.toByteBuffer();
     }
@@ -272,11 +278,9 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     public void confirmConsumerAutoClose(int channelId, AMQShortString consumerTag)
     {
+        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+        BasicCancelOkBody basicCancelOkBody = methodRegistry.createBasicCancelOkBody(consumerTag);
+        writeFrame(basicCancelOkBody.generateFrame(channelId));
 
-        writeFrame(BasicCancelOkBody.createAMQFrame(channelId,
-                   getProtocolMajorVersion(),
-                   getProtocolMinorVersion(),
-                   consumerTag    // consumerTag
-        ));
     }
 }

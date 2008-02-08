@@ -53,10 +53,10 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
 
     public void sendCancel() throws JMSAMQException
     {
-        final AMQFrame cancelFrame =
-            BasicCancelBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                _protocolHandler.getProtocolMinorVersion(), _consumerTag, // consumerTag
-                false); // nowait
+        final AMQFrame cancelFrame = _connection.getProtocolHandler().getMethodRegistry().
+                                        createBasicCancelBody(_consumerTag, // consumerTag
+                                                              false). // nowait
+                                        generateFrame(_channelId);
 
         try
         {

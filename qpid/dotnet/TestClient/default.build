@@ -18,7 +18,7 @@
 			   <include name="**/*.cs" />
          </sources>
          <references>
-            <include name="${build.dir}\Apache.Qpid.Client.Tests.dll"/>
+            <include name="${build.dir}\Apache.Qpid.Integration.Tests.dll"/>
          </references>
         </csc>
     </target>

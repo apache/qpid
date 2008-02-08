@@ -1659,6 +1659,29 @@
       <doc>This method confirms the deletion of an exchange.</doc>
       <chassis name = "client" implement = "MUST" />
     </method>
+	
+	<!-- RG : Added Exchange.bound and Exchange.bound-ok -->
+	<method name="bound" synchronous="1" index="22">
+	    <chassis name="server" implement="SHOULD"/>
+        <field name="exchange" domain="exchange-name"/>
+        <field name = "routing-key" type = "shortstr">
+            Message routing key
+            <doc>
+              Specifies the routing key for the message.  The routing key is
+              used for routing messages depending on the exchange configuration.
+            </doc>
+        </field>
+        <field name = "queue" domain = "queue name"/>
+    </method>
+
+    <method name="bound-ok" synchronous="1" index="23">
+        <field name="reply-code" domain="reply-code"/>
+        <field name="reply-text" domain="reply-text"/>
+		<chassis name="client" implement="SHOULD"/>
+    </method>
+
+
+	
   </class>
 
   <!-- ==  QUEUE  ============================================================ -->
@@ -2704,7 +2727,9 @@
         </doc>
       </field>
       
-      <field name = "filter" domain = "table" label = "arguments for consuming">
+      <!-- RG changed name from filter to arguments on basic.consume: this is inline with qpid0-8 and 0-10 and has no effect on the wire level encoding
+	  <field name = "arguments" domain = "table" label = "arguments for consuming"> -->
+	  <field name = "arguments" domain = "table" label = "arguments for consuming">
       	<doc>
           A set of filters for the consume. The syntax and semantics
 		  of these filters depends on the providers implementation.
@@ -3183,6 +3208,45 @@
         </doc>
       </field>
     </method>
+	
+	
+	<!-- RG : Added recover-sync and recover-sync-ok to give a synchronous recover without interfering with the correct 0-9 recover method -->
+	<method name = "recover-sync" index = "102">
+  redeliver unacknowledged messages
+  <doc>
+    This method asks the broker to redeliver all unacknowledged messages on a
+    specified channel. Zero or more messages may be redelivered.  This method
+    is only allowed on non-transacted channels.
+  </doc>
+  <chassis name = "server" implement = "MUST" />
+
+  <field name = "requeue" type = "bit">
+    requeue the message
+    <doc>
+      If this field is zero, the message will be redelivered to the original
+      recipient.  If this bit is 1, the server will attempt to requeue the
+      message, potentially then delivering it to an alternative subscriber.
+    </doc>
+  </field>    
+  <doc name="rule">
+    The server MUST set the redelivered flag on all messages that are resent.
+  </doc>
+  <doc name="rule">
+    The server MUST raise a channel exception if this is called on a 
+    transacted channel.
+  </doc>
+    <response name="recover-sync-ok"/>
+  </method>
+  <method name="recover-sync-ok" synchronous="1" index="101">
+	confirm a successful recover
+	<doc>
+	  This method confirms to the client that the recover succeeded.
+  	  Note that if an recover fails, the server raises a channel exception.
+    </doc>
+    <chassis name="client" implement="MUST"/>
+  </method>
+
+	
   </class>
 
   <!-- ==  FILE  ============================================================= -->

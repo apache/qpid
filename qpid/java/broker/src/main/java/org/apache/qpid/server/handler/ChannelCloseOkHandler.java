@@ -42,9 +42,9 @@ public class ChannelCloseOkHandler implements StateAwareMethodListener<ChannelCl
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelCloseOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ChannelCloseOkBody body, int channelId) throws AMQException
     {
-        int channelId = evt.getChannelId();
+
         _logger.info("Received channel-close-ok for channel-id " + channelId);
         
         // Let the Protocol Session know the channel is now closed.

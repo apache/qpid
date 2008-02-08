@@ -30,6 +30,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
@@ -64,14 +65,13 @@ public class LocalTransactionalContext implements TransactionalContext
 
     private static class DeliveryDetails
     {
-        public AMQMessage message;
-        public AMQQueue queue;
+        public QueueEntry entry;
+
         private boolean deliverFirst;
 
-        public DeliveryDetails(AMQMessage message, AMQQueue queue, boolean deliverFirst)
+        public DeliveryDetails(QueueEntry entry, boolean deliverFirst)
         {
-            this.message = message;
-            this.queue = queue;
+            this.entry = entry;
             this.deliverFirst = deliverFirst;
         }
     }
@@ -103,7 +103,7 @@ public class LocalTransactionalContext implements TransactionalContext
         _postCommitDeliveryList.clear();
     }
 
-    public void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException
+    public void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException
     {
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
@@ -112,9 +112,9 @@ public class LocalTransactionalContext implements TransactionalContext
         // enqueued. Finally a cleanup op will be added to decrement
         // the reference associated with the routing.
         // message.incrementReference();
-        _postCommitDeliveryList.add(new DeliveryDetails(message, queue, deliverFirst));
+        _postCommitDeliveryList.add(new DeliveryDetails(entry, deliverFirst));
         _messageDelivered = true;
-        _txnBuffer.enlist(new CleanupMessageOperation(message, _returnMessages));
+        _txnBuffer.enlist(new CleanupMessageOperation(entry.getMessage(), _returnMessages));
         /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));
         if (_log.isDebugEnabled())
         {
@@ -242,11 +242,11 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             for (DeliveryDetails dd : _postCommitDeliveryList)
             {
-                dd.queue.process(_storeContext, dd.message, dd.deliverFirst);
+                dd.entry.process(_storeContext, dd.deliverFirst);
 
                 try
                 {
-                    dd.message.checkDeliveredToConsumer();
+                    dd.entry.checkDeliveredToConsumer();
                 }
                 catch (NoConsumersException nce)
                 {

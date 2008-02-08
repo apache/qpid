@@ -30,5 +30,5 @@ public interface SubscriptionManager
 {
     public List<Subscription> getSubscriptions();
     public boolean hasActiveSubscribers();
-    public Subscription nextSubscriber(AMQMessage msg);
+    public Subscription nextSubscriber(QueueEntry entry);
 }

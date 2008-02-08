@@ -27,7 +27,7 @@ namespace Apache.Qpid.Client.Transport.Socket.Blocking
     class ByteChannel : IByteChannel
     {
         // Warning: don't use this log for regular logging.
-        private static readonly ILog _ioTraceLog = LogManager.GetLogger("Qpid.Client.ByteChannel.Tracing");
+        private static readonly ILog _ioTraceLog = LogManager.GetLogger("TRACE.Qpid.Client.ByteChannel");
 
        private IByteChannel _lowerChannel;
         

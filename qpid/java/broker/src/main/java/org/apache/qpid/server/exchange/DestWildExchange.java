@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -72,8 +73,13 @@ public class DestWildExchange extends AbstractExchange
             exch.initialise(host, name, durable, autoDelete);
             return exch;
         }
-    };
 
+	public AMQShortString getDefaultExchangeName()
+        {
+            return ExchangeDefaults.TOPIC_EXCHANGE_NAME;
+        }
+
+    };
 
     private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
 
@@ -174,6 +180,11 @@ public class DestWildExchange extends AbstractExchange
 
     private AMQShortString normalize(AMQShortString routingKey)
     {
+        if(routingKey == null)
+        {
+            routingKey = AMQShortString.EMPTY_STRING;
+        }
+        
         StringTokenizer routingTokens = new StringTokenizer(routingKey.toString(), TOPIC_SEPARATOR);
         List<String> _subscription = new ArrayList<String>();
 
@@ -304,16 +315,17 @@ public class DestWildExchange extends AbstractExchange
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         if (queues == null)
         {
-            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key", null);
-
+            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
+                                   + " with routing key " + routingKey + ". No queue was registered with that _routing key",
+				   null);
         }
 
         boolean removedQ = queues.remove(queue);
         if (!removedQ)
         {
-            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey, null);
+            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
+                                   + " with routing key " + routingKey,
+				   null);
         }
 
         if (queues.isEmpty())

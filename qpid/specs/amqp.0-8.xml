@@ -790,7 +790,7 @@ localised reply text
       class of the method.
     </doc>
       </field>
-      <field name="method id" domain="class id">
+      <field name="method id" domain="method id">
     failing method ID
     <doc>
       When the close is provoked by a method exception, this is the
@@ -1354,6 +1354,7 @@ localised reply text
     </method>
 
     <method name="bound" synchronous="1" index="22">
+	    <chassis name="server" implement="SHOULD"/>
         <field name="exchange" domain="exchange name"/>
         <field name = "routing key" type = "shortstr">
             Message routing key
@@ -1368,6 +1369,7 @@ localised reply text
     <method name="bound-ok" synchronous="1" index="23">
         <field name="reply code" domain="reply code"/>
         <field name="reply text" domain="reply text"/>
+		<chassis name="client" implement="SHOULD"/>
     </method>
 
   </class>

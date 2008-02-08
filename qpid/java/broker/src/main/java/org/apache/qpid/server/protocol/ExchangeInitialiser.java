@@ -23,18 +23,20 @@ package org.apache.qpid.server.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
 
 public class ExchangeInitialiser
 {
     public void initialise(ExchangeFactory factory, ExchangeRegistry registry) throws AMQException{
+        for (ExchangeType<? extends Exchange> type : factory.getRegisteredTypes())
+        {
+            define (registry, factory, type.getDefaultExchangeName(), type.getName());
+        }
+        
         define(registry, factory, ExchangeDefaults.DEFAULT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
-        define(registry, factory, ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
-        define(registry, factory, ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS);
-        define(registry, factory, ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
-        define(registry, factory, ExchangeDefaults.FANOUT_EXCHANGE_NAME, ExchangeDefaults.FANOUT_EXCHANGE_CLASS);
-
         registry.setDefaultExchange(registry.getExchange(ExchangeDefaults.DEFAULT_EXCHANGE_NAME));
     }
 
@@ -43,7 +45,7 @@ public class ExchangeInitialiser
     {
         if(r.getExchange(name)== null)
         {
-            r.registerExchange(f.createExchange(name, type, true, false, 0));
+            r.registerExchange(f.createExchange(name, type, true, false));
         }
     }
 }

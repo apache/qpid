@@ -24,19 +24,21 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 
 public class UnacknowledgedMessage
 {
-    public final AMQMessage message;
+    public final QueueEntry entry;
     public final AMQShortString consumerTag;
     public final long deliveryTag;
-    public AMQQueue queue;
 
-    public UnacknowledgedMessage(AMQQueue queue, AMQMessage message, AMQShortString consumerTag, long deliveryTag)
+    private boolean _queueDeleted;
+
+
+    public UnacknowledgedMessage(QueueEntry entry, AMQShortString consumerTag, long deliveryTag)
     {
-        this.queue = queue;
-        this.message = message;
+        this.entry = entry;
         this.consumerTag = consumerTag;
         this.deliveryTag = deliveryTag;
     }
@@ -45,9 +47,9 @@ public class UnacknowledgedMessage
     {
         StringBuilder sb = new StringBuilder();
         sb.append("Q:");
-        sb.append(queue);
+        sb.append(entry.getQueue());
         sb.append(" M:");
-        sb.append(message);
+        sb.append(entry.getMessage());
         sb.append(" CT:");
         sb.append(consumerTag);
         sb.append(" DT:");
@@ -58,22 +60,42 @@ public class UnacknowledgedMessage
 
     public void discard(StoreContext storeContext) throws AMQException
     {
-        if (queue != null)
+        if (entry.getQueue() != null)
         {
-            message.dequeue(storeContext, queue);
+            entry.getQueue().dequeue(storeContext, entry);
         }
         //if the queue is null then the message is waiting to be acked, but has been removed.
-        message.decrementReference(storeContext);
+        entry.getMessage().decrementReference(storeContext);
     }
 
     public void restoreTransientMessageData() throws AMQException
     {
-        message.restoreTransientMessageData();
+        entry.getMessage().restoreTransientMessageData();
     }
 
     public void clearTransientMessageData()
     {
-        message.clearTransientMessageData();
+        entry.getMessage().clearTransientMessageData();
+    }
+
+    public AMQMessage getMessage()
+    {
+        return entry.getMessage();
+    }
+
+    public AMQQueue getQueue()
+    {
+        return entry.getQueue();
+    }
+
+    public void setQueueDeleted(boolean queueDeleted)
+    {
+        _queueDeleted = queueDeleted;
+    }
+
+    public boolean isQueueDeleted()
+    {
+        return _queueDeleted;
     }
 }
 

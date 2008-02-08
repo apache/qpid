@@ -40,8 +40,11 @@ under the License.
 			failonerror="true"
 			>
 		<arg value="${command}"/>
-		
-		<classpath refid="maven.test.classpath"/>
+		<arg value="-p"/>
+                <arg value="2110"/>
+                <arg value="-m"/>
+                <arg value="2111"/>
+                <classpath refid="maven.test.classpath"/>
 		<sysproperty key="QPID_HOME" value="${broker.dir}"/>
 		<sysproperty key="QPID_WORK" value="${broker.dir}${file.separator}target"/>
 	</java>

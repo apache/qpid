@@ -24,6 +24,7 @@ import org.apache.qpid.server.exception.*;
 import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 
 /**
@@ -34,15 +35,13 @@ import org.apache.qpid.server.store.StoreContext;
 public class EnqueueRecord implements TransactionRecord
 {
     private final StoreContext _storeContext;
-    private final AMQMessage _msg;
-    private final AMQQueue _queue;
+    private final QueueEntry _entry;
     private final boolean _first;
 
-    EnqueueRecord(StoreContext storeContext, AMQMessage msg, AMQQueue q, boolean firsr)
+    EnqueueRecord(StoreContext storeContext, QueueEntry entry, boolean firsr)
     {
         _storeContext = storeContext;
-        _msg = msg;
-        _queue = q;
+        _entry = entry;
         _first = firsr;
     }
 
@@ -52,7 +51,7 @@ public class EnqueueRecord implements TransactionRecord
     {
         try
         {
-            _queue.process(_storeContext, _msg, _first);
+            _entry.process(_storeContext, _first);
         }
         catch (AMQException e)
         {

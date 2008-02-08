@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,20 +25,19 @@ import java.net.InetSocketAddress;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
+import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.SessionUtil;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQProtocolHeaderException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
@@ -53,7 +52,6 @@ import java.net.InetSocketAddress;
  *
  * We delegate all frame (message) processing to the AMQProtocolSession which wraps
  * the state for the connection.
- *
  */
 public class AMQPFastProtocolHandler extends IoHandlerAdapter
 {
@@ -117,11 +115,41 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
             }
 
         }
+
+        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("broker.connector.protectio", false))
+        {
+            try
+            {
+//        //Add IO Protection Filters
+                IoFilterChain chain = protocolSession.getFilterChain();
+
+                int buf_size = 32768;
+                if (protocolSession.getConfig() instanceof SocketSessionConfig)
+                {
+                    buf_size = ((SocketSessionConfig) protocolSession.getConfig()).getReceiveBufferSize();
+                }
+
+                protocolSession.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
+
+                ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
+                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.attach(chain);
+
+                WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
+                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.attach(chain);
+
+                protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
+                _logger.info("Using IO Read/Write Filter Protection");
+            }
+            catch (Exception e)
+            {
+                _logger.error("Unable to attach IO Read/Write Filter Protection :" + e.getMessage());
+            }
+        }
     }
 
-    /**
-     * Separated into its own, protected, method to allow easier reuse
-     */
+    /** Separated into its own, protected, method to allow easier reuse */
     protected void createSession(IoSession session, IApplicationRegistry applicationRegistry, AMQCodecFactory codec) throws AMQException
     {
         new AMQMinaProtocolSession(session, applicationRegistry.getVirtualHostRegistry(), codec);
@@ -139,7 +167,14 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         //fixme  -- this can be null
         if (amqProtocolSession != null)
         {
-            amqProtocolSession.closeSession();
+            try
+            {
+                amqProtocolSession.closeSession();
+            }
+            catch (AMQException e)
+            {
+                _logger.error("Caught AMQException whilst closingSession:" + e);
+            }
         }
     }
 
@@ -173,21 +208,18 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         }
         else if (throwable instanceof IOException)
         {
-            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);
+            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable);
         }
         else
         {
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
 
-            // Be aware of possible changes to parameter order as versions change.
-            protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
-                                                                     session.getProtocolMajorVersion(),
-                                                                     session.getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                     0,    // classId
-                                                                     0,    // methodId
-                                                                     200,    // replyCode
-                                                                     new AMQShortString(throwable.getMessage())    // replyText
-            ));
+
+            MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(session.getProtocolVersion());
+            ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,new AMQShortString(throwable.getMessage()),0,0);
+                        
+            protocolSession.write(closeBody.generateFrame(0));
+
             protocolSession.close();
         }
     }
@@ -195,8 +227,10 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
     /**
      * Invoked when a message is received on a particular protocol session. Note that a
      * protocol session is directly tied to a particular physical connection.
+     *
      * @param protocolSession the protocol session that received the message
-     * @param message the message itself (i.e. a decoded frame)
+     * @param message         the message itself (i.e. a decoded frame)
+     *
      * @throws Exception if the message cannot be processed
      */
     public void messageReceived(IoSession protocolSession, Object message) throws Exception
@@ -206,7 +240,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         if (message instanceof AMQDataBlock)
         {
             amqProtocolSession.dataBlockReceived((AMQDataBlock) message);
-                        
+
         }
         else if (message instanceof ByteBuffer)
         {
@@ -221,9 +255,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     /**
      * Called after a message has been sent out on a particular protocol session
+     *
      * @param protocolSession the protocol session (i.e. connection) on which this
-     * message was sent
-     * @param object the message (frame) that was encoded and sent
+     *                        message was sent
+     * @param object          the message (frame) that was encoded and sent
+     *
      * @throws Exception if we want to indicate an error
      */
     public void messageSent(IoSession protocolSession, Object object) throws Exception

@@ -31,4 +31,5 @@ public interface ExchangeType<T extends Exchange>
     public Class<T> getExchangeClass();
     public T newInstance(VirtualHost host, AMQShortString name,
                          boolean durable, boolean autoDelete) throws AMQException;
+    public AMQShortString getDefaultExchangeName();
 }

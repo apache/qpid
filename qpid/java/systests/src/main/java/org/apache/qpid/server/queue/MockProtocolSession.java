@@ -21,10 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
@@ -188,15 +185,32 @@ public class MockProtocolSession implements AMQProtocolSession
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public MethodRegistry getMethodRegistry()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public MethodDispatcher getMethodDispatcher()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public byte getProtocolMajorVersion()
     {
-        return 8;  //To change body of implemented methods use File | Settings | File Templates.
+        return getProtocolVersion().getMajorVersion();
     }
 
     public byte getProtocolMinorVersion()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return getProtocolVersion().getMinorVersion();
     }
+
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return ProtocolVersion.getLatestSupportedVersion();  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
 
     public VersionSpecificRegistry getRegistry()
     {

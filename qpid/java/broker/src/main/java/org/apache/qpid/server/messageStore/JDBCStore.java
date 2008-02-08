@@ -1449,7 +1449,7 @@ public class JDBCStore implements MessageStore
                     foundMessage.staged();
                     foundMessage.enqueue(foundQueue);
                     foundQueue.enqueue(foundMessage);
-                    foundQueue.process(context, (AMQMessage) foundMessage, false);
+                    // FIXME: TGM AS foundQueue.process(context, (AMQMessage) foundMessage, false);
                 }
                 // add the queue in the result map
                 result.put(foundQueue.getQueueID(), foundQueue);
@@ -1499,7 +1499,7 @@ public class JDBCStore implements MessageStore
             while (rs.next())
             {
                 foundExchange = _virtualHost.getExchangeFactory().createExchange(
-                        new AMQShortString(rs.getString(1)), new AMQShortString(rs.getString(2)), true, false, 0);
+                        new AMQShortString(rs.getString(1)), new AMQShortString(rs.getString(2)), true, false);
                 // get all the bindings
                 Statement stmtb = connection.getConnection().createStatement();
                 ResultSet rsb = stmtb.executeQuery("SELECT * FROM " + _tableNameExchangeQueueRelation +

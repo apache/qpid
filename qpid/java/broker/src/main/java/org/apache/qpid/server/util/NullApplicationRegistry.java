@@ -29,6 +29,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
+import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
@@ -50,6 +51,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
     private AccessManager _accessManager;
 
     private PrincipalDatabaseManager _databaseManager;
+
+    private PluginManager _pluginManager;
 
 
     public NullApplicationRegistry()
@@ -81,7 +84,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         VirtualHost dummyHost = new VirtualHost("test", getConfiguration());
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
-
+        _pluginManager = new PluginManager("");
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
 
     }
@@ -121,6 +124,11 @@ public class NullApplicationRegistry extends ApplicationRegistry
     public AccessManager getAccessManager()
     {
         return _accessManager;
+    }
+
+    public PluginManager getPluginManager()
+    {
+        return _pluginManager;
     }
 }
 

@@ -48,6 +48,12 @@ under the License.
             <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
         </snapshotRepository>
 
+       <repository>
+           <id>apache.incubating</id>
+           <name>Apache Incubating Repository</name>
+           <url>scp://people.apache.org/www/people.apache.org/repo/m2-incubating-repository</url>
+       </repository>
+
         <!--
         <snapshotRepository>
             <uniqueVersion>true</uniqueVersion>
@@ -147,11 +153,10 @@ under the License.
     </properties>
 
     <modules>
-        <module>plugins</module>
         <module>common</module>
         <module>broker</module>
         <module>client</module>
-        <module>cluster</module>
+        <module>plugins</module>
         <module>systests</module>
         <module>perftests</module>
         <module>integrationtests</module>
@@ -399,7 +404,7 @@ under the License.
                 <plugin>
                     <groupId>uk.co.thebadgerset</groupId>
                     <artifactId>junit-toolkit-maven-plugin</artifactId>
-                    <version>0.6-SNAPSHOT</version>
+                    <version>0.7.1-SNAPSHOT</version>
                 </plugin>
 
             <!-- Disabled as plugin crashes on the systest module. 
@@ -503,18 +508,18 @@ under the License.
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-filter-ssl</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
        <!--     
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-java5</artifactId>
-                <version>1.1.5</version>
+                <version>1.0.1</version>
             </dependency>
        -->  
             <dependency>
@@ -541,7 +546,7 @@ under the License.
             <dependency>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
-                <version>0.6-SNAPSHOT</version>
+                <version>0.7.1-SNAPSHOT</version>
                 <scope>compile</scope>
             </dependency>
 
@@ -579,11 +584,6 @@ under the License.
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-mgmt-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.qpid</groupId>
-                <artifactId>qpid-cluster</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -682,25 +682,25 @@ under the License.
              </snapshots>
              </repository>
         -->
-       <repository>
-           <id>junit-toolkit.snapshots</id>
-           <name>JUnit Toolkit SNAPSHOT Repository</name>
-           <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
-           <snapshots>
-               <enabled>true</enabled>
-           </snapshots>
-       </repository>
-    <repository>
-      <id>Codehaus Snapshots</id>
-      <url>http://snapshots.repository.codehaus.org/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
-</repositories>
+        <repository>
+            <id>Codehaus Snapshots</id>
+            <url>http://snapshots.repository.codehaus.org/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+
+        <repository>
+            <id>junittoolkit.snapshots</id>
+            <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <pluginRepositories>
         <pluginRepository>
@@ -716,6 +716,14 @@ under the License.
             <id>codehaus.snapshots</id>
             <name>Codehaus SNAPSHOT Repository</name>
             <url>http://snapshots.repository.codehaus.org</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+
+        <pluginRepository>
+            <id>junittoolkit.plugin.snapshots</id>
+            <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>

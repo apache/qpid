@@ -32,7 +32,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * TestUtils provides static helper methods that are usefull for writing tests against QPid.

@@ -59,6 +59,8 @@ namespace Apache.Qpid.Client.Protocol
 
         private AMQConnection _connection;
         
+        public string ClientID { get { return _connection.ClientID; } }
+
         public AMQProtocolSession(IProtocolWriter protocolWriter, IConnectionCloser connectionCloser, AMQConnection connection)
         {
             _protocolWriter = protocolWriter;

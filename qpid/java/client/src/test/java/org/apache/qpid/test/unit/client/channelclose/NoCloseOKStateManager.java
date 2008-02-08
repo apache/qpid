@@ -59,49 +59,7 @@ public class NoCloseOKStateManager extends AMQStateManager
         super(protocolSession);
     }
 
-    protected void registerListeners()
-    {
-        Map frame2handlerMap = new HashMap();
-
-        // we need to register a map for the null (i.e. all state) handlers otherwise you get
-        // a stack overflow in the handler searching code when you present it with a frame for which
-        // no handlers are registered
-        //
-        _state2HandlersMap.put(null, frame2handlerMap);
-
-        frame2handlerMap = new HashMap();
-        frame2handlerMap.put(ConnectionStartBody.class, ConnectionStartMethodHandler.getInstance());
-        frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_STARTED, frame2handlerMap);
-
-        frame2handlerMap = new HashMap();
-        frame2handlerMap.put(ConnectionTuneBody.class, ConnectionTuneMethodHandler.getInstance());
-        frame2handlerMap.put(ConnectionSecureBody.class, ConnectionSecureMethodHandler.getInstance());
-        frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_TUNED, frame2handlerMap);
-
-        frame2handlerMap = new HashMap();
-        frame2handlerMap.put(ConnectionOpenOkBody.class, ConnectionOpenOkMethodHandler.getInstance());
-        frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        _state2HandlersMap.put(AMQState.CONNECTION_NOT_OPENED, frame2handlerMap);
-
-        //
-        // ConnectionOpen handlers
-        //
-        frame2handlerMap = new HashMap();
-        // Use Test Handler for Close methods to not send Close-OKs
-        frame2handlerMap.put(ChannelCloseBody.class, ChannelCloseMethodHandlerNoCloseOk.getInstance());
-
-        frame2handlerMap.put(ChannelCloseOkBody.class, ChannelCloseOkMethodHandler.getInstance());
-        frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        frame2handlerMap.put(BasicDeliverBody.class, BasicDeliverMethodHandler.getInstance());
-        frame2handlerMap.put(BasicReturnBody.class, BasicReturnMethodHandler.getInstance());
-        frame2handlerMap.put(BasicCancelOkBody.class, BasicCancelOkMethodHandler.getInstance());
-        frame2handlerMap.put(ChannelFlowOkBody.class, ChannelFlowOkMethodHandler.getInstance());
-        frame2handlerMap.put(QueueDeleteOkBody.class, QueueDeleteOkMethodHandler.getInstance());
-        frame2handlerMap.put(ExchangeBoundOkBody.class, ExchangeBoundOkMethodHandler.getInstance());
-        _state2HandlersMap.put(AMQState.CONNECTION_OPEN, frame2handlerMap);
-    }
+    
 
 
 }

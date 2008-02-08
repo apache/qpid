@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collection;
 import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQException;
@@ -28,9 +29,10 @@ import org.apache.qpid.framing.AMQShortString;
 
 public interface ExchangeFactory
 {
-    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
-                            int ticket)
+    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete)
             throws AMQException;
 
     void initialise(Configuration hostConfig);
+
+    Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
 }

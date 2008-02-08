@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +29,8 @@ import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DefaultExchangeFactory implements ExchangeFactory
@@ -46,7 +47,6 @@ public class DefaultExchangeFactory implements ExchangeFactory
         registerExchangeType(DestWildExchange.TYPE);
         registerExchangeType(HeadersExchange.TYPE);
         registerExchangeType(FanoutExchange.TYPE);
-
     }
 
     public void registerExchangeType(ExchangeType<? extends Exchange> type)
@@ -54,8 +54,12 @@ public class DefaultExchangeFactory implements ExchangeFactory
         _exchangeClassMap.put(type.getName(), type);
     }
 
-    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
-                                   int ticket)
+    public Collection<ExchangeType<? extends Exchange>> getRegisteredTypes()
+    {
+        return _exchangeClassMap.values();
+    }
+
+    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete)
             throws AMQException
     {
         ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
@@ -70,18 +74,25 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
     public void initialise(Configuration hostConfig)
     {
+
+        if (hostConfig == null)
+        {
+            return;
+        }
+
         for(Object className : hostConfig.getList("custom-exchanges.class-name"))
         {
             try
             {
-                Class<? extends ExchangeType> exchangeTypeClass = (Class<? extends ExchangeType>) Class.forName(String.valueOf(className));
+                ExchangeType<?> exchangeType = ApplicationRegistry.getInstance().getPluginManager().getExchanges().get(String.valueOf(className));
+                if (exchangeType == null)
+                {
+                    _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
+                    return;
+                }
+                Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
                 ExchangeType type = exchangeTypeClass.newInstance();
                 registerExchangeType(type);
-
-            }
-            catch (ClassNotFoundException e)
-            {
-                _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
             }
             catch (ClassCastException classCastEx)
             {

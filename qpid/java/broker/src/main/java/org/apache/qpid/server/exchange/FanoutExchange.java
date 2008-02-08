@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -48,31 +49,6 @@ public class FanoutExchange extends AbstractExchange
 
 
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
-
-
-    public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
-    {
-
-        public AMQShortString getName()
-        {
-            return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
-        }
-
-        public Class<FanoutExchange> getExchangeClass()
-        {
-            return FanoutExchange.class;
-        }
-
-        public FanoutExchange newInstance(VirtualHost host,
-                                          AMQShortString name,
-                                          boolean durable,
-                                          boolean autoDelete) throws AMQException
-        {
-            FanoutExchange exch = new FanoutExchange();
-            exch.initialise(host, name, durable, autoDelete);
-            return exch;
-        }
-    };
 
 
     /**
@@ -144,6 +120,37 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
+    public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
+    {
+
+        public AMQShortString getName()
+        {
+            return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+        }
+
+        public Class<FanoutExchange> getExchangeClass()
+        {
+            return FanoutExchange.class;
+        }
+
+        public FanoutExchange newInstance(VirtualHost host,
+                                          AMQShortString name,
+                                          boolean durable,
+                                          boolean autoDelete) throws AMQException
+        {
+            FanoutExchange exch = new FanoutExchange();
+            exch.initialise(host, name, durable, autoDelete);
+            return exch;
+        }
+
+	public AMQShortString getDefaultExchangeName()
+    	{
+    		return ExchangeDefaults.FANOUT_EXCHANGE_NAME;
+    	}
+
+    };
+
+
     public Map<AMQShortString, List<AMQQueue>> getBindings()
     {
         return null;
@@ -175,8 +182,8 @@ public class FanoutExchange extends AbstractExchange
 
         if (!_queues.remove(queue))
         {
-            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   ". ", null);
+            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName() + ". ",
+				   null);
         }
     }
 

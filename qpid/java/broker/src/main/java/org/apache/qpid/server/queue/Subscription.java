@@ -27,7 +27,7 @@ import org.apache.qpid.server.AMQChannel;
 
 public interface Subscription
 {
-    void send(AMQMessage msg, AMQQueue queue) throws AMQException;
+    void send(QueueEntry msg, AMQQueue queue) throws AMQException;
 
     boolean isSuspended();
 
@@ -35,15 +35,15 @@ public interface Subscription
 
     boolean filtersMessages();
 
-    boolean hasInterest(AMQMessage msg);
+    boolean hasInterest(QueueEntry msg);
 
-    Queue<AMQMessage> getPreDeliveryQueue();
+    Queue<QueueEntry> getPreDeliveryQueue();
 
-    Queue<AMQMessage> getResendQueue();
+    Queue<QueueEntry> getResendQueue();
 
-    Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages);    
+    Queue<QueueEntry> getNextQueue(Queue<QueueEntry> messages);
 
-    void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst);
+    void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst);
 
     boolean isAutoClose();
 
@@ -53,9 +53,9 @@ public interface Subscription
 
     boolean isBrowser();
 
-    boolean wouldSuspend(AMQMessage msg);
+    boolean wouldSuspend(QueueEntry msg);
 
-    void addToResendQueue(AMQMessage msg);
+    void addToResendQueue(QueueEntry msg);
 
     Object getSendLock();
 

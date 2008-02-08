@@ -23,6 +23,7 @@ package org.apache.qpid.client.transport;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
@@ -34,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -95,28 +95,26 @@ public class TransportConnection
                     {
                         SocketConnector result;
                         // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (Boolean.getBoolean("qpidnio"))
+                        if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
                         {
-                            _logger.error("Using Qpid NIO - sysproperty 'qpidnio' is set.");
-                            // result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
+                            _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
+                                                                 ? "Qpid NIO is new default"
+                                                                 : "Sysproperty 'qpidnio' is set"));
+                            result = new MultiThreadSocketConnector();
                         }
-                        // else
-
+                        else
                         {
                             _logger.info("Using Mina NIO");
                             result = new SocketConnector(); // non-blocking connector
                         }
-
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
                         // clients (like unit tests) to complete quickly.
                         result.setWorkerTimeout(0);
-
                         return result;
                     }
                 });
                 break;
-
             case VM:
             {
                 _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
@@ -151,7 +149,15 @@ public class TransportConnection
         {
             if (AutoCreate)
             {
-                createVMBroker(port);
+                if (AutoCreate)
+                {
+                    createVMBroker(port);
+                }
+                else
+                {
+                    throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
+                                                                       + " does not exist. Auto create disabled.", null);
+                }
             }
             else
             {
@@ -271,8 +277,7 @@ public class TransportConnection
             }
 
             AMQVMBrokerCreationException amqbce =
-                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
-            amqbce.initCause(e);
+                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", e);
             throw amqbce;
         }
 
@@ -282,16 +287,17 @@ public class TransportConnection
     public static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
-        _acceptor.unbindAll();
-
-        Iterator keys = _inVmPipeAddress.keySet().iterator();
-
-        while (keys.hasNext())
+        if (_acceptor != null)
         {
-            int id = (Integer) keys.next();
-            _inVmPipeAddress.remove(id);
+        	_acceptor.unbindAll();
         }
-
+        synchronized (_inVmPipeAddress)
+        {
+            _inVmPipeAddress.clear();
+        }        
+        _acceptor = null;
+        _currentInstance = -1;
+        _currentVMPort = -1;
     }
 
     public static void killVMBroker(int port)

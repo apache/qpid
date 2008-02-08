@@ -744,16 +744,16 @@ public class OperationTabControl extends TabControl
         }
         
         TabularDataSupport tabularData = (TabularDataSupport)result;
-        Collection<CompositeData> records = tabularData.values();
+        Collection<Object> records = tabularData.values();
         List<String> list = new ArrayList<String>();
-        for (CompositeData data : records)
+        for (Object o : records)
         {
+            CompositeData data = (CompositeData) o;
             if (data.containsKey(USERNAME))
             {
                 list.add(data.get(USERNAME).toString());
             }
         }
-        
         return list;
     }
     

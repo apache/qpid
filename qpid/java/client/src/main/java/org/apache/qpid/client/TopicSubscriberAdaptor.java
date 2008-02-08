@@ -21,18 +21,18 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.jms.TopicSubscriber;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
+import javax.jms.TopicSubscriber;
 
 /**
  * Wraps a MessageConsumer to fulfill the extended TopicSubscriber contract
  *
  */
-class TopicSubscriberAdaptor implements  org.apache.qpid.jms.TopicSubscriber
+class TopicSubscriberAdaptor implements TopicSubscriber
 {
     private final Topic _topic;
     private final BasicMessageConsumer _consumer;
