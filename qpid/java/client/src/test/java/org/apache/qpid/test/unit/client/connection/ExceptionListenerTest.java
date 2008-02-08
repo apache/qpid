@@ -51,7 +51,7 @@ public class ExceptionListenerTest extends QpidTestCase
             }
         });
 
-        killBroker();
+        stopBroker();
 
         if (!fired.get(3000))
         {

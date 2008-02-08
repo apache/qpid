@@ -81,11 +81,8 @@ public class QpidClientConnection extends QpidTestCase implements ExceptionListe
             String brokerUrl = "amqp://guest:guest@" + virtualHost + "?brokerlist='" + brokerlist + "'";
             try
             {
-                AMQConnectionFactory factory = new AMQConnectionFactory(brokerUrl);
                 _logger.info("connecting to Qpid :" + brokerUrl);
-                //connection = factory.createConnection();
-                setUp();
-                 connection = getConnection("guest", "guest") ;
+                connection = getConnection("guest", "guest") ;
                 // register exception listener
                 connection.setExceptionListener(this);
 
@@ -112,7 +109,6 @@ public class QpidClientConnection extends QpidTestCase implements ExceptionListe
             connection.close();
             connected = false;
             _logger.info("disconnected");
-            tearDown();
         }
     }
 
