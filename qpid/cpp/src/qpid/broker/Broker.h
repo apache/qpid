@@ -61,6 +61,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     struct Options : public qpid::Options {
         Options(const std::string& name="Broker Options");
 
+        bool noDataDir;
         std::string dataDir;
         uint16_t port;
         int workerThreads;
