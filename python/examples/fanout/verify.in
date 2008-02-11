@@ -1,6 +1,6 @@
-==== ./declare_queues.py.out
-==== ./fanout_producer.py.out
-==== ./fanout_consumer.py.out
+==== declare_queues.py.out
+==== fanout_producer.py.out
+==== fanout_consumer.py.out
 message 0
 message 1
 message 2
