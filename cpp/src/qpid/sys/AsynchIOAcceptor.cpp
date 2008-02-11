@@ -140,7 +140,7 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
 void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionInputHandlerFactory* f) {
 
     AsynchIOHandler* async = new AsynchIOHandler; 
-    ConnectionInputHandler* handler = f->create(async, s);
+    ConnectionInputHandler* handler = f->create(async, s.getPeerAddress());
     AsynchIO* aio = new AsynchIO(s,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::eof, async, _1),
@@ -194,7 +194,7 @@ void AsynchIOAcceptor::connect(const std::string& host, int16_t port, Connection
     socket->connect(host, port);
     AsynchIOHandler* async = new AsynchIOHandler; 
     async->setClient();
-    ConnectionInputHandler* handler = f->create(async, *socket);
+    ConnectionInputHandler* handler = f->create(async, socket->getPeerAddress());
     AsynchIO* aio = new AsynchIO(*socket,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::eof, async, _1),
