@@ -89,7 +89,7 @@ public class TransactedTest extends QpidTestCase
             prepCon = (AMQConnection) getConnection("guest", "guest");
 
             _logger.info("Create prep session");
-            prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+            prepSession = prepCon.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
             _logger.info("Create prep producer to Q1");
             prepProducer1 = prepSession.createProducer(queue1);
@@ -100,7 +100,7 @@ public class TransactedTest extends QpidTestCase
             _logger.info("Create test connection");
             testCon = (AMQConnection) getConnection("guest", "guest");
             _logger.info("Create test session");
-            testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+            testSession = testCon.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
             _logger.info("Create test consumer of q2");
             testConsumer2 = testSession.createConsumer(queue2);
         }

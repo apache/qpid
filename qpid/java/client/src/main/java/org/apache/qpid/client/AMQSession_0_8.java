@@ -21,9 +21,8 @@
 package org.apache.qpid.client;
 
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -132,7 +131,7 @@ public class AMQSession_0_8 extends AMQSession
         {
             // We can't use the BasicRecoverBody-OK method as it isn't part of the spec.
 
-            BasicRecoverBody body = getMethodRegistry().createBasicRecoverBody(false);
+            BasicRecoverBody body = getProtocolHandler().getMethodRegistry().createBasicRecoverBody(false);
             _connection.getProtocolHandler().writeFrame(body.generateFrame(_channelId));
             _logger.warn("Session Recover cannot be guaranteed with STRICT_AMQP. Messages may arrive out of order.");
         }
@@ -142,12 +141,12 @@ public class AMQSession_0_8 extends AMQSession
             // in 0-9 we used the cleaner addition of a new sync recover method with its own ok
             if(getProtocolHandler().getProtocolVersion().equals(ProtocolVersion.v8_0))
             {
-                BasicRecoverBody body = getMethodRegistry().createBasicRecoverBody(false);
+                BasicRecoverBody body = getProtocolHandler().getMethodRegistry().createBasicRecoverBody(false);
                 _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverOkBody.class);
             }
             else if(getProtocolHandler().getProtocolVersion().equals(ProtocolVersion.v0_9))
             {
-                BasicRecoverSyncBody body = ((MethodRegistry_0_9)getMethodRegistry()).createBasicRecoverSyncBody(false);
+                BasicRecoverSyncBody body = ((MethodRegistry_0_9)getProtocolHandler().getMethodRegistry()).createBasicRecoverSyncBody(false);
                 _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverSyncOkBody.class);
             }
             else
@@ -166,7 +165,7 @@ public class AMQSession_0_8 extends AMQSession
                 _logger.debug("Rejecting delivery tag:" + deliveryTag);
             }
 
-            AMQFrame basicRejectBody = getMethodRegistry().createBasicRejectBody(deliveryTag, requeue).generateFrame(_channelId);
+            AMQFrame basicRejectBody = getProtocolHandler().getMethodRegistry().createBasicRejectBody(deliveryTag, requeue).generateFrame(_channelId);
 
             _connection.getProtocolHandler().writeFrame(basicRejectBody);
         }
@@ -182,7 +181,7 @@ public class AMQSession_0_8 extends AMQSession
                     {
                         public AMQMethodEvent execute() throws AMQException, FailoverException
                         {
-                            AMQFrame boundFrame = getMethodRegistry().createExchangeBoundBody
+                            AMQFrame boundFrame = getProtocolHandler().getMethodRegistry().createExchangeBoundBody
                                                     (exchangeName, routingKey, queueName).generateFrame(_channelId);
 
                             return getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
@@ -225,7 +224,7 @@ public class AMQSession_0_8 extends AMQSession
         // we must register the consumer in the map before we actually start listening
         _consumers.put(tag, consumer);
         // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame jmsConsume = getMethodRegistry().createBasicConsumeBody(getTicket(),
+        AMQFrame jmsConsume = getProtocolHandler().getMethodRegistry().createBasicConsumeBody(getTicket(),
                 queueName,
                 tag,
                 consumer.isNoLocal(),
@@ -247,7 +246,7 @@ public class AMQSession_0_8 extends AMQSession
     public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
             final boolean nowait) throws AMQException, FailoverException
     {
-        AMQFrame exchangeDeclare = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,false,false,false,false,nowait,null).
+        AMQFrame exchangeDeclare = getProtocolHandler().getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,false,false,false,false,nowait,null).
                                             generateFrame(_channelId);
 
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
@@ -255,14 +254,14 @@ public class AMQSession_0_8 extends AMQSession
 
     public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler) throws AMQException, FailoverException
     {
-        AMQFrame queueDeclare = getMethodRegistry().createQueueDeclareBody(getTicket(),amqd.getAMQQueueName(),false,amqd.isDurable(),amqd.isExclusive(),amqd.isAutoDelete(),false,null).generateFrame(_channelId);
+        AMQFrame queueDeclare = getProtocolHandler().getMethodRegistry().createQueueDeclareBody(getTicket(),amqd.getAMQQueueName(),false,amqd.isDurable(),amqd.isExclusive(),amqd.isAutoDelete(),false,null).generateFrame(_channelId);
 
         protocolHandler.syncWrite(queueDeclare, QueueDeclareOkBody.class);
     }
 
     public void sendQueueDelete(final AMQShortString queueName) throws AMQException, FailoverException
     {
-        QueueDeleteBody body = getMethodRegistry().createQueueDeleteBody(getTicket(),
+        QueueDeleteBody body = getProtocolHandler().getMethodRegistry().createQueueDeleteBody(getTicket(),
                 queueName,
                 false,
                 false,
@@ -311,4 +310,70 @@ public class AMQSession_0_8 extends AMQSession
 
         return new AMQTemporaryQueue(this);
     }
+
+    public  TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
+       {
+
+           checkNotClosed();
+           AMQTopic origTopic = checkValidTopic(topic);
+           AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
+           TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
+           if (subscriber != null)
+           {
+               if (subscriber.getTopic().equals(topic))
+               {
+                   throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
+                                                   + name);
+               }
+               else
+               {
+                   unsubscribe(name);
+               }
+           }
+           else
+           {
+               AMQShortString topicName;
+               if (topic instanceof AMQTopic)
+               {
+                   topicName = ((AMQTopic) topic).getRoutingKey();
+               }
+               else
+               {
+                   topicName = new AMQShortString(topic.getTopicName());
+               }
+
+               if (_strictAMQP)
+               {
+                   if (_strictAMQPFATAL)
+                   {
+                       throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
+                   }
+                   else
+                   {
+                       _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
+                                    + "for creation durableSubscriber. Requesting queue deletion regardless.");
+                   }
+
+                   deleteQueue(dest.getAMQQueueName());
+               }
+               else
+               {
+                   // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
+                   // says we must trash the subscription.
+                   if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
+                       && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
+                   {
+                       deleteQueue(dest.getAMQQueueName());
+                   }
+               }
+           }
+
+           subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+
+           _subscriptions.put(name, subscriber);
+           _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+
+           return subscriber;
+       }
+
 }

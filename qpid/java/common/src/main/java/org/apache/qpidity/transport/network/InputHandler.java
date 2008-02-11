@@ -245,6 +245,11 @@ public class InputHandler implements Receiver<ByteBuffer>
         }
     }
 
+    public void exception(Throwable t)
+    {
+        receiver.exception(t);
+    }
+
     public void closed()
     {
         receiver.closed();

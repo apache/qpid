@@ -82,8 +82,9 @@ public class ConnectionStartTest extends QpidTestCase
     protected void tearDown() throws Exception
     {
         _connection.close();
+        super.tearDown();
     }
-                
+
     public void testSimpleReceiveConnection()
     {
         try

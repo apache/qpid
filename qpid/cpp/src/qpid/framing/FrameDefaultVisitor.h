@@ -24,14 +24,12 @@
 #include "qpid/framing/MethodBodyDefaultVisitor.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
 
 namespace qpid {
 namespace framing {
-
-class AMQHeaderBody;
-class AMQContentBody;
-class AMQHeartbeatBody;
-
 /**
  * Visitor for all concrete frame body types, combines
  * AMQBodyConstVisitor and MethodBodyDefaultVisitor.
@@ -45,12 +43,12 @@ struct FrameDefaultVisitor : public AMQBodyConstVisitor,
                              protected MethodBodyDefaultVisitor
 {
     virtual void defaultVisit(const AMQBody&) = 0;
+    void defaultVisit(const AMQMethodBody& method) { defaultVisit(static_cast<const AMQBody&>(method)); }
 
     void visit(const AMQHeaderBody& b) { defaultVisit(b); }
     void visit(const AMQContentBody& b) { defaultVisit(b); }
     void visit(const AMQHeartbeatBody& b) { defaultVisit(b); }
     void visit(const AMQMethodBody& b) { b.accept(static_cast<MethodBodyDefaultVisitor&>(*this)); }
-    void defaultVisit(const AMQMethodBody& method) { defaultVisit(static_cast<const AMQBody&>(method)); }
     
     using AMQBodyConstVisitor::visit;
     using MethodBodyDefaultVisitor::visit;

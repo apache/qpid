@@ -106,7 +106,7 @@ public class TopicSessionTest extends QpidTestCase
         AMQTopic topic = new AMQTopic(con, "MyTopic1" + String.valueOf(shutdown));
         AMQTopic topic2 = new AMQTopic(con, "MyOtherTopic1" + String.valueOf(shutdown));
 
-        TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session1 = con.createTopicSession(false, AMQSession.AUTO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
         TopicPublisher publisher = session1.createPublisher(null);
 
@@ -144,11 +144,11 @@ public class TopicSessionTest extends QpidTestCase
         AMQConnection con1 = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con1, "MyTopic3");
 
-        TopicSession session1 = con1.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session1 = con1.createTopicSession(false, AMQSession.AUTO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
 
         AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
-        TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session2 = con2.createTopicSession(false, AMQSession.AUTO_ACKNOWLEDGE);
         TopicSubscriber sub = session2.createDurableSubscriber(topic, "subscription0");
 
         con2.start();

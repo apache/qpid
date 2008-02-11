@@ -25,7 +25,6 @@
 #include <iostream>
 #include <list>
 #include <vector>
-#include "MockChannel.h"
 
 using std::list;
 using std::vector;

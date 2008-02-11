@@ -25,6 +25,8 @@ import java.util.Properties;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -79,6 +81,14 @@ public class Producer
             ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             // create the connection
             Connection connection = conFac.createConnection();
+
+            connection.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    e.printStackTrace();
+                }
+            });
 
             // Create a session on the connection
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.

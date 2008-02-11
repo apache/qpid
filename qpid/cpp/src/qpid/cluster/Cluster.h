@@ -19,13 +19,15 @@
  *
  */
 
-#include "SessionManager.h"
 #include "Cpg.h"
 
+#include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Logger.h"
+#include "qpid/Url.h"
+
 
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
@@ -36,21 +38,16 @@
 namespace qpid { namespace cluster {
 
 /**
- * Connection to the cluster. Maintains cluster membership
- * data.
- *
- * As FrameHandler, handles frames by sending them to the
- * cluster. Frames received from the cluster are sent to the next
- * FrameHandler in the chain.
+ * Connection to the cluster.
+ * Keeps cluster membership data.
  */
-class Cluster : public framing::FrameHandler,
-                private sys::Runnable, private Cpg::Handler
+class Cluster : private sys::Runnable, private Cpg::Handler
 {
   public:
     /** Details of a cluster member */
     struct Member {
-        Member(const std::string& url_=std::string()) : url(url_) {}
-        std::string url;        ///< Broker address.
+        Member(const Url& url_=Url()) : url(url_) {}
+        Url url;        ///< Broker address.
     };
     
     typedef std::vector<Member> MemberList;
@@ -60,11 +57,12 @@ class Cluster : public framing::FrameHandler,
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
      */
-    Cluster(const std::string& name, const std::string& url, broker::Broker&);
+    Cluster(const std::string& name, const Url& url, broker::Broker&);
 
     virtual ~Cluster();
 
-    framing::HandlerUpdater& getHandlerUpdater() { return sessions; }
+    // FIXME aconway 2008-01-29: 
+    intrusive_ptr<broker::SessionManager::Observer> getObserver() { return observer; }
     
     /** Get the current cluster membership. */
     MemberList getMembers() const;
@@ -83,7 +81,7 @@ class Cluster : public framing::FrameHandler,
               sys::Duration timeout=sys::TIME_INFINITE) const;
 
     /** Send frame to the cluster */
-    void handle(framing::AMQFrame&);
+    void send(framing::AMQFrame&, framing::FrameHandler*);
     
   private:
     typedef Cpg::Id Id;
@@ -113,12 +111,12 @@ class Cluster : public framing::FrameHandler,
     mutable sys::Monitor lock;
     Cpg cpg;
     Cpg::Name name;
-    std::string url;
+    Url url;
     Id self;
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    SessionManager sessions;
+    intrusive_ptr<broker::SessionManager::Observer> observer;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

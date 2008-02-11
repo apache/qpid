@@ -36,7 +36,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineVector.cpp \
-	IList.cpp
+	IList.cpp \
+	ClientSessionTest.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -78,8 +79,7 @@ broker_unit_tests =	\
   TxAckTest		\
   TxBufferTest		\
   TxPublishTest		\
-  MessageBuilderTest    \
-  ClientSessionTest
+  MessageBuilderTest
 
 #client_unit_tests =	\
 #  ClientChannelTest     
@@ -109,7 +109,7 @@ testprogs=		\
 
 check_PROGRAMS += $(testprogs) interop_runner
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
@@ -123,7 +123,6 @@ EXTRA_DIST +=								\
   .valgrind.supp							\
   .valgrindrc								\
   MessageUtils.h							\
-  MockChannel.h								\
   MockConnectionInputHandler.h						\
   TxMocks.h								\
   qpid_test_plugin.h

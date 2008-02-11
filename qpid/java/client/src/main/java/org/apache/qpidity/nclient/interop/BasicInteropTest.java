@@ -124,7 +124,7 @@ public class BasicInteropTest implements ClosedListener
         session.sync();
     }
 
-    public void onClosed(ErrorCode errorCode, String reason)
+    public void onClosed(ErrorCode errorCode, String reason, Throwable t)
     {
         System.out.println("------- Broker Notified an error --------");
         System.out.println("------- " + errorCode + " --------");

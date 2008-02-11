@@ -21,8 +21,8 @@ import junit.framework.TestCase;
 
 import javax.jms.Connection;
 import javax.naming.InitialContext;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.IOException;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -39,117 +39,101 @@ import org.slf4j.LoggerFactory;
 public class QpidTestCase extends TestCase
 {
 
-    /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
-    /* Test properties */
-    private static final String SHEL = "broker_shel";
-    private static final String BROKER_PATH = "broker_path";
-    private static final String BROKER_PARAM = "broker_param";
-    private static final String BROKER_VERSION  = "broker_version";
-    public static final String BROKER_08 = "08";
-    private static final String BROKER_VM = "vm";
-    private static final String EXT_BROKER = "ext" ;
-    /**
-     * The process where the remote broker is running.
-     */
+    // system properties
+    private static final String BROKER = "broker";
+    private static final String BROKER_VERSION  = "broker.version";
+
+    // values
+    private static final String VM = "vm";
+    private static final String EXTERNAL = "external";
+    private static final String VERSION_08 = "0-8";
+    private static final String VERSION_010 = "0-10";
+
+    private String _broker = System.getProperty(BROKER, VM);
+    private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
+
     private Process _brokerProcess;
 
-    /* The test property values */
-    // The default broker is an in-VM one
-    private String _shel = BROKER_VM;
-    private String _brokerPath = "";
-    private String _brokerParams = "";
-    private String _brokerVersion = "08" ;
-
-    /* The broker communication objects */
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
-
-    //--------- JUnit support
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        // get the propeties if they are set
-         if (System.getProperties().containsKey(BROKER_VERSION ))
-        {
-            _brokerVersion = System.getProperties().getProperty(BROKER_VERSION );
-        }
-        if (System.getProperties().containsKey(SHEL))
-        {
-            _shel = System.getProperties().getProperty(SHEL);
-        }
-        if (System.getProperties().containsKey(BROKER_PATH))
-        {
-            _brokerPath = System.getProperties().getProperty(BROKER_PATH);
-        }
-        if (System.getProperties().containsKey(BROKER_PARAM))
-        {
-            _brokerParams = System.getProperties().getProperty(BROKER_PARAM);
-        }
-        if (!_shel.equals(BROKER_VM) && ! _shel.equals(EXT_BROKER) )
-        {
-            // start a new broker
-            startBroker();
-        }
-        else if ( ! _shel.equals(EXT_BROKER) )
+        startBroker();
+    }
+
+    protected void tearDown() throws Exception
+    {
+        stopBroker();
+        super.tearDown();
+    }
+
+    public void startBroker() throws Exception
+    {
+        if (_broker.equals(VM))
         {
             // create an in_VM broker
             TransportConnection.createVMBroker(1);
         }
-        _logger.info("=========================================");
-        _logger.info("broker version " + _brokerVersion + " ==== " + _shel + " " + _brokerPath + " " + _brokerParams);
+        else if (!_broker.equals(EXTERNAL))
+        {
+            _logger.info("starting broker: " + _broker);
+            ProcessBuilder pb = new ProcessBuilder(_broker.split("\\s+"));
+            pb.redirectErrorStream(true);
+            _brokerProcess = pb.start();
+
+            new Thread()
+            {
+                private InputStream in = _brokerProcess.getInputStream();
+
+                public void run()
+                {
+                    try
+                    {
+                        byte[] buf = new byte[4*1024];
+                        int n;
+                        while ((n = in.read(buf)) != -1)
+                        {
+                            System.out.write(buf, 0, n);
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        _logger.info("redirector", e);
+                    }
+                }
+            }.start();
+
+            Thread.sleep(1000);
+
+            try
+            {
+                int exit = _brokerProcess.exitValue();
+                throw new RuntimeException("broker aborted: " + exit);
+            }
+            catch (IllegalThreadStateException e)
+            {
+                // this is expect if the broker started succesfully
+            }
+        }
     }
 
-    /**
-     * This method _is invoked after each test case.
-     *
-     * @throws Exception
-     */
-    protected void tearDown() throws Exception
+    public void stopBroker() throws Exception
     {
-          killBroker();
-         super.tearDown();
-    }
-
-    public void killBroker()
-    {
-        _logger.info("Kill broker");
+        _logger.info("stopping broker: " + _broker);
         if (_brokerProcess != null)
         {
-            // destroy the currently running broker
             _brokerProcess.destroy();
+            _brokerProcess.waitFor();
+            _logger.info("broker exited: " + _brokerProcess.exitValue());
             _brokerProcess = null;
         }
-        else   if ( ! _shel.equals(EXT_BROKER))
+        else if (_broker.equals(VM))
         {
             TransportConnection.killAllVMBrokers();
-        }
-    }
-
-    //--------- Util method
-
-    /**
-     * This method starts a remote server by spawning an external process.
-     *
-     * @throws Exception If the broker cannot be started
-     */
-    public void startBroker() throws Exception
-    {
-        _logger.info("Starting broker: " + _shel + " " + _brokerPath + "  " + _brokerParams + "");
-        Runtime rt = Runtime.getRuntime();
-        _brokerProcess = rt.exec(_shel + " " + _brokerPath + "  " + _brokerParams + "");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(_brokerProcess.getInputStream()));
-        if (reader.ready())
-        {
-            //bad, we had an error starting the broker
-            throw new Exception("Problem when starting the broker: " + reader.readLine());
-        }
-        // We need to wait for th ebroker to start ideally we would need to ping it
-        synchronized(this)
-        {
-            this.wait(1000);
         }
     }
 
@@ -159,28 +143,18 @@ public class QpidTestCase extends TestCase
      */
     public boolean isBroker08()
     {
-        return _brokerVersion.equals(BROKER_08);
+        return _brokerVersion.equals(VERSION_08);
     }
 
-    /**
-     * Stop the currently running broker.
-     */
-    public void stopBroker()
+    public boolean isBroker010()
     {
-        _logger.info("Stopping broker");
-        // stooping the broker
-        if (_brokerProcess != null)
-        {
-            _brokerProcess.destroy();
-        }
-        _initialContext = null;
-        _connectionFactory = null;
+        return _brokerVersion.equals(VERSION_010);
     }
 
-     public void shutdownServer() throws Exception
+    public void shutdownServer() throws Exception
     {
-        killBroker();
-        setUp();
+        stopBroker();
+        startBroker();
     }
     /**
      * we assume that the environment is correctly set
@@ -228,7 +202,7 @@ public class QpidTestCase extends TestCase
     {
         _logger.info("get Connection");
         Connection con;
-        if (_shel.equals(BROKER_VM))
+        if (_broker.equals(VM))
         {
             con = new AMQConnection("vm://:1", username, password, "Test", "test");
         }
@@ -243,7 +217,7 @@ public class QpidTestCase extends TestCase
     {
         _logger.info("get Connection");
         Connection con;
-        if (_shel.equals(BROKER_VM))
+        if (_broker.equals(VM))
         {
             con = new AMQConnection("vm://:1", username, password, id, "test");
         }
@@ -254,8 +228,4 @@ public class QpidTestCase extends TestCase
         return con;
     }
 
-    public void testfoo()
-    {
-        //do nothing, just to avoid maven to report an error  
-    }
 }

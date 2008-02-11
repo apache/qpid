@@ -18,14 +18,42 @@
 
 #include "Statement.h"
 #include "Logger.h"
+#include <boost/bind.hpp>
 #include <stdexcept>
+#include <algorithm>
 #include <syslog.h>
 
 namespace qpid {
 namespace log {
 
+namespace {
+using namespace std;
+
+struct IsControl { bool operator()(unsigned char c) { return c < 32; } };
+
+bool isClean(const std::string& str) {
+    return std::find_if(str.begin(), str.end(), IsControl()) == str.end();
+}
+
+std::string quote(const std::string& str) {
+    IsControl isControl;
+    size_t n = std::count_if(str.begin(), str.end(), isControl);
+    std::string ret;
+    ret.reserve(str.size()+n); // Avoid extra allocations.
+    for (string::const_iterator i = str.begin(); i != str.end(); ++i) {
+        if (isControl(*i)) {
+            ret.push_back('^');
+            ret.push_back((*i)+64);
+        }
+        else ret.push_back(*i);
+    }
+    return ret;
+}
+
+}
+
 void Statement::log(const std::string& message) {
-    Logger::instance().log(*this,message);
+    Logger::instance().log(*this, isClean(message) ? message : quote(message));
 }
 
 Statement::Initializer::Initializer(Statement& s) : statement(s) {

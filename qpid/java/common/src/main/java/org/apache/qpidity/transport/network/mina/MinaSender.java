@@ -26,6 +26,7 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
 
 import org.apache.qpidity.transport.Sender;
+import org.apache.qpidity.transport.TransportException;
 
 
 /**
@@ -48,7 +49,7 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
     {
         if (session.isClosing())
         {
-            throw new RuntimeException("Trying to write on a closed socket");
+            throw new TransportException("attempted to write to a closed socket");
         }
         lastWrite = session.write(ByteBuffer.wrap(buf));
     }

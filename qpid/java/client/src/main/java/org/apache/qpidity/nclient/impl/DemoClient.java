@@ -40,7 +40,7 @@ public class DemoClient
         Session ssn = conn.createSession(50000);
         ssn.setClosedListener(new ClosedListener()
                 {
-                     public void onClosed(ErrorCode errorCode, String reason)
+                     public void onClosed(ErrorCode errorCode, String reason, Throwable t)
                      {
                          System.out.println("ErrorCode : " + errorCode + " reason : " + reason);
                      }

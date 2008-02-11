@@ -85,17 +85,13 @@ void Timer::start()
 
 void Timer::stop()
 {
-    signalStop();
-    runner.join();
-}
-
-void Timer::signalStop()
-{
-    Monitor::ScopedLock l(monitor);
-    if (active) {
+    {
+        Monitor::ScopedLock l(monitor);
+        if (!active) return;
         active = false;
         monitor.notifyAll();
     }
+    runner.join();
 }
 
 bool Later::operator()(const intrusive_ptr<TimerTask>& a,

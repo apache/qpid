@@ -52,7 +52,7 @@ in C++ using Qpid.  Qpid implements the AMQP messaging specification.
 Summary: An AMQP message broker daemon
 Group: System Environment/Daemons
 Requires: %name = %version-%release
-@SPEC_REQUIRES_OPENAIS@
+Requires: openais
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
@@ -63,7 +63,7 @@ Summary: Libraries and header files for developing Qpid broker extensions
 Group: Development/System
 Requires: %name-devel = %version-%release
 Requires: %{qpidd} = %version-%release
-@SPEC_REQUIRES_OPENAIS_DEVEL@
+Requires: openais-devel
 
 %description -n %{qpidd}-devel
 Libraries and header files for developing extensions to the
@@ -73,7 +73,7 @@ Qpid broker daemon.
 %setup -q
 
 %build
-%configure --disable-static @SPEC_CONFIGURE_OPTS@ CXXFLAGS="-O3 -DNDEBUG"
+%configure --disable-static --without-cpg CXXFLAGS="-O3 -DNDEBUG"
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
@@ -82,6 +82,7 @@ rm docs/api/html/installdox
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 install  -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
+install -d -m0755 %{buildroot}%{_localstatedir}/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
 
@@ -98,6 +99,7 @@ make check
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
 %_libdir/libqpidclient.so.0.1.0
+%_localstatedir/qpidd
 %config(noreplace) %_sysconfdir/qpidd.conf
 
 %files devel
@@ -155,10 +157,10 @@ fi
 
 %changelog
 
-* Mon Jan 21 2008 Gordon Sim <gsim@redhat.com> - 0.2-18                                                                       
+* Mon Jan 21 2008 Gordon Sim <gsim@redhat.com> - 0.2-18
 - bump up rev for recent changes to plugin modules & mgmt
 
-* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-17                                                                       
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-17
 - add missing header file SessionManager.h
 
 * Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-16

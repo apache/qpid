@@ -69,6 +69,11 @@ class ToyClient extends SessionDelegate
                                                   {
                                                       return new ToyClient();
                                                   }
+                                                  public void exception(Throwable t)
+                                                  {
+                                                      t.printStackTrace();
+                                                  }
+                                                  public void closed() {}
                                               });
         conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
 

@@ -57,6 +57,8 @@ template<class T, int N=0> class IListNode  : public virtual RefCounted {
     }
   friend class IList<T,N>;
   public:
+    typedef IList<T,N> IListType;
+    
     IListNode(IListNode* p=0) : prev(p), next(p) {}
     T* getNext() { return next ? next->self() : 0; }
     T* getPrev() { return prev ? prev->self() : 0; }
@@ -97,7 +99,7 @@ template <class T, int N=0> class IList {
 
   public:
     IList() {}
-    ~IList() { clear(); }
+    ~IList() { clear(); anchor.erase(); }
     typedef size_t size_type;
     typedef T value_type;
     /// pointer type is an intrusive_ptr
@@ -120,6 +122,7 @@ template <class T, int N=0> class IList {
 
     /// Note: takes a non-const reference, unlike standard containers.
     void insert(iterator pos, reference x) { x.Node::insert(pos.ptr); }
+    void insert(iterator pos, pointer x) { x->Node::insert(pos.ptr); }
     void erase(iterator pos) { pos.ptr->erase(); }
     void swap(IList &x) { anchor.swap(x.anchor); }
 
@@ -128,12 +131,14 @@ template <class T, int N=0> class IList {
     void pop_back() { assert(!empty()); erase(last()); }
     /// Note: takes a non-const reference, unlike standard containers.
     void push_back(reference x) { insert(end(), x); }
+    void push_back(pointer x) { insert(end(), x); }
 
     reference front() { assert(!empty()); return *begin(); }
     const_reference front() const { assert(!empty()); return *begin(); }
     void pop_front() { assert(!empty()); erase(begin()); }
     /// Note: takes a non-const reference, unlike standard containers.
     void push_front(reference x) { insert(begin(), x); }
+    void push_front(pointer x) { insert(begin(), x); }
 
     bool empty() const { return begin() == end(); }
     void clear() { while (!empty()) { pop_front(); } }

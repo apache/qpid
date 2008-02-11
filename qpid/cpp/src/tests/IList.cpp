@@ -152,6 +152,10 @@ BOOST_FIXTURE_TEST_CASE(TestIterator, Fixture) {
 }    
 
 
+BOOST_AUTO_TEST_CASE(testEmptyDtor) {
+    TestList l;
+}
+
 BOOST_FIXTURE_TEST_CASE(testOwnership, Fixture) {
     { 
         TestList l2;

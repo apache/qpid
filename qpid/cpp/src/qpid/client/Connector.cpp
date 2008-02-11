@@ -29,12 +29,15 @@
 #include "qpid/sys/Poller.h"
 #include "qpid/Msg.h"
 #include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 namespace qpid {
 namespace client {
 
 using namespace qpid::sys;
 using namespace qpid::framing;
+using boost::format;
+using boost::str;
 
 Connector::Connector(
     ProtocolVersion ver, bool _debug, uint32_t buffer_size
@@ -59,6 +62,7 @@ void Connector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
     socket.connect(host, port);
+    identifier=str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
     closed = false;
     poller = Poller::shared_ptr(new Poller);
     aio = new AsynchIO(socket,
@@ -174,7 +178,9 @@ struct Connector::Buff : public AsynchIO::BufferBase {
     ~Buff() { delete [] bytes;}
 };
 
-Connector::Writer::Writer() : aio(0), buffer(0), lastEof(0) {}
+Connector::Writer::Writer() : aio(0), buffer(0), lastEof(0) 
+{
+}
 
 Connector::Writer::~Writer() { delete buffer; }
 
@@ -182,6 +188,7 @@ void Connector::Writer::setAio(sys::AsynchIO* a) {
     Mutex::ScopedLock l(lock);
     aio = a;
     newBuffer(l);
+    identifier = str(format("[%1% %2%]") % aio->getSocket().getLocalPort() % aio->getSocket().getPeerAddress());
 }
 
 void Connector::Writer::handle(framing::AMQFrame& frame) { 
@@ -191,7 +198,7 @@ void Connector::Writer::handle(framing::AMQFrame& frame) {
         lastEof = frames.size();
         aio->notifyPendingWrite();
     }
-    QPID_LOG(trace, "SENT [" << this << "]: " << frame);
+    QPID_LOG(trace, "SENT " << identifier << ": " << frame);
 }
 
 void Connector::Writer::writeOne(const Mutex::ScopedLock& l) {
@@ -234,7 +241,7 @@ void Connector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
 
     AMQFrame frame;
     while(frame.decode(in)){
-        QPID_LOG(trace, "RECV [" << this << "]: " << frame);
+        QPID_LOG(trace, "RECV " << identifier << ": " << frame);
         input->received(frame);
     }
     // TODO: unreading needs to go away, and when we can cope

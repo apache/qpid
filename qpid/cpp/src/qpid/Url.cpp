@@ -16,20 +16,68 @@
  *
  */
 
-#include "Url.h"
+#include "qpid/Url.h"
+#include "qpid/Exception.h"
+#include "qpid/Msg.h"
+
 #include <sstream>
 #include <boost/spirit.hpp>
 #include <boost/spirit/actor.hpp>
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <errno.h>
 
 using namespace boost::spirit;
 using namespace std;
 
 namespace qpid {
 
+std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
+    return os << "tcp:" << a.host << ":" << a.port;
+}
+
+std::istream& operator>>(std::istream&, const TcpAddress&);
+
+Url Url::getHostNameUrl(uint16_t port) {
+    char name[HOST_NAME_MAX];
+    if (::gethostname(name, sizeof(name)) != 0)
+        throw InvalidUrl(QPID_MSG("Cannot get host name: " << strError(errno)));
+    return Url(TcpAddress(name, port));
+}
+
+static const string LOCALHOST("127.0.0.1");
+
+Url Url::getIpAddressesUrl(uint16_t port) {
+    Url url;
+    int s = socket (PF_INET, SOCK_STREAM, 0);
+    for (int i=1;;i++) {
+        struct ifreq ifr;
+        ifr.ifr_ifindex = i;
+        if (::ioctl (s, SIOCGIFNAME, &ifr) < 0)
+            break;
+        /* now ifr.ifr_name is set */
+        if (::ioctl (s, SIOCGIFADDR, &ifr) < 0)
+            continue;
+        struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
+        string addr(inet_ntoa(sin->sin_addr));
+        if (addr != LOCALHOST)
+            url.push_back(TcpAddress(addr, port));
+    }
+    close (s);
+    return url;
+}
+
 string Url::str() const {
-    ostringstream os;
-    os << *this;
-    return os.str();
+    if (cache.empty() && !this->empty()) {
+        ostringstream os;
+        os << *this;
+        cache = os.str();
+    }
+    return cache;
 }
 
 ostream& operator<<(ostream& os, const Url& url) {
@@ -101,13 +149,22 @@ struct UrlGrammar : public grammar<UrlGrammar>
 };
 
 void Url::parse(const char* url) {
+    cache.clear();
     if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
         throw InvalidUrl(string("Invalid AMQP url: ")+url);
 }
 
 void Url::parseNoThrow(const char* url) {
+    cache.clear();
     if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
         clear();
+}
+
+std::istream& operator>>(std::istream& is, Url& url) {
+    std::string s;
+    is >> s;
+    url.parse(s);
+    return is;
 }
 
 } // namespace qpid

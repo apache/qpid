@@ -120,8 +120,9 @@ struct BootstrapOptions : public qpid::Options {
 shared_ptr<Broker> brokerPtr;
 auto_ptr<QpiddOptions> options;
 
-void shutdownHandler(int signal){
-    QPID_LOG(notice, "Shutting down on signal " << signal);
+void shutdownHandler(int /*signal*/){
+    // Note: do not call any async-signal unsafe functions here.
+    // Do any extra shtudown actions in main() after broker->run()
     brokerPtr->shutdown();
 }
 
@@ -155,7 +156,7 @@ void tryShlib(const char* libname, bool noThrow) {
 
 void loadModuleDir (string dirname, bool isDefault)
 {
-    fs::path dirPath (dirname);
+    fs::path dirPath (dirname, fs::native);
 
     if (!fs::exists (dirPath))
     {
@@ -245,7 +246,8 @@ int main(int argc, char* argv[])
             brokerPtr.reset(new Broker(options->broker));
             if (options->broker.port == 0)
                 cout << uint16_t(brokerPtr->getPort()) << endl; 
-            brokerPtr->run(); 
+            brokerPtr->run();
+            QPID_LOG(notice, "Shutting down.");
         }
         return 0;
     }

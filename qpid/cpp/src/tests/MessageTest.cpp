@@ -22,7 +22,6 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FieldValue.h"
-#include "MockChannel.h"
 
 #include "qpid_test_plugin.h"
 

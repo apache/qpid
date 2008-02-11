@@ -24,8 +24,10 @@
 #include <memory>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
@@ -39,10 +41,13 @@ class Connection;
 // TODO aconway 2007-09-18: Rename to ConnectionHandler
 class ConnectionHandler : public framing::FrameHandler
 {
-    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
+    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
+        public framing::AMQP_ClientOperations::ConnectionHandler
     {
         framing::AMQP_ClientProxy::Connection client;
+        framing::AMQP_ServerProxy::Connection server;
         Connection& connection;
+        bool serverMode;
     
         Handler(Connection& connection);
         void startOk(const qpid::framing::FieldTable& clientProperties,
@@ -55,6 +60,23 @@ class ConnectionHandler : public framing::FrameHandler
         void close(uint16_t replyCode, const std::string& replyText,
                    uint16_t classId, uint16_t methodId); 
         void closeOk(); 
+
+
+        void start(uint8_t versionMajor,
+                   uint8_t versionMinor,
+                   const qpid::framing::FieldTable& serverProperties,
+                   const std::string& mechanisms,
+                   const std::string& locales);
+        
+        void secure(const std::string& challenge);
+        
+        void tune(uint16_t channelMax,
+                  uint32_t frameMax,
+                  uint16_t heartbeat);
+        
+        void openOk(const std::string& knownHosts);
+        
+        void redirect(const std::string& host, const std::string& knownHosts);        
     };
     std::auto_ptr<Handler> handler;
   public:

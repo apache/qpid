@@ -38,6 +38,8 @@
 #include <sstream>
 #include <numeric>
 #include <algorithm>
+#include <unistd.h>
+
 
 using namespace std;
 using namespace qpid;
@@ -90,6 +92,8 @@ struct Opts : public TestOptions {
     size_t iterations;
     Mode mode;
     bool summary;
+	uint32_t intervalSub;
+	uint32_t intervalPub;
 
     static const std::string helpText;
     
@@ -98,7 +102,8 @@ struct Opts : public TestOptions {
         setup(false), control(false), publish(false), subscribe(false),
         pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false),
         subs(1), ack(0),
-        qt(1), iterations(1), mode(SHARED), summary(false)
+        qt(1), iterations(1), mode(SHARED), summary(false),
+		intervalSub(0), intervalPub(0)
     {
         addOptions()
             ("setup", optValue(setup), "Create shared queues.")
@@ -127,7 +132,10 @@ struct Opts : public TestOptions {
             ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec")
 
             ("queue_max_count", optValue(queueMaxCount, "N"), "queue policy: count to trigger 'flow to disk'")
-            ("queue_max_size", optValue(queueMaxSize, "N"), "queue policy: accumulated size to trigger 'flow to disk'");
+            ("queue_max_size", optValue(queueMaxSize, "N"), "queue policy: accumulated size to trigger 'flow to disk'")
+
+            ("interval_sub", optValue(intervalSub, "ms"), ">=0 delay between msg consume")
+            ("interval_pub", optValue(intervalPub, "ms"), ">=0 delay between msg publish");
     }
 
     // Computed values
@@ -454,6 +462,7 @@ struct PublishThread : public Client {
                         arg::destination=destination,
                         arg::content=msg,
                         arg::confirmMode=opts.confirm);
+		            if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
                 }
                 if (opts.confirm) completion.sync();
                 AbsTime end=now();
@@ -523,6 +532,7 @@ struct SubscribeThread : public Client {
                 size_t expect=0;
                 for (size_t i = 0; i < opts.subQuota; ++i) {
                     msg=lq.pop();
+		            if (opts.intervalSub) ::usleep(opts.intervalSub*1000);
                     // TODO aconway 2007-11-23: check message order for. 
                     // multiple publishers. Need an acorray of counters,
                     // one per publisher and a publisher ID in the
