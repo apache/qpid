@@ -49,9 +49,31 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
         ConnectionDelegate connectionDelegate = new ConnectionDelegate()
         {
+            private boolean receivedClose = false;
+
             public SessionDelegate getSessionDelegate()
             {
                 return new ClientSessionDelegate();
+            }
+
+            public void exception(Throwable t)
+            {
+                if (_closedListner != null)
+                {
+                    _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc(),t);
+                }
+                else
+                {
+                    throw new RuntimeException("connection closed",t);
+                }
+            }
+
+            public void closed()
+            {
+                if (_closedListner != null && !this.receivedClose)
+                {
+                    _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc(),null);
+                }
             }
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
@@ -67,8 +89,10 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 }
                 else
                 {
-                    _closedListner.onClosed(errorCode, connectionClose.getReplyText());
+                    _closedListner.onClosed(errorCode, connectionClose.getReplyText(),null);
                 }
+
+                this.receivedClose = true;
             }
         };
 
@@ -79,6 +103,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
         if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
         {
+            System.out.println("Using NIO");
             if( _logger.isDebugEnabled())
             {
                 _logger.debug("using NIO");
@@ -180,6 +205,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public void setClosedListener(ClosedListener closedListner)
     {
+
         _closedListner = closedListner;
     }
 

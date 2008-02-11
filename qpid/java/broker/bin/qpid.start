@@ -18,4 +18,4 @@
 # under the License.
 #
 
-exec qpid-server -run:debug "$@"
+qpid-server -run:debug "$@"

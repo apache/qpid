@@ -25,6 +25,7 @@
 #include <qpid/framing/Uuid.h>
 #include <qpid/sys/Time.h>
 #include <qpid/sys/Mutex.h>
+#include <qpid/RefCounted.h>
 
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -44,8 +45,17 @@ class SessionHandler;
  */
 class SessionManager : private boost::noncopyable {
   public:
+    /**
+     * Observer notified of SessionManager events.
+     */
+    struct Observer : public RefCounted {
+        virtual void opened(SessionState&) {}
+    };
+    
     SessionManager(uint32_t ack);
+    
     ~SessionManager();
+    
     /** Open a new active session, caller takes ownership */
     std::auto_ptr<SessionState> open(SessionHandler& h, uint32_t timeout_);
     
@@ -59,9 +69,13 @@ class SessionManager : private boost::noncopyable {
      */
     std::auto_ptr<SessionState> resume(const framing::Uuid&);
 
+    /** Add an Observer. */
+    void add(const intrusive_ptr<Observer>&);
+    
   private:
     typedef boost::ptr_vector<SessionState> Suspended;
     typedef std::set<framing::Uuid> Active;
+    typedef std::vector<intrusive_ptr<Observer> > Observers;
 
     void erase(const framing::Uuid&);             
     void eraseExpired();             
@@ -70,6 +84,7 @@ class SessionManager : private boost::noncopyable {
     Suspended suspended;
     Active active;
     uint32_t ack;
+    Observers observers;
     
   friend class SessionState; // removes deleted sessions from active set.
 };

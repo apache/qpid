@@ -1,0 +1,67 @@
+backport-util-concurrent=lib/backport-util-concurrent-2.2.jar
+
+commons-cli=lib/commons-cli-1.0.jar
+commons-codec=lib/commons-codec-1.3.jar
+commons-collections=lib/commons-collections-3.2.jar
+commons-configuration=lib/commons-configuration-1.2.jar
+commons-lang=lib/commons-lang-2.2.jar
+commons-logging=lib/commons-logging-1.0.4.jar
+
+geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
+
+junit=lib/junit-3.8.1.jar
+junit-toolkit=lib/junit-toolkit-0.6-SNAPSHOT.jar
+
+log4j=lib/log4j-1.2.12.jar
+
+mina-core=lib/mina-core-1.0.0.jar
+mina-filter-ssl=lib/mina-filter-ssl-1.0.0.jar
+
+slf4j-api=lib/slf4j-api-1.4.0.jar
+slf4j-log4j=lib/slf4j-log4j12-1.4.0.jar
+
+xalan=lib/xalan-2.7.0.jar
+
+test.libs=${log4j} ${slf4j-log4j} ${junit} ${junit-toolkit}
+
+common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
+    ${mina-filter-ssl} ${commons-codec} ${commons-lang} ${commons-collections} \
+    ${commons-configuration}
+client.libs=${common.libs}  ${geronimo-jms}
+broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
+    ${slf4j-log4j} ${xalan}
+systests.libs=${client.libs} ${test.libs}
+perftests.libs=${systests.libs}
+integrationtests.libs=${systests.libs}
+
+ibm-icu=lib/com.ibm.icu-3.4.4.jar
+ecl-core-jface=lib/org.eclipse.jface-3.2.0.jar
+ecl-core-commands=lib/org.eclipse.core.commands-3.2.0.jar
+ecl-core-contenttype=lib/org.eclipse.core.contenttype-3.2.0.jar
+ecl-core-expressions=lib/org.eclipse.core.expressions-3.2.0.jar
+ecl-core-jobs=lib/org.eclipse.core.jobs-3.2.0.jar
+ecl-core-runtime=lib/org.eclipse.core.runtime-3.2.0.jar
+ecl-core-runtime-compat-auth=lib/org.eclipse.core.runtime.compatibility.auth-3.2.0.jar
+ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry-3.2.0.jar
+ecl-equinox-common=lib/org.eclipse.equinox.common-3.2.0.jar
+ecl-equinox-prefs=lib/org.eclipse.equinox.preferences-3.2.0.jar
+ecl-equinox-registry=lib/org.eclipse.equinox.registry-3.2.0.jar
+ecl-help=lib/org.eclipse.help-3.2.0.jar
+ecl-osgi=lib/org.eclipse.osgi-3.2.0.jar
+ecl-swt=lib/org.eclipse.swt-3.2.0.jar
+ecl-swt-win32=lib/org.eclipse.swt.win32.win32.x86-3.2.0.jar
+ecl-ui=lib/org.eclipse.ui-3.2.0.jar
+ecl-ui-forms=lib/org.eclipse.ui.forms-3.2.0.jar
+ecl-ui-workbench=lib/org.eclipse.ui.workbench-3.2.1.jar
+
+management-eclipse-plugin.libs=${commons-codec} ${ibm-icu} ${ecl-core-jface} \
+    ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-expressions} \
+    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-auth} \
+    ${ecl-core-runtime-compat-registry} ${ecl-equinox-common} \
+    ${ecl-equinox-prefs} ${ecl-equinox-registry} ${ecl-help} ${ecl-osgi} \
+    ${ecl-swt} ${ecl-swt-win32} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
+
+common.test.libs=${test.libs}
+broker.test.libs=${test.libs}
+client.test.libs=${broker.libs} ${test.libs}
+management-eclipse-plugin.test.libs=${systests.libs}

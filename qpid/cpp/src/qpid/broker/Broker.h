@@ -34,9 +34,10 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/management/Broker.h"
+#include "qpid/management/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
-#include "qpid/Url.h"
+#include "qpid/DataDir.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -46,12 +47,9 @@
 #include <vector>
 
 namespace qpid { 
-
-namespace framing {
-class HandlerUpdater;
-}
-
 namespace broker {
+
+static const  uint16_t DEFAULT_PORT=5672;
 
 /**
  * A broker instance. 
@@ -62,7 +60,8 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     struct Options : public qpid::Options {
         Options(const std::string& name="Broker Options");
-        
+
+        std::string dataDir;
         uint16_t port;
         int workerThreads;
         int maxConnections;
@@ -77,7 +76,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     Broker(const Options& configuration);
     static shared_ptr<Broker> create(const Options& configuration);
-    static shared_ptr<Broker> create(int16_t port = TcpAddress::DEFAULT_PORT);
+    static shared_ptr<Broker> create(int16_t port = DEFAULT_PORT);
 
     /**
      * Return listening port. If called before bind this is
@@ -87,9 +86,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
      */
     virtual uint16_t getPort() const;
 
-    /** Return the broker's URL. */
-    virtual std::string getUrl() const;
-    
     /**
      * Run the broker. Implements Runnable::run() so the broker
      * can be run in a separate thread.
@@ -99,18 +95,13 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     /** Shut down the broker */
     virtual void shutdown();
 
-    /** Register a handler updater. */
-    void add(const shared_ptr<framing::HandlerUpdater>&);
-    
-    /** Apply all handler updaters to a handler chain pair. */
-    void update(framing::ChannelId, framing::FrameHandler::Chains&); 
-
     void setStore (MessageStore*);
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
     uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
+    DataDir& getDataDir() { return dataDir; }
 
     SessionManager& getSessionManager() { return sessionManager; }
 
@@ -125,19 +116,19 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     Options config;
     sys::Acceptor::shared_ptr acceptor;
     MessageStore* store;
-    typedef std::vector<shared_ptr<framing::HandlerUpdater> > HandlerUpdaters;
+    DataDir dataDir;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     ConnectionFactory factory;
     DtxManager dtxManager;
-    HandlerUpdaters handlerUpdaters;
     SessionManager sessionManager;
     management::ManagementAgent::shared_ptr managementAgent;
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
+    void connect(management::ArgsBrokerConnect& args);
 };
 
 }}

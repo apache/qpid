@@ -1,0 +1,5 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+py=../../../../python/examples/fanout
+clients ./declare_queues ./fanout_producer $py/fanout_consumer.py
+outputs ./declare_queues.out ./fanout_producer.out $py/fanout_consumer.py.out
+

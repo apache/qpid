@@ -19,10 +19,7 @@ package org.apache.qpid.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.UnprocessedMessage_0_10;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
@@ -41,8 +38,8 @@ import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Iterator;
 
 /**
  * This is a 0.10 message consumer.
@@ -50,15 +47,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
         implements org.apache.qpidity.nclient.util.MessageListener
 {
-    /**
-     * A counter for keeping the number of available messages for this consumer
-     */
-    private final AtomicLong _messageCounter = new AtomicLong(0);
-
-    /**
-     * Number of received message so far
-     */
-    private final AtomicLong _messagesReceived = new AtomicLong(0);
 
     /**
      * This class logger
@@ -117,6 +105,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     // ----- Interface org.apache.qpidity.client.util.MessageListener
 
     /**
+     *
+     * This is invoked by the session thread when emptying the session message queue.
+     * We first check if the message is valid (match the selector) and then deliver it to the
+     * message listener or to the sync consumer queue.
+     *
      * @param jmsMessage this message has already been processed so can't redo preDeliver
      * @param channelId
      */
@@ -136,12 +129,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             catch (Exception e1)
             {
-                // the receiver may be waiting for a message
-                if (_messageCounter.get() >= 0)
-                {
-                    _messageCounter.decrementAndGet();
-                    _synchronousQueue.add(new NullTocken());
-                }
                 // we should silently log thie exception as it only hanppens when the connection is closed
                 _logger.error("Exception when receiving message", e1);
             }
@@ -152,20 +139,15 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
     }
 
+
+
+    /**
+     * This method is invoked by the transport layer when a message is delivered for this
+     * consumer. The message is transformed and pass to the session.
+     * @param message an 0.10 message
+     */
     public void onMessage(Message message)
     {
-        if (isMessageListenerSet())
-        {
-            _messagesReceived.incrementAndGet();
-            if (_messagesReceived.get() >= AMQSession_0_10.MAX_PREFETCH)
-            {
-                // require more credit
-                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                                          AMQSession_0_10.MAX_PREFETCH);
-                _messagesReceived.set(0);
-            }
-        }
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         String consumerTag = getConsumerTag().toString();
@@ -207,8 +189,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             newMessage.setReplyToURL(replyToUrl);
         }
         newMessage.setContentHeader(headers);
-        // increase the counter of messages
-        _messageCounter.incrementAndGet();
         getSession().messageReceived(newMessage);
         // else ignore this message
     }
@@ -246,6 +226,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         //{
             super.postDeliver(msg);
         //}
+
+
     }
 
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
@@ -351,50 +333,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             messageOk = acquireMessage(message);
         }
-        if (!messageOk)
-        {
-            requestCreditIfCreditMode();
-        }
         return messageOk;
     }
 
-    private void requestCreditIfCreditMode()
-    {
-        try
-        {
-            // the current message received is not good, so we need to get a message.
-            if (getMessageListener() == null)
-            {
-                int oldval = _messageCounter.intValue();
-                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                                          1);
-                _0_10session.getQpidSession()
-                        .messageFlow(getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
-                _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
-                _0_10session.getQpidSession().sync();
-                _0_10session.getQpidSession()
-                        .messageFlow(getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
-                if (_messageCounter.intValue() <= oldval)
-                {
-                    // we haven't received a message so tell the receiver to return null
-                    _synchronousQueue.add(new NullTocken());
-                }
-                else
-                {
-                    _messageCounter.decrementAndGet();
-                }
-            }
-            // we now need to check if we have received a message
-
-        }
-        catch (Exception e)
-        {
-            _logger.error(
-                    "Error getting message listener, couldn't request credit after releasing a message that failed the selector test",
-                    e);
-        }
-    }
 
     /**
      * Acknowledge a message
@@ -469,16 +410,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         super.setMessageListener(messageListener);
         if (messageListener == null)
         {
-            _0_10session.getQpidSession().messageStop(getConsumerTag().toString());
+           /* _0_10session.getQpidSession().messageStop(getConsumerTag().toString());
             _0_10session.getQpidSession()
                     .messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                                                       org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
                                                       0xFFFFFFFF);
             _0_10session.getQpidSession().sync();
+            */
         }
         else
         {
+            //TODO: empty the list of sync messages.
             if (_connection.started())
             {
                 _0_10session.getQpidSession()
@@ -490,66 +433,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                                                           org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
                                                           0xFFFFFFFF);
                 _0_10session.getQpidSession().sync();
-                _messagesReceived.set(0);
-                ;
             }
         }
     }
 
-    public Object getMessageFromQueue(long l) throws InterruptedException
+    public boolean isStrated()
     {
-        if (!_isStarted)
-        {
-            return null;
-        }
-        Object o;
-        _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                  org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-
-        if (l == 0)
-        {
-            o = _synchronousQueue.take();
-        }
-        else
-        {
-            if (l > 0)
-            {
-                o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
-            }
-            else
-            {
-                o = _synchronousQueue.poll();
-            }
-            if (o == null)
-            {
-                _logger.debug("Message Didn't arrive in time, checking if one is inflight");
-                // checking if one is inflight
-                _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
-                _0_10session.getQpidSession().sync();
-                _0_10session.getQpidSession()
-                        .messageFlow(getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
-                if (_messageCounter.get() > 0)
-                {
-                    o = _synchronousQueue.take();
-                }
-            }
-        }
-        if (o instanceof NullTocken)
-        {
-            o = null;
-        }
-        return o;
-    }
-
-    protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
-    {
-        _messageCounter.decrementAndGet();
-        super.preApplicationProcessing(jmsMsg);
-    }
-
-    private class NullTocken
-    {
-
+        return _isStarted;
     }
 
     public void start()
@@ -560,5 +450,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void stop()
     {
         _isStarted = false;
+    }
+
+    public void close() throws JMSException
+    {
+        super.close();
+        // release message that may be staged
+        Iterator messages=_synchronousQueue.iterator();
+        while (messages.hasNext())
+        {
+            AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+            messages.remove();
+            _session.rejectMessage(message, true);
+        }
     }
 }

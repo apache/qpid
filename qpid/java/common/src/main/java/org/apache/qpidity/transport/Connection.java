@@ -77,7 +77,7 @@ public class Connection
 
     public void received(ConnectionEvent event)
     {
-       log.debug("RECV: %s", event);
+        log.debug("RECV: %s", event);
         Channel channel = getChannel(event.getChannel());
         channel.received(event.getProtocolEvent());
     }
@@ -110,6 +110,11 @@ public class Connection
         }
     }
 
+    public void exception(Throwable t)
+    {
+        delegate.exception(t);
+    }
+
     public void closed()
     {
         log.debug("connection closed: %s", this);
@@ -122,6 +127,7 @@ public class Connection
                 it.remove();
             }
         }
+        delegate.closed();
     }
 
     public void close()

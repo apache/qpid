@@ -30,6 +30,7 @@
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/AMQDataBlock.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
@@ -53,6 +54,7 @@ class AsynchIOAcceptor : public Acceptor {
     AsynchIOAcceptor(int16_t port, int backlog, int threads);
     ~AsynchIOAcceptor() {}
     void run(ConnectionInputHandlerFactory* factory);
+    void connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* factory);
     void shutdown();
         
     uint16_t getPort() const;
@@ -92,13 +94,17 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
     bool initiated;
     bool readError;
     std::string identifier;
+    bool isClient;
+
+    void write(const framing::AMQDataBlock&);
 
   public:
     AsynchIOHandler() :
         inputHandler(0),
         frameQueueClosed(false),
         initiated(false),
-        readError(false)
+        readError(false),
+        isClient(false)
     {}
 	
     ~AsynchIOHandler() {
@@ -106,6 +112,8 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
             inputHandler->closed();
         delete inputHandler;
     }
+
+    void setClient() { isClient = true; }
 
     void init(AsynchIO* a, ConnectionInputHandler* h) {
         aio = a;
@@ -179,9 +187,48 @@ void AsynchIOAcceptor::run(ConnectionInputHandlerFactory* fact) {
         t[i].join();
     }
 }
+    
+void AsynchIOAcceptor::connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* f)
+{
+    Socket* socket = new Socket();//Should be deleted by handle when socket closes
+    socket->connect(host, port);
+    AsynchIOHandler* async = new AsynchIOHandler; 
+    async->setClient();
+    ConnectionInputHandler* handler = f->create(async, *socket);
+    AsynchIO* aio = new AsynchIO(*socket,
+                                 boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
+                                 boost::bind(&AsynchIOHandler::eof, async, _1),
+                                 boost::bind(&AsynchIOHandler::disconnect, async, _1),
+                                 boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+                                 boost::bind(&AsynchIOHandler::nobuffs, async, _1),
+                                 boost::bind(&AsynchIOHandler::idle, async, _1));
+    async->init(aio, handler);
+
+    // Give connection some buffers to use
+    for (int i = 0; i < 4; i++) {
+        aio->queueReadBuffer(new Buff);
+    }
+    aio->start(poller);
+
+}
+
 
 void AsynchIOAcceptor::shutdown() {
+    // NB: this function must be async-signal safe, it must not
+    // call any function that is not async-signal safe.
     poller->shutdown();
+}
+
+
+void AsynchIOHandler::write(const framing::AMQDataBlock& data)
+{
+    AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
+    if (!buff)
+        buff = new Buff;
+    framing::Buffer out(buff->bytes, buff->byteCount);
+    data.encode(out);
+    buff->dataCount = data.size();
+    aio->queueWrite(buff);
 }
 
 // Output side
@@ -274,6 +321,12 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 }
 
 void AsynchIOHandler::idle(AsynchIO&){
+    if (isClient && !initiated) {
+        //get & write protocol header from upper layers
+        write(inputHandler->getInitiation());
+        initiated = true;
+        return;
+    }
     ScopedLock<Mutex> l(frameQueueLock);
 	
     if (frameQueue.empty()) {

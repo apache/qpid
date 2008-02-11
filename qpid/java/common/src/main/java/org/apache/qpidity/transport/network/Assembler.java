@@ -99,6 +99,11 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         event.delegate(this);
     }
 
+    public void exception(Throwable t)
+    {
+        this.receiver.exception(t);
+    }
+
     public void closed()
     {
         this.receiver.closed();

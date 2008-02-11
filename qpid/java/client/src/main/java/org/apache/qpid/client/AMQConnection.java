@@ -116,7 +116,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private String _virtualHost;
    
 
-    private ExceptionListener _exceptionListener;
+    protected ExceptionListener _exceptionListener;
 
     private ConnectionListener _connectionListener;
 

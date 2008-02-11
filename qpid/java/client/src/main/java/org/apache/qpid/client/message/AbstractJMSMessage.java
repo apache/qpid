@@ -739,4 +739,9 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _consumer = basicMessageConsumer;
     }
 
+    public void receivedFromServer()
+    {
+        _changedData = false;
+    }
+
 }

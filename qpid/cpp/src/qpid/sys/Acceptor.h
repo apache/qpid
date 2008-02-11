@@ -38,6 +38,9 @@ class Acceptor : public qpid::SharedObject<Acceptor>
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
     virtual void run(ConnectionInputHandlerFactory* factory) = 0;
+    virtual void connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* factory) = 0;
+
+    /** Note: this function is async-signal safe */
     virtual void shutdown() = 0;
 };
 

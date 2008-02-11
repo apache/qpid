@@ -25,7 +25,6 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "MockChannel.h"
 #include "boost/format.hpp"
 
 using namespace qpid;

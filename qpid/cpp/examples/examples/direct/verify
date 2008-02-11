@@ -1,0 +1,3 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+clients ./declare_queues ./direct_producer ./listener
+outputs  ./declare_queues.out ./direct_producer.out ./listener.out

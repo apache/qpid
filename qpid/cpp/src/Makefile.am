@@ -111,7 +111,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Array.cpp \
   qpid/framing/BodyHolder.cpp \
   qpid/framing/BodyHandler.cpp \
-  qpid/framing/ChannelAdapter.cpp \
   qpid/framing/Buffer.cpp \
   qpid/framing/FieldTable.cpp \
   qpid/framing/FieldValue.cpp \
@@ -141,6 +140,7 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/SystemInfo.cpp \
   qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.cpp \
+  qpid/DataDir.cpp \
   qpid/Options.cpp \
   qpid/log/Options.cpp \
   qpid/log/Selector.cpp \
@@ -156,6 +156,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/PersistableMessage.cpp \
+  qpid/broker/Bridge.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -236,6 +237,7 @@ libqpidclient_la_SOURCES =			\
 nobase_include_HEADERS = \
   $(platform_hdr) \
   qpid/assert.h \
+  qpid/DataDir.h \
   qpid/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \
@@ -253,6 +255,7 @@ nobase_include_HEADERS = \
   qpid/broker/Exchange.h \
   qpid/broker/Queue.h \
   qpid/broker/BrokerSingleton.h \
+  qpid/broker/Bridge.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionHandler.h \
@@ -358,7 +361,6 @@ nobase_include_HEADERS = \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelHandler.h \
-  qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
   qpid/framing/FieldValue.h \
   qpid/framing/FrameDefaultVisitor.h \
@@ -367,7 +369,6 @@ nobase_include_HEADERS = \
   qpid/framing/FrameSet.h \
   qpid/framing/FramingContent.h \
   qpid/framing/Handler.h \
-  qpid/framing/HandlerUpdater.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/Invoker.h \
@@ -438,4 +439,8 @@ nobase_include_HEADERS = \
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
 	$(MAKE) qpidd
+
+# Create the default data directory
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
 

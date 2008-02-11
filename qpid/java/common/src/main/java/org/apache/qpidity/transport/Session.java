@@ -399,6 +399,11 @@ public class Session extends Invoker
         // XXX: channel.close();
     }
 
+    public void exception(Throwable t)
+    {
+        log.error(t, "caught exception");
+    }
+
     public void closed()
     {
         closed.set(true);

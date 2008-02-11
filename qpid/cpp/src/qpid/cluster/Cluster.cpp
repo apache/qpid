@@ -17,10 +17,12 @@
  */
 
 #include "Cluster.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ClusterNotifyBody.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
+#include <boost/scoped_array.hpp>
 #include <algorithm>
 #include <iterator>
 #include <map>
@@ -30,7 +32,70 @@ namespace cluster {
 using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace std;
+using broker::SessionState;
 
+namespace {
+
+// Beginning of inbound chain: send to cluster.
+struct ClusterSendHandler : public FrameHandler {
+    SessionState& session;
+    Cluster& cluster;
+    bool busy;
+    Monitor lock;
+    
+    ClusterSendHandler(SessionState& s, Cluster& c) : session(s), cluster(c), busy(false) {}
+
+    void handle(AMQFrame& f) {
+        Mutex::ScopedLock l(lock);
+        assert(!busy);
+        // FIXME aconway 2008-01-29: refcount Sessions.
+        // session.addRef();             // Keep the session till the message is self delivered.
+        cluster.send(f, next);        // Indirectly send to next via cluster.
+
+        // FIXME aconway 2008-01-29: need to get this blocking out of the loop.
+        // But cluster needs to agree on order of side-effects on the shared model.
+        // OK for wiring to block, for messages use queue tokens?
+        // Both in & out transfers must be orderd per queue.
+        // May need out-of-order completion.
+        busy=true;
+        while (busy) lock.wait();
+    }
+};
+
+// Next in inbound chain, self delivered from cluster.
+struct ClusterDeliverHandler : public FrameHandler {
+    Cluster& cluster;
+    ClusterSendHandler& sender;
+
+    ClusterDeliverHandler(ClusterSendHandler& prev, Cluster& c) : cluster(c), sender(prev) {}
+    
+    void handle(AMQFrame& f) {
+        next->handle(f);
+        Mutex::ScopedLock l(sender.lock);
+        sender.busy=false;
+        sender.lock.notify();
+    }
+};
+
+// FIXME aconway 2008-01-29: IList
+void insert(FrameHandler::Chain& c, FrameHandler* h) {
+    h->next = c.next;
+    c.next = h;
+}
+
+struct SessionObserver : public broker::SessionManager::Observer {
+    Cluster& cluster;
+    SessionObserver(Cluster& c) : cluster(c) {}
+    
+    void opened(SessionState& s) {
+        // FIXME aconway 2008-01-29: IList for memory management.
+        ClusterSendHandler* sender=new ClusterSendHandler(s, cluster);
+        ClusterDeliverHandler* deliverer=new ClusterDeliverHandler(*sender, cluster);
+        insert(s.in, deliverer);
+        insert(s.in, sender);
+    }
+};
+}
 
 ostream& operator <<(ostream& out, const Cluster& cluster) {
     return out << "cluster[" << cluster.name.str() << " " << cluster.self << "]";
@@ -46,13 +111,11 @@ ostream& operator <<(ostream& out, const Cluster::MemberMap& members) {
     return out;
 }
 
-Cluster::Cluster(const std::string& name_, const std::string& url_, broker::Broker& broker) :
-    FrameHandler(&sessions), 
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker&) :
     cpg(*this),
     name(name_),
-    url(url_), 
-    self(Id::self(cpg)),
-    sessions(broker, *this)
+    url(url_),
+    observer(new SessionObserver(*this))
 {
     QPID_LOG(trace, *this << " Joining cluster: " << name_);
     cpg.join(name);
@@ -78,18 +141,19 @@ Cluster::~Cluster() {
     }
 }
 
-void Cluster::handle(AMQFrame& frame) {
+void Cluster::send(AMQFrame& frame, FrameHandler* next) {
     QPID_LOG(trace, *this << " SEND: " << frame);
-    Buffer buf(frame.size());
+    char data[65536]; // FIXME aconway 2008-01-29: Better buffer handling.
+    Buffer buf(data);
     frame.encode(buf);
-    buf.flip();
-    iovec iov = { buf.start(), frame.size() };
+    buf.putRawData((uint8_t*)&next, sizeof(next)); // Tag the frame with the next pointer.
+    iovec iov = { data, frame.size()+sizeof(next) };
     cpg.mcast(name, &iov, 1);
 }
 
 void Cluster::notify() {
-    AMQFrame frame(in_place<ClusterNotifyBody>(ProtocolVersion(), url));
-    handle(frame);
+    AMQFrame frame(in_place<ClusterNotifyBody>(ProtocolVersion(), url.str()));
+    send(frame, 0);
 }
 
 size_t Cluster::size() const {
@@ -113,15 +177,25 @@ void Cluster::deliver(
     void* msg,
     int msg_len)
 {
-    Id from(nodeid, pid);
-    Buffer buf(static_cast<char*>(msg), msg_len);
-    AMQFrame frame;
-    frame.decode(buf);
-    QPID_LOG(trace, *this << " RECV: " << frame << " from: " << from);
-    if (frame.getChannel() == 0)
-        handleClusterFrame(from, frame);
-    else
-        next->handle(frame);
+    try {
+        Id from(nodeid, pid);
+        Buffer buf(static_cast<char*>(msg), msg_len);
+        AMQFrame frame;
+        frame.decode(buf);
+        QPID_LOG(trace, *this << " RECV: " << frame << " from: " << from);
+        if (frame.getChannel() == 0)
+            handleClusterFrame(from, frame);
+        else if (from == self) {
+            FrameHandler* next;
+            buf.getRawData((uint8_t*)&next, sizeof(next));
+            next->handle(frame);
+        }
+        // FIXME aconway 2008-01-30: apply frames from foreign sessions.
+    }
+    catch (const std::exception& e) {
+        // FIXME aconway 2008-01-30: exception handling.
+        QPID_LOG(error, "Error handling frame from cluster " << e.what());
+    }
 }
 
 bool Cluster::wait(boost::function<bool(const Cluster&)> predicate,
@@ -144,6 +218,8 @@ void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
     {
         Mutex::ScopedLock l(lock);
         members[from].url=notifyIn->getUrl();
+        if (!self.id && notifyIn->getUrl() == url.str()) 
+            self=from;
         lock.notifyAll();
         QPID_LOG(trace, *this << ": members joined: " << members);
     }

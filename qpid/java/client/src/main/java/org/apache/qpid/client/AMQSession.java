@@ -20,38 +20,16 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.AMQUndeliveredException;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.failover.FailoverNoopSupport;
-import org.apache.qpid.client.failover.FailoverProtectedOperation;
-import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.ReturnMessage;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.Serializable;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
@@ -78,18 +56,38 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 import javax.jms.TransactionRolledBackException;
-import java.io.Serializable;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.AMQUndeliveredException;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverNoopSupport;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
+import org.apache.qpid.client.failover.FailoverRetrySupport;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.message.JMSObjectMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.ReturnMessage;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -185,14 +183,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * keeps a record of subscriptions which have been created in the current instance. It does not remember
      * subscriptions between executions of the client.
      */
-    private final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
+    protected final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
 
     /**
      * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
      * up in the {@link #_subscriptions} map.
      */
-    private final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
+    protected final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
             new ConcurrentHashMap<BasicMessageConsumer, String>();
 
     /**
@@ -200,7 +198,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Weaken the type once {@link FlowControllingBlockingQueue} implements Queue.
      */
-    private final FlowControllingBlockingQueue _queue;
+    protected final FlowControllingBlockingQueue _queue;
 
     /**
      * Holds the highest received delivery tag.
@@ -279,10 +277,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     protected final boolean _immediatePrefetch;
 
     /** Indicates that warnings should be generated on violations of the strict AMQP. */
-    private final boolean _strictAMQP;
+    protected final boolean _strictAMQP;
 
     /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
-    private final boolean _strictAMQPFATAL;
+    protected final boolean _strictAMQPFATAL;
     private final Object _messageDeliveryLock = new Object();
 
     /** Session state : used to detect if commit is a) required b) allowed , i.e. does the tx span failover. */
@@ -518,8 +516,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         if (_logger.isInfoEnabled())
         {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            _logger.info("Closing session: " + this + ":"
-                         + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
+            _logger.info("Closing session: " + this); // + ":"
+                         // + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
         synchronized (_connection.getFailoverMutex())
@@ -781,6 +779,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   false, false);
     }
 
+    public MessageConsumer createExclusiveConsumer(Destination destination) throws JMSException
+    {
+        checkValidDestination(destination);
+
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, true, null, null,
+                                  false, false);
+    }
+
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
         checkValidDestination(destination);
@@ -831,70 +837,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   false);
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
-    {
-
-        checkNotClosed();
-        AMQTopic origTopic = checkValidTopic(topic);
-        AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
-        TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
-        if (subscriber != null)
-        {
-            if (subscriber.getTopic().equals(topic))
-            {
-                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange "
-                                                + name);
-            }
-            else
-            {
-                unsubscribe(name);
-            }
-        }
-        else
-        {
-            AMQShortString topicName;
-            if (topic instanceof AMQTopic)
-            {
-                topicName = ((AMQTopic) topic).getRoutingKey();
-            }
-            else
-            {
-                topicName = new AMQShortString(topic.getTopicName());
-            }
-
-            if (_strictAMQP)
-            {
-                if (_strictAMQPFATAL)
-                {
-                    throw new UnsupportedOperationException("JMS Durable not currently supported by AMQP.");
-                }
-                else
-                {
-                    _logger.warn("Unable to determine if subscription already exists for '" + topicName + "' "
-                                 + "for creation durableSubscriber. Requesting queue deletion regardless.");
-                }
-
-                deleteQueue(dest.getAMQQueueName());
-            }
-            else
-            {
-                // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
-                // says we must trash the subscription.
-                if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName())
-                    && !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
-                {
-                    deleteQueue(dest.getAMQQueueName());
-                }
-            }
-        }
-
-        subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
-
-        _subscriptions.put(name, subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
-
-        return subscriber;
-    }
+    public abstract TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException;
 
     /** Note, currently this does not handle reuse of the same name with different topics correctly. */
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
@@ -1387,7 +1330,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             {
                 // in Qpid the 0-8 spec was hacked to have a recover-ok method... this is bad
                 // in 0-9 we used the cleaner addition of a new sync recover method with its own ok
-                if(getProtocolVersion().equals(ProtocolVersion.v8_0))
+                if(getProtocolHandler().getProtocolVersion().equals(ProtocolVersion.v8_0))
                 {
                     BasicRecoverBody body = getMethodRegistry().createBasicRecoverBody(false);
                     _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverOkBody.class);
@@ -1985,7 +1928,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    private AMQTopic checkValidTopic(Topic topic) throws JMSException
+    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
     {
         if (topic == null)
         {
@@ -2353,7 +2296,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    private void deleteQueue(final AMQShortString queueName) throws JMSException
+    protected void deleteQueue(final AMQShortString queueName) throws JMSException
     {
         try
         {

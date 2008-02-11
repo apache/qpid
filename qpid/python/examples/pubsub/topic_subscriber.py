@@ -7,7 +7,7 @@
 """
 
 import base64
-
+import sys
 import qpid
 from qpid.client import Client
 from qpid.content import Content
@@ -60,8 +60,8 @@ def dump_queue(client, queue_name):
 
 #  Set parameters for login
 
-host="127.0.0.1"
-port=5672
+host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
+port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
 amqp_spec="/usr/share/amqp/amqp.0-10-preview.xml"
 user="guest"
 password="guest"
@@ -108,7 +108,8 @@ session.queue_bind(exchange="amq.topic", queue=europe, routing_key="control")
 
 # Remind the user to start the topic producer
 
-print "Queues create - please start the topic producer"
+print "Queues created - please start the topic producer"
+sys.stdout.flush()
 
 # Call dump_queue to print messages from each queue
 

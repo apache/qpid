@@ -98,7 +98,7 @@ public class Client implements MessageListener
 
         if (_count < _expected)
         {
-            wait(1000000000);
+            wait(60000);
         }
 
         if (_count < _expected)
