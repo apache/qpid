@@ -75,11 +75,18 @@ void Dispatcher::run()
             if (content->isA<MessageTransferBody>()) {
                 Message msg(*content, session);
                 Subscriber::shared_ptr listener = find(msg.getDestination());
-                assert(listener);
-                listener->received(msg);
+                if (!listener) {
+                    QPID_LOG(error, "No listener found for destination " << msg.getDestination());
+                } else {
+                    assert(listener);
+                    listener->received(msg);
+                }
             } else {
-                assert (handler.get());
-                handler->handle(*content);
+                if (handler.get()) {
+                    handler->handle(*content);
+                } else {
+                    QPID_LOG(error, "No handler found for " << *(content->getMethod()));
+                }
             }
         }
     } catch (const ClosedException&) {
