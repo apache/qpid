@@ -63,6 +63,7 @@ public class Session extends Invoker
     private long commandsIn = 0;
     // completed incoming commands
     private final RangeSet processed = new RangeSet();
+    private long processedMark = -1;
     private Range syncPoint = null;
 
     // outgoing command count
@@ -132,25 +133,25 @@ public class Session extends Invoker
 
    public void flushProcessed()
     {
-        long mark = -1;
         boolean first = true;
         RangeSet rest = new RangeSet();
         synchronized (processed)
         {
             for (Range r: processed)
             {
-                if (first)
+                if (first && r.includes(processedMark))
                 {
-                    first = false;
-                    mark = r.getUpper();
+                    processedMark = r.getUpper();
                 }
                 else
                 {
                     rest.add(r);
                 }
+
+                first = false;
             }
         }
-        executionComplete(mark, rest);
+        executionComplete(processedMark, rest);
     }
 
     void syncPoint()
