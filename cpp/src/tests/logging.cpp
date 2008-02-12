@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     unlink("logging.tmp");
 }
 
-BOOST_AUTO_TEST_CASE(testQuoteControlChars) {
+BOOST_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
     l.clear();
     Options opts;
@@ -375,13 +375,13 @@ BOOST_AUTO_TEST_CASE(testQuoteControlChars) {
     opts.outputs.push_back("logging.tmp");
     opts.time=false;
     l.configure(opts, "test");
-    char s[] = "null\0tab\tspace newline\nret\r";
+    char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
     QPID_LOG(critical, str); 
     ifstream log("logging.tmp");
     string line;
     getline(log, line);
-    string expect="critical null^@tab^Ispace newline^Jret^M^@";
+    string expect="critical null\\00tab\\09space newline\\0Aret\\0D\\80\\99\\FF\\00";
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");
