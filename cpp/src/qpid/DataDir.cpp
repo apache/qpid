@@ -60,7 +60,7 @@ DataDir::DataDir (std::string path) :
         throw Exception (oss.str ());
     }
 
-    QPID_LOG (info, "Locked data direcory: " << dirPath);
+    QPID_LOG (info, "Locked data directory: " << dirPath);
 }
 
 DataDir::~DataDir ()
