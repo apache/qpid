@@ -79,9 +79,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
             if (queue == null)
             {
-                if (_log.isTraceEnabled())
+                if (_log.isDebugEnabled())
                 {
-                    _log.trace("No queue for '" + body.getQueue() + "'");
+                    _log.debug("No queue for '" + body.getQueue() + "'");
                 }
                 if (body.getQueue() != null)
                 {

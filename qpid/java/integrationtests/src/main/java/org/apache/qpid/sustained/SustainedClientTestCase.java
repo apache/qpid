@@ -335,9 +335,9 @@ public class SustainedClientTestCase extends TestCase3BasicPubSub implements Exc
 
         public void onMessage(Message message)
         {
-            if (log.isTraceEnabled())
+            if (log.isDebugEnabled())
             {
-                log.trace("Message " + _received + "received in listener");
+                log.debug("Message " + _received + "received in listener");
             }
 
             if (message instanceof TextMessage)

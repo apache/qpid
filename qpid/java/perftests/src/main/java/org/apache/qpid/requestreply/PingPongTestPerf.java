@@ -172,10 +172,10 @@ public class PingPongTestPerf extends AsymptoticTestCase
             PerThreadSetup perThreadSetup = new PerThreadSetup();
 
             // Extract the test set up paramaeters.
-            String fileProperties = testParameters.getProperty(PingPongProducer.FILE_PROPERTIES_PROPNAME);
-            String factoryName = testParameters.getProperty(PingPongProducer.FACTORY_NAME_PROPNAME);
+            String brokerDetails = testParameters.getProperty(PingPongProducer.BROKER_PROPNAME);
             String username = testParameters.getProperty(PingPongProducer.USERNAME_PROPNAME);
             String password = testParameters.getProperty(PingPongProducer.PASSWORD_PROPNAME);
+            String virtualPath = testParameters.getProperty(PingPongProducer.VIRTUAL_HOST_PROPNAME);
             String destinationName = testParameters.getProperty(PingPongProducer.PING_QUEUE_NAME_PROPNAME);
             boolean persistent = testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME);
             boolean transacted = testParameters.getPropertyAsBoolean(PingPongProducer.TRANSACTED_PROPNAME);
@@ -187,7 +187,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
             {
                 // Establish a bounce back client on the ping queue to bounce back the pings.
                 perThreadSetup._testPingBouncer =
-                    new PingPongBouncer(fileProperties, factoryName, username, password, destinationName, persistent,
+                    new PingPongBouncer(brokerDetails, username, password, virtualPath, destinationName, persistent,
                         transacted, selector, verbose, pubsub);
 
                 // Start the connections for client and producer running.

@@ -26,6 +26,7 @@ import java.util.Properties;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 
 import org.apache.log4j.Logger;
 

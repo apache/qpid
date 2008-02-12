@@ -116,6 +116,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         defaults.setProperty(PERSISTENT_MODE_PROPNAME, "true");
         defaults.setProperty(TX_BATCH_SIZE_PROPNAME, "10");
         defaults.setProperty(RATE_PROPNAME, "20");
+        defaults.setProperty(DURABLE_DESTS_PROPNAME, "true");
         defaults.setProperty(NUM_MESSAGES_TO_ACTION_PROPNAME, NUM_MESSAGES_TO_ACTION_DEFAULT);
     }
 
