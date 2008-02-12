@@ -122,7 +122,7 @@ auto_ptr<QpiddOptions> options;
 
 void shutdownHandler(int /*signal*/){
     // Note: do not call any async-signal unsafe functions here.
-    // Do any extra shtudown actions in main() after broker->run()
+    // Do any extra shutdown actions in main() after broker->run()
     brokerPtr->shutdown();
 }
 
@@ -140,6 +140,7 @@ struct QpiddDaemon : public Daemon {
         uint16_t port=brokerPtr->getPort();
         ready(port);            // Notify parent.
         brokerPtr->run();
+        brokerPtr.reset();
     }
 };
 
