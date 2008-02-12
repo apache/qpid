@@ -202,6 +202,11 @@ public class QpidTestCase extends TestCase
         return _connectionFactory;
     }
 
+    public Connection getConnection() throws Exception
+    {
+        return getConnection("guest", "guest");
+    }
+
     /**
      * Get a connection (remote or in-VM)
      *
