@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        21%{?dist}
+Release:        22%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -73,7 +73,7 @@ Qpid broker daemon.
 %setup -q
 
 %build
-%configure --disable-static --without-cpg CXXFLAGS="-O3 -DNDEBUG"
+%configure --disable-static --without-cpg CXXFLAGS="-g -O3 -DNDEBUG"
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
@@ -156,7 +156,10 @@ fi
 /sbin/ldconfig
 
 %changelog
-* Tue Feb 12 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-21
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-22
+- Added -g to compile flags for debug symbols.
+
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-21
 - Create /var/lib/qpidd correctly.
 
 * Mon Feb 11 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-20
