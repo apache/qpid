@@ -198,6 +198,13 @@
     that modules build root from underneath the project build root:
 
       ${build}/&lt;module&gt;
+
+  ant clean-results
+
+    The clean-results target removes all test output from the test
+    results directory:
+
+      ${build.results}
     </echo>
   </target>
 
