@@ -20,6 +20,8 @@
  */
 using System;
 using System.Threading;
+using System.Collections;
+using System.Collections.Generic;
 using log4net;
 using Apache.Qpid.Client.Message;
 using Apache.Qpid.Collections;
@@ -106,10 +108,15 @@ namespace Apache.Qpid.Client
 
         private AmqChannel _channel;
 
+        // <summary>
+        // Tag of last message delievered, whoch should be acknowledged on commit in transaction mode.
+        // </summary>
+        //private long _lastDeliveryTag;
+
         /// <summary>
-        /// Tag of last message delievered, whoch should be acknowledged on commit in transaction mode.
+        /// Explicit list of all received but un-acked messages in a transaction. Used to ensure acking is completed when transaction is committed.
         /// </summary>
-        private long _lastDeliveryTag;
+        private LinkedList<long> _receivedDeliveryTags;
 
         /// <summary>
         /// Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
@@ -135,6 +142,11 @@ namespace Apache.Qpid.Client
             _prefetchHigh = prefetchHigh;
             _prefetchLow = prefetchLow;
             _exclusive = exclusive;
+
+            if (_acknowledgeMode == AcknowledgeMode.SessionTransacted)
+            {
+                _receivedDeliveryTags = new LinkedList<long>();
+            }
         }
 
         #region IMessageConsumer Members
@@ -391,13 +403,24 @@ namespace Apache.Qpid.Client
         /// <summary>
         /// Acknowledge up to last message delivered (if any). Used when commiting.
         /// </summary>
-        internal void AcknowledgeLastDelivered()
+        internal void AcknowledgeDelivered()
         {
-            if (_lastDeliveryTag > 0)
+            foreach (long tag in _receivedDeliveryTags)
             {
-                _channel.AcknowledgeMessage((ulong)_lastDeliveryTag, true); // XXX evil cast
-                _lastDeliveryTag = -1;
+                _channel.AcknowledgeMessage((ulong)tag, false);
             }
+
+            _receivedDeliveryTags.Clear();
+        }
+
+        internal void RejectUnacked()
+        {
+            foreach (long tag in _receivedDeliveryTags)
+            {
+                _channel.RejectMessage((ulong)tag, true);
+            }
+
+            _receivedDeliveryTags.Clear();
         }
 
         private void PreDeliver(AbstractQmsMessage msg)
@@ -442,7 +465,7 @@ namespace Apache.Qpid.Client
                     break;
                 
                 case AcknowledgeMode.SessionTransacted:
-                    _lastDeliveryTag = msg.DeliveryTag;
+                    _receivedDeliveryTags.AddLast(msg.DeliveryTag);
                     break;
             }
         }

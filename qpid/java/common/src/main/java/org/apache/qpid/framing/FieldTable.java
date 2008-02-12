@@ -706,12 +706,15 @@ public class FieldTable
 
     public void writeToBuffer(ByteBuffer buffer)
     {
-        final boolean trace = _logger.isTraceEnabled();
+        final boolean trace = _logger.isDebugEnabled();
 
         if (trace)
         {
-            _logger.trace("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
-            _logger.trace(_properties.toString());
+            _logger.debug("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
+            if (_properties != null)
+            {
+                _logger.debug(_properties.toString());
+            }
         }
 
         EncodingUtils.writeUnsignedInteger(buffer, getEncodedSize());
@@ -915,11 +918,11 @@ public class FieldTable
                 final Map.Entry<AMQShortString, AMQTypedValue> me = it.next();
                 try
                 {
-                    if (_logger.isTraceEnabled())
+                    if (_logger.isDebugEnabled())
                     {
-                        _logger.trace("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
                             + me.getValue().getValue());
-                        _logger.trace("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
                     }
 
                     // Write the actual parameter name
@@ -928,12 +931,12 @@ public class FieldTable
                 }
                 catch (Exception e)
                 {
-                    if (_logger.isTraceEnabled())
+                    if (_logger.isDebugEnabled())
                     {
-                        _logger.trace("Exception thrown:" + e);
-                        _logger.trace("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                        _logger.debug("Exception thrown:" + e);
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
                             + me.getValue().getValue());
-                        _logger.trace("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
                     }
 
                     throw new RuntimeException(e);
@@ -945,7 +948,7 @@ public class FieldTable
     private void setFromBuffer(ByteBuffer buffer, long length) throws AMQFrameDecodingException
     {
 
-        final boolean trace = _logger.isTraceEnabled();
+        final boolean trace = _logger.isDebugEnabled();
         if (length > 0)
         {
 
@@ -961,7 +964,7 @@ public class FieldTable
 
                 if (trace)
                 {
-                    _logger.trace("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + value.getType()
+                    _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + value.getType()
                         + "', key '" + key + "', value '" + value.getValue() + "'");
                 }
 
@@ -976,7 +979,7 @@ public class FieldTable
 
         if (trace)
         {
-            _logger.trace("FieldTable::FieldTable(buffer," + length + "): Done.");
+            _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
         }
     }
 

@@ -416,9 +416,9 @@ public class SubscriptionImpl implements Subscription
         }
 
 
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
+            _logger.debug("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
         }
         return checkFilters(entry);
 
@@ -563,9 +563,9 @@ public class SubscriptionImpl implements Subscription
             {
                 QueueEntry resent = _resendQueue.poll();
 
-                if (_logger.isTraceEnabled())
+                if (_logger.isDebugEnabled())
                 {
-                    _logger.trace("Removed for resending:" + resent.debugIdentity());
+                    _logger.debug("Removed for resending:" + resent.debugIdentity());
                 }
 
                 resent.release();

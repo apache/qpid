@@ -171,7 +171,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             m.setJMSReplyTo(q);
             m.setStringProperty("TempQueue", q.toString());
 
-            _logger.trace("Message:" + m);
+            _logger.debug("Message:" + m);
 
             Assert.assertEquals("Check temp queue has been set correctly", m.getJMSReplyTo().toString(),
                 m.getStringProperty("TempQueue"));

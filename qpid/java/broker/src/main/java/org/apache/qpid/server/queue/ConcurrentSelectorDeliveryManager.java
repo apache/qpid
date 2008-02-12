@@ -302,9 +302,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void populatePreDeliveryQueue(Subscription subscription)
     {
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace("Populating PreDeliveryQueue for Subscription(" + System.identityHashCode(subscription) + ")");
+            _log.debug("Populating PreDeliveryQueue for Subscription(" + System.identityHashCode(subscription) + ")");
         }
 
         Iterator<QueueEntry> currentQueue = _messages.iterator();
@@ -532,9 +532,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             //else the clean up is not required as the message has already been taken for this queue therefore
             // it was the responsibility of the code that took the message to ensure the _totalMessageSize was updated.
 
-            if (_log.isTraceEnabled())
+            if (_log.isDebugEnabled())
             {
-                _log.trace("Removed taken message:" + message.debugIdentity());
+                _log.debug("Removed taken message:" + message.debugIdentity());
             }
 
             // try the next message
@@ -627,9 +627,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         Queue<QueueEntry> messageQueue = sub.getNextQueue(_messages);
 
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace(debugIdentity() + "Async sendNextMessage for sub (" + System.identityHashCode(sub) +
+            _log.debug(debugIdentity() + "Async sendNextMessage for sub (" + System.identityHashCode(sub) +
                        ") from queue (" + System.identityHashCode(messageQueue) +
                        ") AMQQueue (" + System.identityHashCode(queue) + ")");
         }
@@ -655,9 +655,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 // message will be null if we have no messages in the messageQueue.
                 if (entry == null)
                 {
-                    if (_log.isTraceEnabled())
+                    if (_log.isDebugEnabled())
                     {
-                        _log.trace(debugIdentity() + "No messages for Subscriber(" + System.identityHashCode(sub) + ") from queue; (" + System.identityHashCode(messageQueue) + ")");
+                        _log.debug(debugIdentity() + "No messages for Subscriber(" + System.identityHashCode(sub) + ") from queue; (" + System.identityHashCode(messageQueue) + ")");
                     }
                     return;
                 }
@@ -696,9 +696,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (messageQueue == sub.getResendQueue())
             {
-                if (_log.isTraceEnabled())
+                if (_log.isDebugEnabled())
                 {
-                    _log.trace(debugIdentity() + "All messages sent from resendQueue for " + sub);
+                    _log.debug(debugIdentity() + "All messages sent from resendQueue for " + sub);
                 }
                 if (messageQueue.isEmpty())
                 {
@@ -884,9 +884,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     if (!s.isSuspended())
                     {
-                        if (_log.isTraceEnabled())
+                        if (_log.isDebugEnabled())
                         {
-                            _log.trace(debugIdentity() + "Delivering Message:" + entry.getMessage().debugIdentity() + " to(" +
+                            _log.debug(debugIdentity() + "Delivering Message:" + entry.getMessage().debugIdentity() + " to(" +
                                        System.identityHashCode(s) + ") :" + s);
                         }
 
