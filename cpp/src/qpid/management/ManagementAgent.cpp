@@ -74,16 +74,16 @@ void ManagementAgent::setExchange (broker::Exchange::shared_ptr _mexchange,
 }
 
 void ManagementAgent::addObject (ManagementObject::shared_ptr object,
-                                 uint64_t                     persistenceId,
-                                 uint64_t                     idOffset)
+                                 uint64_t                     /*persistenceId*/,
+                                 uint64_t                     /*idOffset*/)
 {
     RWlock::ScopedWlock writeLock (userLock);
     uint64_t objectId;
 
-    if (persistenceId == 0)
+//    if (persistenceId == 0)
         objectId = nextObjectId++;
-    else
-        objectId = 0x8000000000000000ULL | (persistenceId + idOffset);
+//    else
+//        objectId = 0x8000000000000000ULL | (persistenceId + idOffset);
 
     object->setObjectId (objectId);
     managementObjects[objectId] = object;
