@@ -147,12 +147,14 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
         break;
 
     case management::Session::METHOD_CLOSE :
+        /*
         if (handler != 0)
         {
             handler->getConnection().closeChannel(handler->getChannel());
         }
         status = Manageable::STATUS_OK;
         break;
+        */
 
     case management::Session::METHOD_SOLICITACK :
     case management::Session::METHOD_RESETLIFESPAN :
