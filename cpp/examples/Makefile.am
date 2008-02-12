@@ -61,9 +61,8 @@ all-local:
 	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I../../$(top_srcdir)/src -I../../$(top_srcdir)/src/gen -I../../$(top_builddir)/src/gen -L../../$(top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
 
 # Verify the examples in the buid tree.
-VERIFY=QPID_DATA_DIR= QPIDD=$(abs_top_builddir)/src/qpidd $(srcdir)/verify_all
-check-local: all-local $(VERIFY_FILES)
-	PYTHON_EXAMPLES=$(abs_top_srcdir)/../python/examples $(srcdir)/verify_all $(srcdir)/verify $(top_builddir)/src/qpidd examples 
+check-local: all-local 
+	$(srcdir)/verify_all $(abs_top_srcdir) $(abs_top_builddir)
 
 # TODO:
 #  create a tarball for testing installed examples.
