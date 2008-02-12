@@ -38,6 +38,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SocketTransportConnection implements ITransportConnection
 {
@@ -45,8 +47,6 @@ public class SocketTransportConnection implements ITransportConnection
     private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
 
     private SocketConnectorFactory _socketConnectorFactory;
-
-    private Socket _openSocket;
 
     static interface SocketConnectorFactory
     {
@@ -56,11 +56,6 @@ public class SocketTransportConnection implements ITransportConnection
     public SocketTransportConnection(SocketConnectorFactory socketConnectorFactory)
     {
         _socketConnectorFactory = socketConnectorFactory;
-    }
-
-    public void setOpenSocket(Socket openSocket)
-    {
-        _openSocket = openSocket;
     }
 
     public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail) throws IOException
@@ -99,15 +94,18 @@ public class SocketTransportConnection implements ITransportConnection
         {
             address = null;
 
-            if (_openSocket != null)
+            Socket socket = TransportConnection.removeOpenSocket(brokerDetail.getHost());
+
+            if (socket != null)
             {
-                _logger.info("Using existing Socket:" + _openSocket);
-                ((ExistingSocketConnector) ioConnector).setOpenSocket(_openSocket);
+                _logger.info("Using existing Socket:" + socket);
+
+                ((ExistingSocketConnector) ioConnector).setOpenSocket(socket);
             }
             else
             {
                 throw new IllegalArgumentException("Active Socket must be provided for broker " +
-                                                   "with 'socket' transport:" + brokerDetail);
+                                                   "with 'socket://<SocketID>' transport:" + brokerDetail);
             }
         }
         else

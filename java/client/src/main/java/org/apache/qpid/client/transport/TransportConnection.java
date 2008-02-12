@@ -37,6 +37,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.net.Socket;
+
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up the underlying
@@ -60,6 +63,18 @@ public class TransportConnection
     private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
+
+    private static Map<String, Socket> _openSocketRegister = new ConcurrentHashMap<String, Socket>();
+
+    public static void registerOpenSocket(String socketID, Socket openSocket)
+    {
+        _openSocketRegister.put(socketID, openSocket);
+    }
+
+    public static Socket removeOpenSocket(String socketID)
+    {
+        return _openSocketRegister.remove(socketID);
+    }
 
     public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
     {
@@ -305,7 +320,7 @@ public class TransportConnection
         synchronized (_inVmPipeAddress)
         {
             _inVmPipeAddress.clear();
-        }        
+        }
         _acceptor = null;
         _currentInstance = -1;
         _currentVMPort = -1;

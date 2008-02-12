@@ -23,6 +23,7 @@ package org.apache.qpid.example.transport;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.UUID;
 
 /**
  * This is a simple application that demonstrates how you can use the Qpid AMQP interfaces to use existing sockets as
@@ -66,9 +68,14 @@ public class ExistingSocketConnectorDemo implements ConnectionListener
     MessageProducer _producer;
     Session _session;
 
+    String Socket1_ID = UUID.randomUUID().toString();
+    String Socket2_ID = UUID.randomUUID().toString();
+
+
 
     /** Here we can see the broker we are connecting to is set to be 'socket:///' signifying we will provide the socket. */
-    public static final String CONNECTION = "amqp://guest:guest@id/test?brokerlist='socket:///'";
+    public final String CONNECTION = "amqp://guest:guest@id/test?brokerlist='socket://" + Socket1_ID + ";socket://" + Socket2_ID + "'";
+
 
     public ExistingSocketConnectorDemo() throws IOException, URLSyntaxException, AMQException, JMSException
     {
@@ -76,7 +83,10 @@ public class ExistingSocketConnectorDemo implements ConnectionListener
         Socket socket = SocketChannel.open().socket();
         socket.connect(new InetSocketAddress("localhost", 5672));
 
-        _connection = new AMQConnection(CONNECTION, socket);
+        TransportConnection.registerOpenSocket(Socket1_ID, socket);
+
+
+        _connection = new AMQConnection(CONNECTION);
 
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -130,7 +140,7 @@ public class ExistingSocketConnectorDemo implements ConnectionListener
             socket.connect(new InetSocketAddress("localhost", 5673));
 
             // This is the new method to pass in an open socket for the connection to use.
-            ((AMQConnection) _connection).setOpenSocket(socket);
+            TransportConnection.registerOpenSocket(Socket2_ID, socket);
         }
         catch (IOException e)
         {
