@@ -510,6 +510,23 @@ public class ConnectionURLTest extends TestCase
 
     }
 
+    public void testSocketProtocol() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@id/test" + "?brokerlist='socket:///'";
+
+        try
+        {
+            AMQConnectionURL curl = new AMQConnectionURL(url);
+            assertNotNull(curl);
+            assertEquals(1, curl.getBrokerCount());
+            assertNotNull(curl.getBrokerDetails(0));
+            assertEquals("socket", curl.getBrokerDetails(0).getTransport());
+        }
+        catch (URLSyntaxException e)
+        {
+            fail(e.getMessage());
+        }
+    }
 
     public static junit.framework.Test suite()
     {

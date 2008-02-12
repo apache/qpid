@@ -23,6 +23,7 @@ package org.apache.qpid.client.transport;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
 import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
@@ -54,6 +55,7 @@ public class TransportConnection
 
     private static final int TCP = 0;
     private static final int VM = 1;
+    private static final int SOCKET = 2;
 
     private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
@@ -87,7 +89,15 @@ public class TransportConnection
 
         switch (transport)
         {
-
+            case SOCKET:
+                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                {
+                    public IoConnector newSocketConnector()
+                    {
+                        return new ExistingSocketConnector();
+                    }
+                });
+                break;
             case TCP:
                 _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                 {
@@ -127,6 +137,11 @@ public class TransportConnection
 
     private static int getTransport(String transport)
     {
+        if (transport.equals(BrokerDetails.SOCKET))
+        {
+            return SOCKET;
+        }
+
         if (transport.equals(BrokerDetails.TCP))
         {
             return TCP;

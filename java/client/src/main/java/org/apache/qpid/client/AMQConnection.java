@@ -30,6 +30,8 @@ import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.transport.ITransportConnection;
+import org.apache.qpid.client.transport.SocketTransportConnection;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
@@ -62,6 +64,7 @@ import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -157,6 +160,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
     private ProtocolVersion _protocolVersion;
 
+    /** The active socket that is to be used as a value for connection */
+    private Socket _openSocket;
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -173,7 +179,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(
                 ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                 + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='"
-                + AMQBrokerDetails.checkTransport(broker) + "'"), null);
+                + AMQBrokerDetails.checkTransport(broker) + "'"), null, null);
     }
 
     /**
@@ -192,7 +198,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(
                 ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                 + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='"
-                + AMQBrokerDetails.checkTransport(broker) + "'"), sslConfig);
+                + AMQBrokerDetails.checkTransport(broker) + "'"), sslConfig, null);
     }
 
     public AMQConnection(String host, int port, String username, String password, String clientName, String virtualHost)
@@ -217,25 +223,37 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                    + "'" + "," + ConnectionURL.OPTIONS_SSL + "='true'")
                 : (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                    + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
-                   + "'" + "," + ConnectionURL.OPTIONS_SSL + "='false'")), sslConfig);
+                   + "'" + "," + ConnectionURL.OPTIONS_SSL + "='false'")), sslConfig, null);
+    }
+
+    public AMQConnection(String connection, Socket socket) throws AMQException, URLSyntaxException
+    {
+        this(new AMQConnectionURL(connection), null, socket);
     }
 
     public AMQConnection(String connection) throws AMQException, URLSyntaxException
     {
-        this(new AMQConnectionURL(connection), null);
+        this(new AMQConnectionURL(connection), null, null);
     }
 
     public AMQConnection(String connection, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
     {
-        this(new AMQConnectionURL(connection), sslConfig);
+        this(new AMQConnectionURL(connection), sslConfig, null);
     }
 
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
+    {
+        this(connectionURL, sslConfig, null);
+    }
+
+    public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig, Socket socket) throws AMQException
     {
         if (_logger.isInfoEnabled())
         {
             _logger.info("Connection:" + connectionURL);
         }
+
+        _openSocket = socket;
 
         _sslConfiguration = sslConfig;
         if (connectionURL == null)
@@ -395,9 +413,26 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
         try
         {
-            TransportConnection.getInstance(brokerDetail).connect(_protocolHandler, brokerDetail);
-            // this blocks until the connection has been set up or when an error
-            // has prevented the connection being set up
+
+            ITransportConnection connection = TransportConnection.getInstance(brokerDetail);
+
+            if (brokerDetail.getTransport().equals(BrokerDetails.SOCKET))
+            {
+                if (_openSocket != null)
+                {
+                    ((SocketTransportConnection) connection).setOpenSocket(_openSocket);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Active Socket must be provided for broker " +
+                                                       "with 'socket' transport:" + brokerDetail);
+                }
+
+            }
+
+            connection.connect(_protocolHandler, brokerDetail);
+             // this blocks until the connection has been set up or when an error
+             // has prevented the connection being set up
 
             //_protocolHandler.attainState(AMQState.CONNECTION_OPEN);
             AMQState state = _protocolHandler.attainState(openOrClosedStates);
@@ -1290,6 +1325,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public AMQSession getSession(int channelId)
     {
         return _sessions.get(channelId);
+    }
+
+    public void setOpenSocket(Socket socket)
+    {
+        _openSocket = socket;
     }
 
     public ProtocolVersion getProtocolVersion()
