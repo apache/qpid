@@ -4,7 +4,7 @@
 
 src=$1 ; build=$2
 
-verify=$src/../bin/verify
+verify=./verify
 qpidd=$build/src/qpidd
 cpp=$build/examples/examples
 python=$src/../python
