@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        20%{?dist}
+Release:        21%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -80,9 +80,9 @@ rm docs/api/html/installdox
 
 %install
 rm -rf %{buildroot}
-make install DESTDIR=%{buildroot}
-install  -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
-install -d -m0755 %{buildroot}%{_localstatedir}/qpidd
+make install-strip DESTDIR=%{buildroot}
+install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
+install -d -m0755 %{buildroot}%{_localstatedir}/lib/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
 
@@ -99,7 +99,6 @@ make check
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
 %_libdir/libqpidclient.so.0.1.0
-%_localstatedir/qpidd
 %config(noreplace) %_sysconfdir/qpidd.conf
 
 %files devel
@@ -123,6 +122,7 @@ make check
 %_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
 %{_initrddir}/%{qpidd}
+%_localstatedir/lib/qpidd
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
@@ -156,6 +156,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Tue Feb 12 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-21
+- Create /var/lib/qpidd correctly.
+
 * Mon Feb 11 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-20
 - bumped for Beta 3
 
