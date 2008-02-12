@@ -51,16 +51,23 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         {
             throw new TransportException("attempted to write to a closed socket");
         }
-        lastWrite = session.write(ByteBuffer.wrap(buf));
+
+        synchronized (this)
+        {
+            lastWrite = session.write(ByteBuffer.wrap(buf));
+        }
     }
 
-    public void close()
+    public synchronized void close()
     {
         // MINA will sometimes throw away in-progress writes when you
         // ask it to close
-        if (lastWrite != null)
+        synchronized (this)
         {
-            lastWrite.join();
+            if (lastWrite != null)
+            {
+                lastWrite.join();
+            }
         }
         CloseFuture closed = session.close();
         closed.join();
