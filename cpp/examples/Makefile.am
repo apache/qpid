@@ -45,6 +45,9 @@ VERIFY_FILES= verify verify_all				\
 
 EXTRA_DIST=$(nobase_pkgdata_DATA) $(VERIFY_FILES)
 
+verify: 
+	cp $(top_srcdir)/../bin/verify $@
+
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
 
@@ -61,7 +64,7 @@ all-local:
 	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I../../$(top_srcdir)/src -I../../$(top_srcdir)/src/gen -I../../$(top_builddir)/src/gen -L../../$(top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
 
 # Verify the examples in the buid tree.
-check-local: all-local 
+check-local: all-local verify
 	$(srcdir)/verify_all $(abs_top_srcdir) $(abs_top_builddir)
 
 # TODO:
