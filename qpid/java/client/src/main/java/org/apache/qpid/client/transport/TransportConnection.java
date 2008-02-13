@@ -23,6 +23,7 @@ package org.apache.qpid.client.transport;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
 import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
@@ -36,6 +37,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.net.Socket;
+
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up the underlying
@@ -54,10 +58,23 @@ public class TransportConnection
 
     private static final int TCP = 0;
     private static final int VM = 1;
+    private static final int SOCKET = 2;
 
     private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
+
+    private static Map<String, Socket> _openSocketRegister = new ConcurrentHashMap<String, Socket>();
+
+    public static void registerOpenSocket(String socketID, Socket openSocket)
+    {
+        _openSocketRegister.put(socketID, openSocket);
+    }
+
+    public static Socket removeOpenSocket(String socketID)
+    {
+        return _openSocketRegister.remove(socketID);
+    }
 
     public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
     {
@@ -87,7 +104,15 @@ public class TransportConnection
 
         switch (transport)
         {
-
+            case SOCKET:
+                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                {
+                    public IoConnector newSocketConnector()
+                    {
+                        return new ExistingSocketConnector();
+                    }
+                });
+                break;
             case TCP:
                 _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                 {
@@ -127,6 +152,11 @@ public class TransportConnection
 
     private static int getTransport(String transport)
     {
+        if (transport.equals(BrokerDetails.SOCKET))
+        {
+            return SOCKET;
+        }
+
         if (transport.equals(BrokerDetails.TCP))
         {
             return TCP;
@@ -294,7 +324,7 @@ public class TransportConnection
         synchronized (_inVmPipeAddress)
         {
             _inVmPipeAddress.clear();
-        }        
+        }
         _acceptor = null;
         _currentInstance = -1;
         _currentVMPort = -1;
