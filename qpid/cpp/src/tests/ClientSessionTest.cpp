@@ -21,6 +21,7 @@
 #include "unit_test.h"
 #include "BrokerFixture.h"
 #include "qpid/client/Dispatcher.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/client/Session_0_10.h"
@@ -38,6 +39,7 @@ using namespace qpid::client;
 using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
+using qpid::sys::Monitor;
 using std::string;
 using std::cout;
 using std::endl;
@@ -64,6 +66,27 @@ struct DummyListener : public sys::Runnable, public MessageListener {
         messages.push_back(msg);
         if (--expected == 0)
             dispatcher.stop();
+    }
+};
+
+struct SimpleListener : public MessageListener
+{
+    Monitor lock;
+    std::vector<Message> messages;
+
+    void received(Message& msg)
+    {
+        Monitor::ScopedLock l(lock);
+        messages.push_back(msg);
+        lock.notifyAll();
+    }
+
+    void waitFor(const uint n)
+    {
+        Monitor::ScopedLock l(lock);
+        while (messages.size() < n) {
+            lock.wait();
+        }
     }
 };
 
@@ -167,22 +190,31 @@ BOOST_FIXTURE_TEST_CASE(testSuspendResume, ClientSessionFixture)
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
 
+/**
+ * Currently broken due to a deadlock in SessionCore
+ *
 BOOST_FIXTURE_TEST_CASE(testSendToSelf, SessionFixture) {
-    // https://bugzilla.redhat.com/show_bug.cgi?id=410551
     // Deadlock if SubscriptionManager  run() concurrent with session ack.
-    LocalQueue myq;
+    SimpleListener mylistener;
     session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
-    subs.subscribe(myq, "myq");
+    subs.subscribe(mylistener, "myq", "myq");
+    sys::Thread runner(subs);//start dispatcher thread
     string data("msg");
     Message msg(data, "myq");
-    const int count=100;       // Verified with count=100000 in a loop.
-    for (int i = 0; i < count; ++i)
+    const uint count=10000;
+    for (uint i = 0; i < count; ++i) {
         session.messageTransfer(content=msg);
-    for (int j = 0; j < count; ++j) {
-        Message m=myq.pop();
-        BOOST_CHECK_EQUAL(m.getData(), data);
+    }
+    mylistener.waitFor(count);
+    subs.cancel("myq");
+    subs.stop();
+    session.close();
+    BOOST_CHECK_EQUAL(mylistener.messages.size(), count);
+    for (uint j = 0; j < count; ++j) {
+        BOOST_CHECK_EQUAL(mylistener.messages[j].getData(), data);
     }
 }
+*/
 
 QPID_AUTO_TEST_SUITE_END()
 

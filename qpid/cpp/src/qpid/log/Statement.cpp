@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <syslog.h>
+#include <ctype.h>
 
 namespace qpid {
 namespace log {
@@ -29,21 +30,21 @@ namespace log {
 namespace {
 using namespace std;
 
-struct IsControl { bool operator()(unsigned char c) { return c < 32; } };
+struct NonPrint { bool operator()(unsigned char c) { return !isprint(c); } };
 
-bool isClean(const std::string& str) {
-    return std::find_if(str.begin(), str.end(), IsControl()) == str.end();
-}
+char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 std::string quote(const std::string& str) {
-    IsControl isControl;
-    size_t n = std::count_if(str.begin(), str.end(), isControl);
+    NonPrint nonPrint;
+    size_t n = std::count_if(str.begin(), str.end(), nonPrint);
+    if (n==0) return str;
     std::string ret;
-    ret.reserve(str.size()+n); // Avoid extra allocations.
+    ret.reserve(str.size()+2*n); // Avoid extra allocations.
     for (string::const_iterator i = str.begin(); i != str.end(); ++i) {
-        if (isControl(*i)) {
-            ret.push_back('^');
-            ret.push_back((*i)+64);
+        if (nonPrint(*i)) {
+            ret.push_back('\\');
+            ret.push_back(hex[((*i) >> 4)&0xf]);
+            ret.push_back(hex[(*i) & 0xf]);
         }
         else ret.push_back(*i);
     }
@@ -53,7 +54,7 @@ std::string quote(const std::string& str) {
 }
 
 void Statement::log(const std::string& message) {
-    Logger::instance().log(*this, isClean(message) ? message : quote(message));
+    Logger::instance().log(*this, quote(message));
 }
 
 Statement::Initializer::Initializer(Statement& s) : statement(s) {

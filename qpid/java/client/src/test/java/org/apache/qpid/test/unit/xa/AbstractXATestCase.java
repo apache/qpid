@@ -28,7 +28,7 @@ import javax.jms.*;
  *
  *
  */
-public abstract  class AbstractXATest extends QpidTestCase
+public abstract  class AbstractXATestCase extends QpidTestCase
 {
     protected static final String _sequenceNumberPropertyName = "seqNumber";
 

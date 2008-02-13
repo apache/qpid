@@ -16,6 +16,7 @@ import org.apache.qpidity.nclient.impl.ClientSessionDelegate;
 import org.apache.qpidity.transport.Channel;
 import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionClose;
+import org.apache.qpidity.transport.ConnectionCloseOk;
 import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.ProtocolHeader;
@@ -33,6 +34,9 @@ public class Client implements org.apache.qpidity.nclient.Connection
     private ClosedListener _closedListner;
     private final Lock _lock = new ReentrantLock();
     private static Logger _logger = LoggerFactory.getLogger(Client.class);
+    private Condition closeOk;
+    private boolean closed = false;
+
     /**
      *
      * @return returns a new connection to the broker.
@@ -45,6 +49,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException
     {
         Condition negotiationComplete = _lock.newCondition();
+        closeOk = _lock.newCondition();
         _lock.lock();
 
         ConnectionDelegate connectionDelegate = new ConnectionDelegate()
@@ -73,6 +78,21 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 if (_closedListner != null && !this.receivedClose)
                 {
                     _closedListner.onClosed(ErrorCode.CONNECTION_ERROR,ErrorCode.CONNECTION_ERROR.getDesc(),null);
+                }
+            }
+
+            @Override public void connectionCloseOk(Channel context, ConnectionCloseOk struct)
+            {
+                _lock.lock();
+                try
+                {
+                    closed = true;
+                    this.receivedClose = true;
+                    closeOk.signalAll();
+                }
+                finally
+                {
+                    _lock.unlock();
                 }
             }
 
@@ -179,6 +199,24 @@ public class Client implements org.apache.qpidity.nclient.Connection
     {
         Channel ch = _conn.getChannel(0);
         ch.connectionClose(0, "client is closing", 0, 0);
+        _lock.lock();
+        try
+        {
+            try {
+                while (!closed)
+                {
+                    closeOk.await();
+                }
+            }
+            catch (InterruptedException e)
+            {
+                // do nothing
+            }
+        }
+        finally
+        {
+            _lock.unlock();
+        }
         _conn.close();
     }
 

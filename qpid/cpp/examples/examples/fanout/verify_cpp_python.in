@@ -1,6 +1,6 @@
-==== ./declare_queues.out
-==== ./fanout_producer.out
-==== ../../../../python/examples/fanout/fanout_consumer.py.out
+==== declare_queues.out
+==== fanout_producer.out
+==== fanout_consumer.py.out
 Message 0
 Message 1
 Message 2

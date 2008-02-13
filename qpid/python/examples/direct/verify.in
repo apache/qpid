@@ -1,6 +1,6 @@
-==== ./declare_queues.py.out
-==== ./direct_producer.py.out
-==== ./direct_consumer.py.out
+==== declare_queues.py.out
+==== direct_producer.py.out
+==== direct_consumer.py.out
 message 0
 message 1
 message 2

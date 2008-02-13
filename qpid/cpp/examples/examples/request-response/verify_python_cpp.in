@@ -9,6 +9,10 @@ Response: DID GYRE AND GIMBLE IN THE WABE.
 Response: ALL MIMSY WERE THE BOROGROVES,
 Response: AND THE MOME RATHS OUTGRABE.
 No more messages!
-==== server.py.out | remove_uuid64
-Request server running - run your client now.
-(Times out after 100 seconds ...)
+==== server.out | remove_uuid64
+Activating request queue listener for: request
+Waiting for requests
+Request: Twas brilling, and the slithy toves  (ReplyTo:)
+Request: Did gyre and gimble in the wabe.  (ReplyTo:)
+Request: All mimsy were the borogroves,  (ReplyTo:)
+Request: And the mome raths outgrabe.  (ReplyTo:)

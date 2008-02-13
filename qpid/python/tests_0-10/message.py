@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,7 +47,7 @@ class MessageTests(TestBase):
         msg = included.get(timeout=1)
         self.assertEqual("consume_no_local", msg.content.body)
         try:
-            excluded.get(timeout=1) 
+            excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
         except Empty: None
 
@@ -59,9 +59,9 @@ class MessageTests(TestBase):
         could be left on the queue, possibly never being consumed
         (this is the case for example in the qpid JMS mapping of
         topics). This test excercises a Qpid C++ broker hack that
-        deletes such messages.        
+        deletes such messages.
         """
-        
+
         channel = self.channel
         #setup:
         channel.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
@@ -84,7 +84,7 @@ class MessageTests(TestBase):
         msg = excluded.get(timeout=1)
         self.assertEqual("foreign", msg.content.body)
         try:
-            excluded.get(timeout=1) 
+            excluded.get(timeout=1)
             self.fail("Received extra message")
         except Empty: None
         #check queue is empty
@@ -107,7 +107,7 @@ class MessageTests(TestBase):
         except Closed, e:
             self.assertChannelException(403, e.args[0])
 
-        #open new channel and cleanup last consumer:    
+        #open new channel and cleanup last consumer:
         channel = self.client.channel(2)
         channel.session_open()
 
@@ -173,7 +173,7 @@ class MessageTests(TestBase):
         msg = myqueue.get(timeout=1)
         self.assertEqual("One", msg.content.body)
         try:
-            msg = myqueue.get(timeout=1) 
+            msg = myqueue.get(timeout=1)
             self.fail("Got message after cancellation: " + msg)
         except Empty: None
 
@@ -188,7 +188,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="test-ack-queue", exclusive=True, auto_delete=True)
-        
+
         self.subscribe(queue="test-ack-queue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
@@ -197,13 +197,13 @@ class MessageTests(TestBase):
         channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Three"))
         channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Four"))
         channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Five"))
-                
+
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
         msg3 = queue.get(timeout=1)
         msg4 = queue.get(timeout=1)
         msg5 = queue.get(timeout=1)
-        
+
         self.assertEqual("One", msg1.content.body)
         self.assertEqual("Two", msg2.content.body)
         self.assertEqual("Three", msg3.content.body)
@@ -214,10 +214,10 @@ class MessageTests(TestBase):
         msg4.complete(cumulative=False)
 
         channel.message_recover(requeue=False)
-        
+
         msg3b = queue.get(timeout=1)
         msg5b = queue.get(timeout=1)
-        
+
         self.assertEqual("Three", msg3b.content.body)
         self.assertEqual("Five", msg5b.content.body)
 
@@ -236,7 +236,7 @@ class MessageTests(TestBase):
         channel.queue_bind(exchange="amq.fanout", queue="queue-a")
         channel.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="amq.fanout", queue="queue-b")
-        
+
         self.subscribe(queue="queue-a", destination="unconfirmed", confirm_mode=1)
         self.subscribe(queue="queue-b", destination="confirmed", confirm_mode=0)
         confirmed = self.client.queue("confirmed")
@@ -246,10 +246,10 @@ class MessageTests(TestBase):
         for d in data:
             channel.message_transfer(destination="amq.fanout", content=Content(body=d))
 
-        for q in [confirmed, unconfirmed]:    
+        for q in [confirmed, unconfirmed]:
             for d in data:
                 self.assertEqual(d, q.get(timeout=1).content.body)
-            self.assertEmpty(q)        
+            self.assertEmpty(q)
 
         channel.message_recover(requeue=False)
 
@@ -265,7 +265,7 @@ class MessageTests(TestBase):
             data.remove(msg.content.body)
             msg.complete(cumulative=False)
             channel.message_recover(requeue=False)
-        
+
 
     def test_recover_requeue(self):
         """
@@ -273,7 +273,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="test-requeue", exclusive=True, auto_delete=True)
-        
+
         self.subscribe(queue="test-requeue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
@@ -282,13 +282,13 @@ class MessageTests(TestBase):
         channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Three"))
         channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Four"))
         channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Five"))
-                
+
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
         msg3 = queue.get(timeout=1)
         msg4 = queue.get(timeout=1)
         msg5 = queue.get(timeout=1)
-        
+
         self.assertEqual("One", msg1.content.body)
         self.assertEqual("Two", msg2.content.body)
         self.assertEqual("Three", msg3.content.body)
@@ -307,10 +307,10 @@ class MessageTests(TestBase):
 
         self.subscribe(queue="test-requeue", destination="consumer_tag")
         queue2 = self.client.queue("consumer_tag")
-        
+
         msg3b = queue2.get(timeout=1)
         msg5b = queue2.get(timeout=1)
-        
+
         self.assertEqual("Three", msg3b.content.body)
         self.assertEqual("Five", msg5b.content.body)
 
@@ -327,8 +327,8 @@ class MessageTests(TestBase):
             extra = queue.get(timeout=1)
             self.fail("Got unexpected message in original queue: " + extra.content.body)
         except Empty: None
-        
-        
+
+
     def test_qos_prefetch_count(self):
         """
         Test that the prefetch count specified is honoured
@@ -370,7 +370,7 @@ class MessageTests(TestBase):
         except Empty: None
 
 
-        
+
     def test_qos_prefetch_size(self):
         """
         Test that the prefetch size specified is honoured
@@ -448,7 +448,7 @@ class MessageTests(TestBase):
         #send batch of messages to queue
         for i in range(1, 11):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %d" % i))
-        
+
         #set message credit to finite amount (less than enough for all messages)
         channel.message_flow(unit = 0, value = 5, destination = "c")
         #set infinite byte credit
@@ -458,7 +458,7 @@ class MessageTests(TestBase):
         for i in range(1, 6):
             self.assertDataEquals(channel, q.get(timeout = 1), "Message %d" % i)
         self.assertEmpty(q)
-        
+
         #increase credit again and check more are received
         for i in range(6, 11):
             channel.message_flow(unit = 0, value = 1, destination = "c")
@@ -512,7 +512,7 @@ class MessageTests(TestBase):
         #send batch of messages to queue
         for i in range(1, 11):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %d" % i))
-        
+
         #set message credit to finite amount (less than enough for all messages)
         channel.message_flow(unit = 0, value = 5, destination = "c")
         #set infinite byte credit
@@ -523,7 +523,7 @@ class MessageTests(TestBase):
             msg = q.get(timeout = 1)
             self.assertDataEquals(channel, msg, "Message %d" % i)
         self.assertEmpty(q)
-        
+
         #acknowledge messages and check more are received
         msg.complete(cumulative=True)
         for i in range(6, 11):
@@ -560,7 +560,7 @@ class MessageTests(TestBase):
             msgs.append(msg)
             self.assertDataEquals(channel, msg, "abcdefgh")
         self.assertEmpty(q)
-        
+
         #ack each message individually and check more are received
         for i in range(5):
             msg = msgs.pop()
@@ -650,7 +650,7 @@ class MessageTests(TestBase):
         channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
         queue = self.client.queue("a")
         first = queue.get(timeout = 1)
-        for i in range (2, 10):        
+        for i in range (2, 10):
             self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
         last = queue.get(timeout = 1)
         self.assertEmpty(queue)
@@ -672,7 +672,7 @@ class MessageTests(TestBase):
         channel.message_flow(unit = 0, value = 10, destination = "a")
         channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
         queue = self.client.queue("a")
-        for i in range (1, 11):        
+        for i in range (1, 11):
             self.assertEquals("message %s" % (i), queue.get(timeout = 1).content.body)
         self.assertEmpty(queue)
 
@@ -683,14 +683,14 @@ class MessageTests(TestBase):
         self.assertEmpty(queue)
 
     def test_subscribe_not_acquired_2(self):
-        channel = self.channel        
+        channel = self.channel
 
         #publish some messages
         self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 11):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
 
-        #consume some of them    
+        #consume some of them
         channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
         channel.message_flow_mode(mode = 0, destination = "a")
         channel.message_flow(unit = 0, value = 5, destination = "a")
