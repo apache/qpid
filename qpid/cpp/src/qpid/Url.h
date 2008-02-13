@@ -78,6 +78,9 @@ struct Url : public std::vector<Address> {
 
     template<class T> Url& operator=(T s) { parse(s); return *this; }
     
+    /** Throw InvalidUrl if the URL does not contain any addresses. */
+    void throwIfEmpty() const;
+
     /** Replace contents with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
      *@exception InvalidUrl if the url is invalid.
