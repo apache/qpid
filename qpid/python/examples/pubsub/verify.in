@@ -1,4 +1,4 @@
-==== ./topic_publisher.py.out
+==== topic_publisher.py.out
 ==== topic_subscriber.py.out | remove_uuid64 | sort
 message 0
 message 0

@@ -59,16 +59,27 @@ public class QpidTestCase extends TestCase
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
 
-    protected void setUp() throws Exception
+    public void runBare() throws Throwable
     {
-        super.setUp();
+        String name = getClass().getSimpleName() + "." + getName();
+        _logger.info("========== start " + name + " ==========");
         startBroker();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        stopBroker();
-        super.tearDown();
+        try
+        {
+            super.runBare();
+        }
+        finally
+        {
+            try
+            {
+                stopBroker();
+            }
+            catch (Exception e)
+            {
+                _logger.error("exception stopping broker", e);
+            }
+            _logger.info("==========  stop " + name + " ==========");
+        }
     }
 
     public void startBroker() throws Exception
@@ -102,7 +113,8 @@ public class QpidTestCase extends TestCase
                     }
                     catch (IOException e)
                     {
-                        _logger.info("redirector", e);
+                        // this seems to happen regularly even when
+                        // exits are normal
                     }
                 }
             }.start();
@@ -188,6 +200,11 @@ public class QpidTestCase extends TestCase
             _connectionFactory = (AMQConnectionFactory) getInitialContext().lookup("local");
         }
         return _connectionFactory;
+    }
+
+    public Connection getConnection() throws Exception
+    {
+        return getConnection("guest", "guest");
     }
 
     /**

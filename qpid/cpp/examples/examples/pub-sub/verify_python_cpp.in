@@ -1,4 +1,4 @@
-==== ../../../../python/examples/pubsub/topic_publisher.py.out
+==== topic_publisher.py.out
 ==== topic_listener.out | remove_uuid | sort
 Declaring queue: europe
 Declaring queue: news

@@ -21,22 +21,22 @@
 
 
 /**
- *  direct_publisher.cpp:
+ *  fanout_producer.cpp:
  *
  *  This program is one of three programs designed to be used
  *  together. These programs do not specify the exchange type - the
  *  default exchange type is the direct exchange.
  *  
- *    direct_config_queues.cpp:
+ *    declare_queues.cpp:
  *
  *      Creates a queue on a broker, binding a routing key to route
  *      messages to that queue.
  *
- *    direct_publisher.cpp (this program):
+ *    fanout_producer.cpp (this program):
  *
  *      Publishes to a broker, specifying a routing key.
  *
- *    direct_listener.cpp
+ *    listener.cpp
  *
  *      Reads from a queue on the broker using a message listener.
  *

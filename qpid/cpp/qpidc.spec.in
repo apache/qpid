@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        18%{?dist}
+Release:        22%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -73,16 +73,16 @@ Qpid broker daemon.
 %setup -q
 
 %build
-%configure --disable-static --without-cpg CXXFLAGS="-O3 -DNDEBUG"
+%configure --disable-static --without-cpg CXXFLAGS="-g -O3 -DNDEBUG"
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
 
 %install
 rm -rf %{buildroot}
-make install DESTDIR=%{buildroot}
-install  -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
-install -d -m0755 %{buildroot}%{_localstatedir}/qpidd
+make install-strip DESTDIR=%{buildroot}
+install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
+install -d -m0755 %{buildroot}%{_localstatedir}/lib/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
 
@@ -99,7 +99,6 @@ make check
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
 %_libdir/libqpidclient.so.0.1.0
-%_localstatedir/qpidd
 %config(noreplace) %_sysconfdir/qpidd.conf
 
 %files devel
@@ -123,6 +122,7 @@ make check
 %_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
 %{_initrddir}/%{qpidd}
+%_localstatedir/lib/qpidd
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
@@ -156,6 +156,14 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-22
+- Added -g to compile flags for debug symbols.
+
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-21
+- Create /var/lib/qpidd correctly.
+
+* Mon Feb 11 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-20
+- bumped for Beta 3
 
 * Mon Jan 21 2008 Gordon Sim <gsim@redhat.com> - 0.2-18
 - bump up rev for recent changes to plugin modules & mgmt

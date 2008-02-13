@@ -231,6 +231,14 @@ public abstract class AMQDestination implements Destination, Referenceable
 
             sb.append('?');
 
+            if (_routingKey != null)
+            {
+                sb.append(BindingURL.OPTION_ROUTING_KEY);
+                sb.append("='");
+                sb.append(_routingKey).append("'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
             if (_isDurable)
             {
                 sb.append(BindingURL.OPTION_DURABLE);

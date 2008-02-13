@@ -26,10 +26,10 @@ import junit.framework.TestSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class QueueTests extends AbstractXATest
+public class QueueTest extends AbstractXATestCase
 {
     /* this clas logger */
-    private static final Logger _logger = LoggerFactory.getLogger(QueueTests.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QueueTest.class);
 
     /**
      * the queue use by all the tests
@@ -66,7 +66,7 @@ public class QueueTests extends AbstractXATest
      */
     public static TestSuite getSuite()
     {
-        return new TestSuite(QueueTests.class);
+        return new TestSuite(QueueTest.class);
     }
 
     /**

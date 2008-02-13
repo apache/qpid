@@ -48,9 +48,9 @@ struct ModuleOptions : public qpid::Options {
     ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
     {
         addOptions()
-            ("load-dir",    optValue(loadDir, "DIR"),  "Load all modules from this directory")
-            ("load-module", optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
-            ("no-modules",  optValue(noLoad),          "Don't load any modules");
+            ("module-dir",    optValue(loadDir, "DIR"),  "Load all .so modules in this directory")
+            ("load-module",   optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
+            ("no-module-dir", optValue(noLoad),          "Don't load modules from module directory");
     }
 };
 
@@ -122,7 +122,7 @@ auto_ptr<QpiddOptions> options;
 
 void shutdownHandler(int /*signal*/){
     // Note: do not call any async-signal unsafe functions here.
-    // Do any extra shtudown actions in main() after broker->run()
+    // Do any extra shutdown actions in main() after broker->run()
     brokerPtr->shutdown();
 }
 
@@ -140,6 +140,7 @@ struct QpiddDaemon : public Daemon {
         uint16_t port=brokerPtr->getPort();
         ready(port);            // Notify parent.
         brokerPtr->run();
+        brokerPtr.reset();
     }
 };
 
@@ -188,12 +189,13 @@ int main(int argc, char* argv[])
             // be re-parsed with all of the module-supplied options.
             bootOptions.parse (argc, argv, bootOptions.common.config, true);
             qpid::log::Logger::instance().configure(bootOptions.log, argv[0]);
-            if (!bootOptions.module.noLoad) {
-                for (vector<string>::iterator iter = bootOptions.module.load.begin();
-                     iter != bootOptions.module.load.end();
-                     iter++)
-                    tryShlib (iter->data(), false);
 
+            for (vector<string>::iterator iter = bootOptions.module.load.begin();
+                 iter != bootOptions.module.load.end();
+                 iter++)
+                tryShlib (iter->data(), false);
+
+            if (!bootOptions.module.noLoad) {
                 bool isDefault = defaultPath == bootOptions.module.loadDir;
                 loadModuleDir (bootOptions.module.loadDir, isDefault);
             }

@@ -20,6 +20,7 @@
 
 #include "Exception.h"
 #include "DataDir.h"
+#include "qpid/log/Statement.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -32,7 +33,10 @@ DataDir::DataDir (std::string path) :
     dirPath (path)
 {
     if (!enabled)
+    {
+        QPID_LOG (info, "No data directory - Disabling persistent configuration");
         return;
+    }
 
     const  char *cpath = dirPath.c_str ();
     struct stat  s;
@@ -55,14 +59,20 @@ DataDir::DataDir (std::string path) :
         oss << "Error locking data directory: errno=" << errno;
         throw Exception (oss.str ());
     }
+
+    QPID_LOG (info, "Locked data directory: " << dirPath);
 }
 
 DataDir::~DataDir ()
 {
+    if (dirPath.empty ())
+        return;
+
     std::string lockFile (dirPath);
     lockFile = lockFile + "/lock";
 
     ::unlink (lockFile.c_str ());
+    QPID_LOG (info, "Unlocked data directory: " << dirPath);
 }
 
 } // namespace qpid
