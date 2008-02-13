@@ -1,9 +1,13 @@
  package org.apache.qpidity.nclient;
 
+import java.util.Enumeration;
+
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -24,10 +28,29 @@ public class JMSTestCase
             javax.jms.Session ssn = con.createSession(false, 1);
 
             javax.jms.Destination dest = new AMQQueue(new AMQShortString("direct"),"test");
-            javax.jms.MessageConsumer cons = ssn.createConsumer(dest);
-            //javax.jms.MessageProducer prod = ssn.createProducer(dest);
+            javax.jms.MessageProducer prod = ssn.createProducer(dest);
+            QueueBrowser browser = ssn.createBrowser((Queue)dest, "Test = 'test'");
 
-            javax.jms.TextMessage m = null; // (javax.jms.TextMessage)cons.receive();
+            javax.jms.TextMessage msg = ssn.createTextMessage();
+            msg.setStringProperty("TEST", "test");
+            msg.setText("Should get this");
+            prod.send(msg);
+
+            javax.jms.TextMessage msg2 = ssn.createTextMessage();
+            msg2.setStringProperty("TEST", "test2");
+            msg2.setText("Shouldn't get this");
+            prod.send(msg2);
+
+
+           Enumeration enu = browser.getEnumeration();
+           for (;enu.hasMoreElements();)
+           {
+               System.out.println(enu.nextElement());
+               System.out.println("\n");
+           }
+
+           javax.jms.MessageConsumer cons = ssn.createConsumer(dest, "Test = 'test'");
+           javax.jms.TextMessage m = null; // (javax.jms.TextMessage)cons.receive();
            cons.setMessageListener(new MessageListener()
             {
                 public void onMessage(Message m)
@@ -35,7 +58,9 @@ public class JMSTestCase
                     javax.jms.TextMessage m2 = (javax.jms.TextMessage)m;
                     try
                     {
+                        System.out.println("headers : " + m2.toString());
                         System.out.println("m : " + m2.getText());
+                        System.out.println("\n\n");
                     }
                     catch(Exception e)
                     {
