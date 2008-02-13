@@ -40,6 +40,7 @@
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/Url.h"
 
 #include <boost/bind.hpp>
 
@@ -263,11 +264,13 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     case management::Broker::METHOD_ECHO :
         status = Manageable::STATUS_OK;
         break;
-    case management::Broker::METHOD_CONNECT :
-        connect(dynamic_cast<management::ArgsBrokerConnect&>(args));
+      case management::Broker::METHOD_CONNECT : {
+        management::ArgsBrokerConnect& hp=
+            dynamic_cast<management::ArgsBrokerConnect&>(args);
+        connect(hp.i_host, hp.i_port);
         status = Manageable::STATUS_OK;
         break;
-
+      }
     case management::Broker::METHOD_JOINCLUSTER :
     case management::Broker::METHOD_LEAVECLUSTER :
         status = Manageable::STATUS_NOT_IMPLEMENTED;
@@ -277,9 +280,19 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-void Broker::connect(management::ArgsBrokerConnect& args)
+sys::ConnectionInputHandler* Broker::connect(
+    const std::string& host, uint16_t port,
+    sys::ConnectionInputHandlerFactory* f)
 {
-    getAcceptor().connect(args.i_host, args.i_port, &factory);
+    return getAcceptor().connect(host, port, f ? f : &factory);
+}
+
+sys::ConnectionInputHandler* Broker::connect(
+    const Url& url, sys::ConnectionInputHandlerFactory* f)
+{
+    url.throwIfEmpty();
+    TcpAddress addr=boost::get<TcpAddress>(url[0]);
+    return connect(addr.host, addr.port, f);
 }
 
 }} // namespace qpid::broker

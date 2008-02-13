@@ -59,6 +59,9 @@ class AMQBody
 
     virtual AMQMethodBody* getMethod() { return 0; }
     virtual const AMQMethodBody* getMethod() const { return 0; }
+
+    /** Match if same type and same class/method ID for methods */
+    static bool match(const AMQBody& , const AMQBody& );
 };
 
 std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
