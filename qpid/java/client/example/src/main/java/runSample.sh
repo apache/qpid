@@ -23,7 +23,7 @@ if test "'x$QPID_SAMPLE'" != "'x'"
 then
     QPID_SAMPLE=$QPID_SAMPLE
 else
-    QPID_SAMPLE="/usr/share/rhm-docs-0.2/java"
+    QPID_SAMPLE="/usr/share/doc/rhm-0.2"
 fi
 echo "Using QPID_SAMPLE: $QPID_SAMPLE"
 
@@ -39,7 +39,7 @@ javac -cp  "$CLASSPATH" -sourcepath "$QPID_SAMPLE" -d . `find $QPID_SAMPLE -name
 CLASSPATH="$CLASSPATH$DIVIDER$."
 
 # Set VM parameters
-QPID_PARAM="$QPID_PARAM -Dlog4j.configuration=file://$QPID_SAMPLE/log4j.xml"
+QPID_PARAM="$QPID_PARAM -Dlog4j.configuration=file://$QPID_SAMPLE/java/log4j.xml"
 
 
 # Check if the user supplied a sample classname
