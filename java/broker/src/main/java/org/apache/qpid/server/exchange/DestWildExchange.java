@@ -239,7 +239,7 @@ public class DestWildExchange extends AbstractExchange
     {
         MessagePublishInfo info = payload.getMessagePublishInfo();
 
-        final AMQShortString routingKey = normalize(info.getRoutingKey());
+        final AMQShortString routingKey = info.getRoutingKey();
 
         List<AMQQueue> queues = getMatchedQueues(routingKey);
         // if we have no registered queues we have nothing to do

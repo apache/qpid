@@ -27,6 +27,8 @@ public interface MessagePublishInfo
 
     public AMQShortString getExchange();
 
+    public void setExchange(AMQShortString exchange);
+
     public boolean isImmediate();
 
     public boolean isMandatory();

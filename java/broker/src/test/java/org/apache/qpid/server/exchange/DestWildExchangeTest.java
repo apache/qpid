@@ -589,6 +589,11 @@ public class DestWildExchangeTest extends TestCase
             return null;
         }
 
+        public void setExchange(AMQShortString exchange)
+        {
+                        
+        }
+
         public boolean isImmediate()
         {
             return false;

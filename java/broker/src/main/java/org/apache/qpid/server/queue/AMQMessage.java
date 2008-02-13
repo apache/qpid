@@ -35,6 +35,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.exchange.Exchange;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,6 +85,10 @@ public class AMQMessage
 
     private final int hashcode = System.identityHashCode(this);
 
+    private Exchange _exchange;
+    private static final boolean SYNCED_CLOCKS =
+            ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false);
+
 
     public String debugIdentity()
     {
@@ -97,7 +102,7 @@ public class AMQMessage
         long timestamp =
                 ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
 
-        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
+        if (SYNCED_CLOCKS)
         {
             _expiration = expiration;
         }
@@ -124,6 +129,16 @@ public class AMQMessage
     public boolean isReferenced()
     {
         return _referenceCount.get() > 0;
+    }
+
+    public void setExchange(final Exchange exchange)
+    {
+        _exchange = exchange;
+    }
+
+    public void route() throws AMQException
+    {
+        _exchange.route(this);
     }
 
     /**

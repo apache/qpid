@@ -107,7 +107,7 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
 
     private static class MessagePublishInfoImpl implements MessagePublishInfo
     {
-        private final AMQShortString _exchange;
+        private AMQShortString _exchange;
         private final boolean _immediate;
         private final boolean _mandatory;
         private final AMQShortString _routingKey;
@@ -126,6 +126,11 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
         public AMQShortString getExchange()
         {
             return _exchange;
+        }
+
+        public void setExchange(AMQShortString exchange)
+        {
+            _exchange = exchange;
         }
 
         public boolean isImmediate()
