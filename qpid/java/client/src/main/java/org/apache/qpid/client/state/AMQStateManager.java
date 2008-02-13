@@ -53,7 +53,7 @@ public class AMQStateManager implements AMQMethodListener
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
     private final Object _stateLock = new Object();
-    private static final long MAXIMUM_STATE_WAIT_TIME = 30000L;
+    private static final long MAXIMUM_STATE_WAIT_TIME = Long.parseLong(System.getProperty("amqj.MaximumStateWait", "30000"));
 
     public AMQStateManager()
     {

@@ -71,7 +71,7 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
         connection.start();
 
         String selector = null;
-        // selector = "Cost = 2 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
+         selector = "Cost = 2 AND \"property-with-hyphen\" = 'wibble'";
         // selector = "JMSType = Special AND Cost = 2 AND AMQMessageID > 0 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
 
         _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -86,6 +86,7 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
             Message msg = _session.createTextMessage("Message");
             msg.setJMSPriority(1);
             msg.setIntProperty("Cost", 2);
+            msg.setStringProperty("property-with-hyphen","wibble");
             msg.setJMSType("Special");
 
             _logger.info("Sending Message:" + msg);
