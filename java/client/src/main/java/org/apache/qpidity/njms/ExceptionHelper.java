@@ -41,6 +41,7 @@ public class ExceptionHelper
                 jmsException = new JMSException(exception.getMessage());
             }
             jmsException.setLinkedException(exception);
+            jmsException.initCause(exception);
         }
         else
         {
