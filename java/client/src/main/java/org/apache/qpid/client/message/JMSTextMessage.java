@@ -134,6 +134,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             // should never occur
             JMSException jmse = new JMSException("Unable to decode text data");
             jmse.setLinkedException(e);
+            throw jmse;
         }
     }
 
