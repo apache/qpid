@@ -170,12 +170,17 @@ void Queue::requeue(const QueuedMessage& msg){
 
 bool Queue::acquire(const QueuedMessage& msg) {
     Mutex::ScopedLock locker(messageLock);
+    QPID_LOG(debug, "attempting to acquire " << msg.position);
     for (Messages::iterator i = messages.begin(); i != messages.end(); i++) {
         if (i->position == msg.position) {
             messages.erase(i);
+            QPID_LOG(debug, "Match found, acquire succeeded: " << i->position << " == " << msg.position);
             return true;
+        } else {
+            QPID_LOG(debug, "No match: " << i->position << " != " << msg.position);
         }
     }
+    QPID_LOG(debug, "Acquire failed for " << msg.position);
     return false;
 }
 
@@ -255,8 +260,8 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer& c)
                 m = msg;
                 return true;
             } else {
-                //consumer hasn't got enough credit for the message
-                QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
+                //browser hasn't got enough credit for the message
+                QPID_LOG(debug, "Browser can't currently accept message from '" << name << "'");
                 return false;
             }
         } else {
@@ -304,11 +309,13 @@ bool Queue::seek(QueuedMessage& msg, Consumer& c) {
             msg = messages.front();
             return true;
         } else {        
-            uint index = (c.position - messages.front().position) + 1;
-            if (index < messages.size()) {
-                msg = messages[index];
-                return true;
-            } 
+            //TODO: can improve performance of this search, for now just searching linearly from end
+            Messages::reverse_iterator pos;
+            for (Messages::reverse_iterator i = messages.rbegin(); i != messages.rend() && i->position > c.position; i++) {
+                pos = i;
+            }
+            msg = *pos;
+            return true;
         }
     }
     addListener(c);
