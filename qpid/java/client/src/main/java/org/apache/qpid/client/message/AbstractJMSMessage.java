@@ -78,7 +78,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             {
                 if (_data != null)
                 {
-                    _010message.appendData(_data.buf());
+                    _010message.appendData(_data.buf().slice());
                 }
                 else
                 {
