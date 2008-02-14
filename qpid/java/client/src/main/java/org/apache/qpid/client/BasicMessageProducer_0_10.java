@@ -68,17 +68,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         if (message.get010Message() == null)
         {
             message.set010Message(new ByteBufferMessage());
-            if (message.getData() == null)
-            {
-                try
-                {
-                    message.get010Message().appendData(ByteBuffer.allocate(0));
-                }
-                catch (IOException e)
-                {
-                    throw new JMSException(e.getMessage());
-                }
-            }
+        }
+        // force a rebuild of the 0-10 message if data has changed
+        if (message.getData() == null)
+        {
+            message.dataChanged();
         }
 
         DeliveryProperties deliveryProp = message.get010Message().getDeliveryProperties();
