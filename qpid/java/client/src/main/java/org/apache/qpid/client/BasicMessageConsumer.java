@@ -523,10 +523,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 {
                     // //fixme this probably is not right
                     // if (!isNoConsume())
-                    { // done in BasicCancelOK Handler but not sending one so just deregister.
-                        deregisterConsumer();
-                    }
+                    //{ // done in BasicCancelOK Handler but not sending one so just deregister.
+                    //    deregisterConsumer();
+                    //}
                 }
+
+                deregisterConsumer();
 
                 if (_messageListener != null && _receiving.get() && _receivingThread != null)
                 {
@@ -1011,7 +1013,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         this._queuename = queuename;
     }
 
-    public void addBindingKey(AMQDestination amqd, String routingKey) throws AMQException 
+    public void addBindingKey(AMQDestination amqd, String routingKey) throws AMQException
     {
         _session.addBindingKey(this,amqd,routingKey);
     }
