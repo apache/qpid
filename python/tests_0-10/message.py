@@ -720,6 +720,49 @@ class MessageTests(TestBase):
         #check all 'browsed' messages are still on the queue
         self.assertEqual(5, channel.queue_query(queue="q").message_count)
 
+    def test_subscribe_not_acquired_3(self):
+        channel = self.channel
+
+        #publish some messages
+        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        for i in range(1, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
+
+        #create a not-acquired subscriber
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        channel.message_flow(unit = 0, value = 10, destination = "a")
+
+        #browse through messages
+        queue = self.client.queue("a")
+        for i in range(1, 11):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            if (i % 2):
+                #try to acquire every second message
+                channel.message_acquire([msg.command_id, msg.command_id])
+                #check that acquire succeeds
+                response = channel.control_queue.get(timeout=1)
+                self.assertEquals(response.transfers, [msg.command_id, msg.command_id])
+            msg.complete()
+        self.assertEmpty(queue)
+
+        #create a second not-acquired subscriber
+        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        #check it gets those not consumed
+        queue = self.client.queue("b")
+        for i in [2,4,6,8,10]:
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            msg.complete()
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        self.assertEmpty(queue)
+
+        #check all 'browsed' messages are still on the queue
+        self.assertEqual(5, channel.queue_query(queue="q").message_count)
+
     def test_no_size(self):
         self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
