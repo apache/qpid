@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
@@ -360,6 +359,41 @@ public class FieldTable
         }
     }
 
+    /**
+     * Extracts a value from the field table that is itself a FieldTable associated with the specified parameter name.
+     *
+     * @param string The name of the parameter to get the associated FieldTable value for.
+     *
+     * @return The associated FieldTable value, or <tt>null</tt> if the associated value is not of FieldTable type or
+     *         not present in the field table at all.
+     */
+    public FieldTable getFieldTable(String string)
+    {
+        return getFieldTable(new AMQShortString(string));
+    }
+
+    /**
+     * Extracts a value from the field table that is itself a FieldTable associated with the specified parameter name.
+     *
+     * @param string The name of the parameter to get the associated FieldTable value for.
+     *
+     * @return The associated FieldTable value, or <tt>null</tt> if the associated value is not of FieldTable type or
+     *         not present in the field table at all.
+     */
+    public FieldTable getFieldTable(AMQShortString string)
+    {
+        AMQTypedValue value = getProperty(string);
+
+        if ((value != null) && (value.getType() == AMQType.FIELD_TABLE))
+        {
+            return (FieldTable) value.getValue();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     public Object getObject(String string)
     {
         return getObject(new AMQShortString(string));
@@ -566,6 +600,32 @@ public class FieldTable
     public Object setVoid(AMQShortString string)
     {
         return setProperty(string, AMQType.VOID.asTypedValue(null));
+    }
+
+    /**
+     * Associates a nested field table with the specified parameter name.
+     *
+     * @param string  The name of the parameter to store in the table.
+     * @param ftValue The field table value to associate with the parameter name.
+     *
+     * @return The stored value.
+     */
+    public Object setFieldTable(String string, FieldTable ftValue)
+    {
+        return setFieldTable(new AMQShortString(string), ftValue);
+    }
+
+    /**
+     * Associates a nested field table with the specified parameter name.
+     *
+     * @param string  The name of the parameter to store in the table.
+     * @param ftValue The field table value to associate with the parameter name.
+     *
+     * @return The stored value.
+     */
+    public Object setFieldTable(AMQShortString string, FieldTable ftValue)
+    {
+        return setProperty(string, AMQType.FIELD_TABLE.asTypedValue(ftValue));
     }
 
     public Object setObject(AMQShortString string, Object object)
