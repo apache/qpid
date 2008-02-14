@@ -125,7 +125,7 @@ public class Publisher
         for (int i=1; i <= 6; i++)
         {
             message.setText("message " + i);
-            System.out.println(CLASS + ": Sending message: " + i);
+            System.out.println(CLASS + ": Sending " + message.getText());
             messagePublisher
                     .send(message, DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
         }
