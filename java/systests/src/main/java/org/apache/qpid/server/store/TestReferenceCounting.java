@@ -114,6 +114,11 @@ public class TestReferenceCounting extends TestCase
                 return null;
             }
 
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
             public boolean isImmediate()
             {
                 return false;
