@@ -1,3 +1,6 @@
 # See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
-clients ./declare_queues ./fanout_producer ./listener
-outputs ./declare_queues.out ./fanout_producer.out ./listener.out
+background "Listening" ./listener
+background "Listening" ./listener
+background "Listening" ./listener
+clients ./fanout_producer
+outputs ./fanout_producer.out "./listener.out | remove_uuid" "./listenerX.out | remove_uuid" "./listenerXX.out | remove_uuid"
