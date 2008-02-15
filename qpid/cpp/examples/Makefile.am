@@ -6,7 +6,6 @@ nobase_pkgdata_DATA=						\
 	examples/request-response/server.cpp			\
 	examples/request-response/Makefile			\
 	examples/fanout/Makefile				\
-	examples/fanout/declare_queues.cpp			\
 	examples/fanout/listener.cpp				\
 	examples/fanout/fanout_producer.cpp			\
 	examples/pub-sub/Makefile				\

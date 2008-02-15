@@ -19,7 +19,11 @@ trap cleanup EXIT
 
 ARGS="${QPID_HOST:-localhost} $QPID_PORT"
 
-outfile() { echo $1.out; }
+outfile() {
+    file=$1
+    while [ -f $file.out ]; do file="${file}X"; done
+    echo $file.out
+ }
 
 fail() { test -n "$*" && echo $* 1>&2 ; FAIL=1; return 1; }
 
