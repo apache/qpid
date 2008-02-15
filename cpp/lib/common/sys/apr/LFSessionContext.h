@@ -54,7 +54,7 @@ class LFSessionContext : public virtual qpid::sys::SessionContext
 
     apr_pollfd_t fd;
 
-    std::queue<qpid::framing::AMQFrame*> framesToWrite;
+    std::queue<qpid::framing::AMQDataBlock*> framesToWrite;
     qpid::sys::Mutex writeLock;
         
     bool processing;
@@ -62,7 +62,7 @@ class LFSessionContext : public virtual qpid::sys::SessionContext
 
     static qpid::sys::Mutex logLock;
     void log(const std::string& desc,
-             qpid::framing::AMQFrame* const frame);
+             qpid::framing::AMQDataBlock* const block);
         
 
   public:
@@ -70,7 +70,7 @@ class LFSessionContext : public virtual qpid::sys::SessionContext
                      LFProcessor* const processor, 
                      bool debug = false);
     virtual ~LFSessionContext();
-    virtual void send(qpid::framing::AMQFrame* frame);
+    virtual void send(qpid::framing::AMQDataBlock* frame);
     virtual void close();        
     void read();
     void write();

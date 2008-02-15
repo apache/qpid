@@ -177,7 +177,12 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
                 
         // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void delete_(u_int16_t channel, u_int16_t ticket, const string& exchange, bool ifUnused, bool nowait); 
-                
+            
+        virtual void bound( u_int16_t /*channel*/,
+                            const string& /*exchange*/,
+                            const string& /*routingKey*/,
+                            const string& /*queue*/ ) {}
+    
         virtual ~ExchangeHandlerImpl(){}
     };
 

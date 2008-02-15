@@ -30,8 +30,8 @@ using namespace qpid::framing;
 struct DummyHandler : OutputHandler{
     std::vector<AMQFrame*> frames; 
 
-    virtual void send(AMQFrame* frame){
-        frames.push_back(frame);
+    virtual void send(AMQDataBlock* block){
+        frames.push_back(dynamic_cast<AMQFrame*>(block));
     }
 };
 

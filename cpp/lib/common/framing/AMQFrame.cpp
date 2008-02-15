@@ -119,14 +119,18 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t bufSize)
     body->decode(buffer, bufSize);
 }
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t)
+void AMQFrame::print(std::ostream& out) const
 {
-    out << "Frame[channel=" << t.channel << "; ";
-    if (t.body.get() == 0)
+    out << "Frame[channel=" << channel << "; ";
+    if (body.get() == 0)
         out << "empty";
     else
-        out << *t.body;
+        out << *body;
     out << "]";
+}
+std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t)
+{
+    t.print(out);
     return out;
 }
 

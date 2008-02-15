@@ -18,38 +18,16 @@
  * under the License.
  *
  */
-#include <amqp_types.h>
-#include <Buffer.h>
-#include <AMQDataBlock.h>
-#include <ProtocolVersion.h>
+#include "AMQDataBlock.h"
 
-#ifndef _ProtocolInitiation_
-#define _ProtocolInitiation_
 
 namespace qpid {
 namespace framing {
 
-class ProtocolInitiation : virtual public AMQDataBlock
+std::ostream& operator<<(std::ostream& out, const AMQDataBlock& b)
 {
-private:
-    ProtocolVersion version;
-        
-public:
-    ProtocolInitiation();
-    ProtocolInitiation(u_int8_t major, u_int8_t minor);
-    ProtocolInitiation(const ProtocolVersion& p);
-    virtual ~ProtocolInitiation();
-    virtual void encode(Buffer& buffer); 
-    virtual bool decode(Buffer& buffer); 
-    inline virtual u_int32_t size() const { return 8; }
-    inline u_int8_t getMajor() const { return version.getMajor(); }
-    inline u_int8_t getMinor() const { return version.getMinor(); }
-    inline const ProtocolVersion& getVersion() const { return version; }
-    void print(std::ostream& out) const;
-};
-
-}
+    b.print(out);
+    return out;
 }
 
-
-#endif
+}}
