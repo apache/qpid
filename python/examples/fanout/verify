@@ -1,3 +1,5 @@
 # See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
-clients ./declare_queues.py ./fanout_producer.py ./fanout_consumer.py
-outputs ./declare_queues.py.out ./fanout_producer.py.out ./fanout_consumer.py.out
+background "Subscribed" ./fanout_consumer.py
+background "Subscribed" ./fanout_consumer.py
+clients ./fanout_producer.py
+outputs ./fanout_producer.py.out "./fanout_consumer.py.out | remove_uuid64" "./fanout_consumer.pyX.out | remove_uuid64"

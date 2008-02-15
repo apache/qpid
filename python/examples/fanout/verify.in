@@ -1,14 +1,31 @@
-==== declare_queues.py.out
 ==== fanout_producer.py.out
-==== fanout_consumer.py.out
-message 0
-message 1
-message 2
-message 3
-message 4
-message 5
-message 6
-message 7
-message 8
-message 9
-That's all, folks!
+==== fanout_consumer.py.out | remove_uuid64
+Messages queue: 
+Subscribed to queue 
+Response: message 0
+Response: message 1
+Response: message 2
+Response: message 3
+Response: message 4
+Response: message 5
+Response: message 6
+Response: message 7
+Response: message 8
+Response: message 9
+Response: That's all, folks!
+No more messages!
+==== fanout_consumer.pyX.out | remove_uuid64
+Messages queue: 
+Subscribed to queue 
+Response: message 0
+Response: message 1
+Response: message 2
+Response: message 3
+Response: message 4
+Response: message 5
+Response: message 6
+Response: message 7
+Response: message 8
+Response: message 9
+Response: That's all, folks!
+No more messages!
