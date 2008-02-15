@@ -70,6 +70,7 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * The latest qpid Exception that has been reaised.
      */
+    private Object _currentExceptionLock = new Object();
     private QpidException _currentException;
 
     /**
@@ -553,14 +554,17 @@ public class AMQSession_0_10 extends AMQSession
      *
      * @throws org.apache.qpid.AMQException get the latest thrown error.
      */
-    public synchronized void getCurrentException() throws AMQException
+    public void getCurrentException() throws AMQException
     {
-        if (_currentException != null)
+        synchronized (_currentExceptionLock)
         {
-            QpidException toBeTrhown = _currentException;
-            _currentException = null;
-            throw new AMQException(AMQConstant.getConstant(toBeTrhown.getErrorCode().getCode()),
-                                   toBeTrhown.getMessage(), toBeTrhown);
+            if (_currentException != null)
+            {
+                QpidException toBeThrown = _currentException;
+                _currentException = null;
+                throw new AMQException(AMQConstant.getConstant(toBeThrown.getErrorCode().getCode()),
+                                       toBeThrown.getMessage(), toBeThrown);
+            }
         }
     }
 
@@ -594,11 +598,11 @@ public class AMQSession_0_10 extends AMQSession
     {
         public void onClosed(ErrorCode errorCode, String reason, Throwable t)
         {
-            synchronized (this)
+            synchronized (_currentExceptionLock)
             {
-                //todo check the error code for finding out if we need to notify the
+                // todo check the error code for finding out if we need to notify the
                 // JMS connection exception listener
-                _currentException = new QpidException(reason, errorCode, null);
+                _currentException = new QpidException(reason, errorCode, t);
             }
         }
     }
