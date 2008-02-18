@@ -24,7 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 
 public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    private ByteBuffer _encodedBlock;
+    private AMQDataBlock _firstFrame;
 
     private AMQDataBlock[] _blocks;
 
@@ -39,10 +39,10 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
      * @param encodedBlock already-encoded data
      * @param blocks some blocks to be encoded.
      */
-    public CompositeAMQDataBlock(ByteBuffer encodedBlock, AMQDataBlock[] blocks)
+    public CompositeAMQDataBlock(AMQDataBlock encodedBlock, AMQDataBlock[] blocks)
     {
         this(blocks);
-        _encodedBlock = encodedBlock;
+        _firstFrame = encodedBlock;
     }
 
     public AMQDataBlock[] getBlocks()
@@ -50,9 +50,9 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         return _blocks;
     }
 
-    public ByteBuffer getEncodedBlock()
+    public AMQDataBlock getFirstFrame()
     {
-        return _encodedBlock;
+        return _firstFrame;
     }
 
     public long getSize()
@@ -62,19 +62,18 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         {
             frameSize += _blocks[i].getSize();
         }
-        if (_encodedBlock != null)
+        if (_firstFrame != null)
         {
-            _encodedBlock.rewind();
-            frameSize += _encodedBlock.remaining();
+            frameSize += _firstFrame.getSize();
         }
         return frameSize;
     }
 
     public void writePayload(ByteBuffer buffer)
     {
-        if (_encodedBlock != null)
+        if (_firstFrame != null)
         {
-            buffer.put(_encodedBlock);
+            _firstFrame.writePayload(buffer);
         }
         for (int i = 0; i < _blocks.length; i++)
         {
@@ -91,7 +90,7 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         else
         {
             StringBuilder buf = new StringBuilder(this.getClass().getName());
-            buf.append("{encodedBlock=").append(_encodedBlock);
+            buf.append("{encodedBlock=").append(_firstFrame);
             for (int i = 0 ; i < _blocks.length; i++)
             {
                 buf.append(" ").append(i).append("=[").append(_blocks[i].toString()).append("]");

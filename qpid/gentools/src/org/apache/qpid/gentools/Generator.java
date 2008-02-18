@@ -272,7 +272,7 @@ public abstract class Generator implements LanguageConverter
 
             File[] versionTemplateFiles = new File[0];
 
-            System.out.println("Looking for vesrion specific template files in directory: " + versionTemplateDirectory.getAbsoluteFile());
+            System.out.println("Looking for version specific template files in directory: " + versionTemplateDirectory.getAbsoluteFile());
 
             if (versionTemplateDirectory.exists())
             {
