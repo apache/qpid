@@ -104,7 +104,7 @@ void DeliveryRecord::requeue() const
 
 void DeliveryRecord::release() 
 {
-    if (!confirmed) {
+    if (acquired && !confirmed) {
         queue->requeue(msg);
         acquired = false;
     }
