@@ -2875,7 +2875,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             //if (message.getDeliverBody() != null)
             //{
                 final BasicMessageConsumer consumer =
-                    (BasicMessageConsumer) _consumers.get(message.getConsumerTag());
+                    (BasicMessageConsumer) _consumers.get(new AMQShortString(message.getConsumerTag()));
 
                 if ((consumer == null) || consumer.isClosed())
                 {
