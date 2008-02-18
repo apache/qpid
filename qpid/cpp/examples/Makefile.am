@@ -44,7 +44,9 @@ VERIFY_FILES= verify verify_all				\
 
 EXTRA_DIST=$(nobase_pkgdata_DATA) $(VERIFY_FILES)
 
-verify: 
+force:				
+
+verify: force
 	cp $(top_srcdir)/../bin/verify $@
 
 # Note: we don't use normal automake SUBDIRS because the example
