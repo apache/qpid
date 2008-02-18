@@ -26,6 +26,8 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ServerInvoker.h"
+#include "qpid/client/FutureCompletion.h"
+#include <boost/bind.hpp>
 
 using namespace qpid::client;
 using namespace qpid::framing;
@@ -251,4 +253,15 @@ bool ExecutionHandler::isCompleteUpTo(const SequenceNumber& id)
 void ExecutionHandler::setCompletionListener(boost::function<void()> l)
 {
     completionListener = l;
+}
+
+
+void ExecutionHandler::syncWait(const SequenceNumber& id) {
+    syncTo(id);
+    FutureCompletion fc;
+    completion.listenForCompletion(
+        id, boost::bind(&FutureCompletion::completed, &fc)
+    );
+    fc.waitForCompletion();
+    assert(isCompleteUpTo(id));
 }

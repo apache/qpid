@@ -38,8 +38,6 @@ background() {
     out=`outfile $*`
     eval "$* $ARGS > $out &" || { fail; return 1; }
     waitfor $out "$pattern"
-    # printing the ready message doesn't guarnatee we're ready, so sleep a bit.
-    sleep 1
 }
 
 name() {
@@ -81,7 +79,7 @@ if [ -n "$QPIDD" ] ; then
 fi
 
 for example in "$@"; do
-    echo -n "== $example "
+    echo "== $example "
     if ( verify $example; ) then echo "PASS";  else echo "FAIL"; RET=1; fi
      done
 exit $RET

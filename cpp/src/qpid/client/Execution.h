@@ -41,6 +41,8 @@ public:
     virtual bool isComplete(const framing::SequenceNumber& id) = 0;
     virtual bool isCompleteUpTo(const framing::SequenceNumber& id) = 0;
     virtual void setCompletionListener(boost::function<void()>) = 0;
+    virtual void syncWait(const framing::SequenceNumber& id) = 0;
+    virtual framing::SequenceNumber lastSent() const = 0;
 };
 
 }}
