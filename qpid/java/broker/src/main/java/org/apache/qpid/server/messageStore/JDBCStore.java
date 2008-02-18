@@ -1259,15 +1259,16 @@ public class JDBCStore implements MessageStore
                 connection.getStatements()[GET_MESSAGE_INFO] = pstmt;
             }
             pstmt.setLong(1, m.getMessageId());
-            ResultSet rs = pstmt.executeQuery();
+            final ResultSet rs = pstmt.executeQuery();
             if (rs.next())
             {
-                final AMQShortString exchange = new AMQShortString(rs.getString(1));
-                final AMQShortString routingKey = new AMQShortString(rs.getString(2));
-                final boolean mandatory = rs.getBoolean(3);
-                final boolean immediate = rs.getBoolean(4);
+                
                 result = new MessagePublishInfo()
                 {
+                    AMQShortString exchange = new AMQShortString(rs.getString(1));
+                    final AMQShortString routingKey = new AMQShortString(rs.getString(2));
+                    final boolean mandatory = rs.getBoolean(3);
+                    final boolean immediate = rs.getBoolean(4);
 
                     public AMQShortString getExchange()
                     {
@@ -1287,6 +1288,11 @@ public class JDBCStore implements MessageStore
                     public AMQShortString getRoutingKey()
                     {
                         return routingKey;
+                    }
+
+                    public void setExchange(AMQShortString ex) 
+                    {
+                        exchange = ex;
                     }
                 };
             }
