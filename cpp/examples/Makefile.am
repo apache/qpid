@@ -46,8 +46,9 @@ EXTRA_DIST=$(nobase_pkgdata_DATA) $(VERIFY_FILES)
 
 force:				
 
+VERIFY_SCRIPT=$(top_srcdir)/../bin/verify
 verify: force
-	cp $(top_srcdir)/../bin/verify $@
+	if [ -f $(VERIFY_SCRIPT) ] ; then cp $(VERIFY_SCRIPT) $@; fi
 
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
