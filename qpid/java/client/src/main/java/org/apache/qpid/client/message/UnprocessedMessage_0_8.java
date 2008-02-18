@@ -60,8 +60,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
 
     public UnprocessedMessage_0_8(int channelId, BasicDeliverBody body)
     {
-        //FIXME: TGM, SRSLY 4RL
-        super(channelId, 0, null, body.getExchange(), body.getRoutingKey(), false);
+        super(channelId, body.getDeliveryTag(), body.getConsumerTag().toString(), body.getExchange(), body.getRoutingKey(), false);
     }
 
     public void receiveBody(ContentBody body)
