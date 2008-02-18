@@ -34,4 +34,11 @@ bool SessionBase::isSynchronous() const { return impl->isSync(); }
 Execution& SessionBase::getExecution() { return impl->getExecution(); }
 Uuid SessionBase::getId() const { return impl->getId(); }
 framing::FrameSet::shared_ptr SessionBase::get() { return impl->get(); }
+
+void SessionBase::sync() {
+    Execution& ex = getExecution();
+    ex.syncWait(ex.lastSent());
+    impl->assertOpen();
+}
+
 }} // namespace qpid::client
