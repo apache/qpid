@@ -72,7 +72,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        ByteBuffer deliver = createEncodedDeliverFrame(message, channelId, deliveryTag, consumerTag);
+        AMQDataBlock deliver = createEncodedDeliverFrame(message, channelId, deliveryTag, consumerTag);
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
@@ -127,7 +127,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final StoreContext storeContext = message.getStoreContext();
         final long messageId = message.getMessageId();
 
-        ByteBuffer deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
+        AMQDataBlock deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
 
 
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
@@ -171,7 +171,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
 
-    private ByteBuffer createEncodedDeliverFrame(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    private AMQDataBlock createEncodedDeliverFrame(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
         final MessagePublishInfo pb = message.getMessagePublishInfo();
@@ -187,10 +187,10 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         AMQFrame deliverFrame = deliverBody.generateFrame(channelId);
 
 
-        return deliverFrame.toByteBuffer();
+        return deliverFrame;
     }
 
-    private ByteBuffer createEncodedGetOkFrame(AMQMessage message, int channelId, long deliveryTag, int queueSize)
+    private AMQDataBlock createEncodedGetOkFrame(AMQMessage message, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
         final MessagePublishInfo pb = message.getMessagePublishInfo();
@@ -205,7 +205,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                     queueSize);
         AMQFrame getOkFrame = getOkBody.generateFrame(channelId);
 
-        return getOkFrame.toByteBuffer();
+        return getOkFrame;
     }
 
     public byte getProtocolMinorVersion()
@@ -218,7 +218,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return getProtocolSession().getProtocolMajorVersion();
     }
 
-    private ByteBuffer createEncodedReturnFrame(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
+    private AMQDataBlock createEncodedReturnFrame(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
         MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
         BasicReturnBody basicReturnBody =
@@ -228,13 +228,13 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                      message.getMessagePublishInfo().getRoutingKey());
         AMQFrame returnFrame = basicReturnBody.generateFrame(channelId);
 
-        return returnFrame.toByteBuffer();
+        return returnFrame;
     }
 
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText)
             throws AMQException
     {
-        ByteBuffer returnFrame = createEncodedReturnFrame(message, channelId, replyCode, replyText);
+        AMQDataBlock returnFrame = createEncodedReturnFrame(message, channelId, replyCode, replyText);
 
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());

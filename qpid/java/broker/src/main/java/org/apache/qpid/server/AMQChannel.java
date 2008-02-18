@@ -34,6 +34,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.MessageRouter;
 import org.apache.qpid.server.exchange.NoRouteException;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.MessageStore;
@@ -202,11 +203,12 @@ public class AMQChannel
         _prefetch_HighWaterMark = prefetchCount;
     }
 
-    public void setPublishFrame(MessagePublishInfo info, AMQProtocolSession publisher) throws AMQException
+    public void setPublishFrame(MessagePublishInfo info, AMQProtocolSession publisher, final Exchange e) throws AMQException
     {
 
         _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), info, _txnContext);
         _currentMessage.setPublisher(publisher);
+        _currentMessage.setExchange(e);
     }
 
     public void publishContentHeader(ContentHeaderBody contentHeaderBody, AMQProtocolSession protocolSession)
@@ -288,7 +290,7 @@ public class AMQChannel
     {
         try
         {
-            _exchanges.routeContent(_currentMessage);
+            _currentMessage.route();            
         }
         catch (NoRouteException e)
         {
