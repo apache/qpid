@@ -84,6 +84,11 @@ class SessionBase
     
     /** Close the session */
     void close();
+
+    /** Synchronize with the broker. Wait for all commands issued so far in
+     * the session to complete.
+     */
+    void sync();
     
     Execution& getExecution();
     
