@@ -92,13 +92,11 @@ public class AMQQueueBrowser implements QueueBrowser
 
         return new Enumeration()
             {
-
-                Message _nextMessage = consumer.receive();
+                Message _nextMessage = consumer.receive(1000);
 
                 public boolean hasMoreElements()
                 {
                     _logger.info("QB:hasMoreElements:" + (_nextMessage != null));
-
                     return (_nextMessage != null);
                 }
 
@@ -108,7 +106,6 @@ public class AMQQueueBrowser implements QueueBrowser
                     try
                     {
                         _logger.info("QB:nextElement about to receive");
-
                         _nextMessage = consumer.receive(1000);
                         _logger.info("QB:nextElement received:" + _nextMessage);
                     }
