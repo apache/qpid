@@ -54,7 +54,10 @@ class AsynchIOAcceptor : public Acceptor {
     AsynchIOAcceptor(int16_t port, int backlog, int threads);
     ~AsynchIOAcceptor() {}
     void run(ConnectionInputHandlerFactory* factory);
-    void connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* factory);
+    ConnectionInputHandler* connect(
+        const std::string& host, int16_t port,
+        ConnectionInputHandlerFactory* factory);
+
     void shutdown();
         
     uint16_t getPort() const;
@@ -188,7 +191,7 @@ void AsynchIOAcceptor::run(ConnectionInputHandlerFactory* fact) {
     }
 }
     
-void AsynchIOAcceptor::connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* f)
+ConnectionInputHandler* AsynchIOAcceptor::connect(const std::string& host, int16_t port, ConnectionInputHandlerFactory* f)
 {
     Socket* socket = new Socket();//Should be deleted by handle when socket closes
     socket->connect(host, port);
@@ -209,7 +212,7 @@ void AsynchIOAcceptor::connect(const std::string& host, int16_t port, Connection
         aio->queueReadBuffer(new Buff);
     }
     aio->start(poller);
-
+    return handler;
 }
 
 

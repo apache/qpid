@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        22%{?dist}
+Release:        23%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -156,6 +156,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Thu Feb 14 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-23
+- Bumped to pull in fixes for Beta 3
+
 * Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-22
 - Added -g to compile flags for debug symbols.
 

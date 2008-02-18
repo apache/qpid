@@ -95,7 +95,6 @@ public class Data implements ProtocolEvent
             }
             str.append(str(buf, 20));
         }
-        str.setLength(str.length() - 3);
         str.append(")");
         return str.toString();
     }

@@ -720,6 +720,91 @@ class MessageTests(TestBase):
         #check all 'browsed' messages are still on the queue
         self.assertEqual(5, channel.queue_query(queue="q").message_count)
 
+    def test_subscribe_not_acquired_3(self):
+        channel = self.channel
+
+        #publish some messages
+        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        for i in range(1, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
+
+        #create a not-acquired subscriber
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        channel.message_flow(unit = 0, value = 10, destination = "a")
+
+        #browse through messages
+        queue = self.client.queue("a")
+        for i in range(1, 11):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            if (i % 2):
+                #try to acquire every second message
+                channel.message_acquire([msg.command_id, msg.command_id])
+                #check that acquire succeeds
+                response = channel.control_queue.get(timeout=1)
+                self.assertEquals(response.transfers, [msg.command_id, msg.command_id])
+            msg.complete()
+        self.assertEmpty(queue)
+
+        #create a second not-acquired subscriber
+        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        #check it gets those not consumed
+        queue = self.client.queue("b")
+        for i in [2,4,6,8,10]:
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            msg.complete()
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        self.assertEmpty(queue)
+
+        #check all 'browsed' messages are still on the queue
+        self.assertEqual(5, channel.queue_query(queue="q").message_count)
+
+    def test_release_unacquired(self):
+        channel = self.channel
+
+        #create queue
+        self.queue_declare(queue = "q", exclusive=True, auto_delete=True, durable=True)
+
+        #send message
+        channel.message_transfer(content=Content(properties={'routing_key' : "q", 'delivery_mode':2}, body = "my-message"))
+
+        #create two 'browsers'
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        channel.message_flow(unit = 0, value = 10, destination = "a")
+        queueA = self.client.queue("a")
+
+        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        channel.message_flow(unit = 0, value = 10, destination = "b")
+        queueB = self.client.queue("b")
+        
+        #have each browser release the message
+        msgA = queueA.get(timeout = 1)
+        channel.message_release([msgA.command_id, msgA.command_id])
+
+        msgB = queueB.get(timeout = 1)
+        channel.message_release([msgB.command_id, msgB.command_id])
+        
+        #cancel browsers
+        channel.message_cancel(destination = "a")
+        channel.message_cancel(destination = "b")
+        
+        #create consumer
+        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1, acquire_mode=0)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
+        channel.message_flow(unit = 0, value = 10, destination = "c")
+        queueC = self.client.queue("c")
+        #consume the message then ack it
+        msgC = queueC.get(timeout = 1)
+        msgC.complete()
+        #ensure there are no other messages
+        self.assertEmpty(queueC)
+
     def test_no_size(self):
         self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 

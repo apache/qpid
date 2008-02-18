@@ -47,6 +47,9 @@
 #include <vector>
 
 namespace qpid { 
+
+class Url;
+
 namespace broker {
 
 static const  uint16_t DEFAULT_PORT=5672;
@@ -54,7 +57,8 @@ static const  uint16_t DEFAULT_PORT=5672;
 /**
  * A broker instance. 
  */
-class Broker : public sys::Runnable, public Plugin::Target, public management::Manageable
+class Broker : public sys::Runnable, public Plugin::Target,
+               public management::Manageable
 {
   public:
 
@@ -111,6 +115,14 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
     
+    /** Create a connection to another broker. */
+    sys::ConnectionInputHandler*
+    connect(const std::string& host, uint16_t port,
+            sys::ConnectionInputHandlerFactory* =0);
+    /** Create a connection to another broker. */
+    sys::ConnectionInputHandler*
+    connect(const Url& url, sys::ConnectionInputHandlerFactory* =0);
+
   private:
     sys::Acceptor& getAcceptor() const;
 
@@ -129,7 +141,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     Vhost::shared_ptr              vhostObject;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
-    void connect(management::ArgsBrokerConnect& args);
 };
 
 }}

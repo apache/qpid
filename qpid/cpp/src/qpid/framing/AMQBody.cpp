@@ -19,15 +19,46 @@
  *
  */
 
-#include "AMQBody.h"
+#include "qpid/framing/AMQBody.h"
+#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
 #include <iostream>
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const qpid::framing::AMQBody& body) 
+namespace qpid {
+namespace framing {
+
+std::ostream& operator<<(std::ostream& out, const AMQBody& body) 
 {
     body.print(out);
     return out;
 }
 
-qpid::framing::AMQBody::~AMQBody() {}
+AMQBody::~AMQBody() {}
 
+namespace {
+struct MatchBodies : public AMQBodyConstVisitor {
+    const AMQBody& body;
+    bool match;
 
+    MatchBodies(const AMQBody& b) :  body(b), match(false) {}
+    virtual ~MatchBodies() {}
+    
+    virtual void visit(const AMQHeaderBody&) { match=dynamic_cast<const AMQHeaderBody*>(&body); }
+    virtual void visit(const AMQContentBody&) { match=dynamic_cast<const AMQContentBody*>(&body); }
+    virtual void visit(const AMQHeartbeatBody&) { match=dynamic_cast<const AMQHeartbeatBody*>(&body); }
+    virtual void visit(const AMQMethodBody& x)  {
+        const AMQMethodBody* y=dynamic_cast<const AMQMethodBody*>(&body);
+        match = (y && y->amqpMethodId() == x.amqpMethodId() && y->amqpClassId() == x.amqpClassId());
+    }
+};
+
+}
+bool AMQBody::match(const AMQBody& a, const AMQBody& b) {
+    MatchBodies matcher(a);
+    b.accept(matcher);
+    return matcher.match;
+}
+
+}} // namespace 
