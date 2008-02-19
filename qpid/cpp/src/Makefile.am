@@ -145,7 +145,9 @@ libqpidcommon_la_SOURCES = \
   qpid/log/Options.cpp \
   qpid/log/Selector.cpp \
   qpid/log/Statement.cpp \
-  qpid/IList.h
+  qpid/IList.h \
+  qpid/ISList.h \
+  qpid/pointer_to_other.h
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
