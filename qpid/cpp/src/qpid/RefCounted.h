@@ -39,10 +39,9 @@ class AbstractRefCounted {
 };
 
 /**
- * Reference-counted virtual base class.
+ * Reference-counted base class.
  */
-class RefCounted : public AbstractRefCounted
-{
+class RefCounted : public AbstractRefCounted {
   public:
     RefCounted() {}
     virtual void addRef() const { ++count; }
@@ -53,10 +52,24 @@ class RefCounted : public AbstractRefCounted
     // Copy/assign do not copy refcounts. 
     RefCounted(const RefCounted&) : AbstractRefCounted() {}
     RefCounted& operator=(const RefCounted&) { return *this; }
-    virtual void released() const { delete this; }
+    virtual void released() const { assert(count==0); delete this; }
 
-  private:
     mutable sys::AtomicCount count;
+};
+
+/**
+ * Reference-counted member of a reference-counted parent class.
+ * Delegates reference counts to the parent so that the parent is
+ * deleted only when there are no references to the parent or any of
+ * its children.
+ */
+struct RefCountedChild : public AbstractRefCounted {
+  protected:
+    AbstractRefCounted& parent;
+    RefCountedChild(AbstractRefCounted& parent_) : parent(parent_) {}
+  public:
+    void addRef() const { parent.addRef(); }
+    void release() const { parent.release(); }
 };
 
 using boost::intrusive_ptr;

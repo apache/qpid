@@ -17,9 +17,10 @@
  */
 
 #include "qpid/sys/RefCountedMap.h"
-
 #include "unit_test.h"
+#include "test_tools.h"
 #include <boost/bind.hpp>
+#include <map>
 
 QPID_AUTO_TEST_SUITE(RefCountedMapTestSuite)
 
@@ -27,99 +28,96 @@ using namespace std;
 using namespace qpid;
 using namespace qpid::sys;
 
-template <int ID> struct CountEm {
+template <int Id> struct Counted {
     static int instances;
-    CountEm() { instances++; }
-    ~CountEm() { instances--; }
-    CountEm(const CountEm&) { instances++; }
+    Counted() { ++instances; }
+    Counted(const Counted&) { ++instances; }
+    ~Counted() { --instances; }
 };
-template <int ID> int CountEm<ID>::instances = 0;
+template <int Id>int Counted<Id>::instances=0;
+
+struct Data : public RefCountedMapData<int, Data>, public Counted<2> {
+    Data(int i=0) : value(i) {}
+    int value;
+    void inc()  { value++; }
+};
+
+struct Container : public RefCounted, public Counted<3>  {
+    Data::Map map;
+    Container() : map(*this) {}
+};
     
-struct Data;
-
-struct Attachment : public RefCounted, public CountEm<1> {
-    intrusive_ptr<Data> link;
+struct RefCountedMapFixture {
+    intrusive_ptr<Container> cont;
+    intrusive_ptr<Data> p, q;
+    RefCountedMapFixture() :
+        cont(new Container()), p(new Data(1)), q(new Data(2))
+    {
+        cont->map.insert(1,p);
+        cont->map.insert(2,q);
+    }
+    ~RefCountedMapFixture() { if (cont) cont->map.clear(); }
 };
 
-struct Data : public RefCounted, public CountEm<2> {
-    intrusive_ptr<Attachment> link;
-    void attach(intrusive_ptr<Attachment> a) {
-        if (!a) return;
-        a->link=this;
-        link=a;
-    }
-    void detach() {
-        if (!link) return;
-        intrusive_ptr<Data> protect(this);
-        link->link=0;
-        link=0;
-    }
-};
-typedef intrusive_ptr<Data> DataPtr;
-
-struct Map : public  RefCountedMap<int,Data>, public CountEm<3> {};
-
-
-
-
-BOOST_AUTO_TEST_CASE(testRefCountedMap) {
-    BOOST_CHECK_EQUAL(0, Map::instances);
-    BOOST_CHECK_EQUAL(0, Data::instances);
-
-    intrusive_ptr<Map> map=new Map();
-    BOOST_CHECK_EQUAL(1, Map::instances);
-
-    // Empty map
-    BOOST_CHECK(!map->isClosed());
-    BOOST_CHECK(map->empty());
-    BOOST_CHECK_EQUAL(map->size(), 0u);
-    BOOST_CHECK(!map->find(1));
-
-    {
-        // Add entries
-        DataPtr p=map->get(1);
-        DataPtr q=map->get(2);
-
-        BOOST_CHECK_EQUAL(Data::instances, 2);
-        BOOST_CHECK_EQUAL(map->size(), 2u);
-
-        p=0;                    // verify erased
-        BOOST_CHECK_EQUAL(Data::instances, 1);
-        BOOST_CHECK_EQUAL(map->size(), 1u);
-
-        p=map->find(2);
-        BOOST_CHECK(q==p);
-    }
-
-    BOOST_CHECK(map->empty());
-    BOOST_CHECK_EQUAL(1, Map::instances); 
-    BOOST_CHECK_EQUAL(0, Data::instances); 
-
-    {
-        // Hold the map via a reference to an entry.
-        DataPtr p=map->get(3);
-        map=0;               
-        BOOST_CHECK_EQUAL(1, Map::instances); // Held by entry.
-    }
-    BOOST_CHECK_EQUAL(0, Map::instances); // entry released
+BOOST_FIXTURE_TEST_CASE(testFixtureSetup, RefCountedMapFixture) {
+    BOOST_CHECK_EQUAL(1, Container::instances);
+    BOOST_CHECK_EQUAL(2, Data::instances);
+    BOOST_CHECK_EQUAL(cont->map.size(), 2u);
+    BOOST_CHECK_EQUAL(cont->map.find(1)->value, 1);
+    BOOST_CHECK_EQUAL(cont->map.find(2)->value, 2);
 }
 
+BOOST_FIXTURE_TEST_CASE(testReleaseRemoves, RefCountedMapFixture)
+{
+    // Release external ref, removes from map
+    p = 0;
+    BOOST_CHECK_EQUAL(Data::instances, 1);
+    BOOST_CHECK_EQUAL(cont->map.size(), 1u);
+    BOOST_CHECK(!cont->map.find(1));
+    BOOST_CHECK_EQUAL(cont->map.find(2)->value, 2);
 
-BOOST_AUTO_TEST_CASE(testRefCountedMapAttachClose) {
-    intrusive_ptr<Map> map=new Map();
-    DataPtr d=map->get(5);
-    d->attach(new Attachment());
-    d=0;
-    // Attachment keeps entry pinned
-    BOOST_CHECK_EQUAL(1u, map->size());
-    BOOST_CHECK(map->find(5));
+    q = 0;
+    BOOST_CHECK(cont->map.empty());
+}
 
-    // Close breaks attachment
-    map->close(boost::bind(&Data::detach, _1));
-    BOOST_CHECK(map->empty());
-    BOOST_CHECK(map->isClosed());
-    BOOST_CHECK_EQUAL(0, Data::instances);
-    BOOST_CHECK_EQUAL(0, Attachment::instances);
+// Functor that releases values as a side effect.
+struct Release {
+    RefCountedMapFixture& f ;
+    Release(RefCountedMapFixture& ff) : f(ff) {}
+    void operator()(const intrusive_ptr<Data>& ptr) {
+        BOOST_CHECK(ptr->value > 0); // Make sure ptr is not released.
+        f.p = 0;
+        f.q = 0;
+        BOOST_CHECK(ptr->value > 0); // Make sure ptr is not released.
+    }
+};
+
+
+BOOST_FIXTURE_TEST_CASE(testApply, RefCountedMapFixture) {
+    cont->map.apply(boost::bind(&Data::inc, _1));
+    BOOST_CHECK_EQUAL(2, p->value);
+    BOOST_CHECK_EQUAL(3, q->value);
+
+    // Allow functors to release valuse as side effects.
+    cont->map.apply(Release(*this));
+    BOOST_CHECK(cont->map.empty());
+    BOOST_CHECK_EQUAL(Data::instances, 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(testClearFunctor, RefCountedMapFixture) {
+    cont->map.clear(boost::bind(&Data::inc, _1));
+    BOOST_CHECK(cont->map.empty());
+    BOOST_CHECK_EQUAL(2, p->value);
+    BOOST_CHECK_EQUAL(3, q->value);
+}
+
+BOOST_FIXTURE_TEST_CASE(testReleaseEmptyMap, RefCountedMapFixture) {
+    // Container must not be deleted till map is empty.
+    cont = 0;
+    BOOST_CHECK_EQUAL(1, Container::instances); // Not empty.
+    p = 0;
+    q = 0;
+    BOOST_CHECK_EQUAL(0, Container::instances); // Deleted
 }
 
 QPID_AUTO_TEST_SUITE_END()
