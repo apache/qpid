@@ -162,7 +162,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
                            u_int16_t classId, u_int16_t methodId); 
                 
         virtual void closeOk(u_int16_t channel); 
-                
+
         virtual ~ChannelHandlerImpl(){}
     };
     
@@ -200,6 +200,13 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
                           const string& exchange, const string& routingKey, bool nowait, 
                           const qpid::framing::FieldTable& arguments); 
 
+        virtual void unbind(u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& queue,
+                            const string& exchange,
+                            const string& routingKey,
+                            const framing::FieldTable& arguments);
+
         virtual void purge(u_int16_t channel, u_int16_t ticket, const string& queue, 
                            bool nowait); 
                 
@@ -235,6 +242,8 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual void reject(u_int16_t channel, u_int64_t deliveryTag, bool requeue); 
                 
         virtual void recover(u_int16_t channel, bool requeue); 
+
+        virtual void recoverSync(u_int16_t channel, bool requeue);
                 
         virtual ~BasicHandlerImpl(){}
     };
@@ -262,10 +271,6 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     inline virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
     inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
     inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
-    
-    // Temporary add-in to resolve version conflicts: AMQP v8.0 still defines class Test;
-    // however v0.9 will not - kpvdr 2006-11-17      
-    inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
 };
 
 }
