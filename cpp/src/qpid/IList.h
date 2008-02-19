@@ -22,170 +22,174 @@
  *
  */
 
-#include <qpid/RefCounted.h>
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/cast.hpp>
-#include <assert.h>
+#include "ISList.h"
 
 namespace qpid {
 
-template <class T, int N> class IList;
+template <class> class IList;
 
-/**
- * Base class providing links for a node in an IList.
- * 
- * Derived classes can inheirt multiple IListNode bases provided each
- * has a unique value for N. This allows objects to be linked in
- * multiple independent lists. For example:
- *
- * @code
- * class Foo : public IListNode<0>, public IListNode<1> {};
- * IList<Foo, 0> - uses the 0 links
- * IList<Foo, 1> - uses the 1 links
- *@endcode
- *
- *@param T The derived class.
- *@param N ID for multiple inheritance.
+/** Base class for values (nodes) in an IList.
+ *@param raw or smart-pointer type to use for the "next" pointer.
+ * Using a smart pointer like shared_ptr or intrusive_ptr 
+ * will automate memory management.
  */
-template<class T, int N=0> class IListNode  : public virtual RefCounted {
-    intrusive_ptr<IListNode> prev;
-    intrusive_ptr<IListNode> next;
-    void insert(IListNode*);    
-    void erase();
-    virtual T* self() const {   // Virutal so anchor can hide.
-        return boost::polymorphic_downcast<T*>(const_cast<IListNode*>(this));
-    }
-  friend class IList<T,N>;
+template <class Pointer> class IListNode {
   public:
-    typedef IList<T,N> IListType;
+    typedef Pointer pointer; 
+    typedef typename Pointee<Pointer>::type  NodeType;
+    typedef typename pointer_to_other<Pointer, const NodeType>::type const_pointer;
     
-    IListNode(IListNode* p=0) : prev(p), next(p) {}
-    T* getNext() { return next ? next->self() : 0; }
-    T* getPrev() { return prev ? prev->self() : 0; }
-    const T* getNext() const { return next ? next->self() : 0; }
-    const T* getPrev() const { return prev ? prev->self() : 0; }
+  protected:
+    IListNode() : prev() {}
+    IListNode(const IListNode&) {} // Don't copy next/prev pointers
+
+    pointer getNext() { return next; }
+    const_pointer getNext() const { return next; }
+    pointer getPrev() { return prev; }
+    const_pointer getPrev() const { return prev; }
+
+  private:
+    pointer prev, next;
+  friend class IList<NodeType>;
 };
 
+
 /**
- * Intrusive doubly linked list of reference counted nodes.
+ * Intrusive doubly-linked list.
  * 
- *@param T must inherit from IListNode<N>
- *@param N Identifies which links to use. @see IListNode.
+ * Provides bidirectional iterator and constant time insertion
+ * at front and back.
+ *
+ * The list itself performs no memory management. Use a smart pointer
+ * as the pointer type (e.g. intrusive_ptr, shared_ptr) for automated
+ * memory management.
+ *
+ * Unlike standard containers insert(), push_front() and push_back()
+ * take const pointer& rather than const value_type&.
+ *
+ * Iterators can be converted to the pointer type.
+ *
+ * Noncopyable - intrusively linked nodes cannot be shared between
+ * lists. Does provide swap()
+ * 
+ * @param Node value type for the list, must derive from ISListNode<>.
  */
-template <class T, int N=0> class IList {
-  private:
-    typedef IListNode<T,N> Node;
-
-    template <class R>
-    class Iterator :
-        public boost::iterator_facade<Iterator<R>,  R, boost::bidirectional_traversal_tag>
-    {
-        Node* ptr;                 // Iterators do not own their pointees.
-        void increment() { assert(ptr); ptr = ptr->next.get(); }
-        void decrement() { assert(ptr); ptr = ptr->prev.get(); }
-        R& dereference() const { assert(ptr); return *boost::polymorphic_downcast<R*>(ptr); }
-        bool equal(const Iterator<R>& x) const { return ptr == x.ptr; }
-
-        Node* cast(const Node* p) { return const_cast<Node*>(p); } 
-        explicit Iterator(const Node* p=0) : ptr(cast(p)) {}
-        explicit Iterator(const T* p=0) : ptr(cast(p)) {}
-
-      friend class boost::iterator_core_access;
-      friend class IList;
-
-      public:
-        template <class S> Iterator(const Iterator<S>& x) : ptr(x.ptr) {}
-    };
-
+template<class Node> class IList {
+    template <class> class Iterator;
   public:
-    IList() {}
-    ~IList() { clear(); anchor.erase(); }
-    typedef size_t size_type;
-    typedef T value_type;
-    /// pointer type is an intrusive_ptr
-    typedef intrusive_ptr<T> pointer;
-    /// pointer type is an intrusive_ptr
-    typedef intrusive_ptr<const T> const_pointer;
+    typedef Node value_type;
+    typedef typename Node::pointer pointer;
+    typedef typename Node::const_pointer const_pointer;
     typedef value_type& reference;
     typedef const value_type& const_reference;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
     typedef Iterator<value_type> iterator;
     typedef Iterator<const value_type> const_iterator;
 
-    iterator begin() { return iterator(anchor.next.get()); }
-    iterator end() { return iterator(&anchor); }
-    const_iterator begin() const { return const_iterator(anchor.next.get()); }
-    const_iterator end() const { return const_iterator(&anchor); }
-    /// Iterator to the last element or end() if empty
-    iterator last() { return iterator(anchor.prev.get()); }
-    /// Iterator to the last element or end() if empty
-    const_iterator last() const { return const_iterator(anchor.prev.get()); }
+    IList() : begin_(), last_() {}
 
-    /// Note: takes a non-const reference, unlike standard containers.
-    void insert(iterator pos, reference x) { x.Node::insert(pos.ptr); }
-    void insert(iterator pos, pointer x) { x->Node::insert(pos.ptr); }
-    void erase(iterator pos) { pos.ptr->erase(); }
-    void swap(IList &x) { anchor.swap(x.anchor); }
-
-    reference back() { assert(!empty()); return *last(); }
-    const_reference back() const { assert(!empty()); return *last(); }
-    void pop_back() { assert(!empty()); erase(last()); }
-    /// Note: takes a non-const reference, unlike standard containers.
-    void push_back(reference x) { insert(end(), x); }
-    void push_back(pointer x) { insert(end(), x); }
-
-    reference front() { assert(!empty()); return *begin(); }
-    const_reference front() const { assert(!empty()); return *begin(); }
-    void pop_front() { assert(!empty()); erase(begin()); }
-    /// Note: takes a non-const reference, unlike standard containers.
-    void push_front(reference x) { insert(begin(), x); }
-    void push_front(pointer x) { insert(begin(), x); }
+    iterator begin() { return begin_; }
+    const_iterator begin() const { return begin_; }
+    iterator end() { return 0; }
+    const_iterator end() const { return 0; }
 
     bool empty() const { return begin() == end(); }
-    void clear() { while (!empty()) { pop_front(); } }
 
     size_type size() const {
-        size_type s=0;
-        for (const_iterator i = begin(); i != end(); ++i) ++s;
+        int s = 0;
+        for (const_iterator i=begin(); i != end(); ++i)
+            ++s;
         return s;
     }
+    
+    void swap(IList &x) { swap(begin_, x.begin_); swap(last_, x.last_); }
 
-    iterator erase(iterator from, iterator to) {
-        while(from != to) erase(from);
+    iterator insert(iterator i, const pointer& p) {
+        if (empty()) {
+            begin_ = last_ = p;
+            insert(0, p, 0);
+        }
+        else if (i) {
+            insert(i->prev, p, i);
+            if (i == begin_) --begin_;
+        }
+        else {
+            insert(last_, p, 0) ;
+            last_ = p;
+        }
+        return p;
     }
 
+    void erase(iterator i) {
+        if (begin_ == last_)
+            begin_ = last_ = 0;
+        else {
+            if (i == begin_) ++begin_;
+            else i->prev->next = i->next;
+            if (i == last_) --last_;
+            else i->next->prev = i->prev;
+        }
+        i->prev = i->next = pointer(0);
+    }
+
+    void erase(iterator i, iterator j) { while(i != j) erase(i); }
+    void clear() { while (!empty()) { erase(begin()); } }
+
+    reference front() { return *begin(); }
+    const_reference front() const { return *begin(); }
+    void push_front(const pointer& p) { insert(begin(), p); }
+    void pop_front() { erase(begin()); }
+
+    /** Iterator to the last element in the list. */
+    iterator last() { return last_; }
+    const_iterator last() const { return last_; }
+
+    reference back() { return *last(); }
+    const_reference back() const { return *last(); }
+    void push_back(const pointer& p) { insert(end(), p); }
+    void pop_back() { erase(last()); }
+
   private:
-    // The list is circular and always contains an anchor node.
-    // end() points to the anchor, anchor.next is the first
-    // iterator, anchor.prev is the last iterator.
+    void insert(pointer a, pointer b, pointer c) {
+        b->prev = a;
+        if (a) a->next = b;
+        b->next = c;
+        if (c) c->prev = b;
+    }
+    
+    template <class T>
+    class Iterator : public boost::iterator_facade<
+      Iterator<T>, T, boost::bidirectional_traversal_tag>
+    {
+      public:
+        Iterator() : ptr() {};
 
-    struct Anchor : public Node {
-        Anchor() : Node(this) {}
-        // Suppress refcounting for the anchor node.
-        void release() const {}
-        // Hide anchor from public get functions.
-        T* self() const { return 0; }
-    } anchor;          
+        template <class U> Iterator(
+            const Iterator<U>& i,
+            typename boost::enable_if_convertible<U*, T*>::type* = 0
+        ) : ptr(i.ptr) {}
+
+        operator pointer() { return ptr; }
+        operator const_pointer() const { return ptr; }
+        
+      private:
+      friend class boost::iterator_core_access;
+
+        Iterator(const_pointer p) : ptr(const_cast<pointer>(p)) {};
+
+        T& dereference() const { return *ptr; }
+        void increment() { ptr = ptr->next; }
+        void decrement() { ptr = ptr->prev; }
+        bool equal(const Iterator& x) const { return ptr == x.ptr; }
+
+        pointer ptr;
+
+      friend class IList<Node>;
+    };
+
+    iterator begin_, last_;
 };
-
-template <class T, int N>
-void IListNode<T,N>::insert(IListNode* node) {
-    assert(!next && !prev);     // Not already in a list.
-    assert(node);
-    assert(node->next && node->prev);
-    next=node;
-    prev=node->prev;
-    prev->next = this;
-    next->prev = this;
-}
-
-template <class T, int N>
-void IListNode<T,N>::erase() {
-    assert(prev && next); 
-    intrusive_ptr<IListNode> save(this); // Protect till exit.
-    prev->next = next;
-    next->prev = prev;
-    prev = next = 0;
-}
 
 } // namespace qpid
 

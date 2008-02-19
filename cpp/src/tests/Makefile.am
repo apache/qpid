@@ -36,7 +36,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineVector.cpp \
-	IList.cpp \
+	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp
 
 check_LTLIBRARIES += libshlibtest.la
