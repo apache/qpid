@@ -361,6 +361,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 // this will attemp failover
 
                 sessionClosed(session);
+                _connection.exceptionReceived(cause);
             }
             else
             {

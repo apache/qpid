@@ -39,6 +39,7 @@ import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,6 +234,26 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
+        final ArrayList<JMSException> exceptions = new ArrayList<JMSException>();
+
+        class Listener implements ExceptionListener
+        {
+            public void onException(JMSException e)
+            {
+                exceptions.add(e);
+            }
+        }
+
+        try
+        {
+            setExceptionListener(new Listener());
+        }
+        catch (JMSException e)
+        {
+            // Shouldn't happen
+            throw new AMQException(null, null, e);
+        }
+
         if (_logger.isInfoEnabled())
         {
             _logger.info("Connection:" + connectionURL);
@@ -289,8 +310,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             try
             {
                 makeBrokerConnection(_failoverPolicy.getNextBrokerDetails());
-                lastException = null;
-                _connected = true;
             }
             catch (Exception e)
             {
@@ -318,7 +337,23 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             String message = null;
 
-            if (lastException != null)
+            if (exceptions.size() > 0)
+            {
+                JMSException e = exceptions.get(exceptions.size() - 1);
+                int code = -1;
+                try
+                {
+                    code = new Integer(e.getErrorCode()).intValue();
+                }
+                catch (NumberFormatException nfe)
+                {
+                    // Ignore this, we have some error codes and messages swapped around
+                }
+
+                throw new AMQConnectionFailureException(AMQConstant.getConstant(code),
+                                                        e.getMessage(), e);
+            }
+            else if (lastException != null)
             {
                 if (lastException.getCause() != null)
                 {
