@@ -91,8 +91,8 @@ struct  SessionFixtureT : BrokerFixture {
     qpid::client::LocalQueue lq;
 
     SessionFixtureT() : connection(broker->getPort()),
-                       session(connection.newSession()),
-                       subs(session)
+                        session(connection.newSession(qpid::client::ASYNC)),
+                        subs(session)
     {}
 
     ~SessionFixtureT() {
