@@ -103,7 +103,7 @@ struct ClientSessionFixture : public ProxySessionFixture
 };
 
 BOOST_FIXTURE_TEST_CASE(testQueueQuery, ClientSessionFixture) {
-    session =connection.newSession();
+    session =connection.newSession(ASYNC);
     session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
     TypedResult<QueueQueryResult> result = session.queueQuery(string("my-queue"));
     BOOST_CHECK_EQUAL(false, result.get().getDurable());
@@ -114,7 +114,7 @@ BOOST_FIXTURE_TEST_CASE(testQueueQuery, ClientSessionFixture) {
 
 BOOST_FIXTURE_TEST_CASE(testTransfer, ClientSessionFixture)
 {
-    session=connection.newSession();
+    session=connection.newSession(ASYNC);
     declareSubscribe();
     session.messageTransfer(content=TransferContent("my-message", "my-queue"));
     //get & test the message:
@@ -127,7 +127,7 @@ BOOST_FIXTURE_TEST_CASE(testTransfer, ClientSessionFixture)
 
 BOOST_FIXTURE_TEST_CASE(testDispatcher, ClientSessionFixture)
 {
-    session =connection.newSession();
+    session =connection.newSession(ASYNC);
     declareSubscribe();
     size_t count = 100;
     for (size_t i = 0; i < count; ++i) 
@@ -142,7 +142,7 @@ BOOST_FIXTURE_TEST_CASE(testDispatcher, ClientSessionFixture)
 /* FIXME aconway 2008-01-28: hangs
 BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
 {
-    session =connection.newSession();
+    session =connection.newSession(ASYNC);
     declareSubscribe();
     size_t count = 10000;
     DummyListener listener(session, "my-dest", count);
@@ -160,7 +160,7 @@ BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
 
 BOOST_FIXTURE_TEST_CASE(_FIXTURE, ClientSessionFixture)
 {
-    session =connection.newSession(0);
+    session =connection.newSession(ASYNC, 0);
     session.suspend();  // session has 0 timeout.
     try {
         connection.resume(session);
@@ -170,7 +170,7 @@ BOOST_FIXTURE_TEST_CASE(_FIXTURE, ClientSessionFixture)
 
 BOOST_FIXTURE_TEST_CASE(testUseSuspendedError, ClientSessionFixture)
 {
-    session =connection.newSession(60);
+    session =connection.newSession(ASYNC, 60);
     session.suspend();
     try {
         session.exchangeQuery(name="amq.fanout");
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE(testUseSuspendedError, ClientSessionFixture)
 
 BOOST_FIXTURE_TEST_CASE(testSuspendResume, ClientSessionFixture)
 {
-    session =connection.newSession(60);
+    session =connection.newSession(ASYNC, 60);
     declareSubscribe();
     session.suspend();
     // Make sure we are still subscribed after resume.

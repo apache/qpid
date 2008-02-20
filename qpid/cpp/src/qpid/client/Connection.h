@@ -39,7 +39,6 @@ namespace qpid {
  */
 namespace client {
 
-
 /**
  * \defgroup clientapi Application API for an AMQP client
  */
@@ -135,7 +134,7 @@ class Connection
      * that the broker may discard the session state. Default is 0,
      * meaning the session cannot be resumed.
      */
-    Session_0_10 newSession(uint32_t detachedLifetime=0);
+    Session_0_10 newSession(SynchronousMode sync, uint32_t detachedLifetime=0);
 
     /**
      * Resume a suspendded session. A session may be resumed
