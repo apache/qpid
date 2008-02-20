@@ -70,12 +70,15 @@ void Connection::open(
 }
 
 void Connection::openChannel(Channel& channel) {
-    channel.open(newSession());
+    channel.open(newSession(ASYNC));
 }
 
-Session_0_10 Connection::newSession(uint32_t detachedLifetime) {
+Session_0_10 Connection::newSession(SynchronousMode sync,
+                                    uint32_t detachedLifetime)
+{
     shared_ptr<SessionCore> core(
         new SessionCore(impl, ++channelIdCounter, max_frame_size));
+    core->setSync(sync);
     impl->addSession(core);
     core->open(detachedLifetime);
     return Session_0_10(core);

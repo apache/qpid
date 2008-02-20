@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
         else {
             Connection connection(args.trace);
             args.open(connection);
-            Session_0_10 session = connection.newSession();
+            Session_0_10 session = connection.newSession(ASYNC);
             if (args.transactional) {
                 session.txSelect();
             }

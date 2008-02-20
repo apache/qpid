@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
         //Create and open a session on the connection through which
         //most functionality is exposed:
-        Session_0_10 session = connection.newSession();
+        Session_0_10 session = connection.newSession(ASYNC);
 	if (opts.trace) std::cout << "Opened session." << std::endl;	
 
 
