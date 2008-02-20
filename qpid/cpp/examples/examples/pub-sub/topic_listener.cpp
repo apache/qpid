@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession();
+        Session session =  connection.newSession(ASYNC);
 
         //--------- Main body of program --------------------------------------------
 
