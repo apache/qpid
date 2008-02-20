@@ -101,7 +101,7 @@ struct Client
     Client() 
     {
         opts.open(connection);
-        session = connection.newSession();
+        session = connection.newSession(ASYNC);
     }
 
     ~Client() 

@@ -62,14 +62,14 @@ BOOST_AUTO_TEST_CASE(testWiringReplication) {
     ClusterConnections cluster;
     BOOST_REQUIRE(cluster.size() > 1);
 
-    Session broker0 = cluster[0]->newSession();
+    Session broker0 = cluster[0]->newSession(ASYNC);
     broker0.exchangeDeclare(exchange="ex");
     broker0.queueDeclare(queue="q");
     broker0.queueBind(exchange="ex", queue="q", routingKey="key");
     broker0.close();
     
     for (size_t i = 1; i < cluster.size(); ++i) {
-        Session s = cluster[i]->newSession();
+        Session s = cluster[i]->newSession(ASYNC);
         s.messageTransfer(content=TransferContent("data", "key", "ex"));
         s.messageSubscribe(queue="q", destination="q");
         s.messageFlow(destination="q", unit=0, value=1);//messages

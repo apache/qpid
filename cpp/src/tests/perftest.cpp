@@ -196,7 +196,7 @@ struct Client : public Runnable {
 
     Client() {
         opts.open(connection);
-        session = connection.newSession();
+        session = connection.newSession(ASYNC);
     }
 
     ~Client() {

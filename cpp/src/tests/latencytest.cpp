@@ -156,7 +156,7 @@ public:
 Client::Client(const string& q) : queue(q)
 {
     opts.open(connection);
-    session = connection.newSession();       
+    session = connection.newSession(ASYNC);       
 }
 
 void Client::start()
