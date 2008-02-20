@@ -25,9 +25,9 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.framework.*;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.TimingController;
-import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.TimingController;
+import org.apache.qpid.junit.extensions.TimingControllerAware;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -232,7 +232,7 @@ public class DistributedCircuitImpl implements Circuit, TimingControllerAware
     }
 
     /**
-     * Used by tests cases that can supply a {@link uk.co.thebadgerset.junit.extensions.TimingController} to set the
+     * Used by tests cases that can supply a {@link org.apache.qpid.junit.extensions.TimingController} to set the
      * controller on an aware test.
      *
      * @param controller The timing controller.

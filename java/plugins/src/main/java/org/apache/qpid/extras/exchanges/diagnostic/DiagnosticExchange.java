@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.extras.exchanges.diagnostic;
 
-import java.lang.instrument.Instrumentation;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +37,7 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
-import uk.co.thebadgerset.junit.extensions.util.SizeOf;
+import org.apache.qpid.junit.extensions.util.SizeOf;
 
 /**
  * 

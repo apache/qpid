@@ -57,7 +57,7 @@
         </dependency>
 
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
         </dependency>
 
@@ -102,7 +102,7 @@
 
             <!-- Runs the framework based tests against an in-vm broker. -->
             <plugin>
-                <groupId>uk.co.thebadgerset</groupId>
+                <groupId>org.apache.qpid</groupId>
                 <artifactId>junit-toolkit-maven-plugin</artifactId>
 
                 <configuration>
@@ -113,7 +113,7 @@
                         </property>
                     </systemproperties>
                     
-                    <testrunner>uk.co.thebadgerset.junit.extensions.TKTestRunner</testrunner>
+                    <testrunner>org.apache.qpid.junit.extensions.TKTestRunner</testrunner>
                     
                     <testrunneroptions>
                         <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>

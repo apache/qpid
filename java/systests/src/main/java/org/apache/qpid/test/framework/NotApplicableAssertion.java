@@ -22,7 +22,7 @@ package org.apache.qpid.test.framework;
 
 import org.apache.log4j.Logger;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * NotApplicableAssertion is a messaging assertion that can be used when an assertion requested by a test-case is not

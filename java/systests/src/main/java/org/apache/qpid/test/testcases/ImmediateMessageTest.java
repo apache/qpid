@@ -27,8 +27,7 @@ import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 /**
  * ImmediateMessageTest tests for the desired behaviour of immediate messages. Immediate messages are a non-JMS

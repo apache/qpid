@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.requestreply.PingPongProducer;
 import org.apache.qpid.util.CommandLineParser;
 
-import uk.co.thebadgerset.junit.extensions.util.MathUtils;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.MathUtils;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 

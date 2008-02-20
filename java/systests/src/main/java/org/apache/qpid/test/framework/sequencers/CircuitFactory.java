@@ -25,13 +25,9 @@ import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**

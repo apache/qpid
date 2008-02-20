@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.framework;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * A Receiver is a {@link CircuitEnd} that represents the status of the receiving side of a test circuit. Its main

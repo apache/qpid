@@ -25,10 +25,10 @@ import org.apache.log4j.NDC;
 
 import org.apache.qpid.test.framework.TestUtils;
 
-import uk.co.thebadgerset.junit.extensions.BatchedThrottle;
-import uk.co.thebadgerset.junit.extensions.Throttle;
-import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.BatchedThrottle;
+import org.apache.qpid.junit.extensions.Throttle;
+import org.apache.qpid.junit.extensions.util.CommandLineParser;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 import javax.naming.Context;

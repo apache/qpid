@@ -30,9 +30,9 @@ import org.apache.qpid.test.framework.clocksynch.UDPClockSynchronizer;
 import org.apache.qpid.util.ReflectionUtils;
 import org.apache.qpid.util.ReflectionUtilsException;
 
-import uk.co.thebadgerset.junit.extensions.SleepThrottle;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.SleepThrottle;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import javax.jms.*;
 
@@ -154,8 +154,8 @@ public class TestClient implements MessageListener
         // Any options and trailing name=value pairs are also injected into the test context properties object,
         // to override any defaults that may have been set up.
         ParsedProperties options =
-            new ParsedProperties(uk.co.thebadgerset.junit.extensions.util.CommandLineParser.processCommandLine(args,
-                    new uk.co.thebadgerset.junit.extensions.util.CommandLineParser(
+            new ParsedProperties(org.apache.qpid.junit.extensions.util.CommandLineParser.processCommandLine(args,
+                    new org.apache.qpid.junit.extensions.util.CommandLineParser(
                         new String[][]
                         {
                             { "b", "The broker URL.", "broker", "false" },

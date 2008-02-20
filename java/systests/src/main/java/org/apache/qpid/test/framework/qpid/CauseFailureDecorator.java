@@ -26,7 +26,7 @@ import junit.framework.TestResult;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.CauseFailureUserPrompt;
 
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 /**
  * CauseFailureDecorator applies decorations to {@link BrokerLifecycleAware} tests, so that they may use different failure

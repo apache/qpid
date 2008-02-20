@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
 
-import uk.co.thebadgerset.junit.extensions.TimingController;
-import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
+import org.apache.qpid.junit.extensions.TimingController;
+import org.apache.qpid.junit.extensions.TimingControllerAware;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
