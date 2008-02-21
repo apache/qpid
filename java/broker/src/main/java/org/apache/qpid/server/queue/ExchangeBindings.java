@@ -51,7 +51,7 @@ class ExchangeBindings
 
         ExchangeBinding(AMQShortString routingKey, Exchange exchange, FieldTable arguments)
         {
-            _routingKey = routingKey;
+            _routingKey = routingKey == null ? AMQShortString.EMPTY_STRING : routingKey;
             _exchange = exchange;
             _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
         }
@@ -74,8 +74,7 @@ class ExchangeBindings
         public int hashCode()
         {
             return (_exchange == null ? 0 : _exchange.hashCode())
-                   + (_routingKey == null ? 0 : _routingKey.hashCode())
-                   + (_arguments == null ? 0 : _arguments.hashCode());
+                   + (_routingKey == null ? 0 : _routingKey.hashCode());
         }
 
         public boolean equals(Object o)
@@ -86,8 +85,7 @@ class ExchangeBindings
             }
             ExchangeBinding eb = (ExchangeBinding) o;
             return _exchange.equals(eb._exchange)
-                   && _routingKey.equals(eb._routingKey)
-                   && _arguments.equals(eb._arguments);
+                   && _routingKey.equals(eb._routingKey);
         }
     }
 
