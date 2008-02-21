@@ -43,6 +43,7 @@ public class QpidTestCase extends TestCase
 
     // system properties
     private static final String BROKER = "broker";
+    private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION  = "broker.version";
 
     // values
@@ -52,6 +53,7 @@ public class QpidTestCase extends TestCase
     private static final String VERSION_010 = "0-10";
 
     private String _broker = System.getProperty(BROKER, VM);
+    private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
 
     private Process _brokerProcess;
@@ -82,6 +84,35 @@ public class QpidTestCase extends TestCase
         }
     }
 
+    private static final class Piper extends Thread
+    {
+
+        private InputStream in;
+
+        public Piper(InputStream in)
+        {
+            this.in = in;
+        }
+
+        public void run()
+        {
+            try
+            {
+                byte[] buf = new byte[4*1024];
+                int n;
+                while ((n = in.read(buf)) != -1)
+                {
+                    System.out.write(buf, 0, n);
+                }
+            }
+            catch (IOException e)
+            {
+                // this seems to happen regularly even when
+                // exits are normal
+            }
+        }
+    }
+
     public void startBroker() throws Exception
     {
         if (_broker.equals(VM))
@@ -96,39 +127,48 @@ public class QpidTestCase extends TestCase
             pb.redirectErrorStream(true);
             _brokerProcess = pb.start();
 
-            new Thread()
-            {
-                private InputStream in = _brokerProcess.getInputStream();
-
-                public void run()
-                {
-                    try
-                    {
-                        byte[] buf = new byte[4*1024];
-                        int n;
-                        while ((n = in.read(buf)) != -1)
-                        {
-                            System.out.write(buf, 0, n);
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        // this seems to happen regularly even when
-                        // exits are normal
-                    }
-                }
-            }.start();
+            new Piper(_brokerProcess.getInputStream()).start();
 
             Thread.sleep(1000);
 
             try
             {
                 int exit = _brokerProcess.exitValue();
+                _logger.info("broker aborted: " + exit);
+                cleanBroker();
                 throw new RuntimeException("broker aborted: " + exit);
             }
             catch (IllegalThreadStateException e)
             {
                 // this is expect if the broker started succesfully
+            }
+        }
+    }
+
+    public void cleanBroker()
+    {
+        if (_brokerClean != null)
+        {
+            _logger.info("clean: " + _brokerClean);
+
+            try
+            {
+                ProcessBuilder pb = new ProcessBuilder(_brokerClean.split("\\s+"));
+                pb.redirectErrorStream(true);
+                Process clean = pb.start();
+                new Piper(clean.getInputStream()).start();
+
+                clean.waitFor();
+
+                _logger.info("clean exited: " + clean.exitValue());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
             }
         }
     }
