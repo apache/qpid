@@ -169,14 +169,18 @@
 
   <condition property="brokerdefault" value="${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t" else="vm">
     <isset property="cpp"/>
-  </condition>  
+  </condition>
 
- <condition property="broker" value="${brokerdefault} --load-module ${store}" else="${brokerdefault}">
+  <condition property="broker" value="${brokerdefault} --load-module ${store} --store-async yes" else="${brokerdefault}">
     <and>
-    	<isset property="store"/>
-    	<isset property="cpp"/>
-    </and>	
-  </condition>  
+      <isset property="store"/>
+      <isset property="cpp"/>
+    </and>
+  </condition>
+
+  <condition property="broker.clean" value="${project.root}/clean-dir ${build.data}">
+    <isset property="cpp"/>
+  </condition>
 
   <condition property="broker.version" value="0-10" else="0-8">
     <isset property="cpp"/>
@@ -184,7 +188,6 @@
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
-    <echo message="=------->>>>>>>>>>>>> ${broker}"/>
     <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
@@ -193,6 +196,7 @@
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
       <sysproperty key="broker" value="${broker}"/>
+      <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
 
       <formatter type="plain"/>
