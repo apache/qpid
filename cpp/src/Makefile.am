@@ -101,6 +101,10 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
+  qpid/Serializer.h \
+  qpid/amqp_0_10/built_in_types.h \
+  qpid/amqp_0_10/Codec.h \
+  qpid/amqp_0_10/Decimal.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
