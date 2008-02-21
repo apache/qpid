@@ -24,7 +24,7 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/framing/TransferContent.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -52,7 +52,7 @@ struct DummyListener : public sys::Runnable, public MessageListener {
     uint expected;
     Dispatcher dispatcher;
 
-    DummyListener(Session_0_10& session, const string& n, uint ex) :
+    DummyListener(Session& session, const string& n, uint ex) :
         name(n), expected(ex), dispatcher(session) {}
 
     void run()

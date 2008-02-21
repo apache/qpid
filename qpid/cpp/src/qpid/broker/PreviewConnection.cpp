@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Connection.h"
+#include "PreviewConnection.h"
 #include "SessionState.h"
 #include "BrokerAdapter.h"
 #include "Bridge.h"
@@ -49,19 +49,19 @@ using qpid::management::Args;
 namespace qpid {
 namespace broker {
 
-class Connection::MgmtClient : public Connection::MgmtWrapper
+class PreviewConnection::MgmtClient : public PreviewConnection::MgmtWrapper
 {
     management::Client::shared_ptr mgmtClient;
 
 public:
-    MgmtClient(Connection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId);
+    MgmtClient(PreviewConnection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId);
     ~MgmtClient();
     void received(framing::AMQFrame& frame);
     management::ManagementObject::shared_ptr getManagementObject() const;
     void closing();
 };
 
-class Connection::MgmtLink : public Connection::MgmtWrapper
+class PreviewConnection::MgmtLink : public PreviewConnection::MgmtWrapper
 {
     typedef boost::ptr_vector<Bridge> Bridges;
 
@@ -75,24 +75,24 @@ class Connection::MgmtLink : public Connection::MgmtWrapper
     void cancel(Bridge*);
 
 public:
-    MgmtLink(Connection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId);
+    MgmtLink(PreviewConnection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId);
     ~MgmtLink();
     void received(framing::AMQFrame& frame);
     management::ManagementObject::shared_ptr getManagementObject() const;
     void closing();
     void processPending();
-    void process(Connection& connection, const management::Args& args);
+    void process(PreviewConnection& connection, const management::Args& args);
 };
 
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
+PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
     ConnectionState(out_, broker_),
     adapter(*this),
     mgmtClosing(0),
     mgmtId(mgmtId_)
 {}
 
-void Connection::initMgmt(bool asLink)
+void PreviewConnection::initMgmt(bool asLink)
 {
     Manageable* parent = broker.GetVhostObject ();
 
@@ -111,9 +111,9 @@ void Connection::initMgmt(bool asLink)
     }
 }
 
-Connection::~Connection () {}
+PreviewConnection::~PreviewConnection () {}
 
-void Connection::received(framing::AMQFrame& frame){
+void PreviewConnection::received(framing::AMQFrame& frame){
     if (mgmtClosing)
         close (403, "Closed by Management Request", 0, 0);
 
@@ -126,7 +126,7 @@ void Connection::received(framing::AMQFrame& frame){
     if (mgmtWrapper.get()) mgmtWrapper->received(frame);
 }
 
-void Connection::close(
+void PreviewConnection::close(
     ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {
     adapter.close(code, text, classId, methodId);
@@ -134,17 +134,17 @@ void Connection::close(
     getOutput().close();
 }
 
-void Connection::initiated(const framing::ProtocolInitiation& header) {
+void PreviewConnection::initiated(const framing::ProtocolInitiation& header) {
     version = ProtocolVersion(header.getMajor(), header.getMinor());
     adapter.init(header);
     initMgmt();
 }
 
-void Connection::idleOut(){}
+void PreviewConnection::idleOut(){}
 
-void Connection::idleIn(){}
+void PreviewConnection::idleIn(){}
 
-void Connection::closed(){ // Physically closed, suspend open sessions.
+void PreviewConnection::closed(){ // Physically closed, suspend open sessions.
     try {
 	for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
 	    get_pointer(i)->localSuspend();
@@ -163,7 +163,7 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
     }
 }
 
-bool Connection::doOutput()
+bool PreviewConnection::doOutput()
 {    
     try{
         //process any pending mgmt commands:
@@ -179,30 +179,30 @@ bool Connection::doOutput()
     return false;
 }
 
-void Connection::closeChannel(uint16_t id) {
+void PreviewConnection::closeChannel(uint16_t id) {
     ChannelMap::iterator i = channels.find(id);
     if (i != channels.end()) channels.erase(i);
 }
 
-SessionHandler& Connection::getChannel(ChannelId id) {
+PreviewSessionHandler& PreviewConnection::getChannel(ChannelId id) {
     ChannelMap::iterator i=channels.find(id);
     if (i == channels.end()) {
-        i = channels.insert(id, new SessionHandler(*this, id)).first;
+        i = channels.insert(id, new PreviewSessionHandler(*this, id)).first;
     }
     return *get_pointer(i);
 }
 
-ManagementObject::shared_ptr Connection::GetManagementObject (void) const
+ManagementObject::shared_ptr PreviewConnection::GetManagementObject (void) const
 {
     return mgmtWrapper.get() ? mgmtWrapper->getManagementObject() : ManagementObject::shared_ptr();
 }
 
-Manageable::status_t Connection::ManagementMethod (uint32_t methodId,
+Manageable::status_t PreviewConnection::ManagementMethod (uint32_t methodId,
                                                    Args&    args)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
-    QPID_LOG (debug, "Connection::ManagementMethod [id=" << methodId << "]");
+    QPID_LOG (debug, "PreviewConnection::ManagementMethod [id=" << methodId << "]");
 
     switch (methodId)
     {
@@ -222,7 +222,7 @@ Manageable::status_t Connection::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-Connection::MgmtLink::MgmtLink(Connection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId) 
+PreviewConnection::MgmtLink::MgmtLink(PreviewConnection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId) 
     : channelCounter(1)
 {
     mgmtLink = management::Link::shared_ptr
@@ -230,13 +230,13 @@ Connection::MgmtLink::MgmtLink(Connection* conn, Manageable* parent, ManagementA
     agent->addObject (mgmtLink);
 }
 
-Connection::MgmtLink::~MgmtLink()
+PreviewConnection::MgmtLink::~MgmtLink()
 {
     if (mgmtLink.get () != 0)
         mgmtLink->resourceDestroy ();
 }
 
-void Connection::MgmtLink::received(framing::AMQFrame& frame)
+void PreviewConnection::MgmtLink::received(framing::AMQFrame& frame)
 {
     if (mgmtLink.get () != 0)
     {
@@ -245,17 +245,17 @@ void Connection::MgmtLink::received(framing::AMQFrame& frame)
     }
 }
 
-management::ManagementObject::shared_ptr Connection::MgmtLink::getManagementObject() const
+management::ManagementObject::shared_ptr PreviewConnection::MgmtLink::getManagementObject() const
 {
     return dynamic_pointer_cast<ManagementObject>(mgmtLink);
 }
 
-void Connection::MgmtLink::closing()
+void PreviewConnection::MgmtLink::closing()
 {
     if (mgmtLink) mgmtLink->set_closing (1);
 }
 
-void Connection::MgmtLink::processPending()
+void PreviewConnection::MgmtLink::processPending()
 {
     //process any pending creates
     if (!created.empty()) {
@@ -273,14 +273,14 @@ void Connection::MgmtLink::processPending()
     }
 }
 
-void Connection::MgmtLink::process(Connection& connection, const management::Args& args)
+void PreviewConnection::MgmtLink::process(PreviewConnection& connection, const management::Args& args)
 {   
     created.push_back(new Bridge(channelCounter++, connection, 
                                  boost::bind(&MgmtLink::cancel, this, _1),
                                  dynamic_cast<const management::ArgsLinkBridge&>(args)));
 }
 
-void Connection::MgmtLink::cancel(Bridge* b)
+void PreviewConnection::MgmtLink::cancel(Bridge* b)
 {   
     //need to take this out the active map and add it to the cancelled map
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
@@ -291,20 +291,20 @@ void Connection::MgmtLink::cancel(Bridge* b)
     }
 }
 
-Connection::MgmtClient::MgmtClient(Connection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId)
+PreviewConnection::MgmtClient::MgmtClient(PreviewConnection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId)
 {
     mgmtClient = management::Client::shared_ptr
         (new management::Client (conn, parent, mgmtId));
     agent->addObject (mgmtClient);
 }
 
-Connection::MgmtClient::~MgmtClient()
+PreviewConnection::MgmtClient::~MgmtClient()
 {
     if (mgmtClient.get () != 0)
         mgmtClient->resourceDestroy ();
 }
 
-void Connection::MgmtClient::received(framing::AMQFrame& frame)
+void PreviewConnection::MgmtClient::received(framing::AMQFrame& frame)
 {
     if (mgmtClient.get () != 0)
     {
@@ -313,12 +313,12 @@ void Connection::MgmtClient::received(framing::AMQFrame& frame)
     }
 }
 
-management::ManagementObject::shared_ptr Connection::MgmtClient::getManagementObject() const
+management::ManagementObject::shared_ptr PreviewConnection::MgmtClient::getManagementObject() const
 {
     return dynamic_pointer_cast<ManagementObject>(mgmtClient);
 }
 
-void Connection::MgmtClient::closing()
+void PreviewConnection::MgmtClient::closing()
 {
     if (mgmtClient) mgmtClient->set_closing (1);
 }

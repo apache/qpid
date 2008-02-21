@@ -38,7 +38,7 @@ namespace qpid {
 namespace broker {
 
 class SessionState;
-class SessionHandler;
+class SessionContext;
 
 /**
  * Create and manage SessionState objects.
@@ -57,7 +57,7 @@ class SessionManager : private boost::noncopyable {
     ~SessionManager();
     
     /** Open a new active session, caller takes ownership */
-    std::auto_ptr<SessionState> open(SessionHandler& h, uint32_t timeout_);
+    std::auto_ptr<SessionState> open(SessionContext& c, uint32_t timeout_);
     
     /** Suspend a session, start it's timeout counter.
      * The factory takes ownership.

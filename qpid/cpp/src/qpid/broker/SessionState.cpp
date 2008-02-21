@@ -20,8 +20,8 @@
  */
 #include "SessionState.h"
 #include "SessionManager.h"
-#include "SessionHandler.h"
-#include "Connection.h"
+#include "SessionContext.h"
+#include "ConnectionState.h"
 #include "Broker.h"
 #include "SemanticHandler.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -37,7 +37,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 
 SessionState::SessionState(
-    SessionManager* f, SessionHandler* h, uint32_t timeout_, uint32_t ack) 
+    SessionManager* f, SessionContext* h, uint32_t timeout_, uint32_t ack) 
     : framing::SessionState(ack, timeout_ > 0),
       factory(f), handler(h), id(true), timeout(timeout_),
       broker(h->getConnection().broker),
@@ -76,7 +76,7 @@ SessionState::~SessionState() {
         mgmtObject->resourceDestroy ();
 }
 
-SessionHandler* SessionState::getHandler() {
+SessionContext* SessionState::getHandler() {
     return handler;
 }
 
@@ -85,7 +85,7 @@ AMQP_ClientProxy& SessionState::getProxy() {
     return getHandler()->getProxy();
 }
 
-Connection& SessionState::getConnection() {
+ConnectionState& SessionState::getConnection() {
     assert(isAttached());
     return getHandler()->getConnection();
 }
@@ -100,7 +100,7 @@ void SessionState::detach() {
     }
 }
 
-void SessionState::attach(SessionHandler& h) {
+void SessionState::attach(SessionContext& h) {
     {
         Mutex::ScopedLock l(lock);
         handler = &h;
@@ -141,7 +141,7 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
     case management::Session::METHOD_DETACH :
         if (handler != 0)
         {
-            handler->localSuspend ();
+            handler->detach();
         }
         status = Manageable::STATUS_OK;
         break;
