@@ -26,7 +26,6 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicReturnBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +46,9 @@ public void methodReceived(AMQStateManager stateManager, BasicReturnBody body, i
     {
         _logger.debug("New JmsBounce method received");
         final AMQProtocolSession session = stateManager.getProtocolSession();
-        final UnprocessedMessage msg = new UnprocessedMessage(channelId, body);
+        final UnprocessedMessage msg = new UnprocessedMessage.UnprocessedBouncedMessage(body);
 
-        session.unprocessedMessageReceived(msg);
+        session.unprocessedMessageReceived(channelId, msg);
     }
 
 

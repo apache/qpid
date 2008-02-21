@@ -29,8 +29,8 @@ import org.apache.qpid.pool.Event.CloseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * PoolingFilter, is a no-op pass through filter that hands all events down the Mina filter chain by default. As it
@@ -84,9 +84,6 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
     /** Used for debugging purposes. */
     private static final Logger _logger = LoggerFactory.getLogger(PoolingFilter.class);
 
-    /** Holds a mapping from Mina sessions to batched jobs for execution. */
-    private final ConcurrentMap<IoSession, Job> _jobs = new ConcurrentHashMap<IoSession, Job>();
-
     /** Holds the managed reference to obtain the executor for the batched jobs. */
     private final ReferenceCountingExecutorService _poolReference;
 
@@ -94,7 +91,9 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
     private final String _name;
 
     /** Defines the maximum number of events that will be batched into a single job. */
-    private final int _maxEvents = Integer.getInteger("amqj.server.read_write_pool.max_events", 10);
+    static final int MAX_JOB_EVENTS = Integer.getInteger("amqj.server.read_write_pool.max_events", 10);
+
+    private final int _maxEvents;
 
     /**
      * Creates a named pooling filter, on the specified shared thread pool.
@@ -102,10 +101,11 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      * @param refCountingPool The thread pool reference.
      * @param name            The identifying name of the filter type.
      */
-    public PoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
+    public PoolingFilter(ReferenceCountingExecutorService refCountingPool, String name, int maxEvents)
     {
         _poolReference = refCountingPool;
         _name = name;
+        _maxEvents = maxEvents;
     }
 
     /**
@@ -160,20 +160,34 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
     /**
      * Adds an {@link Event} to a {@link Job}, triggering the execution of the job if it is not already running.
      *
-     * @param session The Mina session to work in.
+     * @param job The job.
      * @param event   The event to hand off asynchronously.
      */
-    void fireAsynchEvent(IoSession session, Event event)
+    void fireAsynchEvent(Job job, Event event)
     {
-        Job job = getJobForSession(session);
+
         // job.acquire(); //prevents this job being removed from _jobs
         job.add(event);
 
-        // Additional checks on pool to check that it hasn't shutdown.
-        // The alternative is to catch the RejectedExecutionException that will result from executing on a shutdown pool
-        if (job.activate() && (_poolReference.getPool() != null) && !_poolReference.getPool().isShutdown())
+        final ExecutorService pool = _poolReference.getPool();
+
+        if(pool == null)
         {
-            _poolReference.getPool().execute(job);
+            return;
+        }
+
+        // rather than perform additional checks on pool to check that it hasn't shutdown.
+        // catch the RejectedExecutionException that will result from executing on a shutdown pool
+        if (job.activate())
+        {
+            try
+            {
+                pool.execute(job);
+            }
+            catch(RejectedExecutionException e)
+            {
+                _logger.warn("Thread pool shutdown while tasks still outstanding");
+            }
         }
 
     }
@@ -186,7 +200,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      */
     public void createNewJobForSession(IoSession session)
     {
-        Job job = new Job(session, this, _maxEvents);
+        Job job = new Job(session, this, MAX_JOB_EVENTS);
         session.setAttribute(_name, job);
     }
 
@@ -197,7 +211,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      *
      * @return The Job for this filter to place asynchronous events into.
      */
-    private Job getJobForSession(IoSession session)
+    public Job getJobForSession(IoSession session)
     {
         return (Job) session.getAttribute(_name);
     }
@@ -233,16 +247,56 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
         // }
         // }
         // else
+
+
         if (!job.isComplete())
         {
+            final ExecutorService pool = _poolReference.getPool();
+
+            if(pool == null)
+            {
+                return;
+            }
+
+
             // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
             // Can the pool be shutdown at this point?
-            if (job.activate() && (_poolReference.getPool() != null) && !_poolReference.getPool().isShutdown())
+            if (job.activate())
             {
-                _poolReference.getPool().execute(job);
+                try
+                {
+                    pool.execute(job);
+                }
+                catch(RejectedExecutionException e)
+                {
+                    _logger.warn("Thread pool shutdown while tasks still outstanding");
+                }
+
             }
         }
     }
+
+    public void notCompleted(IoSession session, Job job)
+    {
+        final ExecutorService pool = _poolReference.getPool();
+
+        if(pool == null)
+        {
+            return;
+        }
+
+        try
+        {
+            pool.execute(job);
+        }
+        catch(RejectedExecutionException e)
+        {
+            _logger.warn("Thread pool shutdown while tasks still outstanding");
+        }
+
+    }
+
+
 
     /**
      * No-op pass through filter to the next filter in the chain.
@@ -400,7 +454,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public AsynchReadPoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
         {
-            super(refCountingPool, name);
+            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_read_events", MAX_JOB_EVENTS));
         }
 
         /**
@@ -412,8 +466,8 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public void messageReceived(NextFilter nextFilter, final IoSession session, Object message)
         {
-
-            fireAsynchEvent(session, new Event.ReceivedEvent(nextFilter, message));
+            Job job = getJobForSession(session);
+            fireAsynchEvent(job, new Event.ReceivedEvent(nextFilter, message));
         }
 
         /**
@@ -424,7 +478,8 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public void sessionClosed(final NextFilter nextFilter, final IoSession session)
         {
-            fireAsynchEvent(session, new CloseEvent(nextFilter));
+            Job job = getJobForSession(session);
+            fireAsynchEvent(job, new CloseEvent(nextFilter));
         }
     }
 
@@ -442,7 +497,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public AsynchWritePoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
         {
-            super(refCountingPool, name);
+            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_write_events", MAX_JOB_EVENTS));
         }
 
         /**
@@ -454,7 +509,8 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public void filterWrite(final NextFilter nextFilter, final IoSession session, final WriteRequest writeRequest)
         {
-            fireAsynchEvent(session, new Event.WriteEvent(nextFilter, writeRequest));
+            Job job = getJobForSession(session);
+            fireAsynchEvent(job, new Event.WriteEvent(nextFilter, writeRequest));
         }
 
         /**
@@ -465,7 +521,8 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public void sessionClosed(final NextFilter nextFilter, final IoSession session)
         {
-            fireAsynchEvent(session, new CloseEvent(nextFilter));
+            Job job = getJobForSession(session);
+            fireAsynchEvent(job, new CloseEvent(nextFilter));
         }
     }
 }

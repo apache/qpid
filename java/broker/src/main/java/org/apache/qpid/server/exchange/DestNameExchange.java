@@ -212,10 +212,9 @@ public class DestNameExchange extends AbstractExchange
                 _logger.debug("Publishing message to queue " + queues);
             }
 
-            for (AMQQueue q : queues)
-            {
-                payload.enqueue(q);
-            }
+            payload.enqueue(queues);
+
+
         }
     }
 

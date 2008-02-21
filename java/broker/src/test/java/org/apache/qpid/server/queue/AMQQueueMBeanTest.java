@@ -123,7 +123,7 @@ public class AMQQueueMBeanTest extends TestCase
 
 
         TestMinaProtocolSession protocolSession = new TestMinaProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore, null);
+        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
         protocolSession.addChannel(channel);
 
         _queue.registerProtocolSession(protocolSession, 1, new AMQShortString("test"), false, null, false, false);

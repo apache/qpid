@@ -36,32 +36,14 @@ import org.apache.qpid.framing.ContentHeaderBody;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public class UnprocessedMessage
+public abstract class UnprocessedMessage
 {
-    private long _bytesReceived = 0;
+    private long _bytesReceived = 0L;
 
-    private final BasicDeliverBody _deliverBody;
-    private final BasicReturnBody _bounceBody; // TODO: check change (gustavo)
-    private final int _channelId;
     private ContentHeaderBody _contentHeader;
 
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ContentBody> _bodies;
-
-    public UnprocessedMessage(int channelId, BasicDeliverBody deliverBody)
-    {
-        _deliverBody = deliverBody;
-        _channelId = channelId;
-        _bounceBody = null;
-    }
-
-
-    public UnprocessedMessage(int channelId, BasicReturnBody bounceBody)
-    {
-        _deliverBody = null;
-        _channelId = channelId;
-        _bounceBody = bounceBody;
-    }
 
     public void receiveBody(ContentBody body) //throws UnexpectedBodyReceivedException
     {
@@ -96,22 +78,11 @@ public class UnprocessedMessage
         return _bytesReceived == getContentHeader().bodySize;
     }
 
-    public BasicDeliverBody getDeliverBody()
-    {
-        return _deliverBody;
-    }
-
-    public BasicReturnBody getBounceBody()
-    {
-        return _bounceBody;
-    }
 
 
-    public int getChannelId()
-    {
-        return _channelId;
-    }
+    abstract public BasicDeliverBody getDeliverBody();
 
+    abstract public BasicReturnBody getBounceBody();
 
     public ContentHeaderBody getContentHeader()
     {
@@ -127,5 +98,61 @@ public class UnprocessedMessage
     {
         return _bodies;
     }
+
+    abstract public boolean isDeliverMessage();
+
+    public static final class UnprocessedDeliverMessage extends UnprocessedMessage
+    {
+        private final BasicDeliverBody _body;
+
+        public UnprocessedDeliverMessage(final BasicDeliverBody body)
+        {
+            _body = body;
+        }
+
+
+        public BasicDeliverBody getDeliverBody()
+        {
+            return _body;
+        }
+
+        public BasicReturnBody getBounceBody()
+        {
+            return null;
+        }
+
+        public boolean isDeliverMessage()
+        {
+            return true;
+        }
+    }
+
+    public static final class UnprocessedBouncedMessage extends UnprocessedMessage
+        {
+            private final BasicReturnBody _body;
+
+            public UnprocessedBouncedMessage(final BasicReturnBody body)
+            {
+                _body = body;
+            }
+
+
+            public BasicDeliverBody getDeliverBody()
+            {
+                return null;
+            }
+
+            public BasicReturnBody getBounceBody()
+            {
+                return _body;
+            }
+
+            public boolean isDeliverMessage()
+            {
+                return false;
+            }
+        }
+
+
 
 }

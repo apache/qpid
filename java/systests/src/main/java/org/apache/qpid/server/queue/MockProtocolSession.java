@@ -190,6 +190,26 @@ public class MockProtocolSession implements AMQProtocolSession
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public void methodFrameReceived(int channelId, AMQMethodBody body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void contentHeaderReceived(int channelId, ContentHeaderBody body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void contentBodyReceived(int channelId, ContentBody body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void heartbeatBodyReceived(int channelId, HeartbeatBody body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public MethodDispatcher getMethodDispatcher()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.

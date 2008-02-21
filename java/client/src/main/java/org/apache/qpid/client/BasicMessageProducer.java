@@ -538,6 +538,18 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         frames[0] = publishFrame;
         frames[1] = contentHeaderFrame;
         CompositeAMQDataBlock compositeFrame = new CompositeAMQDataBlock(frames);
+
+        try
+        {
+            _session.checkFlowControl();
+        }
+        catch (InterruptedException e)
+        {
+            JMSException jmsEx = new JMSException("Interrupted while waiting for flow control to be removed");
+            jmsEx.setLinkedException(e);
+            throw jmsEx;
+        }
+
         _protocolHandler.writeFrame(compositeFrame, wait);
 
         if (message != origMessage)

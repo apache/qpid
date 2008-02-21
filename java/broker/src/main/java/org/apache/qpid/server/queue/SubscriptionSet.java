@@ -39,6 +39,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
     private int _currentSubscriber;
 
     private final Object _changeLock = new Object();
+    private volatile boolean _exclusive;
 
 
     /** Accessor for unit tests. */
@@ -116,10 +117,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
      */
     public Subscription nextSubscriber(QueueEntry msg)
     {
-        if (_subscriptions.isEmpty())
-        {
-            return null;
-        }
+
 
         try
         {
@@ -143,30 +141,64 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     private Subscription nextSubscriberImpl(QueueEntry msg)
     {
-        final ListIterator<Subscription> iterator = _subscriptions.listIterator(_currentSubscriber);
-        while (iterator.hasNext())
+        if(_exclusive)
         {
-            Subscription subscription = iterator.next();
-            ++_currentSubscriber;
-            subscriberScanned();
-
-            if (!(subscription.isSuspended() || subscription.wouldSuspend(msg)))
+            try
             {
-                if (subscription.hasInterest(msg))
+                Subscription subscription = _subscriptions.get(0);
+                subscriberScanned();
+
+                if (!(subscription.isSuspended() || subscription.wouldSuspend(msg)))
                 {
-                    // if the queue is not empty then this client is ready to receive a message.
-                    //FIXME the queue could be full of sent messages.
-                    // Either need to clean all PDQs after sending a message
-                    // OR have a clean up thread that runs the PDQs expunging the messages.
-                    if (!subscription.filtersMessages() || subscription.getPreDeliveryQueue().isEmpty())
+                    if (subscription.hasInterest(msg))
                     {
-                        return subscription;
+                        // if the queue is not empty then this client is ready to receive a message.
+                        //FIXME the queue could be full of sent messages.
+                        // Either need to clean all PDQs after sending a message
+                        // OR have a clean up thread that runs the PDQs expunging the messages.
+                        if (!subscription.filtersMessages() || subscription.getPreDeliveryQueue().isEmpty())
+                        {
+                            return subscription;
+                        }
                     }
                 }
             }
+            catch(IndexOutOfBoundsException e)
+            {
+            }
+            return null;
         }
+        else
+        {
+            if (_subscriptions.isEmpty())
+            {
+                return null;
+            }
+            final ListIterator<Subscription> iterator = _subscriptions.listIterator(_currentSubscriber);
+            while (iterator.hasNext())
+            {
+                Subscription subscription = iterator.next();
+                ++_currentSubscriber;
+                subscriberScanned();
 
-        return null;
+                if (!(subscription.isSuspended() || subscription.wouldSuspend(msg)))
+                {
+                    if (subscription.hasInterest(msg))
+                    {
+                        // if the queue is not empty then this client is ready to receive a message.
+                        //FIXME the queue could be full of sent messages.
+                        // Either need to clean all PDQs after sending a message
+                        // OR have a clean up thread that runs the PDQs expunging the messages.
+                        if (!subscription.filtersMessages() || subscription.getPreDeliveryQueue().isEmpty())
+                        {
+                            return subscription;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
     }
 
     /** Overridden in test classes. */
@@ -233,5 +265,14 @@ class SubscriptionSet implements WeightedSubscriptionManager
     {
         return _changeLock;
     }
-    
+
+    public void setExclusive(final boolean exclusive)
+    {
+        _exclusive = exclusive;
+    }
+
+    public boolean getExcBoolean()
+    {
+        return _exclusive;
+    }
 }

@@ -42,6 +42,7 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class FanoutExchange extends AbstractExchange
@@ -205,10 +206,8 @@ public class FanoutExchange extends AbstractExchange
                 _logger.debug("Publishing message to queue " + _queues);
             }
 
-            for (AMQQueue q : _queues)
-            {
-                payload.enqueue(q);
-            }
+            payload.enqueue(new ArrayList(_queues));
+
         }
     }
 

@@ -85,7 +85,7 @@ public class TransportConnection
             throw new AMQNoTransportForProtocolException(details);
         }
 
-        if (transport == _currentInstance)
+       /* if (transport == _currentInstance)
         {
             if (transport == VM)
             {
@@ -100,21 +100,23 @@ public class TransportConnection
             }
         }
 
-        _currentInstance = transport;
+        _currentInstance = transport;*/
 
+        ITransportConnection instance;
         switch (transport)
         {
             case SOCKET:
-                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
-                {
-                    public IoConnector newSocketConnector()
-                    {
-                        return new ExistingSocketConnector();
-                    }
-                });
+                instance =
+                        new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                        {
+                            public IoConnector newSocketConnector()
+                            {
+                                return new ExistingSocketConnector();
+                            }
+                        });
                 break;
             case TCP:
-                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                 {
                     public IoConnector newSocketConnector()
                     {
@@ -142,12 +144,14 @@ public class TransportConnection
                 break;
             case VM:
             {
-                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
+                instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
                 break;
             }
+            default:
+                throw new AMQNoTransportForProtocolException(details);
         }
 
-        return _instance;
+        return instance;
     }
 
     private static int getTransport(String transport)

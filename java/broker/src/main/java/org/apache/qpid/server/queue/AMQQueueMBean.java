@@ -54,10 +54,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * AMQQueueMBean is the management bean for an {@link AMQQueue}.
@@ -96,6 +93,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
     private Notification _lastNotification = null;
+
+
+
 
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
@@ -249,16 +249,21 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     public void checkForNotification(AMQMessage msg) throws AMQException, JMException
     {
 
-        final long currentTime = System.currentTimeMillis();
-        final long thresholdTime = currentTime - _queue.getMinimumAlertRepeatGap();
+        final Set<NotificationCheck> notificationChecks = _queue.getNotificationChecks();
 
-        for (NotificationCheck check : NotificationCheck.values())
+        if(!notificationChecks.isEmpty())
         {
-            if (check.isMessageSpecific() || (_lastNotificationTimes[check.ordinal()] < thresholdTime))
+            final long currentTime = System.currentTimeMillis();
+            final long thresholdTime = currentTime - _queue.getMinimumAlertRepeatGap();
+
+            for (NotificationCheck check : notificationChecks)
             {
-                if (check.notifyIfNecessary(msg, _queue, this))
+                if (check.isMessageSpecific() || (_lastNotificationTimes[check.ordinal()] < thresholdTime))
                 {
-                    _lastNotificationTimes[check.ordinal()] = currentTime;
+                    if (check.notifyIfNecessary(msg, _queue, this))
+                    {
+                        _lastNotificationTimes[check.ordinal()] = currentTime;
+                    }
                 }
             }
         }

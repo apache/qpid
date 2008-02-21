@@ -23,6 +23,7 @@ package org.apache.qpid.server.virtualhost;
 import javax.management.NotCompliantMBeanException;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.security.access.AccessManager;
@@ -123,7 +124,7 @@ public class VirtualHost implements Accessable
      */
     public VirtualHost(String name, MessageStore store) throws Exception
     {
-        this(name, null, store);
+        this(name, new PropertiesConfiguration(), store);
     }
 
     /**

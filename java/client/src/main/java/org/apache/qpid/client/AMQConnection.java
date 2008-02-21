@@ -73,6 +73,105 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
+    private static final class ChannelToSessionMap
+    {
+        private final AMQSession[] _fastAccessSessions = new AMQSession[16];
+        private final LinkedHashMap<Integer, AMQSession> _slowAccessSessions = new LinkedHashMap<Integer, AMQSession>();
+        private int _size = 0;
+        private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
+
+        public AMQSession get(int channelId)
+        {
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                return _fastAccessSessions[channelId];
+            }
+            else
+            {
+                return _slowAccessSessions.get(channelId);
+            }
+        }
+
+        public AMQSession put(int channelId, AMQSession session)
+        {
+            AMQSession oldVal;
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                oldVal = _fastAccessSessions[channelId];
+                _fastAccessSessions[channelId] = session;
+            }
+            else
+            {
+                oldVal = _slowAccessSessions.put(channelId, session);
+            }
+            if((oldVal != null) && (session == null))
+            {
+                _size--;
+            }
+            else if((oldVal == null) && (session != null))
+            {
+                _size++;
+            }
+
+            return session;
+
+        }
+
+
+        public AMQSession remove(int channelId)
+        {
+            AMQSession session;
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                 session = _fastAccessSessions[channelId];
+                _fastAccessSessions[channelId] = null;
+            }
+            else
+            {
+                session = _slowAccessSessions.remove(channelId);
+            }
+
+            if(session != null)
+            {
+                _size--;
+            }
+            return session;
+
+        }
+
+        public Collection<AMQSession> values()
+        {
+            ArrayList<AMQSession> values = new ArrayList<AMQSession>(size());
+
+            for(int i = 0; i < 16; i++)
+            {
+                if(_fastAccessSessions[i] != null)
+                {
+                    values.add(_fastAccessSessions[i]);
+                }
+            }
+            values.addAll(_slowAccessSessions.values());
+
+            return values;
+        }
+
+        public int size()
+        {
+            return _size;
+        }
+
+        public void clear()
+        {
+            _size = 0;
+            _slowAccessSessions.clear();
+            for(int i = 0; i<16; i++)
+            {
+                _fastAccessSessions[i] = null;
+            }
+        }
+    }
+
+
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
     private AtomicInteger _idFactory = new AtomicInteger(0);
@@ -102,7 +201,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
-    private final Map<Integer, AMQSession> _sessions = new LinkedHashMap<Integer, AMQSession>();
+    private final ChannelToSessionMap _sessions = new ChannelToSessionMap();
 
     private String _clientName;
 
@@ -757,10 +856,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         checkNotClosed();
         if (!_started)
         {
-            final Iterator it = _sessions.entrySet().iterator();
+            final Iterator it = _sessions.values().iterator();
             while (it.hasNext())
             {
-                final AMQSession s = (AMQSession) ((Map.Entry) it.next()).getValue();
+                final AMQSession s = (AMQSession) (it.next());
                 try
                 {
                     s.start();
@@ -1014,11 +1113,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _maximumFrameSize;
     }
 
-    public Map getSessions()
-    {
-        return _sessions;
-    }
-
     public String getUsername()
     {
         return _username;
@@ -1239,6 +1333,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
             s.resubscribe();
+            s.setFlowControl(true);
         }
     }
 

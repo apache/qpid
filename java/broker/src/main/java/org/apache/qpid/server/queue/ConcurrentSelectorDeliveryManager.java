@@ -363,8 +363,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                     protocolSession.getProtocolOutputConverter().writeGetOk(entry.getMessage(), channel.getChannelId(),
                                                                             deliveryTag, _queue.getMessageCount());
-                    _totalMessageSize.addAndGet(-entry.getSize());
+
                 }
+                _totalMessageSize.addAndGet(-entry.getSize());
 
                 if (!acks)
                 {
@@ -918,7 +919,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     if (!s.isSuspended())
                     {
-                        if (_log.isDebugEnabled())
+                        if (debugEnabled)
                         {
                             _log.debug(debugIdentity() + "Delivering Message:" + entry.getMessage().debugIdentity() + " to(" +
                                        System.identityHashCode(s) + ") :" + s);

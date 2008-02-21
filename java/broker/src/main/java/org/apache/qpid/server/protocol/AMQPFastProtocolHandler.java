@@ -30,6 +30,7 @@ import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.codec.QpidProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.SessionUtil;
@@ -82,7 +83,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         createSession(protocolSession, _applicationRegistry, codecFactory);
         _logger.info("Protocol session created for:" + protocolSession.getRemoteAddress());
 
-        final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
+        final QpidProtocolCodecFilter pcf = new QpidProtocolCodecFilter(codecFactory);
 
         ConnectorConfiguration connectorConfig = ApplicationRegistry.getInstance().
                 getConfiguredObject(ConnectorConfiguration.class);
