@@ -19,7 +19,7 @@
  *
  */
 #include "Bridge.h"
-#include "Connection.h"
+#include "ConnectionState.h"
 
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
@@ -31,7 +31,7 @@ using qpid::framing::Uuid;
 namespace qpid {
 namespace broker {
 
-Bridge::Bridge(framing::ChannelId id, Connection& c, CancellationListener l, const management::ArgsLinkBridge& _args) : 
+Bridge::Bridge(framing::ChannelId id, ConnectionState& c, CancellationListener l, const management::ArgsLinkBridge& _args) : 
     args(_args), channel(id, &(c.getOutput())), peer(channel), 
     mgmtObject(new management::Bridge(this, &c, id, args.i_src, args.i_dest, args.i_key, args.i_src_is_queue, args.i_src_is_local)),
     connection(c), listener(l)

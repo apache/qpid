@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include "qpid/client/Session.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -34,17 +35,15 @@
 namespace qpid {
 namespace client {
 
-class Session_0_10;
-
 class Subscriber : public MessageListener
 {
-    Session_0_10& session;
+    Session& session;
     MessageListener* const listener;
     AckPolicy autoAck;
 
 public:
     typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(Session_0_10& session, MessageListener* listener, AckPolicy);
+    Subscriber(Session& session, MessageListener* listener, AckPolicy);
     void received(Message& msg);
     
 };
@@ -56,7 +55,7 @@ class Dispatcher : public sys::Runnable
     typedef std::map<std::string, Subscriber::shared_ptr> Listeners;
     sys::Mutex lock;
     sys::Thread worker;
-    Session_0_10& session;
+    Session& session;
     Demux::QueuePtr queue;
     bool running;
     bool autoStop;
@@ -68,7 +67,7 @@ class Dispatcher : public sys::Runnable
     bool isStopped();
 
 public:
-    Dispatcher(Session_0_10& session, const std::string& queue = "");
+    Dispatcher(Session& session, const std::string& queue = "");
 
     void start();
     void run();

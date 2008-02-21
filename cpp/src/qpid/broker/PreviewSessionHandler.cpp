@@ -18,9 +18,9 @@
  *
  */
 
-#include "SessionHandler.h"
+#include "PreviewSessionHandler.h"
 #include "SessionState.h"
-#include "Connection.h"
+#include "PreviewConnection.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
 #include "qpid/framing/ClientInvoker.h"
@@ -35,21 +35,21 @@ using namespace framing;
 using namespace std;
 using namespace qpid::sys;
 
-SessionHandler::SessionHandler(Connection& c, ChannelId ch)
+PreviewSessionHandler::PreviewSessionHandler(PreviewConnection& c, ChannelId ch)
     : SessionContext(c.getOutput()),
       connection(c), channel(ch, &c.getOutput()),
       proxy(out),               // Via my own handleOut() for L2 data.
       peerSession(channel),     // Direct to channel for L2 commands.
       ignoring(false) {}
 
-SessionHandler::~SessionHandler() {}
+PreviewSessionHandler::~PreviewSessionHandler() {}
 
 namespace {
 ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
 MethodId methodId(AMQMethodBody* m) { return m ? m->amqpClassId() : 0; }
 } // namespace
 
-void SessionHandler::handleIn(AMQFrame& f) {
+void PreviewSessionHandler::handleIn(AMQFrame& f) {
     // Note on channel states: a channel is open if session != 0.  A
     // channel that is closed (session == 0) can be in the "ignoring"
     // state. This is a temporary state after we have sent a channel
@@ -84,27 +84,27 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
 }
 
-void SessionHandler::handleOut(AMQFrame& f) {
+void PreviewSessionHandler::handleOut(AMQFrame& f) {
     channel.handle(f);          // Send it.
     if (session->sent(f))
         peerSession.solicitAck();
 }
 
-void SessionHandler::assertAttached(const char* method) const {
+void PreviewSessionHandler::assertAttached(const char* method) const {
     if (!session.get())
         throw ChannelErrorException(
             QPID_MSG(method << " failed: No session for channel "
                      << getChannel()));
 }
 
-void SessionHandler::assertClosed(const char* method) const {
+void PreviewSessionHandler::assertClosed(const char* method) const {
     if (session.get())
         throw ChannelBusyException(
             QPID_MSG(method << " failed: channel " << channel.get()
                      << " is already open."));
 }
 
-void  SessionHandler::open(uint32_t detachedLifetime) {
+void  PreviewSessionHandler::open(uint32_t detachedLifetime) {
     assertClosed("open");
     std::auto_ptr<SessionState> state(
         connection.broker.getSessionManager().open(*this, detachedLifetime));
@@ -112,7 +112,7 @@ void  SessionHandler::open(uint32_t detachedLifetime) {
     peerSession.attached(session->getId(), session->getTimeout());
 }
 
-void  SessionHandler::resume(const Uuid& id) {
+void  PreviewSessionHandler::resume(const Uuid& id) {
     assertClosed("resume");
     session = connection.broker.getSessionManager().resume(id);
     session->attach(*this);
@@ -121,19 +121,19 @@ void  SessionHandler::resume(const Uuid& id) {
     proxy.getSession().ack(seq, SequenceNumberSet());
 }
 
-void  SessionHandler::flow(bool /*active*/) {
+void  PreviewSessionHandler::flow(bool /*active*/) {
     assertAttached("flow");
     // TODO aconway 2007-09-19: Removed in 0-10, remove 
     assert(0); throw NotImplementedException("session.flow");
 }
 
-void  SessionHandler::flowOk(bool /*active*/) {
+void  PreviewSessionHandler::flowOk(bool /*active*/) {
     assertAttached("flowOk");
     // TODO aconway 2007-09-19: Removed in 0-10, remove 
     assert(0); throw NotImplementedException("session.flowOk");
 }
 
-void  SessionHandler::close() {
+void  PreviewSessionHandler::close() {
     assertAttached("close");
     QPID_LOG(info, "Received session.close");
     ignoring=false;
@@ -144,14 +144,14 @@ void  SessionHandler::close() {
     connection.closeChannel(channel.get()); 
 }
 
-void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
+void  PreviewSessionHandler::closed(uint16_t replyCode, const string& replyText) {
     QPID_LOG(warning, "Received session.closed: "<<replyCode<<" "<<replyText);
     ignoring=false;
     session->detach();
     session.reset();
 }
 
-void SessionHandler::localSuspend() {
+void PreviewSessionHandler::localSuspend() {
     if (session.get() && session->isAttached()) {
         session->detach();
         connection.broker.getSessionManager().suspend(session);
@@ -159,7 +159,7 @@ void SessionHandler::localSuspend() {
     }
 }
 
-void  SessionHandler::suspend() {
+void  PreviewSessionHandler::suspend() {
     assertAttached("suspend");
     localSuspend();
     peerSession.detached();
@@ -167,7 +167,7 @@ void  SessionHandler::suspend() {
     connection.closeChannel(channel.get()); 
 }
 
-void  SessionHandler::ack(uint32_t     cumulativeSeenMark,
+void  PreviewSessionHandler::ack(uint32_t     cumulativeSeenMark,
                           const SequenceNumberSet& /*seenFrameSet*/)
 {
     assertAttached("ack");
@@ -175,37 +175,36 @@ void  SessionHandler::ack(uint32_t     cumulativeSeenMark,
         session->receivedAck(cumulativeSeenMark);
         framing::SessionState::Replay replay=session->replay();
         std::for_each(replay.begin(), replay.end(),
-                      boost::bind(&SessionHandler::handleOut, this, _1));
+                      boost::bind(&PreviewSessionHandler::handleOut, this, _1));
     }
     else
         session->receivedAck(cumulativeSeenMark);
 }
 
-void  SessionHandler::highWaterMark(uint32_t /*lastSentMark*/) {
+void  PreviewSessionHandler::highWaterMark(uint32_t /*lastSentMark*/) {
     // TODO aconway 2007-10-02: may be removed from spec.
     assert(0); throw NotImplementedException("session.high-water-mark");
 }
 
-void  SessionHandler::solicitAck() {
+void  PreviewSessionHandler::solicitAck() {
     assertAttached("solicit-ack");
     peerSession.ack(session->sendingAck(), SequenceNumberSet());    
 }
 
-void SessionHandler::attached(const Uuid& /*sessionId*/, uint32_t detachedLifetime)
+void PreviewSessionHandler::attached(const Uuid& /*sessionId*/, uint32_t detachedLifetime)
 {
     std::auto_ptr<SessionState> state(
         connection.broker.getSessionManager().open(*this, detachedLifetime));
     session.reset(state.release());
 }
 
-void SessionHandler::detached()
+void PreviewSessionHandler::detached()
 {
     connection.broker.getSessionManager().suspend(session);
     session.reset();
 }
 
-
-ConnectionState& SessionHandler::getConnection() { return connection; }
-const ConnectionState& SessionHandler::getConnection() const { return connection; }
+ConnectionState& PreviewSessionHandler::getConnection() { return connection; }
+const ConnectionState& PreviewSessionHandler::getConnection() const { return connection; }
 
 }} // namespace qpid::broker

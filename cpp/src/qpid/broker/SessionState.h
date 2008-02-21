@@ -48,10 +48,10 @@ class AMQP_ClientProxy;
 namespace broker {
 
 class SemanticHandler;
-class SessionHandler;
+class SessionContext;
 class SessionManager;
 class Broker;
-class Connection;
+class ConnectionState;
 
 /**
  * Broker-side session state includes sessions handler chains, which may
@@ -67,16 +67,16 @@ class SessionState : public framing::SessionState,
     bool isAttached() { return handler; }
 
     void detach();
-    void attach(SessionHandler& handler);
+    void attach(SessionContext& handler);
 
     
-    SessionHandler* getHandler();
+    SessionContext* getHandler();
 
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();
     
     /** @pre isAttached() */
-    Connection& getConnection();
+    ConnectionState& getConnection();
 
     uint32_t getTimeout() const { return timeout; }
     Broker& getBroker() { return broker; }
@@ -92,14 +92,14 @@ class SessionState : public framing::SessionState,
 
     // Normally SessionManager creates sessions.
     SessionState(SessionManager*,
-                 SessionHandler* out,
+                 SessionContext* out,
                  uint32_t timeout,
                  uint32_t ackInterval);
     
 
   private:
     SessionManager* factory;
-    SessionHandler* handler;    
+    SessionContext* handler;    
     framing::Uuid id;
     uint32_t timeout;
     sys::AbsTime expiry;        // Used by SessionManager.

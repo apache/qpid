@@ -50,7 +50,7 @@ class LocalQueue
 
   private:
   friend class SubscriptionManager;
-    Session_0_10 session;
+    Session session;
     Demux::QueuePtr queue;
     AckPolicy autoAck;
 };

@@ -31,7 +31,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
 
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
         //Create and open a session on the connection through which
         //most functionality is exposed:
-        Session_0_10 session = connection.newSession(ASYNC);
+        Session session = connection.newSession(ASYNC);
 	if (opts.trace) std::cout << "Opened session." << std::endl;	
 
 

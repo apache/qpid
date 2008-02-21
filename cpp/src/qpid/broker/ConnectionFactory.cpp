@@ -20,6 +20,7 @@
  */
 #include "ConnectionFactory.h"
 #include "Connection.h"
+#include "MultiVersionConnectionInputHandler.h"
 
 namespace qpid {
 namespace broker {
@@ -38,7 +39,7 @@ qpid::sys::ConnectionInputHandler*
 ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out,
                           const std::string& id)
 {
-    return new Connection(out, broker, id);
+    return new MultiVersionConnectionInputHandler(out, broker, id);
 }
 
 }} // namespace qpid::broker

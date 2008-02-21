@@ -178,6 +178,12 @@ class Connection:
       raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
     return frame
 
+  def write_99_0(self, frame):
+    self.write_0_10(frame)
+    
+  def read_99_0(self):
+    return self.read_0_10()
+
 class Frame:
 
   DECODERS = {}
@@ -233,7 +239,7 @@ class Method(Frame):
 
   def encode(self, c):
     version = (c.spec.major, c.spec.minor)
-    if version == (0, 10):
+    if version == (0, 10) or version == (99, 0):
       c.encode_octet(self.method.klass.id)
       c.encode_octet(self.method.id)
     else:
@@ -244,7 +250,7 @@ class Method(Frame):
 
   def decode(spec, c, size):
     version = (c.spec.major, c.spec.minor)
-    if version == (0, 10):
+    if version == (0, 10) or version == (99, 0):
       klass = spec.classes.byid[c.decode_octet()]
       meth = klass.methods.byid[c.decode_octet()]
     else:
@@ -315,7 +321,7 @@ class Response(Frame):
     return "[%s] Response(%s,%s,%s) %s" % (self.channel, self.id, self.request_id, self.batch_offset, self.method)
 
 def uses_struct_encoding(spec):
-  return (spec.major == 0 and spec.minor == 10)
+  return (spec.major == 0 and spec.minor == 10) or (spec.major == 99 and spec.minor == 0)
 
 class Header(Frame):
 
