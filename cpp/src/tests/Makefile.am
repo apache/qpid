@@ -37,7 +37,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineVector.cpp \
 	ISList.cpp IList.cpp \
-	ClientSessionTest.cpp
+	ClientSessionTest.cpp \
+	serialize.cpp
 # FIXME aconway 2008-02-20: removed RefCountedMap.cpp  due to valgrind error.
 
 check_LTLIBRARIES += libshlibtest.la
