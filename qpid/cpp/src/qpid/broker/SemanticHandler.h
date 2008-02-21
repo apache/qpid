@@ -77,7 +77,7 @@ class SemanticHandler : public DeliveryAdapter,
     DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);
 
     framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
-    Connection& getConnection() { return session.getConnection(); }
+    //Connection& getConnection() { return session.getConnection(); }
     Broker& getBroker() { return session.getBroker(); }
 
 public:

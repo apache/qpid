@@ -29,7 +29,7 @@
 #include "Message.h"
 #include "Queue.h"
 #include "ConnectionImpl.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
@@ -79,7 +79,7 @@ class Channel : private sys::Runnable
     bool running;
 
     ConsumerMap consumers;
-    Session_0_10 session;
+    Session session;
     framing::ChannelId channelId;
     sys::BlockingQueue<framing::FrameSet::shared_ptr> gets;
     framing::Uuid uniqueId;
@@ -88,7 +88,7 @@ class Channel : private sys::Runnable
 
     void stop();
 
-    void open(const Session_0_10& session);
+    void open(const Session& session);
     void closeInternal();
     void join();
 

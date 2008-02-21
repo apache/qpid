@@ -24,7 +24,7 @@
 #include "qpid/sys/Mutex.h"
 #include <qpid/client/Dispatcher.h>
 #include <qpid/client/Completion.h>
-#include <qpid/client/Session_0_10.h>
+#include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/LocalQueue.h>
 #include <qpid/sys/Runnable.h>
@@ -48,7 +48,7 @@ class SubscriptionManager : public sys::Runnable
     Completion subscribeInternal(const std::string& q, const std::string& dest);
     
     qpid::client::Dispatcher dispatcher;
-    qpid::client::Session_0_10& session;
+    qpid::client::Session& session;
     uint32_t messages;
     uint32_t bytes;
     bool window;
@@ -58,7 +58,7 @@ class SubscriptionManager : public sys::Runnable
     bool autoStop;
     
   public:
-    SubscriptionManager(Session_0_10& session);
+    SubscriptionManager(Session& session);
     
     /**
      * Subscribe a MessagesListener to receive messages from queue.

@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_SESSIONHANDLER_H
-#define QPID_BROKER_SESSIONHANDLER_H
+#ifndef QPID_BROKER_PREVIEWSESSIONHANDLER_H
+#define QPID_BROKER_PREVIEWSESSIONHANDLER_H
 
 /*
  *
@@ -35,7 +35,7 @@
 namespace qpid {
 namespace broker {
 
-class Connection;
+class PreviewConnection;
 class SessionState;
 
 /**
@@ -43,14 +43,14 @@ class SessionState;
  * receives incoming frames, handles session commands and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
+class PreviewSessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
                        public framing::AMQP_ClientOperations::SessionHandler,
                        public SessionContext,
                        private boost::noncopyable
 {
   public:
-    SessionHandler(Connection&, framing::ChannelId);
-    ~SessionHandler();
+    PreviewSessionHandler(PreviewConnection&, framing::ChannelId);
+    ~PreviewSessionHandler();
 
     /** Returns 0 if not attached to a session */
     SessionState* getSession() { return session.get(); }
@@ -96,7 +96,7 @@ class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
     void assertClosed(const char* method) const;
 
 
-    Connection& connection;
+    PreviewConnection& connection;
     framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
     framing::AMQP_ClientProxy::Session peerSession;

@@ -27,7 +27,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionImpl.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 
 /**
@@ -86,7 +86,7 @@ struct ProxyConnection : public qpid::client::Connection {
 template <class ConnectionType>
 struct  SessionFixtureT : BrokerFixture {
     ConnectionType connection;
-    qpid::client::Session_0_10 session;
+    qpid::client::Session session;
     qpid::client::SubscriptionManager subs;
     qpid::client::LocalQueue lq;
 

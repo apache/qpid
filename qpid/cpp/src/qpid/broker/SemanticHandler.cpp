@@ -21,11 +21,10 @@
 
 #include "SemanticHandler.h"
 #include "SemanticState.h"
-#include "SessionHandler.h"
+#include "SessionContext.h"
 #include "SessionState.h"
 #include "BrokerAdapter.h"
 #include "MessageDelivery.h"
-#include "Connection.h"
 #include "qpid/framing/ExecutionCompleteBody.h"
 #include "qpid/framing/ExecutionResultBody.h"
 #include "qpid/framing/ServerInvoker.h"
@@ -165,7 +164,7 @@ void SemanticHandler::handleContent(AMQFrame& frame)
 
 DeliveryId SemanticHandler::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
-    SessionHandler* handler = session.getHandler();
+    SessionContext* handler = session.getHandler();
     if (handler) {
         uint32_t maxFrameSize = handler->getConnection().getFrameMax();
         MessageDelivery::deliver(msg, handler->out, ++outgoing.hwm, token, maxFrameSize);

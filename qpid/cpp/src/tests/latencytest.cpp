@@ -30,7 +30,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 
 using namespace qpid;
@@ -98,7 +98,7 @@ class Client : public Runnable
 {
 protected:
     Connection connection;
-    Session_0_10 session;
+    Session session;
     Thread thread;
     string queue;
 

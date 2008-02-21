@@ -85,8 +85,8 @@ class SessionNoKeywordGen < CppGen
           }
           cpp_class(@classname, "public SessionBase") {
             public
-            genl "Session_0_10() {}"
-            genl "Session_0_10(shared_ptr<SessionCore> core) : SessionBase(core) {}"
+            genl "Session_#{@amqp.version.bars}() {}"
+            genl "Session_#{@amqp.version.bars}(shared_ptr<SessionCore> core) : SessionBase(core) {}"
             session_methods.each { |m|
               genl
               doxygen(m)

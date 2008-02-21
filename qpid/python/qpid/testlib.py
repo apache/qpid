@@ -141,7 +141,7 @@ Options:
                 self.tests=findmodules("tests")
             if self.use08spec():
                 self.tests+=findmodules("tests_0-8")
-            elif self.spec.major == 0 and self.spec.minor == 10:
+            elif (self.spec.major == 0 and self.spec.minor == 10) or (self.spec.major == 99 and self.spec.minor == 0):
                 self.tests+=findmodules("tests_0-10")
             else:
                 self.tests+=findmodules("tests_0-9")

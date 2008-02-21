@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#ifndef _Connection_
-#define _Connection_
+#ifndef _PreviewConnection_
+#define _PreviewConnection_
 
 #include <memory>
 #include <sstream>
@@ -38,9 +38,9 @@
 #include "Broker.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/Exception.h"
-#include "ConnectionHandler.h"
+#include "PreviewConnectionHandler.h"
 #include "ConnectionState.h"
-#include "SessionHandler.h"
+#include "PreviewSessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Client.h"
 #include "qpid/management/Link.h"
@@ -50,15 +50,15 @@
 namespace qpid {
 namespace broker {
 
-class Connection : public sys::ConnectionInputHandler, 
+class PreviewConnection : public sys::ConnectionInputHandler, 
                    public ConnectionState
 {
   public:
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
-    ~Connection ();
+    PreviewConnection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
+    ~PreviewConnection ();
 
-    /** Get the SessionHandler for channel. Create if it does not already exist */
-    SessionHandler& getChannel(framing::ChannelId channel);
+    /** Get the PreviewSessionHandler for channel. Create if it does not already exist */
+    PreviewSessionHandler& getChannel(framing::ChannelId channel);
 
     /** Close the connection */
     void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
@@ -82,7 +82,7 @@ class Connection : public sys::ConnectionInputHandler,
     void initMgmt(bool asLink = false);
 
   private:
-    typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
+    typedef boost::ptr_map<framing::ChannelId, PreviewSessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     /**
@@ -99,14 +99,15 @@ class Connection : public sys::ConnectionInputHandler,
         virtual management::ManagementObject::shared_ptr getManagementObject() const = 0;
         virtual void closing() = 0;
         virtual void processPending(){}
-        virtual void process(Connection&, const management::Args&){}
+        virtual void process(PreviewConnection&, const management::Args&){}
     };
     class MgmtClient;
     class MgmtLink;
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;
-    ConnectionHandler adapter;
+    uint64_t stagingThreshold;
+    PreviewConnectionHandler adapter;
     std::auto_ptr<MgmtWrapper> mgmtWrapper;
     bool mgmtClosing;
     const std::string mgmtId;
