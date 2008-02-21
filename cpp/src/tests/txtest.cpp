@@ -28,7 +28,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 
 using namespace qpid;
@@ -96,7 +96,7 @@ Args opts;
 struct Client 
 {
     Connection connection;
-    Session_0_10 session;
+    Session session;
 
     Client() 
     {

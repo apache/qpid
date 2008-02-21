@@ -25,7 +25,7 @@
 #include <string>
 #include "Channel.h"
 #include "ConnectionImpl.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/Uuid.h"
 
@@ -134,13 +134,13 @@ class Connection
      * that the broker may discard the session state. Default is 0,
      * meaning the session cannot be resumed.
      */
-    Session_0_10 newSession(SynchronousMode sync, uint32_t detachedLifetime=0);
+    Session newSession(SynchronousMode sync, uint32_t detachedLifetime=0);
 
     /**
      * Resume a suspendded session. A session may be resumed
      * on a different connection to the one that created it.
      */
-    void resume(Session_0_10& session);
+    void resume(Session& session);
 };
 
 }} // namespace qpid::client

@@ -46,9 +46,9 @@ const std::string empty;
 
 class ScopedSync
 {
-    Session_0_10& session;
+    Session& session;
   public:
-    ScopedSync(Session_0_10& s, bool enabled = true) : session(s) { session.setSynchronous(enabled); }
+    ScopedSync(Session& s, bool enabled = true) : session(s) { session.setSynchronous(enabled); }
     ~ScopedSync() { session.setSynchronous(false); }
 };
 
@@ -63,7 +63,7 @@ Channel::~Channel()
     join();
 }
 
-void Channel::open(const Session_0_10& s)
+void Channel::open(const Session& s)
 {
     Mutex::ScopedLock l(stopLock);
     if (isOpen())

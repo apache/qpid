@@ -198,7 +198,7 @@ class Channel:
       self.invoker = self.invoke_reliable
     else:
       self.invoker = self.invoke_method
-    self.use_execution_layer = (spec.major == 0 and spec.minor == 10)
+    self.use_execution_layer = (spec.major == 0 and spec.minor == 10) or (spec.major == 99 and spec.minor == 0)
     self.synchronous = True
 
   def closed(self, reason):

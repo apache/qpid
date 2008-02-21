@@ -163,6 +163,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Queue.cpp \
   qpid/broker/PersistableMessage.cpp \
   qpid/broker/Bridge.cpp \
+  qpid/broker/PreviewConnection.cpp \
+  qpid/broker/PreviewConnectionHandler.cpp \
+  qpid/broker/PreviewSessionHandler.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -186,6 +189,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageDelivery.cpp \
   qpid/broker/MessageHandlerImpl.cpp \
   qpid/broker/MessageStoreModule.cpp \
+  qpid/broker/MultiVersionConnectionInputHandler.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/QueueBindings.cpp \
@@ -201,6 +205,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionManager.h \
   qpid/broker/SessionManager.cpp \
   qpid/broker/SessionHandler.h \
+  qpid/broker/SessionContext.h \
   qpid/broker/SessionHandler.cpp \
   qpid/broker/SemanticHandler.cpp \
   qpid/broker/Timer.cpp \
@@ -262,7 +267,11 @@ nobase_include_HEADERS = \
   qpid/broker/Queue.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
+  qpid/broker/PreviewConnection.h \
+  qpid/broker/PreviewConnectionHandler.h \
+  qpid/broker/PreviewSessionHandler.h \
   qpid/broker/Connection.h \
+  qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionHandler.h \
   qpid/broker/ConnectionToken.h \
@@ -293,6 +302,7 @@ nobase_include_HEADERS = \
   qpid/broker/MessageHandlerImpl.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.h \
+  qpid/broker/MultiVersionConnectionInputHandler.h \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.h \
   qpid/broker/Persistable.h \
