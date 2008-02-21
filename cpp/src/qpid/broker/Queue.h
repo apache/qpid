@@ -26,6 +26,7 @@
 #include <deque>
 #include <set>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include "qpid/framing/amqp_types.h"
 #include "ConnectionToken.h"
 #include "Consumer.h"
@@ -55,13 +56,13 @@ namespace qpid {
          * registered consumers or be stored until dequeued or until one
          * or more consumers registers.
          */
-        class Queue : public PersistableQueue, public management::Manageable {
+        class Queue : public boost::enable_shared_from_this<Queue>, public PersistableQueue, public management::Manageable {
             typedef std::set<Consumer*> Listeners;
             typedef std::deque<QueuedMessage> Messages;
 
             const string name;
             const bool autodelete;
-            MessageStore* const store;
+            MessageStore* store;
             const ConnectionToken* owner;
             uint32_t consumerCount;
             bool exclusive;
