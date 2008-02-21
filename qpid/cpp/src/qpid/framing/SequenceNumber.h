@@ -50,6 +50,8 @@ class SequenceNumber
     operator uint32_t() const { return (uint32_t) value; }
 
     friend int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
+
+    template <class S> void serialize(S& s) { s(value); }
 };    
 
 struct Window 
