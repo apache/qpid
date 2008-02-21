@@ -38,7 +38,10 @@ void PersistableMessage::flush()
 	}
     }
     for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
-        store->flush(*(*i));
+        PersistableQueue::shared_ptr q(i->lock());
+        if (q) {
+            store->flush(*q);
+        }
     } 
 }
 
