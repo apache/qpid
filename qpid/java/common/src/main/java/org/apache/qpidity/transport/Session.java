@@ -237,7 +237,7 @@ public class Session extends Invoker
 
     public Header header(List<Struct> structs)
     {
-        Header res = new Header(structs);
+        Header res = new Header(structs, false);
         header(res);
         return res;
     }
