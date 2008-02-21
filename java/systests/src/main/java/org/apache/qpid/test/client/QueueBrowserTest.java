@@ -34,6 +34,8 @@ import javax.jms.TextMessage;
 import javax.jms.JMSException;
 import javax.jms.QueueReceiver;
 import javax.jms.Message;
+import javax.naming.NamingException;
+
 import java.util.Enumeration;
 
 import junit.framework.TestCase;
@@ -41,8 +43,6 @@ import junit.framework.TestCase;
 public class QueueBrowserTest extends VMTestCase
 {
     private static final Logger _logger = Logger.getLogger(QueueBrowserTest.class);
-
-    private static final int MSG_COUNT = 10;
 
     private Connection _clientConnection;
     private Session _clientSession;
@@ -64,6 +64,10 @@ public class QueueBrowserTest extends VMTestCase
 
         //Ensure _queue is created
         _clientSession.createConsumer(_queue).close();
+    }
+
+    private void sendMessages(int num) throws JMSException, NamingException
+    {
 
         //Create Producer put some messages on the queue
         Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
@@ -74,23 +78,17 @@ public class QueueBrowserTest extends VMTestCase
 
         MessageProducer producer = producerSession.createProducer(_queue);
 
-        for (int msg = 0; msg < MSG_COUNT; msg++)
+        for (int msg = 0; msg < num; msg++)
         {
             producer.send(producerSession.createTextMessage("Message " + msg));
         }
 
         producerConnection.close();
-
     }
 
-    /*
-    * Test Messages Remain on Queue
-    * Create a queu and send messages to it. Browse them and then receive them all to verify they were still there
-    *
-    */
-
-    public void testQueueBrowserMsgsRemainOnQueue() throws JMSException
+    private void checkQueueDepth(int depth) throws JMSException, NamingException
     {
+        sendMessages(depth);
 
         // create QueueBrowser
         _logger.info("Creating Queue Browser");
@@ -100,7 +98,7 @@ public class QueueBrowserTest extends VMTestCase
         // check for messages
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Checking for " + MSG_COUNT + " messages with QueueBrowser");
+            _logger.debug("Checking for " + depth + " messages with QueueBrowser");
         }
 
         int msgCount = 0;
@@ -119,34 +117,54 @@ public class QueueBrowserTest extends VMTestCase
 
         // check to see if all messages found
 //        assertEquals("browser did not find all messages", MSG_COUNT, msgCount);
-        if (msgCount != MSG_COUNT)
+        if (msgCount != depth)
         {
-            _logger.warn(msgCount + "/" + MSG_COUNT + " messages received.");
+            _logger.warn(msgCount + " off" + depth + " messages received.");
         }
 
         //Close browser
         queueBrowser.close();
-
-        // VERIFY
-
-        // continue and try to receive all messages
-        MessageConsumer consumer = _clientSession.createConsumer(_queue);
-
-        _logger.info("Verify messages are still on the queue");
-
-        Message tempMsg;
-
-        for (msgCount = 0; msgCount < MSG_COUNT; msgCount++)
-        {
-            tempMsg = (TextMessage) consumer.receive(RECEIVE_TIMEOUT);
-            if (tempMsg == null)
-            {
-                fail("Message " + msgCount + " not retrieved from queue");
-            }
-        }
-
-        _logger.info("All messages recevied from queue");
     }
 
+    /*
+     * Test Messages Remain on Queue
+     * Create a queu and send messages to it. Browse them and then receive them all to verify they were still there
+     *
+     */
 
+     public void testQueueBrowserMsgsRemainOnQueue() throws Exception
+     {
+         int messages = 10;
+
+         checkQueueDepth(messages);
+
+         // VERIFY
+
+         // continue and try to receive all messages
+         MessageConsumer consumer = _clientSession.createConsumer(_queue);
+
+         _logger.info("Verify messages are still on the queue");
+
+         Message tempMsg;
+
+         for (int msgCount = 0; msgCount < messages; msgCount++)
+         {
+             tempMsg = (TextMessage) consumer.receive(RECEIVE_TIMEOUT);
+             if (tempMsg == null)
+             {
+                 fail("Message " + msgCount + " not retrieved from queue");
+             }
+         }
+
+         _logger.info("All messages recevied from queue");
+     }
+
+     /**
+      * This tests you can browse an empty queue, see QPID-785
+      * @throws Exception
+      */
+     public void testBrowsingEmptyQueue() throws Exception
+     {
+         checkQueueDepth(0);
+     }
 }
