@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
@@ -53,7 +54,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class ChannelCloseTest extends TestCase implements ExceptionListener, ConnectionListener
+public class ChannelCloseTest extends QpidTestCase implements ExceptionListener, ConnectionListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseTest.class);
 
@@ -80,56 +81,60 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
      */
     public void testReusingChannelAfterFullClosure() throws Exception
     {
-        _connection = newConnection();
-
-        // Create Producer
-        try
+        // this is testing an 0.8 conneciton 
+        if(isBroker08())
         {
-            _connection.start();
+            _connection=newConnection();
 
-            createChannelAndTest(1);
-
-            // Cause it to close
+            // Create Producer
             try
             {
-                _logger.info("Testing invalid exchange");
-                declareExchange(1, "", "name_that_will_lookup_to_null", false);
-                fail("Exchange name is empty so this should fail ");
-            }
-            catch (AMQException e)
-            {
-                assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
-            }
+                _connection.start();
 
-            // Check that
-            try
-            {
-                _logger.info("Testing valid exchange should fail");
-                declareExchange(1, "topic", "amq.topic", false);
-                fail("This should not succeed as the channel should be closed ");
-            }
-            catch (AMQException e)
-            {
-                if (_logger.isInfoEnabled())
+                createChannelAndTest(1);
+
+                // Cause it to close
+                try
                 {
-                    _logger.info("Exception occured was:" + e.getErrorCode());
+                    _logger.info("Testing invalid exchange");
+                    declareExchange(1, "", "name_that_will_lookup_to_null", false);
+                    fail("Exchange name is empty so this should fail ");
+                }
+                catch (AMQException e)
+                {
+                    assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
                 }
 
-                assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
+                // Check that
+                try
+                {
+                    _logger.info("Testing valid exchange should fail");
+                    declareExchange(1, "topic", "amq.topic", false);
+                    fail("This should not succeed as the channel should be closed ");
+                }
+                catch (AMQException e)
+                {
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Exception occured was:" + e.getErrorCode());
+                    }
 
-                _connection = newConnection();
+                    assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
+
+                    _connection=newConnection();
+                }
+
+                checkSendingMessage();
+
+                _session.close();
+                _connection.close();
+
             }
-
-            checkSendingMessage();
-
-            _session.close();
-            _connection.close();
-
-        }
-        catch (JMSException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
+            catch (JMSException e)
+            {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
         }
     }
 
@@ -138,112 +143,117 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
      */
     public void testSendingMethodsAfterClose() throws Exception
     {
-        try
-        {
-            _connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='" + _brokerlist + "'");
-
-            ((AMQConnection) _connection).setConnectionListener(this);
-
-            _connection.setExceptionListener(this);
-
-            // Change the StateManager for one that doesn't respond with Close-OKs
-            AMQStateManager oldStateManager = ((AMQConnection) _connection).getProtocolHandler().getStateManager();
-
-            _session = _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-
-            _connection.start();
-
-            // Test connection
-            checkSendingMessage();
-
-            // Set StateManager to manager that ignores Close-oks
-            AMQProtocolSession protocolSession = ((AMQConnection) _connection).getProtocolHandler().getProtocolSession();
-            AMQStateManager newStateManager = new NoCloseOKStateManager(protocolSession);
-            newStateManager.changeState(oldStateManager.getCurrentState());
-
-            ((AMQConnection) _connection).getProtocolHandler().setStateManager(newStateManager);
-
-            final int TEST_CHANNEL = 1;
-            _logger.info("Testing Channel(" + TEST_CHANNEL + ") Creation");
-
-            createChannelAndTest(TEST_CHANNEL);
-
-            // Cause it to close
-            try
-            {
-                _logger.info("Closing Channel - invalid exchange");
-                declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", false);
-                fail("Exchange name is empty so this should fail ");
-            }
-            catch (AMQException e)
-            {
-                assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
-            }
-
-            try
-            {
-                // Send other methods that should be ignored
-                // send them no wait as server will ignore them
-                _logger.info("Tested known exchange - should ignore");
-                declareExchange(TEST_CHANNEL, "topic", "amq.topic", true);
-
-                _logger.info("Tested known invalid exchange - should ignore");
-                declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", true);
-
-                _logger.info("Tested known invalid exchange - should ignore");
-                declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", true);
-
-                // Send sync .. server will igore and timy oue
-                _logger.info("Tested known invalid exchange - should ignore");
-                declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", false);
-            }
-            catch (AMQTimeoutException te)
-            {
-                assertEquals("Request should timeout", AMQConstant.REQUEST_TIMEOUT, te.getErrorCode());
-            }
-            catch (AMQException e)
-            {
-                fail("This should not fail as all requests should be ignored");
-            }
-
-            _logger.info("Sending Close");
-            // Send Close-ok
-            sendClose(TEST_CHANNEL);
-
-            _logger.info("Re-opening channel");
-
-            createChannelAndTest(TEST_CHANNEL);
-
-            // Test connection is still ok
-
-            checkSendingMessage();
-
-        }
-        catch (JMSException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-
-        }
-        catch (URLSyntaxException e)
-        {
-            fail(e.getMessage());
-        }
-        finally
+        // this is testing an 0.8 connection
+        if(isBroker08())
         {
             try
             {
-                _session.close();
-                _connection.close();
+                _connection=new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='" + _brokerlist + "'");
+
+                ((AMQConnection) _connection).setConnectionListener(this);
+
+                _connection.setExceptionListener(this);
+
+                // Change the StateManager for one that doesn't respond with Close-OKs
+                AMQStateManager oldStateManager=((AMQConnection) _connection).getProtocolHandler().getStateManager();
+
+                _session=_connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+                _connection.start();
+
+                // Test connection
+                checkSendingMessage();
+
+                // Set StateManager to manager that ignores Close-oks
+                AMQProtocolSession protocolSession=
+                        ((AMQConnection) _connection).getProtocolHandler().getProtocolSession();
+                AMQStateManager newStateManager=new NoCloseOKStateManager(protocolSession);
+                newStateManager.changeState(oldStateManager.getCurrentState());
+
+                ((AMQConnection) _connection).getProtocolHandler().setStateManager(newStateManager);
+
+                final int TEST_CHANNEL=1;
+                _logger.info("Testing Channel(" + TEST_CHANNEL + ") Creation");
+
+                createChannelAndTest(TEST_CHANNEL);
+
+                // Cause it to close
+                try
+                {
+                    _logger.info("Closing Channel - invalid exchange");
+                    declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", false);
+                    fail("Exchange name is empty so this should fail ");
+                }
+                catch (AMQException e)
+                {
+                    assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
+                }
+
+                try
+                {
+                    // Send other methods that should be ignored
+                    // send them no wait as server will ignore them
+                    _logger.info("Tested known exchange - should ignore");
+                    declareExchange(TEST_CHANNEL, "topic", "amq.topic", true);
+
+                    _logger.info("Tested known invalid exchange - should ignore");
+                    declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", true);
+
+                    _logger.info("Tested known invalid exchange - should ignore");
+                    declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", true);
+
+                    // Send sync .. server will igore and timy oue
+                    _logger.info("Tested known invalid exchange - should ignore");
+                    declareExchange(TEST_CHANNEL, "", "name_that_will_lookup_to_null", false);
+                }
+                catch (AMQTimeoutException te)
+                {
+                    assertEquals("Request should timeout", AMQConstant.REQUEST_TIMEOUT, te.getErrorCode());
+                }
+                catch (AMQException e)
+                {
+                    fail("This should not fail as all requests should be ignored");
+                }
+
+                _logger.info("Sending Close");
+                // Send Close-ok
+                sendClose(TEST_CHANNEL);
+
+                _logger.info("Re-opening channel");
+
+                createChannelAndTest(TEST_CHANNEL);
+
+                // Test connection is still ok
+
+                checkSendingMessage();
+
             }
             catch (JMSException e)
             {
                 e.printStackTrace();
                 fail(e.getMessage());
+            }
+            catch (AMQException e)
+            {
+                fail(e.getMessage());
+
+            }
+            catch (URLSyntaxException e)
+            {
+                fail(e.getMessage());
+            }
+            finally
+            {
+                try
+                {
+                    _session.close();
+                    _connection.close();
+                }
+                catch (JMSException e)
+                {
+                    e.printStackTrace();
+                    fail(e.getMessage());
+                }
             }
         }
     }
