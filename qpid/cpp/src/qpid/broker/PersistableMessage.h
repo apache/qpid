@@ -25,6 +25,7 @@
 #include <string>
 #include <list>
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "Persistable.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Monitor.h"
@@ -63,12 +64,12 @@ class PersistableMessage : public Persistable
      */
     int asyncDequeueCounter;
 protected:
-    typedef std::list<PersistableQueue*> syncList;
-	syncList synclist;
-	MessageStore* store;
-	bool contentReleased;
-
-	inline void setContentReleased() {contentReleased = true; }
+    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
+    syncList synclist;
+    MessageStore* store;
+    bool contentReleased;
+    
+    inline void setContentReleased() {contentReleased = true; }
 
 public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
@@ -118,18 +119,20 @@ public:
             sys::ScopedLock<sys::Mutex> l(storeLock);
             if (store) {
                 for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-                    (*i)->notifyDurableIOComplete();
+                    PersistableQueue::shared_ptr q(i->lock());
+                    if (q) q->notifyDurableIOComplete();
                 } 
                 //synclist.clear();
             }            
         }
     }
 
-    inline void enqueueAsync(PersistableQueue* queue, MessageStore* _store) { 
+    inline void enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
         if (_store){
             sys::ScopedLock<sys::Mutex> l(storeLock);
             store = _store;
-            synclist.push_back(queue);
+            boost::weak_ptr<PersistableQueue> q(queue);
+            synclist.push_back(q);
         }
         enqueueAsync();
     }
@@ -161,11 +164,12 @@ public:
         }
     }
 
-    inline void dequeueAsync(PersistableQueue* queue, MessageStore* _store) { 
+    inline void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
         if (_store){
             sys::ScopedLock<sys::Mutex> l(storeLock);
             store = _store;
-            synclist.push_back(queue);
+            boost::weak_ptr<PersistableQueue> q(queue);
+            synclist.push_back(q);
         }
         dequeueAsync();
     }
