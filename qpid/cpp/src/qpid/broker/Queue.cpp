@@ -437,7 +437,7 @@ bool Queue::canAutoDelete() const{
 bool Queue::enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
-        msg->enqueueAsync(this, store); //increment to async counter -- for message sent to more than one queue
+        msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
         store->enqueue(ctxt, pmsg, *this);
         return true;
@@ -450,7 +450,7 @@ bool Queue::enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 bool Queue::dequeue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
-        msg->dequeueAsync(this, store); //increment to async counter -- for message sent to more than one queue
+        msg->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
         store->dequeue(ctxt, pmsg, *this);
         return true;
@@ -498,7 +498,9 @@ void Queue::destroy()
     }
 
     if (store) {
+        store->flush(*this);
         store->destroy(*this);
+        store = 0;//ensure we make no more calls to the store for this queue
     }
 }
 
