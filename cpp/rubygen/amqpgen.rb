@@ -127,6 +127,9 @@ class AmqpElement
     @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
   end
 
+  # Fully qualified amqp dotted name of this element
+  def dotted_name() (parent ? parent.dotted_name+"." : "") + name; end
+
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
@@ -142,7 +145,9 @@ class AmqpElement
 
 end
 
-AmqpResponse = AmqpElement
+class AmqpResponse < AmqpElement
+   def initialize(xml, parent) super; end
+end
 
 class AmqpDoc < AmqpElement
   def initialize(xml,parent) super; end
@@ -183,7 +188,6 @@ class AmqpField < AmqpElement
   def initialize(xml, amqp) super; end;
   def domain() root.domain(xml.attributes["domain"]); end
   amqp_single_child_reader :struct # preview
-  # FIXME aconway 2008-02-21: exceptions in fields - need to update c++ mapping.
   amqp_child_reader :exception
   amqp_attr_reader :type, :default, :code, :required
 end
@@ -197,11 +201,6 @@ class AmqpConstant < AmqpElement
   def initialize(xml, parent) super; end
   amqp_attr_reader :value, :class
 end
-
-# FIXME aconway 2008-02-21: 
-# class AmqpResponse < AmqpElement
-#   def initialize(xml, parent) super; end
-# end
 
 class AmqpResult < AmqpElement
   def initialize(xml, parent) super; end
@@ -236,8 +235,8 @@ class AmqpStruct < AmqpElement
   amqp_attr_reader :size, :code, :pack 
   amqp_child_reader :field
 
-  alias :raw_pack :pack
   # preview - preview code needs default "short" for pack.
+  alias :raw_pack :pack
   def pack() raw_pack or (not parent.final? and "short"); end 
   def result?() parent.xml.name == "result"; end
   def domain?() parent.xml.name == "domain"; end
@@ -299,7 +298,12 @@ class AmqpClass < AmqpElement
 end
 
 class AmqpType < AmqpElement
+  def initialize(xml,amqp) super; end
   amqp_attr_reader :code, :fixed_width, :variable_width
+end
+
+class AmqpXref < AmqpElement
+  def initialize(xml,amqp) super; end
 end
 
 # AMQP root element.
@@ -319,9 +323,9 @@ class AmqpRoot < AmqpElement
 
   def version() major + "-" + minor; end
 
-  # Find a child node from a dotted amqp name, e.g. message.transfer
-  def lookup(dotted_name) elements[dotted_name.gsub(/\./,"/")]; end
-
+  # Find the element corresponding to an amqp dotted name.
+  def lookup(dotted_name) xml.elements[dotted_name.gsub(/\./,"/")]; end
+  
   # preview - only struct child reader remains for new mapping
   def domain_structs() domains.map{ |d| d.struct }.compact; end
   def result_structs()
@@ -353,7 +357,7 @@ end
 # Collect information about generated files.
 class GenFiles
   @@files =[]
-  def GenFiles.add(f) @@files << f; puts f; end
+  def GenFiles.add(f) @@files << f; end
   def GenFiles.get() @@files; end
 end
 
@@ -378,7 +382,14 @@ class Generator
     if (@outdir != "-")         
       path=Pathname.new "#{@outdir}/#{file}"
       path.parent.mkpath
-      path.open('w') { |@out| yield }
+      @out=String.new           # Generate in memory first
+      yield                     # Generate to @out
+      if path.exist? and path.read == @out  
+        puts "Skipped #{path} - unchanged" # Dont generate if unchanged
+      else
+        path.open('w') { |f| f << @out }
+        puts "Generated #{path}"
+      end
     end
   end
 
