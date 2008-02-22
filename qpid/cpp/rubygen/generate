@@ -69,7 +69,7 @@ EOS
     }
     out << <<EOS
 if GENERATE
-$(rgen_srcs) $(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
+$(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
 	$(rgen_cmd)
 
 # Empty rule in case a generator file is renamed/removed.
