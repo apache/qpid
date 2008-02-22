@@ -54,12 +54,23 @@ CppKeywords = Set.new(["and", "and_eq", "asm", "auto", "bitand",
 CppMangle = CppKeywords+Set.new(["string"])
 
 class String
-  def cppsafe()
-    CppMangle.include?(self) ? self+"_" : self
+  def cppsafe() CppMangle.include?(self) ? self+"_" : self; end
+  def amqp2cpp()
+    path=split(".")
+    name=path.pop
+    path.map! { |n| n.bars }
+    (path << name.caps).join("::")
   end
 end
 
 # Hold information about a C++ type.
+# 
+# preview - new mapping does not use CppType,
+# Each amqp type corresponds exactly by dotted name
+# to a type, domain or struct, which in turns
+# corresponds by name to a C++ type or typedef.
+# (see String.amqp2cpp)
+# 
 class CppType
   def initialize(name) @name=@param=@ret=name; end
   attr_reader :name, :param, :ret, :code
@@ -93,6 +104,16 @@ class CppType
   def to_s() name; end;
 end
 
+class AmqpElement
+  def cppfqname()
+    names=parent.dotted_name.split(".")
+    # Field children are moved up to method in C++b
+    prefix.pop if parent.is_a? AmqpField
+    prefix.push cppname
+    prefix.join("::")
+  end
+end
+  
 class AmqpField
   def cppname() name.lcaps.cppsafe; end
   def cpptype() domain.cpptype;  end
