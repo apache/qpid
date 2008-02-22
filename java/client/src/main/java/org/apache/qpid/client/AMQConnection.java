@@ -438,7 +438,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             if (exceptions.size() > 0)
             {
-                JMSException e = exceptions.get(exceptions.size() - 1);
+                JMSException e = exceptions.get(0);
                 int code = -1;
                 try
                 {
