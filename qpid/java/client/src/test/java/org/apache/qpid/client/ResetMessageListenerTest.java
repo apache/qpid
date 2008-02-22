@@ -270,6 +270,7 @@ public class ResetMessageListenerTest extends QpidTestCase
         {
             try
             {
+                 _consumer2.close();
                 _consumer1.setMessageListener(new MessageListener()
                 {
                     public void onMessage(Message message)

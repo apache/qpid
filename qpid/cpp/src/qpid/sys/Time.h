@@ -46,6 +46,9 @@ class AbsTime {
 	 
     static AbsTime now();
     inline static AbsTime FarFuture();
+    int64_t timeValue() const { return time_ns; }
+    bool operator==(const AbsTime& t) const { return t.time_ns == time_ns; }
+    template <class S> void serialize(S& s) { s(time_ns); }
 
   friend bool operator<(const AbsTime& a, const AbsTime& b);
   friend bool operator>(const AbsTime& a, const AbsTime& b);

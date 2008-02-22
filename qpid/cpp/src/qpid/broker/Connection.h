@@ -39,6 +39,7 @@
 #include "qpid/sys/Socket.h"
 #include "qpid/Exception.h"
 #include "ConnectionHandler.h"
+#include "ConnectionState.h"
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Client.h"
@@ -50,8 +51,7 @@ namespace qpid {
 namespace broker {
 
 class Connection : public sys::ConnectionInputHandler, 
-                   public ConnectionToken,
-                   public management::Manageable
+                   public ConnectionState
 {
   public:
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
@@ -62,25 +62,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     /** Close the connection */
     void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
-
-    sys::ConnectionOutputHandler& getOutput() const { return *out; }
-    framing::ProtocolVersion getVersion() const { return version; }
-
-    uint32_t getFrameMax() const { return framemax; }
-    uint16_t getHeartbeat() const { return heartbeat; }
-    uint64_t getStagingThreshold() const { return stagingThreshold; }
-
-    void setFrameMax(uint32_t fm) { framemax = fm; }
-    void setHeartbeat(uint16_t hb) { heartbeat = hb; }
-    void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
-    
-    Broker& getBroker() { return broker; }
-
-    Broker& broker;
-    std::vector<Queue::shared_ptr> exclusiveQueues;
-    
-    //contained output tasks
-    sys::AggregateOutput outputTasks;
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -97,9 +78,6 @@ class Connection : public sys::ConnectionInputHandler,
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
-
-    void setUserId(const string& uid);
-    const string& getUserId() const;
 
     void initMgmt(bool asLink = false);
 
@@ -126,17 +104,11 @@ class Connection : public sys::ConnectionInputHandler,
     class MgmtClient;
     class MgmtLink;
 
-    framing::ProtocolVersion version;
     ChannelMap channels;
-    sys::ConnectionOutputHandler* out;
-    uint32_t framemax;
-    uint16_t heartbeat;
     framing::AMQP_ClientProxy::Connection* client;
-    uint64_t stagingThreshold;
     ConnectionHandler adapter;
     std::auto_ptr<MgmtWrapper> mgmtWrapper;
     bool mgmtClosing;
-    string userId;
     const std::string mgmtId;
 };
 

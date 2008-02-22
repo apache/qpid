@@ -39,10 +39,17 @@ public class QueueTest extends AbstractXATestCase
      * the queue connection factory used by all tests
      */
     private static XAQueueConnectionFactory _queueFactory = null;
+
     /**
-     * standard queue connection
+     * standard xa queue connection
      */
-    private static XAQueueConnection _queueConnection = null;
+    private static XAQueueConnection _xaqueueConnection= null;
+
+    /**
+     * standard xa queue connection
+     */
+    private static QueueConnection _queueConnection=null;
+
 
     /**
      * standard queue session created from the standard connection
@@ -85,7 +92,7 @@ public class QueueTest extends AbstractXATestCase
         {
             try
             {
-                _queueConnection.stop();
+                _xaqueueConnection.close();
                 _queueConnection.close();
             }
             catch (Exception e)
@@ -125,7 +132,7 @@ public class QueueTest extends AbstractXATestCase
             // create standard connection
             try
             {
-                _queueConnection = getNewQueueXAConnection();
+                _xaqueueConnection= getNewQueueXAConnection();
             }
             catch (JMSException e)
             {
@@ -135,7 +142,7 @@ public class QueueTest extends AbstractXATestCase
             XAQueueSession session = null;
             try
             {
-                session = _queueConnection.createXAQueueSession();
+                session = _xaqueueConnection.createXAQueueSession();
             }
             catch (JMSException e)
             {
@@ -144,6 +151,7 @@ public class QueueTest extends AbstractXATestCase
             // create a standard session
             try
             {
+                _queueConnection = _queueFactory.createQueueConnection();
                 _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
             }
             catch (JMSException e)
@@ -183,7 +191,7 @@ public class QueueTest extends AbstractXATestCase
             try
             {
                 // start the connection
-                _queueConnection.start();
+                _xaqueueConnection.start();
                 // produce a message with sequence number 1
                 _message.setLongProperty(_sequenceNumberPropertyName, 1);
                 _producer.send(_message);
@@ -247,7 +255,7 @@ public class QueueTest extends AbstractXATestCase
             // receive a message from queue test we expect it to be the second one
             try
             {
-                TextMessage message = (TextMessage) _consumer.receiveNoWait();
+                TextMessage message = (TextMessage) _consumer.receive(1000);
                 if (message == null)
                 {
                     fail("did not receive second message as expected ");
@@ -278,9 +286,11 @@ public class QueueTest extends AbstractXATestCase
             // We should now be able to receive the first message
             try
             {
+                _xaqueueConnection.close();
                 Session nonXASession = _nonXASession;
                 MessageConsumer nonXAConsumer = nonXASession.createConsumer(_queue);
-                TextMessage message1 = (TextMessage) nonXAConsumer.receiveNoWait();
+                _queueConnection.start();
+                TextMessage message1 = (TextMessage) nonXAConsumer.receive(1000);
                 if (message1 == null)
                 {
                     fail("did not receive first message as expected ");
@@ -296,7 +306,7 @@ public class QueueTest extends AbstractXATestCase
                 // commit that transacted session
                 nonXASession.commit();
                 // the queue should be now empty
-                message1 = (TextMessage) nonXAConsumer.receiveNoWait();
+                message1 = (TextMessage) nonXAConsumer.receive(1000);
                 if (message1 != null)
                 {
                     fail("receive an unexpected message ");
@@ -330,7 +340,7 @@ public class QueueTest extends AbstractXATestCase
             try
             {
                 // start the connection
-                _queueConnection.start();
+                _xaqueueConnection.start();
                 // produce a message with sequence number 1
                 _message.setLongProperty(_sequenceNumberPropertyName, 1);
                 _producer.send(_message);
@@ -363,6 +373,7 @@ public class QueueTest extends AbstractXATestCase
             {
                 _logger.debug("stopping broker");
                 shutdownServer();
+                init();
             }
             catch (Exception e)
             {
@@ -412,10 +423,11 @@ public class QueueTest extends AbstractXATestCase
             // the queue should contain the first message!
             try
             {
+                _xaqueueConnection.close();
                 Session nonXASession = _nonXASession;
                 MessageConsumer nonXAConsumer = nonXASession.createConsumer(_queue);
                 _queueConnection.start();
-                TextMessage message1 = (TextMessage) nonXAConsumer.receiveNoWait();
+                TextMessage message1 = (TextMessage) nonXAConsumer.receive(1000);
 
                 if (message1 == null)
                 {
@@ -459,7 +471,7 @@ public class QueueTest extends AbstractXATestCase
             try
             {
                 // start the connection
-                _queueConnection.start();
+                _xaqueueConnection.start();
                 // produce a message with sequence number 1
                 _message.setLongProperty(_sequenceNumberPropertyName, 1);
                 _producer.send(_message);
@@ -516,7 +528,7 @@ public class QueueTest extends AbstractXATestCase
             // receive a message from queue test we expect it to be the second one
             try
             {
-                TextMessage message = (TextMessage) _consumer.receiveNoWait();
+                TextMessage message = (TextMessage) _consumer.receive(1000);
                 if (message == null || message.getLongProperty(_sequenceNumberPropertyName) != 2)
                 {
                     fail("did not receive second message as expected ");
@@ -550,6 +562,7 @@ public class QueueTest extends AbstractXATestCase
             {
                 _logger.debug("stopping broker");
                 shutdownServer();
+                init();
             }
             catch (Exception e)
             {
@@ -607,10 +620,11 @@ public class QueueTest extends AbstractXATestCase
             // the queue should be empty
             try
             {
+                _xaqueueConnection.close();
                 Session nonXASession = _nonXASession;
                 MessageConsumer nonXAConsumer = nonXASession.createConsumer(_queue);
                 _queueConnection.start();
-                TextMessage message1 = (TextMessage) nonXAConsumer.receiveNoWait();
+                TextMessage message1 = (TextMessage) nonXAConsumer.receive(1000);
                 if (message1 != null)
                 {
                     fail("The queue is not empty! ");

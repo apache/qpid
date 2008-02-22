@@ -22,7 +22,7 @@
  *
  */
 #include <string>
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TransferContent.h"
 
@@ -63,18 +63,18 @@ public:
         return getMessageProperties().getApplicationHeaders(); 
     }
 
-    void acknowledge(Session_0_10& session, bool cumulative = true, bool send = true) const
+    void acknowledge(Session& session, bool cumulative = true, bool send = true) const
     {
         session.getExecution().completed(id, cumulative, send);
     }
 
     void acknowledge(bool cumulative = true, bool send = true) const
     {
-        const_cast<Session_0_10&>(session).getExecution().completed(id, cumulative, send);
+        const_cast<Session&>(session).getExecution().completed(id, cumulative, send);
     }
 
     /**@internal for incoming messages */
-    Message(const framing::FrameSet& frameset, Session_0_10 s) :
+    Message(const framing::FrameSet& frameset, Session s) :
         method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId()), session(s)
     {
         populate(frameset);
@@ -91,12 +91,12 @@ public:
     }
 
     /**@internal use for incoming messages. */
-    void setSession(Session_0_10 s) { session=s; }
+    void setSession(Session s) { session=s; }
 private:
     //method and id are only set for received messages:
     framing::MessageTransferBody method;
     framing::SequenceNumber id;
-    Session_0_10 session;
+    Session session;
 };
 
 }}

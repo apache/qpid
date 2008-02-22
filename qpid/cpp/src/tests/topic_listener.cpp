@@ -35,7 +35,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/FieldValue.h"
@@ -53,7 +53,7 @@ using namespace std;
  * defined.
  */
 class Listener : public MessageListener{    
-    Session_0_10& session;
+    Session& session;
     SubscriptionManager& mgr;
     const string responseQueue;
     const bool transactional;
@@ -64,7 +64,7 @@ class Listener : public MessageListener{
     void shutdown();
     void report();
 public:
-    Listener(Session_0_10& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
+    Listener(Session& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
     virtual void received(Message& msg);
 };
 
@@ -101,7 +101,7 @@ int main(int argc, char** argv){
         else {
             Connection connection(args.trace);
             args.open(connection);
-            Session_0_10 session = connection.newSession();
+            Session session = connection.newSession(ASYNC);
             if (args.transactional) {
                 session.txSelect();
             }
@@ -144,7 +144,7 @@ int main(int argc, char** argv){
     return 1;
 }
 
-Listener::Listener(Session_0_10& s, SubscriptionManager& m, const string& _responseq, bool tx) : 
+Listener::Listener(Session& s, SubscriptionManager& m, const string& _responseq, bool tx) : 
     session(s), mgr(m), responseQueue(_responseq), transactional(tx), init(false), count(0){}
 
 void Listener::received(Message& message){

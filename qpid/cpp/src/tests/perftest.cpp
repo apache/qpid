@@ -21,7 +21,7 @@
 
 #include "TestOptions.h"
 
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Completion.h"
@@ -191,12 +191,12 @@ Opts opts;
 
 struct Client : public Runnable {
     Connection connection;
-    Session_0_10 session;
+    Session session;
     Thread thread;
 
     Client() {
         opts.open(connection);
-        session = connection.newSession();
+        session = connection.newSession(ASYNC);
     }
 
     ~Client() {

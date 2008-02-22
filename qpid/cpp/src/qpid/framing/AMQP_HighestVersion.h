@@ -32,7 +32,7 @@
 namespace qpid {
 namespace framing {
 
-static ProtocolVersion highestProtocolVersion(0, 10);
+static ProtocolVersion highestProtocolVersion(99, 0);
 
 } /* namespace framing */
 } /* namespace qpid */

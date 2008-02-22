@@ -90,9 +90,15 @@ public class ConnectionTest extends TestCase
         return conn;
     }
 
-    public void testWriteToClosed() throws Exception
+    public void testClosedNotificationAndWriteToClosed() throws Exception
     {
-        Connection conn = connect(null);
+        Condition closed = new Condition();
+        Connection conn = connect(closed);
+        if (!closed.get(3000))
+        {
+            fail("never got notified of connection close");
+        }
+
         Channel ch = conn.getChannel(0);
         Session ssn = new Session();
         ssn.attach(ch);
@@ -105,16 +111,6 @@ public class ConnectionTest extends TestCase
         catch (TransportException e)
         {
             // expected
-        }
-    }
-
-    public void testClosedNotification() throws Exception
-    {
-        Condition closed = new Condition();
-        Connection conn = connect(closed);
-        if (!closed.get(3000))
-        {
-            fail("never got notified of connection close");
         }
     }
 

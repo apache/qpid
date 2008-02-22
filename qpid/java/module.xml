@@ -26,6 +26,7 @@
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
+
   <property file="${project.root}/build.deps"/>
 
   <property name="module.build"        location="${build}/${module}"/>
@@ -166,7 +167,18 @@
   <property name="java.naming.factory.initial" value="org.apache.qpid.jndi.PropertiesFileInitialContextFactory"/>
   <property name="java.naming.provider.url" value="${project.root}/test-provider.properties"/>
 
-  <condition property="broker" value="${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t" else="vm">
+  <condition property="brokerdefault" value="${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t" else="vm">
+    <isset property="cpp"/>
+  </condition>
+
+  <condition property="broker" value="${brokerdefault} --load-module ${store} --store-async yes" else="${brokerdefault}">
+    <and>
+      <isset property="store"/>
+      <isset property="cpp"/>
+    </and>
+  </condition>
+
+  <condition property="broker.clean" value="${project.root}/clean-dir ${build.data}">
     <isset property="cpp"/>
   </condition>
 
@@ -184,6 +196,7 @@
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
       <sysproperty key="broker" value="${broker}"/>
+      <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
 
       <formatter type="plain"/>

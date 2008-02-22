@@ -47,6 +47,11 @@ public class ClientSessionDelegate extends SessionDelegate
     @Override public void header(Session ssn, Header header)
     {
         _currentMessageListener.messageHeader(header);
+        if( header.hasNoPayload())
+        {
+           _currentMessageListener.data(ByteBuffer.allocate(0));
+           _currentMessageListener.messageReceived();
+        }
     }
 
 

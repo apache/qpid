@@ -45,6 +45,32 @@ using framing::MethodContent;
 using framing::SequenceNumberSet;
 using framing::Uuid;
 
+/** \defgroup clientapi Synchronous mode of a session.
+ * 
+ * SYNC means that Session functions do not return until the remote
+ * broker has confirmed that the command was executed. 
+ * 
+ * ASYNC means that the client sends commands asynchronously, Session
+ * functions return immediately.
+ *
+ * ASYNC mode gives better performance for high-volume traffic, but
+ * requires some additional caution:
+ * 
+ * Session functions return immediately. If the command causes an
+ * exception on the broker, the exception will be thrown on a
+ * <em>later</em> function call. 
+ *
+ * If you need to notify some extenal agent that some actions have
+ * been taken (e.g. binding queues to exchanages), you must call
+ * Session::sync() first, to ensure that all the commands are complete.
+ *
+ * You can freely switch between modes by calling Session::setSynchronous()
+ * 
+ * @see Session::sync(), Session::setSynchronous()
+ */
+enum SynchronousMode { SYNC=true, ASYNC=false };
+
+
 /**
  * Basic session operations that are not derived from AMQP XML methods.
  */
@@ -61,20 +87,20 @@ class SessionBase
     Uuid getId() const;
 
     /**
-     * In synchronous mode, the session sets the sync bit on every
-     * command and waits for the broker's response before returning.
-     * Note this gives lower throughput than non-synchronous mode.
+     * In synchronous mode, wait for the broker's response before
+     * returning. Note this gives lower throughput than asynchronous
+     * mode.
      *
-     * In non-synchronous mode commands are sent without waiting
+     * In asynchronous mode commands are sent without waiting
      * for a respose (you can use the returned Completion object
      * to wait for completion.)
      * 
-     *@param if true set the session to synchronous mode, else
-     * set it to non-synchronous mode.
+     * @see SynchronousMode
      */
-    void setSynchronous(bool isSync);
-
+    void setSynchronous(SynchronousMode mode);
+    void setSynchronous(bool set);
     bool isSynchronous() const;
+    SynchronousMode getSynchronous() const;
 
     /**
      * Suspend the session, can be resumed on a different connection.
@@ -84,6 +110,13 @@ class SessionBase
     
     /** Close the session */
     void close();
+
+    /**
+     * Synchronize with the broker. Wait for all commands issued so far in
+     * the session to complete.
+     * @see SynchronousMode
+     */
+    void sync();
     
     Execution& getExecution();
     

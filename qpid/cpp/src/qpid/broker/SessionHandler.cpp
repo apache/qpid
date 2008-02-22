@@ -36,7 +36,7 @@ using namespace std;
 using namespace qpid::sys;
 
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
-    : InOutHandler(0, &c.getOutput()),
+    : SessionContext(c.getOutput()),
       connection(c), channel(ch, &c.getOutput()),
       proxy(out),               // Via my own handleOut() for L2 data.
       peerSession(channel),     // Direct to channel for L2 commands.
@@ -203,5 +203,9 @@ void SessionHandler::detached()
     connection.broker.getSessionManager().suspend(session);
     session.reset();
 }
+
+
+ConnectionState& SessionHandler::getConnection() { return connection; }
+const ConnectionState& SessionHandler::getConnection() const { return connection; }
 
 }} // namespace qpid::broker

@@ -154,11 +154,11 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         if (frame.isLastFrame())
         {
             clearSegment(frame);
-            emit(frame, decode(frame.getType(), segment));
+            emit(frame, decode(frame, frame.getType(), segment));
         }
     }
 
-    private ProtocolEvent decode(byte type, List<ByteBuffer> segment)
+    private ProtocolEvent decode(Frame frame, byte type, List<ByteBuffer> segment)
     {
         FragmentDecoder dec = new FragmentDecoder(segment.iterator());
 
@@ -175,7 +175,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             {
                 structs.add(dec.readLongStruct());
             }
-            return new Header(structs);
+            return new Header(structs,frame.isLastFrame() && frame.isLastSegment());
         default:
             throw new IllegalStateException("unknown frame type: " + type);
         }

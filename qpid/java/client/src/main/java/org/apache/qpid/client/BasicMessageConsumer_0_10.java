@@ -421,7 +421,16 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         else
         {
-            //TODO: empty the list of sync messages.
+            if(! _synchronousQueue.isEmpty())
+            {
+                Iterator messages=_synchronousQueue.iterator();
+                while (messages.hasNext())
+                {
+                    AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+                    messages.remove();
+                    _session.rejectMessage(message, true);
+                }
+            }
             if (_connection.started())
             {
                 _0_10session.getQpidSession()
