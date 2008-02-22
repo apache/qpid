@@ -2,6 +2,16 @@
 # Generic AMQP code generation library.
 #
 
+# TODO aconway 2008-02-21:
+#
+# The amqp_attr_reader and amqp_child_reader for each Amqp* class
+# should correspond exactly to ampq.dtd.  Currently they are more
+# permissive so we can parse 0-10 preview and 0-10 final XML.
+#
+# Code marked with "# preview" should be removed/modified when final  0-10
+# is complete and we are ready to remove preview-related code.
+#
+
 require 'delegate'
 require 'rexml/document'
 require 'pathname'
@@ -120,11 +130,16 @@ class AmqpElement
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
+  # Are we in preview or final 0-10
+  # preview - used to make some classes behave differently for preview vs. final
+  def final?() root().version == "0-10"; end 
+
   def to_s() "#<#{self.class}(#{name})>"; end
   def inspect() to_s; end
 
   # Text of doc child if there is one.
   def doc() d=xml.elements["doc"]; d and d.text; end
+
 end
 
 AmqpResponse = AmqpElement
@@ -134,10 +149,21 @@ class AmqpDoc < AmqpElement
   def text() @xml.text end
 end
 
+class AmqpChoice < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_attr_reader :name, :value
+end
+  
+class AmqpEnum < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_child_reader :choice
+end
+
 class AmqpDomain < AmqpElement
   def initialize(xml, parent) super; end
   amqp_attr_reader :type
-  amqp_single_child_reader :struct
+  amqp_single_child_reader :struct # preview
+  amqp_single_child_reader :enum
 
   def unalias()
     d=self
@@ -148,13 +174,21 @@ class AmqpDomain < AmqpElement
   end
 end
 
+class AmqpException < AmqpElement
+  def initialize(xml, amqp) super; end;
+  amqp_attr_reader :error_code
+end
+
 class AmqpField < AmqpElement
   def initialize(xml, amqp) super; end;
   def domain() root.domain(xml.attributes["domain"]); end
-  amqp_single_child_reader :struct
+  amqp_single_child_reader :struct # preview
+  # FIXME aconway 2008-02-21: exceptions in fields - need to update c++ mapping.
+  amqp_child_reader :exception
+  amqp_attr_reader :type, :default, :code, :required
 end
 
-class AmqpChassis < AmqpElement
+class AmqpChassis < AmqpElement # preview
   def initialize(xml, parent) super; end
   amqp_attr_reader :implement
 end
@@ -164,16 +198,47 @@ class AmqpConstant < AmqpElement
   amqp_attr_reader :value, :class
 end
 
+# FIXME aconway 2008-02-21: 
+# class AmqpResponse < AmqpElement
+#   def initialize(xml, parent) super; end
+# end
+
 class AmqpResult < AmqpElement
   def initialize(xml, parent) super; end
-  amqp_single_child_reader :struct
+  amqp_single_child_reader :struct # preview
+  amqp_attr_reader :type
+end
+
+class AmqpEntry < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_attr_reader :type
+end
+
+class AmqpHeader < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_child_reader :entry
+  amqp_attr_reader :required
+end
+
+class AmqpBody < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_attr_reader :required  
+end
+
+class AmqpSegments < AmqpElement
+  def initialize(xml,parent) super; end
+  amqp_child_reader :header, :body
 end
 
 class AmqpStruct < AmqpElement
   def initialize(xml, parent) super; end
-  amqp_attr_reader :size, :type, :pack => "short"
+  amqp_attr_reader :type        # preview
+  amqp_attr_reader :size, :code, :pack 
   amqp_child_reader :field
-  
+
+  alias :raw_pack :pack
+  # preview - preview code needs default "short" for pack.
+  def pack() raw_pack or (not parent.final? and "short"); end 
   def result?() parent.xml.name == "result"; end
   def domain?() parent.xml.name == "domain"; end
 end
@@ -190,27 +255,58 @@ class AmqpMethod < AmqpElement
   def on_server?() on_chassis? "server"; end
 end
 
+class AmqpImplement < AmqpElement
+  def initialize(xml,amqp) super; end
+  amqp_attr_reader :handle, :send
+end
+
+class AmqpRole < AmqpElement
+  def initialize(xml,amqp) super; end
+  amqp_attr_reader :implement
+end
+
+class AmqpControl < AmqpElement
+  def initialize(xml,amqp) super; end
+  amqp_child_reader :implement, :field, :response
+  amqp_attr_reader :code
+end
+
+class AmqpCommand < AmqpElement
+  def initialize(xml,amqp) super; end
+  amqp_child_reader :implement, :field, :exception, :response
+  amqp_single_child_reader :result, :segments
+  amqp_attr_reader :code
+end
+
 class AmqpClass < AmqpElement
   def initialize(xml,amqp) super; end
-  amqp_attr_reader :index
 
-  amqp_child_reader :method
+  amqp_attr_reader :index       # preview
+  amqp_child_reader :method     # preview
+  
+  amqp_child_reader :struct, :domain, :control, :command, :role
+  amqp_attr_reader :code
 
   # chassis should be "client" or "server"
-  def methods_on(chassis)
+  def methods_on(chassis)       # preview
     @methods_on ||= { }
     @methods_on[chassis] ||= methods_.select { |m| m.on_chassis? chassis }
   end
 
-  def l4?()
+  def l4?()                     # preview
     !["connection", "session", "execution"].include?(name)
   end
 end
 
-
+class AmqpType < AmqpElement
+  amqp_attr_reader :code, :fixed_width, :variable_width
+end
 
 # AMQP root element.
 class AmqpRoot < AmqpElement
+  amqp_attr_reader :major, :minor, :port, :comment
+  amqp_child_reader :doc, :type, :struct, :domain, :constant, :class
+
   def parse(filename) Document.new(File.new(filename)).root; end
 
   # Initialize with output directory and spec files from ARGV.
@@ -221,17 +317,16 @@ class AmqpRoot < AmqpElement
     super(xml, nil)
   end
 
-  amqp_attr_reader :major, :minor
-  amqp_child_reader :class, :domain, :constant
-
   def version() major + "-" + minor; end
 
-  def domain_structs() domains.map{ |d| d.struct }.compact; end
+  # Find a child node from a dotted amqp name, e.g. message.transfer
+  def lookup(dotted_name) elements[dotted_name.gsub(/\./,"/")]; end
 
+  # preview - only struct child reader remains for new mapping
+  def domain_structs() domains.map{ |d| d.struct }.compact; end
   def result_structs()
     methods_.map { |m| m.result and m.result.struct }.compact
   end
-
   def structs() result_structs+domain_structs;  end
   
   def methods_() classes.map { |c| c.methods_ }.flatten; end
@@ -242,6 +337,8 @@ class AmqpRoot < AmqpElement
     @methods_on[chassis] ||= classes.map { |c| c.methods_on(chassis) }.flatten
   end
 
+  # TODO aconway 2008-02-21: methods by role.
+  
   private
   
   # Merge contents of elements.
