@@ -27,7 +27,7 @@ namespace qpid {
 namespace client {
 
 /**
- * Session is currently just an alias for Session_0_10
+ * Session is currently just an alias for Session_99_0
  *
  * \ingroup clientapi
  */
