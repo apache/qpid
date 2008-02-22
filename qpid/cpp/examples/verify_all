@@ -2,20 +2,19 @@
 # Verify all C++/python example combinations.
 #
 
-src=$1 ; build=$2
-
-verify=./verify
-qpidd=$build/src/qpidd
-cpp=$build/examples/examples
-python=$src/../python
+srcdir=$1 ;
+verify=`dirname $0`/verify
+qpidd=../src/qpidd
+python=$srcdir/python
  
 trap "$qpidd -q" exit
 export QPID_PORT=`$qpidd -dp0 --data-dir ""`
 export PYTHON_EXAMPLES=$python/examples
 export PYTHONPATH=$python:$PYTHONPATH
-export AMQP_SPEC=$src/../specs/amqp.0-10-preview.xml
+export AMQP_SPEC=$srcdir/specs/amqp.0-10-preview.xml
 
-find="find $cpp"
+test -d $PYTHON_EXAMPLES || echo "Warning: not verifying python examples, $PYTHON_EXAMPLES not found"
+find="find examples"
 test -d $PYTHON_EXAMPLES && find="$find $PYTHON_EXAMPLES"
 find="$find -name verify"
 test -d $PYTHON_EXAMPLES && \

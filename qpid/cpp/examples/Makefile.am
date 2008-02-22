@@ -44,9 +44,6 @@ VERIFY_FILES= verify verify_all				\
 
 EXTRA_DIST=$(nobase_pkgdata_DATA) $(VERIFY_FILES)
 
-verify: 
-	cp $(top_srcdir)/../bin/verify $@
-
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
 
@@ -64,7 +61,7 @@ all-local:
 
 # Verify the examples in the buid tree.
 check-local: all-local verify
-	$(srcdir)/verify_all $(abs_top_srcdir) $(abs_top_builddir)
+	$(srcdir)/verify_all $(abs_top_srcdir)/..
 
 # TODO:
 #  create a tarball for testing installed examples.

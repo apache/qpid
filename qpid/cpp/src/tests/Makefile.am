@@ -31,13 +31,15 @@ unit_test_LDADD=-lboost_unit_test_framework -lboost_regex \
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \
-	RefCounted.cpp RefCountedMap.cpp \
+	RefCounted.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineVector.cpp \
-	IList.cpp \
-	ClientSessionTest.cpp
+	ISList.cpp IList.cpp \
+	ClientSessionTest.cpp \
+	serialize.cpp
+# FIXME aconway 2008-02-20: removed RefCountedMap.cpp  due to valgrind error.
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)

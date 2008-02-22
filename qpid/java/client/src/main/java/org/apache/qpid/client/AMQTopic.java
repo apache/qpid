@@ -90,7 +90,7 @@ public class AMQTopic extends AMQDestination implements Topic
             throws JMSException
     {
         return new AMQTopic(topic.getExchangeName(), ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getRoutingKey(), true, false,
-              getDurableTopicQueueName(subscriptionName, connection), false);
+              getDurableTopicQueueName(subscriptionName, connection), true);
     }
 
     public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException

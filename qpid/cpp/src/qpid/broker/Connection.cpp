@@ -86,13 +86,7 @@ public:
 
 
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
-    broker(broker_),
-    outputTasks(*out_),
-    out(out_),
-    framemax(65535), 
-    heartbeat(0),
-    client(0),
-    stagingThreshold(broker.getStagingThreshold()),
+    ConnectionState(out_, broker_),
     adapter(*this),
     mgmtClosing(0),
     mgmtId(mgmtId_)
@@ -226,17 +220,6 @@ Manageable::status_t Connection::ManagementMethod (uint32_t methodId,
     }
 
     return status;
-}
-
-void Connection::setUserId(const string& uid)
-{
-    userId = uid;
-    QPID_LOG (debug, "UserId is " << userId);
-}
-
-const string& Connection::getUserId() const
-{
-    return userId;
 }
 
 Connection::MgmtLink::MgmtLink(Connection* conn, Manageable* parent, ManagementAgent::shared_ptr agent, const std::string& mgmtId) 

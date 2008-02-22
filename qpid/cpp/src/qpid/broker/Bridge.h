@@ -32,14 +32,14 @@
 namespace qpid {
 namespace broker {
 
-class Connection;
+class ConnectionState;
 
 class Bridge : public management::Manageable
 {
 public:
     typedef boost::function<void(Bridge*)> CancellationListener;
 
-    Bridge(framing::ChannelId id, Connection& c, CancellationListener l,
+    Bridge(framing::ChannelId id, ConnectionState& c, CancellationListener l,
            const management::ArgsLinkBridge& args);
     ~Bridge();
 
@@ -54,7 +54,7 @@ private:
     framing::ChannelHandler channel;
     framing::AMQP_ServerProxy peer;
     management::Bridge::shared_ptr mgmtObject;
-    Connection& connection;
+    ConnectionState& connection;
     CancellationListener listener;
 };
 

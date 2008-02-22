@@ -29,9 +29,22 @@ SessionBase::~SessionBase() {}
 SessionBase::SessionBase(shared_ptr<SessionCore> core) : impl(core) {}
 void SessionBase::suspend() { impl->suspend(); }
 void SessionBase::close() { impl->close(); }
+
 void SessionBase::setSynchronous(bool isSync) { impl->setSync(isSync); }
+void SessionBase::setSynchronous(SynchronousMode m) { impl->setSync(m); }
 bool SessionBase::isSynchronous() const { return impl->isSync(); }
+SynchronousMode SessionBase::getSynchronous() const {
+    return SynchronousMode(impl->isSync());
+}
+
 Execution& SessionBase::getExecution() { return impl->getExecution(); }
 Uuid SessionBase::getId() const { return impl->getId(); }
 framing::FrameSet::shared_ptr SessionBase::get() { return impl->get(); }
+
+void SessionBase::sync() {
+    Execution& ex = getExecution();
+    ex.syncWait(ex.lastSent());
+    impl->assertOpen();
+}
+
 }} // namespace qpid::client

@@ -45,7 +45,7 @@ SessionManager::~SessionManager() {}
 
 // FIXME aconway 2008-02-01: pass handler*, allow open  unattached.
 std::auto_ptr<SessionState>  SessionManager::open(
-    SessionHandler& h, uint32_t timeout_)
+    SessionContext& h, uint32_t timeout_)
 {
     Mutex::ScopedLock l(lock);
     std::auto_ptr<SessionState> session(

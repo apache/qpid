@@ -128,7 +128,8 @@ void Listener::received(Message& message) {
 }
 
 void Listener::listen() {
-  subscriptions.run();
+    // Receive messages
+    subscriptions.run();
 }
 
 int main(int argc, char** argv) {
@@ -137,7 +138,7 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession();
+        Session session =  connection.newSession(ASYNC);
 
         //--------- Main body of program --------------------------------------------
 
@@ -151,6 +152,9 @@ int main(int argc, char** argv) {
 	listener.prepareQueue("europe", "europe.#");
 	listener.prepareQueue("news", "#.news");
 	listener.prepareQueue("weather", "#.weather");
+
+        // Wait for the broker to indicate that our queues have been created.
+        session.sync();
 
 	std::cout << "Listening for messages ..." << std::endl;
 

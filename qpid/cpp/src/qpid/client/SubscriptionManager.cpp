@@ -23,7 +23,7 @@
 
 #include "SubscriptionManager.h"
 #include <qpid/client/Dispatcher.h>
-#include <qpid/client/Session_0_10.h>
+#include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
 #include <set>
 #include <sstream>
@@ -32,7 +32,7 @@
 namespace qpid {
 namespace client {
 
-SubscriptionManager::SubscriptionManager(Session_0_10& s)
+SubscriptionManager::SubscriptionManager(Session& s)
     : dispatcher(s), session(s),
       messages(UNLIMITED), bytes(UNLIMITED), window(true),
       confirmMode(true), acquireMode(false),

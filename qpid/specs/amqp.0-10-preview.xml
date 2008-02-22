@@ -137,7 +137,7 @@
 -->
 
 <amqp xmlns="http://www.amqp.org/schema/amqp.xsd"
-    major="0" minor="10" port="5672" comment="AMQ Protocol (Working version)">
+    major="99" minor="0" port="5672" comment="AMQ Protocol (Working version)">
 
   <!--
     ======================================================

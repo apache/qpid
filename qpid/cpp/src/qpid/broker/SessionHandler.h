@@ -28,6 +28,7 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/ChannelHandler.h"
+#include "SessionContext.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -42,9 +43,9 @@ class SessionState;
  * receives incoming frames, handles session commands and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public framing::FrameHandler::InOutHandler,
-                       public framing::AMQP_ServerOperations::SessionHandler,
+class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
                        public framing::AMQP_ClientOperations::SessionHandler,
+                       public SessionContext,
                        private boost::noncopyable
 {
   public:
@@ -57,14 +58,15 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
 
     framing::ChannelId getChannel() const { return channel.get(); }
     
-    Connection& getConnection() { return connection; }
-    const Connection& getConnection() const { return connection; }
+    ConnectionState& getConnection();
+    const ConnectionState& getConnection() const;
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
     // Called by closing connection.
     void localSuspend();
+    void detach() { localSuspend(); }
     
   protected:
     void handleIn(framing::AMQFrame&);

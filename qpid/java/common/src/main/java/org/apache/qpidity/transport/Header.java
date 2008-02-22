@@ -36,10 +36,12 @@ public class Header implements ProtocolEvent {
 
     private final List<Struct> structs;
     private ByteBuffer _buf;
+    private boolean _noPayload;
 
-    public Header(List<Struct> structs)
+    public Header(List<Struct> structs, boolean lastframe)
     {
         this.structs = structs;
+        _noPayload= lastframe;
     }
 
     public List<Struct> getStructs()
@@ -78,6 +80,12 @@ public class Header implements ProtocolEvent {
     {
         delegate.header(context, this);
     }
+
+    public boolean hasNoPayload()
+       {
+           return _noPayload;
+       }
+
 
     public String toString()
     {

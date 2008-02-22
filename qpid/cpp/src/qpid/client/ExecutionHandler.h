@@ -86,6 +86,7 @@ public:
     void completed(const framing::SequenceNumber& id, bool cumulative, bool send);
     void syncTo(const framing::SequenceNumber& point);
     void flushTo(const framing::SequenceNumber& point);
+    void syncWait(const framing::SequenceNumber& id);
 
     bool isComplete(const framing::SequenceNumber& id);
     bool isCompleteUpTo(const framing::SequenceNumber& id);

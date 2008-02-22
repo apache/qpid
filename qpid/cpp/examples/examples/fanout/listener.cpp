@@ -50,12 +50,12 @@ Listener::Listener(SubscriptionManager& subs) : subscriptions(subs)
 {}
 
 void Listener::received(Message& message) {
-  std::cout << "Message: " << message.getData() << std::endl;
-  if (message.getData() == "That's all, folks!") {
-      std::cout << "Shutting down listener for " << message.getDestination()
-                << std::endl;
-      subscriptions.cancel(message.getDestination());
-  }
+    std::cout << "Message: " << message.getData() << std::endl;
+    if (message.getData() == "That's all, folks!") {
+        std::cout << "Shutting down listener for " << message.getDestination()
+                  << std::endl;
+        subscriptions.cancel(message.getDestination());
+    }
 }
 
 int main(int argc, char** argv) {
@@ -64,35 +64,38 @@ int main(int argc, char** argv) {
     Connection connection;
     Message msg;
     try {
-      connection.open(host, port);
-      Session session =  connection.newSession();
+        connection.open(host, port);
+        Session session =  connection.newSession(ASYNC);
 
-  //--------- Main body of program --------------------------------------------
+        //--------- Main body of program --------------------------------------------
 
-      // Unique name for private queue:
-      std::string myQueue=session.getId().str();
-      // Declear my queue. 
-      session.queueDeclare(arg::queue=myQueue, arg::exclusive=true,
-                           arg::autoDelete=true);
-      // Bind my queue to the fanout exchange.
-      // Note no routingKey required, the fanout exchange delivers
-      // all messages to all bound queues unconditionally.
-      session.queueBind(arg::exchange="amq.fanout", arg::queue=myQueue);
+        // Unique name for private queue:
+        std::string myQueue=session.getId().str();
+        // Declear my queue. 
+        session.queueDeclare(arg::queue=myQueue, arg::exclusive=true,
+                             arg::autoDelete=true);
+        // Bind my queue to the fanout exchange.
+        // Note no routingKey required, the fanout exchange delivers
+        // all messages to all bound queues unconditionally.
+        session.queueBind(arg::exchange="amq.fanout", arg::queue=myQueue);
 
-      // Create a listener and subscribe it to my queue.
-      SubscriptionManager subscriptions(session);
-      Listener listener(subscriptions);
-      subscriptions.subscribe(listener, myQueue);
+        // Create a listener and subscribe it to my queue.
+        SubscriptionManager subscriptions(session);
+        Listener listener(subscriptions);
+        subscriptions.subscribe(listener, myQueue);
 
-      // Deliver messages until the subscription is cancelled
-      // by Listener::received()
-      std::cout << "Listening" << std::endl;
-      subscriptions.run();
+        // Wait for the broker to indicate that our queues have been created.
+        session.sync();
 
-  //---------------------------------------------------------------------------
+        // Deliver messages until the subscription is cancelled
+        // by Listener::received()
+        std::cout << "Listening" << std::endl;
+        subscriptions.run();
 
-      connection.close();
-      return 0;
+        //---------------------------------------------------------------------------
+
+        connection.close();
+        return 0;
     } catch(const std::exception& error) {
         std::cout << error.what() << std::endl;
     }

@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     Message msg;
     try {
       connection.open(host, port);
-      Session session =  connection.newSession();
+      Session session =  connection.newSession(ASYNC);
 
   //--------- Main body of program --------------------------------------------
 

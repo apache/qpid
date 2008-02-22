@@ -20,7 +20,6 @@
  */
 #include "Dispatcher.h"
 
-#include "qpid/client/Session_0_10.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
@@ -38,7 +37,7 @@ using qpid::sys::Thread;
 namespace qpid {
 namespace client {
 
-Subscriber::Subscriber(Session_0_10& s, MessageListener* l, AckPolicy a) : session(s), listener(l), autoAck(a) {}
+Subscriber::Subscriber(Session& s, MessageListener* l, AckPolicy a) : session(s), listener(l), autoAck(a) {}
 
 void Subscriber::received(Message& msg)
 {
@@ -48,7 +47,7 @@ void Subscriber::received(Message& msg)
     }
 }
 
-Dispatcher::Dispatcher(Session_0_10& s, const std::string& q)
+Dispatcher::Dispatcher(Session& s, const std::string& q)
     : session(s), running(false), autoStop(true)
 {
     queue = q.empty() ? 
