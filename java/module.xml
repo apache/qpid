@@ -186,10 +186,11 @@
     <isset property="cpp"/>
   </condition>
 
+
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
     <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
-
+      <jvmarg value="${jvmarg}" />
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
@@ -203,7 +204,7 @@
       <formatter type="xml"/>
 
       <classpath refid="module.test.path"/>
-
+     
       <batchtest fork="yes" todir="${build.results}">
         <fileset dir="${module.test.src}">
           <include name="**/${test}.java"/>
