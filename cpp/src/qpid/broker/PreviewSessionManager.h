@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_SESSIONMANAGER_H
-#define QPID_BROKER_SESSIONMANAGER_H
+#ifndef QPID_BROKER_PREVIEWSESSIONMANAGER_H
+#define QPID_BROKER_PREVIEWSESSIONMANAGER_H
 
 /*
  *
@@ -37,43 +37,43 @@
 namespace qpid {
 namespace broker {
 
-class SessionState;
-class SessionHandler;
+class PreviewSessionState;
+class PreviewSessionHandler;
 
 /**
- * Create and manage SessionState objects.
+ * Create and manage PreviewSessionState objects.
  */
-class SessionManager : private boost::noncopyable {
+class PreviewSessionManager : private boost::noncopyable {
   public:
     /**
-     * Observer notified of SessionManager events.
+     * Observer notified of PreviewSessionManager events.
      */
     struct Observer : public RefCounted {
-        virtual void opened(SessionState&) {}
+        virtual void opened(PreviewSessionState&) {}
     };
     
-    SessionManager(uint32_t ack);
+    PreviewSessionManager(uint32_t ack);
     
-    ~SessionManager();
+    ~PreviewSessionManager();
     
     /** Open a new active session, caller takes ownership */
-    std::auto_ptr<SessionState> open(SessionHandler& c, uint32_t timeout_);
+    std::auto_ptr<PreviewSessionState> open(PreviewSessionHandler& c, uint32_t timeout_);
     
     /** Suspend a session, start it's timeout counter.
      * The factory takes ownership.
      */
-    void suspend(std::auto_ptr<SessionState> session);
+    void suspend(std::auto_ptr<PreviewSessionState> session);
         
     /** Resume a suspended session.
      *@throw Exception if timed out or non-existant.
      */
-    std::auto_ptr<SessionState> resume(const framing::Uuid&);
+    std::auto_ptr<PreviewSessionState> resume(const framing::Uuid&);
 
     /** Add an Observer. */
     void add(const intrusive_ptr<Observer>&);
     
   private:
-    typedef boost::ptr_vector<SessionState> Suspended;
+    typedef boost::ptr_vector<PreviewSessionState> Suspended;
     typedef std::set<framing::Uuid> Active;
     typedef std::vector<intrusive_ptr<Observer> > Observers;
 
@@ -86,7 +86,7 @@ class SessionManager : private boost::noncopyable {
     uint32_t ack;
     Observers observers;
     
-  friend class SessionState; // removes deleted sessions from active set.
+  friend class PreviewSessionState; // removes deleted sessions from active set.
 };
 
 
@@ -97,4 +97,4 @@ class SessionManager : private boost::noncopyable {
 
 
 
-#endif  /*!QPID_BROKER_SESSIONMANAGER_H*/
+#endif  /*!QPID_BROKER_PREVIEWSESSIONMANAGER_H*/
