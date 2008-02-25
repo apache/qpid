@@ -927,8 +927,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     {
                         long startCloseTime = System.currentTimeMillis();
 
-                        _taskPool.shutdown();
                         closeAllSessions(null, timeout, startCloseTime);
+
+                        //This MUST occur after we have successfully closed all Channels/Sessions
+                        _taskPool.shutdown();
 
                         if (!_taskPool.isTerminated())
                         {
