@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -59,6 +59,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     private VirtualHostRegistry _virtualHostRegistry;
 
 
+    //fixme Why is this not used.
     private final Map<String, VirtualHost> _virtualHosts = new ConcurrentHashMap<String, VirtualHost>();
 
     private PluginManager _pluginManager;
@@ -121,7 +122,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         _managedObjectRegistry.start();
 
         _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
-        
+
         initialiseVirtualHosts();
 
     }
@@ -178,7 +179,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         return getConfiguration().getList("virtualhosts.virtualhost.name");
     }
-    
+
     public PluginManager getPluginManager()
     {
         return _pluginManager;
