@@ -282,6 +282,78 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     }
 
+    public boolean endsWith(String s)
+    {
+        return endsWith(new AMQShortString(s));
+    }
+
+
+    public boolean endsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+
+        int thisLength = length();
+        int otherLength = otherString.length();
+
+        for (int i = 1; i <= otherLength; i++)
+        {
+            if (charAt(thisLength - i) != otherString.charAt(otherLength - i))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean startsWith(String s)
+    {
+        return startsWith(new AMQShortString(s));
+    }
+
+    public boolean startsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (_data[i] != otherString._data[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    public boolean startsWith(CharSequence otherString)
+    {
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (charAt(i) != otherString.charAt(i))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     private final class CharSubSequence implements CharSequence
     {
         private final int _sequenceOffset;
