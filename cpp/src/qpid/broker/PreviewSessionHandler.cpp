@@ -19,7 +19,7 @@
  */
 
 #include "PreviewSessionHandler.h"
-#include "SessionState.h"
+#include "PreviewSessionState.h"
 #include "PreviewConnection.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
@@ -36,7 +36,7 @@ using namespace std;
 using namespace qpid::sys;
 
 PreviewSessionHandler::PreviewSessionHandler(PreviewConnection& c, ChannelId ch)
-    : SessionContext(c.getOutput()),
+    : InOutHandler(0, &out),
       connection(c), channel(ch, &c.getOutput()),
       proxy(out),               // Via my own handleOut() for L2 data.
       peerSession(channel),     // Direct to channel for L2 commands.
@@ -106,15 +106,15 @@ void PreviewSessionHandler::assertClosed(const char* method) const {
 
 void  PreviewSessionHandler::open(uint32_t detachedLifetime) {
     assertClosed("open");
-    std::auto_ptr<SessionState> state(
-        connection.broker.getSessionManager().open(*this, detachedLifetime));
+    std::auto_ptr<PreviewSessionState> state(
+        connection.broker.getPreviewSessionManager().open(*this, detachedLifetime));
     session.reset(state.release());
     peerSession.attached(session->getId(), session->getTimeout());
 }
 
 void  PreviewSessionHandler::resume(const Uuid& id) {
     assertClosed("resume");
-    session = connection.broker.getSessionManager().resume(id);
+    session = connection.broker.getPreviewSessionManager().resume(id);
     session->attach(*this);
     SequenceNumber seq = session->resuming();
     peerSession.attached(session->getId(), session->getTimeout());
@@ -154,7 +154,7 @@ void  PreviewSessionHandler::closed(uint16_t replyCode, const string& replyText)
 void PreviewSessionHandler::localSuspend() {
     if (session.get() && session->isAttached()) {
         session->detach();
-        connection.broker.getSessionManager().suspend(session);
+        connection.broker.getPreviewSessionManager().suspend(session);
         session.reset();
     }
 }
@@ -171,7 +171,7 @@ void  PreviewSessionHandler::ack(uint32_t     cumulativeSeenMark,
                           const SequenceNumberSet& /*seenFrameSet*/)
 {
     assertAttached("ack");
-    if (session->getState() == SessionState::RESUMING) {
+    if (session->getState() == PreviewSessionState::RESUMING) {
         session->receivedAck(cumulativeSeenMark);
         framing::SessionState::Replay replay=session->replay();
         std::for_each(replay.begin(), replay.end(),
@@ -193,14 +193,14 @@ void  PreviewSessionHandler::solicitAck() {
 
 void PreviewSessionHandler::attached(const Uuid& /*sessionId*/, uint32_t detachedLifetime)
 {
-    std::auto_ptr<SessionState> state(
-        connection.broker.getSessionManager().open(*this, detachedLifetime));
+    std::auto_ptr<PreviewSessionState> state(
+        connection.broker.getPreviewSessionManager().open(*this, detachedLifetime));
     session.reset(state.release());
 }
 
 void PreviewSessionHandler::detached()
 {
-    connection.broker.getSessionManager().suspend(session);
+    connection.broker.getPreviewSessionManager().suspend(session);
     session.reset();
 }
 
