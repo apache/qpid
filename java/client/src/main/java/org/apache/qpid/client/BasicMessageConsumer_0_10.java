@@ -38,7 +38,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Iterator;
 
 /**
@@ -290,7 +289,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         // TODO Use a tag for fiding out if message filtering is done here or by the broker.
         try
         {
-            if (getMessageSelector() != null && !getMessageSelector().equals(""))
+            if (_messageSelector != null && !_messageSelector.equals(""))
             {
                 messageOk = _filter.matches(message);
             }

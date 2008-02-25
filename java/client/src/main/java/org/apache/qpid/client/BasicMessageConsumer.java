@@ -54,7 +54,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     protected AMQConnection _connection;
 
-    private String _messageSelector;
+    protected String _messageSelector;
 
     private boolean _noLocal;
 
@@ -658,6 +658,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
             else
             {
+                // we should not be allowed to add a message is the
+                // consumer is closed
                 _synchronousQueue.put(jmsMessage);
             }
         }
