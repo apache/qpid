@@ -106,9 +106,9 @@
 
     <!-- Log all info events to file -->
     <root>
-        <priority value="info"/>
+        <priority value="debug"/>
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="FileAppender"/>
+        <!--appender-ref ref="FileAppender"/-->
     </root>
 
 </log4j:configuration>
