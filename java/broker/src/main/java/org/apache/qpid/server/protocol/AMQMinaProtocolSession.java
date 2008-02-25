@@ -109,7 +109,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
-    private List<Integer> _closingChannelsList = new ArrayList<Integer>();
+    private List<Integer> _closingChannelsList = new CopyOnWriteArrayList<Integer>();
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
@@ -208,9 +208,39 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             _logger.debug("Frame Received: " + frame);
         }
+
+        // Check that this channel is not closing
+        if (channelAwaitingClosure(channelId))
+        {
+            if ((frame.getBodyFrame() instanceof ChannelCloseOkBody))
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
+                }
+            }
+            else
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
+                }
+
+                return;
+            }
+        }
                 
 
-        body.handle(channelId, this);
+
+        try
+        {
+            body.handle(channelId, this);
+        }
+        catch (AMQException e)
+        {
+            closeChannel(channelId);
+            throw e;
+        }
 
     }
 
@@ -258,27 +288,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
 
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(channelId, methodBody);
-
-        // Check that this channel is not closing
-        if (channelAwaitingClosure(channelId))
-        {
-            if ((evt.getMethod() instanceof ChannelCloseOkBody))
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
-                }
-            }
-            else
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
-                }
-
-                return;
-            }
-        }
 
         try
         {
@@ -341,6 +350,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                     _logger.info("Closing connection due to: " + e.getMessage());
                 }
 
+                markChannelawaitingCloseOk(channelId);
                 closeSession();
                 _stateManager.changeState(AMQState.CONNECTION_CLOSING);
                 writeFrame(e.getCloseFrame(channelId));
