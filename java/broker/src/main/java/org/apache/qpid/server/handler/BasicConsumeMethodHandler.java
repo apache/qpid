@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -36,7 +35,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BasicConsumeMethodHandler implements StateAwareMethodListener<BasicConsumeBody>
 {
-    private static final Logger _log = Logger.getLogger(BasicConsumeMethodHandler.class);
+    private static final Logger _logger = Logger.getLogger(BasicConsumeMethodHandler.class);
 
     private static final BasicConsumeMethodHandler _instance = new BasicConsumeMethodHandler();
 
@@ -66,21 +65,21 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         }
         else
         {
-            if (_log.isDebugEnabled())
+            if (_logger.isDebugEnabled())
             {
-                _log.debug("BasicConsume: from '" + body.getQueue() +
-                           "' for:" + body.getConsumerTag() +
-                           " nowait:" + body.getNowait() +
-                           " args:" + body.getArguments());
+                _logger.debug("BasicConsume: from '" + body.getQueue() +
+                              "' for:" + body.getConsumerTag() +
+                              " nowait:" + body.getNowait() +
+                              " args:" + body.getArguments());
             }
 
             AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue().intern());
 
             if (queue == null)
             {
-                if (_log.isDebugEnabled())
+                if (_logger.isDebugEnabled())
                 {
-                    _log.debug("No queue for '" + body.getQueue() + "'");
+                    _logger.debug("No queue for '" + body.getQueue() + "'");
                 }
                 if (body.getQueue() != null)
                 {
@@ -127,7 +126,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 }
                 catch (org.apache.qpid.AMQInvalidArgumentException ise)
                 {
-                    _log.debug("Closing connection due to invalid selector");
+                    _logger.debug("Closing connection due to invalid selector");
 
                     MethodRegistry methodRegistry = session.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.INVALID_ARGUMENT.getCode(),
