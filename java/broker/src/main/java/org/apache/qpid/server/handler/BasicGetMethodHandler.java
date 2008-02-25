@@ -27,10 +27,10 @@ import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -82,7 +82,11 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             }
             else
             {
-                if(!queue.performGet(session, channel, !body.getNoAck()))
+
+                //Perform ACLs
+                vHost.getAccessManager().authorise(session, Permission.CONSUME, body, queue);
+
+                if (!queue.performGet(session, channel, !body.getNoAck()))
                 {
                     MethodRegistry methodRegistry = session.getMethodRegistry();
                     // TODO - set clusterId

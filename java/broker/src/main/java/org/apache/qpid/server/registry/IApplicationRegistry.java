@@ -27,7 +27,7 @@ import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.AccessManager;
+import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public interface IApplicationRegistry
@@ -68,8 +68,8 @@ public interface IApplicationRegistry
 
     VirtualHostRegistry getVirtualHostRegistry();
 
-    AccessManager getAccessManager();
-    
+    ACLPlugin getAccessManager();
+
     PluginManager getPluginManager();
     
 }

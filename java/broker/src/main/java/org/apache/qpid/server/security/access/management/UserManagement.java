@@ -18,7 +18,7 @@
  *
  * 
  */
-package org.apache.qpid.server.security.access;
+package org.apache.qpid.server.security.access.management;
 
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanOperationParameter;

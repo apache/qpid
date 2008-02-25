@@ -37,7 +37,7 @@ import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.AMQUserManagementMBean;
+import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.qpid.AMQException;
 
 import javax.management.JMException;

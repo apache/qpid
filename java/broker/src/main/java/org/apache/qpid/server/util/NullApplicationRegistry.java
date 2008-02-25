@@ -35,8 +35,8 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.AccessManager;
-import org.apache.qpid.server.security.access.AllowAll;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -48,7 +48,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     private VirtualHostRegistry _virtualHostRegistry;
 
-    private AccessManager _accessManager;
+    private ACLPlugin _accessManager;
 
     private PrincipalDatabaseManager _databaseManager;
 
@@ -116,7 +116,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public AccessManager getAccessManager()
+    public ACLPlugin getAccessManager()
     {
         return _accessManager;
     }

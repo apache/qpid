@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.handler;
 
-import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -38,6 +35,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -75,6 +73,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore store = virtualHost.getMessageStore();
 
+        // Perform ACL on queue Creation
+        virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
 
 
 
@@ -118,6 +118,10 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     if (autoRegister)
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
+
+                        // Perform ACL to control bindings
+                        virtualHost.getAccessManager().authorise(session, Permission.BIND, body,
+                                                                 defaultExchange, queue, queueName);
 
                         queue.bind(queueName, null, defaultExchange);
                         _log.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");

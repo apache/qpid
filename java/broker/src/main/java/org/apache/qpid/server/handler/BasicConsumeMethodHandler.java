@@ -29,6 +29,7 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -96,6 +97,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             {
 
                 final AMQShortString consumerTagName;
+
+                //Perform ACLs
+                vHost.getAccessManager().authorise(session, Permission.CONSUME, body, queue);
 
                 if (body.getConsumerTag() != null)
                 {

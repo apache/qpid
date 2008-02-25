@@ -61,7 +61,7 @@
             </principal-database>
         </principal-databases>
         <access>
-            <class>org.apache.qpid.server.security.access.AllowAll</class>
+            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
         </access>
         <jmx>
             <access>${conf}/jmxremote.access</access>
@@ -79,7 +79,7 @@
 
                 <security>
                     <access>
-                        <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
+                        <class>org.apache.qpid.server.security.old.PrincipalDatabaseAccessManager</class>
                         <attributes>
                             <attribute>
                                 <name>principalDatabase</name>

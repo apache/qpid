@@ -26,8 +26,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.security.access.AccessManager;
-import org.apache.qpid.server.security.access.AccessManagerImpl;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -69,7 +69,7 @@ public class VirtualHost implements Accessable
 
     private AuthenticationManager _authenticationManager;
 
-    private AccessManager _accessManager;
+    private ACLPlugin _accessManager;
 
     private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
      
@@ -168,7 +168,7 @@ public class VirtualHost implements Accessable
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
 
-        _accessManager = new AccessManagerImpl(name, hostConfig);
+        _accessManager = ACLManager.loadACLManager(name, hostConfig);
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
@@ -279,7 +279,7 @@ public class VirtualHost implements Accessable
         return _authenticationManager;
     }
 
-    public AccessManager getAccessManager()
+    public ACLPlugin getAccessManager()
     {
         return _accessManager;
     }
