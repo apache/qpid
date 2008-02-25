@@ -75,8 +75,9 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
             {
                 if (errorCode == AMQConstant.NOT_ALLOWED || (errorCode == AMQConstant.ACCESS_REFUSED))
                 {
-                    _logger.info("Authentication Error:" + Thread.currentThread().getName());
+                    _logger.info("Error :" + errorCode +":"+ Thread.currentThread().getName());
 
+                    // todo ritchiem : Why do this here when it is going to be done in the finally block?
                     session.closeProtocolSession();
 
                     // todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
@@ -98,6 +99,8 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
 
             session.closeProtocolSession();
 
+            // ritchiem: Doing this though will cause any waiting connection start to be released without being able to
+            // see what the cause was.
             stateManager.changeState(AMQState.CONNECTION_CLOSED);
         }
     }
