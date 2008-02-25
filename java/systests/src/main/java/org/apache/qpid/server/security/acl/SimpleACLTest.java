@@ -59,6 +59,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
     public void tearDown()
     {
+        ApplicationRegistry.remove(1);
         TransportConnection.killAllVMBrokers();
     }
 
