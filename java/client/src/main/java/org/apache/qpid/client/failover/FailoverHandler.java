@@ -138,6 +138,9 @@ public class FailoverHandler implements Runnable
                 _logger.info("Failover process veto-ed by client");
 
                 _amqProtocolHandler.setStateManager(existingStateManager);
+
+                //todo: ritchiem these exceptions are useless... Would be better to attempt to propogate exception that
+                // prompted the failover event.
                 if (_host != null)
                 {
                     _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException(
