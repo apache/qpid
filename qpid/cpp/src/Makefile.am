@@ -166,6 +166,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PreviewConnection.cpp \
   qpid/broker/PreviewConnectionHandler.cpp \
   qpid/broker/PreviewSessionHandler.cpp \
+  qpid/broker/PreviewSessionManager.cpp \
+  qpid/broker/PreviewSessionState.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -270,6 +272,8 @@ nobase_include_HEADERS = \
   qpid/broker/PreviewConnection.h \
   qpid/broker/PreviewConnectionHandler.h \
   qpid/broker/PreviewSessionHandler.h \
+  qpid/broker/PreviewSessionManager.h \
+  qpid/broker/PreviewSessionState.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionFactory.h \

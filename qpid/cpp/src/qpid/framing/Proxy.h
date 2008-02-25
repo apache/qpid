@@ -39,6 +39,7 @@ class Proxy
     void send(const AMQBody&);
 
     ProtocolVersion getVersion() const;
+    FrameHandler& getHandler() { return out; }
 
   protected:
     FrameHandler& out;

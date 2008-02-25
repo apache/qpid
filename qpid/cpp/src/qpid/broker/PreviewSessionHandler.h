@@ -36,7 +36,7 @@ namespace qpid {
 namespace broker {
 
 class PreviewConnection;
-class SessionState;
+class PreviewSessionState;
 
 /**
  * A SessionHandler is associated with each active channel. It
@@ -45,7 +45,7 @@ class SessionState;
  */
 class PreviewSessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
                        public framing::AMQP_ClientOperations::SessionHandler,
-                       public SessionContext,
+                       public framing::FrameHandler::InOutHandler,
                        private boost::noncopyable
 {
   public:
@@ -53,8 +53,8 @@ class PreviewSessionHandler : public framing::AMQP_ServerOperations::SessionHand
     ~PreviewSessionHandler();
 
     /** Returns 0 if not attached to a session */
-    SessionState* getSession() { return session.get(); }
-    const SessionState* getSession() const { return session.get(); }
+    PreviewSessionState* getSession() { return session.get(); }
+    const PreviewSessionState* getSession() const { return session.get(); }
 
     framing::ChannelId getChannel() const { return channel.get(); }
     
@@ -101,7 +101,7 @@ class PreviewSessionHandler : public framing::AMQP_ServerOperations::SessionHand
     framing::AMQP_ClientProxy proxy;
     framing::AMQP_ClientProxy::Session peerSession;
     bool ignoring;
-    std::auto_ptr<SessionState> session;
+    std::auto_ptr<PreviewSessionState> session;
 };
 
 }} // namespace qpid::broker
