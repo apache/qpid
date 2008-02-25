@@ -82,14 +82,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             if (databaseName == null)
             {
 
-                if (hostConfig instanceof SubsetConfiguration)
-                {
-                    _logger.warn("No authentication specified for '" + ((SubsetConfiguration) hostConfig).getPrefix() + "'. Using Default authentication manager");
-                }
-                else
-                {
-                    _logger.warn("No authentication specified. Using Default authentication manager");
-                }
                 _default = ApplicationRegistry.getInstance().getAuthenticationManager();
                 return;
             }

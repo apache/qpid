@@ -35,9 +35,9 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class BasicPublishMethodHandler  implements StateAwareMethodListener<BasicPublishBody>
+public class BasicPublishMethodHandler implements StateAwareMethodListener<BasicPublishBody>
 {
-    private static final Logger _log = Logger.getLogger(BasicPublishMethodHandler.class);
+    private static final Logger _logger = Logger.getLogger(BasicPublishMethodHandler.class);
 
     private static final BasicPublishMethodHandler _instance = new BasicPublishMethodHandler();
 
@@ -54,12 +54,9 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
     public void methodReceived(AMQStateManager stateManager, BasicPublishBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-
-
-
-        if (_log.isDebugEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _log.debug("Publish received on channel " + channelId);
+            _logger.debug("Publish received on channel " + channelId);
         }
 
         AMQShortString exchange = body.getExchange();

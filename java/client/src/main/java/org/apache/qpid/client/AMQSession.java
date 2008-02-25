@@ -615,7 +615,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     final AMQFrame frame = body.generateFrame(getChannelId());
 
                     getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
-                     
 
                         // When control resumes at this point, a reply will have been received that
                         // indicates the broker has closed the channel successfully.
@@ -1758,11 +1757,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                         catch (AMQException e)
                         {
                             JMSException ex = new JMSException("Error registering consumer: " + e);
-
-                            if (_logger.isDebugEnabled())
-                            {
-                                e.printStackTrace();
-                            }
 
                             ex.setLinkedException(e);
                             throw ex;
