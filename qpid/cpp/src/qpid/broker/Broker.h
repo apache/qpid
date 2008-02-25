@@ -30,6 +30,7 @@
 #include "MessageStore.h"
 #include "QueueRegistry.h"
 #include "SessionManager.h"
+#include "PreviewSessionManager.h"
 #include "Vhost.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
@@ -109,6 +110,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DataDir& getDataDir() { return dataDir; }
 
     SessionManager& getSessionManager() { return sessionManager; }
+    PreviewSessionManager& getPreviewSessionManager() { return previewSessionManager; }
 
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable*                  GetVhostObject      (void) const;
@@ -136,6 +138,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     ConnectionFactory factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
+    PreviewSessionManager previewSessionManager;
     management::ManagementAgent::shared_ptr managementAgent;
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;

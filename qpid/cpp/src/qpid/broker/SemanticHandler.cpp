@@ -22,7 +22,6 @@
 #include "SemanticHandler.h"
 #include "SemanticState.h"
 #include "SessionContext.h"
-#include "SessionState.h"
 #include "BrokerAdapter.h"
 #include "MessageDelivery.h"
 #include "qpid/framing/ExecutionCompleteBody.h"
@@ -37,9 +36,9 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-SemanticHandler::SemanticHandler(SessionState& s) : 
+SemanticHandler::SemanticHandler(SessionContext& s) : 
     state(*this,s), session(s),
-    msgBuilder(&s.getBroker().getStore(), s.getBroker().getStagingThreshold()),
+    msgBuilder(&s.getConnection().getBroker().getStore(), s.getConnection().getBroker().getStagingThreshold()),
     ackOp(boost::bind(&SemanticState::ackRange, &state, _1, _2))
  {}
 
@@ -164,13 +163,8 @@ void SemanticHandler::handleContent(AMQFrame& frame)
 
 DeliveryId SemanticHandler::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
-    SessionContext* handler = session.getHandler();
-    if (handler) {
-        uint32_t maxFrameSize = handler->getConnection().getFrameMax();
-        MessageDelivery::deliver(msg, handler->out, ++outgoing.hwm, token, maxFrameSize);
-    } else {
-        QPID_LOG(error, "Dropping message as session is no longer attached to a channel.");        
-    }
+    uint32_t maxFrameSize = session.getConnection().getFrameMax();
+    MessageDelivery::deliver(msg, session.getProxy().getHandler(), ++outgoing.hwm, token, maxFrameSize);
     return outgoing.hwm;
 }
 

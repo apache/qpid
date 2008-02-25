@@ -92,7 +92,7 @@ BOOST_FIXTURE_TEST_CASE(DisconnectedListen, ProxySessionFixture) {
     BOOST_CHECK_THROW(session.close(), InternalErrorException);    
 }
 
-BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, SessionFixture) {
+BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, ProxySessionFixture) {
     BOOST_CHECK_THROW(subs.subscribe(lq, "no such queue").sync(), NotFoundException);
 }
 

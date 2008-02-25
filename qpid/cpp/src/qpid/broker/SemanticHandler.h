@@ -46,7 +46,7 @@ class AMQHeaderBody;
 
 namespace broker {
 
-class SessionState;
+class SessionContext;
 
 class SemanticHandler : public DeliveryAdapter,
                         public framing::FrameHandler,
@@ -56,7 +56,7 @@ class SemanticHandler : public DeliveryAdapter,
     typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
 
     SemanticState state;
-    SessionState& session;
+    SessionContext& session;
     // TODO aconway 2007-09-20: Why are these on the handler rather than the
     // state?
     IncomingExecutionContext incoming;
@@ -78,10 +78,10 @@ class SemanticHandler : public DeliveryAdapter,
 
     framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
     //Connection& getConnection() { return session.getConnection(); }
-    Broker& getBroker() { return session.getBroker(); }
+    Broker& getBroker() { return session.getConnection().getBroker(); }
 
 public:
-    SemanticHandler(SessionState& session);
+    SemanticHandler(SessionContext& session);
 
     //frame handler:
     void handle(framing::AMQFrame& frame);
