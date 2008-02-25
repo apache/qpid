@@ -139,7 +139,6 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
 # Check for optional CPG requirement.
-save_ldflags=$LDFLAGS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
 
 AC_ARG_WITH([cpg],  
@@ -157,15 +156,13 @@ AC_ARG_WITH([cpg],
    esac],
    [ # not specified - enable if libs/headers available.
     with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
     AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
+    AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
    ]
 )
 AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 if test x$with_CPG = xyes; then
   CPPFLAGS+=" -DCPG"
-else
-  LDFLAGS=$save_ldflags	    
 fi
 	
 # Files to generate	
