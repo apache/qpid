@@ -39,23 +39,23 @@ class UnbindTests(TestBase):
         #bind two queues and consume from them
         channel = self.channel
         
-        self.queue_declare(queue="queue-1")
-        self.queue_declare(queue="queue-2")
+        self.queue_declare(queue="unbind-queue-1")
+        self.queue_declare(queue="unbind-queue-2")
 
-        channel.basic_consume(queue="queue-1", consumer_tag="queue-1", no_ack=True)
-        channel.basic_consume(queue="queue-2", consumer_tag="queue-2", no_ack=True)
+        channel.basic_consume(queue="unbind-queue-1", consumer_tag="unbind-queue-1", no_ack=True)
+        channel.basic_consume(queue="unbind-queue-2", consumer_tag="unbind-queue-2", no_ack=True)
 
-        queue1 = self.client.queue("queue-1")
-        queue2 = self.client.queue("queue-2")
+        queue1 = self.client.queue("unbind-queue-1")
+        queue2 = self.client.queue("unbind-queue-2")
 
-        channel.queue_bind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
-        channel.queue_bind(exchange=exchange, queue="queue-2", routing_key=routing_key, arguments=args)
+        channel.queue_bind(exchange=exchange, queue="unbind-queue-1", routing_key=routing_key, arguments=args)
+        channel.queue_bind(exchange=exchange, queue="unbind-queue-2", routing_key=routing_key, arguments=args)
 
         #send a message that will match both bindings
         channel.basic_publish(exchange=exchange, routing_key=routing_key, content=Content("one", properties={'headers':headers}))
         
         #unbind first queue
-        channel.queue_unbind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
+        channel.queue_unbind(exchange=exchange, queue="unbind-queue-1", routing_key=routing_key, arguments=args)
         
         #send another message
         channel.basic_publish(exchange=exchange, routing_key=routing_key, content=Content("two", properties={'headers':headers}))
