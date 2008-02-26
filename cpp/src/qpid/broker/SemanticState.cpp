@@ -326,7 +326,7 @@ void SemanticState::cancel(ConsumerImpl& c)
     if(queue) {
         queue->cancel(c);
         if (queue->canAutoDelete() && !queue->hasExclusiveOwner()) {            
-            Queue::tryAutoDelete(getSession().getConnection().getBroker(), queue);
+            Queue::tryAutoDelete(session.getBroker(), queue);
         }
     }
 }
@@ -347,7 +347,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
     msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
-        cacheExchange = session.getConnection().broker.getExchanges().get(exchangeName);
+        cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
@@ -579,7 +579,7 @@ Queue::shared_ptr SemanticState::getQueue(const string& name) const {
     if (name.empty()) {
         throw NotAllowedException(QPID_MSG("No queue name specified."));
     } else {
-        queue = session.getConnection().getBroker().getQueues().find(name);
+        queue = session.getBroker().getQueues().find(name);
         if (!queue)
             throw NotFoundException(QPID_MSG("Queue not found: "<<name));
     }
