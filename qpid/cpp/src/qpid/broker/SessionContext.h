@@ -40,6 +40,7 @@ class SessionContext : public sys::OutputControl
     virtual ~SessionContext(){}
     virtual ConnectionState& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
+    virtual Broker& getBroker() = 0;
 };
 
 }} // namespace qpid::broker
