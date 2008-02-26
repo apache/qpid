@@ -158,6 +158,7 @@
   </target>
 
   <property name="test" value="*Test"/>
+  <property name="test.mem" value="512M"/>
 
   <property name="log" value="info"/>
   <property name="amqj.logging.level" value="${log}"/>
@@ -186,11 +187,12 @@
     <isset property="cpp"/>
   </condition>
 
-
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
     <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
-      <jvmarg value="${jvmarg}" />
+
+      <jvmarg value="-Xmx${test.mem}" />
+
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
@@ -204,7 +206,7 @@
       <formatter type="xml"/>
 
       <classpath refid="module.test.path"/>
-     
+
       <batchtest fork="yes" todir="${build.results}">
         <fileset dir="${module.test.src}">
           <include name="**/${test}.java"/>
