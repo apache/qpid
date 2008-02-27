@@ -72,7 +72,7 @@ class Dispatcher:
       cls = cls.base
     return False
 
-  def dispatch(self, f):
+  def dispatch(self, f, attrs = ""):
     cls = self
     while cls != None:
       if hasattr(f, cls.type):
@@ -81,7 +81,6 @@ class Dispatcher:
         cls = cls.base
 
     cls = self
-    attrs = ""
     while cls != None:
       if attrs:
         sep = ", "
@@ -151,9 +150,10 @@ class Tag(Node):
 
   def dispatch(self, f):
     try:
-      method = getattr(f, "do_" + self.name)
+      attr = "do_" + self.name
+      method = getattr(f, attr)
     except AttributeError:
-      return Dispatcher.dispatch(self, f)
+      return Dispatcher.dispatch(self, f, "'%s'" % attr)
     return method(self)
 
 class Leaf(Component, Dispatcher):
