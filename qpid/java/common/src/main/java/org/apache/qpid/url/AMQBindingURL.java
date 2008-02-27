@@ -209,20 +209,28 @@ public class AMQBindingURL implements BindingURL
         sb.append(URLHelper.printOptions(_options));
 
         // temp hack
-        if (sb.toString().indexOf("?") == -1)
+        if (getRoutingKey() == null || getRoutingKey().toString().equals(""))
         {
-            sb.append("?");
+
+            if (sb.toString().indexOf("?") == -1)
+            {
+                sb.append("?");
+            }
+            else
+            {
+                sb.append("&");
+            }
+
+            for (AMQShortString key :_bindingKeys)
+            {
+                sb.append(BindingURL.OPTION_BINDING_KEY).append("='").append(key.toString()).append("'&");
+            }
+
+            return sb.toString().substring(0,sb.toString().length()-1);
         }
         else
         {
-            sb.append("&");
+            return sb.toString();
         }
-
-        for (AMQShortString key :_bindingKeys)
-        {
-            sb.append("bindingKey='").append(key.toString()).append("'&");
-        }
-
-        return sb.toString().substring(0,sb.toString().length()-1);
     }
 }

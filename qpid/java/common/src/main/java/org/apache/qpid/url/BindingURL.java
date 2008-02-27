@@ -34,7 +34,7 @@ public interface BindingURL
     public static final String OPTION_CLIENTID = "clientid";
     public static final String OPTION_SUBSCRIPTION = "subscription";
     public static final String OPTION_ROUTING_KEY = "routingkey";
-    public static final String OPTION_BINDING_KEY = "bindingKey";
+    public static final String OPTION_BINDING_KEY = "bindingkey";
 
 
     String getURL();
