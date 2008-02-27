@@ -152,10 +152,21 @@ class AmqpElement
   # Text of doc child if there is one.
   def doc() d=xml.elements["doc"]; d and d.text; end
 
+  def fqname()
+    throw "fqname: #{self} #{parent.fqname} has no name" unless name
+    p=parent && parent.fqname
+    p ? p+"."+name : name;
+  end
+
+  def containing_class()
+    return self if is_a? AmqpClass
+    return parent && parent.containing_class
+  end
+  
 end
 
 class AmqpResponse < AmqpElement
-   def initialize(xml, parent) super; end
+  def initialize(xml, parent) super; end
 end
 
 class AmqpDoc < AmqpElement
@@ -167,17 +178,31 @@ class AmqpChoice < AmqpElement
   def initialize(xml,parent) super; end
   amqp_attr_reader :name, :value
 end
-  
+
 class AmqpEnum < AmqpElement
   def initialize(xml,parent) super; end
   amqp_child_reader :choice
 end
 
+# 0-10 array domains are missing element type information, add it here.
+ArrayTypes={
+  "str16-array" => "str-16",
+  "amqp-host-array" => "connection.amqp-host-url",
+  "command-fragments" => "session.command-fragment",
+  "in-doubt" => "dtx.xid"
+}
+
 class AmqpDomain < AmqpElement
-  def initialize(xml, parent) super; end
+  def initialize(xml, parent)
+    super
+    root.used_by[uses].push(fqname) if uses and uses.index('.') 
+  end
+  
   amqp_attr_reader :type
   amqp_single_child_reader :struct # preview
   amqp_single_child_reader :enum
+
+  def uses() type_=="array" ? ArrayTypes[name] : type_; end
 
   def unalias()
     d=self
@@ -194,7 +219,11 @@ class AmqpException < AmqpElement
 end
 
 class AmqpField < AmqpElement
-  def initialize(xml, amqp) super; end;
+  def initialize(xml, amqp)
+    super;
+    root.used_by[type_].push(parent.fqname) if  type_ and type_.index('.')
+  end
+  
   def domain() root.domain(xml.attributes["domain"]); end
   amqp_single_child_reader :struct # preview
   amqp_child_reader :exception
@@ -215,6 +244,7 @@ class AmqpResult < AmqpElement
   def initialize(xml, parent) super; end
   amqp_single_child_reader :struct # preview
   amqp_attr_reader :type
+  def name() "result"; end
 end
 
 class AmqpEntry < AmqpElement
@@ -333,16 +363,16 @@ class AmqpRoot < AmqpElement
     raise "No XML spec files." if specs.empty?
     xml=parse(specs.shift)
     specs.each { |s| xml_merge(xml, parse(s)) }
+    @used_by=Hash.new{ |h,k| h[k]=[] }
     super(xml, nil)
   end
 
+  attr_reader :used_by
+  
   def merge(root) xml_merge(xml, root.xml); end
   
   def version() major + "-" + minor; end
 
-  # Find the element corresponding to an amqp dotted name.
-  def lookup(dotted_name) xml.elements[dotted_name.gsub(/\./,"/")]; end
-  
   # preview - only struct child reader remains for new mapping
   def domain_structs() domains.map{ |d| d.struct }.compact; end
   def result_structs()
@@ -357,6 +387,8 @@ class AmqpRoot < AmqpElement
     @methods_on ||= { }
     @methods_on[chassis] ||= classes.map { |c| c.methods_on(chassis) }.flatten
   end
+
+  def fqname() nil; end
 
   # TODO aconway 2008-02-21: methods by role.
   
@@ -390,7 +422,7 @@ class Generator
     @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
-    Pathname.new(@outdir).mkpath unless @outdir=="-" or File.directory?(@outdir) 
+    Pathname.new(@outdir).mkpath unless @outdir=="-"
   end
 
   # Create a new file, set @out. 

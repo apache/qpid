@@ -103,6 +103,7 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
+  qpid/amqp_0_10/helpers.cpp \
   qpid/Serializer.h \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/Codec.h \
@@ -251,6 +252,7 @@ libqpidclient_la_SOURCES =			\
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
+  qpid/amqp_0_10/helpers.h \
   qpid/assert.h \
   qpid/DataDir.h \
   qpid/Exception.h \
