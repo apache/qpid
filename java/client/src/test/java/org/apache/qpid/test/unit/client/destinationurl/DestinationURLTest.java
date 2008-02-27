@@ -23,11 +23,17 @@ package org.apache.qpid.test.unit.client.destinationurl;
 import junit.framework.TestCase;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.test.unit.basic.PropertyValueTest;
 import org.apache.qpid.url.AMQBindingURL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URISyntaxException;
 
 public class DestinationURLTest extends TestCase
 {
+    private static final Logger _logger = LoggerFactory.getLogger(DestinationURLTest.class);
+
     public void testFullURL() throws URISyntaxException
     {
 
@@ -141,7 +147,7 @@ public class DestinationURLTest extends TestCase
     public void testDestinationWithMultiBindingKeys() throws URISyntaxException
     {
 
-        String url = "exchangeClass://exchangeName/Destination/?bindingKey='key1',bindingKey='key2'";
+        String url = "exchangeClass://exchangeName/Destination/?bindingkey='key1',bindingkey='key2'";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
@@ -151,6 +157,26 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals(""));
 
         assertTrue(dest.getBindingKeys().length == 2);
+    }
+
+    // You can only specify only a routing key or binding key, but not both.
+    public void testDestinationIfOnlyRoutingKeyOrBindingKeyIsSpecified() throws URISyntaxException
+    {
+
+        String url = "exchangeClass://exchangeName/Destination/?bindingkey='key1',routingkey='key2'";
+        boolean exceptionThrown = false;
+        try
+        {
+
+            AMQBindingURL dest = new AMQBindingURL(url);
+        }
+        catch(URISyntaxException e)
+        {
+            exceptionThrown = true;
+            _logger.info("Exception thrown",e);
+        }
+
+        assertTrue("Failed to throw an URISyntaxException when both the bindingkey and routingkey is specified",exceptionThrown);
     }
 
     public static junit.framework.Test suite()
