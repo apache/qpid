@@ -274,19 +274,19 @@ public abstract class AMQDestination implements Destination, Referenceable
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
 
-            if (_bindingKeys != null && _bindingKeys.length>0)
+            // We can't allow both routingKey and bindingKey
+            if (_routingKey == null && _bindingKeys != null && _bindingKeys.length>0)
             {
-                sb.append(BindingURL.OPTION_BINDING_KEY);
-                sb.append("='");
+
                 for (AMQShortString bindingKey:_bindingKeys)
                 {
-
-                    sb.append(bindingKey).append(",");
+                    sb.append(BindingURL.OPTION_BINDING_KEY);
+                    sb.append("='");
+                    sb.append(bindingKey);
+                    sb.append("'");
+                    sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
 
                 }
-                sb.deleteCharAt(sb.length() - 1);
-                sb.append("'");
-                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
 
             if (_isDurable)
