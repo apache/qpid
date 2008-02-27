@@ -20,7 +20,7 @@
  -
  -->
 
-<amqp major="0" minor="10" port="5672">
+<amqp major="99" minor="0" port="5672">
 
 <class name = "cluster" index = "201">
 

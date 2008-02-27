@@ -119,7 +119,16 @@ class AmqpElement
   # List of children of type elname, or all children if elname
   # not specified.
   def children(elname=nil)
-    @cache_children[elname] ||= @children.select { |c| elname==c.xml.name }
+    if elname
+      @cache_children[elname] ||= @children.select { |c| elname==c.xml.name }
+    else
+      @children
+    end
+  end
+
+  def each_descendant(&block)
+    yield self
+    @children.each { |c| c.each_descendant(&block) }
   end
 
   # Look up child of type elname with attribute name.
@@ -264,17 +273,21 @@ class AmqpRole < AmqpElement
   amqp_attr_reader :implement
 end
 
-class AmqpControl < AmqpElement
+# Base class for command and control.
+class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
 end
 
-class AmqpCommand < AmqpElement
+class AmqpControl < AmqpAction
   def initialize(xml,amqp) super; end
-  amqp_child_reader :implement, :field, :exception, :response
+end
+
+class AmqpCommand < AmqpAction
+  def initialize(xml,amqp) super; end
+  amqp_child_reader :exception
   amqp_single_child_reader :result, :segments
-  amqp_attr_reader :code
 end
 
 class AmqpClass < AmqpElement
@@ -295,6 +308,8 @@ class AmqpClass < AmqpElement
   def l4?()                     # preview
     !["connection", "session", "execution"].include?(name)
   end
+
+  def actions() controls+commands;   end
 end
 
 class AmqpType < AmqpElement
@@ -321,6 +336,8 @@ class AmqpRoot < AmqpElement
     super(xml, nil)
   end
 
+  def merge(root) xml_merge(xml, root.xml); end
+  
   def version() major + "-" + minor; end
 
   # Find the element corresponding to an amqp dotted name.
@@ -370,25 +387,30 @@ class Generator
   def initialize (outdir, amqp)
     @amqp=amqp
     @outdir=outdir
-    @prefix=''                  # For indentation or comments.
+    @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
     Pathname.new(@outdir).mkpath unless @outdir=="-" or File.directory?(@outdir) 
   end
 
   # Create a new file, set @out. 
-  def file(file)
+  def file(file, &block)
     GenFiles.add file
     if (@outdir != "-")         
-      path=Pathname.new "#{@outdir}/#{file}"
-      path.parent.mkpath
+      @path=Pathname.new "#{@outdir}/#{file}"
+      @path.parent.mkpath
       @out=String.new           # Generate in memory first
-      yield                     # Generate to @out
-      if path.exist? and path.read == @out  
-        puts "Skipped #{path} - unchanged" # Dont generate if unchanged
+      if block then yield; endfile; end
+    end
+  end
+
+  def endfile()
+    if @outdir != "-"
+      if @path.exist? and @path.read == @out  
+        puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
       else
-        path.open('w') { |f| f << @out }
-        puts "Generated #{path}"
+        @path.open('w') { |f| f << @out }
+        puts "Generated #{@path}"
       end
     end
   end
@@ -396,7 +418,7 @@ class Generator
   # Append multi-line string to generated code, prefixing each line.
   def gen (str)
     str.each_line { |line|
-      @out << @prefix unless @midline
+      @out << @prefix.last unless @midline
       @out << line
       @midline = nil
     }
@@ -411,23 +433,25 @@ class Generator
   end
 
   # Generate code with added prefix.
-  def prefix(add)
-    save=@prefix
-    @prefix+=add
-    yield
-    @prefix=save
+  def prefix(add, &block)
+    @prefix.push @prefix.last+add
+    if block then yield; endprefix; end
+  end
+
+  def endprefix()
+    @prefix.pop
   end
   
   # Generate indented code
   def indent(n=1,&block) prefix(@indentstr * n,&block); end
+  alias :endindent :endprefix
 
   # Generate outdented code
   def outdent(&block)
-    save=@prefix
-    @prefix=@prefix[0...-2]
-    yield
-    @prefix=save
+    @prefix.push @prefix.last[0...-2]
+    if block then yield; endprefix; end
   end
+  alias :endoutdent :endprefix
   
   attr_accessor :out
 end

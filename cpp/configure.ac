@@ -122,11 +122,11 @@ test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 specdir=`pwd`/$srcdir/../specs  
-AMQP_XML=$specdir/amqp.0-10-preview.xml
-AC_SUBST(AMQP_XML)
-ls $AMQP_XML >/dev/null 2>&1 || generate=no
-
-AM_CONDITIONAL([GENERATE], [test x$generate = xyes])
+AMQP_PREVIEW_XML=$specdir/amqp.0-10-preview.xml
+AMQP_FINAL_XML=$specdir/amqp.0-10.xml
+AC_SUBST(AMQP_PREVIEW_XML)
+AC_SUBST(AMQP_FINAL_XML)
+AM_CONDITIONAL([GENERATE], [ls $AMQP_FINAL_XML >/dev/null])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc

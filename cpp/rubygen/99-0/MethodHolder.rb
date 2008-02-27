@@ -96,5 +96,5 @@ EOS
   end
 end
 
-MethodHolderGen.new(Outdir, Amqp).generate();
+MethodHolderGen.new($outdir, $amqp).generate();
 
