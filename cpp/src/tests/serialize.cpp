@@ -79,7 +79,7 @@ template <class A, class B, class C, class D> struct concat4 { typedef typename 
 typedef mpl::vector<Bit, Boolean, Char, Int32, Int64, Int8, Uint16, CharUtf32, Uint32, Uint64, Bin8, Uint8>::type IntegralTypes;
 typedef mpl::vector<Bin1024, Bin128, Bin16, Bin256, Bin32, Bin40, Bin512, Bin64, Bin72>::type BinTypes;
 typedef mpl::vector<Double, Float>::type FloatTypes;
-typedef mpl::vector<SequenceNo, Uuid, DateTime, Dec32, Dec64> FixedSizeClassTypes;
+typedef mpl::vector<SequenceNo, Uuid, Datetime, Dec32, Dec64> FixedSizeClassTypes;
 typedef mpl::vector<Vbin8, Str8Latin, Str8, Str8Utf16, Vbin16, Str16Latin, Str16, Str16Utf16, Vbin32> VariableSizeTypes;
 
 
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(testNetworkByteOrder) {
 void testValue(bool& b) { b = true; }
 template <class T> typename boost::enable_if<boost::is_arithmetic<T> >::type testValue(T& n) { n=42; }
 void testValue(long long& l) { l = 12345; }
-void testValue(DateTime& dt) { dt = qpid::sys::now(); }
+void testValue(Datetime& dt) { dt = qpid::sys::now(); }
 void testValue(Uuid& uuid) { uuid=Uuid(true); }
 template <class E, class M> void testValue(Decimal<E,M>& d) { d.exponent=2; d.mantissa=1234; }
 void testValue(SequenceNo& s) { s = 42; }

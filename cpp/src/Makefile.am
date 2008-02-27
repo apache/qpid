@@ -11,10 +11,12 @@ EXTRA_DIST= $(platform_dist)
 # This phony target is needed by generated makefile fragments:
 force:
 
-# AMQP_XML is defined in ../configure.ac
-specs=@AMQP_XML@ $(top_srcdir)/xml/cluster.xml
-
 if GENERATE
+
+# AMQP_PREVIEW_XML and AMQP_FINAL_XML are defined in ../configure.ac
+amqp_99_0_xml=@AMQP_PREVIEW_XML@  $(top_srcdir)/xml/cluster.xml
+amqp_0_10_xml=@AMQP_FINAL_XML@
+specs=$(amqp_99_0_xml) $(amqp_0_10_xml)
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen

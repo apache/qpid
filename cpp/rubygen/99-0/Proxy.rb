@@ -62,7 +62,9 @@ EOS
       include "<sstream>"
       include "#{@classname}.h"
       include "qpid/framing/amqp_types_full.h"
-      Amqp.methods_on(@chassis).each { |m| include "qpid/framing/"+m.body_name }
+      @amqp.methods_on(@chassis).each {
+        |m| include "qpid/framing/"+m.body_name
+      }
       genl
       namespace("qpid::framing") { 
         genl "#{@classname}::#{@classname}(FrameHandler& f) :"
@@ -75,6 +77,6 @@ EOS
 end
 
 
-ProxyGen.new("client", Outdir, Amqp).generate;
-ProxyGen.new("server", Outdir, Amqp).generate;
+ProxyGen.new("client", $outdir, $amqp).generate;
+ProxyGen.new("server", $outdir, $amqp).generate;
     
