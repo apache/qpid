@@ -61,7 +61,7 @@ class String
     name=path.pop
     return name.typename if path.empty?
     path.map! { |n| n.nsname }
-    return "amqp_0_10::"+(path << name.caps).join("::")
+    return (path << name.caps).join("::")
   end
 
   alias :typename :caps
@@ -137,12 +137,8 @@ class AmqpMethod
   def body_name() parent.name.caps+name.caps+"Body"; end
 end
 
-class AmqpAction
-  def nsname() name.namespace; end
-  def classname() name.typename; end
-  def funcname() parent.name.funcname + name.caps; end
-
-  def parameters()
+module AmqpHasFields
+    def parameters()
     fields.map { |f| "#{f.paramtype} #{f.cppname}_"}.join(",\n")
   end
 
@@ -155,21 +151,26 @@ class AmqpAction
   end
 
   def initializers()
-    fields.map { |f| "#{f.cppname}(#{f.cppname}_)}"}.join(",\n")
+    fields.map { |f| "#{f.cppname}(#{f.cppname}_)"}.join(",\n")
   end
-
 end
 
-class AmqpCommand
+class AmqpAction
+  def classname() name.typename; end
+  def funcname() parent.name.funcname + name.caps; end
+  include AmqpHasFields
+end
+
+class AmqpCommand < AmqpAction
   def base() "Command";  end
 end
 
-class AmqpControl
+class AmqpControl < AmqpAction
   def base() "Control";  end
 end
 
 class AmqpClass
-  def cppname() name.caps; end
+  def cppname() name.caps; end  # preview
   def nsname() name.nsname; end
 end
 
@@ -212,9 +213,14 @@ class AmqpResult
 end
 
 class AmqpStruct
-  def cpp_pack_type() AmqpDomain.lookup_type(pack()) or CppType.new("uint16_t"); end
+  include AmqpHasFields
+
+  def cpp_pack_type()           # preview
+    AmqpDomain.lookup_type(pack()) or CppType.new("uint16_t");
+  end 
   def cpptype() parent.cpptype; end # preview
   def cppname() cpptype.name;  end # preview
+
   def classname() name.typename; end
 end
 
