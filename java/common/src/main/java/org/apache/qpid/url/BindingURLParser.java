@@ -414,13 +414,14 @@ public class BindingURLParser
         String[] urls = new String[]
            {
              "topic://amq.topic//myTopic?routingkey='stocks.#'",
-             "topic://amq.topic/message_queue?bindingKey='usa.*'&bindingKey='control',exclusive='true'",
-             "topic://amq.topic//?bindingKey='usa.*',bindingKey='control',exclusive='true'",
-             "direct://amq.direct/dummyDest/myQueue?routingKey='abc.*'",
+             "topic://amq.topic/message_queue?bindingkey='usa.*'&bindingkey='control',exclusive='true'",
+             "topic://amq.topic//?bindingKey='usa.*',bindingkey='control',exclusive='true'",
+             "direct://amq.direct/dummyDest/myQueue?routingkey='abc.*'",
              "exchange.Class://exchangeName/Destination/Queue",
              "exchangeClass://exchangeName/Destination/?option='value',option2='value2'",
              "IBMPerfQueue1?durable='true'",
-             "exchangeClass://exchangeName/Destination/?bindingKey='key1',bindingKey='key2'"
+             "exchangeClass://exchangeName/Destination/?bindingkey='key1',bindingkey='key2'",
+             "exchangeClass://exchangeName/Destination/?bindingkey='key1'&routingkey='key2'"
            };
 
         try
