@@ -55,12 +55,20 @@ CppMangle = CppKeywords+Set.new(["string"])
 
 class String
   def cppsafe() CppMangle.include?(self) ? self+"_" : self; end
+
   def amqp2cpp()
     path=split(".")
     name=path.pop
-    path.map! { |n| n.bars }
-    (path << name.caps).join("::")
+    return name.typename if path.empty?
+    path.map! { |n| n.nsname }
+    return "amqp_0_10::"+(path << name.caps).join("::")
   end
+
+  alias :typename :caps
+  alias :nsname :bars
+  alias :constname :shout
+  alias :funcname :lcaps
+  alias :varname :lcaps
 end
 
 # Hold information about a C++ type.
@@ -119,6 +127,7 @@ class AmqpField
   def cpptype() domain.cpptype;  end
   def bit?() domain.type_ == "bit"; end
   def signature() cpptype.param+" "+cppname; end
+  def paramtype() "call_traits<#{type_.amqp2cpp}>::param_type"; end
 end
 
 class AmqpMethod
@@ -128,8 +137,40 @@ class AmqpMethod
   def body_name() parent.name.caps+name.caps+"Body"; end
 end
 
+class AmqpAction
+  def nsname() name.namespace; end
+  def classname() name.typename; end
+  def funcname() parent.name.funcname + name.caps; end
+
+  def parameters()
+    fields.map { |f| "#{f.paramtype} #{f.cppname}_"}.join(",\n")
+  end
+
+  def arguments()
+    fields.map { |f| "#{f.cppname}_"}.join(",\n")
+  end
+
+  def values()
+    fields.map { |f| "#{f.cppname}"}.join(",\n")
+  end
+
+  def initializers()
+    fields.map { |f| "#{f.cppname}(#{f.cppname}_)}"}.join(",\n")
+  end
+
+end
+
+class AmqpCommand
+  def base() "Command";  end
+end
+
+class AmqpControl
+  def base() "Control";  end
+end
+
 class AmqpClass
   def cppname() name.caps; end
+  def nsname() name.nsname; end
 end
 
 class AmqpDomain
@@ -172,17 +213,20 @@ end
 
 class AmqpStruct
   def cpp_pack_type() AmqpDomain.lookup_type(pack()) or CppType.new("uint16_t"); end
-  def cpptype() parent.cpptype; end
-  def cppname() cpptype.name;  end
+  def cpptype() parent.cpptype; end # preview
+  def cppname() cpptype.name;  end # preview
+  def classname() name.typename; end
 end
 
 class CppGen < Generator
   def initialize(outdir, *specs)
     super(outdir,*specs)
+    # need to sort classes for dependencies
+    @actions=[]                 # Stack of end-scope actions
   end
 
   # Write a header file. 
-  def h_file(path)
+  def h_file(path, &block)
     path = (/\.h$/ === path ? path : path+".h")
     guard=path.upcase.tr('./-','_')
     file(path) { 
@@ -190,12 +234,12 @@ class CppGen < Generator
       gen "#define #{guard}\n"
       gen Copyright
       yield
-      gen "#endif  /*!#{guard}*/\n"
+      gen "#endif  /*!#{guard}*/\n" 
     }
   end
 
   # Write a .cpp file.
-  def cpp_file(path)
+  def cpp_file(path, &block)
     path = (/\.cpp$/ === path ? path : path+".cpp")
     file(path) do
       gen Copyright
@@ -209,10 +253,12 @@ class CppGen < Generator
     genl "#include #{header}"
   end
 
-  def scope(open="{",close="}", &block) 
-    genl open; indent(&block); genl close
+  def scope(open="{",close="}", &block)
+    genl open
+    indent &block
+    genl close
   end
-
+  
   def namespace(name, &block) 
     genl
     names = name.split("::")
@@ -231,7 +277,7 @@ class CppGen < Generator
       indent { gen "#{bases.join(",\n")}" }
     end
     genl
-    scope("{","};") { yield }
+    scope("{","};", &block)
   end
 
   def struct(name, *bases, &block)
@@ -262,6 +308,11 @@ class CppGen < Generator
     genl "/**"
     prefix(" * ",&block)
     genl " */"
+  end
+
+  # Generate code in namespace for each class
+  def each_class_ns()
+    @amqp.classes.each { |c| namespace(c.nsname) { yield c } }
   end
 end
 

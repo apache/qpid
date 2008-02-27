@@ -30,5 +30,5 @@ class MethodBodyDefaultVisitorGen < CppGen
   end
 end
 
-MethodBodyDefaultVisitorGen.new(Outdir, Amqp).generate();
+MethodBodyDefaultVisitorGen.new($outdir, $amqp).generate();
 

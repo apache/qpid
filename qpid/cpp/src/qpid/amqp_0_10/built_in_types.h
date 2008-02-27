@@ -29,6 +29,7 @@
 #include <boost/array.hpp>
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 /**@file Mapping from built-in AMQP types to C++ types */
 
@@ -66,7 +67,7 @@ typedef double Double;
 typedef float Float;
 typedef framing::SequenceNumber SequenceNo;
 using framing::Uuid;
-typedef sys::AbsTime DateTime;
+typedef sys::AbsTime Datetime;
 
 typedef Decimal<Uint8, Int32> Dec32;
 typedef Decimal<Uint8, Int64> Dec64;
@@ -89,14 +90,18 @@ typedef CodableString<Uint16, Uint16> Str16Utf16;
 
 typedef CodableString<Uint8, Uint32> Vbin32;
 
-/** FIXME aconway 2008-02-20: todo
-byte-ranges       2 byte ranges within a 64-bit payload
-sequence-set      2 ranged set representation
-map          0xa8 4 a mapping of keys to typed values
-list         0xa9 4 a series of consecutive type-value pairs
-array        0xaa 4 a defined length collection of values of a single type
-struct32     0xab 4 a coded struct with a 32-bit size
-*/
+// FIXME aconway 2008-02-26: array encoding
+template <class T> struct Array : public std::vector<T> {};
+
+// FIXME aconway 2008-02-26: Unimplemented types:
+struct ByteRanges {};
+struct SequenceSet {};
+struct Map {};
+struct List {};
+struct Struct32 {};
+
+// Top level enum definitions.
+enum SegmentType { CONTROL, COMMAND, HEADER, BODY };
 
 }} // namespace qpid::amqp_0_10
 

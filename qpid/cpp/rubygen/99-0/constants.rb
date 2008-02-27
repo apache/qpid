@@ -78,5 +78,5 @@ class ConstantsGen < CppGen
   end
 end
 
-ConstantsGen.new(Outdir, Amqp).generate();
+ConstantsGen.new($outdir, $amqp).generate();
 

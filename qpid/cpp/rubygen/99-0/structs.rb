@@ -534,5 +534,5 @@ EOS
   end
 end
 
-StructGen.new(ARGV[0], Amqp).generate()
+StructGen.new(ARGV[0], $amqp).generate()
 
