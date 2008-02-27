@@ -17,22 +17,22 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.FiledTableSupport;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.njms.ExceptionHelper;
 import org.apache.qpidity.nclient.util.ByteBufferMessage;
-import org.apache.qpidity.transport.ReplyTo;
+import org.apache.qpidity.njms.ExceptionHelper;
 import org.apache.qpidity.transport.DeliveryProperties;
-
-import javax.jms.Message;
-import javax.jms.JMSException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import org.apache.qpidity.transport.ReplyTo;
 
 /**
  * This is a 0_10 message producer.
@@ -154,12 +154,20 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             String replyToURL = contentHeaderProperties.getReplyToAsString();
             if (replyToURL != null)
             {
+                if(_logger.isDebugEnabled())
+                {
+                    StringBuffer b = new StringBuffer();
+                    b.append("\n==========================");
+                    b.append("\nReplyTo : " + replyToURL);
+                    b.append("\n==========================");
+                    _logger.debug(b.toString());
+                }
                 AMQBindingURL dest;
                 try
                 {
                     dest = new AMQBindingURL(replyToURL);
                 }
-                catch (URLSyntaxException e)
+                catch (URISyntaxException e)
                 {
                     throw ExceptionHelper.convertQpidExceptionToJMSException(e);
                 }
@@ -198,8 +206,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination.getExchangeName(), destination.getAMQQueueName(),
-                                     destination.getRoutingKey());
+        return _session.isQueueBound(destination);
     }
 }
 
