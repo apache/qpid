@@ -25,7 +25,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class ObjectMessageTest extends QpidTestCase implements MessageListener
+public class ObjectMessageTest extends QpidTestBase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(ObjectMessageTest.class);
 

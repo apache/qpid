@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 import org.apache.qpidity.transport.util.Logger;
 
 import javax.jms.Connection;
@@ -35,7 +35,7 @@ import javax.jms.TextMessage;
  *
  */
 
-public class ConnectionCloseTest extends QpidTestCase
+public class ConnectionCloseTest extends QpidTestBase
 {
 
     private static final Logger log = Logger.get(ConnectionCloseTest.class);

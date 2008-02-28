@@ -22,9 +22,7 @@ package org.apache.qpid.test.unit.close;
 
 import junit.framework.Assert;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +43,7 @@ import javax.jms.Session;
  * <p><table id="crc"><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations <tr><td> Check that
  * closing a connection whilst handling a message, blocks till completion of the handler. </table>
  */
-public class CloseBeforeAckTest extends QpidTestCase
+public class CloseBeforeAckTest extends QpidTestBase
 {
     private static final Logger log = LoggerFactory.getLogger(CloseBeforeAckTest.class);
 

@@ -31,7 +31,7 @@ import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ import javax.jms.MessageProducer;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class FieldTableMessageTest extends QpidTestCase implements MessageListener
+public class FieldTableMessageTest extends QpidTestBase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(FieldTableMessageTest.class);
 
