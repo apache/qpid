@@ -104,6 +104,7 @@ make check
 %files devel
 %defattr(-,root,root,-)
 %_includedir/qpid/*.h
+%_includedir/qpid/amqp_0_10
 %_includedir/qpid/client
 %_includedir/qpid/framing
 %_includedir/qpid/sys
