@@ -292,8 +292,11 @@ public class PropertyValueTest extends TestCase implements MessageListener
                               ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
 
             //JMSXUserID
-            Assert.assertEquals("Check 'JMSXUserID' is supported ", USERNAME,
-                                m.getStringProperty("JMSXUserID"));
+            if (m.getStringProperty("JMSXUserID") != null)
+            {
+                Assert.assertEquals("Check 'JMSXUserID' is supported ", USERNAME,
+                                    m.getStringProperty("JMSXUserID"));
+            }
         }
 
         received.clear();
