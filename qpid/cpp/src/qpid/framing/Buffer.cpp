@@ -74,6 +74,31 @@ void Buffer::putLongLong(uint64_t i){
     putLong(lo);
 }
 
+void Buffer::putFloat(float f){
+    union {
+        uint32_t i;
+        float    f;
+    } val;
+
+    val.f = f;
+    putLong (val.i);
+}
+
+void Buffer::putDouble(double f){
+    union {
+        uint64_t i;
+        double   f;
+    } val;
+
+    val.f = f;
+    putLongLong (val.i);
+}
+
+void Buffer::putBin128(uint8_t* b){
+    memcpy (data + position, b, 16);
+    position += 16;
+}
+
 uint8_t Buffer::getOctet(){ 
     return (uint8_t) data[position++]; 
 }
@@ -102,6 +127,24 @@ uint64_t Buffer::getLongLong(){
     uint64_t lo = getLong();
     hi = hi << 32;
     return hi | lo;
+}
+
+float Buffer::getFloat(){
+    union {
+        uint32_t i;
+        float    f;
+    } val;
+    val.i = getLong();
+    return val.f;
+}
+
+double Buffer::getDouble(){
+    union {
+        uint64_t i;
+        double   f;
+    } val;
+    val.i = getLongLong();
+    return val.f;
 }
 
 template <>
@@ -170,6 +213,11 @@ void Buffer::getLongString(string& s){
     checkAvailable(len);
     s.assign(data + position, len);
     position += len;
+}
+
+void Buffer::getBin128(uint8_t* b){
+    memcpy (b, data + position, 16);
+    position += 16;
 }
 
 void Buffer::putRawData(const string& s){

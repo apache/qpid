@@ -104,7 +104,10 @@ class Mcli (Cmd):
     self.dataObject.do_list (data)
 
   def do_call (self, data):
-    self.dataObject.do_call (data)
+    try:
+      self.dataObject.do_call (data)
+    except ValueError, e:
+      print "ValueError:", e
 
   def do_EOF (self, data):
     print "quit"
@@ -121,7 +124,10 @@ class Mcli (Cmd):
     self.dataObject.close ()
 
 def Usage ():
-  print sys.argv[0], "[<target-host> [<tcp-port>]]"
+  print "Usage:", sys.argv[0], "[OPTIONS] [<target-host> [<tcp-port>]]"
+  print
+  print "Options:"
+  print "    -s <amqp-spec-file>  default: /usr/share/amqp/amqp.0-10-preview.xml"
   print
   sys.exit (1)
 
@@ -134,13 +140,15 @@ try:
   (optlist, cargs) = getopt.getopt (sys.argv[1:], 's:')
 except:
   Usage ()
+  exit (1)
 
 specpath = "/usr/share/amqp/amqp.0-10-preview.xml"
 host     = "localhost"
 port     = 5672
 
-if "s" in optlist:
-  specpath = optlist["s"]
+for opt in optlist:
+  if opt[0] == "-s":
+    specpath = opt[1]
 
 if len (cargs) > 0:
   host = cargs[0]
@@ -148,19 +156,27 @@ if len (cargs) > 0:
 if len (cargs) > 1:
   port = int (cargs[1])
 
-print ("Management Tool for QPID")
 disp = Display ()
 
 # Attempt to make a connection to the target broker
 try:
-  data = ManagementData (disp, host, port, spec=specpath)
+  data = ManagementData (disp, host, port, specfile=specpath)
 except socket.error, e:
-  sys.exit (0)
+  print "Socket Error:", e[1]
+  sys.exit (1)
 except Closed, e:
   if str(e).find ("Exchange not found") != -1:
     print "Management not enabled on broker:  Use '-m yes' option on broker startup."
-  sys.exit (0)
+  sys.exit (1)
+except IOError, e:
+  print "IOError: %d - %s: %s" % (e.errno, e.strerror, e.filename)
+  sys.exit (1)
 
 # Instantiate the CLI interpreter and launch it.
 cli = Mcli (data, disp)
-cli.cmdloop ()
+print ("Management Tool for QPID")
+try:
+  cli.cmdloop ()
+except Closed, e:
+  print "Connection to Broker Lost:", e
+  exit (1)
