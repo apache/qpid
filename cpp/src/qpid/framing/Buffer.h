@@ -57,11 +57,16 @@ public:
     void putShort(uint16_t i);
     void putLong(uint32_t i);
     void putLongLong(uint64_t i);
+    void putFloat(float f);
+    void putDouble(double f);
+    void putBin128(uint8_t* b);
 
-    uint8_t getOctet();
+    uint8_t  getOctet();
     uint16_t getShort(); 
     uint32_t getLong();
     uint64_t getLongLong();
+    float    getFloat();
+    double   getDouble();
     
     template <int n>
     uint64_t getUInt();
@@ -73,6 +78,7 @@ public:
     void putLongString(const string& s);
     void getShortString(string& s);
     void getLongString(string& s);
+    void getBin128(uint8_t* b);
 
     void putRawData(const string& s);
     void getRawData(string& s, uint32_t size);

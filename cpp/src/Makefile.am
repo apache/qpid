@@ -213,6 +213,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionContext.h \
   qpid/broker/SessionHandler.cpp \
   qpid/broker/SemanticHandler.cpp \
+  qpid/broker/System.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
@@ -331,6 +332,7 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SemanticHandler.h \
   qpid/broker/SessionManager.h \
+  qpid/broker/System.h \
   qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \

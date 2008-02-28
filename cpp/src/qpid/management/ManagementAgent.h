@@ -27,6 +27,7 @@
 #include "qpid/broker/Timer.h"
 #include "qpid/sys/Mutex.h"
 #include "ManagementObject.h"
+#include <qpid/framing/AMQFrame.h>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid { 
@@ -70,16 +71,76 @@ class ManagementAgent
         void fire ();
     };
 
+    //  Storage for tracking remote management agents, attached via the client
+    //  management agent API.
+    //
+    struct RemoteAgent
+    {
+        std::string name;
+        uint64_t    objIdBase;
+    };
+
+    // TODO: Eventually replace string with entire reply-to structure.  reply-to
+    //       currently assumes that the exchange is "amq.direct" even though it could
+    //       in theory be specified differently.
+    typedef std::map<std::string, RemoteAgent> RemoteAgentMap;
+    typedef std::vector<std::string>           ReplyToVector;
+
+    //  Storage for known schema classes:
+    //
+    //  SchemaClassKey     -- Key elements for map lookups
+    //  SchemaClassKeyComp -- Comparison class for SchemaClassKey
+    //  SchemaClass        -- Non-key elements for classes
+    //
+    struct SchemaClassKey
+    {
+        std::string name;
+        uint8_t     hash[16];
+    };
+
+    struct SchemaClassKeyComp
+    {
+        bool operator() (const SchemaClassKey& lhs, const SchemaClassKey& rhs) const
+        {
+            if (lhs.name != rhs.name)
+                return lhs.name < rhs.name;
+            else
+                for (int i = 0; i < 16; i++)
+                    if (lhs.hash[i] != rhs.hash[i])
+                        return lhs.hash[i] < rhs.hash[i];
+            return false;
+        }
+    };
+
+    struct SchemaClass
+    {
+        ManagementObject::writeSchemaCall_t writeSchemaCall;
+        ReplyToVector                       remoteAgents;
+
+        SchemaClass () : writeSchemaCall(0) {}
+    };
+
+    typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
+    typedef std::map<std::string, ClassMap> PackageMap;
+
+    RemoteAgentMap               remoteAgents;
+    PackageMap                   packages;
+    ManagementObjectMap          managementObjects;
+
     static shared_ptr            agent;
     static bool                  enabled;
 
     qpid::sys::RWlock            userLock;
-    ManagementObjectMap          managementObjects;
     broker::Timer                timer;
     broker::Exchange::shared_ptr mExchange;
     broker::Exchange::shared_ptr dExchange;
     uint16_t                     interval;
     uint64_t                     nextObjectId;
+    uint32_t                     nextRemotePrefix;
+
+#   define MA_BUFFER_SIZE 65536
+    char inputBuffer[MA_BUFFER_SIZE];
+    char outputBuffer[MA_BUFFER_SIZE];
 
     void PeriodicProcessing (void);
     void EncodeHeader       (qpid::framing::Buffer& buf, uint8_t  opcode, uint8_t  cls = 0);
@@ -88,6 +149,27 @@ class ManagementAgent
                              uint32_t                     length,
                              broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
+
+    void dispatchMethod (broker::Message&   msg,
+                         const std::string& routingKey,
+                         size_t             first);
+    void dispatchAgentCommand (broker::Message& msg);
+
+    PackageMap::iterator FindOrAddPackage (std::string name);
+    void AddClassLocal (PackageMap::iterator         pIter,
+                        ManagementObject::shared_ptr object);
+    void EncodePackageIndication (qpid::framing::Buffer& buf,
+                                  PackageMap::iterator   pIter);
+    void EncodeClassIndication (qpid::framing::Buffer& buf,
+                                PackageMap::iterator   pIter,
+                                ClassMap::iterator     cIter);
+    uint32_t assignPrefix (uint32_t requestedPrefix);
+    void handleHello         (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void handlePackageQuery  (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void handlePackageInd    (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void handleClassQuery    (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void handleSchemaQuery   (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void handleAttachRequest (qpid::framing::Buffer& inBuffer, std::string replyToKey);
 };
 
 }}

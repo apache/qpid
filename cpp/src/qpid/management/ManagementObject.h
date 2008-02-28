@@ -44,8 +44,7 @@ class ManagementObject
     bool        instChanged;
     bool        deleted;
     Manageable* coreObject;
-    std::string className;
-    
+
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;
     static const uint8_t TYPE_U32       = 3;
@@ -56,6 +55,8 @@ class ManagementObject
     static const uint8_t TYPE_DELTATIME = 9;
     static const uint8_t TYPE_REF       = 10;
     static const uint8_t TYPE_BOOL      = 11;
+    static const uint8_t TYPE_FLOAT     = 12;
+    static const uint8_t TYPE_DOUBLE    = 13;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;
@@ -73,23 +74,26 @@ class ManagementObject
 
   public:
     typedef boost::shared_ptr<ManagementObject> shared_ptr;
+    typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
-    ManagementObject (Manageable* _core, std::string _name) :
+    ManagementObject (Manageable* _core) :
         destroyTime(0), objectId (0), configChanged(true),
-        instChanged(true), deleted(false), coreObject(_core), className(_name)
+        instChanged(true), deleted(false), coreObject(_core)
     { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
     virtual ~ManagementObject () {}
 
-    virtual void writeSchema          (qpid::framing::Buffer& buf) = 0;
+    virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
+    virtual bool firstInstance        (void) = 0;
     virtual void writeConfig          (qpid::framing::Buffer& buf) = 0;
     virtual void writeInstrumentation (qpid::framing::Buffer& buf) = 0;
-    virtual bool getSchemaNeeded      (void) = 0;
-    virtual void setSchemaNeeded      (void) = 0;
     virtual void doMethod             (std::string            methodName,
                                        qpid::framing::Buffer& inBuf,
                                        qpid::framing::Buffer& outBuf) = 0;
 
-    std::string  getClassName     (void) { return className; }
+    virtual std::string  getClassName   (void) = 0;
+    virtual std::string  getPackageName (void) = 0;
+    virtual uint8_t*     getMd5Sum      (void) = 0;
+
     void         setObjectId      (uint64_t oid) { objectId = oid; }
     uint64_t     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
@@ -108,7 +112,7 @@ class ManagementObject
 
 };
 
- typedef std::map<uint64_t,ManagementObject::shared_ptr> ManagementObjectMap;
+typedef std::map<uint64_t,ManagementObject::shared_ptr> ManagementObjectMap;
 
 }}
             

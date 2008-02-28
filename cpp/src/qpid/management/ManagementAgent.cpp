@@ -24,13 +24,13 @@
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
-#include <qpid/framing/AMQFrame.h>
 #include <list>
 
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::broker;
 using namespace qpid::sys;
+using namespace std;
 
 ManagementAgent::shared_ptr ManagementAgent::agent;
 bool                        ManagementAgent::enabled = 0;
@@ -39,6 +39,7 @@ ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
     nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
+    nextRemotePrefix = 101;
 }
 
 ManagementAgent::~ManagementAgent () {}
@@ -87,6 +88,15 @@ void ManagementAgent::addObject (ManagementObject::shared_ptr object,
 
     object->setObjectId (objectId);
     managementObjects[objectId] = object;
+
+    // If we've already seen instances of this object type, we're done.
+    if (!object->firstInstance ())
+        return;
+
+    // This is the first object of this type that we've seen, update the schema
+    // inventory.
+    PackageMap::iterator pIter = FindOrAddPackage (object->getPackageName ());
+    AddClassLocal (pIter, object);
 }
 
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
@@ -102,15 +112,12 @@ void ManagementAgent::Periodic::fire ()
 
 void ManagementAgent::clientAdded (void)
 {
-    RWlock::ScopedRlock readLock (userLock);
-
     for (ManagementObjectMap::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
          iter++)
     {
         ManagementObject::shared_ptr object = iter->second;
-        object->setAllChanged   ();
-        object->setSchemaNeeded ();
+        object->setAllChanged ();
     }
 }
 
@@ -142,6 +149,9 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
                                   broker::Exchange::shared_ptr exchange,
                                   string   routingKey)
 {
+    if (exchange.get() == 0)
+        return;
+
     intrusive_ptr<Message> msg (new Message ());
     AMQFrame method (in_place<MessageTransferBody>(
                          ProtocolVersion(), 0, exchange->getName (), 0, 0));
@@ -170,7 +180,6 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
 void ManagementAgent::PeriodicProcessing (void)
 {
 #define BUFSIZE   65536
-#define THRESHOLD 16384
     RWlock::ScopedWlock writeLock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
@@ -185,18 +194,6 @@ void ManagementAgent::PeriodicProcessing (void)
          iter++)
     {
         ManagementObject::shared_ptr object = iter->second;
-
-        if (object->getSchemaNeeded ())
-        {
-            Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer, 'S');
-            object->writeSchema (msgBuffer);
-
-            contentSize = BUFSIZE - msgBuffer.available ();
-            msgBuffer.reset ();
-            routingKey = "mgmt.schema." + object->getClassName ();
-            SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
-        }
 
         if (object->getConfigChanged () || object->isDeleted ())
         {
@@ -239,17 +236,30 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
                                        const string&     routingKey,
                                        const FieldTable* /*args*/)
 {
-    size_t    pos, start;
+    RWlock::ScopedRlock readLock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
-    uint32_t  contentSize;
 
-    if (routingKey.compare (0, 7, "method.") != 0)
+    if (routingKey.compare (0, 13, "agent.method.") == 0)
+        dispatchMethod (msg, routingKey, 13);
+
+    else if (routingKey.length () == 5 &&
+        routingKey.compare (0, 5, "agent") == 0)
+        dispatchAgentCommand (msg);
+
+    else
     {
         QPID_LOG (debug, "Illegal routing key for dispatch: " << routingKey);
         return;
     }
+}
 
-    start = 7;
+void ManagementAgent::dispatchMethod (Message&      msg,
+                                      const string& routingKey,
+                                      size_t        first)
+{
+    size_t    pos, start = first;
+    uint32_t  contentSize;
+
     if (routingKey.length () == start)
     {
         QPID_LOG (debug, "Missing package-name in routing key: " << routingKey);
@@ -279,13 +289,11 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     string methodName = routingKey.substr (start, routingKey.length () - start);
 
     contentSize = msg.encodedContentSize ();
-    if (contentSize < 8 || contentSize > 65536)
+    if (contentSize < 8 || contentSize > MA_BUFFER_SIZE)
         return;
 
-    char     *inMem  = new char[contentSize];
-    char     outMem[4096]; // TODO Fix This
-    Buffer   inBuffer  (inMem,  contentSize);
-    Buffer   outBuffer (outMem, 4096);
+    Buffer   inBuffer  (inputBuffer,  MA_BUFFER_SIZE);
+    Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
     uint8_t  opcode, unused;
 
@@ -321,7 +329,7 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
         return;
     }
 
-    EncodeHeader (outBuffer, 'R');
+    EncodeHeader (outBuffer, 'm');
     outBuffer.putLong (methodId);
 
     ManagementObjectMap::iterator iter = managementObjects.find (objId);
@@ -335,9 +343,233 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
         iter->second->doMethod (methodName, inBuffer, outBuffer);
     }
 
-    outLen = 4096 - outBuffer.available ();
+    outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     SendBuffer (outBuffer, outLen, dExchange, replyToKey);
-    free (inMem);
+}
+
+void ManagementAgent::handleHello (Buffer&, string replyToKey)
+{
+    Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+    uint32_t outLen;
+
+    uint8_t* dat = (uint8_t*) "Broker ID";
+    EncodeHeader (outBuffer, 'I');
+    outBuffer.putShort (9);
+    outBuffer.putRawData (dat, 9);
+
+    outLen = MA_BUFFER_SIZE - outBuffer.available ();
+    outBuffer.reset ();
+    SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+}
+
+void ManagementAgent::handlePackageQuery (Buffer&, string replyToKey)
+{
+    for (PackageMap::iterator pIter = packages.begin ();
+         pIter != packages.end ();
+         pIter++)
+    {
+        Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+        uint32_t outLen;
+
+        EncodeHeader (outBuffer, 'p');
+        EncodePackageIndication (outBuffer, pIter);
+        outLen = MA_BUFFER_SIZE - outBuffer.available ();
+        outBuffer.reset ();
+        SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+    }
+}
+
+void ManagementAgent::handlePackageInd (Buffer& inBuffer, string /*replyToKey*/)
+{
+    std::string packageName;
+
+    inBuffer.getShortString (packageName);
+    FindOrAddPackage (packageName);
+}
+
+void ManagementAgent::handleClassQuery (Buffer& inBuffer, string replyToKey)
+{
+    std::string packageName;
+
+    inBuffer.getShortString (packageName);
+    PackageMap::iterator pIter = packages.find (packageName);
+    if (pIter != packages.end ())
+    {
+        ClassMap cMap = pIter->second;
+        for (ClassMap::iterator cIter = cMap.begin ();
+             cIter != cMap.end ();
+             cIter++)
+        {
+            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+
+            EncodeHeader (outBuffer, 'q');
+            EncodeClassIndication (outBuffer, pIter, cIter);
+            outLen = MA_BUFFER_SIZE - outBuffer.available ();
+            outBuffer.reset ();
+            SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+        }
+    }
+}
+
+void ManagementAgent::handleSchemaQuery (Buffer& inBuffer, string replyToKey)
+{
+    string         packageName;
+    SchemaClassKey key;
+
+    inBuffer.getShortString (packageName);
+    inBuffer.getShortString (key.name);
+    inBuffer.getBin128      (key.hash);
+
+    PackageMap::iterator pIter = packages.find (packageName);
+    if (pIter != packages.end ())
+    {
+        ClassMap cMap = pIter->second;
+        ClassMap::iterator cIter = cMap.find (key);
+        if (cIter != cMap.end ())
+        {
+            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+            SchemaClass classInfo = cIter->second;
+
+            if (classInfo.writeSchemaCall != 0)
+            {
+                EncodeHeader (outBuffer, 's');
+                classInfo.writeSchemaCall (outBuffer);
+                outLen = MA_BUFFER_SIZE - outBuffer.available ();
+                outBuffer.reset ();
+                SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+            }
+            else
+            {
+                // TODO: Forward request to remote agent.
+            }
+
+            clientAdded ();
+            // TODO: Send client-added to each remote agent.
+        }
+    }
+}
+
+uint32_t ManagementAgent::assignPrefix (uint32_t /*requestedPrefix*/)
+{
+    // TODO: Allow remote agents to keep their requested prefixes if able.
+    return nextRemotePrefix++;
+}
+
+void ManagementAgent::handleAttachRequest (Buffer& inBuffer, string replyToKey)
+{
+    string   label;
+    uint32_t requestedPrefix;
+    uint32_t assignedPrefix;
+
+    inBuffer.getShortString (label);
+    requestedPrefix = inBuffer.getLong ();
+    assignedPrefix  = assignPrefix (requestedPrefix);
+
+    Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+    uint32_t outLen;
+
+    EncodeHeader (outBuffer, 'a');
+    outBuffer.putLong (assignedPrefix);
+    outLen = MA_BUFFER_SIZE - outBuffer.available ();
+    outBuffer.reset ();
+    SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+}
+
+void ManagementAgent::dispatchAgentCommand (Message& msg)
+{
+    Buffer   inBuffer (inputBuffer,  MA_BUFFER_SIZE);
+    uint8_t  opcode, unused;
+    string   replyToKey;
+
+    const framing::MessageProperties* p =
+        msg.getFrames().getHeaders()->get<framing::MessageProperties>();
+    if (p && p->hasReplyTo())
+    {
+        const framing::ReplyTo& rt = p->getReplyTo ();
+        replyToKey = rt.getRoutingKey ();
+    }
+    else
+        return;
+
+    msg.encodeContent (inBuffer);
+    inBuffer.reset ();
+
+    if (!CheckHeader (inBuffer, &opcode, &unused))
+        return;
+
+    if      (opcode == 'H') handleHello         (inBuffer, replyToKey);
+    else if (opcode == 'P') handlePackageQuery  (inBuffer, replyToKey);
+    else if (opcode == 'p') handlePackageInd    (inBuffer, replyToKey);
+    else if (opcode == 'Q') handleClassQuery    (inBuffer, replyToKey);
+    else if (opcode == 'S') handleSchemaQuery   (inBuffer, replyToKey);
+    else if (opcode == 'A') handleAttachRequest (inBuffer, replyToKey);
+}
+
+ManagementAgent::PackageMap::iterator ManagementAgent::FindOrAddPackage (std::string name)
+{
+    PackageMap::iterator pIter = packages.find (name);
+    if (pIter != packages.end ())
+        return pIter;
+
+    // No such package found, create a new map entry.
+    pair<PackageMap::iterator, bool> result =
+        packages.insert (pair<string, ClassMap> (name, ClassMap ()));
+    QPID_LOG (debug, "ManagementAgent added package " << name);
+
+    // Publish a package-indication message
+    Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+    uint32_t outLen;
+
+    EncodeHeader (outBuffer, 'p');
+    EncodePackageIndication (outBuffer, result.first);
+    outLen = MA_BUFFER_SIZE - outBuffer.available ();
+    outBuffer.reset ();
+    SendBuffer (outBuffer, outLen, mExchange, "mgmt.schema.package");
+
+    return result.first;
+}
+
+void ManagementAgent::AddClassLocal (PackageMap::iterator         pIter,
+                                     ManagementObject::shared_ptr object)
+{
+    SchemaClassKey key;
+    ClassMap&      cMap = pIter->second;
+
+    key.name = object->getClassName ();
+    memcpy (&key.hash, object->getMd5Sum (), 16);
+
+    ClassMap::iterator cIter = cMap.find (key);
+    if (cIter != cMap.end ())
+        return;
+
+    // No such class found, create a new class with local information.
+    QPID_LOG (debug, "ManagementAgent added class " << pIter->first << "." <<
+              key.name);
+    SchemaClass classInfo;
+
+    classInfo.writeSchemaCall = object->getWriteSchemaCall ();
+    cMap[key] = classInfo;
+
+    // TODO: Publish a class-indication message
+}
+
+void ManagementAgent::EncodePackageIndication (Buffer&              buf,
+                                               PackageMap::iterator pIter)
+{
+    buf.putShortString ((*pIter).first);
+}
+
+void ManagementAgent::EncodeClassIndication (Buffer&              buf,
+                                             PackageMap::iterator pIter,
+                                             ClassMap::iterator   cIter)
+{
+    SchemaClassKey key = (*cIter).first;
+
+    buf.putShortString ((*pIter).first);
+    buf.putShortString (key.name);
+    buf.putBin128      (key.hash);
 }
 

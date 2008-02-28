@@ -47,7 +47,11 @@
   <class name="system">
     <configElement name="sysId" index="y" type="sstr" access="RC"/>
 
-    <!-- RT config/instrumentation TBD -->
+    <instElement name="osName"   type="sstr" desc="Operating System Name"/>
+    <instElement name="nodeName" type="sstr" desc="Node Name"/>
+    <instElement name="release"  type="sstr"/>
+    <instElement name="version"  type="sstr"/>
+    <instElement name="machine"  type="sstr"/>
 
   </class>
 
@@ -57,20 +61,18 @@
   ===============================================================
   -->
   <class name="broker">
-    <configElement name="systemRef"            type="objId"  access="RC" index="y" desc="System ID"/>
+    <configElement name="systemRef"            type="objId"  access="RC" index="y" desc="System ID" parentRef="y"/>
     <configElement name="port"                 type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
     <configElement name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
     <configElement name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
     <configElement name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <configElement name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
-    <configElement name="storeLib"             type="sstr"   access="RO" desc="Name of persistent storage library"/>
-    <configElement name="asyncStore"           type="bool"   access="RO" desc="Use async persistent store"/>
     <configElement name="mgmtPubInterval"      type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
-    <configElement name="initialDiskPageSize"  type="uint32" access="RO" desc="Number of disk pages allocated for storage"/>
-    <configElement name="initialPagesPerQueue" type="uint32" access="RO" desc="Number of disk pages allocated per queue"/>
     <configElement name="clusterName"          type="sstr"   access="RO"
-                   desc="Name of cluster this server is a member of, zero-length for standalone server"/>
+                   desc="Name of cluster this server is a member of"/>
     <configElement name="version"              type="sstr"   access="RO" desc="Running software version"/>
+    <configElement name="dataDirEnabled"       type="bool"   access="RO" desc="Persistent configuration storage enabled"/>
+    <configElement name="dataDir"              type="sstr"   access="RO" desc="Persistent configuration storage location"/>
 
     <method name="joinCluster">
       <arg name="clusterName" dir="I" type="sstr"/>
@@ -137,9 +139,7 @@
     <instElement name="consumers"           type="hilo32"  unit="consumer"    desc="Current consumers on queue"/>
     <instElement name="bindings"            type="hilo32"  unit="binding"     desc="Current bindings"/>
     <instElement name="unackedMessages"     type="hilo32"  unit="message"     desc="Messages consumed but not yet acked"/>
-    <instElement name="messageLatencyMin"   type="uint64"  unit="nanosecond"  desc="Minimum broker latency through this queue"/>
-    <instElement name="messageLatencyMax"   type="uint64"  unit="nanosecond"  desc="Maximum broker latency through this queue"/>
-    <instElement name="messageLatencyAvg"   type="uint64"  unit="nanosecond"  desc="Average broker latency through this queue"/>
+    <instElement name="messageLatency"      type="mmaTime" unit="nanosecond"  desc="Broker latency through this queue"/>
 
     <method name="purge" desc="Discard all messages on queue"/>
   </class>
@@ -203,6 +203,9 @@
   ===============================================================
   -->
   <class name="link">
+
+    This class represents an inter-broker connection.
+
     <configElement name="vhostRef" type="objId"  access="RC" index="y" parentRef="y"/>
     <configElement name="address"  type="sstr"   access="RC" index="y"/>
 
