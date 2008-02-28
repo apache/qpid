@@ -20,6 +20,24 @@
  */
 package org.apache.qpid.jndi;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.Queue;
+import javax.jms.Topic;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.spi.InitialContextFactory;
+
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQHeadersExchange;
@@ -30,27 +48,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.Queue;
-import javax.jms.Topic;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.spi.InitialContextFactory;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
@@ -184,6 +183,17 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 Topic t = createTopic(entry.getValue().toString());
                 if (t != null)
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        StringBuffer b = new StringBuffer();
+                        b.append("Creating the topic: " + jndiName +  " with the following binding keys ");
+                        for (AMQShortString binding:((AMQTopic)t).getBindingKeys())
+                        {
+                            b.append(binding.toString()).append(",");
+                        }
+
+                        _logger.debug(b.toString());
+                    }
                     data.put(jndiName, t);
                 }
             }
@@ -219,7 +229,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         catch (URISyntaxException urlse)
         {
-            _logger.warn("Unable to destination:" + urlse);
+            _logger.warn("Unable to create destination:" + urlse, urlse);
 
             return null;
         }
@@ -268,7 +278,17 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         else if (value instanceof String)
         {
-            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, new AMQShortString((String) value));
+            String[] keys = ((String)value).split(",");
+            AMQShortString[] bindings = new AMQShortString[keys.length];
+            int i = 0;
+            for (String key:keys)
+            {
+                bindings[i] = new AMQShortString(key);
+                i++;
+            }
+            // The Destination has a dual nature. If this was used for a producer the key is used
+            // for the routing key. If it was used for the consumer it becomes the bindingKey
+            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME,bindings[0],null,bindings);
         }
         else if (value instanceof BindingURL)
         {

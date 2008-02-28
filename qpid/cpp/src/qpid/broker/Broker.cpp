@@ -109,7 +109,8 @@ Broker::Broker(const Broker::Options& conf) :
     store(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     factory(*this),
-    sessionManager(conf.ack)
+    sessionManager(conf.ack),
+    previewSessionManager(conf.ack)
 {
     // Early-Initialize plugins
     const Plugin::Plugins& plugins=Plugin::getPlugins();

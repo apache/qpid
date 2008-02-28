@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'amqpgen'
+require 'pathname'
 
 #
 # Run a set of code generation templates.
@@ -18,17 +19,39 @@ EOS
   exit 1
 end
 
-Outdir=ARGV[0]
-Specs=ARGV.grep(/\.xml$/)
-Amqp=AmqpRoot.new(*Specs)
+# Create array of specs by version
+def parse_specs(specs)
+  roots={ }
+  specs.each { |spec|
+    root=AmqpRoot.new(spec)
+    ver=root.version
+    if (roots[ver])
+      roots[ver].merge(root)
+    else
+      roots[ver]=root
+    end
+  }
+  roots
+end
 
 # Run selected templates
 if ARGV.any? { |arg| arg=="all" }
-  templates=Dir["#{File.dirname __FILE__}/templates/*.rb"]
+  templates=Dir["#{File.dirname __FILE__}/*/*.rb"]
 else
   templates=ARGV.grep(/\.rb$/)
 end
-templates.each { |t| load t }
+
+$outdir=ARGV[0]
+$models=parse_specs(ARGV.grep(/\.xml$/))
+templates.each { |t|
+  ver=Pathname.new(t).dirname.basename.to_s
+  $amqp=$models[ver]
+  if $amqp
+    load t
+  else
+    puts "Warning: skipping #{t}, no spec file for version #{ver}."
+  end
+}
 
 def make_continue(lines) lines.join(" \\\n    "); end
 
@@ -40,7 +63,7 @@ if makefile
   generator_files=Dir["**/*.rb"] << File.basename(__FILE__)
   Dir.chdir dir
   rgen_generator=generator_files.map{ |f| "$(rgen_dir)/#{f}" }
-  rgen_srcs=GenFiles.get.map{ |f| "#{Outdir}/#{f}" }
+  rgen_srcs=GenFiles.get.map{ |f| "#{$outdir}/#{f}" }
 
   File.open(makefile, 'w') { |out|
     out << <<EOS
@@ -51,13 +74,13 @@ rgen_generator=#{make_continue rgen_generator}
 
 rgen_client_cpp=#{make_continue(rgen_srcs.grep(%r|/qpid/client/.+\.cpp$|))}
 
-rgen_common_cpp=#{make_continue(rgen_srcs.grep(%r|qpid/framing/.+\.cpp$|))}
+rgen_common_cpp=#{make_continue(rgen_srcs.grep(%r{qpid/(framing|amqp_.+)/.+\.cpp$}))}
 
 rgen_srcs=#{make_continue rgen_srcs}
 
 # Header file install rules.
 EOS
-    ["framing", "client/no_keyword","client", "broker"].each { |ns|
+    ["amqp_0_10", "framing", "client/no_keyword","client", "broker"].each { |ns|
       dir="qpid/#{ns}"
       dir_ = dir.tr("/", "_")
       regex=%r|#{dir}/[^/]+\.h$|
@@ -69,7 +92,7 @@ EOS
     }
     out << <<EOS
 if GENERATE
-$(rgen_srcs) $(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
+$(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
 	$(rgen_cmd)
 
 # Empty rule in case a generator file is renamed/removed.

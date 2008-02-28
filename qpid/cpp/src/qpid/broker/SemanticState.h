@@ -45,7 +45,7 @@
 namespace qpid {
 namespace broker {
 
-class SessionState;
+class SessionContext;
 
 /**
  * SemanticState holds the L3 and L4 state of an open session, whether
@@ -98,7 +98,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     typedef boost::ptr_map<std::string,ConsumerImpl> ConsumerImplMap;
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
-    SessionState& session;
+    SessionContext& session;
     DeliveryAdapter& deliveryAdapter;
     Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
@@ -129,10 +129,10 @@ class SemanticState : public framing::FrameHandler::Chains,
     void cancel(ConsumerImpl&);
 
   public:
-    SemanticState(DeliveryAdapter&, SessionState&);
+    SemanticState(DeliveryAdapter&, SessionContext&);
     ~SemanticState();
 
-    SessionState& getSession() { return session; }
+    SessionContext& getSession() { return session; }
     
     /**
      * Get named queue, never returns 0.

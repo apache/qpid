@@ -11,10 +11,12 @@ EXTRA_DIST= $(platform_dist)
 # This phony target is needed by generated makefile fragments:
 force:
 
-# AMQP_XML is defined in ../configure.ac
-specs=@AMQP_XML@ $(top_srcdir)/xml/cluster.xml
-
 if GENERATE
+
+# AMQP_PREVIEW_XML and AMQP_FINAL_XML are defined in ../configure.ac
+amqp_99_0_xml=@AMQP_PREVIEW_XML@  $(top_srcdir)/xml/cluster.xml
+amqp_0_10_xml=@AMQP_FINAL_XML@
+specs=$(amqp_99_0_xml) $(amqp_0_10_xml)
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
@@ -101,6 +103,7 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
+  qpid/amqp_0_10/helpers.cpp \
   qpid/Serializer.h \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/Codec.h \
@@ -166,6 +169,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PreviewConnection.cpp \
   qpid/broker/PreviewConnectionHandler.cpp \
   qpid/broker/PreviewSessionHandler.cpp \
+  qpid/broker/PreviewSessionManager.cpp \
+  qpid/broker/PreviewSessionState.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -247,6 +252,7 @@ libqpidclient_la_SOURCES =			\
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
+  qpid/amqp_0_10/helpers.h \
   qpid/assert.h \
   qpid/DataDir.h \
   qpid/Exception.h \
@@ -270,6 +276,8 @@ nobase_include_HEADERS = \
   qpid/broker/PreviewConnection.h \
   qpid/broker/PreviewConnectionHandler.h \
   qpid/broker/PreviewSessionHandler.h \
+  qpid/broker/PreviewSessionManager.h \
+  qpid/broker/PreviewSessionState.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionFactory.h \

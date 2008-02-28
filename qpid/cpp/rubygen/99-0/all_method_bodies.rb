@@ -17,5 +17,5 @@ class AllMethodBodiesGen < CppGen
   end
 end
 
-AllMethodBodiesGen.new(Outdir, Amqp).generate();
+AllMethodBodiesGen.new($outdir, $amqp).generate();
 

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,12 +23,18 @@ package org.apache.qpid.test.unit.client.destinationurl;
 import junit.framework.TestCase;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.test.unit.basic.PropertyValueTest;
 import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URISyntaxException;
 
 public class DestinationURLTest extends TestCase
 {
-    public void testFullURL() throws URLSyntaxException
+    private static final Logger _logger = LoggerFactory.getLogger(DestinationURLTest.class);
+
+    public void testFullURL() throws URISyntaxException
     {
 
         String url = "exchange.Class://exchangeName/Destination/Queue";
@@ -43,7 +49,7 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals("Queue"));
     }
 
-    public void testQueue() throws URLSyntaxException
+    public void testQueue() throws URISyntaxException
     {
 
         String url = "exchangeClass://exchangeName//Queue";
@@ -58,7 +64,7 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals("Queue"));
     }
 
-    public void testQueueWithOption() throws URLSyntaxException
+    public void testQueueWithOption() throws URISyntaxException
     {
 
         String url = "exchangeClass://exchangeName//Queue?option='value'";
@@ -75,7 +81,7 @@ public class DestinationURLTest extends TestCase
     }
 
 
-    public void testDestination() throws URLSyntaxException
+    public void testDestination() throws URISyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/";
@@ -90,7 +96,7 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals(""));
     }
 
-    public void testDestinationWithOption() throws URLSyntaxException
+    public void testDestinationWithOption() throws URISyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/?option='value'";
@@ -107,7 +113,7 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getOption("option").equals("value"));
     }
 
-    public void testDestinationWithMultiOption() throws URLSyntaxException
+    public void testDestinationWithMultiOption() throws URISyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/?option='value',option2='value2'";
@@ -123,7 +129,7 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getOption("option2").equals("value2"));
     }
 
-    public void testDestinationWithNoExchangeDefaultsToDirect() throws URLSyntaxException
+    public void testDestinationWithNoExchangeDefaultsToDirect() throws URISyntaxException
     {
 
         String url = "IBMPerfQueue1?durable='true'";
@@ -136,6 +142,41 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getQueueName().equals("IBMPerfQueue1"));
 
         assertTrue(dest.getOption("durable").equals("true"));
+    }
+
+    public void testDestinationWithMultiBindingKeys() throws URISyntaxException
+    {
+
+        String url = "exchangeClass://exchangeName/Destination/?bindingkey='key1',bindingkey='key2'";
+
+        AMQBindingURL dest = new AMQBindingURL(url);
+
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals("Destination"));
+        assertTrue(dest.getQueueName().equals(""));
+
+        assertTrue(dest.getBindingKeys().length == 2);
+    }
+
+    // You can only specify only a routing key or binding key, but not both.
+    public void testDestinationIfOnlyRoutingKeyOrBindingKeyIsSpecified() throws URISyntaxException
+    {
+
+        String url = "exchangeClass://exchangeName/Destination/?bindingkey='key1',routingkey='key2'";
+        boolean exceptionThrown = false;
+        try
+        {
+
+            AMQBindingURL dest = new AMQBindingURL(url);
+        }
+        catch(URISyntaxException e)
+        {
+            exceptionThrown = true;
+            _logger.info("Exception thrown",e);
+        }
+
+        assertTrue("Failed to throw an URISyntaxException when both the bindingkey and routingkey is specified",exceptionThrown);
     }
 
     public static junit.framework.Test suite()

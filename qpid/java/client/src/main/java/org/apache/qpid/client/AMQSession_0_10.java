@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
 import java.util.Map;
@@ -159,7 +160,7 @@ public class AMQSession_0_10 extends AMQSession
         AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
         TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
-        
+
         _subscriptions.put(name, subscriber);
         _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
 
@@ -213,7 +214,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param arguments    0_8 specific
      */
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey,
-                              final FieldTable arguments, final AMQShortString exchangeName)
+                              final FieldTable arguments, final AMQShortString exchangeName, final AMQDestination destination)
             throws AMQException, FailoverException
     {
         Map args = FiledTableSupport.convertToMap(arguments);
@@ -222,7 +223,12 @@ public class AMQSession_0_10 extends AMQSession
         {
             args.put("x-match", "any");
         }
-        getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), routingKey.toString(), args);
+
+        for (AMQShortString rk: destination.getBindingKeys())
+        {
+            _logger.debug("Binding queue : " + queueName.toString() + " exchange: " + exchangeName.toString() + " using binding key " + rk.asString());
+            getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), rk.toString(), args);
+        }
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
@@ -238,6 +244,7 @@ public class AMQSession_0_10 extends AMQSession
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
+        getQpidSession().sync();
         getQpidSession().sessionClose();
         getCurrentException();
     }
@@ -350,19 +357,37 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * Bind a queue with an exchange.
      */
-    public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName,
-                                final AMQShortString routingKey) throws JMSException
+
+    public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
+    throws JMSException
+    {
+        return isQueueBound(exchangeName,queueName,routingKey,null);
+    }
+
+    public boolean isQueueBound(final AMQDestination destination) throws JMSException
+    {
+        return isQueueBound(destination.getExchangeName(),destination.getAMQQueueName(),destination.getRoutingKey(),destination.getBindingKeys());
+    }
+
+    public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey,AMQShortString[] bindingKeys)
+    throws JMSException
     {
         String rk = "";
         boolean res;
-        if (routingKey != null)
+        if (bindingKeys != null && bindingKeys.length>0)
+        {
+            rk = bindingKeys[0].toString();
+        }
+        else if (routingKey != null)
         {
             rk = routingKey.toString();
         }
+
         Future<BindingQueryResult> result =
-                getQpidSession().bindingQuery(exchangeName.toString(), queueName.toString(), rk, null);
+            getQpidSession().bindingQuery(exchangeName.toString(),queueName.toString(), rk, null);
         BindingQueryResult bindingQueryResult = result.get();
-        if (routingKey == null)
+
+        if (rk == null)
         {
             res = !(bindingQueryResult.getExchangeNotFound() || bindingQueryResult.getQueueNotFound());
         }
@@ -577,7 +602,7 @@ public class AMQSession_0_10 extends AMQSession
         {
             // this is done so that we can produce to a temporary queue beofre we create a consumer
             sendCreateQueue(result.getRoutingKey(), result.isAutoDelete(), result.isDurable(), result.isExclusive());
-            sendQueueBind(result.getRoutingKey(), result.getRoutingKey(), new FieldTable(), result.getExchangeName());
+            sendQueueBind(result.getRoutingKey(), result.getRoutingKey(), new FieldTable(), result.getExchangeName(),result);
             result.setQueueName(result.getRoutingKey());
         }
         catch (Exception e)
@@ -701,7 +726,7 @@ public class AMQSession_0_10 extends AMQSession
             AMQShortString topicName;
             if (topic instanceof AMQTopic)
             {
-                topicName=((AMQTopic) topic).getRoutingKey();
+                topicName=((AMQTopic) topic).getBindingKeys()[0];
             }
             else
             {

@@ -20,28 +20,29 @@
  */
 package org.apache.qpid.url;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AMQBindingURL implements BindingURL
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
 
     String _url;
-    AMQShortString _exchangeClass;
-    AMQShortString _exchangeName;
-    AMQShortString _destinationName;
-    AMQShortString _queueName;
+    AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+    AMQShortString _exchangeName = new AMQShortString("");
+    AMQShortString _destinationName = new AMQShortString("");;
+    AMQShortString _queueName = new AMQShortString("");
+    AMQShortString[] _bindingKeys = new AMQShortString[0];
     private HashMap<String, String> _options;
 
-    public AMQBindingURL(String url) throws URLSyntaxException
+    public AMQBindingURL(String url) throws URISyntaxException
     {
         // format:
         // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
@@ -52,116 +53,35 @@ public class AMQBindingURL implements BindingURL
         parseBindingURL();
     }
 
-    private void parseBindingURL() throws URLSyntaxException
+    private void parseBindingURL() throws URISyntaxException
     {
-        try
-        {
-            URI connection = new URI(_url);
-
-            String exchangeClass = connection.getScheme();
-
-            if (exchangeClass == null)
-            {
-                _url = ExchangeDefaults.DIRECT_EXCHANGE_CLASS + "://" + "" + "//" + _url;
-                // URLHelper.parseError(-1, "Exchange Class not specified.", _url);
-                parseBindingURL();
-
-                return;
-            }
-            else
-            {
-                setExchangeClass(exchangeClass);
-            }
-
-            String exchangeName = connection.getHost();
-
-            if (exchangeName == null)
-            {
-                if (getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
-                {
-                    setExchangeName("");
-                }
-                else
-                {
-                    throw URLHelper.parseError(-1, "Exchange Name not specified.", _url);
-                }
-            }
-            else
-            {
-                setExchangeName(exchangeName);
-            }
-
-            String queueName;
-
-            if ((connection.getPath() == null) || connection.getPath().equals(""))
-            {
-                throw URLHelper.parseError(_url.indexOf(_exchangeName.toString()) + _exchangeName.length(),
-                    "Destination or Queue requried", _url);
-            }
-            else
-            {
-                int slash = connection.getPath().indexOf("/", 1);
-                if (slash == -1)
-                {
-                    throw URLHelper.parseError(_url.indexOf(_exchangeName.toString()) + _exchangeName.length(),
-                        "Destination requried", _url);
-                }
-                else
-                {
-                    String path = connection.getPath();
-                    setDestinationName(path.substring(1, slash));
-
-                    // We don't set queueName yet as the actual value we use depends on options set
-                    // when we are dealing with durable subscriptions
-
-                    queueName = path.substring(slash + 1);
-
-                }
-            }
-
-            URLHelper.parseOptions(_options, connection.getQuery());
-
-            processOptions();
-
-            // We can now call setQueueName as the URL is full parsed.
-
-            setQueueName(queueName);
-
-            // Fragment is #string (not used)
-            _logger.debug("URL Parsed: " + this);
-
-        }
-        catch (URISyntaxException uris)
-        {
-
-            throw URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
-
-        }
+        BindingURLParser parser = new BindingURLParser(_url,this);
+        processOptions();
+        _logger.debug("URL Parsed: " + this);
     }
 
-    private void setExchangeClass(String exchangeClass)
+    public void setExchangeClass(String exchangeClass)
     {
         setExchangeClass(new AMQShortString(exchangeClass));
     }
 
-    private void setQueueName(String name) throws URLSyntaxException
+    public void setQueueName(String name)
     {
         setQueueName(new AMQShortString(name));
     }
 
-    private void setDestinationName(String name)
+    public void setDestinationName(String name)
     {
         setDestinationName(new AMQShortString(name));
     }
 
-    private void setExchangeName(String exchangeName)
+    public void setExchangeName(String exchangeName)
     {
         setExchangeName(new AMQShortString(exchangeName));
     }
 
-    private void processOptions()
+    private void processOptions() throws URISyntaxException
     {
-        // this is where we would parse any options that needed more than just storage.
     }
 
     public String getURL()
@@ -210,34 +130,9 @@ public class AMQBindingURL implements BindingURL
         return _queueName;
     }
 
-    public void setQueueName(AMQShortString name) throws URLSyntaxException
+    public void setQueueName(AMQShortString name)
     {
-        if (_exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
-        {
-            if (Boolean.parseBoolean(getOption(OPTION_DURABLE)))
-            {
-                if (containsOption(BindingURL.OPTION_CLIENTID) && containsOption(BindingURL.OPTION_SUBSCRIPTION))
-                {
-                    _queueName =
-                        new AMQShortString(getOption(BindingURL.OPTION_CLIENTID + ":" + BindingURL.OPTION_SUBSCRIPTION));
-                }
-                else
-                {
-                    throw URLHelper.parseError(-1, "Durable subscription must have values for " + BindingURL.OPTION_CLIENTID
-                        + " and " + BindingURL.OPTION_SUBSCRIPTION + ".", _url);
-
-                }
-            }
-            else
-            {
-                _queueName = null;
-            }
-        }
-        else
-        {
-            _queueName = name;
-        }
-
+        _queueName = name;
     }
 
     public String getOption(String key)
@@ -261,7 +156,7 @@ public class AMQBindingURL implements BindingURL
         {
             if (containsOption(BindingURL.OPTION_ROUTING_KEY))
             {
-                return new AMQShortString(getOption(OPTION_ROUTING_KEY));
+                return new AMQShortString((String)getOption(OPTION_ROUTING_KEY));
             }
             else
             {
@@ -271,10 +166,27 @@ public class AMQBindingURL implements BindingURL
 
         if (containsOption(BindingURL.OPTION_ROUTING_KEY))
         {
-            return new AMQShortString(getOption(OPTION_ROUTING_KEY));
+            return new AMQShortString((String)getOption(OPTION_ROUTING_KEY));
         }
 
         return getDestinationName();
+    }
+
+    public AMQShortString[] getBindingKeys()
+    {
+        if (_bindingKeys != null && _bindingKeys.length>0)
+        {
+            return _bindingKeys;
+        }
+        else
+        {
+            return new AMQShortString[]{getRoutingKey()};
+        }
+    }
+
+    public void setBindingKeys(AMQShortString[] keys)
+    {
+        _bindingKeys = keys;
     }
 
     public void setRoutingKey(AMQShortString key)
@@ -296,6 +208,29 @@ public class AMQBindingURL implements BindingURL
 
         sb.append(URLHelper.printOptions(_options));
 
-        return sb.toString();
+        // temp hack
+        if (getRoutingKey() == null || getRoutingKey().toString().equals(""))
+        {
+
+            if (sb.toString().indexOf("?") == -1)
+            {
+                sb.append("?");
+            }
+            else
+            {
+                sb.append("&");
+            }
+
+            for (AMQShortString key :_bindingKeys)
+            {
+                sb.append(BindingURL.OPTION_BINDING_KEY).append("='").append(key.toString()).append("'&");
+            }
+
+            return sb.toString().substring(0,sb.toString().length()-1);
+        }
+        else
+        {
+            return sb.toString();
+        }
     }
 }

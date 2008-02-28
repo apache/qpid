@@ -68,7 +68,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
 
-    framing::ProtocolVersion getVersion() const { return session.getVersion();}
+    framing::ProtocolVersion getVersion() const { return session.getConnection().getVersion();}
 
 
     AccessHandler* getAccessHandler() {

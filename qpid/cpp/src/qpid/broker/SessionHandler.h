@@ -28,7 +28,7 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/ChannelHandler.h"
-#include "SessionContext.h"
+#include "qpid/framing/SequenceNumber.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -36,16 +36,18 @@ namespace qpid {
 namespace broker {
 
 class Connection;
+class ConnectionState;
 class SessionState;
 
 /**
  * A SessionHandler is associated with each active channel. It
- * receives incoming frames, handles session commands and manages the
+ * receives incoming frames, handles session controls and manages the
  * association between the channel and a session.
  */
 class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
                        public framing::AMQP_ClientOperations::SessionHandler,
-                       public SessionContext,
+                       public framing::AMQP_ServerOperations::ExecutionHandler,
+                       public framing::FrameHandler::InOutHandler,
                        private boost::noncopyable
 {
   public:
@@ -90,11 +92,16 @@ class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
     void attached(const framing::Uuid& sessionId, uint32_t detachedLifetime);
     void detached();
 
+    //Execution methods:
+    void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    
+    void flush();
+    void noop();
+    void result(uint32_t command, const std::string& data);
+    void sync();
 
     void assertAttached(const char* method) const;
     void assertActive(const char* method) const;
     void assertClosed(const char* method) const;
-
 
     Connection& connection;
     framing::ChannelHandler channel;

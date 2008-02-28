@@ -25,6 +25,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/OutputControl.h"
 #include "ConnectionState.h"
 
 
@@ -33,17 +34,13 @@
 namespace qpid {
 namespace broker {
 
-class SessionContext : public framing::FrameHandler::InOutHandler                       
+class SessionContext : public sys::OutputControl
 {
   public:
-    SessionContext(qpid::framing::OutputHandler& out) : InOutHandler(0, &out) {}
     virtual ~SessionContext(){}
     virtual ConnectionState& getConnection() = 0;
-    virtual const ConnectionState& getConnection() const = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
-    virtual const framing::AMQP_ClientProxy& getProxy() const = 0;
-    virtual void detach() = 0;
-    virtual framing::ChannelId getChannel() const = 0;
+    virtual Broker& getBroker() = 0;
 };
 
 }} // namespace qpid::broker

@@ -40,13 +40,27 @@ std::string strError(int err);
 class Exception : public std::exception
 {
   public:
-    explicit Exception(const std::string& str=std::string()) throw();
-    virtual ~Exception() throw();
+    explicit Exception(const std::string& message=std::string(),
+                       const std::string& name=std::string(),
+                       uint16_t code=0) throw();
     
-    virtual const char *what() const throw();
-    virtual std::string str() const throw();
+    virtual ~Exception() throw();
+
+    // returns "name: message"
+    virtual const char* what() const throw();
+
+    virtual std::string getName() const throw();
+    virtual std::string getMessage() const throw();
+    virtual uint16_t getCode() const throw();
+
+    // FIXME aconway 2008-02-21: backwards compat, remove?
+    std::string str() const throw() { return getMessage(); } 
+    
   private:
-    std::string msg;
+    const std::string message;
+    const std::string name;
+    const uint16_t code;
+    const std::string whatStr;
 };
 
 struct ChannelException : public Exception {
@@ -62,8 +76,7 @@ struct ConnectionException : public Exception {
 };
 
 struct ClosedException : public Exception {
-    static const std::string CLOSED_MESSAGE;
-    ClosedException(const std::string& msg=CLOSED_MESSAGE) : Exception(msg) {}
+    ClosedException(const std::string& msg=std::string());
 };
 
 } // namespace qpid
