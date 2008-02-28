@@ -20,21 +20,17 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 /**
  * @author Apache Software Foundation
  */
-public class CloseWithBlockingReceiveTest extends QpidTestCase
+public class CloseWithBlockingReceiveTest extends QpidTestBase
 {
 
 

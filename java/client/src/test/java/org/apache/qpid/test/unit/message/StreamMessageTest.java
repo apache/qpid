@@ -29,7 +29,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ import javax.jms.StreamMessage;
 /**
  * @author Apache Software Foundation
  */
-public class StreamMessageTest extends QpidTestCase
+public class StreamMessageTest extends QpidTestBase
 {
 
     private static final Logger _logger = LoggerFactory.getLogger(StreamMessageTest.class);
