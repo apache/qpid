@@ -28,7 +28,7 @@ import javax.jms.MessageListener;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 /**
  * Declare a queue and bind it to amq.direct with a 'well known' routing key,
@@ -39,10 +39,10 @@ public class Service implements MessageListener
     private final AMQConnection _connection;
     private final AMQSession _session;
 
-    private static QpidTestCase _qct;
+    private static QpidTestBase _qct;
      
 
-    public static void setQTC(QpidTestCase qtc)
+    public static void setQTC(QpidTestBase qtc)
     {
         _qct = qtc;
     }

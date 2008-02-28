@@ -21,11 +21,9 @@
 package org.apache.qpid.test.unit.close;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.QpidClientConnection;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
@@ -40,7 +38,7 @@ import javax.jms.Session;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MessageRequeueTest extends QpidTestCase
+public class MessageRequeueTest extends QpidTestBase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageRequeueTest.class);
 

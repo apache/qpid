@@ -27,7 +27,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TextMessageTest extends QpidTestCase implements MessageListener
+public class TextMessageTest extends QpidTestBase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(TextMessageTest.class);
 

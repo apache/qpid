@@ -26,7 +26,7 @@ import junit.framework.TestSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class QueueTest extends AbstractXATestCase
+public class QueueTest extends AbstractXATestBase
 {
     /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(QueueTest.class);

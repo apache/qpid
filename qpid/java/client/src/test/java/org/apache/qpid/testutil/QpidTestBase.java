@@ -36,10 +36,10 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-public class QpidTestCase extends TestCase
+public class QpidTestBase extends TestCase
 {
 
-    private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidTestBase.class);
 
     // system properties
     private static final String BROKER = "broker";
