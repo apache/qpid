@@ -33,6 +33,7 @@ import org.apache.qpid.jms.Session;
 import junit.framework.TestCase;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
 
@@ -115,8 +116,8 @@ public class ConnectionTest extends TestCase
         }
     }
 
-     //fixme AMQAuthenticationException is not propogaged
-    public void PasswordFailureConnection() throws Exception
+    //See QPID-771
+    public void testPasswordFailureConnection() throws Exception
     {
         try
         {
@@ -125,10 +126,9 @@ public class ConnectionTest extends TestCase
         }
         catch (AMQException amqe)
         {
-            if (!(amqe instanceof AMQAuthenticationException))
-            {
-                fail("Correct exception not thrown. Excpected 'AMQAuthenticationException' got: " + amqe);
-            }
+            assertEquals("Exception was wrong type", JMSException.class, amqe.getCause().getClass());
+            Exception linked = ((JMSException) amqe.getCause()).getLinkedException();
+            assertEquals("Exception was wrong type", AMQAuthenticationException.class, linked.getClass());
         }
     }
 

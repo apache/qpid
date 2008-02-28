@@ -23,33 +23,35 @@ package org.apache.qpid.server.security.access;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.lang.reflect.Method;
-import java.security.Principal;
 
-public class AccessManagerImpl implements AccessManager
+public class ACLManager
 {
-    private static final Logger _logger = Logger.getLogger(AccessManagerImpl.class);
+    private static final Logger _logger = Logger.getLogger(ACLManager.class);
 
-    AccessManager _accessManager;
-
-    public AccessManagerImpl(String name, Configuration hostConfig) throws ConfigurationException
+    public static ACLPlugin loadACLManager(String name, Configuration hostConfig) throws ConfigurationException
     {
+        ACLPlugin aclPlugin = ApplicationRegistry.getInstance().getAccessManager();
+
         if (hostConfig == null)
         {
-            _logger.warn("No Configuration specified. Using default access controls for VirtualHost:'" + name + "'");
-            return;
+            _logger.warn("No Configuration specified. Using default ACLPlugin '" + aclPlugin.getPluginName()
+                         + "' for VirtualHost:'" + name + "'");
+            return aclPlugin;
         }
 
         String accessClass = hostConfig.getString("security.access.class");
         if (accessClass == null)
         {
-            _logger.warn("No access control specified. Using default access controls for VirtualHost:'" + name + "'");
-            return;
+
+            _logger.warn("No ACL Plugin specified. Using default ACL Plugin '" + aclPlugin.getPluginName() +
+                         "' for VirtualHost:'" + name + "'");
+            return aclPlugin;
         }
 
         Object o;
@@ -59,26 +61,35 @@ public class AccessManagerImpl implements AccessManager
         }
         catch (Exception e)
         {
-            throw new ConfigurationException("Error initialising access control: " + e, e);
+            throw new ConfigurationException("Error initialising ACL: " + e, e);
         }
 
-        if (!(o instanceof AccessManager))
+        if (!(o instanceof ACLPlugin))
         {
-            throw new ConfigurationException("Access control must implement the VirtualHostAccess interface");
+            throw new ConfigurationException("ACL Plugins must implement the ACLPlugin interface");
         }
 
-        initialiseAccessControl((AccessManager) o, hostConfig);
+        initialiseAccessControl((ACLPlugin) o, hostConfig);
 
-        _accessManager = (AccessManager) o;
+        aclPlugin = getManager((ACLPlugin) o);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Initialised ACL Plugin '" + aclPlugin.getPluginName()
+                         + "' for virtualhost '" + name + "' successfully");
+        }
 
-        _logger.info("Initialised access control for virtualhost '" + name + "' successfully");
-
+        return aclPlugin;
     }
 
 
-    private void initialiseAccessControl(AccessManager accessManager, Configuration config)
+    private static void initialiseAccessControl(ACLPlugin accessManager, Configuration config)
             throws ConfigurationException
     {
+        //First provide the ACLPlugin with the host configuration
+
+        accessManager.setConfiguaration(config);
+
+        //Provide additional attribute customisation.        
         String baseName = "security.access.attributes.attribute.";
         List<String> argumentNames = config.getList(baseName + "name");
         List<String> argumentValues = config.getList(baseName + "value");
@@ -123,33 +134,28 @@ public class AccessManagerImpl implements AccessManager
         }
     }
 
-    public AccessResult isAuthorized(Accessable accessObject, String username)
-    {
-        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
-    }
 
-    public AccessResult isAuthorized(Accessable accessObject, Principal user, AccessRights.Rights rights)
+    private static ACLPlugin getManager(ACLPlugin manager)
     {
-        if (_accessManager == null)
+        if (manager == null)
         {
-            if (ApplicationRegistry.getInstance().getAccessManager() == this)
+            if (ApplicationRegistry.getInstance().getAccessManager() == null)
             {
-                _logger.warn("No Default access manager specified DENYING ALL ACCESS");
-                return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
+                return new DenyAll();
             }
             else
             {
-                return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, user, rights);
+                return ApplicationRegistry.getInstance().getAccessManager();
             }
         }
         else
         {
-            return _accessManager.isAuthorized(accessObject, user, rights);
+            return manager;
         }
     }
 
-    public String getName()
+    public static Logger getLogger()
     {
-        return "AccessManagerImpl";
+        return _logger;
     }
 }

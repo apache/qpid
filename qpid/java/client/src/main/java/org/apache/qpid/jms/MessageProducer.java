@@ -50,4 +50,8 @@ public interface MessageProducer extends javax.jms.MessageProducer
     void send(Destination destination, Message message, int deliveryMode,
                      int priority, long timeToLive, boolean mandatory, boolean immediate)
             throws JMSException;
+
+    void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
+                     boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException;
+
 }

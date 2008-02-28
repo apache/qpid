@@ -470,7 +470,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             if (exceptions.size() > 0)
             {
-                JMSException e = exceptions.get(exceptions.size() - 1);
+                JMSException e = exceptions.get(0);
                 int code = -1;
                 try
                 {
@@ -875,11 +875,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                         {
                             long startCloseTime = System.currentTimeMillis();
 
-                            _taskPool.shutdown();
-                            closeAllSessions(null, timeout, startCloseTime);
+                        closeAllSessions(null, timeout, startCloseTime);
 
-                            if (!_taskPool.isTerminated())
-                            {
+                        //This MUST occur after we have successfully closed all Channels/Sessions
+                        _taskPool.shutdown();
+
+                        if (!_taskPool.isTerminated())
+                        {
                                 try
                                 {
                                     // adjust timeout

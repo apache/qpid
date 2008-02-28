@@ -25,20 +25,19 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class BasicPublishMethodHandler  implements StateAwareMethodListener<BasicPublishBody>
+public class BasicPublishMethodHandler implements StateAwareMethodListener<BasicPublishBody>
 {
-    private static final Logger _log = Logger.getLogger(BasicPublishMethodHandler.class);
+    private static final Logger _logger = Logger.getLogger(BasicPublishMethodHandler.class);
 
     private static final BasicPublishMethodHandler _instance = new BasicPublishMethodHandler();
 
@@ -55,12 +54,9 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
     public void methodReceived(AMQStateManager stateManager, BasicPublishBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-
-
-
-        if (_log.isDebugEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _log.debug("Publish received on channel " + channelId);
+            _logger.debug("Publish received on channel " + channelId);
         }
 
         AMQShortString exchange = body.getExchange();
@@ -89,6 +85,9 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             {
                 throw body.getChannelNotFoundException(channelId);
             }
+
+            //Access Control
+            vHost.getAccessManager().authorise(session, Permission.PUBLISH, body, e);
 
             MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             info.setExchange(exchange);

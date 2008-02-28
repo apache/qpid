@@ -209,6 +209,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
         catch (RuntimeException e)
         {
+            _logger.warn(e.getMessage());
             e.printStackTrace();
         }
 
@@ -352,18 +353,27 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void exceptionCaught(IoSession session, Throwable cause)
     {
-        if (_failoverState == FailoverState.NOT_STARTED)
-        {
-            // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
-            if (cause instanceof AMQConnectionClosedException)
-            {
-                _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
-                // this will attemp failover
+    	if (_failoverState == FailoverState.NOT_STARTED)
+    	{
+    		// if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
+    		if (cause instanceof AMQConnectionClosedException)
+    		{
+    			_logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
+    			// this will attemp failover
 
-                sessionClosed(session);
-                _connection.exceptionReceived(cause);
-            }
+    			sessionClosed(session);
+    			_connection.exceptionReceived(cause);
+    		}
 
+    		if (cause instanceof ProtocolCodecException)
+    		{
+    			_logger.info("Protocol Exception caught NOT going to attempt failover as " +
+    					"cause isn't AMQConnectionClosedException: " + cause, cause);
+
+    			AMQException amqe = new AMQException(null, "Protocol handler error: " + cause, cause);
+    			propagateExceptionToWaiters(amqe);
+    		}
+    		_connection.exceptionReceived(cause);
             // FIXME Need to correctly handle other exceptions. Things like ...
             // if (cause instanceof AMQChannelClosedException)
             // which will cause the JMSSession to end due to a channel close and so that Session needs

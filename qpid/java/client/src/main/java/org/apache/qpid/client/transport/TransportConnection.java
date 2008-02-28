@@ -76,7 +76,7 @@ public class TransportConnection
         return _openSocketRegister.remove(socketID);
     }
 
-    public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
+    public static synchronized ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
     {
         int transport = getTransport(details.getTransport());
 

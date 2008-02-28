@@ -23,14 +23,12 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.AccessRights;
 import org.apache.log4j.Logger;
 
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
@@ -79,22 +77,8 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         {
             session.setVirtualHost(virtualHost);
 
-            AccessResult result = virtualHost.getAccessManager().isAuthorized(virtualHost, session.getAuthorizedID(), AccessRights.Rights.ANY);
-
-            switch (result.getStatus())
-            {
-                default:
-                case REFUSED:
-                    String error = "Any access denied to vHost '" + virtualHostName + "' by "
-                                   + result.getAuthorizer();
-                    
-                    _logger.warn(error);
-
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, error);
-                case GRANTED:
-                    _logger.info("Granted any access to vHost '" + virtualHostName + "' for " + session.getAuthorizedID()
-                                 + " by '" + result.getAuthorizer() + "'");
-            }
+            //Perform ACL
+            virtualHost.getAccessManager().authorise(session, Permission.ACCESS ,body, virtualHost);
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)

@@ -632,7 +632,7 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    public AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/

@@ -56,7 +56,7 @@ public class JMSSelectorFilter implements MessageFilter
         catch (AMQException e)
         {
             //fixme this needs to be sorted.. it shouldn't happen
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();  
         }
         return false;
     }

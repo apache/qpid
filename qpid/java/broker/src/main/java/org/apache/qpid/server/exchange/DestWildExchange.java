@@ -86,7 +86,7 @@ public class DestWildExchange extends AbstractExchange
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
     private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _wildCardBindingKey2queues =
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
-    // private ConcurrentHashMap<AMQShortString, AMQQueue> _routingKey2queue = new ConcurrentHashMap<AMQShortString, AMQQueue>();
+
     private static final byte TOPIC_SEPARATOR = (byte)'.';
     private static final AMQShortString TOPIC_SEPARATOR_AS_SHORTSTRING = new AMQShortString(".");
     private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
@@ -279,16 +279,6 @@ public class DestWildExchange extends AbstractExchange
 
 
         AMQShortString normalizedString = AMQShortString.join(subscriptionList, TOPIC_SEPARATOR_AS_SHORTSTRING);
-/*
-        StringBuilder sb = new StringBuilder();
-        for (AMQShortString s : subscriptionList)
-        {
-            sb.append(s);
-            sb.append(TOPIC_SEPARATOR);
-        }
-
-        sb.deleteCharAt(sb.length() - 1);
-*/
 
         return normalizedString;
     }
@@ -459,11 +449,6 @@ public class DestWildExchange extends AbstractExchange
                 {
 
                     AMQShortString next = routingTokens.nextToken();
-        /*            if (next.equals(AMQP_HASH) && routingkeyTokens.get(routingkeyTokens.size() - 1).equals(AMQP_HASH))
-                    {
-                        continue;
-                    }
-        */
 
                     routingkeyTokens[token++] = next;
                 }

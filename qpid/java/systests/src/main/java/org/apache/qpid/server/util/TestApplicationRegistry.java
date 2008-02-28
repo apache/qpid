@@ -31,8 +31,8 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.AccessManager;
-import org.apache.qpid.server.security.access.AllowAll;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -54,7 +54,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     private ManagedObjectRegistry _managedObjectRegistry;
 
-    private AccessManager _accessManager;
+    private ACLPlugin _accessManager;
 
     private PrincipalDatabaseManager _databaseManager;
 
@@ -137,9 +137,14 @@ public class TestApplicationRegistry extends ApplicationRegistry
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public AccessManager getAccessManager()
+    public ACLPlugin getAccessManager()
     {
         return _accessManager;
+    }
+
+    public void setAccessManager(ACLPlugin newManager)
+    {
+        _accessManager = newManager;
     }
 
     public MessageStore getMessageStore()

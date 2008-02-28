@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,10 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.exchange.ExchangeDefaults;
+
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -37,6 +36,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -46,7 +46,7 @@ import org.apache.commons.configuration.Configuration;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
-    private static final Logger _log = Logger.getLogger(QueueDeclareHandler.class);
+    private static final Logger _logger = Logger.getLogger(QueueDeclareHandler.class);
 
     private static final QueueDeclareHandler _instance = new QueueDeclareHandler();
 
@@ -74,6 +74,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore store = virtualHost.getMessageStore();
 
+        // Perform ACL on queue Creation
+        virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
 
 
 
@@ -106,7 +108,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
                 else
                 {
-                    queue = createQueue(queueName,body, virtualHost, session);
+                    queue = createQueue(queueName, body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         //DTX MessageStore
@@ -123,8 +125,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
+                        // Perform ACL to control bindings
+                        virtualHost.getAccessManager().authorise(session, Permission.BIND, body,
+                                                                 defaultExchange, queue, queueName);
+
                         queue.bind(queueName, null, defaultExchange);
-                        _log.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");
+                        _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");
                     }
                 }
             }
@@ -156,7 +162,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                                                             queue.getConsumerCount());
             session.writeFrame(responseBody.generateFrame(channelId));
 
-            _log.info("Queue " + queueName + " declared successfully");
+            _logger.info("Queue " + queueName + " declared successfully");
         }
     }
 

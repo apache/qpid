@@ -133,7 +133,7 @@ public class TestPublisher
         }
         catch (JMSException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
     }
 
@@ -163,7 +163,7 @@ public class TestPublisher
         }
         catch (UnknownHostException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         catch (AMQException e)
         {
