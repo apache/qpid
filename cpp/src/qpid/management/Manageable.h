@@ -23,6 +23,7 @@
 #include "ManagementObject.h"
 #include "Args.h"
 #include <string>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid { 
 namespace management {

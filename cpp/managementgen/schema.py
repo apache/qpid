@@ -21,6 +21,7 @@
 
 from xml.dom.minidom import parse, parseString, Node
 from cStringIO       import StringIO
+import md5
 
 #=====================================================================================
 #
@@ -575,15 +576,18 @@ class SchemaEvent:
   def getArgCount (self):
     return len (self.args)
 
-#=====================================================================================
-#
-#=====================================================================================
+
 class SchemaClass:
-  def __init__ (self, node, typespec):
+  def __init__ (self, package, node, typespec, fragments, options):
+    self.packageName    = package
     self.configElements = []
     self.instElements   = []
     self.methods        = []
     self.events         = []
+    self.options        = options
+    self.md5Sum         = md5.new ()
+
+    self.hash (node)
 
     attrs = node.attributes
     self.name = attrs['name'].nodeValue
@@ -607,8 +611,39 @@ class SchemaClass:
           sub = SchemaEvent (self, child, typespec)
           self.events.append (sub)
 
+        elif child.nodeName == 'group':
+          self.expandFragment (child, fragments)
+
         else:
           raise ValueError ("Unknown class tag '%s'" % child.nodeName)
+
+  def hash (self, node):
+    attrs = node.attributes
+    self.md5Sum.update (node.nodeName)
+
+    for idx in range (attrs.length):
+      self.md5Sum.update (attrs.item(idx).nodeName)
+      self.md5Sum.update (attrs.item(idx).nodeValue)
+
+    for child in node.childNodes:
+      if child.nodeType == Node.ELEMENT_NODE:
+        self.hash (child)
+
+  def expandFragment (self, node, fragments):
+    attrs = node.attributes
+    name  = attrs['name'].nodeValue
+    for fragment in fragments:
+      if fragment.name == name:
+        for config in fragment.configElements:
+          self.configElements.append (config)
+        for inst   in fragment.instElements:
+          self.instElements.append (inst)
+        for method in fragment.methods:
+          self.methods.append (method)
+        for event  in fragment.events:
+          self.events.append (event)
+        return
+    raise ValueError ("Undefined group '%s'" % name)
 
   def getName (self):
     return self.name
@@ -644,13 +679,9 @@ class SchemaClass:
   def genConstructorArgs (self, stream, variables):
     # Constructor args are config elements with read-create access
     result = ""
-    first  = 1
     for element in self.configElements:
       if element.isConstructorArg ():
-        if first == 1:
-          first = 0
-        else:
-          stream.write (", ")
+        stream.write (", ")
         element.genFormalParam (stream)
 
   def genConstructorInits (self, stream, variables):
@@ -715,8 +746,8 @@ class SchemaClass:
   def genMethodArgIncludes (self, stream, variables):
     for method in self.methods:
       if method.getArgCount () > 0:
-        stream.write ("#include \"qpid/management/Args" +\
-                      method.getFullName () + ".h\"\n")
+        stream.write ("#include \"" + (self.options.include_prefix or "") +\
+                      "Args" + method.getFullName () + ".h\"\n")
 
   def genMethodCount (self, stream, variables):
     stream.write ("%d" % len (self.methods))
@@ -765,13 +796,16 @@ class SchemaClass:
   def genNameLower (self, stream, variables):
     stream.write (self.name.lower ())
 
+  def genNamePackageLower (self, stream, variables):
+    stream.write (self.packageName.lower ())
+
   def genNameUpper (self, stream, variables):
     stream.write (self.name.upper ())
 
   def genParentArg (self, stream, variables):
     for config in self.configElements:
       if config.isParentRef == 1:
-        stream.write (" _parent")
+        stream.write (", Manageable* _parent")
         return
 
   def genParentRefAssignment (self, stream, variables):
@@ -780,6 +814,13 @@ class SchemaClass:
         stream.write (config.getName () + \
                       " = _parent->GetManagementObject ()->getObjectId ();")
         return
+
+  def genSchemaMD5 (self, stream, variables):
+    sum = self.md5Sum.digest ()
+    for idx in range (len (sum)):
+      if idx != 0:
+        stream.write (",")
+      stream.write (hex (ord (sum[idx])))
 
   def genWriteConfig (self, stream, variables):
     for config in self.configElements:
@@ -790,14 +831,13 @@ class SchemaClass:
       inst.genWrite (stream);
 
 
-#=====================================================================================
-#
-#=====================================================================================
-class PackageSchema:
-  def __init__ (self, typefile, schemafile):
 
-    self.classes  = []
-    self.typespec = TypeSpec (typefile)
+class PackageSchema:
+  def __init__ (self, typefile, schemafile, options):
+
+    self.classes   = []
+    self.fragments = []
+    self.typespec  = TypeSpec (typefile)
 
     dom = parse (schemafile)
     document = dom.documentElement
@@ -810,8 +850,15 @@ class PackageSchema:
     for child in children:
       if child.nodeType == Node.ELEMENT_NODE:
         if child.nodeName == 'class':
-          cls = SchemaClass (child, self.typespec)
+          cls = SchemaClass (self.packageName, child, self.typespec,
+                             self.fragments, options)
           self.classes.append (cls)
+
+        elif child.nodeName == 'group':
+          cls = SchemaClass (self.packageName, child, self.typespec,
+                             self.fragments, options)
+          self.fragments.append (cls)
+
         else:
           raise ValueError ("Unknown schema tag '%s'" % child.nodeName)
 

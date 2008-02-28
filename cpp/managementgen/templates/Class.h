@@ -33,22 +33,24 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 {
   private:
 
-    static bool schemaNeeded;
+    static std::string packageName;
+    static std::string className;
+    static uint8_t     md5Sum[16];
+    static bool        firstInst;
 
     // Configuration Elements
 /*MGEN:Class.ConfigDeclarations*/
     // Instrumentation Elements
 /*MGEN:Class.InstDeclarations*/
     // Private Methods
-    std::string getObjectName (void) { return "/*MGEN:Class.NameLower*/"; }
-    void writeSchema          (qpid::framing::Buffer& buf);
+    static void writeSchema   (qpid::framing::Buffer& buf);
     void writeConfig          (qpid::framing::Buffer& buf);
     void writeInstrumentation (qpid::framing::Buffer& buf);
-    bool getSchemaNeeded      (void) { return schemaNeeded; }
-    void setSchemaNeeded      (void) { schemaNeeded = true; }
     void doMethod             (std::string            methodName,
                                qpid::framing::Buffer& inBuf,
                                qpid::framing::Buffer& outBuf);
+    writeSchemaCall_t getWriteSchemaCall (void) { return writeSchema; }
+    bool firstInstance (void);
 
 /*MGEN:Class.InstChangedStub*/
   public:
@@ -56,9 +58,12 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
     qpid::sys::Mutex accessorLock;
 
-    /*MGEN:Class.NameCap*/ (Manageable* coreObject, Manageable* parentObject,
-        /*MGEN:Class.ConstructorArgs*/);
+    /*MGEN:Class.NameCap*/ (Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);
+
+    std::string getPackageName (void) { return packageName; }
+    std::string getClassName   (void) { return className; }
+    uint8_t*    getMd5Sum      (void) { return md5Sum; }
 
     // Method IDs
 /*MGEN:Class.MethodIdDeclarations*/

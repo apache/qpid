@@ -32,6 +32,7 @@
 #include "SessionManager.h"
 #include "PreviewSessionManager.h"
 #include "Vhost.h"
+#include "System.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/management/Broker.h"
@@ -142,6 +143,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::ManagementAgent::shared_ptr managementAgent;
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;
+    System::shared_ptr             systemObject;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 };

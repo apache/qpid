@@ -29,7 +29,9 @@ using namespace qpid::sys;
 
 void ManagementObject::writeTimestamps (Buffer& buf)
 {
-    buf.putShortString (className);
+    buf.putShortString (getPackageName ());
+    buf.putShortString (getClassName ());
+    buf.putBin128      (getMd5Sum ());
     buf.putLongLong    (uint64_t (Duration (now ())));
     buf.putLongLong    (createTime);
     buf.putLongLong    (destroyTime);

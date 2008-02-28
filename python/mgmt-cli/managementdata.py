@@ -19,10 +19,12 @@
 # under the License.
 #
 
-from qpid.management import ManagedBroker
+import qpid
+from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
 from shlex           import split
+from qpid.client  import Client
 
 class ManagementData:
 
@@ -35,9 +37,10 @@ class ManagementData:
   # The only historical data it keeps are the high and low watermarks
   # for hi-lo statistics.
   #
-  #    tables        :== {<class-name>}
+  #    tables        :== {class-key}
   #                        {<obj-id>}
   #                          (timestamp, config-record, inst-record)
+  #    class-key     :== (<package-name>, <class-name>, <class-hash>)
   #    timestamp     :== (<last-interval-time>, <create-time>, <delete-time>)
   #    config-record :== [element]
   #    inst-record   :== [element]
@@ -58,6 +61,10 @@ class ManagementData:
     if displayId < 5000:
       return displayId + self.baseId
     return displayId - 5000 + 0x8000000000000000L
+
+  def displayClassName (self, cls):
+    (packageName, className, hash) = cls
+    return packageName + "." + className
 
   def dataHandler (self, context, className, list, timestamps):
     """ Callback for configuration and instrumentation data updates """
@@ -104,6 +111,12 @@ class ManagementData:
     finally:
       self.lock.release ()
 
+  def configHandler (self, context, className, list, timestamps):
+    self.dataHandler (0, className, list, timestamps);
+
+  def instHandler (self, context, className, list, timestamps):
+    self.dataHandler (1, className, list, timestamps);
+
   def methodReply (self, broker, sequence, status, sText, args):
     """ Callback for method-reply messages """
     self.lock.acquire ()
@@ -121,12 +134,8 @@ class ManagementData:
       self.schema[className] = (configs, insts, methods, events)
 
   def __init__ (self, disp, host, port=5672, username="guest", password="guest",
-                spec="../../specs/amqp.0-10-preview.xml"):
-    self.broker = ManagedBroker (host, port, username, password, spec)
-    self.broker.configListener          (0,    self.dataHandler)
-    self.broker.instrumentationListener (1,    self.dataHandler)
-    self.broker.methodListener          (None, self.methodReply)
-    self.broker.schemaListener          (None, self.schemaHandler)
+                specfile="../../specs/amqp.0-10-preview.xml"):
+    self.spec           = qpid.spec.load (specfile)
     self.lock           = Lock ()
     self.tables         = {}
     self.schema         = {}
@@ -135,24 +144,33 @@ class ManagementData:
     self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
-    self.broker.start ()
+
+    self.client = Client (host, port, self.spec)
+    self.client.start ({"LOGIN": username, "PASSWORD": password})
+    self.channel = self.client.channel (1)
+
+    self.mclient = managementClient (self.spec, None, self.configHandler,
+                                     self.instHandler, self.methodReply)
+    self.mclient.schemaListener (self.schemaHandler)
+    self.mch = managementChannel (self.channel, self.mclient.topicCb, self.mclient.replyCb)
+    self.mclient.addChannel (self.mch)
 
   def close (self):
-    self.broker.stop ()
+    self.mclient.removeChannel (self.mch)
 
   def refName (self, oid):
     if oid == 0:
       return "NULL"
     return str (self.displayObjId (oid))
 
-  def valueDisplay (self, className, key, value):
+  def valueDisplay (self, classKey, key, value):
     for kind in range (2):
-      schema = self.schema[className][kind]
+      schema = self.schema[classKey][kind]
       for item in schema:
         if item[0] == key:
           typecode = item[1]
           unit     = item[2]
-          if typecode >= 1 and typecode <= 5:  # numerics
+          if (typecode >= 1 and typecode <= 5) or typecode >= 12:  # numerics
             if unit == None or unit == self.lastUnit:
               return str (value)
             else:
@@ -191,6 +209,20 @@ class ManagementData:
             result = result + self.valueDisplay (className, key, val)
     return result
 
+  def getClassKey (self, className):
+    dotPos = className.find(".")
+    if dotPos == -1:
+      for key in self.schema:
+        if key[1] == className:
+          return key
+    else:
+      package = className[0:dotPos]
+      name    = className[dotPos + 1:]
+      for key in self.schema:
+        if key[0] == package and key[1] == name:
+          return key
+    return None
+
   def classCompletions (self, prefix):
     """ Provide a list of candidate class names for command completion """
     self.lock.acquire ()
@@ -227,6 +259,10 @@ class ManagementData:
       return "reference"
     elif typecode == 11:
       return "boolean"
+    elif typecode == 12:
+      return "float"
+    elif typecode == 13:
+      return "double"
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
@@ -253,16 +289,16 @@ class ManagementData:
         return False
     return True
 
-  def listOfIds (self, className, tokens):
+  def listOfIds (self, classKey, tokens):
     """ Generate a tuple of object ids for a classname based on command tokens. """
     list = []
     if tokens[0] == "all":
-      for id in self.tables[className]:
+      for id in self.tables[classKey]:
         list.append (self.displayObjId (id))
 
     elif tokens[0] == "active":
-      for id in self.tables[className]:
-        if self.tables[className][id][0][2] == 0:
+      for id in self.tables[classKey]:
+        if self.tables[classKey][id][0][2] == 0:
           list.append (self.displayObjId (id))
 
     else:
@@ -271,7 +307,7 @@ class ManagementData:
           if token.find ("-") != -1:
             ids = token.split("-", 2)
             for id in range (int (ids[0]), int (ids[1]) + 1):
-              if self.getClassForId (self.rawObjId (long (id))) == className:
+              if self.getClassForId (self.rawObjId (long (id))) == classKey:
                 list.append (id)
           else:
             list.append (token)
@@ -301,7 +337,7 @@ class ManagementData:
             deleted = deleted + 1
           else:
             active = active + 1
-        rows.append ((name, active, deleted))
+        rows.append ((self.displayClassName (name), active, deleted))
       self.disp.table ("Management Object Types:",
                        ("ObjectType", "Active", "Deleted"), rows)
     finally:
@@ -311,22 +347,23 @@ class ManagementData:
     """ Generate a display of a list of objects in a class """
     self.lock.acquire ()
     try:
-      if className not in self.tables:
+      classKey = self.getClassKey (className)
+      if classKey == None:
         print ("Object type %s not known" % className)
       else:
         rows = []
-        sorted = self.tables[className].keys ()
+        sorted = self.tables[classKey].keys ()
         sorted.sort ()
         for objId in sorted:
-          (ts, config, inst) = self.tables[className][objId]
+          (ts, config, inst) = self.tables[classKey][objId]
           createTime  = self.disp.timestamp (ts[1])
           destroyTime = "-"
           if ts[2] > 0:
             destroyTime = self.disp.timestamp (ts[2])
-          objIndex = self.getObjIndex (className, config)
+          objIndex = self.getObjIndex (classKey, config)
           row = (self.refName (objId), createTime, destroyTime, objIndex)
           rows.append (row)
-        self.disp.table ("Objects of type %s" % className,
+        self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
                          ("ID", "Created", "Destroyed", "Index"),
                          rows)
     finally:
@@ -343,57 +380,57 @@ class ManagementData:
         else:
           rootId = int (tokens[0])
 
-        className = self.getClassForId (self.rawObjId (rootId))
+        classKey  = self.getClassForId (self.rawObjId (rootId))
         remaining = tokens
-        if className == None:
+        if classKey == None:
           print "Id not known: %d" % int (tokens[0])
           raise ValueError ()
       else:
-        className = tokens[0]
+        classKey  = self.getClassKey (tokens[0])
         remaining = tokens[1:]
-        if className not in self.tables:
-          print "Class not known: %s" % className
+        if classKey not in self.tables:
+          print "Class not known: %s" % tokens[0]
           raise ValueError ()
 
-      userIds = self.listOfIds (className, remaining)
+      userIds = self.listOfIds (classKey, remaining)
       if len (userIds) == 0:
         print "No object IDs supplied"
         raise ValueError ()
 
       ids = []
       for id in userIds:
-        if self.getClassForId (self.rawObjId (long (id))) == className:
+        if self.getClassForId (self.rawObjId (long (id))) == classKey:
           ids.append (self.rawObjId (long (id)))
 
       rows = []
       timestamp = None
-      config = self.tables[className][ids[0]][1]
+      config = self.tables[classKey][ids[0]][1]
       for eIdx in range (len (config)):
         key = config[eIdx][0]
         if key != "id":
           row   = ("config", key)
           for id in ids:
             if timestamp == None or \
-               timestamp < self.tables[className][id][0][0]:
-              timestamp = self.tables[className][id][0][0]
-            (key, value) = self.tables[className][id][1][eIdx]
-            row = row + (self.valueDisplay (className, key, value),)
+               timestamp < self.tables[classKey][id][0][0]:
+              timestamp = self.tables[classKey][id][0][0]
+            (key, value) = self.tables[classKey][id][1][eIdx]
+            row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
-      inst = self.tables[className][ids[0]][2]
+      inst = self.tables[classKey][ids[0]][2]
       for eIdx in range (len (inst)):
         key = inst[eIdx][0]
         if key != "id":
           row = ("inst", key)
           for id in ids:
-            (key, value) = self.tables[className][id][2][eIdx]
-            row = row + (self.valueDisplay (className, key, value),)
+            (key, value) = self.tables[classKey][id][2][eIdx]
+            row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
       titleRow = ("Type", "Element")
       for id in ids:
         titleRow = titleRow + (self.refName (id),)
-      caption = "Object of type %s:" % className
+      caption = "Object of type %s.%s:" % (classKey[0], classKey[1])
       if timestamp != None:
         caption = caption + " (last sample time: " + self.disp.timestamp (timestamp) + ")"
       self.disp.table (caption, titleRow, rows)
@@ -423,12 +460,13 @@ class ManagementData:
     """ Generate a display of details of the schema of a particular class """
     self.lock.acquire ()
     try:
-      if className not in self.schema:
+      classKey = self.getClassKey (className)
+      if classKey == None:
         print ("Class name %s not known" % className)
         raise ValueError ()
 
       rows = []
-      for config in self.schema[className][0]:
+      for config in self.schema[classKey][0]:
         name     = config[0]
         if name != "id":
           typename = self.typeName(config[1])
@@ -446,7 +484,7 @@ class ManagementData:
             extra = extra + "MaxLen: " + str (config[8])
           rows.append ((name, typename, unit, access, extra, desc))
         
-      for config in self.schema[className][1]:
+      for config in self.schema[classKey][1]:
         name     = config[0]
         if name != "id":
           typename = self.typeName(config[1])
@@ -455,10 +493,10 @@ class ManagementData:
           rows.append ((name, typename, unit, "", "", desc))
 
       titles = ("Element", "Type", "Unit", "Access", "Notes", "Description")
-      self.disp.table ("Schema for class '%s':" % className, titles, rows)
+      self.disp.table ("Schema for class '%s.%s':" % (classKey[0], classKey[1]), titles, rows)
 
-      for mname in self.schema[className][2]:
-        (mdesc, args) = self.schema[className][2][mname]
+      for mname in self.schema[classKey][2]:
+        (mdesc, args) = self.schema[classKey][2][mname]
         caption = "\nMethod '%s' %s" % (mname, self.notNone (mdesc))
         rows = []
         for arg in args:
@@ -485,25 +523,25 @@ class ManagementData:
     self.lock.release ()
 
   def getClassForId (self, objId):
-    """ Given an object ID, return the class name for the referenced object """
-    for className in self.tables:
-      if objId in self.tables[className]:
-        return className
+    """ Given an object ID, return the class key for the referenced object """
+    for classKey in self.tables:
+      if objId in self.tables[classKey]:
+        return classKey
     return None
 
   def callMethod (self, userOid, methodName, args):
     self.lock.acquire ()
     methodOk = True
     try:
-      className = self.getClassForId (self.rawObjId (userOid))
-      if className == None:
+      classKey = self.getClassForId (self.rawObjId (userOid))
+      if classKey == None:
         raise ValueError ()
 
-      if methodName not in self.schema[className][2]:
-        print "Method '%s' not valid for class '%s'" % (methodName, className)
+      if methodName not in self.schema[classKey][2]:
+        print "Method '%s' not valid for class '%s.%s'" % (methodName, classKey[0], classKey[1])
         raise ValueError ()
 
-      schemaMethod = self.schema[className][2][methodName]
+      schemaMethod = self.schema[classKey][2][methodName]
       if len (args) != len (schemaMethod[1]):
         print "Wrong number of method args: Need %d, Got %d" % (len (schemaMethod[1]), len (args))
         raise ValueError ()
@@ -519,8 +557,8 @@ class ManagementData:
     self.lock.release ()
     if methodOk:
 #      try:
-        self.broker.method (self.methodSeq, self.rawObjId (userOid), className,
-                            methodName, namedArgs)
+        self.mclient.callMethod (self.mch, self.methodSeq, self.rawObjId (userOid), classKey,
+                                 methodName, namedArgs)
 #      except ValueError, e:
 #        print "Error invoking method:", e
 

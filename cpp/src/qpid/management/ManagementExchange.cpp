@@ -36,28 +36,15 @@ ManagementExchange::ManagementExchange (const std::string& _name,
     Exchange (_name, _durable, _args, _parent), 
     TopicExchange(_name, _durable, _args, _parent) {}
 
-
-bool ManagementExchange::bind (Queue::shared_ptr queue,
-                               const string&     routingKey,
-                               const FieldTable* args)
-{
-    bool result = TopicExchange::bind (queue, routingKey, args);
-
-    // Notify the management agent that a new management client has bound to the 
-    // exchange.
-    if (result)
-        managementAgent->clientAdded ();
-
-    return result;
-}
-
 void ManagementExchange::route (Deliverable&      msg,
                                 const string&     routingKey,
                                 const FieldTable* args)
 {
-    // Intercept management commands
-    if (routingKey.length () > 7 &&
-        routingKey.substr (0, 7).compare ("method.") == 0)
+    // Intercept management agent commands
+    if ((routingKey.length () > 6 &&
+         routingKey.substr (0, 6).compare ("agent.") == 0) ||
+        (routingKey.length () == 5 &&
+         routingKey.substr (0, 5).compare ("agent") == 0))
     {
         managementAgent->dispatchCommand (msg, routingKey, args);
         return;
