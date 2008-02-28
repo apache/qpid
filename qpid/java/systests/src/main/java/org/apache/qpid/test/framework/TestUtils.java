@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -39,7 +39,9 @@ import java.util.Map;
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Create connections from test properties. <td> {@link MessagingTestConfigProperties}
+ * <tr><td> Create test messages.
  * <tr><td> Inject a short pause in a test.
+ * <tr><td> Serialize properties into a message.
  * </table>
  */
 public class TestUtils
@@ -47,7 +49,8 @@ public class TestUtils
     /** Used for debugging. */
     private static Logger log = Logger.getLogger(TestUtils.class);
 
-    private static byte[] MESSAGE_DATA_BYTES =
+    /** Some dummy data to stuff all test messages with. */
+    private static final byte[] MESSAGE_DATA_BYTES =
         "Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- "
         .getBytes();
 
@@ -117,7 +120,7 @@ public class TestUtils
      *
      * @return A bytes message, of the specified size, filled with dummy data.
      *
-     *
+     * @throws JMSException Any underlying JMSExceptions are allowed to fall through.
      */
     public static Message createTestMessageOfSize(Session session, int size) throws JMSException
     {
@@ -186,3 +189,4 @@ public class TestUtils
         }
     }
 }
+

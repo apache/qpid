@@ -26,8 +26,8 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
-import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
-import uk.co.thebadgerset.junit.extensions.listeners.TKTestListener;
+import org.apache.qpid.junit.extensions.ShutdownHookable;
+import org.apache.qpid.junit.extensions.listeners.TKTestListener;
 
 import java.io.IOException;
 import java.io.PrintWriter;

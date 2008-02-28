@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.framework;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.Session;
 

@@ -21,6 +21,8 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
 public class ContentHeaderBody implements AMQBody
 {
@@ -108,6 +110,12 @@ public class ContentHeaderBody implements AMQBody
         buffer.putLong(bodySize);
         EncodingUtils.writeUnsignedShort(buffer, properties.getPropertyFlags());
         properties.writePropertyListPayload(buffer);
+    }
+
+    public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
+            throws AMQException
+    {
+        session.contentHeaderReceived(channelId, this);
     }
 
     public static AMQFrame createAMQFrame(int channelId, int classId, int weight, BasicContentHeaderProperties properties,

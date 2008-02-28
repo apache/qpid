@@ -73,6 +73,105 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
+    public static final class ChannelToSessionMap
+    {
+        private final AMQSession[] _fastAccessSessions = new AMQSession[16];
+        private final LinkedHashMap<Integer, AMQSession> _slowAccessSessions = new LinkedHashMap<Integer, AMQSession>();
+        private int _size = 0;
+        private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
+
+        public AMQSession get(int channelId)
+        {
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                return _fastAccessSessions[channelId];
+            }
+            else
+            {
+                return _slowAccessSessions.get(channelId);
+            }
+        }
+
+        public AMQSession put(int channelId, AMQSession session)
+        {
+            AMQSession oldVal;
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                oldVal = _fastAccessSessions[channelId];
+                _fastAccessSessions[channelId] = session;
+            }
+            else
+            {
+                oldVal = _slowAccessSessions.put(channelId, session);
+            }
+            if((oldVal != null) && (session == null))
+            {
+                _size--;
+            }
+            else if((oldVal == null) && (session != null))
+            {
+                _size++;
+            }
+
+            return session;
+
+        }
+
+
+        public AMQSession remove(int channelId)
+        {
+            AMQSession session;
+            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            {
+                 session = _fastAccessSessions[channelId];
+                _fastAccessSessions[channelId] = null;
+            }
+            else
+            {
+                session = _slowAccessSessions.remove(channelId);
+            }
+
+            if(session != null)
+            {
+                _size--;
+            }
+            return session;
+
+        }
+
+        public Collection<AMQSession> values()
+        {
+            ArrayList<AMQSession> values = new ArrayList<AMQSession>(size());
+
+            for(int i = 0; i < 16; i++)
+            {
+                if(_fastAccessSessions[i] != null)
+                {
+                    values.add(_fastAccessSessions[i]);
+                }
+            }
+            values.addAll(_slowAccessSessions.values());
+
+            return values;
+        }
+
+        public int size()
+        {
+            return _size;
+        }
+
+        public void clear()
+        {
+            _size = 0;
+            _slowAccessSessions.clear();
+            for(int i = 0; i<16; i++)
+            {
+                _fastAccessSessions[i] = null;
+            }
+        }
+    }
+
+
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
     protected AtomicInteger _idFactory = new AtomicInteger(0);
@@ -102,7 +201,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
-    private final Map<Integer, AMQSession> _sessions = new LinkedHashMap<Integer, AMQSession>();
+    private final ChannelToSessionMap _sessions = new ChannelToSessionMap();
 
     private String _clientName;
 
@@ -266,6 +365,26 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _delegate = new AMQConnectionDelegate_0_8(this);
         }
 
+        final ArrayList<JMSException> exceptions = new ArrayList<JMSException>();
+
+        class Listener implements ExceptionListener
+        {
+            public void onException(JMSException e)
+            {
+                exceptions.add(e);
+            }
+        }
+
+        try
+        {
+            setExceptionListener(new Listener());
+        }
+        catch (JMSException e)
+        {
+            // Shouldn't happen
+            throw new AMQException(null, null, e);
+        }
+
         if (_logger.isInfoEnabled())
         {
             _logger.info("Connection:" + connectionURL);
@@ -322,8 +441,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             try
             {
                 makeBrokerConnection(_failoverPolicy.getNextBrokerDetails());
-                lastException = null;
-                _connected = true;
             }
             catch (Exception e)
             {
@@ -351,7 +468,23 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             String message = null;
 
-            if (lastException != null)
+            if (exceptions.size() > 0)
+            {
+                JMSException e = exceptions.get(exceptions.size() - 1);
+                int code = -1;
+                try
+                {
+                    code = new Integer(e.getErrorCode()).intValue();
+                }
+                catch (NumberFormatException nfe)
+                {
+                    // Ignore this, we have some error codes and messages swapped around
+                }
+
+                throw new AMQConnectionFailureException(AMQConstant.getConstant(code),
+                                                        e.getMessage(), e);
+            }
+            else if (lastException != null)
             {
                 if (lastException.getCause() != null)
                 {
@@ -671,10 +804,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         checkNotClosed();
         if (!_started)
         {
-            final Iterator it = _sessions.entrySet().iterator();
+            final Iterator it = _sessions.values().iterator();
             while (it.hasNext())
             {
-                final AMQSession s = (AMQSession) ((Map.Entry) it.next()).getValue();
+                final AMQSession s = (AMQSession) (it.next());
                 try
                 {
                     s.start();
@@ -927,11 +1060,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _maximumFrameSize;
     }
 
-    public Map getSessions()
+    public ChannelToSessionMap getSessions()
     {
         return _sessions;
     }
-
+    
     public String getUsername()
     {
         return _username;
@@ -1149,6 +1282,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     void deregisterSession(int channelId)
     {
         _sessions.remove(channelId);
+    }
+
+    /**
+     * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
+     * The caller must hold the failover mutex before calling this method.
+     */
+    public void resubscribeSesssions() throws JMSException, AMQException, FailoverException
+    {
+        ArrayList sessions = new ArrayList(_sessions.values());
+        _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: removeKey?
+        for (Iterator it = sessions.iterator(); it.hasNext();)
+        {
+            AMQSession s = (AMQSession) it.next();
+            // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
+            reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
+            s.resubscribe();
+            s.setFlowControl(true);
+        }
     }
 
     public String toString()

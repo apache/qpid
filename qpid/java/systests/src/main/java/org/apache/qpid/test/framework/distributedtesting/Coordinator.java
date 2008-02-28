@@ -1,24 +1,11 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
+/* Copyright Rupert Smith, 2005 to 2007, all rights reserved. */
 package org.apache.qpid.test.framework.distributedtesting;
+
+import java.net.InetAddress;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import javax.jms.*;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
@@ -26,7 +13,6 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestClientDetails;
@@ -34,18 +20,12 @@ import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.TKTestRunner;
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
-import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
-import uk.co.thebadgerset.junit.extensions.util.MathUtils;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
-
-import javax.jms.*;
-
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.qpid.junit.extensions.TKTestRunner;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.util.CommandLineParser;
+import org.apache.qpid.junit.extensions.util.MathUtils;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 /**
  * <p/>Implements the coordinator client described in the interop testing specification
@@ -137,8 +117,7 @@ public class Coordinator extends TKTestRunner
         String reportDir, String runName, boolean verbose, String brokerUrl, String virtualHost, TestEngine engine,
         boolean terminate, boolean csv, boolean xml, List<TestDecoratorFactory> decoratorFactories)
     {
-        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, verbose,
-            decoratorFactories);
+        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, decoratorFactories);
 
         log.debug("public Coordinator(Integer repetitions = " + repetitions + " , Long duration = " + duration
             + ", int[] threads = " + Arrays.toString(threads) + ", int delay = " + delay + ", int[] params = "
@@ -480,7 +459,7 @@ public class Coordinator extends TKTestRunner
         {
             log.debug("targetTest is a TestSuite");
 
-            TestSuite suite = (TestSuite) test;
+            TestSuite suite = (TestSuite)test;
 
             int numTests = suite.countTestCases();
             log.debug("There are " + numTests + " in the suite.");
@@ -539,3 +518,4 @@ public class Coordinator extends TKTestRunner
         }
     }
 }
+

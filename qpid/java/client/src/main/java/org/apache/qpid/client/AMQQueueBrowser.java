@@ -88,6 +88,7 @@ public class AMQQueueBrowser implements QueueBrowser
         checkState();
         final BasicMessageConsumer consumer =
             (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
+        consumer.closeWhenNoMessages(true);
         _consumers.add(consumer);
 
         return new Enumeration()

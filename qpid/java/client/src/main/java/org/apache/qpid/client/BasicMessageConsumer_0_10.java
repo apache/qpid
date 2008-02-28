@@ -135,7 +135,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         if (messageOk)
         {
-            super.notifyMessage(jmsMessage, channelId);
+            super.notifyMessage(jmsMessage);
         }
     }
 
@@ -150,7 +150,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
-        String consumerTag = getConsumerTag().toString();
+        AMQShortString consumerTag = getConsumerTag();
         AMQShortString exchange;
         AMQShortString routingKey;
         boolean redelivered = false;
@@ -264,7 +264,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             ((UnprocessedMessage_0_10) messageFrame).setReplyToURL(replyToUrl);
         }
-        super.notifyMessage(messageFrame, channelId);
+        super.notifyMessage(messageFrame);
     }
 
     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(

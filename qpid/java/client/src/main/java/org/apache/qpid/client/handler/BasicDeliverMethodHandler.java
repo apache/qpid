@@ -21,12 +21,12 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,13 @@ public class BasicDeliverMethodHandler implements StateAwareMethodListener<Basic
         throws AMQException
     {
         final AMQProtocolSession session = stateManager.getProtocolSession();
-        final UnprocessedMessage_0_8 msg = new UnprocessedMessage_0_8(channelId, body);
+        final UnprocessedMessage_0_8 msg = new UnprocessedMessage_0_8(
+                channelId,
+                body.getDeliveryTag(),
+                body.getConsumerTag(),
+                body.getExchange(),
+                body.getRoutingKey(),
+                body.getRedelivered());
         _logger.debug("New JmsDeliver method received");
         session.unprocessedMessageReceived(msg);
     }

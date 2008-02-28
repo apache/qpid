@@ -165,6 +165,22 @@ public class ConnectionTest extends TestCase
         }
     }
 
+    public void testUnresolvedVirtualHostFailure() throws Exception
+    {
+        try
+        {
+            new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + _broker + "?retries='0''");
+            fail("Connection should not be established");
+        }
+        catch (AMQException amqe)
+        {
+            if (!(amqe instanceof AMQConnectionFailureException))
+            {
+                fail("Correct exception not thrown. Excpected 'AMQConnectionFailureException' got: " + amqe);
+            }
+        }
+    }
+
     public void testClientIdCannotBeChanged() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",

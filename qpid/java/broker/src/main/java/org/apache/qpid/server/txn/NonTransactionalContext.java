@@ -49,11 +49,11 @@ public class NonTransactionalContext implements TransactionalContext
     /** Where to put undeliverable messages */
     private final List<RequiredDeliveryException> _returnMessages;
 
-    private Set<Long> _browsedAcks;
+    private final Set<Long> _browsedAcks;
 
     private final MessageStore _messageStore;
 
-    private StoreContext _storeContext;
+    private final StoreContext _storeContext;
 
     /** Whether we are in a transaction */
     private boolean _inTran;

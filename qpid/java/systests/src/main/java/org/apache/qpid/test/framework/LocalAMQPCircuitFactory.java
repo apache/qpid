@@ -26,7 +26,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.framework.localcircuit.LocalAMQPPublisherImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalPublisherImpl;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 

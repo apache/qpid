@@ -178,7 +178,7 @@ public class AMQQueueAlertTest extends TestCase
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
         protocolSession = new TestMinaProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 2,_txm, _messageStore, null);
+        AMQChannel channel = new AMQChannel(protocolSession, 2,_txm, _messageStore);
         protocolSession.addChannel(channel);
 
         // Create queue

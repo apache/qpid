@@ -70,7 +70,7 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
         return new MethodConverter_0_9.MessagePublishInfoImpl(exchange,
                                           publishBody.getImmediate(),
                                           publishBody.getMandatory(),
-                                          routingKey == null ? null : routingKey.intern());
+                                          routingKey);
 
     }
 

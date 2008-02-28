@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.test.framework.clocksynch;
 
-import org.apache.log4j.Logger;
-
-import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
+import org.apache.qpid.junit.extensions.ShutdownHookable;
 
 import java.io.IOException;
 import java.net.*;
@@ -164,3 +162,4 @@ public class UDPClockReference implements Runnable, ShutdownHookable
         }
     }
 }
+
