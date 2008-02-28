@@ -19,8 +19,8 @@
  *
  */
 
-#include "SessionManager.h"
-#include "SessionState.h"
+#include "PreviewSessionManager.h"
+#include "PreviewSessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include "qpid/log/Helpers.h"
@@ -39,24 +39,24 @@ namespace broker {
 using namespace sys;
 using namespace framing;
 
-SessionManager::SessionManager(uint32_t a) : ack(a) {}
+PreviewSessionManager::PreviewSessionManager(uint32_t a) : ack(a) {}
 
-SessionManager::~SessionManager() {}
+PreviewSessionManager::~PreviewSessionManager() {}
 
 // FIXME aconway 2008-02-01: pass handler*, allow open  unattached.
-std::auto_ptr<SessionState>  SessionManager::open(
-    SessionHandler& h, uint32_t timeout_)
+std::auto_ptr<PreviewSessionState>  PreviewSessionManager::open(
+    PreviewSessionHandler& h, uint32_t timeout_)
 {
     Mutex::ScopedLock l(lock);
-    std::auto_ptr<SessionState> session(
-        new SessionState(this, &h, timeout_, ack));
+    std::auto_ptr<PreviewSessionState> session(
+        new PreviewSessionState(this, &h, timeout_, ack));
     active.insert(session->getId());
     for_each(observers.begin(), observers.end(),
              boost::bind(&Observer::opened, _1,boost::ref(*session)));
     return session;
 }
 
-void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
+void  PreviewSessionManager::suspend(std::auto_ptr<PreviewSessionState> session) {
     Mutex::ScopedLock l(lock);
     active.erase(session->getId());
     session->suspend();
@@ -67,7 +67,7 @@ void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
     eraseExpired();
 }
 
-std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id)
+std::auto_ptr<PreviewSessionState>  PreviewSessionManager::resume(const Uuid& id)
 {
     Mutex::ScopedLock l(lock);
     eraseExpired();
@@ -76,28 +76,28 @@ std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id)
             QPID_MSG("Session already active: " << id));
     Suspended::iterator i = std::find_if(
         suspended.begin(), suspended.end(),
-        boost::bind(std::equal_to<Uuid>(), id, boost::bind(&SessionState::getId, _1))
+        boost::bind(std::equal_to<Uuid>(), id, boost::bind(&PreviewSessionState::getId, _1))
     );
     if (i == suspended.end())
         throw InvalidArgumentException(
             QPID_MSG("No suspended session with id=" << id));
     active.insert(id);
-    std::auto_ptr<SessionState> state(suspended.release(i).release());
+    std::auto_ptr<PreviewSessionState> state(suspended.release(i).release());
     return state;
 }
 
-void SessionManager::erase(const framing::Uuid& id)
+void PreviewSessionManager::erase(const framing::Uuid& id)
 {
     Mutex::ScopedLock l(lock);
     active.erase(id);
 }
 
-void SessionManager::eraseExpired() {
+void PreviewSessionManager::eraseExpired() {
     // Called with lock held.
     if (!suspended.empty()) {
         Suspended::iterator keep = std::lower_bound(
             suspended.begin(), suspended.end(), now(),
-            boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
+            boost::bind(std::less<AbsTime>(), boost::bind(&PreviewSessionState::expiry, _1), _2));
         if (suspended.begin() != keep) {
             QPID_LOG(debug, "Expiring sessions: " << log::formatList(suspended.begin(), keep));
             suspended.erase(suspended.begin(), keep);
@@ -105,7 +105,7 @@ void SessionManager::eraseExpired() {
     }
 }
 
-void SessionManager::add(const intrusive_ptr<Observer>& o) {
+void PreviewSessionManager::add(const intrusive_ptr<Observer>& o) {
     observers.push_back(o);
 }
 

@@ -30,37 +30,32 @@ class QueueTest (TestCase):
   # all the queue functionality.
 
   def test_listen(self):
-    LISTEN = object()
-    GET = object()
-    EMPTY = object()
+    values = []
+    heard = threading.Event()
+    def listener(x):
+      values.append(x)
+      heard.set()
 
     q = Queue(0)
-    values = []
-    q.listen(lambda x: values.append((LISTEN, x)))
+    q.listen(listener)
+    heard.clear()
     q.put(1)
-    assert values[-1] == (LISTEN, 1)
+    heard.wait()
+    assert values[-1] == 1
+    heard.clear()
     q.put(2)
-    assert values[-1] == (LISTEN, 2)
+    heard.wait()
+    assert values[-1] == 2
 
-    class Getter(threading.Thread):
-
-      def run(self):
-        try:
-          values.append((GET, q.get(timeout=10)))
-        except Empty:
-          values.append(EMPTY)
-
-    g = Getter()
-    g.start()
-    # let the other thread reach the get
-    time.sleep(2)
+    q.listen(None)
     q.put(3)
-    g.join()
+    assert q.get(3) == 3
+    q.listen(listener)
 
-    assert values[-1] == (GET, 3)
-
+    heard.clear()
     q.put(4)
-    assert values[-1] == (LISTEN, 4)
+    heard.wait()
+    assert values[-1] == 4
 
   def test_close(self):
     q = Queue(0)

@@ -94,7 +94,7 @@ public class AMQSession_0_8 extends AMQSession
     }
 
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-            final AMQShortString exchangeName) throws AMQException, FailoverException
+            final AMQShortString exchangeName, final AMQDestination dest) throws AMQException, FailoverException
     {
         getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createQueueBindBody
                                         (getTicket(),queueName,exchangeName,routingKey,false,arguments).
@@ -169,6 +169,11 @@ public class AMQSession_0_8 extends AMQSession
 
             _connection.getProtocolHandler().writeFrame(basicRejectBody);
         }
+    }
+
+    public boolean isQueueBound(final AMQDestination destination) throws JMSException
+    {
+        return isQueueBound(destination.getExchangeName(),destination.getAMQQueueName(),destination.getAMQQueueName());
     }
 
     public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)

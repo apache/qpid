@@ -19,7 +19,7 @@
  *
  */
 
-#include "SessionState.h"
+#include "SessionContext.h"
 #include "BrokerAdapter.h"
 #include "Queue.h"
 #include "Connection.h"
@@ -56,7 +56,7 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace qpid::ptr_map;
 
-SemanticState::SemanticState(DeliveryAdapter& da, SessionState& ss)
+SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
     : session(ss),
       deliveryAdapter(da),
       prefetchSize(0),
@@ -263,21 +263,16 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
 
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
-    if (parent->getSession().isAttached() && accept(msg.payload)) {
-        allocateCredit(msg.payload);
-        DeliveryId deliveryTag =
-            parent->deliveryAdapter.deliver(msg, token);
-        if (windowing || ackExpected) {
-            parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
-        } 
-        if (acquire && !ackExpected) {
-            queue->dequeue(0, msg.payload);
-        }
-        return true;
-    } else {
-        QPID_LOG(debug, "Failed to deliver message to '" << name << "' on " << parent);
-        return false;
+    allocateCredit(msg.payload);
+    DeliveryId deliveryTag =
+        parent->deliveryAdapter.deliver(msg, token);
+    if (windowing || ackExpected) {
+        parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
+    } 
+    if (acquire && !ackExpected) {
+        queue->dequeue(0, msg.payload);
     }
+    return true;
 }
 
 bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message> msg)
@@ -331,7 +326,7 @@ void SemanticState::cancel(ConsumerImpl& c)
     if(queue) {
         queue->cancel(c);
         if (queue->canAutoDelete() && !queue->hasExclusiveOwner()) {            
-            Queue::tryAutoDelete(getSession().getBroker(), queue);
+            Queue::tryAutoDelete(session.getBroker(), queue);
         }
     }
 }
@@ -352,7 +347,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
     msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
-        cacheExchange = session.getConnection().broker.getExchanges().get(exchangeName);
+        cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());

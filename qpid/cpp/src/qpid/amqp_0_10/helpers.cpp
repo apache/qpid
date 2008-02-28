@@ -1,6 +1,3 @@
-#ifndef QPID_CLIENT_SESSION_H
-#define QPID_CLIENT_SESSION_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,18 +18,13 @@
  * under the License.
  *
  */
-#include "qpid/client/Session_99_0.h"
+#include "helpers.h"
 
 namespace qpid {
-namespace client {
+namespace amqp_0_10 {
 
-/**
- * Session is currently just an alias for Session_99_0
- *
- * \ingroup clientapi
- */
-typedef Session_99_0 Session;
+Control::~Control() {}
+Command::~Command() {}
+Struct::~Struct() {}
 
-}} // namespace qpid::client
-
-#endif  /*!QPID_CLIENT_SESSION_H*/
+}} // namespace qpid::amqp_0_10

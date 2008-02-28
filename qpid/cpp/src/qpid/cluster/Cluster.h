@@ -62,7 +62,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     virtual ~Cluster();
 
     // FIXME aconway 2008-01-29: 
-    intrusive_ptr<broker::SessionManager::Observer> getObserver() { return observer; }
+    intrusive_ptr<broker::PreviewSessionManager::Observer> getObserver() { return observer; }
     
     /** Get the current cluster membership. */
     MemberList getMembers() const;
@@ -116,7 +116,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    intrusive_ptr<broker::SessionManager::Observer> observer;
+    intrusive_ptr<broker::PreviewSessionManager::Observer> observer;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

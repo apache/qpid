@@ -38,7 +38,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Iterator;
 
 /**
@@ -122,8 +121,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         catch (AMQException e)
         {
+            _logger.error("Receivecd an Exception when receiving message",e);
             try
             {
+
                 getSession().getAMQConnection().getExceptionListener()
                         .onException(new JMSAMQException("Error when receiving message", e));
             }
@@ -135,6 +136,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         if (messageOk)
         {
+            _logger.debug("messageOk, trying to notify");
             super.notifyMessage(jmsMessage);
         }
     }
@@ -290,7 +292,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         // TODO Use a tag for fiding out if message filtering is done here or by the broker.
         try
         {
-            if (getMessageSelector() != null && !getMessageSelector().equals(""))
+            if (_messageSelector != null && !_messageSelector.equals(""))
             {
                 messageOk = _filter.matches(message);
             }
@@ -332,6 +334,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("filterMessage - trying to acquire message");
             }
             messageOk = acquireMessage(message);
+            _logger.debug("filterMessage - *************************************");
+            _logger.debug("filterMessage - message acquire status : " + messageOk);
+            _logger.debug("filterMessage - *************************************");
         }
         return messageOk;
     }
@@ -393,13 +398,29 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
             _0_10session.getQpidSession()
                     .messageAcquire(ranges, org.apache.qpidity.nclient.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
+
+            _logger.debug("acquireMessage, sent acquire message to broker");
+
             _0_10session.getQpidSession().sync();
+
+            _logger.debug("acquireMessage, returned from sync");
+
             RangeSet acquired = _0_10session.getQpidSession().getAccquiredMessages();
+
+            _logger.debug("acquireMessage, acquired range set " + acquired);
+
             if (acquired != null && acquired.size() > 0)
             {
                 result = true;
             }
+
+            _logger.debug("acquireMessage, Trying to get current exception ");
+
             _0_10session.getCurrentException();
+
+            _logger.debug("acquireMessage, returned from getting current exception ");
+
+            _logger.debug("acquireMessage, acquired range set " + acquired + " now returning " );
         }
         return result;
     }

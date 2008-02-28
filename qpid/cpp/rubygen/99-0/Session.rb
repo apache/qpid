@@ -190,6 +190,6 @@ EOS
   end
 end
 
-SessionNoKeywordGen.new(ARGV[0], Amqp).generate()
-SessionGen.new(ARGV[0], Amqp).generate()
+SessionNoKeywordGen.new(ARGV[0], $amqp).generate()
+SessionGen.new(ARGV[0], $amqp).generate()
 

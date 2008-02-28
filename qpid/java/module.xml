@@ -158,6 +158,7 @@
   </target>
 
   <property name="test" value="*Test"/>
+  <property name="test.mem" value="512M"/>
 
   <property name="log" value="info"/>
   <property name="amqj.logging.level" value="${log}"/>
@@ -189,6 +190,8 @@
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
     <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
+
+      <jvmarg value="-Xmx${test.mem}" />
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>

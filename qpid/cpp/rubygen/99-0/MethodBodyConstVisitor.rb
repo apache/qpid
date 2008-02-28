@@ -23,5 +23,5 @@ class MethodBodyConstVisitorGen < CppGen
   end
 end
 
-MethodBodyConstVisitorGen.new(Outdir, Amqp).generate();
+MethodBodyConstVisitorGen.new($outdir, $amqp).generate();
 

@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,7 +87,6 @@ import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -564,19 +564,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * @todo Document the additional arguments that may be passed in the field table. Are these for headers exchanges?
      */
     public void bindQueue(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-                          final AMQShortString exchangeName) throws AMQException
+                          final AMQShortString exchangeName,final AMQDestination destination) throws AMQException
     {
         /*new FailoverRetrySupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()*/
         new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
             public Object execute() throws AMQException, FailoverException
             {
-                    QueueBindBody body = getMethodRegistry().createQueueBindBody(getTicket(),queueName,exchangeName,routingKey,false,arguments);
-
-                    AMQFrame queueBind = body.generateFrame(_channelId);
-
-                    getProtocolHandler().syncWrite(queueBind, QueueBindOkBody.class);
-
+                sendQueueBind(queueName,routingKey,arguments,exchangeName,destination);
                 return null;
             }
         }, _connection).execute();
@@ -587,12 +582,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         if( consumer.getQueuename() != null)
         {
-            bindQueue(consumer.getQueuename(), new AMQShortString(routingKey), new FieldTable(), amqd.getExchangeName());
+            bindQueue(consumer.getQueuename(), new AMQShortString(routingKey), new FieldTable(), amqd.getExchangeName(),amqd);
         }
     }
 
     public abstract void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-            final AMQShortString exchangeName) throws AMQException, FailoverException;
+            final AMQShortString exchangeName,AMQDestination destination) throws AMQException, FailoverException;
 
     /**
 
@@ -1036,7 +1031,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             {
                 return new AMQQueue(new AMQBindingURL(queueName));
             }
-            catch (URLSyntaxException urlse)
+            catch (URISyntaxException urlse)
             {
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
@@ -1253,7 +1248,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             {
                 return new AMQTopic(new AMQBindingURL(topicName));
             }
-            catch (URLSyntaxException urlse)
+            catch (URISyntaxException urlse)
             {
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
@@ -1378,6 +1373,16 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             _highestDeliveryTag.set(message.getDeliveryTag());
             _queue.add(message);
         }
+    }
+
+    public void declareAndBind(AMQDestination amqd)
+            throws
+            AMQException
+    {
+        AMQProtocolHandler protocolHandler = getProtocolHandler();
+        declareExchange(amqd, protocolHandler, false);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler);
+        bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(),amqd);
     }
 
     /**
@@ -1820,35 +1825,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
-            throws JMSException
-    {
-        try
-        {
-            AMQMethodEvent response =
-                new FailoverRetrySupport<AMQMethodEvent, AMQException>(
-                    new FailoverProtectedOperation<AMQMethodEvent, AMQException>()
-                    {
-                        public AMQMethodEvent execute() throws AMQException, FailoverException
-                        {
-                            ExchangeBoundBody body = getMethodRegistry().createExchangeBoundBody(exchangeName, routingKey, queueName);
-                            AMQFrame boundFrame = body.generateFrame(_channelId);
-
-                                    return getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
-
-                                }
-                            }, _connection).execute();
-
-            // Extract and return the response code from the query.
-            ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
-
-            return (responseBody.getReplyCode() == 0);
-        }
-        catch (AMQException e)
-        {
-            throw new JMSAMQException("Queue bound query failed: " + e.getMessage(), e);
-        }
-    }
+    public abstract boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
+            throws JMSException;
+            
+    public abstract boolean isQueueBound(final AMQDestination destination) throws JMSException;
 
     /**
      * Called to mark the session as being closed. Useful when the session needs to be made invalid, e.g. after failover
@@ -2509,16 +2489,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    public void declareAndBind(AMQDestination amqd)
-            throws
-            AMQException
-    {
-        AMQProtocolHandler protocolHandler = getProtocolHandler();
-        declareExchange(amqd, protocolHandler, false);
-        AMQShortString queueName = declareQueue(amqd, protocolHandler);
-        bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName());
-    }
-
     /**
      * Callers must hold the failover mutex before calling this method.
      *
@@ -2540,7 +2510,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         consumer.setQueuename(queueName);
 
         // bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
-        bindQueue(queueName, amqd.getRoutingKey(), consumer.getRawSelectorFieldTable(), amqd.getExchangeName());
+        bindQueue(queueName, amqd.getRoutingKey(), consumer.getRawSelectorFieldTable(), amqd.getExchangeName(),amqd);
 
         // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
         if (!_immediatePrefetch)

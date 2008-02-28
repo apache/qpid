@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import java.net.URISyntaxException;
+
 import javax.jms.Destination;
 import javax.naming.NamingException;
 import javax.naming.Reference;
@@ -31,7 +33,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
 
 
 public abstract class AMQDestination implements Destination, Referenceable
@@ -50,6 +51,8 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     private AMQShortString _routingKey;
 
+    private AMQShortString[] _bindingKeys;
+
     private String _url;
     private AMQShortString _urlAsShortString;
 
@@ -64,7 +67,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     public static final Integer TOPIC_TYPE = Integer.valueOf(2);
     public static final Integer UNKNOWN_TYPE = Integer.valueOf(3);
 
-    protected AMQDestination(String url) throws URLSyntaxException
+    protected AMQDestination(String url) throws URISyntaxException
     {
         this(new AMQBindingURL(url));
     }
@@ -79,26 +82,43 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
         _queueName = binding.getQueueName() == null ? null : new AMQShortString(binding.getQueueName());
         _routingKey = binding.getRoutingKey() == null ? null : new AMQShortString(binding.getRoutingKey());
+        _bindingKeys = binding.getBindingKeys() == null || binding.getBindingKeys().length == 0 ? new AMQShortString[0] : binding.getBindingKeys();
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, AMQShortString queueName)
     {
-        this(exchangeName, exchangeClass, routingKey, false, false, queueName);
+        this(exchangeName, exchangeClass, routingKey, false, false, queueName, null);
+    }
+
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, AMQShortString queueName, AMQShortString[] bindingKeys)
+    {
+        this(exchangeName, exchangeClass, routingKey, false, false, queueName,bindingKeys);
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName)
     {
-        this(exchangeName, exchangeClass, destinationName, false, false, null);
+        this(exchangeName, exchangeClass, destinationName, false, false, null,null);
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
-                             boolean isAutoDelete, AMQShortString queueName)
+            boolean isAutoDelete, AMQShortString queueName)
     {
-        this(exchangeName, exchangeClass, routingKey, isExclusive, isAutoDelete, queueName, false);
+        this(exchangeName, exchangeClass, routingKey, isExclusive, isAutoDelete, queueName, false,null);
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
-                             boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
+                             boolean isAutoDelete, AMQShortString queueName,AMQShortString[] bindingKeys)
+    {
+        this(exchangeName, exchangeClass, routingKey, isExclusive, isAutoDelete, queueName, false,bindingKeys);
+    }
+
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
+            boolean isAutoDelete, AMQShortString queueName, boolean isDurable){
+        this (exchangeName, exchangeClass, routingKey, isExclusive,isAutoDelete,queueName,isDurable,null);
+    }
+
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
+                             boolean isAutoDelete, AMQShortString queueName, boolean isDurable,AMQShortString[] bindingKeys)
     {
         // If used with a fannout exchange, the routing key can be null
         if ( !ExchangeDefaults.FANOUT_EXCHANGE_CLASS.equals(exchangeClass) && routingKey == null)
@@ -120,6 +140,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isAutoDelete = isAutoDelete;
         _queueName = queueName;
         _isDurable = isDurable;
+        _bindingKeys = bindingKeys == null || bindingKeys.length == 0 ? new AMQShortString[0] : bindingKeys;
     }
 
     public AMQShortString getEncodedName()
@@ -181,6 +202,20 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _routingKey;
     }
 
+    public AMQShortString[] getBindingKeys()
+    {
+        if (_bindingKeys != null && _bindingKeys.length > 0)
+        {
+            return _bindingKeys;
+        }
+        else
+        {
+            // catering to the common use case where the
+            //routingKey is the same as the bindingKey.
+            return new AMQShortString[]{_routingKey};
+        }
+    }
+
     public boolean isExclusive()
     {
         return _isExclusive;
@@ -237,6 +272,21 @@ public abstract class AMQDestination implements Destination, Referenceable
                 sb.append("='");
                 sb.append(_routingKey).append("'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            // We can't allow both routingKey and bindingKey
+            if (_routingKey == null && _bindingKeys != null && _bindingKeys.length>0)
+            {
+
+                for (AMQShortString bindingKey:_bindingKeys)
+                {
+                    sb.append(BindingURL.OPTION_BINDING_KEY);
+                    sb.append("='");
+                    sb.append(bindingKey);
+                    sb.append("'");
+                    sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+
+                }
             }
 
             if (_isDurable)

@@ -119,13 +119,25 @@ class AmqpElement
   # List of children of type elname, or all children if elname
   # not specified.
   def children(elname=nil)
-    @cache_children[elname] ||= @children.select { |c| elname==c.xml.name }
+    if elname
+      @cache_children[elname] ||= @children.select { |c| elname==c.xml.name }
+    else
+      @children
+    end
+  end
+
+  def each_descendant(&block)
+    yield self
+    @children.each { |c| c.each_descendant(&block) }
   end
 
   # Look up child of type elname with attribute name.
   def child(elname, name)
     @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
   end
+
+  # Fully qualified amqp dotted name of this element
+  def dotted_name() (parent ? parent.dotted_name+"." : "") + name; end
 
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
@@ -140,9 +152,22 @@ class AmqpElement
   # Text of doc child if there is one.
   def doc() d=xml.elements["doc"]; d and d.text; end
 
+  def fqname()
+    throw "fqname: #{self} #{parent.fqname} has no name" unless name
+    p=parent && parent.fqname
+    p ? p+"."+name : name;
+  end
+
+  def containing_class()
+    return self if is_a? AmqpClass
+    return parent && parent.containing_class
+  end
+  
 end
 
-AmqpResponse = AmqpElement
+class AmqpResponse < AmqpElement
+  def initialize(xml, parent) super; end
+end
 
 class AmqpDoc < AmqpElement
   def initialize(xml,parent) super; end
@@ -153,17 +178,31 @@ class AmqpChoice < AmqpElement
   def initialize(xml,parent) super; end
   amqp_attr_reader :name, :value
 end
-  
+
 class AmqpEnum < AmqpElement
   def initialize(xml,parent) super; end
   amqp_child_reader :choice
 end
 
+# 0-10 array domains are missing element type information, add it here.
+ArrayTypes={
+  "str16-array" => "str-16",
+  "amqp-host-array" => "connection.amqp-host-url",
+  "command-fragments" => "session.command-fragment",
+  "in-doubt" => "dtx.xid"
+}
+
 class AmqpDomain < AmqpElement
-  def initialize(xml, parent) super; end
+  def initialize(xml, parent)
+    super
+    root.used_by[uses].push(fqname) if uses and uses.index('.') 
+  end
+  
   amqp_attr_reader :type
   amqp_single_child_reader :struct # preview
   amqp_single_child_reader :enum
+
+  def uses() type_=="array" ? ArrayTypes[name] : type_; end
 
   def unalias()
     d=self
@@ -180,10 +219,13 @@ class AmqpException < AmqpElement
 end
 
 class AmqpField < AmqpElement
-  def initialize(xml, amqp) super; end;
+  def initialize(xml, amqp)
+    super;
+    root.used_by[type_].push(parent.fqname) if  type_ and type_.index('.')
+  end
+  
   def domain() root.domain(xml.attributes["domain"]); end
   amqp_single_child_reader :struct # preview
-  # FIXME aconway 2008-02-21: exceptions in fields - need to update c++ mapping.
   amqp_child_reader :exception
   amqp_attr_reader :type, :default, :code, :required
 end
@@ -198,15 +240,11 @@ class AmqpConstant < AmqpElement
   amqp_attr_reader :value, :class
 end
 
-# FIXME aconway 2008-02-21: 
-# class AmqpResponse < AmqpElement
-#   def initialize(xml, parent) super; end
-# end
-
 class AmqpResult < AmqpElement
   def initialize(xml, parent) super; end
   amqp_single_child_reader :struct # preview
   amqp_attr_reader :type
+  def name() "result"; end
 end
 
 class AmqpEntry < AmqpElement
@@ -236,8 +274,8 @@ class AmqpStruct < AmqpElement
   amqp_attr_reader :size, :code, :pack 
   amqp_child_reader :field
 
-  alias :raw_pack :pack
   # preview - preview code needs default "short" for pack.
+  alias :raw_pack :pack
   def pack() raw_pack or (not parent.final? and "short"); end 
   def result?() parent.xml.name == "result"; end
   def domain?() parent.xml.name == "domain"; end
@@ -265,17 +303,21 @@ class AmqpRole < AmqpElement
   amqp_attr_reader :implement
 end
 
-class AmqpControl < AmqpElement
+# Base class for command and control.
+class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
 end
 
-class AmqpCommand < AmqpElement
+class AmqpControl < AmqpAction
   def initialize(xml,amqp) super; end
-  amqp_child_reader :implement, :field, :exception, :response
+end
+
+class AmqpCommand < AmqpAction
+  def initialize(xml,amqp) super; end
+  amqp_child_reader :exception
   amqp_single_child_reader :result, :segments
-  amqp_attr_reader :code
 end
 
 class AmqpClass < AmqpElement
@@ -296,10 +338,17 @@ class AmqpClass < AmqpElement
   def l4?()                     # preview
     !["connection", "session", "execution"].include?(name)
   end
+
+  def actions() controls+commands;   end
 end
 
 class AmqpType < AmqpElement
+  def initialize(xml,amqp) super; end
   amqp_attr_reader :code, :fixed_width, :variable_width
+end
+
+class AmqpXref < AmqpElement
+  def initialize(xml,amqp) super; end
 end
 
 # AMQP root element.
@@ -314,13 +363,15 @@ class AmqpRoot < AmqpElement
     raise "No XML spec files." if specs.empty?
     xml=parse(specs.shift)
     specs.each { |s| xml_merge(xml, parse(s)) }
+    @used_by=Hash.new{ |h,k| h[k]=[] }
     super(xml, nil)
   end
 
+  attr_reader :used_by
+  
+  def merge(root) xml_merge(xml, root.xml); end
+  
   def version() major + "-" + minor; end
-
-  # Find a child node from a dotted amqp name, e.g. message.transfer
-  def lookup(dotted_name) elements[dotted_name.gsub(/\./,"/")]; end
 
   # preview - only struct child reader remains for new mapping
   def domain_structs() domains.map{ |d| d.struct }.compact; end
@@ -336,6 +387,8 @@ class AmqpRoot < AmqpElement
     @methods_on ||= { }
     @methods_on[chassis] ||= classes.map { |c| c.methods_on(chassis) }.flatten
   end
+
+  def fqname() nil; end
 
   # TODO aconway 2008-02-21: methods by role.
   
@@ -353,7 +406,7 @@ end
 # Collect information about generated files.
 class GenFiles
   @@files =[]
-  def GenFiles.add(f) @@files << f; puts f; end
+  def GenFiles.add(f) @@files << f; end
   def GenFiles.get() @@files; end
 end
 
@@ -366,26 +419,38 @@ class Generator
   def initialize (outdir, amqp)
     @amqp=amqp
     @outdir=outdir
-    @prefix=''                  # For indentation or comments.
+    @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
-    Pathname.new(@outdir).mkpath unless @outdir=="-" or File.directory?(@outdir) 
+    Pathname.new(@outdir).mkpath unless @outdir=="-"
   end
 
   # Create a new file, set @out. 
-  def file(file)
+  def file(file, &block)
     GenFiles.add file
     if (@outdir != "-")         
-      path=Pathname.new "#{@outdir}/#{file}"
-      path.parent.mkpath
-      path.open('w') { |@out| yield }
+      @path=Pathname.new "#{@outdir}/#{file}"
+      @path.parent.mkpath
+      @out=String.new           # Generate in memory first
+      if block then yield; endfile; end
+    end
+  end
+
+  def endfile()
+    if @outdir != "-"
+      if @path.exist? and @path.read == @out  
+        puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
+      else
+        @path.open('w') { |f| f << @out }
+        puts "Generated #{@path}"
+      end
     end
   end
 
   # Append multi-line string to generated code, prefixing each line.
   def gen (str)
     str.each_line { |line|
-      @out << @prefix unless @midline
+      @out << @prefix.last unless @midline
       @out << line
       @midline = nil
     }
@@ -400,23 +465,25 @@ class Generator
   end
 
   # Generate code with added prefix.
-  def prefix(add)
-    save=@prefix
-    @prefix+=add
-    yield
-    @prefix=save
+  def prefix(add, &block)
+    @prefix.push @prefix.last+add
+    if block then yield; endprefix; end
+  end
+
+  def endprefix()
+    @prefix.pop
   end
   
   # Generate indented code
   def indent(n=1,&block) prefix(@indentstr * n,&block); end
+  alias :endindent :endprefix
 
   # Generate outdented code
   def outdent(&block)
-    save=@prefix
-    @prefix=@prefix[0...-2]
-    yield
-    @prefix=save
+    @prefix.push @prefix.last[0...-2]
+    if block then yield; endprefix; end
   end
+  alias :endoutdent :endprefix
   
   attr_accessor :out
 end

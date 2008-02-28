@@ -18,17 +18,13 @@
  * under the License.
  *
  */
-#include "SessionState.h"
-#include "Broker.h"
+#include "PreviewSessionState.h"
+#include "PreviewSessionManager.h"
+#include "PreviewSessionHandler.h"
 #include "ConnectionState.h"
-#include "MessageDelivery.h"
+#include "Broker.h"
 #include "SemanticHandler.h"
-#include "SessionManager.h"
-#include "SessionHandler.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "qpid/framing/ServerInvoker.h"
-
-#include <boost/bind.hpp>
 
 namespace qpid {
 namespace broker {
@@ -40,18 +36,18 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 
-SessionState::SessionState(
-    SessionManager* f, SessionHandler* h, uint32_t timeout_, uint32_t ack) 
+PreviewSessionState::PreviewSessionState(
+    PreviewSessionManager* f, PreviewSessionHandler* h, uint32_t timeout_, uint32_t ack) 
     : framing::SessionState(ack, timeout_ > 0),
       factory(f), handler(h), id(true), timeout(timeout_),
       broker(h->getConnection().broker),
       version(h->getConnection().getVersion()),
-      semanticState(*this, *this),
-      adapter(semanticState),
-      msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
-      ackOp(boost::bind(&SemanticState::ackRange, &semanticState, _1, _2))
+      semanticHandler(new SemanticHandler(*this))
 {
-    getConnection().outputTasks.addOutputTask(&semanticState);
+    in.next = semanticHandler.get();
+    out.next = &handler->out;
+
+    getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
 
     Manageable* parent = broker.GetVhostObject ();
 
@@ -72,7 +68,7 @@ SessionState::SessionState(
     }
 }
 
-SessionState::~SessionState() {
+PreviewSessionState::~PreviewSessionState() {
     // Remove ID from active session list.
     if (factory)
         factory->erase(getId());
@@ -80,34 +76,35 @@ SessionState::~SessionState() {
         mgmtObject->resourceDestroy ();
 }
 
-SessionHandler* SessionState::getHandler() {
+PreviewSessionHandler* PreviewSessionState::getHandler() {
     return handler;
 }
 
-AMQP_ClientProxy& SessionState::getProxy() {
+AMQP_ClientProxy& PreviewSessionState::getProxy() {
     assert(isAttached());
     return getHandler()->getProxy();
 }
 
-ConnectionState& SessionState::getConnection() {
+ConnectionState& PreviewSessionState::getConnection() {
     assert(isAttached());
     return getHandler()->getConnection();
 }
 
-void SessionState::detach() {
-    getConnection().outputTasks.removeOutputTask(&semanticState);
+void PreviewSessionState::detach() {
+    getConnection().outputTasks.removeOutputTask(&semanticHandler->getSemanticState());
     Mutex::ScopedLock l(lock);
-    handler = 0;
+    handler = 0; out.next = 0; 
     if (mgmtObject.get() != 0)
     {
         mgmtObject->set_attached  (0);
     }
 }
 
-void SessionState::attach(SessionHandler& h) {
+void PreviewSessionState::attach(PreviewSessionHandler& h) {
     {
         Mutex::ScopedLock l(lock);
         handler = &h;
+        out.next = &handler->out;
         if (mgmtObject.get() != 0)
         {
             mgmtObject->set_attached (1);
@@ -115,10 +112,10 @@ void SessionState::attach(SessionHandler& h) {
             mgmtObject->set_channelId (h.getChannel());
         }
     }
-    h.getConnection().outputTasks.addOutputTask(&semanticState);
+    h.getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
 }
 
-void SessionState::activateOutput()
+void PreviewSessionState::activateOutput()
 {
     Mutex::ScopedLock l(lock);
     if (isAttached()) {
@@ -129,12 +126,12 @@ void SessionState::activateOutput()
     //if not attached, it can simply ignore the callback, else pass it
     //on to the connection
 
-ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
+ManagementObject::shared_ptr PreviewSessionState::GetManagementObject (void) const
 {
     return dynamic_pointer_cast<ManagementObject> (mgmtObject);
 }
 
-Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
+Manageable::status_t PreviewSessionState::ManagementMethod (uint32_t methodId,
                                                      Args&    /*args*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
@@ -166,101 +163,6 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
     }
 
     return status;
-}
-
-void SessionState::handleCommand(framing::AMQMethodBody* method)
-{
-    SequenceNumber id = incoming.next();
-    Invoker::Result invocation = invoke(adapter, *method);
-    incoming.complete(id);                                    
-    
-    if (!invocation.wasHandled()) {
-        throw NotImplementedException("Not implemented");
-    } else if (invocation.hasResult()) {
-        getProxy().getExecution().result(id.getValue(), invocation.getResult());
-    }
-    if (method->isSync()) { 
-        incoming.sync(id); 
-        sendCompletion(); 
-    }
-    //TODO: if window gets too large send unsolicited completion
-}
-
-void SessionState::handleContent(AMQFrame& frame)
-{
-    intrusive_ptr<Message> msg(msgBuilder.getMessage());
-    if (!msg) {//start of frameset will be indicated by frame flags
-        msgBuilder.start(incoming.next());
-        msg = msgBuilder.getMessage();
-    }
-    msgBuilder.handle(frame);
-    if (frame.getEof() && frame.getEos()) {//end of frameset will be indicated by frame flags
-        msg->setPublisher(&getConnection());
-        semanticState.handle(msg);        
-        msgBuilder.end();
-        incoming.track(msg);
-        if (msg->getFrames().getMethod()->isSync()) { 
-            incoming.sync(msg->getCommandId()); 
-            sendCompletion(); 
-        }
-    }
-}
-
-void SessionState::handle(AMQFrame& frame)
-{
-    //TODO: make command handling more uniform, regardless of whether
-    //commands carry content. (For now, assume all single frame
-    //assmblies are non-content bearing and all content-bearing
-    //assmeblies will have more than one frame):
-    if (frame.getBof() && frame.getEof()) {
-        handleCommand(frame.getMethod());
-    } else {
-        handleContent(frame);
-    }
-
-}
-
-DeliveryId SessionState::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
-{
-    uint32_t maxFrameSize = getConnection().getFrameMax();
-    MessageDelivery::deliver(msg, getProxy().getHandler(), ++outgoing.hwm, token, maxFrameSize);
-    return outgoing.hwm;
-}
-
-void SessionState::sendCompletion()
-{
-    SequenceNumber mark = incoming.getMark();
-    SequenceNumberSet range = incoming.getRange();
-    getProxy().getExecution().complete(mark.getValue(), range);
-}
-
-void SessionState::complete(uint32_t cumulative, const SequenceNumberSet& range) 
-{
-    //record: 
-    SequenceNumber mark(cumulative);
-    if (outgoing.lwm < mark) {
-        outgoing.lwm = mark;
-        //ack messages:
-        semanticState.ackCumulative(mark.getValue());
-    }
-    range.processRanges(ackOp);
-}
-
-void SessionState::flush()
-{
-    incoming.flush();
-    sendCompletion();
-}
-
-void SessionState::sync()
-{
-    incoming.sync();
-    sendCompletion();
-}
-
-void SessionState::noop()
-{
-    incoming.noop();
 }
 
 

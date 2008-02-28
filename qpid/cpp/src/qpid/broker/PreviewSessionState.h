@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_SESSION_H
-#define QPID_BROKER_SESSION_H
+#ifndef QPID_BROKER_PREVIEWSESSION_H
+#define QPID_BROKER_PREVIEWSESSION_H
 
 /*
  *
@@ -30,12 +30,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Session.h"
-#include "BrokerAdapter.h"
-#include "DeliveryAdapter.h"
-#include "MessageBuilder.h"
 #include "SessionContext.h"
-#include "SemanticState.h"
-#include "IncomingExecutionContext.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -52,8 +47,9 @@ class AMQP_ClientProxy;
 
 namespace broker {
 
-class SessionHandler;
-class SessionManager;
+class SemanticHandler;
+class PreviewSessionHandler;
+class PreviewSessionManager;
 class Broker;
 class ConnectionState;
 
@@ -61,20 +57,20 @@ class ConnectionState;
  * Broker-side session state includes sessions handler chains, which may
  * themselves have state. 
  */
-class SessionState : public framing::SessionState,
+class PreviewSessionState : public framing::SessionState,
     public SessionContext,
-    public DeliveryAdapter,
+    public framing::FrameHandler::Chains,
     public management::Manageable
 {
   public:
-    ~SessionState();
+    ~PreviewSessionState();
     bool isAttached() { return handler; }
 
     void detach();
-    void attach(SessionHandler& handler);
+    void attach(PreviewSessionHandler& handler);
 
     
-    SessionHandler* getHandler();
+    PreviewSessionHandler* getHandler();
 
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();
@@ -89,59 +85,35 @@ class SessionState : public framing::SessionState,
     /** OutputControl **/
     void activateOutput();
 
-    void handle(framing::AMQFrame& frame);
-    void handleCommand(framing::AMQMethodBody* method);
-    void handleContent(framing::AMQFrame& frame);
-
-    void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    
-    void flush();
-    void noop();
-    void sync();
-    void sendCompletion();
-
-    //delivery adapter methods:
-    DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);
-
     // Manageable entry points
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
     // Normally SessionManager creates sessions.
-    SessionState(SessionManager*,
-                 SessionHandler* out,
+    PreviewSessionState(PreviewSessionManager*,
+                 PreviewSessionHandler* out,
                  uint32_t timeout,
                  uint32_t ackInterval);
     
 
   private:
-    typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
-
-    SessionManager* factory;
-    SessionHandler* handler;    
+    PreviewSessionManager* factory;
+    PreviewSessionHandler* handler;    
     framing::Uuid id;
     uint32_t timeout;
     sys::AbsTime expiry;        // Used by SessionManager.
     Broker& broker;
     framing::ProtocolVersion version;
     sys::Mutex lock;
-
-    SemanticState semanticState;
-    BrokerAdapter adapter;
-    MessageBuilder msgBuilder;
-
-    //execution state
-    IncomingExecutionContext incoming;
-    framing::Window outgoing;
-    RangedOperation ackOp;
-
+    boost::scoped_ptr<SemanticHandler> semanticHandler;
     management::Session::shared_ptr mgmtObject;
 
-  friend class SessionManager;
+  friend class PreviewSessionManager;
 };
 
 
-inline std::ostream& operator<<(std::ostream& out, const SessionState& session) {
+inline std::ostream& operator<<(std::ostream& out, const PreviewSessionState& session) {
     return out << session.getId();
 }
 

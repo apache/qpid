@@ -20,7 +20,7 @@
  */
 
 #include "SemanticState.h"
-#include "SessionState.h"
+#include "SessionContext.h"
 #include "ConnectionState.h"
 
 namespace qpid {
@@ -35,13 +35,13 @@ class Broker;
 class HandlerImpl {
   protected:
     SemanticState& state;
-    SessionState& session;
+    SessionContext& session;
 
     HandlerImpl(SemanticState& s) : state(s), session(s.getSession()) {}
 
     framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
     ConnectionState& getConnection() { return session.getConnection(); }
-    Broker& getBroker() { return session.getBroker(); }
+    Broker& getBroker() { return session.getConnection().getBroker(); }
 };
 
 }} // namespace qpid::broker
