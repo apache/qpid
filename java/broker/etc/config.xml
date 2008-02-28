@@ -32,8 +32,8 @@
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
-        <qpidnio>true</qpidnio>
-        <protectio>true</protectio>
+        <qpidnio>false</qpidnio>
+        <protectio>false</protectio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>

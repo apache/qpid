@@ -213,7 +213,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             e.printStackTrace();
         }
 
-        if (!System.getProperties().containsKey("protectio") || Boolean.getBoolean("protectio"))
+        if (Boolean.getBoolean("protectio"))
         {
             try
             {
