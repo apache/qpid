@@ -707,10 +707,6 @@ public class AMQMessage
         _transientMessageData = transientMessageData;
     }
 
-    public void clearTransientMessageData()
-    {
-        _transientMessageData = null;
-    }
 
     public String toString()
     {
