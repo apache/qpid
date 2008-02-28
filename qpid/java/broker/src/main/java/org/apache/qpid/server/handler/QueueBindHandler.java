@@ -25,13 +25,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -106,6 +106,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         try
         {
+
+            //Perform ACLs
+            virtualHost.getAccessManager().authorise(session, Permission.BIND, body, exch, queue, routingKey);
+
             if (!exch.isBound(routingKey, body.getArguments(), queue))
             {
                 queue.bind(routingKey, body.getArguments(), exch);

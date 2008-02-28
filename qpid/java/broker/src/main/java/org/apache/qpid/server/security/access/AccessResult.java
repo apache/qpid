@@ -30,15 +30,15 @@ public class AccessResult
     StringBuilder _authorizer;
     AccessStatus _status;
 
-    public AccessResult(AccessManager authorizer, AccessStatus status)
+    public AccessResult(ACLPlugin authorizer, AccessStatus status)
     {
         _status = status;
-        _authorizer = new StringBuilder(authorizer.getName());        
+        _authorizer = new StringBuilder(authorizer.getPluginName());
     }
 
-    public void setAuthorizer(AccessManager authorizer)
+    public void setAuthorizer(ACLPlugin authorizer)
     {
-        _authorizer.append(authorizer.getName());
+        _authorizer.append(authorizer.getPluginName());
     }
 
     public String getAuthorizer()
@@ -56,10 +56,10 @@ public class AccessResult
         return _status;
     }
 
-    public void addAuthorizer(AccessManager accessManager)
+    public void addAuthorizer(ACLPlugin accessManager)
     {
         _authorizer.insert(0, "->");
-        _authorizer.insert(0, accessManager.getName());
+        _authorizer.insert(0, accessManager.getPluginName());
     }
 
 

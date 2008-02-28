@@ -639,7 +639,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                     final AMQFrame frame = body.generateFrame(getChannelId());
 
                     getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
-                     
 
                         // When control resumes at this point, a reply will have been received that
                         // indicates the broker has closed the channel successfully.
@@ -1737,11 +1736,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         {
                             JMSException ex = new JMSException("Error registering consumer: " + e);
 
-                            if (_logger.isDebugEnabled())
-                            {
-                                e.printStackTrace();
-                            }
-
                             ex.setLinkedException(e);
                             throw ex;
                         }
@@ -2354,7 +2348,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    private AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    public AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
@@ -2427,17 +2421,17 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         return ++_nextProducerId;
     }
 
-    protected AMQProtocolHandler getProtocolHandler()
+    public AMQProtocolHandler getProtocolHandler()
     {
         return _connection.getProtocolHandler();
     }
 
-    protected byte getProtocolMajorVersion()
+    public byte getProtocolMajorVersion()
     {
         return getProtocolHandler().getProtocolMajorVersion();
     }
 
-    protected byte getProtocolMinorVersion()
+    public byte getProtocolMinorVersion()
     {
         return getProtocolHandler().getProtocolMinorVersion();
     }

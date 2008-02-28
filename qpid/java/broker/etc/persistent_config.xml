@@ -51,18 +51,18 @@
         <principal-databases>
             <principal-database>
                 <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
                         <name>passwordFile</name>
-                        <value>${conf}/passwdVhost</value>
+                        <value>${conf}/passwd</value>
                     </attribute>
                 </attributes>
             </principal-database>
         </principal-databases>
 
         <access>
-            <class>org.apache.qpid.server.security.access.AllowAll</class>
+            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
         </access>
         <jmx>
             <access>${conf}/jmxremote.access</access>
@@ -76,7 +76,7 @@
             <localhost>
                 <store>
                     <environment-path>${work}/bdbstore/localhost-store</environment-path>
-                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+                    <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
                 </store>             
                 <txn>
                     <environment-tx-timeout>60</environment-tx-timeout>

@@ -35,6 +35,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.security.access.Permission;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
 {
@@ -100,6 +101,10 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
+
+                //Perform ACLs
+                virtualHost.getAccessManager().authorise(session, Permission.PURGE, body, queue);
+
                 long purged = queue.clearQueue(channel.getStoreContext());
 
 

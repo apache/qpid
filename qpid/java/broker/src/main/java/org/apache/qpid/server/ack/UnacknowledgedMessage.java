@@ -68,16 +68,6 @@ public class UnacknowledgedMessage
         entry.getMessage().decrementReference(storeContext);
     }
 
-    public void restoreTransientMessageData() throws AMQException
-    {
-        entry.getMessage().restoreTransientMessageData();
-    }
-
-    public void clearTransientMessageData()
-    {
-        entry.getMessage().clearTransientMessageData();
-    }
-
     public AMQMessage getMessage()
     {
         return entry.getMessage();

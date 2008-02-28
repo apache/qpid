@@ -113,8 +113,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     private int _hashCode;
     private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
-    private char[] chars;
-    private String str;
     
     public static final AMQShortString EMPTY_STRING = new AMQShortString((String)null);
 
@@ -281,7 +279,80 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         //buffer.setAutoExpand(true);
         buffer.put((byte) size);
         buffer.put(_data, _offset, size);
+
     }
+
+    public boolean endsWith(String s)
+    {
+        return endsWith(new AMQShortString(s));
+    }
+
+
+    public boolean endsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+
+        int thisLength = length();
+        int otherLength = otherString.length();
+
+        for (int i = 1; i <= otherLength; i++)
+        {
+            if (charAt(thisLength - i) != otherString.charAt(otherLength - i))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean startsWith(String s)
+    {
+        return startsWith(new AMQShortString(s));
+    }
+
+    public boolean startsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (_data[i] != otherString._data[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    public boolean startsWith(CharSequence otherString)
+    {
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (charAt(i) != otherString.charAt(i))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     private final class CharSubSequence implements CharSequence
     {
@@ -312,27 +383,20 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public char[] asChars()
     {
-        if (chars == null)
-        {
-            final int size = length();
-            chars = new char[size];
+        final int size = length();
+        final char[] chars = new char[size];
 
-	    for (int i = 0; i < size; i++)
-	    {
-                chars[i] = (char) _data[i + _offset];
-            }
-	}
+        for (int i = 0; i < size; i++)
+        {
+            chars[i] = (char) _data[i + _offset];
+        }
+
         return chars;
     }
 
     public String asString()
     {
-        if (str == null)
-        {
-            str = new String(asChars());
-        }
-
-        return str;
+        return new String(asChars());
     }
 
     public boolean equals(Object o)
@@ -473,6 +537,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             return (length() == name.length()) ? 0 : -1;
         }
     }
+
 
     public AMQShortStringTokenizer tokenize(byte delim)
     {

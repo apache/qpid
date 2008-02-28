@@ -13,6 +13,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -78,6 +79,8 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
         }
 
+        //Perform ACLs
+        virtualHost.getAccessManager().authorise(session, Permission.UNBIND, body, queue);
 
         try
         {

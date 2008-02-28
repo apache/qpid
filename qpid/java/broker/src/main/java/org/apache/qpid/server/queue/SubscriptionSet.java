@@ -271,8 +271,4 @@ class SubscriptionSet implements WeightedSubscriptionManager
         _exclusive = exclusive;
     }
 
-    public boolean getExcBoolean()
-    {
-        return _exclusive;
-    }
 }
