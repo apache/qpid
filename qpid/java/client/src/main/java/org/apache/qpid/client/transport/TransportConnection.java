@@ -122,7 +122,7 @@ public class TransportConnection
                     {
                         SocketConnector result;
                         // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
+                        if (Boolean.getBoolean("qpidnio"))
                         {
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
                                                                  ? "Qpid NIO is new default"

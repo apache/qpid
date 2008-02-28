@@ -28,7 +28,6 @@
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
-        <qpidnio>true</qpidnio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>

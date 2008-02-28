@@ -94,7 +94,7 @@ public class ConnectorConfiguration
     public String certType;
 
     @Configured(path = "connector.qpidnio",
-                defaultValue = "true")
+                defaultValue = "false")
     public boolean _multiThreadNIO;
 
 

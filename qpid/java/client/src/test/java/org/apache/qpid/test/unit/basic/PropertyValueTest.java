@@ -287,7 +287,14 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
 
             Assert.assertTrue("Check void properties are correctly transported",
-                ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+                              ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+
+            //JMSXUserID
+            if (m.getStringProperty("JMSXUserID") != null)
+            {
+                Assert.assertEquals("Check 'JMSXUserID' is supported ", USERNAME,
+                                    m.getStringProperty("JMSXUserID"));
+            }
         }
 
         received.clear();
