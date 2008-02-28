@@ -52,7 +52,7 @@
         <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
-        <enableJMSXUserID>true</enableJMSXUserID>
+        <enableJMSXUserID>false</enableJMSXUserID>
     </advanced>
 
     <security>
