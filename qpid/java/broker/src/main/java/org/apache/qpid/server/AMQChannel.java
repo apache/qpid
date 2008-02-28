@@ -119,7 +119,7 @@ public class AMQChannel
     private boolean _closing;
 
     @Configured(path = "advanced.enableJMSXUserID",
-                defaultValue = "true")
+                defaultValue = "false")
     public boolean ENABLE_JMSXUserID;
 
     public AMQChannel(AMQProtocolSession session, int channelId, TransactionManager transactionManager,
