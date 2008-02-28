@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-public class TopicTest extends AbstractXATestCase
+public class TopicTest extends AbstractXATestBase
 {
     /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(TopicTest.class);

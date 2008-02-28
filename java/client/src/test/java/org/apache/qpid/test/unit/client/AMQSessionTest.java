@@ -29,12 +29,12 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 
 /**
  * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession
  */
-public class AMQSessionTest extends QpidTestCase
+public class AMQSessionTest extends QpidTestBase
 {
 
     private static AMQSession _session;

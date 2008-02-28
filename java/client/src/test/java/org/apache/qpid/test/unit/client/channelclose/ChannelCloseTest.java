@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.testutil.QpidTestBase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
@@ -54,7 +52,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class ChannelCloseTest extends QpidTestCase implements ExceptionListener, ConnectionListener
+public class ChannelCloseTest extends QpidTestBase implements ExceptionListener, ConnectionListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseTest.class);
 
