@@ -112,8 +112,6 @@ class Specification < CppGen
           # segment-type and track are are built in
           domain_h d unless ["track","segment-type"].include?(d.name)
         }
-        puts @amqp.used_by.inspect
-        
         # Domains and structs that must be generated early because
         # they are used by other definitions:
         each_class_ns { |c|
