@@ -22,7 +22,7 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.qpid.test.framework.*;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -168,4 +168,3 @@ public class LocalPublisherImpl extends CircuitEndBase implements Publisher
         this.circuit = circuit;
     }
 }
-

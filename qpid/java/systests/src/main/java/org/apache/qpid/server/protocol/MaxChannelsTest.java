@@ -27,6 +27,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
@@ -55,7 +57,7 @@ public class MaxChannelsTest extends TestCase
         {
             for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
             {
-                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null, null));
+                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null));
             }
         }
         catch (AMQException e)

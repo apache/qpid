@@ -208,27 +208,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             _logger.debug("Frame Received: " + frame);
         }
+                
 
-        if (body instanceof AMQMethodBody)
-        {
-            methodFrameReceived(channelId, (AMQMethodBody) body);
-        }
-        else if (body instanceof ContentHeaderBody)
-        {
-            contentHeaderReceived(channelId, (ContentHeaderBody) body);
-        }
-        else if (body instanceof ContentBody)
-        {
-            contentBodyReceived(channelId, (ContentBody) body);
-        }
-        else if (body instanceof HeartbeatBody)
-        {
-            // NO OP
-        }
-        else
-        {
-            _logger.warn("Unrecognised frame " + frame.getClass().getName());
-        }
+        body.handle(channelId, this);
+
     }
 
     private void protocolInitiationReceived(ProtocolInitiation pi)
@@ -271,7 +254,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    private void methodFrameReceived(int channelId, AMQMethodBody methodBody)
+    public void methodFrameReceived(int channelId, AMQMethodBody methodBody)
     {
 
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(channelId, methodBody);
@@ -365,7 +348,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
         catch (Exception e)
         {
-            _stateManager.error(e);
+            
             for (AMQMethodListener listener : _frameListeners)
             {
                 listener.error(e);
@@ -375,7 +358,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    private void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
+    public void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
     {
 
         AMQChannel channel = getAndAssertChannel(channelId);
@@ -384,11 +367,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     }
 
-    private void contentBodyReceived(int channelId, ContentBody body) throws AMQException
+    public void contentBodyReceived(int channelId, ContentBody body) throws AMQException
     {
         AMQChannel channel = getAndAssertChannel(channelId);
 
         channel.publishContentBody(body, this);
+    }
+
+    public void heartbeatBodyReceived(int channelId, HeartbeatBody body)
+    {
+        // NO - OP
     }
 
     /**

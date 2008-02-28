@@ -361,6 +361,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 // this will attemp failover
 
                 sessionClosed(session);
+                _connection.exceptionReceived(cause);
             }
 
             // FIXME Need to correctly handle other exceptions. Things like ...
@@ -392,7 +393,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void propagateExceptionToWaiters(Exception e)
     {
-        getStateManager().error(e);
+        
         if (!_frameListeners.isEmpty())
         {
             final Iterator it = _frameListeners.iterator();
@@ -424,78 +425,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
             HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
 
-            switch (bodyFrame.getFrameType())
-            {
-                case AMQMethodBody.TYPE:
-
-                    if (debug)
-                    {
-                        _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
-                    }
-
-                    final AMQMethodEvent<AMQMethodBody> evt =
-                            new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
-
-                    try
-                    {
-
-                        boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                        if (!_frameListeners.isEmpty())
-                        {
-                            Iterator it = _frameListeners.iterator();
-                            while (it.hasNext())
-                            {
-                                final AMQMethodListener listener = (AMQMethodListener) it.next();
-                                wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
-                            }
-                        }
-
-                        if (!wasAnyoneInterested)
-                        {
-                            throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
-                                                   + _frameListeners, null);
-                        }
-                    }
-                    catch (AMQException e)
-                    {
-                        getStateManager().error(e);
-                        if (!_frameListeners.isEmpty())
-                        {
-                            Iterator it = _frameListeners.iterator();
-                            while (it.hasNext())
-                            {
-                                final AMQMethodListener listener = (AMQMethodListener) it.next();
-                                listener.error(e);
-                            }
-                        }
-
-                        exceptionCaught(session, e);
-                    }
-
-                    break;
-
-                case ContentHeaderBody.TYPE:
-
-                    _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
-                    break;
-
-                case ContentBody.TYPE:
-
-                    _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
-                    break;
-
-                case HeartbeatBody.TYPE:
-
-                    if (debug)
-                    {
-                        _logger.debug("Received heartbeat");
-                    }
-
-                    break;
-
-                default:
-
-            }
+            bodyFrame.handle(frame.getChannel(),_protocolSession);
 
             _connection.bytesReceived(_protocolSession.getIoSession().getReadBytes());
         }
@@ -511,6 +441,55 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             // get round a bug in old versions of qpid whereby the connection is not closed
             _stateManager.changeState(AMQState.CONNECTION_CLOSED);
         }
+    }
+
+    public void methodBodyReceived(final int channelId, final AMQBody bodyFrame, IoSession session)//, final IoSession session)
+            throws AMQException
+    {
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + bodyFrame);
+        }
+
+        final AMQMethodEvent<AMQMethodBody> evt =
+                new AMQMethodEvent<AMQMethodBody>(channelId, (AMQMethodBody) bodyFrame);
+
+        try
+                    {
+
+                        boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
+            if (!_frameListeners.isEmpty())
+            {
+                Iterator it = _frameListeners.iterator();
+                while (it.hasNext())
+                {
+                    final AMQMethodListener listener = (AMQMethodListener) it.next();
+                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                }
+            }
+
+            if (!wasAnyoneInterested)
+            {
+                throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
+                                       + _frameListeners, null);
+            }
+        }
+        catch (AMQException e)
+        {            
+            if (!_frameListeners.isEmpty())
+            {
+                Iterator it = _frameListeners.iterator();
+                while (it.hasNext())
+                {
+                    final AMQMethodListener listener = (AMQMethodListener) it.next();
+                    listener.error(e);
+                }
+            }
+
+            exceptionCaught(session, e);
+        }
+
     }
 
     private static int _messagesOut;

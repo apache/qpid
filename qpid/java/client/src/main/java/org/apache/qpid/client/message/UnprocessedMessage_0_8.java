@@ -47,7 +47,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ContentBody> _bodies;
 
-    public UnprocessedMessage_0_8(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage_0_8(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
         super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
     }
@@ -60,7 +60,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
 
     public UnprocessedMessage_0_8(int channelId, BasicDeliverBody body)
     {
-        super(channelId, body.getDeliveryTag(), body.getConsumerTag().toString(), body.getExchange(), body.getRoutingKey(), false);
+        super(channelId, body.getDeliveryTag(), body.getConsumerTag(), body.getExchange(), body.getRoutingKey(), false);
     }
 
     public void receiveBody(ContentBody body)

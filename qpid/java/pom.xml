@@ -163,8 +163,9 @@ under the License.
         <module>management/eclipse-plugin</module>
         <module>client/example</module>
         <module>client-java14</module>
+        <module>junit-toolkit</module>
+        <module>junit-toolkit-maven-plugin</module>
     </modules>
-
 
     <build>
         <resources>
@@ -401,37 +402,14 @@ under the License.
                     </executions>
                 </plugin>
 
+                <!--
                 <plugin>
-                    <groupId>uk.co.thebadgerset</groupId>
+                    <groupId>org.apache.qpid</groupId>
                     <artifactId>junit-toolkit-maven-plugin</artifactId>
                     <version>0.7.1-SNAPSHOT</version>
                 </plugin>
-
-            <!-- Disabled as plugin crashes on the systest module. 
-             Also, the resulting NOTICE file doesn't include all license info due to missing data in dependant poms.
-
-            <plugin>
-               <artifactId>maven-remote-resources-plugin</artifactId>
-               <version>1.0-alpha-5</version>
-               <executions>
-                   <execution>
-                       <goals>
-                           <goal>process</goal>
-                       </goals>
-                       <configuration>
-                           <resourceBundles>
-                               <resourceBundle>org.apache:apache-incubator-disclaimer-resource-bundle:1.1</resourceBundle>
-                               <resourceBundle>org.apache:apache-jar-resource-bundle:1.2</resourceBundle>
-                           </resourceBundles>
-                           <properties>
-                               <addLicense>true</addLicense>
-                               <projectName>Apache Qpid</projectName>
-                           </properties>
-                       </configuration>
-                   </execution>
-               </executions>
-           </plugin-->
-        </plugins>
+                -->
+            </plugins>
         </pluginManagement>
 
         <defaultGoal>install</defaultGoal>
@@ -543,12 +521,14 @@ under the License.
                 <scope>test</scope>
             </dependency>
 
+            <!--
             <dependency>
-                <groupId>uk.co.thebadgerset</groupId>
+                <groupId>org.apache.qpid</groupId>
                 <artifactId>junit-toolkit</artifactId>
                 <version>0.7.1-SNAPSHOT</version>
                 <scope>compile</scope>
             </dependency>
+            -->
 
             <!-- Qpid Version Dependencies -->
             <dependency>
@@ -584,6 +564,16 @@ under the License.
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-mgmt-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>junit-toolkit</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>junit-toolkit-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -693,6 +683,7 @@ under the License.
             </releases>
         </repository>
 
+        <!--
         <repository>
             <id>junittoolkit.snapshots</id>
             <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
@@ -700,6 +691,8 @@ under the License.
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        -->
+
     </repositories>
 
     <pluginRepositories>
@@ -721,6 +714,7 @@ under the License.
             </snapshots>
         </pluginRepository>
 
+        <!--
         <pluginRepository>
             <id>junittoolkit.plugin.snapshots</id>
             <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
@@ -728,6 +722,7 @@ under the License.
                 <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
+        -->
 
     </pluginRepositories>
 

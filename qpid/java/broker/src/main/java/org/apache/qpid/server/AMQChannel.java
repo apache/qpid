@@ -74,7 +74,7 @@ public class AMQChannel
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
      * value of this represents the <b>last</b> tag sent out
      */
-    private AtomicLong _deliveryTag = new AtomicLong(0);
+    private long _deliveryTag = 0;
 
     /** A channel has a default queue (the last declared) that is used when no queue name is explictily set */
     private AMQQueue _defaultQueue;
@@ -100,8 +100,6 @@ public class AMQChannel
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
-    private final MessageRouter _exchanges;
-
     private TransactionalContext _txnContext, _nonTransactedContext;
 
     /**
@@ -125,7 +123,7 @@ public class AMQChannel
     public boolean ENABLE_JMSXUserID;
 
     public AMQChannel(AMQProtocolSession session, int channelId, TransactionManager transactionManager,
-                      MessageStore messageStore, MessageRouter exchanges) throws AMQException
+                      MessageStore messageStore) throws AMQException
     {
         _session = session;
         _channelId = channelId;
@@ -134,7 +132,7 @@ public class AMQChannel
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _transactionManager = transactionManager;
-        _exchanges = exchanges;
+
         // by default the session is non-transactional
         _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
     }
@@ -300,7 +298,7 @@ public class AMQChannel
 
     public long getNextDeliveryTag()
     {
-        return _deliveryTag.incrementAndGet();
+        return ++_deliveryTag;
     }
 
     public int getNextConsumerTag()
@@ -953,14 +951,18 @@ public class AMQChannel
 
     public void processReturns(AMQProtocolSession session) throws AMQException
     {
-        for (RequiredDeliveryException bouncedMessage : _returnMessages)
+        if(!_returnMessages.isEmpty())
         {
-            AMQMessage message = bouncedMessage.getAMQMessage();
-            session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
-                                                             new AMQShortString(bouncedMessage.getMessage()));
-        }
+            for (RequiredDeliveryException bouncedMessage : _returnMessages)
+            {
+                AMQMessage message = bouncedMessage.getAMQMessage();
+                session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
+                                                                 new AMQShortString(bouncedMessage.getMessage()));
+                message.decrementReference(_storeContext);
+            }
 
-        _returnMessages.clear();
+            _returnMessages.clear();
+        }
     }
 
     public boolean wouldSuspend(AMQMessage msg)

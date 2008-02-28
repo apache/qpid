@@ -26,17 +26,14 @@ import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.AMQMessage;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.requestreply.PingPongProducer;
 
-import uk.co.thebadgerset.junit.extensions.TimingController;
-import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.TimingController;
+import org.apache.qpid.junit.extensions.TimingControllerAware;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.ObjectMessage;
 
 import java.util.Collections;
 import java.util.HashMap;

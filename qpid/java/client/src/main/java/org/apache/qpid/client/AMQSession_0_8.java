@@ -222,7 +222,7 @@ public class AMQSession_0_8 extends AMQSession
 
         consumer.setConsumerTag(tag);
         // we must register the consumer in the map before we actually start listening
-        _consumers.put(tag, consumer);
+        _consumers.put(tag.toIntValue(), consumer);
         // TODO: Be aware of possible changes to parameter order as versions change.
         AMQFrame jmsConsume = getProtocolHandler().getMethodRegistry().createBasicConsumeBody(getTicket(),
                 queueName,

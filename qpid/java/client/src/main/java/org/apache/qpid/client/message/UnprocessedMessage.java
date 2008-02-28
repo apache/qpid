@@ -36,12 +36,12 @@ public abstract class UnprocessedMessage<H,B>
 {
     private final int _channelId;
     private final long _deliveryId;
-    private final String _consumerTag;
+    private final AMQShortString _consumerTag;
     protected AMQShortString _exchange;
     protected AMQShortString _routingKey;
     protected boolean _redelivered;
 
-    public UnprocessedMessage(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
         _channelId = channelId;
         _deliveryId = deliveryId;
@@ -65,7 +65,7 @@ public abstract class UnprocessedMessage<H,B>
         return _deliveryId;
     }
 
-    public String getConsumerTag()
+    public AMQShortString getConsumerTag()
     {
         return _consumerTag;
     }

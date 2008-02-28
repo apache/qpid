@@ -26,12 +26,7 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 import org.slf4j.Logger;
@@ -54,13 +49,13 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
     /** The connection being used by this consumer */
-    protected AMQConnection _connection;
+    protected final AMQConnection _connection;
 
-    private String _messageSelector;
+    private final String _messageSelector;
 
-    private boolean _noLocal;
+    private final boolean _noLocal;
 
-    private AMQDestination _destination;
+    private final AMQDestination _destination;
 
     /**
      * When true indicates that a blocking receive call is in progress
@@ -75,7 +70,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     protected AMQShortString _consumerTag;
 
     /** We need to know the channel id when constructing frames */
-    protected int _channelId;
+    protected final int _channelId;
 
     /**
      * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
@@ -83,40 +78,40 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     protected final ArrayBlockingQueue _synchronousQueue;
 
-    protected MessageFactoryRegistry _messageFactory;
+    protected final MessageFactoryRegistry _messageFactory;
 
     protected final AMQSession _session;
 
-    protected AMQProtocolHandler _protocolHandler;
+    protected final AMQProtocolHandler _protocolHandler;
 
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
      */
-    private FieldTable _rawSelectorFieldTable;
+    private final FieldTable _rawSelectorFieldTable;
 
     /**
      * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of
      * failover
      */
-    private int _prefetchHigh;
+    private final int _prefetchHigh;
 
     /**
      * We store the low water prefetch field in order to be able to reuse it when resubscribing in the event of
      * failover
      */
-    private int _prefetchLow;
+    private final int _prefetchLow;
 
     /**
      * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
      */
-    private boolean _exclusive;
+    private final boolean _exclusive;
 
     /**
      * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
      * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
      * implementation.
      */
-    private int _acknowledgeMode;
+    private final int _acknowledgeMode;
 
     /**
      * Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
@@ -153,10 +148,10 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * autoClose denotes that the consumer will automatically cancel itself when there are no more messages to receive
      * on the queue.  This is used for queue browsing.
      */
-    private boolean _autoClose;
+    private final boolean _autoClose;
     private boolean _closeWhenNoMessages;
 
-    private boolean _noConsume;
+    private final boolean _noConsume;
     private List<StackTraceElement> _closedStack = null;
 
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
@@ -177,7 +172,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
-        _acknowledgeMode = acknowledgeMode;
+
         _synchronousQueue = new ArrayBlockingQueue(prefetchHigh, true);
         _autoClose = autoClose;
         _noConsume = noConsume;
@@ -186,6 +181,10 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         if (_noConsume)
         {
             _acknowledgeMode = Session.NO_ACKNOWLEDGE;
+        }
+        else
+        {
+            _acknowledgeMode = acknowledgeMode;
         }
     }
 
@@ -665,9 +664,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * message listener or a synchronous receive() caller.
      *
      * @param messageFrame the raw unprocessed mesage
-     * @param channelId    channel on which this message was sent
      */
-    void notifyMessage(UnprocessedMessage messageFrame, int channelId)
+    void notifyMessage(UnprocessedMessage messageFrame)
     {
         final boolean debug = _logger.isDebugEnabled();
 
@@ -678,12 +676,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
         try
         {
-            AbstractJMSMessage jmsMessage =
-                _messageFactory.createMessage(messageFrame.getDeliveryTag(), messageFrame.isRedelivered(),
-                                              messageFrame.getExchange(), messageFrame.getRoutingKey(),
-                                              (ContentHeaderBody) messageFrame.getContentHeader(), 
-                                              messageFrame.getBodies());
-
+            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(messageFrame);
             if (debug)
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
@@ -694,11 +687,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 // if (!_closed.get())
                 {
 
-                    jmsMessage.setConsumer(this);
-
                     preDeliver(jmsMessage);
 
-                    notifyMessage(jmsMessage, channelId);
+                    notifyMessage(jmsMessage);
                 }
                 // else
                 // {
@@ -727,9 +718,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     /**
      * @param jmsMessage this message has already been processed so can't redo preDeliver
-     * @param channelId
      */
-    public void notifyMessage(AbstractJMSMessage jmsMessage, int channelId)
+    public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
         try
         {

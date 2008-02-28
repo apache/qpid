@@ -255,7 +255,7 @@
                                     </condition>
 
                                     <property name="command"
-                                              value="python run-tests -v -I java_failing.txt -b localhost:2110"/>
+                                              value="python run-tests -v -I java_failing.txt -b localhost:2110 -s ../specs/amqp.0-9.no-wip.xml"/>
 
                                     <ant antfile="python-test.xml" inheritRefs="true">
                                         <target name="run-tests" />

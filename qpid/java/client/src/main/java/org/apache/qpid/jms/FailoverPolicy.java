@@ -34,7 +34,6 @@ public class FailoverPolicy
     private static final long MINUTE = 60000L;
 
     private static final long DEFAULT_METHOD_TIMEOUT = 1 * MINUTE;
-    private static final long DEFAULT_FAILOVER_TIMEOUT = 4 * MINUTE;
 
     private FailoverMethod[] _methods = new FailoverMethod[1];
 
@@ -161,16 +160,7 @@ public class FailoverPolicy
             }
             else
             {
-                if ((now - _lastFailTime) >= DEFAULT_FAILOVER_TIMEOUT)
-                {
-                    _logger.info("Failover timeout");
-
-                    return false;
-                }
-                else
-                {
-                    _lastMethodTime = now;
-                }
+                _lastMethodTime = now;
             }
         }
         else

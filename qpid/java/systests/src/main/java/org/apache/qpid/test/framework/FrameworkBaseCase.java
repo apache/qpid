@@ -26,11 +26,11 @@ import org.apache.log4j.NDC;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
-import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
-import uk.co.thebadgerset.junit.extensions.SetupTaskAware;
-import uk.co.thebadgerset.junit.extensions.SetupTaskHandler;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.AsymptoticTestCase;
+import org.apache.qpid.junit.extensions.SetupTaskAware;
+import org.apache.qpid.junit.extensions.SetupTaskHandler;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import java.util.ArrayList;
 import java.util.List;

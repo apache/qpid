@@ -45,6 +45,7 @@ import javax.naming.spi.InitialContextFactory;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
@@ -216,7 +217,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             binding = new AMQBindingURL(bindingURL);
         }
-        catch (URLSyntaxException urlse)
+        catch (URISyntaxException urlse)
         {
             _logger.warn("Unable to destination:" + urlse);
 

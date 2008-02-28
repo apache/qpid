@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.framework;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * A Publisher represents the status of the publishing side of a test circuit. Its main purpose is to provide assertions
@@ -72,4 +72,3 @@ public interface Publisher
      */
     public Assertion exceptionAssertion(ParsedProperties testProps, Class<? extends Exception> exceptionClass);
 }
-

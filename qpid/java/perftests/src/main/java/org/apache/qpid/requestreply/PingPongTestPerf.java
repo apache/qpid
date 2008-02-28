@@ -26,9 +26,9 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
-import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.AsymptoticTestCase;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import javax.jms.*;
 
@@ -39,7 +39,7 @@ import javax.jms.*;
  *
  * <p/>A single run of the test using the default JUnit test runner will result in the sending and timing of the number
  * of pings specified by the test size and time how long it takes for all of these to complete. This test may be scaled
- * up using a suitable JUnit test runner. See {@link uk.co.thebadgerset.junit.extensions.TKTestRunner} for more
+ * up using a suitable JUnit test runner. See {@link org.apache.qpid.junit.extensions.TKTestRunner} for more
  * information on how to do this.
  *
  * <p/>The setup/teardown cycle establishes a connection to a broker and sets up a queue to send ping messages to and a

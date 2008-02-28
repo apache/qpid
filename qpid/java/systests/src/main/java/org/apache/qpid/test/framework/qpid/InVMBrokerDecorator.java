@@ -29,8 +29,8 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 
-import uk.co.thebadgerset.junit.extensions.SetupTaskAware;
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.SetupTaskAware;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 /**
  * InVMBrokerDecorator is a test decorator, that is activated when running tests against an in-vm broker only. Its

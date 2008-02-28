@@ -28,7 +28,7 @@ import org.apache.qpid.test.framework.localcircuit.LocalReceiverImpl;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 

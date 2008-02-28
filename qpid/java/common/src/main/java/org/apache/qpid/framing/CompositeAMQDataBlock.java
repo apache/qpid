@@ -24,7 +24,6 @@ import org.apache.mina.common.ByteBuffer;
 
 public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    private AMQDataBlock _firstFrame;
 
     private AMQDataBlock[] _blocks;
 
@@ -33,27 +32,12 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         _blocks = blocks;
     }
 
-    /**
-     * The encoded block will be logically first before the AMQDataBlocks which are encoded
-     * into the buffer afterwards.
-     * @param encodedBlock already-encoded data
-     * @param blocks some blocks to be encoded.
-     */
-    public CompositeAMQDataBlock(AMQDataBlock encodedBlock, AMQDataBlock[] blocks)
-    {
-        this(blocks);
-        _firstFrame = encodedBlock;
-    }
 
     public AMQDataBlock[] getBlocks()
     {
         return _blocks;
     }
 
-    public AMQDataBlock getFirstFrame()
-    {
-        return _firstFrame;
-    }
 
     public long getSize()
     {
@@ -62,19 +46,11 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         {
             frameSize += _blocks[i].getSize();
         }
-        if (_firstFrame != null)
-        {
-            frameSize += _firstFrame.getSize();
-        }
         return frameSize;
     }
 
     public void writePayload(ByteBuffer buffer)
     {
-        if (_firstFrame != null)
-        {
-            _firstFrame.writePayload(buffer);
-        }
         for (int i = 0; i < _blocks.length; i++)
         {
             _blocks[i].writePayload(buffer);
@@ -90,7 +66,7 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         else
         {
             StringBuilder buf = new StringBuilder(this.getClass().getName());
-            buf.append("{encodedBlock=").append(_firstFrame);
+            buf.append("{");
             for (int i = 0 ; i < _blocks.length; i++)
             {
                 buf.append(" ").append(i).append("=[").append(_blocks[i].toString()).append("]");

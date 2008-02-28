@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -60,7 +62,7 @@ public class TransientMessageData
      * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
      * by the message handle.
      */
-    private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
+    private List<AMQQueue> _destinationQueues;
 
     public MessagePublishInfo getMessagePublishInfo()
     {
@@ -74,7 +76,7 @@ public class TransientMessageData
 
     public List<AMQQueue> getDestinationQueues()
     {
-        return _destinationQueues;
+        return _destinationQueues == null ? (List<AMQQueue>) Collections.EMPTY_LIST : _destinationQueues;
     }
 
     public void setDestinationQueues(List<AMQQueue> destinationQueues)
@@ -109,6 +111,10 @@ public class TransientMessageData
 
     public void addDestinationQueue(AMQQueue queue)
     {
+        if(_destinationQueues == null)
+        {
+            _destinationQueues = new ArrayList<AMQQueue>();
+        }
         _destinationQueues.add(queue);
     }
 

@@ -29,7 +29,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -55,8 +54,7 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
 
-        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getTransactionManager(), virtualHost.getMessageStore(),
-                                                  virtualHost.getExchangeRegistry());
+        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getTransactionManager(), virtualHost.getMessageStore());
         session.addChannel(channel);
 
         ChannelOpenOkBody response;

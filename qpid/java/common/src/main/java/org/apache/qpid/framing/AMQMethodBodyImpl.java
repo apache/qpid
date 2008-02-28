@@ -24,7 +24,9 @@ package org.apache.qpid.framing;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public abstract class AMQMethodBodyImpl implements AMQMethodBody
 {
@@ -84,6 +86,11 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)
     {
         return new AMQConnectionException(code, message, getClazz(), getMethod(), getMajor(), getMinor(), cause);
+    }
+
+    public void handle(final int channelId, final AMQVersionAwareProtocolSession session) throws AMQException
+    {
+        session.methodFrameReceived(channelId, this);
     }
 
 }

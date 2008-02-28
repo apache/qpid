@@ -82,7 +82,7 @@
         </dependency>
 
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
         </dependency>
 
@@ -119,16 +119,16 @@
                  
                  To run from within maven:
                  
-                 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
+                 mvn org.apache.qpid:junit-toolkit-maven-plugin:tktest
                  
                  To run from the command line (after doing assembly:assembly goal):
                  
-                 java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 
+                 java -cp target/test_jar-jar-with-dependencies.jar org.apache.qpid.junit.extensions.TKTestRunner -s 1 -r 100000 
                  -o target org.apache.qpid.requestreply.PingPongTestPerf
                  
                  To generate the scripts do:
                  
-                 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
+                 mvn org.apache.qpid:junit-toolkit-maven-plugin:tkscriptgen
                  
                  Then to run the scripts, in the target directory do (after doing assembly:assembly goal):
                  
@@ -137,7 +137,7 @@
                  These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
             -->
             <plugin>
-                <groupId>uk.co.thebadgerset</groupId>
+                <groupId>org.apache.qpid</groupId>
                 <artifactId>junit-toolkit-maven-plugin</artifactId>
 
                 <configuration>

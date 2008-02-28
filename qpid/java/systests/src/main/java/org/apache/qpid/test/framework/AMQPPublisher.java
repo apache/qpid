@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.framework;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * An AMQPPublisher represents the status of the publishing side of a test circuit that exposes AMQP specific features.

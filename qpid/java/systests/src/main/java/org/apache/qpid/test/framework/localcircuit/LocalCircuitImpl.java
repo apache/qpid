@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.test.framework.*;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.*;
 

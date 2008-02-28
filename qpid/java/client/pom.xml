@@ -79,7 +79,7 @@
         </dependency>
 
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
             <scope>test</scope>
         </dependency>

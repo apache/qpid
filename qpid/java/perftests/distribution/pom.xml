@@ -54,12 +54,12 @@
             <version>${pom.version}</version>
         </dependency>
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
             <scope>runtime</scope>
             </dependency>
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit-maven-plugin</artifactId>
             <scope>runtime</scope>
         </dependency>

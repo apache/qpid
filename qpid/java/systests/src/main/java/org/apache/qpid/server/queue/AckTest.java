@@ -79,7 +79,7 @@ public class AckTest extends TestCase
         _messageStore = new TestableMemoryMessageStore();
         _txm = new MemoryTransactionManager();
         _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession, 5, _txm, _messageStore, null/*dont need exchange registry*/);
+        _channel = new AMQChannel(_protocolSession, 5, _txm, _messageStore);
 
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();

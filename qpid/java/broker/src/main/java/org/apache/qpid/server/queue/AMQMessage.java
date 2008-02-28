@@ -102,7 +102,7 @@ public class AMQMessage implements StorableMessage
     private long _expiration;
 
 
-    private final int hashcode = System.identityHashCode(this);
+
 
     private Exchange _exchange;
     private static final boolean SYNCED_CLOCKS =
@@ -111,7 +111,7 @@ public class AMQMessage implements StorableMessage
 
     public String debugIdentity()
     {
-        return "(HC:" + hashcode + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
+        return "(HC:" + System.identityHashCode(this) + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
     }
 
     public void setExpiration()
@@ -158,6 +158,11 @@ public class AMQMessage implements StorableMessage
     public void route() throws AMQException
     {
         _exchange.route(this);
+    }
+
+    public void enqueue(final List<AMQQueue> queues)
+    {
+        _transientMessageData.setDestinationQueues(queues);
     }
 
     /**
@@ -763,7 +768,7 @@ public class AMQMessage implements StorableMessage
         }
         finally
         {
-            destinationQueues.clear();
+
             // Remove refence for routing process . Reference count should now == delivered queue count
             decrementReference(storeContext);
         }
