@@ -158,6 +158,7 @@
   </target>
 
   <property name="test" value="*Test"/>
+  <property name="test.fork" value="no"/>
   <property name="test.mem" value="512M"/>
 
   <property name="log" value="info"/>
@@ -189,9 +190,7 @@
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
-    <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
-
-      <jvmarg value="-Xmx${test.mem}" />
+    <junit fork="${test.fork}" maxmemory="${test.mem}" haltonfailure="no" printsummary="on" timeout="600000">
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
@@ -207,7 +206,7 @@
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="yes" todir="${build.results}">
+      <batchtest fork="${test.fork}" todir="${build.results}">
         <fileset dir="${module.test.src}">
           <include name="**/${test}.java"/>
         </fileset>
