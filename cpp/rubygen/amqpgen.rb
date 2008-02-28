@@ -356,13 +356,19 @@ class AmqpRoot < AmqpElement
   amqp_attr_reader :major, :minor, :port, :comment
   amqp_child_reader :doc, :type, :struct, :domain, :constant, :class
 
-  def parse(filename) Document.new(File.new(filename)).root; end
+  def get_root(x)
+    case x
+    when Element then x
+    when Document then x.root
+    else Document.new(x).root
+    end
+  end
 
   # Initialize with output directory and spec files from ARGV.
   def initialize(*specs)
     raise "No XML spec files." if specs.empty?
-    xml=parse(specs.shift)
-    specs.each { |s| xml_merge(xml, parse(s)) }
+    xml=get_root(specs.shift)
+    specs.each { |s| xml_merge(xml, get_root(s)) }
     @used_by=Hash.new{ |h,k| h[k]=[] }
     super(xml, nil)
   end
