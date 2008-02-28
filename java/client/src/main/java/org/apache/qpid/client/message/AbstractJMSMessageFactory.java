@@ -140,8 +140,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         props.setType(mprop.getType());
         props.setUserId(mprop.getUserId());
         props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));        
-        AbstractJMSMessage message = createMessage(messageNbr, data, exchange, routingKey, props);
-        message.receivedFromServer();
+        AbstractJMSMessage message = createMessage(messageNbr, data, exchange, routingKey, props);        
         return message;
     }
 
@@ -152,7 +151,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     {
         final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
         msg.setJMSRedelivered(redelivered);
-
+        msg.receivedFromServer();
         return msg;
     }
 
@@ -164,7 +163,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         final AbstractJMSMessage msg =
                 create010MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, replyToURL);
         msg.setJMSRedelivered(redelivered);
-
+        msg.receivedFromServer();
         return msg;
     }
 
