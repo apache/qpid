@@ -136,9 +136,6 @@ class AmqpElement
     @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
   end
 
-  # Fully qualified amqp dotted name of this element
-  def dotted_name() (parent ? parent.dotted_name+"." : "") + name; end
-
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
@@ -167,6 +164,7 @@ end
 
 class AmqpResponse < AmqpElement
   def initialize(xml, parent) super; end
+  def fqname() (parent ? parent.dotted_name+"." : "") + "response"; end  
 end
 
 class AmqpDoc < AmqpElement
@@ -454,7 +452,7 @@ class Generator
   end
 
   # Append multi-line string to generated code, prefixing each line.
-  def gen (str)
+  def gen(str)
     str.each_line { |line|
       @out << @prefix.last unless @midline
       @out << line
@@ -465,10 +463,7 @@ class Generator
   end
 
   # Append str + '\n' to generated code.
-  def genl(str="")
-    gen str
-    gen "\n"
-  end
+  def genl(str="") gen str+"\n"; end
 
   # Generate code with added prefix.
   def prefix(add, &block)

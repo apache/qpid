@@ -46,11 +46,9 @@ class Specification < CppGen
       genl "static const char* NAME;"
       consts.each { |c| genl "static const uint8_t #{c.upcase}=#{x.send c or 0};"}
       genl "static const uint8_t CLASS_CODE=#{x.containing_class.nsname}::CODE;"
-      genl
-      genl "#{x.classname}();"           
-      scope("#{x.classname}(",");") { genl x.parameters } unless x.fields.empty?
-      genl
-      genl "void accept(Visitor&) const;"
+      ctor_decl(x.classname,[])
+      ctor_decl(x.classname, x.parameters) unless x.fields.empty?
+      function_decl("void accept", ["Visitor&"], "const")
       genl
       yield if block
     }
@@ -60,15 +58,9 @@ class Specification < CppGen
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
     genl
-    genl "#{x.classname}::#{x.classname}() {}"; 
-    genl
-    if not x.fields.empty?
-      scope("#{x.classname}::#{x.classname}(",") :") { genl x.parameters }
-      indent() { genl x.initializers }
-      genl "{}"
-      genl
-    end
-    scope("void #{x.classname}::accept(Visitor&) const {","}") {
+    ctor_defn(x.classname) {}
+    ctor_defn(x.classname, x.parameters, x.initializers) {} if not x.fields.empty?
+    function_defn("void #{x.classname}::accept", ["Visitor&"], "const") { 
       genl "// FIXME aconway 2008-02-27: todo"
     }
   end
@@ -82,11 +74,10 @@ class Specification < CppGen
   
   def action_h(a)
     action_struct_h(a, a.base, ["code"]) {
-      scope("template <class T> void invoke(T& target) {","}") {
-        scope("target.#{a.funcname}(", ");") { genl a.values }
+      function_defn("template <class T> void invoke", ["T& target"]) {
+        genl "target.#{a.funcname}(#{a.values.join(', ')});"
       }
-      genl
-      scope("template <class S> void serialize(S& s) {","}") {
+      function_defn("template <class S> void serialize", ["S& s"]) { 
         gen "s"
         a.fields.each { |f| gen "(#{f.cppname})"}
         genl ";"
@@ -141,19 +132,20 @@ class Specification < CppGen
   end
   
   def gen_proxy()
-    h_file("#{@dir}/Proxy.h") { 
+    h_file("#{@dir}/ProxyTemplate.h") { 
       include "#{@dir}/specification"
       namespace(@ns) { 
-        genl "template <class F, class R=F::result_type>"
+        genl "template <class F, class R=typename F::result_type>"
         cpp_class("ProxyTemplate") {
           public
-          genl "ProxyTemplate(F f) : functor(f) {}"
+          genl "ProxyTemplate(F f=F()) : functor(f) {}"
           @amqp.classes.each { |c|
             c.actions.each { |a|
-              scope("R #{a.funcname}(", ")") {  genl a.parameters }
-              scope() { 
+              genl
+              function_defn("R #{a.funcname}", a.parameters) { 
                 var=a.name.funcname
-                scope("#{a.classname} #{var}(",");") { genl a.arguments }
+                args = a.arguments.empty? ? "" : "("+a.arguments.join(", ")+")"
+                genl("#{a.fqclassname} #{var}#{args};")
                 genl "return functor(#{var});"
               }
             }
