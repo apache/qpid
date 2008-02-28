@@ -131,13 +131,18 @@ Broker::Broker(const Broker::Options& conf) :
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
 
-        mgmtObject = management::Broker::shared_ptr (new management::Broker (this, 0, 0, conf.port));
+        System* system = new System ();
+        systemObject = System::shared_ptr (system);
+
+        mgmtObject = management::Broker::shared_ptr (new management::Broker (this, system, conf.port));
         mgmtObject->set_workerThreads    (conf.workerThreads);
         mgmtObject->set_maxConns         (conf.maxConnections);
         mgmtObject->set_connBacklog      (conf.connectionBacklog);
         mgmtObject->set_stagingThreshold (conf.stagingThreshold);
         mgmtObject->set_mgmtPubInterval  (conf.mgmtPubInterval);
         mgmtObject->set_version          (PACKAGE_VERSION);
+        mgmtObject->set_dataDirEnabled   (dataDir.isEnabled ());
+        mgmtObject->set_dataDir          (dataDir.getPath ());
         
         managementAgent->addObject (mgmtObject, 1, 0);
 

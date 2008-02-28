@@ -31,11 +31,14 @@ using namespace qpid::sys;
 using namespace qpid::framing;
 using           std::string;
 
-bool /*MGEN:Class.NameCap*/::schemaNeeded = true;
+string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackageLower*/");
+string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/");
+uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
+    {/*MGEN:Class.SchemaMD5*/};
+bool    /*MGEN:Class.NameCap*/::firstInst    = true;
 
-/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (Manageable* _core, Manageable*/*MGEN:Class.ParentArg*/, 
-              /*MGEN:Class.ConstructorArgs*/) :
-    ManagementObject(_core, "/*MGEN:Class.NameLower*/")
+/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
+    ManagementObject(_core)
     /*MGEN:Class.ConstructorInits*/
 {
     /*MGEN:Class.ParentRefAssignment*/
@@ -60,14 +63,26 @@ namespace {
     const string DEFAULT("default");
 }
 
+bool /*MGEN:Class.NameCap*/::firstInstance (void)
+{
+    Mutex::ScopedLock alock(accessorLock);
+    if (firstInst)
+    {
+        firstInst = false;
+        return true;
+    }
+
+    return false;
+}
+
 void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 {
     FieldTable ft;
 
-    schemaNeeded = false;
-
     // Schema class header:
-    buf.putShortString (className);  // Class Name
+    buf.putShortString (packageName); // Package Name
+    buf.putShortString (className);   // Class Name
+    buf.putBin128      (md5Sum);      // Schema Hash
     buf.putShort       (/*MGEN:Class.ConfigCount*/); // Config Element Count
     buf.putShort       (/*MGEN:Class.InstCount*/); // Inst Element Count
     buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count

@@ -265,6 +265,38 @@ class Codec:
     """
     return self.unpack("!Q")
 
+  def encode_float(self, o):
+    self.pack("!f", o)
+
+  def decode_float(self):
+    return self.unpack("!f")
+
+  def encode_double(self, o):
+    self.pack("!d", o)
+
+  def decode_double(self):
+    return self.unpack("!d")
+
+  def encode_bin128(self, b):
+    for idx in range (0,16):
+      self.pack("!B", ord (b[idx]))
+
+  def decode_bin128(self):
+    result = ""
+    for idx in range (0,16):
+      result = result + chr (self.unpack("!B"))
+    return result
+
+  def encode_raw(self, len, b):
+    for idx in range (0,len):
+      self.pack("!B", b[idx])
+
+  def decode_raw(self, len):
+    result = ""
+    for idx in range (0,len):
+      result = result + chr (self.unpack("!B"))
+    return result
+
   def enc_str(self, fmt, s):
     """
     encodes a string 's' in network byte order as per format 'fmt'
