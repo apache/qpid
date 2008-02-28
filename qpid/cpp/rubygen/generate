@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require 'amqpgen'
 require 'pathname'
+require 'amqpgen'
 
 #
 # Run a set of code generation templates.
@@ -21,14 +21,16 @@ end
 
 # Create array of specs by version
 def parse_specs(files)
-  specs=Hash.new { |h,k| h[k]=[] }
+  lists=Hash.new { |h,k| h[k]=[] }
   files.each { |f|
     spec=AmqpRoot.new(File.new(f))
-    specs[spec.version] << spec
+    lists[spec.version] << spec
   }
-  specs.each_pair { |k,v|
-    specs[k] = v.size==1 ? v.first : AmqpRoot.new(*v.map { |s| s.xml})
+  specs={}
+  lists.each_pair { |k,l|
+    specs[k] = l.size==1 ? l.first : AmqpRoot.new(*l.map { |s| s.xml})
   }
+  return specs
 end
 
 # Run selected templates

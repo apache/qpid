@@ -61,14 +61,14 @@ class String
     name=path.pop
     return name.typename if path.empty?
     path.map! { |n| n.nsname }
-    return (path << name.caps).join("::")
+    return (path << name.caps.cppsafe).join("::")
   end
 
-  alias :typename :caps
-  alias :nsname :bars
-  alias :constname :shout
-  alias :funcname :lcaps
-  alias :varname :lcaps
+  def typename() caps.cppsafe; end
+  def nsname() bars.cppsafe; end
+  def constname() shout.cppsafe; end
+  def funcname() lcaps.cppsafe; end
+  def varname() lcaps.cppsafe; end
 end
 
 # Hold information about a C++ type.
@@ -112,22 +112,21 @@ class CppType
   def to_s() name; end;
 end
 
-class AmqpElement
-  def cppfqname()
-    names=parent.dotted_name.split(".")
-    # Field children are moved up to method in C++b
-    prefix.pop if parent.is_a? AmqpField
-    prefix.push cppname
-    prefix.join("::")
-  end
-end
-  
 class AmqpField
   def cppname() name.lcaps.cppsafe; end
   def cpptype() domain.cpptype;  end
   def bit?() domain.type_ == "bit"; end
   def signature() cpptype.param+" "+cppname; end
-  def paramtype() "call_traits<#{type_.amqp2cpp}>::param_type"; end
+  # FIXME aconway 2008-02-27: qualified
+  def paramtype()
+    fqtype=type_
+    unless type_.index(".")
+      c=containing_class
+      return c.domain(type_).fqtypename if c.domain(type_)
+      return c.struct(type_).fqclassname if c.struct(type_)
+    end
+    "call_traits<#{fqtype.amqp2cpp}>::param_type";
+  end
 end
 
 class AmqpMethod
@@ -138,26 +137,17 @@ class AmqpMethod
 end
 
 module AmqpHasFields
-    def parameters()
-    fields.map { |f| "#{f.paramtype} #{f.cppname}_"}.join(",\n")
-  end
-
-  def arguments()
-    fields.map { |f| "#{f.cppname}_"}.join(",\n")
-  end
-
-  def values()
-    fields.map { |f| "#{f.cppname}"}.join(",\n")
-  end
-
-  def initializers()
-    fields.map { |f| "#{f.cppname}(#{f.cppname}_)"}.join(",\n")
-  end
+  def parameters() fields.map { |f| "#{f.paramtype} #{f.cppname}_"} end
+  def arguments() fields.map { |f| "#{f.cppname}_"} end
+  def values() fields.map { |f| "#{f.cppname}"} end
+  def initializers() fields.map { |f| "#{f.cppname}(#{f.cppname}_)"}  end
 end
 
 class AmqpAction
   def classname() name.typename; end
   def funcname() parent.name.funcname + name.caps; end
+  def fqclassname() parent.name+"::"+classname; end
+
   include AmqpHasFields
 end
 
@@ -194,6 +184,11 @@ class AmqpDomain
 
   def cppname() name.caps; end
 
+  def fqtypename()
+    return containing_class.nsname+"::"+name.typename if containing_class
+    name.typename
+  end
+  
   def cpptype()
     d=unalias
     @cpptype ||= @@typemap[d.type_] or
@@ -220,7 +215,7 @@ class AmqpStruct
   end 
   def cpptype() parent.cpptype; end # preview
   def cppname() cpptype.name;  end # preview
-
+  def fqclassname() containing_class.nsname+"::"+name.typename;  end
   def classname() name.typename; end
 end
 
@@ -319,6 +314,38 @@ class CppGen < Generator
   # Generate code in namespace for each class
   def each_class_ns()
     @amqp.classes.each { |c| namespace(c.nsname) { yield c } }
+  end
+
+  def signature(ret_name, params, trailer="")
+    if params.size <= 1
+      genl ret_name+"(#{params})"+trailer
+    else
+      scope(ret_name+"(",")"+trailer) { genl params.join(",\n") }
+    end
+  end
+  
+  def function_decl(ret_name, params=[], trailer="")
+    signature(ret_name, params, trailer+";")
+  end
+
+  def function_defn(ret_name, params=[], trailer="")
+    genl
+    signature(ret_name, params, trailer)
+    scope() { yield }
+  end
+
+  def ctor_decl(name, params=[]) function_decl(name, params); end
+  
+  def ctor_defn(name, params=[], inits=[])
+    signature(name+"::"+name, params)
+    scope(":","") { genl inits.join(",\n")} if not inits.empty?
+    scope() { yield }
+  end
+
+  def function_call(name, params=[], trailer="")
+    gen name
+    list "(",params, ")"
+    gen trailer
   end
 end
 
