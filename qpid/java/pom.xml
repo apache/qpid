@@ -151,7 +151,6 @@ under the License.
         <module>common</module>
         <module>broker</module>
         <module>client</module>
-        <module>cluster</module>
         <module>systests</module>
         <module>perftests</module>
         <module>integrationtests</module>
@@ -581,11 +580,6 @@ under the License.
                 <artifactId>qpid-mgmt-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.qpid</groupId>
-                <artifactId>qpid-cluster</artifactId>
-                <version>${project.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -767,5 +761,13 @@ under the License.
                 </plugins>
             </build>
         </profile>
+<!--- Build profile to ignore test failures. -->
+<profile>
+<id>ignore</id>
+<properties>
+<maven.test.failure.ignore>true</maven.test.failure.ignore>
+<maven.test.error.ignore>true</maven.test.error.ignore>
+</properties>
+</profile>
     </profiles>
 </project>
