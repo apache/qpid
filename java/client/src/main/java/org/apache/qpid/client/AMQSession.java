@@ -1774,11 +1774,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     private void closeConsumers(Throwable error) throws JMSException
     {
-        if (_dispatcher != null)
-        {
-            _dispatcher.close();
-            _dispatcher = null;
-        }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
         final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList<BasicMessageConsumer>(_consumers.values());
@@ -1797,6 +1792,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
         }
         // at this point the _consumers map will be empty
+         if (_dispatcher != null)
+        {
+            _dispatcher.close();
+            _dispatcher = null;
+        }
     }
 
     /**
