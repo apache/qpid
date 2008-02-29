@@ -39,7 +39,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
 	serialize.cpp \
-	ProxyTemplate.cpp
+	ProxyTemplate.cpp apply.cpp
 # FIXME aconway 2008-02-20: removed RefCountedMap.cpp  due to valgrind error.
 
 check_LTLIBRARIES += libshlibtest.la
