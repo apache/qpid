@@ -32,70 +32,47 @@
 
 namespace qpid {
 namespace amqp_0_10 {
-
 /**
  * AMQP 0-10 encoding and decoding.
  */
-struct Codec
-{
-    template <class T>
-    static inline void endianize(T& value) {
+class Codec {
+  public:
+    /** Encode to an output byte iterator */
+    template <class OutIter>
+    class Encode : public Serializer<Encode<OutIter> > {
+      public:
+        Encode(OutIter o) : out(o) {}
 
-#ifdef BOOST_LITTLE_ENDIAN
-        std::reverse((char*)&value, (char*)&value+sizeof(value));
-#else
-        (void)value;            // Avoid unused var warnings.
-#endif
-    }
-    static inline void endianize(char&) {}
-    static inline void endianize(uint8_t&) {}
-    static inline void endianize(int8_t&) {}
+        using Serializer<Encode<OutIter> >::operator();
 
-
-    template <class Out> struct Encode : public ConstSerializer<Encode<Out> > {
-        Out out;
-
-        Encode(Out o) : out(o) {}
-
-        using ConstSerializer<Encode<Out> >::operator();
-        using ConstSerializer<Encode<Out> >::raw;
-
-        template <class T> 
+        template <class T>
         typename boost::enable_if<boost::is_integral<T>, Encode&>::type
-        operator()(const T& x) { T xx(x); endianize(xx); return raw(xx); }
+        operator()(T x) {
+            endianize(x);
+            raw(&x, sizeof(x));
+            return *this;
+        }
 
-        // FIXME aconway 2008-02-20: correct float encoading
+        // FIXME aconway 2008-02-20: correct float encoading?
         template <class T>
         typename boost::enable_if<boost::is_float<T>, Encode&>::type
-        operator()(const T& x) { return raw(x); }
+        operator()(const T& x) { raw(&x, sizeof(x)); return *this; }
 
-
-        template<class T, class SizeType>
-        Encode& operator()(const CodableString<T,SizeType>& str) {
-            (*this)(SizeType(str.size()));
-            std::for_each(str.begin(), str.end(), *this);
-            return *this;
+        void raw(const void* p, size_t n) {
+            std::copy((const char*)p, (const char*)p+n, out); 
         }
-
+        
       private:
-      friend class ConstSerializer<Encode<Out> >;
-
-        Encode& raw(const void* vp, size_t s) {
-            char* p = (char*) vp;
-            std::copy(p, p+s, out);
-            return *this;
-        }
-
-        Encode& byte(char x) { out++ = x; return *this; }
+        OutIter out;
     };
 
-    template <class In> struct Decode : public Serializer<Decode<In> > {
-        In in;
-        Decode(In i) : in(i) {}
-
-        using Serializer<Decode<In> >::operator();
-        using Serializer<Decode<In> >::raw;
-
+    template <class InIter>
+    class Decode : public Serializer<Decode<InIter> > {
+      public:
+        Decode(InIter i) : in(i) {}
+        
+        using Serializer<Decode<InIter> >::operator();
+        
         template <class T>
         typename boost::enable_if<boost::is_integral<T>, Decode&>::type
         operator()(T& x) {
@@ -106,10 +83,10 @@ struct Codec
 
         template <class T>
         typename boost::enable_if<boost::is_float<T>, Decode&>::type
-        operator()(T& x) { return raw(&x, sizeof(x)); }
+        operator()(T& x) { raw(&x, sizeof(x)); return *this; }
 
         template<class T, class SizeType>
-        Decode& operator()(CodableString<T,SizeType>& str) {
+        Decode& operator()(SerializableString<T,SizeType>& str) {
             SizeType n;
             (*this)(n);
             str.resize(n);
@@ -117,54 +94,45 @@ struct Codec
             return *this;
         }
 
-      private:
-      friend class Serializer<Decode<In> >;
-        
-        Decode& raw(void* vp, size_t s) {
-            char* p=(char*)vp;
-            std::copy(in, in+s, p);
-            return *this;
+        void raw(void *p, size_t n) {
+            // FIXME aconway 2008-02-29: requires random access iterator,
+            // does this optimize to memcpy? Is there a better way?
+            std::copy(in, in+n, (char*)p);
+            in += n;
         }
 
-        Decode& byte(char& x) { x = *in++; return *this; }        
+      private:
+        InIter in;
     };
 
-    struct Size : public ConstSerializer<Size> {
+    
+    class Size : public Serializer<Size> {
+      public:
         Size() : size(0) {}
-        size_t size;
+
         operator size_t() const { return size; }
 
-        using ConstSerializer<Size>::operator();
-        using ConstSerializer<Size>::raw;
+        using Serializer<Size>::operator();
         
         template <class T>
         typename boost::enable_if<boost::is_arithmetic<T>, Size&>::type
         operator()(const T&) { size += sizeof(T); return *this; }
 
-        template <class T, size_t N>
-        Size& operator()(const boost::array<T,N>&) {
-            size += sizeof(boost::array<T,N>);
-            return *this;
-        }
-
         template<class T, class SizeType>
-        Size& operator()(const CodableString<T,SizeType>& str) {
+        Size& operator()(const SerializableString<T,SizeType>& str) {
             size += sizeof(SizeType) + str.size()*sizeof(T);
             return *this;
         }
 
+        void raw(const void*, size_t n){ size += n; }
 
       private:
-      friend class ConstSerializer<Size>;
-
-        Size& raw(void*, size_t s) { size += s; return *this; }
-        
-        Size& byte(char) { ++size; return *this; }        
+        size_t size;
     };
 
     template <class Out, class T>
     static void encode(Out o, const T& x) {
-        Encode<Out>encode(o);
+        Encode<Out> encode(o);
         encode(x);
     }
 
@@ -180,6 +148,18 @@ struct Codec
         sz(x);
         return sz;
     }
+
+  private:
+    template <class T> static inline void endianize(T& value) {
+#ifdef BOOST_LITTLE_ENDIAN
+        std::reverse((char*)&value, (char*)&value+sizeof(value));
+#else
+        (void)value;            // Avoid unused var warnings.
+#endif
+    }
+    static inline void endianize(char&) {}
+    static inline void endianize(uint8_t&) {}
+    static inline void endianize(int8_t&) {}
 };
 
 }} // namespace qpid::amqp_0_10
