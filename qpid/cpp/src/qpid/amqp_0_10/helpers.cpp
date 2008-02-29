@@ -19,6 +19,9 @@
  *
  */
 #include "helpers.h"
+#include "qpid/amqp_0_10/CommandVisitor.h"
+#include "qpid/amqp_0_10/ControlVisitor.h"
+#include "qpid/amqp_0_10/StructVisitor.h"
 
 namespace qpid {
 namespace amqp_0_10 {

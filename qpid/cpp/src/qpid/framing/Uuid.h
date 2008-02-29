@@ -67,7 +67,7 @@ struct Uuid : public boost::array<uint8_t, 16> {
     std::string str() const;
 
     template <class S> void serialize(S& s) {
-        s(static_cast<boost::array<uint8_t, 16>&>(*this));
+        s.raw(begin(), size());
     }
 };
 

@@ -31,7 +31,7 @@
 #include <boost/mpl/empty_sequence.hpp>
 #include <iterator>
 #include <string>
-#include <ostream>
+#include <iostream>
 #include <netinet/in.h>
 
 // Missing operators needed for tests.
@@ -49,15 +49,6 @@ namespace sys {
 
 std::ostream& operator<<(std::ostream& out, const AbsTime& t) {
     return out << t.timeValue();
-}
-}
-
-namespace amqp_0_10 {
-template <class T, class SizeType>
-std::ostream& operator<<(std::ostream& out, const CodableString<T,SizeType>& str) {
-    std::ostream_iterator<T> o(out, " ");
-    std::copy(str.begin(), str.end(), o);
-    return out;
 }
 }
 
@@ -90,34 +81,37 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 BOOST_AUTO_TEST_CASE(testNetworkByteOrder) {
     string data;
 
-    uint32_t l = 1234567890;
+    uint32_t l = 0x11223344;
     Codec::encode(std::back_inserter(data), l);
     uint32_t enc=reinterpret_cast<const uint32_t&>(*data.data());
     uint32_t l2 = ntohl(enc);
     BOOST_CHECK_EQUAL(l, l2);
 
     data.clear();
-    uint16_t s = 12345;
+    uint16_t s = 0x1122;
     Codec::encode(std::back_inserter(data), s);
     uint32_t s2 = ntohs(*reinterpret_cast<const uint32_t*>(data.data()));
     BOOST_CHECK_EQUAL(s, s2);
 }
 
+// Assign test values to the various types.
 void testValue(bool& b) { b = true; }
 template <class T> typename boost::enable_if<boost::is_arithmetic<T> >::type testValue(T& n) { n=42; }
-void testValue(long long& l) { l = 12345; }
+void testValue(long long& l) { l = 0x012345; }
 void testValue(Datetime& dt) { dt = qpid::sys::now(); }
 void testValue(Uuid& uuid) { uuid=Uuid(true); }
-template <class E, class M> void testValue(Decimal<E,M>& d) { d.exponent=2; d.mantissa=1234; }
+template <class E, class M> void testValue(Decimal<E,M>& d) { d.exponent=2; d.mantissa=0x1122; }
 void testValue(SequenceNo& s) { s = 42; }
-template <class T, size_t N> void testValue(boost::array<T,N>& a) { a.assign(42); }
-template <class T, class SizeType> void testValue(CodableString<T, SizeType>& s) {
+template <size_t N> void testValue(Bin<N>& a) { a.assign(42); }
+template <class T, class S> void testValue(SerializableString<T, S>& s) {
     char msg[]="foobar";
     s.assign(msg, msg+sizeof(msg));
 }
+void testValue(Str16& s) { s = "the quick brown fox jumped over the lazy dog"; }
+void testValue(Str8& s) { s = "foobar"; }
 
-// FIXME aconway 2008-02-20: test AllTypes
-BOOST_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, FixedSizeTypes)
+//typedef mpl::vector<Str8, Str16>::type TestTypes;
+BOOST_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
 {
     string data;
     T t;
