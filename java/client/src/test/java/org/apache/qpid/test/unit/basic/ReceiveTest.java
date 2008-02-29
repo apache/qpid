@@ -23,13 +23,17 @@ package org.apache.qpid.test.unit.basic;
 import javax.jms.MessageConsumer;
 import javax.jms.Message;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class ReceiveTest extends QpidTestBase
+public class ReceiveTest extends QpidTestCase
 {
     private AMQConnection _connection;
     private AMQDestination _destination;

@@ -23,7 +23,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ import javax.jms.TextMessage;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RecoverTest extends QpidTestBase
+public class RecoverTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
 

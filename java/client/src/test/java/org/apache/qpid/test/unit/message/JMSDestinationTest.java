@@ -25,7 +25,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ import javax.jms.TextMessage;
 /**
  * @author Apache Software Foundation
  */
-public class JMSDestinationTest extends QpidTestBase
+public class JMSDestinationTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(JMSDestinationTest.class);
 

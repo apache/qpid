@@ -24,7 +24,7 @@ package org.apache.qpid.test.unit.basic;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class LargeMessageTest extends QpidTestBase
+public class LargeMessageTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(LargeMessageTest.class);
 

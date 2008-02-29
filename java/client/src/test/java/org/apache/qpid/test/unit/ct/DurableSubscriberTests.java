@@ -19,13 +19,13 @@ package org.apache.qpid.test.unit.ct;
 
 import javax.jms.*;
 
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  *   Crash Recovery tests for durable subscription
  *
  */
-public class DurableSubscriberTests extends QpidTestBase
+public class DurableSubscriberTests extends QpidTestCase
 {
     private final String _topicName = "durableSubscriberTopic";
 

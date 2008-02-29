@@ -18,7 +18,7 @@
 package org.apache.qpid.test.unit.xa;
 
 import org.apache.qpidity.dtx.XidImpl;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAResource;
@@ -28,7 +28,7 @@ import javax.jms.*;
  *
  *
  */
-public abstract  class AbstractXATestBase extends QpidTestBase
+public abstract  class AbstractXATestCase extends QpidTestCase
 {
     protected static final String _sequenceNumberPropertyName = "seqNumber";
 

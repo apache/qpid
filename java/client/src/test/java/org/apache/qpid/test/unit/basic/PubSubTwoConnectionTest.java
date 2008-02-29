@@ -27,15 +27,18 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class PubSubTwoConnectionTest extends QpidTestBase
+public class PubSubTwoConnectionTest extends QpidTestCase
 {
     protected void setUp() throws Exception
     {
