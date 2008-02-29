@@ -20,6 +20,7 @@
  */
 #include "amqp_types.h"
 #include "qpid/Exception.h"
+#include <boost/iterator/iterator_facade.hpp>
 
 #ifndef _Buffer_
 #define _Buffer_
@@ -41,8 +42,28 @@ class Buffer
 
     void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
 
-public:
+  public:
+    
+    /** Buffer input/output iterator.
+     * Supports using an amqp_0_10::Codec with a framing::Buffer.
+     */
+    class Iterator  : public boost::iterator_facade<
+      Iterator, char, boost::random_access_traversal_tag>
+    {
+      public:
+        Iterator(Buffer& b) : buffer(&b) {}
 
+      private:
+      friend class boost::iterator_core_access;
+        char& dereference() const { return buffer->data[buffer->position]; }
+        void increment() { ++buffer->position; }
+        bool equal(const Iterator& x) const { return buffer == x.buffer; }
+
+        Buffer* buffer;
+    };
+    
+  friend class Iterator;
+    
     Buffer(char* data=0, uint32_t size=0);
 
     void record();
@@ -52,6 +73,7 @@ public:
     uint32_t available() { return size - position; }
     uint32_t getSize() { return size; }
     uint32_t getPosition() { return position; }
+    Iterator getIterator() { return Iterator(*this); }
         
     void putOctet(uint8_t i);
     void putShort(uint16_t i);
