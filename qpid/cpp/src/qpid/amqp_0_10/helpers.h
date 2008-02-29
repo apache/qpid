@@ -21,6 +21,7 @@ n * "License"); you may not use this file except in compliance
  * under the License.
  *
  */
+#include "qpid/amqp_0_10/built_in_types.h"
 #include <string>
 
 namespace qpid {
@@ -33,22 +34,36 @@ const char* getControlName(uint8_t classCode, uint8_t code);
 const char* getStructName(uint8_t classCode, uint8_t code);
 
 struct Command {
+    static const int SEGMENT_TYPE=COMMAND;
     virtual ~Command();
     struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
 
 struct Control {
+    static const int SEGMENT_TYPE=CONTROL;
     virtual ~Control();
     struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
 
+// Struct 
 struct Struct {
     virtual ~Struct();
     struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
+
+template <class SizeType, bool Coded, uint8_t Code, uint8_t Pack>
+struct SerializableStruct : public Struct {
+    static const uint8_t SIZE=sizeof(SizeType);
+    static const bool CODED=Coded;
+    static const uint8_t CODE=Code;
+    static const uint8_t PACK;
+    // TODO aconway 2008-02-29: handle common encoding/decoding/size
+    // for structs. Support for packing.
+};
+
 
 /** Base class for generated enum domains.
  * Enums map to classes for type safety and to provide separate namespaces
