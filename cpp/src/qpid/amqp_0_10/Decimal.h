@@ -30,7 +30,7 @@ template <class E, class M> struct Decimal {
     E exponent;
     M mantissa;
     
-    Decimal() : exponent(0), mantissa(0) {}
+    Decimal(E exp=0, M man=0) : exponent(exp), mantissa(man) {}
 
     bool operator==(const Decimal& d) const {
         return exponent == d.exponent && mantissa == d.mantissa;
@@ -44,8 +44,7 @@ template <class E, class M> struct Decimal {
 
 template<class E, class M>
 inline std::ostream& operator<<(std::ostream& o, const Decimal<E,M>& d) {
-    M pow10=10^d.exponent;
-    return o << d.mantissa/pow10 << "." << d.mantissa%pow10;
+    return o << "Decimal{" << d.mantissa << "/10^" << (int)d.exponent << "}";
 }
 }}
 

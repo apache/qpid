@@ -57,6 +57,7 @@ class String
   def cppsafe() CppMangle.include?(self) ? self+"_" : self; end
 
   def amqp2cpp()
+    throw 'Invalid "array".amqp2cpp' if self=="array"
     path=split(".")
     name=path.pop
     return name.typename if path.empty?
@@ -112,21 +113,28 @@ class CppType
   def to_s() name; end;
 end
 
+class AmqpElement
+  # convert my amqp type_ attribute to a C++ type.
+  def amqp2cpp()
+    return "Array<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
+    return type_.amqp2cpp
+  end
+end
+
 class AmqpField
   def cppname() name.lcaps.cppsafe; end
   def cpptype() domain.cpptype;  end
   def bit?() domain.type_ == "bit"; end
   def signature() cpptype.param+" "+cppname; end
-  # FIXME aconway 2008-02-27: qualified
-  def paramtype()
-    fqtype=type_
-    unless type_.index(".")
+  def fqtypename()
+    unless type_.index(".") 
       c=containing_class
       return c.domain(type_).fqtypename if c.domain(type_)
       return c.struct(type_).fqclassname if c.struct(type_)
     end
-    "call_traits<#{fqtype.amqp2cpp}>::param_type";
+    return amqp2cpp
   end
+  def paramtype() "call_traits<#{fqtypename}>::param_type";  end
 end
 
 class AmqpMethod
@@ -337,8 +345,8 @@ class CppGen < Generator
   def ctor_decl(name, params=[]) function_decl(name, params); end
   
   def ctor_defn(name, params=[], inits=[])
-    signature(name+"::"+name, params)
-    scope(":","") { genl inits.join(",\n")} if not inits.empty?
+    signature(name, params, inits.empty? ? "" : " :")
+    indent { gen inits.join(",\n") } if not inits.empty?
     scope() { yield }
   end
 

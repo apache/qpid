@@ -19,10 +19,8 @@ class Specification < CppGen
         genl d.enum.choices.map { |c|
           "#{c.name.constname} = #{c.value}" }.join(",\n")
       }
-    elsif (d.type_ == "array") 
-      genl "typedef Array<#{ArrayTypes[d.name].amqp2cpp}> #{typename};"
     else
-      genl "typedef #{d.type_.amqp2cpp} #{typename};"
+      genl "typedef #{d.amqp2cpp} #{typename};"
     end
   end
 
@@ -41,7 +39,7 @@ class Specification < CppGen
   def action_struct_h(x, base, consts, &block)
     genl
     struct(x.classname, "public #{base}") {
-      x.fields.each { |f| genl "#{f.type_.amqp2cpp} #{f.cppname};" }
+      x.fields.each { |f| genl "#{f.amqp2cpp} #{f.cppname};" }
       genl
       genl "static const char* NAME;"
       consts.each { |c| genl "static const uint8_t #{c.upcase}=#{x.send c or 0};"}
@@ -58,10 +56,11 @@ class Specification < CppGen
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
     genl
-    ctor_defn(x.classname) {}
-    ctor_defn(x.classname, x.parameters, x.initializers) {} if not x.fields.empty?
-    function_defn("void #{x.classname}::accept", ["Visitor&"], "const") { 
-      genl "// FIXME aconway 2008-02-27: todo"
+    ctor=x.classname+"::"+x.classname
+    ctor_defn(ctor) {}
+    ctor_defn(ctor, x.parameters, x.initializers) {} if not x.fields.empty?
+    function_defn("void #{x.classname}::accept", ["Visitor& v"], "const") { 
+      genl "v.visit(*this);"
     }
   end
 
@@ -107,20 +106,21 @@ class Specification < CppGen
         # they are used by other definitions:
         each_class_ns { |c|
           class_h c
-          c.domains.each { |d| domain_h d if pregenerate? d }
-          c.structs.each { |s| struct_h s if pregenerate? s }
+          c.collect_all(AmqpDomain).each { |d| domain_h d if pregenerate? d }
+          c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
         }
         # Now dependent domains/structs and actions
         each_class_ns { |c|
-          c.domains.each { |d| domain_h d if not pregenerate? d }
-          c.structs.each { |s| struct_h s if not pregenerate? s }
-          c.actions.each { |a| action_h a }
+          c.collect_all(AmqpDomain).each { |d| domain_h d unless pregenerate? d}
+          c.collect_all(AmqpStruct).each { |s| struct_h s unless pregenerate? s}
+          c.collect_all(AmqpAction).each { |a| action_h a }
         }
       }
     }
 
     cpp_file("#{@dir}/specification") { 
       include "#{@dir}/specification"
+      ["Command","Control","Struct"].each { |x| include "#{@dir}/Apply#{x}" }
       namespace(@ns) { 
         each_class_ns { |c|
           class_cpp c
@@ -156,10 +156,58 @@ class Specification < CppGen
       }
     }
   end
-  
+
+  def gen_visitor(base, subs)
+    h_file("#{@dir}/#{base}Visitor.h") { 
+      include "#{@dir}/specification"
+      namespace("#{@ns}") { 
+        genl
+        genl "/** Visitor interface for #{base} subclasses. */"
+        struct("#{base}::Visitor") {
+          genl "virtual ~Visitor() {}"
+          genl "typedef #{base} BaseType;"
+          subs.each{ |s|
+            genl "virtual void visit(const #{s.fqclassname}&) = 0;"
+          }}}}
+
+    h_file("#{@dir}/Apply#{base}.h") {
+      include "#{@dir}/#{base}Visitor.h"
+      include "#{@dir}/apply.h"
+      namespace("#{@ns}") { 
+        genl
+        genl "/** apply() support for #{base} subclasses */"
+        genl "template <class F>"
+        struct("ApplyVisitor<#{base}::Visitor, F>",
+               ["public FunctionAndResult<F>", "public #{base}::Visitor"])  {
+          subs.each{ |s|
+            function_defn("virtual void visit", ["const #{s.fqclassname}& x"]) {
+              genl "this->invoke(x);"
+            }}}}}
+  end
+
+  def gen_visitors()
+  end
+
+  def holder(base, derived)
+    name=base.caps+"Holder"
+    h_file("#{@dir}/#{name}") {
+      include "#{@dir}/specification"
+      include "qpid/framing/Blob"
+      namespace(@ns){ 
+        # TODO aconway 2008-02-29: 
+      }
+    }
+  end
+  def gen_holders()
+
+  end
+
   def generate
     gen_specification
     gen_proxy
+    gen_visitor("Command", @amqp.collect_all(AmqpCommand))
+    gen_visitor("Control", @amqp.collect_all(AmqpControl))
+    gen_visitor("Struct", @amqp.collect_all(AmqpStruct))
   end
 end
 

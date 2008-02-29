@@ -24,7 +24,6 @@ n * "License"); you may not use this file except in compliance
 #include <string>
 
 namespace qpid {
-
 namespace amqp_0_10 {
 
 // Look up names by code
@@ -35,19 +34,19 @@ const char* getStructName(uint8_t classCode, uint8_t code);
 
 struct Command {
     virtual ~Command();
-    class Visitor;
+    struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
 
 struct Control {
     virtual ~Control();
-    class Visitor;
+    struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
 
 struct Struct {
     virtual ~Struct();
-    class Visitor;
+    struct Visitor;
     virtual void accept(Visitor&) const = 0;
 };
 

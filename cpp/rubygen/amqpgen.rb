@@ -131,6 +131,12 @@ class AmqpElement
     @children.each { |c| c.each_descendant(&block) }
   end
 
+  def collect_all(amqp_type)
+    collect=[]
+    each_descendant { |d| collect << d if d.is_a? amqp_type }
+    collect
+  end
+
   # Look up child of type elname with attribute name.
   def child(elname, name)
     @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
@@ -386,6 +392,7 @@ class AmqpRoot < AmqpElement
   
   def methods_() classes.map { |c| c.methods_ }.flatten; end
 
+  #preview
   # Return all methods on chassis for all classes.
   def methods_on(chassis)
     @methods_on ||= { }
@@ -394,8 +401,6 @@ class AmqpRoot < AmqpElement
 
   def fqname() nil; end
 
-  # TODO aconway 2008-02-21: methods by role.
-  
   private
   
   # Merge contents of elements.
