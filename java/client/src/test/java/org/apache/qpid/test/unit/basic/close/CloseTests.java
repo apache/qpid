@@ -19,19 +19,23 @@
  *
  */
 package org.apache.qpid.test.unit.basic.close;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-public class CloseTests extends QpidTestBase
+public class CloseTests extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CloseTests.class);
 

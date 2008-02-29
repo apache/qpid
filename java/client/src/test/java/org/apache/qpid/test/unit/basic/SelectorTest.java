@@ -20,12 +20,15 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +38,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-public class SelectorTest extends QpidTestBase implements MessageListener
+public class SelectorTest extends QpidTestCase  implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(SelectorTest.class);
 
