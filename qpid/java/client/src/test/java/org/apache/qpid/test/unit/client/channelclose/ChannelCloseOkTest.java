@@ -25,7 +25,7 @@ import junit.textui.TestRunner;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ import java.util.List;
  * 3. Since client does not have an exception listener, currently all sessions are
  * closed.
  */
-public class ChannelCloseOkTest extends QpidTestBase
+public class ChannelCloseOkTest extends QpidTestCase
 {
     private AMQConnection _connection;
     private Destination _destination1;

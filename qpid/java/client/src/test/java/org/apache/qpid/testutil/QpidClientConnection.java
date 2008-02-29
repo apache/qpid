@@ -22,7 +22,10 @@
 package org.apache.qpid.testutil;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.JMSAMQException;
+import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +40,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class QpidClientConnection extends QpidTestBase implements ExceptionListener
+public class QpidClientConnection extends QpidTestCase implements ExceptionListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(QpidClientConnection.class);
 

@@ -29,9 +29,9 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class AMQConnectionTest extends QpidTestBase
+public class AMQConnectionTest extends QpidTestCase
 {
     private static AMQConnection _connection;
     private static AMQTopic _topic;
