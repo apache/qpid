@@ -375,6 +375,7 @@ nobase_include_HEADERS = \
   qpid/client/SubscriptionManager.h \
   qpid/client/TypedResult.h \
   qpid/framing/AMQBody.h \
+  qpid/framing/AMQCommandControlBody.h \
   qpid/framing/AMQContentBody.h \
   qpid/framing/AMQDataBlock.h \
   qpid/framing/AMQFrame.h \
