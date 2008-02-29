@@ -30,13 +30,14 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 import junit.framework.Assert;
 
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import java.util.List;
 import java.util.LinkedList;
 
-public class TemporaryQueueTest extends QpidTestBase
+public class TemporaryQueueTest extends QpidTestCase
 {
     protected void setUp() throws Exception
     {

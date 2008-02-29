@@ -23,7 +23,7 @@ package org.apache.qpid.test.unit.basic;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import javax.jms.Session;
 import javax.jms.QueueSession;
@@ -32,7 +32,7 @@ import javax.jms.QueueSender;
 import javax.jms.TextMessage;
 import javax.jms.InvalidDestinationException;
 
-public class InvalidDestinationTest extends QpidTestBase
+public class InvalidDestinationTest extends QpidTestCase
 {
     private AMQConnection _connection;
 

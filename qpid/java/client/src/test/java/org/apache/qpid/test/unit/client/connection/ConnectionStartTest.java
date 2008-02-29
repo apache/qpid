@@ -34,9 +34,9 @@ import javax.jms.TextMessage;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.QpidTestBase;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class ConnectionStartTest extends QpidTestBase
+public class ConnectionStartTest extends QpidTestCase
 {
 
     String _broker = "vm://:1";
