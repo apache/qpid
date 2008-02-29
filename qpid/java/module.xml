@@ -190,7 +190,8 @@
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
-    <junit fork="${test.fork}" maxmemory="${test.mem}" haltonfailure="no" printsummary="on" timeout="600000">
+    <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
+           haltonfailure="no" printsummary="on" timeout="600000" >
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
