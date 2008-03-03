@@ -23,23 +23,55 @@ QPID_AUTO_TEST_SUITE(SequenceSetTestSuite)
 
 using namespace qpid::framing;
 
+struct RangeExpectations
+{
+    typedef std::pair<SequenceNumber, SequenceNumber> Range;
+    typedef std::list<Range> Ranges;
+
+    Ranges ranges;
+
+    RangeExpectations& expect(const SequenceNumber& start, const SequenceNumber& end) {
+        ranges.push_back(Range(start, end));
+        return *this;
+    }
+
+    void operator()(const SequenceNumber& start, const SequenceNumber& end) {
+        BOOST_CHECK(!ranges.empty());
+        if (!ranges.empty()) {
+            BOOST_CHECK_EQUAL(start, ranges.front().first);
+            BOOST_CHECK_EQUAL(end, ranges.front().second);
+            ranges.pop_front();
+        }
+    }
+
+    void check(SequenceSet& set) {
+        set.for_each(*this);
+        BOOST_CHECK(ranges.empty());
+    }
+};
+
 BOOST_AUTO_TEST_CASE(testAdd) {
     SequenceSet s;
     s.add(2);
     s.add(8,8);
     s.add(3,5);
 
-    for (uint32_t i = 0; i <= 1; i++) //0, 1
+    for (uint32_t i = 0; i <= 1; i++)
         BOOST_CHECK(!s.contains(i));
 
-    for (uint32_t i = 2; i <= 5; i++) //2, 3, 4 & 5
+    for (uint32_t i = 2; i <= 5; i++)
         BOOST_CHECK(s.contains(i));
 
-    for (uint32_t i = 0; i <= 1; i++) //6, 7
+    for (uint32_t i = 6; i <= 7; i++)
         BOOST_CHECK(!s.contains(i));
 
-    BOOST_CHECK(s.contains(8));//8
+    BOOST_CHECK(s.contains(8));
 
+    for (uint32_t i = 9; i <= 10; i++)
+        BOOST_CHECK(!s.contains(i));
+
+    RangeExpectations().expect(2, 5).expect(8, 8).check(s);
+    
     SequenceSet t;
     t.add(6, 10);
     t.add(s);
@@ -49,6 +81,17 @@ BOOST_AUTO_TEST_CASE(testAdd) {
 
     for (uint32_t i = 2; i <= 10; i++)
         BOOST_CHECK(t.contains(i));
+
+    RangeExpectations().expect(2, 10).check(t);
+}
+
+BOOST_AUTO_TEST_CASE(testAdd2) {
+    SequenceSet s;
+    s.add(7,6);
+    s.add(4,4);
+    s.add(3,10);    
+    s.add(2);
+    RangeExpectations().expect(2, 10).check(s);
 }
 
 BOOST_AUTO_TEST_CASE(testRemove) {
@@ -86,6 +129,9 @@ BOOST_AUTO_TEST_CASE(testRemove) {
         BOOST_CHECK(!s.contains(i));
         BOOST_CHECK(t.contains(i));
     }
+
+    RangeExpectations().expect(0, 2).expect(6, 6).expect(8, 8).check(s);
+    RangeExpectations().expect(3, 5).expect(7, 7).expect(9, 10).check(t);
 }
 
 QPID_AUTO_TEST_SUITE_END()
