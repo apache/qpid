@@ -39,7 +39,7 @@ class SequenceNumber
 
     SequenceNumber& operator++();//prefix ++
     const SequenceNumber operator++(int);//postfix ++
-    SequenceNumber operator+(uint32_t) const;
+    SequenceNumber& operator--();//prefix ++
     bool operator==(const SequenceNumber& other) const;
     bool operator!=(const SequenceNumber& other) const;
     bool operator<(const SequenceNumber& other) const;

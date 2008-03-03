@@ -97,8 +97,10 @@ class Buffer
     void putUInt(uint64_t);
 
     void putShortString(const string& s);
+    void putMediumString(const string& s);
     void putLongString(const string& s);
     void getShortString(string& s);
+    void getMediumString(string& s);
     void getLongString(string& s);
     void getBin128(uint8_t* b);
 

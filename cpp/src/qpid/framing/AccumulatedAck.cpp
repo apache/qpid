@@ -83,7 +83,7 @@ void AccumulatedAck::update(SequenceNumber first, SequenceNumber last){
 void AccumulatedAck::consolidate(){}
 
 void AccumulatedAck::clear(){
-    mark = 0;//not sure that this is valid when wraparound is a possibility
+    mark = SequenceNumber(0);//not sure that this is valid when wraparound is a possibility
     ranges.clear();
 }
 

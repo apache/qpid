@@ -41,10 +41,10 @@ class Connection;
 // TODO aconway 2007-09-18: Rename to ConnectionHandler
 class ConnectionHandler : public framing::FrameHandler
 {
-    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
+    struct Handler : public framing::AMQP_ServerOperations::Connection010Handler, 
         public framing::AMQP_ClientOperations::ConnectionHandler
     {
-        framing::AMQP_ClientProxy::Connection client;
+        framing::AMQP_ClientProxy::Connection010 client;
         framing::AMQP_ServerProxy::Connection server;
         Connection& connection;
         bool serverMode;
@@ -55,6 +55,7 @@ class ConnectionHandler : public framing::FrameHandler
                      const std::string& locale); 
         void secureOk(const std::string& response); 
         void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
+        void heartbeat() {}
         void open(const std::string& virtualHost,
                   const std::string& capabilities, bool insist); 
         void close(uint16_t replyCode, const std::string& replyText,
