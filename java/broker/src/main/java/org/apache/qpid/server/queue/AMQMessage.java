@@ -657,8 +657,6 @@ public class AMQMessage
             // now that it has all been received, before we attempt delivery
             _txnContext.messageFullyReceived(isPersistent());
 
-            _transientMessageData = null;
-
             for (AMQQueue q : destinationQueues)
             {
                 // Increment the references to this message for each queue delivery.

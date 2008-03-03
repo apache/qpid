@@ -138,11 +138,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         catch (RuntimeException e)
         {
             e.printStackTrace();
-            // throw e;
+            throw e;
 
         }
-
-        // this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
@@ -363,6 +361,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             {
                 listener.error(e);
             }
+
+            _logger.error("Unexpected exception while processing frame.  Closing connection.", e);
 
             _minaProtocolSession.close();
         }
