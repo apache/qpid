@@ -23,6 +23,7 @@
 #include "ConnectionHandler.h"
 #include "Connection.h"
 #include "qpid/framing/ConnectionStartBody.h"
+#include "qpid/framing/Connection010StartBody.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
 
@@ -38,11 +39,14 @@ const std::string en_US = "en_US";
 }
 
 void ConnectionHandler::init(const framing::ProtocolInitiation& header) {
+    //need to send out a protocol header back to the client
+    handler->connection.getOutput().initiated(header);
+
     FieldTable properties;
     string mechanisms(PLAIN);
     string locales(en_US);
-    handler->serverMode = true;
-    handler->client.start(header.getMajor(), header.getMinor(), properties, mechanisms, locales);
+    handler->serverMode = true;    
+    handler->client.start(properties, mechanisms, locales);
 }
 
 void ConnectionHandler::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId)
@@ -55,7 +59,7 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     AMQMethodBody* method=frame.getBody()->getMethod();
     try{
         if (handler->serverMode) {
-            if (!invoke(static_cast<AMQP_ServerOperations::ConnectionHandler&>(*handler.get()), *method))
+            if (!invoke(static_cast<AMQP_ServerOperations::Connection010Handler&>(*handler.get()), *method))
                 throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
         } else {
             if (!invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method))

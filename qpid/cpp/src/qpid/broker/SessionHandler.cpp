@@ -60,17 +60,10 @@ void SessionHandler::handleIn(AMQFrame& f) {
     AMQMethodBody* m = f.getBody()->getMethod();
     try {
         if (!ignoring) {
-            if (m && 
-                (invoke(static_cast<AMQP_ServerOperations::SessionHandler&>(*this), *m) || 
-                 invoke(static_cast<AMQP_ServerOperations::ExecutionHandler&>(*this), *m))) {
+            if (m && invoke(static_cast<AMQP_ServerOperations::Session010Handler&>(*this), *m)) {
                 return;
             } else if (session.get()) {
-                boost::optional<SequenceNumber> ack=session->received(f);
                 session->handle(f);
-                if (ack)
-                    peerSession.ack(*ack, SequenceNumberSet());
-            } else if (m && invoke(static_cast<AMQP_ClientOperations::SessionHandler&>(*this), *m)) {
-                return;
             } else {
                 throw ChannelErrorException(
                     QPID_MSG("Channel " << channel.get() << " is not open"));
@@ -80,7 +73,8 @@ void SessionHandler::handleIn(AMQFrame& f) {
         ignoring=true;          // Ignore trailing frames sent by client.
         session->detach();
         session.reset();
-        peerSession.closed(e.code, e.what());
+        //TODO: implement new exception handling mechanism
+        //peerSession.closed(e.code, e.what());
     }catch(const ConnectionException& e){
         connection.close(e.code, e.what(), classId(m), methodId(m));
     }catch(const std::exception& e){
@@ -92,7 +86,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
 void SessionHandler::handleOut(AMQFrame& f) {
     channel.handle(f);          // Send it.
     if (session->sent(f))
-        peerSession.solicitAck();
+        peerSession.flush(false, false, true);
 }
 
 void SessionHandler::assertAttached(const char* method) const {
@@ -111,53 +105,6 @@ void SessionHandler::assertClosed(const char* method) const {
                      << " is already open."));
 }
 
-void  SessionHandler::open(uint32_t detachedLifetime) {
-    assertClosed("open");
-    std::auto_ptr<SessionState> state(
-        connection.broker.getSessionManager().open(*this, detachedLifetime));
-    session.reset(state.release());
-    peerSession.attached(session->getId(), session->getTimeout());
-}
-
-void  SessionHandler::resume(const Uuid& id) {
-    assertClosed("resume");
-    session = connection.broker.getSessionManager().resume(id);
-    session->attach(*this);
-    SequenceNumber seq = session->resuming();
-    peerSession.attached(session->getId(), session->getTimeout());
-    proxy.getSession().ack(seq, SequenceNumberSet());
-}
-
-void  SessionHandler::flow(bool /*active*/) {
-    assertAttached("flow");
-    // TODO aconway 2007-09-19: Removed in 0-10, remove 
-    assert(0); throw NotImplementedException("session.flow");
-}
-
-void  SessionHandler::flowOk(bool /*active*/) {
-    assertAttached("flowOk");
-    // TODO aconway 2007-09-19: Removed in 0-10, remove 
-    assert(0); throw NotImplementedException("session.flowOk");
-}
-
-void  SessionHandler::close() {
-    assertAttached("close");
-    QPID_LOG(info, "Received session.close");
-    ignoring=false;
-    session->detach();
-    session.reset();
-    peerSession.closed(REPLY_SUCCESS, "ok");
-    assert(&connection.getChannel(channel.get()) == this);
-    connection.closeChannel(channel.get()); 
-}
-
-void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
-    QPID_LOG(warning, "Received session.closed: "<<replyCode<<" "<<replyText);
-    ignoring=false;
-    session->detach();
-    session.reset();
-}
-
 void SessionHandler::localSuspend() {
     if (session.get() && session->isAttached()) {
         session->detach();
@@ -166,81 +113,115 @@ void SessionHandler::localSuspend() {
     }
 }
 
-void  SessionHandler::suspend() {
-    assertAttached("suspend");
-    localSuspend();
-    peerSession.detached();
-    assert(&connection.getChannel(channel.get()) == this);
-    connection.closeChannel(channel.get()); 
-}
-
-void  SessionHandler::ack(uint32_t     cumulativeSeenMark,
-                          const SequenceNumberSet& /*seenFrameSet*/)
-{
-    assertAttached("ack");
-    if (session->getState() == SessionState::RESUMING) {
-        session->receivedAck(cumulativeSeenMark);
-        framing::SessionState::Replay replay=session->replay();
-        std::for_each(replay.begin(), replay.end(),
-                      boost::bind(&SessionHandler::handleOut, this, _1));
-    }
-    else
-        session->receivedAck(cumulativeSeenMark);
-}
-
-void  SessionHandler::highWaterMark(uint32_t /*lastSentMark*/) {
-    // TODO aconway 2007-10-02: may be removed from spec.
-    assert(0); throw NotImplementedException("session.high-water-mark");
-}
-
-void  SessionHandler::solicitAck() {
-    assertAttached("solicit-ack");
-    peerSession.ack(session->sendingAck(), SequenceNumberSet());    
-}
-
-void SessionHandler::attached(const Uuid& /*sessionId*/, uint32_t detachedLifetime)
-{
-    std::auto_ptr<SessionState> state(
-        connection.broker.getSessionManager().open(*this, detachedLifetime));
-    session.reset(state.release());
-}
-
-void SessionHandler::detached()
-{
-    connection.broker.getSessionManager().suspend(session);
-    session.reset();
-}
-
 
 ConnectionState& SessionHandler::getConnection() { return connection; }
 const ConnectionState& SessionHandler::getConnection() const { return connection; }
 
-void SessionHandler::complete(uint32_t cumulative, const SequenceNumberSet& range) 
+//new methods:
+void SessionHandler::attach(const std::string& name, bool /*force*/)
 {
-    assertAttached("complete");
-    session->complete(cumulative, range);
+    //TODO: need to revise session manager to support resume as well
+    assertClosed("attach");
+    std::auto_ptr<SessionState> state(
+        connection.broker.getSessionManager().open(*this, 0));
+    session.reset(state.release());
+    peerSession.attached(name);
 }
 
-void SessionHandler::flush()
+void SessionHandler::attached(const std::string& /*name*/)
 {
-    assertAttached("flush");
-    session->flush();
-}
-void SessionHandler::sync()
-{
-    assertAttached("sync");
-    session->sync();
+    std::auto_ptr<SessionState> state(connection.broker.getSessionManager().open(*this, 0));
+    session.reset(state.release());
 }
 
-void SessionHandler::noop()
+void SessionHandler::detach(const std::string& name)
 {
-    assertAttached("noop");
-    session->noop();
+    assertAttached("detach");
+    localSuspend();
+    peerSession.detached(name, 0);
+    assert(&connection.getChannel(channel.get()) == this);
+    connection.closeChannel(channel.get()); 
 }
 
-void SessionHandler::result(uint32_t /*command*/, const std::string& /*data*/)
+void SessionHandler::detached(const std::string& name, uint8_t code)
 {
-    //never actually sent by client at present
+    ignoring=false;
+    session->detach();
+    session.reset();
+    if (code) {
+        //no error
+    } else {
+        //error occured
+        QPID_LOG(warning, "Received session.closed: "<< name << " " << code);
+    }
 }
 
+void SessionHandler::requestTimeout(uint32_t t)
+{
+    session->setTimeout(t);
+    //proxy.timeout(t);
+}
+
+void SessionHandler::timeout(uint32_t)
+{
+    //not sure what we need to do on the server for this...
+}
+
+void SessionHandler::commandPoint(const framing::SequenceNumber& id, uint64_t offset)
+{
+    if (offset) throw NotImplementedException("Non-zero byte offset not yet supported for command-point");
+    
+    session->next = id;
+}
+
+void SessionHandler::expected(const framing::SequenceSet& commands, const framing::Array& fragments)
+{
+    if (!commands.empty() || fragments.size()) {
+        throw NotImplementedException("Session resumption not yet supported");
+    }
+}
+
+void SessionHandler::confirmed(const framing::SequenceSet& /*commands*/, const framing::Array& /*fragments*/)
+{
+    //don't really care too much about this yet
+}
+
+void SessionHandler::completed(const framing::SequenceSet& commands, bool timelyReply)
+{
+    session->complete(commands);
+    if (timelyReply) {
+        peerSession.knownCompleted(session->knownCompleted);
+        session->knownCompleted.clear();
+    }
+}
+
+void SessionHandler::knownCompleted(const framing::SequenceSet& commands)
+{
+    session->completed.remove(commands);
+}
+
+void SessionHandler::flush(bool expected, bool confirmed, bool completed)
+{
+    if (expected) {
+        peerSession.expected(SequenceSet(session->next), Array());
+    }
+    if (confirmed) {
+        peerSession.confirmed(session->completed, Array());
+    }
+    if (completed) {
+        peerSession.completed(session->completed, true);
+    }
+}
+
+
+void SessionHandler::sendCompletion()
+{
+    peerSession.completed(session->completed, true);
+}
+
+void SessionHandler::gap(const framing::SequenceSet& /*commands*/)
+{
+    throw NotImplementedException("gap not yet supported");
+}
+    
 }} // namespace qpid::broker

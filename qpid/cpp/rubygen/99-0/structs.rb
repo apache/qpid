@@ -17,6 +17,7 @@ class StructGen < CppGen
     "longlong"=>"LongLong",
     "longstr"=>"LongString",
     "shortstr"=>"ShortString",
+    "mediumstr"=>"MediumString",
     "timestamp"=>"LongLong",
     "table"=>"FieldTable",
     "content"=>"Content",
@@ -33,7 +34,8 @@ class StructGen < CppGen
   ValueTypes=["octet", "short", "long", "longlong", "timestamp"]
 
   def is_packed(s)
-    s.kind_of? AmqpStruct
+    #return true
+    s.kind_of?(AmqpStruct) or s.body_name.include?("010")
   end
 
   def execution_header?(s)
@@ -182,12 +184,21 @@ class StructGen < CppGen
     end
   end
 
+  def all_fields_via_accessors(s)
+    s.fields.collect { |f| "get#{f.name.caps}()" }.join(", ")
+  end
+
   def methodbody_extra_defs(s)
+    if (s.parent.control?) 
+      genl "virtual uint8_t type() const { return 0;/*control segment*/ }"
+    end
+    
+
     gen <<EOS
     typedef #{s.result ? s.result.struct.cpptype.name : 'void'} ResultType;
 
     template <class T> ResultType invoke(T& invocable) const {
-        return invocable.#{s.cppname}(#{s.param_names.join ", "});
+        return invocable.#{s.cppname}(#{all_fields_via_accessors(s)});
     }
 
     using  AMQMethodBody::accept;
@@ -235,6 +246,14 @@ EOS
   end
 
   def define_packed_field_accessors(s, f, i)
+    if (s.kind_of? AmqpMethod) 
+      define_packed_field_accessors_for_method(s, f, i)
+    else
+      define_packed_field_accessors_for_struct(s, f, i)
+    end
+  end
+
+  def define_packed_field_accessors_for_struct(s, f, i)
     if (f.domain.type_ == "bit")
       genl "void #{s.cppname}::set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
       indent {
@@ -261,6 +280,37 @@ EOS
       end
       genl "bool #{s.cppname}::has#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
       genl "void #{s.cppname}::clear#{f.name.caps}Flag() { flags &= ~#{flag_mask(s, i)}; }"
+    end
+    genl ""
+  end
+
+  def define_packed_field_accessors_for_method(s, f, i)
+    if (f.domain.type_ == "bit")
+      genl "void #{s.body_name}::set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
+      indent {
+        genl "if (_#{f.cppname}) flags |= #{flag_mask(s, i)};"
+        genl "else flags &= ~#{flag_mask(s, i)};"
+      }
+      genl "}"
+      genl "#{f.cpptype.ret} #{s.body_name}::get#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
+    else 
+      genl "void #{s.body_name}::set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
+      indent {
+        genl "#{f.cppname} = _#{f.cppname};"
+        genl "flags |= #{flag_mask(s, i)};"
+      }
+      genl "}"
+      genl "#{f.cpptype.ret} #{s.body_name}::get#{f.name.caps}() const { return #{f.cppname}; }"
+      if (f.cpptype.name == "FieldTable")
+        genl "#{f.cpptype.name}& #{s.body_name}::get#{f.name.caps}() {"
+        indent { 
+          genl "flags |= #{flag_mask(s, i)};"#treat the field table as having been 'set'
+          genl "return #{f.cppname};" 
+        }
+        genl "}"
+      end
+      genl "bool #{s.body_name}::has#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
+      genl "void #{s.body_name}::clear#{f.name.caps}Flag() { flags &= ~#{flag_mask(s, i)}; }"
     end
     genl ""
   end
@@ -383,7 +433,7 @@ EOS
 EOS
     }
     cpp_file("qpid/framing/#{classname}.cpp") { 
-      if (s.fields.size > 0 || execution_header?(s))
+      if (is_packed(s) || s.fields.size > 0 || execution_header?(s))
         buffer = "buffer"
       else
         buffer = "/*buffer*/"

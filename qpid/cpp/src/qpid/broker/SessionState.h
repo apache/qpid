@@ -25,6 +25,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SessionState.h"
+#include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
@@ -83,6 +84,8 @@ class SessionState : public framing::SessionState,
     ConnectionState& getConnection();
 
     uint32_t getTimeout() const { return timeout; }
+    void setTimeout(uint32_t t) { timeout = t; }
+
     Broker& getBroker() { return broker; }
     framing::ProtocolVersion getVersion() const { return version; }
 
@@ -93,10 +96,7 @@ class SessionState : public framing::SessionState,
     void handleCommand(framing::AMQMethodBody* method);
     void handleContent(framing::AMQFrame& frame);
 
-    void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    
-    void flush();
-    void noop();
-    void sync();
+    void complete(const framing::SequenceSet& ranges);    
     void sendCompletion();
 
     //delivery adapter methods:
@@ -114,6 +114,10 @@ class SessionState : public framing::SessionState,
                  uint32_t ackInterval);
     
 
+    framing::SequenceSet completed;
+    framing::SequenceSet knownCompleted;
+    framing::SequenceNumber next;
+
   private:
     typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
 
@@ -130,8 +134,6 @@ class SessionState : public framing::SessionState,
     BrokerAdapter adapter;
     MessageBuilder msgBuilder;
 
-    //execution state
-    IncomingExecutionContext incoming;
     framing::Window outgoing;
     RangedOperation ackOp;
 

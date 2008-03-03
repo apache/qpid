@@ -48,6 +48,7 @@ void BodyHolder::encode(Buffer& b) const {
 void BodyHolder::decode(uint8_t type, Buffer& buffer, uint32_t size) {
     switch(type)
     {
+      case 0://CONTROL 
       case METHOD_BODY: {
           ClassId c = buffer.getOctet();
           MethodId m = buffer.getOctet();

@@ -85,6 +85,8 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     ExecutionHandler* getExecutionHandler() { BADHANDLER(); }
     ConnectionHandler* getConnectionHandler() { BADHANDLER(); }
     SessionHandler* getSessionHandler() { BADHANDLER(); }
+    Connection010Handler* getConnection010Handler() { BADHANDLER(); }
+    Session010Handler* getSession010Handler() { BADHANDLER(); }
 #undef BADHANDLER
 
   private:

@@ -94,7 +94,7 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
     std::queue<framing::AMQFrame> frameQueue;
     Mutex frameQueueLock;
     bool frameQueueClosed;
-    bool initiated;
+    bool isInitiated;
     bool readError;
     std::string identifier;
     bool isClient;
@@ -105,7 +105,7 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
     AsynchIOHandler() :
         inputHandler(0),
         frameQueueClosed(false),
-        initiated(false),
+        isInitiated(false),
         readError(false),
         isClient(false)
     {}
@@ -128,6 +128,8 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
     void send(framing::AMQFrame&);
     void close();
     void activateOutput();
+    void initiated(const framing::ProtocolInitiation&);
+
 
     // Input side
     void readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff);
@@ -259,13 +261,18 @@ void AsynchIOHandler::activateOutput() {
     aio->notifyPendingWrite();
 }
 
+void AsynchIOHandler::initiated(const framing::ProtocolInitiation& pi)
+{
+    write(pi);
+}
+
 // Input side
 void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
         return;
     }
     framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
-    if(initiated){
+    if(isInitiated){
         framing::AMQFrame frame;
         try{
             while(frame.decode(in)) {
@@ -282,7 +289,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         if(protocolInit.decode(in)){
             QPID_LOG(debug, "INIT [" << identifier << "]");
             inputHandler->initiated(protocolInit);
-            initiated = true;
+            isInitiated = true;
         }
     }
     // TODO: unreading needs to go away, and when we can cope
@@ -324,10 +331,10 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 }
 
 void AsynchIOHandler::idle(AsynchIO&){
-    if (isClient && !initiated) {
+    if (isClient && !isInitiated) {
         //get & write protocol header from upper layers
         write(inputHandler->getInitiation());
-        initiated = true;
+        isInitiated = true;
         return;
     }
     ScopedLock<Mutex> l(frameQueueLock);
