@@ -270,7 +270,7 @@ public class QpidTestCase extends TestCase
         return con;
     }
 
-     public Connection getConnection(String username, String password, String id) throws Exception
+    public Connection getConnection(String username, String password, String id) throws Exception
     {
         _logger.info("get Connection");
         Connection con;
