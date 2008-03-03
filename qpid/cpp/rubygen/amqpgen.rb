@@ -343,6 +343,10 @@ class AmqpClass < AmqpElement
     !["connection", "session", "execution"].include?(name)
   end
 
+  def control?()
+    ["connection010", "session010"].include?(name)
+  end
+
   def actions() controls+commands;   end
 end
 

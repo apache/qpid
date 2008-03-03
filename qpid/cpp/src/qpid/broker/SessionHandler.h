@@ -27,8 +27,10 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Array.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceSet.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -44,9 +46,7 @@ class SessionState;
  * receives incoming frames, handles session controls and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
-                       public framing::AMQP_ClientOperations::SessionHandler,
-                       public framing::AMQP_ServerOperations::ExecutionHandler,
+class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
                        public framing::FrameHandler::InOutHandler,
                        private boost::noncopyable
 {
@@ -69,35 +69,32 @@ class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
     // Called by closing connection.
     void localSuspend();
     void detach() { localSuspend(); }
+    void sendCompletion();
     
   protected:
     void handleIn(framing::AMQFrame&);
     void handleOut(framing::AMQFrame&);
     
   private:
-    /// Session methods
-    void open(uint32_t detachedLifetime);
-    void flow(bool active);
-    void flowOk(bool active);
-    void close();
-    void closed(uint16_t replyCode, const std::string& replyText);
-    void resume(const framing::Uuid& sessionId);
-    void suspend();
-    void ack(uint32_t cumulativeSeenMark,
-             const framing::SequenceNumberSet& seenFrameSet);
-    void highWaterMark(uint32_t lastSentMark);
-    void solicitAck();
-    
-    //extra methods required for assuming client role
-    void attached(const framing::Uuid& sessionId, uint32_t detachedLifetime);
-    void detached();
+    //new methods:
+    void attach(const std::string& name, bool force);
+    void attached(const std::string& name);
+    void detach(const std::string& name);
+    void detached(const std::string& name, uint8_t code);
 
-    //Execution methods:
-    void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    
-    void flush();
-    void noop();
-    void result(uint32_t command, const std::string& data);
-    void sync();
+    void requestTimeout(uint32_t t);
+    void timeout(uint32_t t);
+
+    void commandPoint(const framing::SequenceNumber& id, uint64_t offset);
+    void expected(const framing::SequenceSet& commands, const framing::Array& fragments);
+    void confirmed(const framing::SequenceSet& commands,const framing::Array& fragments);
+    void completed(const framing::SequenceSet& commands, bool timelyReply);
+    void knownCompleted(const framing::SequenceSet& commands);
+    void flush(bool expected, bool confirmed, bool completed);
+    void gap(const framing::SequenceSet& commands);    
+
+    //hacks for old generator:
+    void commandPoint(uint32_t id, uint64_t offset) { commandPoint(framing::SequenceNumber(id), offset); }
 
     void assertAttached(const char* method) const;
     void assertActive(const char* method) const;
@@ -106,7 +103,7 @@ class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
     Connection& connection;
     framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
-    framing::AMQP_ClientProxy::Session peerSession;
+    framing::AMQP_ClientProxy::Session010 peerSession;
     bool ignoring;
     std::auto_ptr<SessionState> session;
 };

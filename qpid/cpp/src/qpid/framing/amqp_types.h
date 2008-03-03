@@ -65,6 +65,7 @@ const ChannelId CHANNEL_HIGH_BIT= ChannelId(~CHANNEL_MAX);
 class FramingContent;
 class FieldTable;
 class SequenceNumberSet;
+class SequenceSet;
 class Uuid;
 
 }} // namespace qpid::framing
