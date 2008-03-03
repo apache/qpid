@@ -23,6 +23,9 @@ package org.apache.qpid.test.unit.client.connection;
 import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpidity.transport.util.Logger;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -42,6 +45,8 @@ public class ConnectionCloseTest extends QpidTestCase
 
     public void testSendReceiveClose() throws Exception
     {
+        Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
+
         for (int i = 0; i < 500; i++)
         {
             if ((i % 10) == 0)
@@ -66,6 +71,30 @@ public class ConnectionCloseTest extends QpidTestCase
             assertNotNull("message was lost", m);
             assertEquals(m.getText(), "test");
             receiver.close();
+        }
+
+        Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
+
+        Map<Thread,StackTraceElement[]> delta = new HashMap<Thread,StackTraceElement[]>(after);
+        for (Thread t : before.keySet())
+        {
+            delta.remove(t);
+        }
+
+        dumpStacks(delta);
+
+        assertTrue("Spurious thread creation exceeded threshold, " +
+                   delta.size() + " threads created.",
+                   delta.size() < 10);
+    }
+
+    private void dumpStacks(Map<Thread,StackTraceElement[]> map)
+    {
+        for (Map.Entry<Thread,StackTraceElement[]> entry : map.entrySet())
+        {
+            Throwable t = new Throwable();
+            t.setStackTrace(entry.getValue());
+            log.warn(t, entry.getKey().toString());
         }
     }
 
