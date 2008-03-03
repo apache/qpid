@@ -73,14 +73,18 @@ void SequenceSet::add(const SequenceNumber& start, const SequenceNumber& end)
         add(end, start);
     } else {
         Range r(start, end);
-        bool merged = false;
+        Ranges::iterator merged = ranges.end();
         Ranges::iterator i = ranges.begin();
-        while (i != ranges.end() && !merged && i->start < start) {
-            if (i->merge(r)) merged = true;            
+        while (i != ranges.end() && merged == ranges.end() && i->start < start) {
+            if (i->merge(r)) merged = i;            
             i++;
         }
-        if (!merged) {
-            ranges.insert(i, r);
+        if (merged == ranges.end()) {
+            i = merged = ranges.insert(i, r);
+            i++;
+        }
+        while (i != ranges.end() && merged->merge(*i)) {
+            i = ranges.erase(i);
         }
     }
 }
@@ -190,7 +194,7 @@ bool SequenceSet::Range::merge(const Range& r)
 
 bool SequenceSet::Range::mergeable(const SequenceNumber& s) const
 { 
-    if (contains(s) || start - s == 1) {
+    if (contains(s) || start - s == 1 || s - end == 1) {
         return true;
     } else {
         return false;
