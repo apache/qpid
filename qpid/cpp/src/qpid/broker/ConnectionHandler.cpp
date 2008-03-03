@@ -58,13 +58,16 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
     try{
+        bool handled = false;
         if (handler->serverMode) {
-            if (!invoke(static_cast<AMQP_ServerOperations::Connection010Handler&>(*handler.get()), *method))
-                throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
+            handled = invoke(static_cast<AMQP_ServerOperations::Connection010Handler&>(*handler.get()), *method);
         } else {
-            if (!invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method))
-                throw ChannelErrorException(QPID_MSG("Class can't be accessed over channel 0"));
+            handled = invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method);
         }
+        if (!handled) {
+            handler->connection.getChannel(frame.getChannel()).in(frame);
+        }
+
     }catch(ConnectionException& e){
         handler->client.close(e.code, e.what(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
