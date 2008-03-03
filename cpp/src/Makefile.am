@@ -14,7 +14,7 @@ force:
 if GENERATE
 
 # AMQP_PREVIEW_XML and AMQP_FINAL_XML are defined in ../configure.ac
-amqp_99_0_xml=@AMQP_PREVIEW_XML@  $(top_srcdir)/xml/cluster.xml
+amqp_99_0_xml=@AMQP_PREVIEW_XML@  $(top_srcdir)/xml/extra.xml $(top_srcdir)/xml/cluster.xml
 amqp_0_10_xml=@AMQP_FINAL_XML@
 specs=$(amqp_99_0_xml) $(amqp_0_10_xml)
 
@@ -130,6 +130,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
+  qpid/framing/SequenceSet.cpp \
   qpid/framing/Proxy.cpp \
   qpid/framing/Uuid.cpp \
   qpid/framing/AMQP_HighestVersion.h \
@@ -412,6 +413,7 @@ nobase_include_HEADERS = \
   qpid/framing/SessionState.h \
   qpid/framing/SendContent.h \
   qpid/framing/SequenceNumber.h \
+  qpid/framing/SequenceSet.h \
   qpid/framing/SequenceNumberSet.h \
   qpid/framing/SerializeHandler.h \
   qpid/framing/StructHelper.h \

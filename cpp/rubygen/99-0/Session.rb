@@ -6,7 +6,7 @@ require 'cppgen'
 
 class CppGen
   def session_methods
-    excludes = ["channel", "connection", "session", "execution"]
+    excludes = ["channel", "connection", "session", "execution", "connection010", "session010"]
     gen_methods=@amqp.methods_on(@chassis).reject { |m|
       excludes.include? m.parent.name
     }

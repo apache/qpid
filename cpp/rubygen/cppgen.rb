@@ -142,6 +142,13 @@ class AmqpMethod
   def param_names() fields.map { |f| f.cppname }; end
   def signature() fields.map { |f| f.signature }; end
   def body_name() parent.name.caps+name.caps+"Body"; end
+
+  def cpp_pack_type()           # preview
+    CppType.new("uint16_t").code("Short").defval("0");
+  end 
+  def pack()           # preview
+    "short"
+  end 
 end
 
 module AmqpHasFields
@@ -182,10 +189,12 @@ class AmqpDomain
     "timestamp"=>CppType.new("uint64_t").code("LongLong").defval("0"),
     "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
     "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
+    "mediumstr"=>CppType.new("string").passcref.retcref.code("MediumString"),
     "table"=>CppType.new("FieldTable").passcref.retcref,
     "array"=>CppType.new("Array").passcref.retcref,
     "content"=>CppType.new("Content").passcref.retcref,
     "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
+    "sequence-set"=>CppType.new("SequenceSet").passcref.retcref,
     "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
     "uuid"=>CppType.new("Uuid").passcref.retcref
   }

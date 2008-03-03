@@ -88,7 +88,7 @@ class SemanticState : public framing::FrameHandler::Chains,
         void addMessageCredit(uint32_t value);
         void flush();
         void stop();
-        void acknowledged(const DeliveryRecord&);    
+        void adjustFlow(const DeliveryRecord&);    
         Queue::shared_ptr getQueue() { return queue; }
         bool isBlocked() const { return blocked; }
 
@@ -122,7 +122,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
-    void acknowledged(const DeliveryRecord&);
+    void adjustFlow(const DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void requestDispatch(ConsumerImpl&);
@@ -171,8 +171,6 @@ class SemanticState : public framing::FrameHandler::Chains,
     void endDtx(const std::string& xid, bool fail);
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
-    void ackCumulative(DeliveryId deliveryTag);
-    void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
     void recover(bool requeue);
     void flow(bool active);
     DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
@@ -180,8 +178,15 @@ class SemanticState : public framing::FrameHandler::Chains,
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
     void handle(intrusive_ptr<Message> msg);
-
     bool doOutput() { return outputTasks.doOutput(); }
+
+    //preview only (completed == ack):
+    void ackCumulative(DeliveryId deliveryTag);
+    void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
+
+    //final 0-10 spec (completed and accepted are distinct):
+    void completed(DeliveryId deliveryTag, DeliveryId endTag);
+    void accepted(DeliveryId deliveryTag, DeliveryId endTag);
 };
 
 }} // namespace qpid::broker

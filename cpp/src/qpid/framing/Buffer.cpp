@@ -194,6 +194,13 @@ void Buffer::putShortString(const string& s){
     position += len;    
 }
 
+void Buffer::putMediumString(const string& s){
+    uint16_t len = s.length();
+    putShort(len);
+    s.copy(data + position, len);
+    position += len;    
+}
+
 void Buffer::putLongString(const string& s){
     uint32_t len = s.length();
     putLong(len);
@@ -203,6 +210,13 @@ void Buffer::putLongString(const string& s){
 
 void Buffer::getShortString(string& s){
     uint8_t len = getOctet();
+    checkAvailable(len);
+    s.assign(data + position, len);
+    position += len;
+}
+
+void Buffer::getMediumString(string& s){
+    uint16_t len = getShort();
     checkAvailable(len);
     s.assign(data + position, len);
     position += len;

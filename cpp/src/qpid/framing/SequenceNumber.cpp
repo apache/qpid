@@ -51,9 +51,10 @@ const SequenceNumber SequenceNumber::operator++(int)
     return old;
 }
 
-SequenceNumber SequenceNumber::operator+(uint32_t i) const
+SequenceNumber& SequenceNumber::operator--()
 {
-    return SequenceNumber(value + i);
+    value = value - 1;
+    return *this;
 }
 
 bool SequenceNumber::operator<(const SequenceNumber& other) const

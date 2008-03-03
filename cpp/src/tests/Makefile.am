@@ -38,6 +38,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	InlineVector.cpp \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
+	SequenceSet.cpp \
 	serialize.cpp \
 	ProxyTemplate.cpp apply.cpp
 # FIXME aconway 2008-02-20: removed RefCountedMap.cpp  due to valgrind error.
