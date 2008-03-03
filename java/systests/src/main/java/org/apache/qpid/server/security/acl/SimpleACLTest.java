@@ -106,7 +106,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
         catch (AMQException amqe)
         {
-            if (amqe.getCause() instanceof Exception)
+            if (amqe.getCause().getClass() == Exception.class)
             {
                 System.err.println("QPID-594 : WARNING RACE CONDITION. Unable to determine cause of Connection Failure.");
                 return;
