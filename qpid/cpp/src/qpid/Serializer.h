@@ -25,6 +25,7 @@
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_const.hpp>
+#include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/add_const.hpp>
 #include <algorithm>
 
