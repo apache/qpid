@@ -30,3 +30,64 @@
    fun:epoll_ctl
 }
 
+{
+   Reported only on Fedora 5
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid3sys6ThreadC1EPNS0_8RunnableE
+   fun:_ZN4qpid6client9Connector4initEv
+   fun:_ZN4qpid6client14ConnectionImpl4openERKSsiS3_S3_S3_
+}
+{
+   Reported against Fedora 5     
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid6client9Connector4initEv
+}
+
+{
+   Reported against perf_test on Fedora 5
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:_ZN4qpid3sys6ThreadC1ERNS0_8RunnableE
+   fun:main
+}
+{
+   Reported against Fedora 5     
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid3sys6ThreadC1EPNS0_8RunnableE
+   fun:_ZN4qpid6broker5Timer5startEv
+   fun:_ZN4qpid6broker5TimerC1Ev
+}
+{
+   Reported against Fedora 5     
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid6broker5Timer5startEv
+   fun:_ZN4qpid6broker5TimerC1Ev
+}
+{
+   Fedora 5 issue again     
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid6client9Connector4initEv
+   fun:_ZN4qpid6client14ConnectionImpl4openERKSsiS3_S3_S3_
+}
