@@ -170,7 +170,7 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
 
 void SessionState::handleCommand(framing::AMQMethodBody* method)
 {
-    SequenceNumber id = next++;
+    SequenceNumber id = nextIn++;
     Invoker::Result invocation = invoke(adapter, *method);
     completed.add(id);                                    
     
@@ -189,7 +189,7 @@ void SessionState::handleContent(AMQFrame& frame)
 {
     intrusive_ptr<Message> msg(msgBuilder.getMessage());
     if (!msg) {//start of frameset will be indicated by frame flags
-        SequenceNumber id = next++;
+        SequenceNumber id = nextIn++;
         msgBuilder.start(id);
         msg = msgBuilder.getMessage();
     }
@@ -225,8 +225,8 @@ void SessionState::handle(AMQFrame& frame)
 DeliveryId SessionState::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
     uint32_t maxFrameSize = getConnection().getFrameMax();
-    MessageDelivery::deliver(msg, getProxy().getHandler(), ++outgoing.hwm, token, maxFrameSize);
-    return outgoing.hwm;
+    MessageDelivery::deliver(msg, getProxy().getHandler(), nextOut, token, maxFrameSize);
+    return nextOut++;
 }
 
 void SessionState::sendCompletion()

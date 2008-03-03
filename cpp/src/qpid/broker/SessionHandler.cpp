@@ -126,6 +126,7 @@ void SessionHandler::attach(const std::string& name, bool /*force*/)
         connection.broker.getSessionManager().open(*this, 0));
     session.reset(state.release());
     peerSession.attached(name);
+    peerSession.commandPoint(session->nextOut, 0);
 }
 
 void SessionHandler::attached(const std::string& /*name*/)
@@ -171,7 +172,7 @@ void SessionHandler::commandPoint(const framing::SequenceNumber& id, uint64_t of
 {
     if (offset) throw NotImplementedException("Non-zero byte offset not yet supported for command-point");
     
-    session->next = id;
+    session->nextIn = id;
 }
 
 void SessionHandler::expected(const framing::SequenceSet& commands, const framing::Array& fragments)
@@ -203,7 +204,7 @@ void SessionHandler::knownCompleted(const framing::SequenceSet& commands)
 void SessionHandler::flush(bool expected, bool confirmed, bool completed)
 {
     if (expected) {
-        peerSession.expected(SequenceSet(session->next), Array());
+        peerSession.expected(SequenceSet(session->nextIn), Array());
     }
     if (confirmed) {
         peerSession.confirmed(session->completed, Array());
