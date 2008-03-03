@@ -116,7 +116,8 @@ class SessionState : public framing::SessionState,
 
     framing::SequenceSet completed;
     framing::SequenceSet knownCompleted;
-    framing::SequenceNumber next;
+    framing::SequenceNumber nextIn;
+    framing::SequenceNumber nextOut;
 
   private:
     typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
@@ -134,7 +135,6 @@ class SessionState : public framing::SessionState,
     BrokerAdapter adapter;
     MessageBuilder msgBuilder;
 
-    framing::Window outgoing;
     RangedOperation ackOp;
 
     management::Session::shared_ptr mgmtObject;
