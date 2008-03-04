@@ -30,7 +30,7 @@ using namespace boost;
 
 FrameSet::FrameSet(const SequenceNumber& _id) : id(_id) {parts.reserve(4);}
 
-void FrameSet::append(AMQFrame& part)
+void FrameSet::append(const AMQFrame& part)
 {
     parts.push_back(part);
 }

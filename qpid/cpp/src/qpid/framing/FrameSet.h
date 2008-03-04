@@ -43,7 +43,7 @@ public:
     typedef boost::shared_ptr<FrameSet> shared_ptr;
 
     FrameSet(const SequenceNumber& id);
-    void append(AMQFrame& part);
+    void append(const AMQFrame& part);
     bool isComplete() const;
 
     uint64_t getContentSize() const;

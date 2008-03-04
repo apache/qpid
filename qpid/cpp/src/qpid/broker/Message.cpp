@@ -35,6 +35,7 @@ using namespace qpid::framing;
 using std::string;
 
 TransferAdapter Message::TRANSFER;
+PreviewAdapter Message::TRANSFER_99_0;
 
 Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), staged(false), publisher(0), adapter(0) {}
 
@@ -219,6 +220,8 @@ MessageAdapter& Message::getAdapter() const
 {
     if (!adapter) {
         if(frames.isA<MessageTransferBody>()) {
+            adapter = &TRANSFER_99_0;
+        } else if(frames.isA<Message010TransferBody>()) {
             adapter = &TRANSFER;
         } else {
             const AMQMethodBody* method = frames.getMethod();
