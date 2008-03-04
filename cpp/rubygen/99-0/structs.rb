@@ -39,7 +39,8 @@ class StructGen < CppGen
   end
 
   def execution_header?(s)
-    false and s.kind_of? AmqpMethod and s.parent.l4?
+    #false and s.kind_of? AmqpMethod and s.parent.l4?
+    s.kind_of? AmqpMethod and s.parent.name.include?("010") and not s.parent.control?
   end
 
   def has_bitfields_only(s)
@@ -453,7 +454,7 @@ void #{classname}::encodeStructBody(Buffer& #{buffer}) const
 {
 EOS
       if (execution_header?(s))
-        genl "ModelMethod::encode(buffer);"
+        genl "encodeHeader(buffer);"
       end
 
       if (is_packed(s))
@@ -473,7 +474,7 @@ EOS
             genl "buffer.put#{s.size.caps}(bodySize() + 2/*typecode*/);" if s.size
             genl "buffer.putShort(TYPE);" 
           else
-            genl "buffer.put#{s.size.caps}(size());" if s.size
+            genl "buffer.put#{s.size.caps}(bodySize());" if s.size
           end
         end
         genl "encodeStructBody(buffer);"
@@ -485,7 +486,7 @@ void #{classname}::decodeStructBody(Buffer& #{buffer}, uint32_t /*size*/)
 {
 EOS
       if (execution_header?(s))
-        genl "ModelMethod::decode(buffer);"
+        genl "decodeHeader(buffer);"
       end
 
       if (is_packed(s))
@@ -514,7 +515,7 @@ uint32_t #{classname}::bodySize() const
     uint32_t total = 0;
 EOS
       if (execution_header?(s))
-        genl "total += ModelMethod::size();"
+        genl "total += headerSize();"
       end
 
       if (is_packed(s))

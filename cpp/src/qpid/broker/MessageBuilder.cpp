@@ -28,6 +28,10 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+namespace 
+{
+    std::string type_str(uint8_t type);
+}
 MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) : 
     state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
 
@@ -39,7 +43,19 @@ void MessageBuilder::handle(AMQFrame& frame)
         state = HEADER;
         break;
     case HEADER:
-        checkType(HEADER_BODY, frame.getBody()->type());
+        switch (frame.getBody()->type()) {
+        case CONTENT_BODY:
+            //TODO: rethink how to handle non-existent headers...
+            //didn't get a header: add in a dummy
+            message->getFrames().append(AMQFrame(AMQHeaderBody()));            
+            break;
+        case HEADER_BODY:            
+            break;
+        default:
+            throw CommandInvalidException(
+                QPID_MSG("Invalid frame sequence for message, expected header or content got " 
+                         << type_str(frame.getBody()->type()) << ")"));
+        }
         state = CONTENT;
         break;
     case CONTENT:
