@@ -22,6 +22,9 @@
 #include "unit_test.h"
 #include "qpid/amqp_0_10/built_in_types.h"
 #include "qpid/amqp_0_10/Codec.h"
+#include "qpid/amqp_0_10/specification.h"
+#include "qpid/amqp_0_10/ControlHolder.h"
+
 #include <boost/test/test_case_template.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -62,6 +65,7 @@ QPID_AUTO_TEST_SUITE(SerializeTestSuite)
 using namespace std;
 namespace mpl=boost::mpl;
 using namespace qpid::amqp_0_10;
+using qpid::framing::in_place;
 
 template <class A, class B> struct concat2 { typedef typename mpl::copy<B, typename mpl::back_inserter<A> >::type type; };
 template <class A, class B, class C> struct concat3 { typedef typename concat2<A, typename concat2<B, C>::type>::type type; };
@@ -82,14 +86,14 @@ BOOST_AUTO_TEST_CASE(testNetworkByteOrder) {
     string data;
 
     uint32_t l = 0x11223344;
-    Codec::encode(std::back_inserter(data), l);
+    Codec::encode(std::back_inserter(data))(l);
     uint32_t enc=reinterpret_cast<const uint32_t&>(*data.data());
     uint32_t l2 = ntohl(enc);
     BOOST_CHECK_EQUAL(l, l2);
 
     data.clear();
     uint16_t s = 0x1122;
-    Codec::encode(std::back_inserter(data), s);
+    Codec::encode(std::back_inserter(data))(s);
     uint32_t s2 = ntohs(*reinterpret_cast<const uint32_t*>(data.data()));
     BOOST_CHECK_EQUAL(s, s2);
 }
@@ -116,14 +120,58 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
     string data;
     T t;
     testValue(t);
-    Codec::encode(std::back_inserter(data), t);
+    Codec::encode(std::back_inserter(data))(t);
 
     BOOST_CHECK_EQUAL(Codec::size(t), data.size());
 
     T t2;
-    Codec::decode(data.begin(), t2);
+    Codec::decode(data.begin())(t2);
     BOOST_CHECK_EQUAL(t,t2);
 }
 
+struct TestMe {
+    bool encoded, decoded;
+    char value;
+    TestMe(char v) : encoded(), decoded(), value(v) {}
+    template <class S> void encode(S& s) { encoded=true; s(value); }
+    template <class S> void decode(S& s) { decoded=true; s(value); }
+    template <class S> void serialize(S& s) { s.split(*this); }
+};
+
+BOOST_AUTO_TEST_CASE(testSplit) {
+    string data;
+    TestMe t1('x');
+    Codec::encode(std::back_inserter(data))(t1);
+    BOOST_CHECK(t1.encoded);
+    BOOST_CHECK(!t1.decoded);
+    BOOST_CHECK_EQUAL(data, "x");
+
+    TestMe t2('y');
+    Codec::decode(data.begin())(t2);
+    BOOST_CHECK(!t2.encoded);
+    BOOST_CHECK(t2.decoded);
+    BOOST_CHECK_EQUAL(t2.value, 'x');
+}
+
+BOOST_AUTO_TEST_CASE(testControlEncodeDecode) {
+    string data;
+    Control::Holder h(in_place<connection::Tune>(1,2,3,4));
+    Codec::encode(std::back_inserter(data))(h);
+    
+    BOOST_CHECK_EQUAL(data.size(), Codec::size(h));
+
+    Codec::Decode<string::iterator> decode(data.begin());
+    Control::Holder h2;
+    decode(h2);
+
+    BOOST_REQUIRE(h2.get());
+    BOOST_CHECK_EQUAL(h2.get()->getClassCode(), connection::CODE);
+    BOOST_CHECK_EQUAL(h2.get()->getCode(), uint8_t(connection::Tune::CODE));
+    connection::Tune& tune=static_cast<connection::Tune&>(*h2.get());
+    BOOST_CHECK_EQUAL(tune.channelMax, 1u);
+    BOOST_CHECK_EQUAL(tune.maxFrameSize, 2u);
+    BOOST_CHECK_EQUAL(tune.heartbeatMin, 3u);
+    BOOST_CHECK_EQUAL(tune.heartbeatMax, 4u);
+}
 
 QPID_AUTO_TEST_SUITE_END()
