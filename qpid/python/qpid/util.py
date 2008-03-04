@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import socket
+import os, socket
 
 def connect(host, port):
   sock = socket.socket()
@@ -37,3 +37,6 @@ def listen(host, port, predicate = lambda: True, bound = lambda: None):
   while predicate():
     s, a = sock.accept()
     yield s
+
+def mtime(filename):
+  return os.stat(filename).st_mtime

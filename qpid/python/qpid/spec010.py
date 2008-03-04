@@ -17,8 +17,9 @@
 # under the License.
 #
 
-import datatypes
+import os, cPickle, datatypes
 from codec010 import StringCodec
+from util import mtime
 
 class Node:
 
@@ -598,11 +599,9 @@ class Loader:
   def do_exception(self, e):
     return Exception(id(e["@name"]), id(e["@error-code"]), self.children(e))
 
-import os, cPickle
-
 def load(xml):
   fname = xml + ".pcl"
-  if os.path.exists(fname):
+  if os.path.exists(fname) and mtime(fname) > mtime(__file__):
     file = open(fname, "r")
     s = cPickle.load(file)
     file.close()
