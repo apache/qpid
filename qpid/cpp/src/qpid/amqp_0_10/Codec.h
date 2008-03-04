@@ -28,15 +28,14 @@
 #include <boost/type_traits/is_float.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/detail/endian.hpp>
-#include <boost/ref.hpp>
 
 namespace qpid {
 namespace amqp_0_10 {
 /**
  * AMQP 0-10 encoding and decoding.
  */
-class Codec {
-  public:
+struct Codec {                  // FIXME aconway 2008-02-29: drop this wrapper?
+
     /** Encode to an output byte iterator */
     template <class OutIter>
     class Encode : public Serializer<Encode<OutIter> > {
@@ -58,6 +57,11 @@ class Codec {
         typename boost::enable_if<boost::is_float<T>, Encode&>::type
         operator()(const T& x) { raw(&x, sizeof(x)); return *this; }
 
+        template <class Iter> Encode& operator()(Iter begin, Iter end) {
+            std::for_each(begin, end, *this);
+            return *this;
+        }
+
         void raw(const void* p, size_t n) {
             std::copy((const char*)p, (const char*)p+n, out); 
         }
@@ -70,6 +74,8 @@ class Codec {
     class Decode : public Serializer<Decode<InIter> > {
       public:
         Decode(InIter i) : in(i) {}
+
+        static const bool IS_DECODER=true;
         
         using Serializer<Decode<InIter> >::operator();
         
@@ -91,6 +97,11 @@ class Codec {
             (*this)(n);
             str.resize(n);
             std::for_each(str.begin(), str.end(), *this);
+            return *this;
+        }
+
+        template <class Iter> Decode& operator()(Iter begin, Iter end) {
+            std::for_each(begin, end, *this);
             return *this;
         }
 
@@ -124,30 +135,27 @@ class Codec {
             return *this;
         }
 
+        template <class Iter>
+        Size& operator()(const Iter& a, const Iter& b) {
+            size += (b-a)*sizeof(*a);
+            return *this;
+        }
+
         void raw(const void*, size_t n){ size += n; }
 
       private:
         size_t size;
     };
 
-    template <class Out, class T>
-    static void encode(Out o, const T& x) {
-        Encode<Out> encode(o);
-        encode(x);
+    template <class OutIter> static Decode<OutIter> decode(const OutIter &i) {
+        return Decode<OutIter>(i);
     }
 
-    template <class In, class T>
-    static void decode(In i, T& x) {
-        Decode<In> decode(i);
-        decode(x);
+    template <class InIter> static Encode<InIter> encode(InIter i) {
+        return Encode<InIter>(i);
     }
 
-    template <class T>
-    static size_t size(const T& x) {
-        Size sz;
-        sz(x);
-        return sz;
-    }
+    template <class T> static size_t size(const T& x) { return Size()(x); }
 
   private:
     template <class T> static inline void endianize(T& value) {

@@ -22,7 +22,8 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
-#include "qpid/amqp_0_10/helpers.h"
+#include "qpid/amqp_0_10/built_in_types.h"
+#include "qpid/amqp_0_10/complex_types.h"
 
 #include <ostream>
 
