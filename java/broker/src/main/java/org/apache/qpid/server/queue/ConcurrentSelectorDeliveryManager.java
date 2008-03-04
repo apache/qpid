@@ -313,13 +313,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             QueueEntry entry = currentQueue.next();
 
-            if (!entry.getDeliveredToConsumer())
+            if (subscription.hasInterest(entry))
             {
-                if (subscription.hasInterest(entry))
-                {
-                    subscription.enqueueForPreDelivery(entry, false);
-                }
+                subscription.enqueueForPreDelivery(entry, false);
             }
+
         }
     }
 
@@ -509,9 +507,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         while (purgeMessage(entry, sub, purgeOnly))
         {
             AMQMessage message = entry.getMessage();
-            // if we are purging then ensure we mark this message taken for the current subscriber
-            // the current subscriber may be null in the case of a get or a purge but this is ok.
-//            boolean alreadyTaken = message.taken(_queue, sub);
 
             //remove the already taken message or expired
             QueueEntry removed = messages.poll();
@@ -519,7 +514,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             assert removed == entry;
 
             // if the message expired then the _totalMessageSize needs adjusting
-            if (message.expired(_queue) && !entry.getDeliveredToConsumer())
+            if (message.expired(_queue) && !entry.taken(sub))
             {
                 _totalMessageSize.addAndGet(-entry.getSize());
 
@@ -866,17 +861,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     }
                     for (Subscription sub : _subscriptions.getSubscriptions())
                     {
-
-                        // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
-                        if (_queue.isShared() && entry.getDeliveredToConsumer())
-                        {
-                            if (debugEnabled)
-                            {
-                                _log.debug(debugIdentity() + "Stopping PreDelivery as message(" + System.identityHashCode(entry) +
-                                           ") is already delivered.");
-                            }
-                            continue;
-                        }
 
                         // Only give the message to those that want them.
                         if (sub.hasInterest(entry))
