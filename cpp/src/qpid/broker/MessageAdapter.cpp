@@ -36,12 +36,12 @@ namespace broker{
 
     std::string TransferAdapter::getExchange(const framing::FrameSet& f)
     {
-        return f.as<framing::MessageTransferBody>()->getDestination();
+        return f.as<framing::Message010TransferBody>()->getDestination();
     }
 
     bool TransferAdapter::isImmediate(const framing::FrameSet&)
     {
-        //TODO: we seem to have lost the immediate flag
+        //TODO: delete this, immediate is no longer part of the spec
         return false;
     }
 
@@ -57,4 +57,8 @@ namespace broker{
         return p && p->getDeliveryMode() == 2;
     }
 
+    std::string PreviewAdapter::getExchange(const framing::FrameSet& f)
+    {
+        return f.as<framing::MessageTransferBody>()->getDestination();
+    }
 }}

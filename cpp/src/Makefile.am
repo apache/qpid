@@ -164,6 +164,7 @@ libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
+  qpid/broker/SessionAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
@@ -273,6 +274,7 @@ nobase_include_HEADERS = \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
   qpid/broker/BrokerAdapter.h \
+  qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
   qpid/broker/Queue.h \
   qpid/broker/BrokerSingleton.h \

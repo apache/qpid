@@ -31,7 +31,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Session.h"
-#include "BrokerAdapter.h"
+#include "SessionAdapter.h"
 #include "DeliveryAdapter.h"
 #include "MessageBuilder.h"
 #include "SessionContext.h"
@@ -132,7 +132,7 @@ class SessionState : public framing::SessionState,
     sys::Mutex lock;
 
     SemanticState semanticState;
-    BrokerAdapter adapter;
+    SessionAdapter adapter;
     MessageBuilder msgBuilder;
 
     RangedOperation ackOp;
