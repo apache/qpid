@@ -31,7 +31,8 @@ template <class F, class R=typename F::result_type> struct FunctionAndResult {
     boost::optional<R> result;
 
     FunctionAndResult() : functor(0) {}
-    template <class T> void invoke(T t) { result=(*functor)(t); }
+    template <class T> void invoke(T& t) { result=(*functor)(t); }
+    template <class T> void invoke(const T& t) { result=(*functor)(t); }
     R getResult() { return *result; }
 };
 
@@ -40,17 +41,23 @@ template <class F> struct FunctionAndResult<F, void> {
     F* functor;
     
     FunctionAndResult() : functor(0) {}
-    template <class T> void invoke(T t) { (*functor)(t); }
+    template <class T> void invoke(T& t) { (*functor)(t); }
     void getResult() {}
 };
 
-template <class V, class F>
-struct ApplyVisitorBase : public V, public FunctionAndResult<F> {
-    using V::visit;
+// Metafunction returning correct abstract visitor for Visitable type. 
+template <class Visitable> struct VisitorType {
+    typedef typename Visitable::Visitor type;
 };
+template <class Visitable> struct VisitorType<const Visitable> {
+    typedef typename Visitable::ConstVisitor type;
+};
+    
+template <class Visitor, class F>
+struct ApplyVisitorBase : public Visitor, public FunctionAndResult<F> {};
 
 // Specialize for each visitor type
-template <class V, class F> struct ApplyVisitor;
+template <class Visitable, class F> struct ApplyVisitor;
 
 /** Apply a functor to a visitable object.
  * The functor can have operator() overloads for each visitable type
@@ -58,7 +65,7 @@ template <class V, class F> struct ApplyVisitor;
  */
 template <class F, class Visitable>
 typename F::result_type apply(F& functor, Visitable& visitable) {
-    ApplyVisitor<typename Visitable::Visitor, F> visitor;
+    ApplyVisitor<typename VisitorType<Visitable>::type, F> visitor;
     visitor.functor=&functor;
     visitable.accept(visitor);
     return visitor.getResult();
@@ -66,11 +73,17 @@ typename F::result_type apply(F& functor, Visitable& visitable) {
 
 template <class F, class Visitable>
 typename F::result_type apply(const F& functor, Visitable& visitable) {
-    ApplyVisitor<typename Visitable::Visitor, const F> visitor;
+    ApplyVisitor<typename VisitorType<Visitable>::type, const F> visitor;
     visitor.functor=&functor;
     visitable.accept(visitor);
     return visitor.getResult();
 }
+
+template <class R, bool Const=false> struct ApplyFunctor {
+    typedef R result_type;
+    static const bool IS_CONST=Const;
+};
+template <class R> struct ConstApplyFunctor : public ApplyFunctor<R, true> {};
 
 }} // namespace qpid::amqp_0_10
 

@@ -15,10 +15,11 @@ class Specification < CppGen
     genl
     typename=d.name.typename
     if d.enum
-      scope("enum #{typename} {", "};") { 
+      scope("enum #{typename}Enum {", "};") { 
         genl d.enum.choices.map { |c|
           "#{c.name.constname} = #{c.value}" }.join(",\n")
       }
+      genl "typedef Enum<#{typename}Enum, uint8_t> #{typename};"
     else
       genl "typedef #{d.amqp2cpp} #{typename};"
     end
@@ -42,11 +43,15 @@ class Specification < CppGen
       x.fields.each { |f| genl "#{f.amqp2cpp} #{f.cppname};" }
       genl
       genl "static const char* NAME;"
-      consts.each { |c| genl "static const uint8_t #{c.upcase}=#{x.send c or 0};"}
+      consts.each {
+        |c| genl "static const uint8_t #{c.upcase}=#{(x.send c) or 0};"
+      }
       genl "static const uint8_t CLASS_CODE=#{x.containing_class.nsname}::CODE;"
+      genl "static const char* CLASS_NAME;"
       ctor_decl(x.classname,[])
       ctor_decl(x.classname, x.parameters) unless x.fields.empty?
-      function_decl("void accept", ["Visitor&"], "const")
+      genl "void accept(Visitor&);" 
+      genl "void accept(ConstVisitor&) const;"
       genl
       yield if block
     }
@@ -55,13 +60,19 @@ class Specification < CppGen
   def action_struct_cpp(x)
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
+    genl "const char* #{x.classname}::CLASS_NAME=#{x.containing_class.nsname}::NAME;"
     genl
     ctor=x.classname+"::"+x.classname
     ctor_defn(ctor) {}
     ctor_defn(ctor, x.parameters, x.initializers) {} if not x.fields.empty?
-    function_defn("void #{x.classname}::accept", ["Visitor& v"], "const") { 
-      genl "v.visit(*this);"
-    }
+    # FIXME aconway 2008-03-04: struct visitors
+    if x.is_a? AmqpStruct
+      genl "void #{x.classname}::accept(Visitor&) { assert(0); }"
+      genl "void #{x.classname}::accept(ConstVisitor&) const { assert(0); }"
+    else
+      genl "void #{x.classname}::accept(Visitor& v) {  v.visit(*this); }"
+      genl "void #{x.classname}::accept(ConstVisitor& v) const { v.visit(*this); }"
+    end
   end
 
   # structs
@@ -76,11 +87,13 @@ class Specification < CppGen
       function_defn("template <class T> void invoke", ["T& target"]) {
         genl "target.#{a.funcname}(#{a.values.join(', ')});"
       }
-      function_defn("template <class S> void serialize", ["S& s"]) { 
-        gen "s"
-        a.fields.each { |f| gen "(#{f.cppname})"}
-        genl ";"
-      } unless a.fields.empty?
+      if (a.fields.empty?)
+        genl "template <class S> void serialize(S&) {}"
+      else
+        scope("template <class S> void serialize(S& s) {") {
+          gen "s"; a.fields.each { |f| gen "(#{f.cppname})"}; genl ";"
+        }
+      end
     }
   end
   
@@ -93,7 +106,7 @@ class Specification < CppGen
   def gen_specification()
     h_file("#{@dir}/specification") {
       include "#{@dir}/built_in_types"
-      include "#{@dir}/helpers"
+      include "#{@dir}/complex_types"
       include "<boost/call_traits.hpp>"
       genl "using boost::call_traits;"
       namespace(@ns) {
@@ -120,12 +133,13 @@ class Specification < CppGen
 
     cpp_file("#{@dir}/specification") { 
       include "#{@dir}/specification"
-      ["Command","Control","Struct"].each { |x| include "#{@dir}/Apply#{x}" }
+      # FIXME aconway 2008-03-04: add Struct visitors.
+      ["Command","Control"].each { |x| include "#{@dir}/Apply#{x}" }
       namespace(@ns) { 
         each_class_ns { |c|
           class_cpp c
           c.actions.each { |a| action_cpp a}
-          c.structs.each { |s| struct_cpp s }
+          c.collect_all(AmqpStruct).each {  |s| struct_cpp(s) }
         }
       }
     }
@@ -157,57 +171,98 @@ class Specification < CppGen
     }
   end
 
+  def visitor_interface_h(base, subs, is_const)
+    name="#{is_const ? 'Const' : ''}#{base}Visitor"
+    const=is_const ? "const " : ""
+    struct(name) {
+      genl "virtual ~#{name}() {}"
+      genl "typedef #{const}#{base} BaseType;"
+      subs.each{ |s|
+        genl "virtual void visit(#{const}#{s.fqclassname}&) = 0;"
+      }}
+  end
+
+  def visitor_impl(base, subs, is_const)
+    name="#{is_const ? 'Const' : ''}#{base}Visitor"
+    const=is_const ? "const " : ""
+    genl "template <class F>"
+    struct("ApplyVisitor<#{name}, F>", "public ApplyVisitorBase<#{name}, F>") {
+      subs.each{ |s|
+        genl "virtual void visit(#{const}#{s.fqclassname}& x) { this->invoke(x); }" 
+      }}
+  end
+  
   def gen_visitor(base, subs)
     h_file("#{@dir}/#{base}Visitor.h") { 
       include "#{@dir}/specification"
       namespace("#{@ns}") { 
-        genl
-        genl "/** Visitor interface for #{base} subclasses. */"
-        struct("#{base}::Visitor") {
-          genl "virtual ~Visitor() {}"
-          genl "typedef #{base} BaseType;"
-          subs.each{ |s|
-            genl "virtual void visit(const #{s.fqclassname}&) = 0;"
-          }}}}
-
+        visitor_interface_h(base, subs, false)
+        visitor_interface_h(base, subs, true)
+      }}
+    
     h_file("#{@dir}/Apply#{base}.h") {
       include "#{@dir}/#{base}Visitor.h"
       include "#{@dir}/apply.h"
       namespace("#{@ns}") { 
-        genl
-        genl "/** apply() support for #{base} subclasses */"
-        genl "template <class F>"
-        struct("ApplyVisitor<#{base}::Visitor, F>",
-               ["public FunctionAndResult<F>", "public #{base}::Visitor"])  {
-          subs.each{ |s|
-            function_defn("virtual void visit", ["const #{s.fqclassname}& x"]) {
-              genl "this->invoke(x);"
-            }}}}}
-  end
-
-  def gen_visitors()
-  end
-
-  def holder(base, derived)
-    name=base.caps+"Holder"
-    h_file("#{@dir}/#{name}") {
-      include "#{@dir}/specification"
-      include "qpid/framing/Blob"
-      namespace(@ns){ 
-        # TODO aconway 2008-02-29: 
+        visitor_impl(base, subs, false)
+        visitor_impl(base, subs, true)
       }
     }
   end
-  def gen_holders()
+  
+  def gen_holder(base, subs)
+    name=base.caps+"Holder"
+    h_file("#{@dir}/#{name}") {
+      include "#{@dir}/Apply#{base}"
+      include "#{@dir}/Holder"
+      namespace(@ns){
+        namespace("#{base.downcase}_max") {
+          gen "template <class M, class X> "
+          struct("Max") {
+            genl "static const size_t max=(M::max > sizeof(X)) ? M::max : sizeof(X);"
+          }
+          genl "struct Max000 { static const size_t max=0; };"
+          last="Max000"
+          subs.each { |s|
+            genl "typedef Max<#{last}, #{s.fqclassname}> #{last.succ!};"
+          }
+          genl "static const int MAX=#{last}::max;"
+        }
+        holder_base="amqp_0_10::Holder<#{base}Holder, #{base}, #{base.downcase}_max::MAX>"
+        struct("#{name}", "public #{holder_base}") {
+          genl "#{name}() {}"
+          genl "template <class T> #{name}(const T& t) : #{holder_base}(t) {}"
+          genl "using #{holder_base}::operator=;"
+          genl "void set(uint8_t classCode, uint8_t code);"
+        }}}
+    
+    cpp_file("#{@dir}/#{name}") {
+      include "#{@dir}/#{name}"
+      namespace(@ns) {
+        genl "using framing::in_place;"
+        genl
+        scope("void #{name}::set(uint8_t classCode, uint8_t code) {") {
+          genl "uint16_t key=(classCode<<8)+code;"
+          scope ("switch(key) {") {
+            subs.each { |s|
+              genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
+            }
+            genl "default: assert(0);"
+          }}}}
+  end
 
+  def gen_visitable(base, subs)
+    gen_holder(base, subs)
+    gen_visitor(base, subs)
   end
 
   def generate
     gen_specification
     gen_proxy
-    gen_visitor("Command", @amqp.collect_all(AmqpCommand))
-    gen_visitor("Control", @amqp.collect_all(AmqpControl))
-    gen_visitor("Struct", @amqp.collect_all(AmqpStruct))
+    gen_visitable("Command", @amqp.collect_all(AmqpCommand))
+    gen_visitable("Control", @amqp.collect_all(AmqpControl))
+    # FIXME aconway 2008-03-04: sort out visitable structs.
+    # gen_visitable("Struct", @amqp.collect_all(AmqpStruct))
   end
 end
 

@@ -82,7 +82,7 @@ template <class T, class SizeType>
 struct SerializableString : public std::basic_string<T> {
     using std::basic_string<T>::operator=;
     template <class S> void serialize(S& s) {
-        s(SizeType(this->size())).iterate(this->begin(), this->end());
+        s(SizeType(this->size()))(this->begin(), this->end());
     }
 };
 
@@ -107,16 +107,29 @@ typedef SerializableString<Uint16, Uint16> Str16Utf16;
 typedef SerializableString<Uint8, Uint32> Vbin32;
 
 // FIXME aconway 2008-02-26: Unimplemented types:
-template <class T> struct Array : public std::vector<T> {};
-struct ByteRanges {};
-struct SequenceSet {};
-struct Map {};
-struct List {};
-struct Struct32 {};
+template <class T> struct Array : public std::vector<T>  { template <class S> void serialize(S&) {} };
+struct ByteRanges { template <class S> void serialize(S&) {} };
+struct SequenceSet  { template <class S> void serialize(S&) {} };
+struct Map  { template <class S> void serialize(S&) {} };
+struct List  { template <class S> void serialize(S&) {} };
+struct Struct32  { template <class S> void serialize(S&) {} };
 
-// Top level enum definitions.
-enum SegmentType { CONTROL, COMMAND, HEADER, BODY };
+// Serializable enum support
+template <class E, class Store> struct Enum {
+    Store value;
+    Enum() {}
+    Enum(E v) : value(v) {}
+    Enum(Store v) : value(v) {}
+    Enum& operator=(E v) { value=v; return *this; }
+    Enum& operator=(Store v) { value=v; return *this; }
+    operator E() const { return value; }
+    operator Store() const { return value; }
+    template <class S> void serialize(S& s) { s(value); }
+};
+
+enum SegmentTypeEnum { CONTROL, COMMAND, HEADER, BODY };
+typedef Enum<SegmentTypeEnum, uint8_t> SegmentType;
 
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_AMQP_0_10_BUILT_IN_TYPES_H*/
+#endif

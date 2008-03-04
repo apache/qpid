@@ -26,11 +26,15 @@ QPID_AUTO_TEST_SUITE(VisitorTestSuite)
 
 using  namespace qpid::amqp_0_10;
 
-struct GetCode {
-    typedef uint8_t result_type;
+struct GetCode : public ConstApplyFunctor<uint8_t> {
     template <class T> uint8_t operator()(const T&) const { return T::CODE; }
 };
 
+struct SetChannelMax : ApplyFunctor<void> {
+    template <class T> void operator()(T&) const { BOOST_FAIL(""); }
+    void operator()(connection::Tune& t) const { t.channelMax=42; }
+};
+    
 struct TestFunctor {
     typedef bool result_type;
     bool operator()(const connection::Tune& tune) {
@@ -57,6 +61,9 @@ BOOST_AUTO_TEST_CASE(testApply) {
     connection::Start start;
     p = &start;
     BOOST_CHECK(!apply(tf, *p));
+
+    apply(SetChannelMax(), tune);
+    BOOST_CHECK_EQUAL(tune.channelMax, 42);
 }
 
 struct VoidTestFunctor {

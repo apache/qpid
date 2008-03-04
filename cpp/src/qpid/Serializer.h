@@ -22,36 +22,59 @@
  *
  */
 
-#include <boost/type_traits/remove_const.hpp>
 #include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_const.hpp>
+#include <boost/static_assert.hpp>
 #include <boost/type_traits/is_class.hpp>
-#include <boost/type_traits/add_const.hpp>
 #include <algorithm>
 
 namespace qpid {
 
-/**
- * Base class for serializers.
- */
+// FIXME aconway 2008-03-03: Doc - esp decoding
 template <class Derived> class Serializer {
   public:
+    typedef Serializer result_type; // unary functor requirement.
+
+    static const bool IS_DECODER=false;
+
+    /** Generic handler for class objects, call serialize() */
     template <class T>
     typename boost::enable_if<boost::is_class<T>, Derived&>::type
     operator()(T& t) {
-        // const_cast so we don't need 2 serialize() members for every class.
-        const_cast<typename boost::remove_const<T>::type&>(t).serialize(self());
+        t.serialize(self());
         return self();
     }
 
-    template <class Iter> Derived& iterate(Iter begin, Iter end) {
-        std::for_each(begin, end, self());
+    /** Generic handler for const class objects, call serialize() */
+    template <class T>
+    typename boost::enable_if<boost::is_class<T>, Derived&>::type
+    operator()(const T& t) {
+        assert(!Derived::IS_DECODER); // We won't modify the value.
+        // const_cast so we don't need 2 serialize() members for every class.
+        const_cast<T&>(t).serialize(self());
         return self();
     }
+
+    template <class T, bool=false> struct Split {
+        Split(Derived& s, T& t) { t.encode(s); }
+    };
+    
+    template <class T> struct Split<T,true> {
+        Split(Derived& s, T& t) { t.decode(s); }
+    };
+    /**
+     * Called by classes that want to receive separate
+     * encode()/decode() calls.
+     */
+    template <class T>
+    void split(T& t) { Split<T, Derived::IS_DECODER>(self(),t); }
 
   private:
     Derived& self() { return *static_cast<Derived*>(this); }
 };
+
+
+
+
 
 } // namespace qpid
 
