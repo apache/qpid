@@ -286,7 +286,7 @@ public class TopicSessionTest extends QpidTestCase
 
     public void testNoLocal() throws Exception
     {
-/*
+
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         AMQTopic topic = new AMQTopic(con, "testNoLocal");
@@ -363,7 +363,7 @@ public class TopicSessionTest extends QpidTestCase
 
 
         con.close();
-        con2.close();*/
+        con2.close();
     }
 
     public static junit.framework.Test suite()
