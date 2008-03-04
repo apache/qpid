@@ -582,4 +582,185 @@
 
 </class>
 
+<class name="message010" index="4">
+    <doc>blah, blah</doc>
+    <method name = "transfer" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+        <field name="accept-mode" domain="octet"/>
+        <field name="acquire-mode" domain="octet"/>
+    </method>
+    <method name = "accept" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="commands" domain="sequence-set"/>
+    </method>
+    <method name = "reject" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="commands" domain="sequence-set"/>
+        <field name="code" domain="short"/>
+        <field name="text" domain="shortstr"/>
+    </method>
+    <method name = "release" index="4">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="commands" domain="sequence-set"/>
+        <field name="set-redelivered" domain="bit"/>
+    </method>
+
+
+    <method name = "subscribe" index="7">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="queue" domain="shortstr"/>
+        <field name="destination" domain="shortstr"/>
+        <field name="accept-mode" domain="octet"/>
+        <field name="acquire-mode" domain="octet"/>
+        <field name="exclusive" domain="bit"/>
+        <field name="resume-id" domain="mediumstr"/>
+        <field name="resume-ttl" domain="longlong"/>
+        <field name="arguments" domain="table"/>
+    </method>
+    <method name = "cancel" index="8">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+    </method>
+    <method name = "set-flow-mode" index="9">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+        <field name="flow-mode" domain="octet"/>
+    </method>
+    <method name = "flow" index="10">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+        <field name="unit" domain="octet"/>
+        <field name="value" domain="long"/>
+    </method>
+    <method name = "flush" index="11">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+    </method>
+    <method name = "stop" index="12">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="destination" domain="shortstr"/>
+    </method>
+</class>
+
+<class name="exchange010" index="7">
+    <doc>blah, blah</doc>
+    <method name = "declare" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <field name="type" domain="shortstr"/>
+        <field name="alternate-exchange" domain="shortstr"/>
+        <field name="passive" domain="bit"/>
+        <field name="durable" domain="bit"/>
+        <field name="auto-delete" domain="bit"/>
+        <field name="arguments" domain="table"/>
+    </method>
+    <method name = "delete" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <field name="if-unused" domain="bit"/>
+    </method>
+    <method name = "query" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <result>
+            <struct size="long" type="1">
+                <field name="type" domain="shortstr"/>
+                <field name="durable" domain="bit"/>
+                <field name="not-found" domain="bit"/>
+                <field name="arguments" domain="table"/>
+            </struct>
+        </result>
+    </method>
+    <method name = "bind" index="4">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="queue" domain="shortstr"/>
+        <field name="exchange" domain="shortstr"/>
+        <field name="binding-key" domain="shortstr"/>
+        <field name="arguments" domain="table"/>
+    </method>
+    <method name = "unbind" index="5">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="queue" domain="shortstr"/>
+        <field name="exchange" domain="shortstr"/>
+        <field name="binding-key" domain="shortstr"/>
+    </method>
+    <method name = "bound" index="6">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="queue" domain="shortstr"/>
+        <field name="exchange" domain="shortstr"/>
+        <field name="binding-key" domain="shortstr"/>
+        <field name="arguments" domain="table"/>
+        <result>
+            <struct size="long" type="1">
+                <field name="exchange-not-found" domain="bit"/>
+                <field name="queue-not-found" domain="bit"/>
+                <field name="queue-not-matched" domain="bit"/>
+                <field name="key-not-matched" domain="bit"/>
+                <field name="arguments-not-matched" domain="bit"/>
+            </struct>
+        </result>
+    </method>
+</class>
+
+<class name="queue010" index="8">
+    <doc>blah, blah</doc>
+    <method name = "declare" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <field name="alternate-exchange" domain="shortstr"/>
+        <field name="passive" domain="bit"/>
+        <field name="durable" domain="bit"/>
+        <field name="exclusive" domain="bit"/>
+        <field name="auto-delete" domain="bit"/>
+        <field name="arguments" domain="table"/>
+    </method>
+    <method name = "delete" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <field name="if-unused" domain="bit"/>
+        <field name="if-empty" domain="bit"/>
+    </method>
+    <method name = "purge" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+    </method>
+    <method name = "query" index="4">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="name" domain="shortstr"/>
+        <result>
+            <struct size="long" type="1">
+                <field name="name" domain="shortstr"/>
+                <field name="alternate-exchange" domain="shortstr"/>
+                <field name="passive" domain="bit"/>
+                <field name="durable" domain="bit"/>
+                <field name="auto-delete" domain="bit"/>
+                <field name="arguments" domain="table"/>
+                <field name="message-count" domain="long"/>
+                <field name="subscriber-count" domain="long"/>
+            </struct>
+        </result>
+    </method>
+</class>
+
 </amqp>

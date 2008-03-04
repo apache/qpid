@@ -29,6 +29,7 @@
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/Message010TransferBody.h"
 
 namespace qpid {	
 namespace broker {
@@ -48,10 +49,15 @@ struct MessageAdapter
 struct TransferAdapter : MessageAdapter
 {
     std::string getRoutingKey(const framing::FrameSet& f);
-    std::string getExchange(const framing::FrameSet& f);
+    virtual std::string getExchange(const framing::FrameSet& f);
     bool isImmediate(const framing::FrameSet&);
     const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
     bool isPersistent(const framing::FrameSet& f);
+};
+
+struct PreviewAdapter : TransferAdapter
+{
+    std::string getExchange(const framing::FrameSet& f);
 };
 
 }}

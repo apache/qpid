@@ -117,7 +117,7 @@ void Connection::received(framing::AMQFrame& frame){
     if (mgmtClosing)
         close (403, "Closed by Management Request", 0, 0);
 
-    if (frame.getChannel() == 0) {
+    if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {
         getChannel(frame.getChannel()).in(frame);
