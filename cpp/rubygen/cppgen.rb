@@ -162,7 +162,7 @@ class AmqpAction
   def classname() name.typename; end
   def funcname() parent.name.funcname + name.caps; end
   def fqclassname() parent.name+"::"+classname; end
-
+  def full_code() (containing_class.code.hex << 8)+code.hex; end
   include AmqpHasFields
 end
 
