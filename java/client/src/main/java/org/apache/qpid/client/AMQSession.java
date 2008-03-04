@@ -459,6 +459,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         // + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
         }
 
+        if( _dispatcher != null )
+        {
+            _dispatcher.setConnectionStopped(true);
+        }
         synchronized (_messageDeliveryLock)
         {
 
