@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+from qpid.connection010 import Connection
+from qpid.spec010 import load
+from qpid.util import connect
+from qpid.datatypes import Message
+
+spec = load("../specs/amqp.0-10.xml")
+conn = Connection(connect("0.0.0.0", spec.port), spec)
+conn.start(timeout=10)
+
+ssn = conn.session("my-session")
+
+ssn.queue_declare("asdf")
+
+ssn.message_transfer("this", None, None, Message("testing..."))
+ssn.message_transfer("is")
+ssn.message_transfer("a")
+ssn.message_transfer("test")
+
+print ssn.queue_query("testing")
+
+ssn.close(timeout=10)
+conn.close(timeout=10)
