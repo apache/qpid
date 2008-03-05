@@ -43,6 +43,14 @@ class Message:
     else:
       self.headers = None
 
+  def __repr__(self):
+    args = []
+    if self.headers:
+      args.extend(self.headers)
+    if self.body:
+      args.append(self.body)
+    return "Message(%s)" % ", ".join(map(repr, args))
+
 class Range:
 
   def __init__(self, lower, upper):
