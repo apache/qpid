@@ -150,6 +150,7 @@ class StructGen < CppGen
         encoded = EncodingMap[f.domain.type_]        
         gen "total += ("
         gen "4 + " if encoded == "LongString"
+        gen "2 + " if encoded == "MediumString"
         gen "1 + " if encoded == "ShortString"
         genl "#{f.cppname}.size());"
       end
