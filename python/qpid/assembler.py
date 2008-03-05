@@ -19,6 +19,9 @@
 
 from codec010 import StringCodec
 from framer import *
+from logging import getLogger
+
+log = getLogger("qpid.io.seg")
 
 class Segment:
 
@@ -84,6 +87,7 @@ class Assembler(Framer):
 
       if frame.isLastFrame():
         self.fragments.pop(key)
+        log.debug("RECV: %s", seg)
         return seg
 
   def write_segment(self, segment):
@@ -108,3 +112,5 @@ class Assembler(Framer):
       frame = Frame(flags, segment.type, segment.track, segment.channel,
                     payload)
       self.write_frame(frame)
+
+    log.debug("SENT: %s", segment)

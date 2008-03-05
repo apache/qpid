@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+import logging
 from qpid.connection010 import Connection
 from qpid.spec010 import load
 from qpid.util import connect
 from qpid.datatypes import Message
+
+format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+logging.basicConfig(level=logging.DEBUG, format=format, datefmt='%H:%M:%S')
 
 spec = load("../specs/amqp.0-10.xml")
 conn = Connection(connect("0.0.0.0", spec.port), spec)
