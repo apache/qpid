@@ -123,12 +123,18 @@ class Framer(Packer):
     track = frame.track & 0x0F
     self.pack(Frame.HEADER, frame.flags, frame.type, size, track, frame.channel)
     self.write(frame.payload)
+    # XXX: NOT 0-10 FINAL, TEMPORARY WORKAROUND for C++
+    self.write("\xCE")
     frm.debug("SENT: %s", frame)
 
   def read_frame(self):
     flags, type, size, track, channel = self.unpack(Frame.HEADER)
     if flags & 0xF0: raise FramingError()
     payload = self.read(size - struct.calcsize(Frame.HEADER))
+    # XXX: NOT 0-10 FINAL, TEMPORARY WORKAROUND for C++
+    end = self.read(1)
+    if end != "\xCE":
+      raise FramingError()
     frame = Frame(flags, type, track, channel, payload)
     frm.debug("RECV: %s", frame)
     return frame
