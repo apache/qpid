@@ -69,18 +69,18 @@ void SessionHandler::handleIn(AMQFrame& f) {
                     QPID_MSG("Channel " << channel.get() << " is not open"));
             }
         }
-    } catch(const ChannelException& e) {
-        ignoring=true;          // Ignore trailing frames sent by client.
-        session->detach();
-        session.reset();
-        //TODO: implement new exception handling mechanism
-        //peerSession.closed(e.code, e.what());
     }catch(const ConnectionException& e){
         connection.close(e.code, e.what(), classId(m), methodId(m));
     }catch(const std::exception& e){
         connection.close(
             framing::INTERNAL_ERROR, e.what(), classId(m), methodId(m));
     }
+}
+
+void SessionHandler::destroy() {
+    ignoring=true;          // Ignore trailing frames sent by client.
+    session->detach();
+    session.reset();
 }
 
 void SessionHandler::handleOut(AMQFrame& f) {
