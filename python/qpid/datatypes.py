@@ -33,9 +33,15 @@ class Struct:
 
 class Message:
 
-  def __init__(self, body):
-    self.headers = None
-    self.body = body
+  def __init__(self, *args):
+    if args:
+      self.body = args[-1]
+    else:
+      self.body = None
+    if len(args) > 1:
+      self.headers = args[:-1]
+    else:
+      self.headers = None
 
 class Range:
 

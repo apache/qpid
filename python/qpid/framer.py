@@ -19,6 +19,10 @@
 
 import struct, socket
 from packer import Packer
+from logging import getLogger
+
+raw = getLogger("qpid.io.raw")
+frm = getLogger("qpid.io.frm")
 
 FIRST_SEG = 0x08
 LAST_SEG = 0x04
@@ -63,6 +67,8 @@ class Frame:
 
 class Closed(Exception): pass
 
+class FramingError(Exception): pass
+
 class Framer(Packer):
 
   HEADER="!4s4B"
@@ -74,7 +80,6 @@ class Framer(Packer):
     return False
 
   def write(self, buf):
-#    print "OUT: %r" % buf
     while buf:
       try:
         n = self.sock.send(buf)
@@ -83,6 +88,7 @@ class Framer(Packer):
           raise Closed()
         else:
           continue
+      raw.debug("SENT: %r", buf[:n])
       buf = buf[n:]
 
   def read(self, n):
@@ -102,8 +108,8 @@ class Framer(Packer):
           raise Closed()
       if len(s) == 0:
         raise Closed()
-#      print "IN: %r" % s
       data += s
+      raw.debug("RECV: %r", s)
     return data
 
   def read_header(self):
@@ -117,8 +123,12 @@ class Framer(Packer):
     track = frame.track & 0x0F
     self.pack(Frame.HEADER, frame.flags, frame.type, size, track, frame.channel)
     self.write(frame.payload)
+    frm.debug("SENT: %s", frame)
 
   def read_frame(self):
     flags, type, size, track, channel = self.unpack(Frame.HEADER)
+    if flags & 0xF0: raise FramingError()
     payload = self.read(size - struct.calcsize(Frame.HEADER))
-    return Frame(flags, type, track, channel, payload)
+    frame = Frame(flags, type, track, channel, payload)
+    frm.debug("RECV: %s", frame)
+    return frame
