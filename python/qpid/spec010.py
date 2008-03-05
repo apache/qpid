@@ -194,7 +194,7 @@ class Composite(Type, Coded):
       result[f.name] = a
 
     for k, v in kwargs.items():
-      f = self.named.get(k, None)
+      f = self.named.get(k)
       if f == None:
         raise TypeError("%s got an unexpected keyword argument '%s'" %
                         (self.name, k))
@@ -232,7 +232,7 @@ class Composite(Type, Coded):
     flags = 0
     for i in range(len(self.fields)):
       f = self.fields[i]
-      if f.type.is_present(values.get(f.name, None)):
+      if f.type.is_present(values.get(f.name)):
         flags |= (0x1 << i)
     for i in range(self.pack):
       codec.write_uint8((flags >> 8*i) & 0xFF)
@@ -272,7 +272,10 @@ class Struct(Composite):
                              for f in self.fields])
     return "%s {\n    %s\n}" % (self.qname, fields)
 
-class Segment(Node):
+class Segment:
+
+  def __init__(self):
+    self.segment_type = None
 
   def register(self, node):
     self.spec = node.spec
@@ -284,7 +287,7 @@ class Instruction(Composite, Segment):
 
   def __init__(self, name, code, children):
     Composite.__init__(self, name, code, 0, 2, children)
-    self.segment_type = None
+    Segment.__init__(self)
     self.track = None
     self.handlers = []
 
@@ -337,11 +340,17 @@ class Command(Instruction):
     self.header.encode(codec, cmd)
     Instruction.encode(self, codec, cmd)
 
-class Header(Segment):
+class Header(Segment, Node):
 
   def __init__(self, children):
+    Segment.__init__(self)
+    Node.__init__(self, children)
     self.entries = []
-    Segment.__init__(self, children)
+
+  def register(self, node):
+    Segment.register(self, node)
+    self.segment_type = self.spec["segment_type.header"].value
+    Node.register(self)
 
 class Entry(Lookup):
 
@@ -356,7 +365,16 @@ class Entry(Lookup):
   def resolve(self):
     self.type = self.lookup(self.type)
 
-class Body(Segment):
+class Body(Segment, Node):
+
+  def __init__(self, children):
+    Segment.__init__(self)
+    Node.__init__(self, children)
+
+  def register(self, node):
+    Segment.register(self, node)
+    self.segment_type = self.spec["segment_type.body"].value
+    Node.register(self)
 
   def resolve(self): pass
 

@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
-import logging
+import sys, logging
 from qpid.connection010 import Connection
 from qpid.spec010 import load
 from qpid.util import connect
 from qpid.datatypes import Message
 
+if "-v" in sys.argv:
+  level = logging.DEBUG
+else:
+  level = logging.WARN
+
 format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=format, datefmt='%H:%M:%S')
+logging.basicConfig(level=level, format=format, datefmt='%H:%M:%S')
 
 spec = load("../specs/amqp.0-10.xml")
 conn = Connection(connect("0.0.0.0", spec.port), spec)
@@ -18,9 +23,14 @@ ssn = conn.session("my-session", timeout=10)
 ssn.queue_declare("asdf")
 
 ssn.message_transfer("this", None, None, Message("testing..."))
-ssn.message_transfer("is")
+ssn.message_transfer("is", None, None, Message("more testing..."))
 ssn.message_transfer("a")
 ssn.message_transfer("test")
+
+print ssn.incoming("this").get()
+print ssn.incoming("is").get()
+print ssn.incoming("a").get()
+print ssn.incoming("test").get()
 
 print ssn.queue_query("testing")
 
