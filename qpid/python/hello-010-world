@@ -13,7 +13,7 @@ spec = load("../specs/amqp.0-10.xml")
 conn = Connection(connect("0.0.0.0", spec.port), spec)
 conn.start(timeout=10)
 
-ssn = conn.session("my-session")
+ssn = conn.session("my-session", timeout=10)
 
 ssn.queue_declare("asdf")
 
