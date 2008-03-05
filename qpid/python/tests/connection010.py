@@ -50,11 +50,8 @@ class TestSession(Delegate):
   def queue_query(self, qq):
     return qq.type.result.type.new((qq.queue,), {})
 
-  def message_transfer(self, cmd):
-    self.queue.put(cmd)
-
-  def body(self, body):
-    self.queue.put(body)
+  def message_transfer(self, cmd, header, body):
+    self.queue.put((cmd, header, body))
 
 class ConnectionTest(TestCase):
 
@@ -88,8 +85,8 @@ class ConnectionTest(TestCase):
     c = Connection(connect("0.0.0.0", PORT), self.spec)
     c.start(10)
 
-    ssn1 = c.session("test1")
-    ssn2 = c.session("test2")
+    ssn1 = c.session("test1", timeout=10)
+    ssn2 = c.session("test2", timeout=10)
 
     assert ssn1 == c.sessions["test1"]
     assert ssn2 == c.sessions["test2"]
@@ -110,7 +107,7 @@ class ConnectionTest(TestCase):
     assert ssn2 not in c.attached.values()
     assert ssn2 not in c.sessions.values()
 
-    ssn = c.session("session")
+    ssn = c.session("session", timeout=10)
 
     assert ssn.channel != None
     assert ssn in c.sessions.values()
@@ -121,16 +118,17 @@ class ConnectionTest(TestCase):
       ssn.message_transfer(d)
 
     for d in destinations:
-      cmd = self.queue.get(10)
+      cmd, header, body = self.queue.get(10)
       assert cmd.destination == d
+      assert header == None
+      assert body == None
 
     msg = Message("this is a test")
     ssn.message_transfer("four", message=msg)
-    cmd = self.queue.get(10)
+    cmd, header, body = self.queue.get(10)
     assert cmd.destination == "four"
-    body = self.queue.get(10)
-    assert body.payload == msg.body
-    assert body.last
+    assert header == None
+    assert body == msg.body
 
     qq = ssn.queue_query("asdf")
     assert qq.queue == "asdf"

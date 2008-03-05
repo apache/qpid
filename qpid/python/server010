@@ -5,6 +5,7 @@ from qpid.connection010 import Connection
 from qpid.util import connect, listen
 from qpid.spec010 import load
 from qpid.session import Client
+from qpid.datatypes import Message
 
 spec = load("../specs/amqp.0-10.xml")
 
@@ -26,6 +27,11 @@ class SessionDelegate(Client):
 
   def queue_query(self, qq):
     return qq.type.result.type.new((qq.queue,), {})
+
+  def message_transfer(self, cmd, header, body):
+    m = Message(body)
+    m.header = header
+    self.session.message_transfer(cmd.destination, cmd.accept_mode, cmd.acquire_mode, m)
 
 server = Server()
 
