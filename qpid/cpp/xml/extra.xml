@@ -582,6 +582,33 @@
 
 </class>
 
+<class name="execution010" index="3">
+    <method name = "sync" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
+    </method>
+    <method name = "result" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
+        <field name="command-id" domain="command-id"/>
+        <field name="value" domain="long-struct"/>
+    </method>
+    <method name = "exception" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
+        <field name="error-code" domain="short"/>
+        <field name="command-id" domain="long"/>
+        <field name="class-code" domain="octet"/>
+        <field name="command-code" domain="octet"/>
+        <field name="field-index" domain="octet"/>
+        <field name="description" domain="mediumstr"/>
+        <field name="error-info" domain="table"/>
+    </method>
+</class>
+
 <class name="message010" index="4">
     <doc>blah, blah</doc>
     <method name = "transfer" index="1">
@@ -708,7 +735,7 @@
         <field name="binding-key" domain="shortstr"/>
         <field name="arguments" domain="table"/>
         <result>
-            <struct size="long" type="1">
+            <struct size="long" type="2">
                 <field name="exchange-not-found" domain="bit"/>
                 <field name="queue-not-found" domain="bit"/>
                 <field name="queue-not-matched" domain="bit"/>

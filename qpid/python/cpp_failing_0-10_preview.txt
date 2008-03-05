@@ -1,0 +1,6 @@
+tests.codec.FieldTableTestCase.test_field_table_decode
+tests.codec.FieldTableTestCase.test_field_table_multiple_name_value_pair
+tests.codec.FieldTableTestCase.test_field_table_name_value_pair
+tests_0-10_preview.alternate_exchange.AlternateExchangeTests.test_immediate
+tests_0-10_preview.broker.BrokerTests.test_closed_channel
+

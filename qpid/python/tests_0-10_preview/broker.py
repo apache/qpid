@@ -19,10 +19,9 @@
 from qpid.client import Closed
 from qpid.queue import Empty
 from qpid.content import Content
-from qpid.testlib import TestBase010
-from qpid.datatypes import Message
+from qpid.testlib import testrunner, TestBase
 
-class BrokerTests(TestBase010):
+class BrokerTests(TestBase):
     """Tests for basic Broker functionality"""
 
     def test_ack_and_no_ack(self):
@@ -58,36 +57,37 @@ class BrokerTests(TestBase010):
         """
         Test simple message delivery where consume is issued before publish
         """
-        session = self.session
-        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
-        session.exchange_bind(queue="test-queue", exchange="amq.fanout")
+        channel = self.channel
+        self.exchange_declare(channel, exchange="test-exchange", type="direct")
+        self.queue_declare(channel, queue="test-queue") 
+        channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
         consumer_tag = "tag1"
-        session.message_subscribe(queue="test-queue", destination=consumer_tag)
-        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = consumer_tag)
-        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = consumer_tag)
-        queue = session.incoming(consumer_tag)
+        self.subscribe(queue="test-queue", destination=consumer_tag)
+        queue = self.client.queue(consumer_tag)
 
         body = "Immediate Delivery"
-        session.message_transfer("amq.fanout", None, None, Message(body))
+        channel.message_transfer(destination="test-exchange", content = Content(body, properties = {"routing_key" : "key"}))
         msg = queue.get(timeout=5)
         self.assert_(msg.content.body == body)
+
+        # TODO: Ensure we fail if immediate=True and there's no consumer.
+
 
     def test_simple_delivery_queued(self):
         """
         Test basic message delivery where publish is issued before consume
         (i.e. requires queueing of the message)
         """
-        session = self.session
-        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
-        session.exchange_bind(queue="test-queue", exchange="amq.fanout")
+        channel = self.channel
+        self.exchange_declare(channel, exchange="test-exchange", type="direct")
+        self.queue_declare(channel, queue="test-queue")
+        channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
         body = "Queued Delivery"
-        session.message_transfer("amq.fanout", None, None, Message(body))
+        channel.message_transfer(destination="test-exchange", content = Content(body, properties = {"routing_key" : "key"}))
 
         consumer_tag = "tag1"
-        session.message_subscribe(queue="test-queue", destination=consumer_tag)
-        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = consumer_tag)
-        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = consumer_tag)
-        queue = session.incoming(consumer_tag)
+        self.subscribe(queue="test-queue", destination=consumer_tag)
+        queue = self.client.queue(consumer_tag)
         msg = queue.get(timeout=5)
         self.assert_(msg.content.body == body)
 

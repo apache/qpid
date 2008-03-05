@@ -93,8 +93,6 @@ class SessionState : public framing::SessionState,
     void activateOutput();
 
     void handle(framing::AMQFrame& frame);
-    void handleCommand(framing::AMQMethodBody* method);
-    void handleContent(framing::AMQFrame& frame);
 
     void complete(const framing::SequenceSet& ranges);    
     void sendCompletion();
@@ -138,8 +136,10 @@ class SessionState : public framing::SessionState,
     RangedOperation ackOp;
 
     management::Session::shared_ptr mgmtObject;
+    void handleCommand(framing::AMQMethodBody* method, framing::SequenceNumber& id);
+    void handleContent(framing::AMQFrame& frame, framing::SequenceNumber& id);
 
-  friend class SessionManager;
+    friend class SessionManager;
 };
 
 

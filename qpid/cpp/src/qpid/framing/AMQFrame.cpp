@@ -49,12 +49,15 @@ uint32_t AMQFrame::frameOverhead() {
 
 void AMQFrame::encode(Buffer& buffer) const
 {
+    //set track first (controls on track 0, everything else on 1):
+    uint8_t track = getBody()->type() ? 1 : 0;
+
     uint8_t flags = (bof ? 0x08 : 0) | (eof ? 0x04 : 0) | (bos ? 0x02 : 0) | (eos ? 0x01 : 0);
     buffer.putOctet(flags);
     buffer.putOctet(getBody()->type());
     buffer.putShort(size() - 1); // Don't include end marker (it's not part of the frame itself)
     buffer.putOctet(0);
-    buffer.putOctet(0x0f & subchannel);
+    buffer.putOctet(0x0f & track);
     buffer.putShort(channel);    
     buffer.putLong(0);
     body->encode(buffer);
