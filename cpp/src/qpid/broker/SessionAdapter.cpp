@@ -37,7 +37,8 @@ SessionAdapter::SessionAdapter(SemanticState& s) :
     HandlerImpl(s),
     exchangeImpl(s),
     queueImpl(s),
-    messageImpl(s)
+    messageImpl(s),
+    executionImpl(s)
 {}
 
 
@@ -376,6 +377,28 @@ void SessionAdapter::MessageHandlerImpl::acquire(const SequenceSet& transfers)
     getProxy().getMessage().acquired(results);
 }
 */
+
+
+void SessionAdapter::ExecutionHandlerImpl::sync()
+{
+    //TODO
+}
+
+void SessionAdapter::ExecutionHandlerImpl::result(uint32_t /*commandId*/, const string& /*value*/)
+{
+    //TODO
+}
+
+void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t /*errorCode*/,
+                                                     uint32_t /*commandId*/,
+                                                     uint8_t /*classCode*/,
+                                                     uint8_t /*commandCode*/,
+                                                     uint8_t /*fieldIndex*/,
+                                                     const std::string& /*description*/,
+                                                     const framing::FieldTable& /*errorInfo*/)
+{
+    //TODO
+}
 
 }} // namespace qpid::broker
 

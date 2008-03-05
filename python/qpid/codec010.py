@@ -111,6 +111,11 @@ class Codec(Packer):
   def write_str8(self, s):
     self.write_vbin8(s.encode("utf8"))
 
+  def read_str16(self):
+    return self.read_vbin16().decode("utf8")
+  def write_str16(self, s):
+    self.write_vbin16(s.encode("utf8"))
+
 
   def read_vbin16(self):
     return self.read(self.read_uint16())
@@ -125,9 +130,10 @@ class Codec(Packer):
     self.write(b)
 
   def write_map(self, m):
-    pass
+    self.write_uint32(0) #hack
   def read_map(self):
-    pass
+    size = self.read_uint32() #hack
+    self.read(size)           #hack
 
   def write_array(self, a):
     pass

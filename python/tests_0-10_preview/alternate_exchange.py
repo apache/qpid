@@ -93,6 +93,34 @@ class AlternateExchangeTests(TestBase):
         self.assertEqual("Three", dlq.get(timeout=1).content.body)
         self.assertEmpty(dlq)
 
+
+    def test_immediate(self):
+        """
+        Test that messages in a queue being deleted are delivered to the alternate-exchange if specified
+        """
+        channel = self.channel
+        #set up a 'dead letter queue':
+        channel.exchange_declare(exchange="dlq", type="fanout")
+        channel.queue_declare(queue="immediate", exclusive=True, auto_delete=True)
+        channel.queue_bind(exchange="dlq", queue="immediate")
+        self.subscribe(destination="dlq", queue="immediate")
+        dlq = self.client.queue("dlq")
+
+        #create a queue using the dlq as its alternate exchange:
+        channel.queue_declare(queue="no-consumers", alternate_exchange="dlq", exclusive=True, auto_delete=True)
+        #send it some messages:
+        #TODO: WE HAVE LOST THE IMMEDIATE FLAG; FIX THIS ONCE ITS BACK
+        channel.message_transfer(content=Content("no one wants me", properties={'routing_key':"no-consumers"}))
+
+        #check the messages were delivered to the dlq:
+        self.assertEqual("no one wants me", dlq.get(timeout=1).content.body)
+        self.assertEmpty(dlq)
+
+        #cleanup:
+        channel.queue_delete(queue="no-consumers")
+        channel.exchange_delete(exchange="dlq")
+
+
     def test_delete_while_used_by_queue(self):
         """
         Ensure an exchange still in use as an alternate-exchange for a

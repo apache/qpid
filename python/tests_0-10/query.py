@@ -19,209 +19,212 @@
 from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase010
 
-class QueryTests(TestBase):
-    """Tests for various query methods introduced in 0-10 and available in 0-9 for preview"""
+class QueryTests(TestBase010):
+    """Tests for various query methods"""
+
+    def test_queue_query(self):
+        session = self.session
+        session.queue_declare(queue="my-queue", exclusive=True)
+        result = session.queue_query(queue="my-queue")
+        self.assertEqual("my-queue", result.queue)
 
     def test_exchange_query(self):
         """
         Test that the exchange_query method works as expected
         """
-        channel = self.channel
+        session = self.session
         #check returned type for the standard exchanges
-        self.assert_type("direct", channel.exchange_query(name="amq.direct"))
-        self.assert_type("topic", channel.exchange_query(name="amq.topic"))
-        self.assert_type("fanout", channel.exchange_query(name="amq.fanout"))
-        self.assert_type("headers", channel.exchange_query(name="amq.match"))
-        self.assert_type("direct", channel.exchange_query(name=""))        
+        self.assertEqual("direct", session.exchange_query(name="amq.direct").type)
+        self.assertEqual("topic", session.exchange_query(name="amq.topic").type)
+        self.assertEqual("fanout", session.exchange_query(name="amq.fanout").type)
+        self.assertEqual("headers", session.exchange_query(name="amq.match").type)
+        self.assertEqual("direct", session.exchange_query(name="").type)        
         #declare an exchange
-        channel.exchange_declare(exchange="my-test-exchange", type= "direct", durable=False)
+        session.exchange_declare(exchange="my-test-exchange", type= "direct", durable=False)
         #check that the result of a query is as expected
-        response = channel.exchange_query(name="my-test-exchange")
-        self.assert_type("direct", response)
-        self.assertEqual(False, response.durable)
-        self.assertEqual(False, response.not_found)
+        response = session.exchange_query(name="my-test-exchange")
+        self.assertEqual("direct", response.type)
+        self.assert_(not response.durable)
+        self.assert_(not response.not_found)
         #delete the exchange
-        channel.exchange_delete(exchange="my-test-exchange")
+        session.exchange_delete(exchange="my-test-exchange")
         #check that the query now reports not-found
-        self.assertEqual(True, channel.exchange_query(name="my-test-exchange").not_found)
+        self.assert_(session.exchange_query(name="my-test-exchange").not_found)
 
-    def assert_type(self, expected_type, response):
-        self.assertEqual(expected_type, response.__getattr__("type"))
+    def test_exchange_bound_direct(self):
+        """
+        Test that the exchange_bound method works as expected with the direct exchange
+        """
+        self.exchange_bound_with_key("amq.direct")
 
-    def test_binding_query_direct(self):
+    def test_exchange_bound_topic(self):
         """
-        Test that the binding_query method works as expected with the direct exchange
+        Test that the exchange_bound method works as expected with the direct exchange
         """
-        self.binding_query_with_key("amq.direct")
+        self.exchange_bound_with_key("amq.topic")
 
-    def test_binding_query_topic(self):
-        """
-        Test that the binding_query method works as expected with the direct exchange
-        """
-        self.binding_query_with_key("amq.topic")
-
-    def binding_query_with_key(self, exchange_name):
-        channel = self.channel
+    def exchange_bound_with_key(self, exchange_name):
+        session = self.session
         #setup: create two queues
-        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
         
-        channel.queue_bind(exchange=exchange_name, queue="used-queue", routing_key="used-key")
+        session.exchange_bind(exchange=exchange_name, queue="used-queue", binding_key="used-key")
 
         # test detection of any binding to specific queue
-        response = channel.binding_query(exchange=exchange_name, queue="used-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
+        response = session.exchange_bound(exchange=exchange_name, queue="used-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
 
         # test detection of specific binding to any queue
-        response = channel.binding_query(exchange=exchange_name, routing_key="used-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.key_not_matched)        
+        response = session.exchange_bound(exchange=exchange_name, binding_key="used-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.key_not_matched)        
 
         # test detection of specific binding to specific queue
-        response = channel.binding_query(exchange=exchange_name, queue="used-queue", routing_key="used-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
-        self.assertEqual(False, response.key_not_matched)        
+        response = session.exchange_bound(exchange=exchange_name, queue="used-queue", binding_key="used-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
+        self.assert_(not response.key_not_matched)        
 
         # test unmatched queue, unspecified binding
-        response = channel.binding_query(exchange=exchange_name, queue="unused-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange=exchange_name, queue="unused-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
 
         # test unspecified queue, unmatched binding
-        response = channel.binding_query(exchange=exchange_name, routing_key="unused-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange=exchange_name, binding_key="unused-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.key_not_matched)        
 
         # test matched queue, unmatched binding
-        response = channel.binding_query(exchange=exchange_name, queue="used-queue", routing_key="unused-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
+        response = session.exchange_bound(exchange=exchange_name, queue="used-queue", binding_key="unused-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
         self.assertEqual(True, response.key_not_matched)        
 
         # test unmatched queue, matched binding
-        response = channel.binding_query(exchange=exchange_name, queue="unused-queue", routing_key="used-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange=exchange_name, queue="unused-queue", binding_key="used-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
-        self.assertEqual(False, response.key_not_matched)        
+        self.assert_(not response.key_not_matched)        
 
         # test unmatched queue, unmatched binding
-        response = channel.binding_query(exchange=exchange_name, queue="unused-queue", routing_key="unused-key")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange=exchange_name, queue="unused-queue", binding_key="unused-key")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
         self.assertEqual(True, response.key_not_matched)        
 
         #test exchange not found
-        self.assertEqual(True, channel.binding_query(exchange="unknown-exchange").exchange_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange="unknown-exchange").exchange_not_found)
 
         #test queue not found
-        self.assertEqual(True, channel.binding_query(exchange=exchange_name, queue="unknown-queue").queue_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange=exchange_name, queue="unknown-queue").queue_not_found)
 
 
-    def test_binding_query_fanout(self):
+    def test_exchange_bound_fanout(self):
         """
-        Test that the binding_query method works as expected with fanout exchange
+        Test that the exchange_bound method works as expected with fanout exchange
         """
-        channel = self.channel
+        session = self.session
         #setup
-        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
-        channel.queue_bind(exchange="amq.fanout", queue="used-queue")
+        session.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
+        session.exchange_bind(exchange="amq.fanout", queue="used-queue")
 
         # test detection of any binding to specific queue
-        response = channel.binding_query(exchange="amq.fanout", queue="used-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
+        response = session.exchange_bound(exchange="amq.fanout", queue="used-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
 
         # test unmatched queue, unspecified binding
-        response = channel.binding_query(exchange="amq.fanout", queue="unused-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange="amq.fanout", queue="unused-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
 
         #test exchange not found
-        self.assertEqual(True, channel.binding_query(exchange="unknown-exchange").exchange_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange="unknown-exchange").exchange_not_found)
 
         #test queue not found
-        self.assertEqual(True, channel.binding_query(exchange="amq.fanout", queue="unknown-queue").queue_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange="amq.fanout", queue="unknown-queue").queue_not_found)
 
-    def test_binding_query_header(self):
+    def test_exchange_bound_header(self):
         """
-        Test that the binding_query method works as expected with headers exchanges
+        Test that the exchange_bound method works as expected with headers exchanges
         """
-        channel = self.channel
+        session = self.session
         #setup
-        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
-        channel.queue_bind(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "a":"A"} )
+        session.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
+        session.exchange_bind(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "a":"A"} )
 
         # test detection of any binding to specific queue
-        response = channel.binding_query(exchange="amq.match", queue="used-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
+        response = session.exchange_bound(exchange="amq.match", queue="used-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
 
         # test detection of specific binding to any queue
-        response = channel.binding_query(exchange="amq.match", arguments={"x-match":"all", "a":"A"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.args_not_matched)        
+        response = session.exchange_bound(exchange="amq.match", arguments={"x-match":"all", "a":"A"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.args_not_matched)        
 
         # test detection of specific binding to specific queue
-        response = channel.binding_query(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "a":"A"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
-        self.assertEqual(False, response.args_not_matched)        
+        response = session.exchange_bound(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "a":"A"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
+        self.assert_(not response.args_not_matched)        
 
         # test unmatched queue, unspecified binding
-        response = channel.binding_query(exchange="amq.match", queue="unused-queue")
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange="amq.match", queue="unused-queue")
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
 
         # test unspecified queue, unmatched binding
-        response = channel.binding_query(exchange="amq.match", arguments={"x-match":"all", "b":"B"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange="amq.match", arguments={"x-match":"all", "b":"B"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.args_not_matched)        
 
         # test matched queue, unmatched binding
-        response = channel.binding_query(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "b":"B"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
-        self.assertEqual(False, response.queue_not_matched)        
+        response = session.exchange_bound(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "b":"B"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
+        self.assert_(not response.queue_not_matched)        
         self.assertEqual(True, response.args_not_matched)        
 
         # test unmatched queue, matched binding
-        response = channel.binding_query(exchange="amq.match", queue="unused-queue", arguments={"x-match":"all", "a":"A"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange="amq.match", queue="unused-queue", arguments={"x-match":"all", "a":"A"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
-        self.assertEqual(False, response.args_not_matched)        
+        self.assert_(not response.args_not_matched)        
 
         # test unmatched queue, unmatched binding
-        response = channel.binding_query(exchange="amq.match", queue="unused-queue", arguments={"x-match":"all", "b":"B"})
-        self.assertEqual(False, response.exchange_not_found)
-        self.assertEqual(False, response.queue_not_found)
+        response = session.exchange_bound(exchange="amq.match", queue="unused-queue", arguments={"x-match":"all", "b":"B"})
+        self.assert_(not response.exchange_not_found)
+        self.assert_(not response.queue_not_found)
         self.assertEqual(True, response.queue_not_matched)        
         self.assertEqual(True, response.args_not_matched)        
 
         #test exchange not found
-        self.assertEqual(True, channel.binding_query(exchange="unknown-exchange").exchange_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange="unknown-exchange").exchange_not_found)
 
         #test queue not found
-        self.assertEqual(True, channel.binding_query(exchange="amq.match", queue="unknown-queue").queue_not_found)
+        self.assertEqual(True, session.exchange_bound(exchange="amq.match", queue="unknown-queue").queue_not_found)
         
