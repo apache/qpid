@@ -198,7 +198,7 @@ class Codec:
     if (o < 0 or o > 255):
         raise ValueError('Valid range of octet is [0,255]')
 
-    self.pack("!B", o)
+    self.pack("!B", int(o))
 
   def decode_octet(self):
     """
@@ -215,7 +215,7 @@ class Codec:
     if (o < 0 or o > 65535):
         raise ValueError('Valid range of short int is [0,65535]: %s' % o)
 
-    self.pack("!H", o)
+    self.pack("!H", int(o))
 
   def decode_short(self):
     """
@@ -233,7 +233,7 @@ class Codec:
     if (o < 0 or o > 4294967295):
       raise ValueError('Valid range of long int is [0,4294967295]')
 
-    self.pack("!L", o)
+    self.pack("!L", int(o))
 
   def decode_long(self):
     """
