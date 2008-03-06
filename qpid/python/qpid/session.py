@@ -73,9 +73,17 @@ class Session(Invoker):
     if cmd is not None and cmd.track == self.spec["track.command"].value:
       return cmd
     else:
+      # XXX
+      for st in self.spec.structs.values():
+        if st.name == name:
+          return st
       return None
 
   def invoke(self, type, args, kwargs):
+    # XXX
+    if not hasattr(type, "track"):
+      return type.new(args, kwargs)
+
     if self.channel == None:
       raise SessionDetached()
 
@@ -106,7 +114,7 @@ class Session(Invoker):
       if message.headers != None:
         sc = StringCodec(self.spec)
         for st in message.headers:
-          sc.write_struct32(st.type, st)
+          sc.write_struct32(st)
         seg = Segment(False, message.body == None, self.spec["segment_type.header"].value,
                       type.track, self.channel.id, sc.encoded)
         self.send(seg)
