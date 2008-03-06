@@ -83,6 +83,7 @@ public class ObjectMessageTest extends QpidTestCase implements MessageListener
 
     protected void tearDown() throws Exception
     {
+        close();
         super.tearDown();
     }
 
@@ -107,10 +108,6 @@ public class ObjectMessageTest extends QpidTestCase implements MessageListener
         {
             e.printStackTrace();
             fail("This Test should succeed but failed due to: " + e);
-        }
-        finally
-        {
-            close();
         }
     }
 

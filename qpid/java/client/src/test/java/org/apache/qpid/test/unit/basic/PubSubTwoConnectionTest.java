@@ -72,5 +72,7 @@ public class PubSubTwoConnectionTest extends QpidTestCase
         TextMessage tm1 = (TextMessage) consumer.receive(2000);
         assertNotNull(tm1);
         assertEquals("Hello", tm1.getText());
+        con1.close();
+        con2.close();
     }
 }
