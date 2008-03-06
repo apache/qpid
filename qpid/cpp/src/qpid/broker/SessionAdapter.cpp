@@ -308,7 +308,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     string tag = destination;
     state.consume(MessageDelivery::getMessageDeliveryToken(destination, acceptMode, acquireMode), 
                   tag, queue, false, //TODO get rid of no-local
-                  acceptMode == 1, acquireMode == 0, exclusive, &arguments);
+                  acceptMode == 0, acquireMode == 0, exclusive, &arguments);
 }
 
 void

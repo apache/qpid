@@ -240,7 +240,7 @@ EOS
     end
     #default constructors:
     if (s.kind_of? AmqpMethod)
-      genl "#{name}(ProtocolVersion=ProtocolVersion()) {}"
+      genl "#{name}(ProtocolVersion=ProtocolVersion()) #{default_initialisation(s)} {}"
     end
     if (s.kind_of? AmqpStruct)
       genl "#{name}() #{default_initialisation(s)} {}"

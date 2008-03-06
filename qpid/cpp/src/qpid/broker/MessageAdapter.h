@@ -48,7 +48,7 @@ struct MessageAdapter
 
 struct TransferAdapter : MessageAdapter
 {
-    std::string getRoutingKey(const framing::FrameSet& f);
+    virtual std::string getRoutingKey(const framing::FrameSet& f);
     virtual std::string getExchange(const framing::FrameSet& f);
     bool isImmediate(const framing::FrameSet&);
     const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
@@ -58,6 +58,7 @@ struct TransferAdapter : MessageAdapter
 struct PreviewAdapter : TransferAdapter
 {
     std::string getExchange(const framing::FrameSet& f);
+    std::string getRoutingKey(const framing::FrameSet& f);
 };
 
 }}

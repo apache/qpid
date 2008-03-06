@@ -151,7 +151,7 @@ class SemanticState : public framing::FrameHandler::Chains,
      *@param tagInOut - if empty it is updated with the generated token.
      */
     void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
-                 bool nolocal, bool acks, bool acquire, bool exclusive, const framing::FieldTable* = 0);
+                 bool nolocal, bool ackRequired, bool acquire, bool exclusive, const framing::FieldTable* = 0);
 
     void cancel(const string& tag);
 

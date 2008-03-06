@@ -90,14 +90,17 @@ struct MessageDeliveryToken : BaseToken
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId /*id*/)
     {
         //may need to set the redelivered flag:
-        if (msg->getRedelivered()){
-            msg->getProperties<DeliveryProperties>()->setRedelivered(true);
-        }
         if (isPreview) {
+            if (msg->getRedelivered()){
+                msg->getProperties<DeliveryProperties>()->setRedelivered(true);
+            }
             return AMQFrame(in_place<MessageTransferBody>(
                 ProtocolVersion(), 0, destination,
                 confirmMode, acquireMode));
         } else {
+            if (msg->getRedelivered()){
+                msg->getProperties<DeliveryProperties010>()->setRedelivered(true);
+            }
             return AMQFrame(in_place<Message010TransferBody>(
                 ProtocolVersion(), destination, confirmMode, acquireMode));
         }
