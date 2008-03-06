@@ -4,7 +4,7 @@ import sys, logging
 from qpid.connection010 import Connection
 from qpid.spec010 import load
 from qpid.util import connect
-from qpid.datatypes import Message
+from qpid.datatypes import Message, RangedSet
 
 if "-v" in sys.argv:
   level = logging.DEBUG
@@ -27,10 +27,16 @@ ssn.message_transfer("is", None, None, Message("more testing..."))
 ssn.message_transfer("a")
 ssn.message_transfer("test")
 
-print ssn.incoming("this").get()
-print ssn.incoming("is").get()
-print ssn.incoming("a").get()
-print ssn.incoming("test").get()
+m1 = ssn.incoming("this").get()
+print m1
+m2 = ssn.incoming("is").get()
+print m2
+m3 = ssn.incoming("a").get()
+print m3
+m4 = ssn.incoming("test").get()
+print m4
+
+ssn.message_accept(RangedSet(m1.id, m2.id, m3.id, m4.id))
 
 print ssn.queue_query("testing")
 

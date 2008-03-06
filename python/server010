@@ -33,6 +33,9 @@ class SessionDelegate(Client):
     m.header = header
     self.session.message_transfer(cmd.destination, cmd.accept_mode, cmd.acquire_mode, m)
 
+  def message_accept(self, messages):
+    print "ACCEPT %s" % messages
+
 server = Server()
 
 for s in listen("0.0.0.0", spec.port):

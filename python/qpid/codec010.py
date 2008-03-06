@@ -18,6 +18,7 @@
 #
 
 from packer import Packer
+from datatypes import RangedSet
 
 class Codec(Packer):
 
@@ -122,6 +123,23 @@ class Codec(Packer):
   def write_vbin16(self, b):
     self.write_uint16(len(b))
     self.write(b)
+
+  def read_sequence_set(self):
+    result = RangedSet()
+    size = self.read_uint16()
+    nranges = size/8
+    while nranges > 0:
+      lower = self.read_sequence_no()
+      upper = self.read_sequence_no()
+      result.add(lower, upper)
+      nranges -= 1
+    return result
+  def write_sequence_set(self, ss):
+    size = 8*len(ss.ranges)
+    self.write_uint16(size)
+    for range in ss.ranges:
+      self.write_sequence_no(range.lower)
+      self.write_sequence_no(range.upper)
 
   def read_vbin32(self):
     return self.read(self.read_uint32())
