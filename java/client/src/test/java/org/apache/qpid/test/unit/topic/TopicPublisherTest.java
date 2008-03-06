@@ -66,7 +66,7 @@ public class TopicPublisherTest extends QpidTestCase
         {
             // PASS
         }
-
+        con.close();
     }
 
     public static junit.framework.Test suite()

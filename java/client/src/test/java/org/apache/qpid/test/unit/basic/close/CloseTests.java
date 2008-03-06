@@ -69,6 +69,6 @@ public class CloseTests extends QpidTestCase
         consumer.close();
 
         _logger.info("Closed Consumer");
-
+        connection.close();
     }
 }
