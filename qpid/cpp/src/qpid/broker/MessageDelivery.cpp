@@ -82,9 +82,10 @@ struct MessageDeliveryToken : BaseToken
     const std::string destination;
     const u_int8_t confirmMode;
     const u_int8_t acquireMode;
+    const bool isPreview;
 
-    MessageDeliveryToken(const std::string& d, u_int8_t c, u_int8_t a) : 
-        destination(d), confirmMode(c), acquireMode(a) {}
+    MessageDeliveryToken(const std::string& d, u_int8_t c, u_int8_t a, bool p) : 
+        destination(d), confirmMode(c), acquireMode(a), isPreview(p) {}
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId /*id*/)
     {
@@ -92,9 +93,14 @@ struct MessageDeliveryToken : BaseToken
         if (msg->getRedelivered()){
             msg->getProperties<DeliveryProperties>()->setRedelivered(true);
         }
-        return AMQFrame(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, destination,
-                            confirmMode, acquireMode));
+        if (isPreview) {
+            return AMQFrame(in_place<MessageTransferBody>(
+                ProtocolVersion(), 0, destination,
+                confirmMode, acquireMode));
+        } else {
+            return AMQFrame(in_place<Message010TransferBody>(
+                ProtocolVersion(), destination, confirmMode, acquireMode));
+        }
     }
 };
 
@@ -114,7 +120,13 @@ DeliveryToken::shared_ptr MessageDelivery::getBasicConsumeToken(const string& co
 DeliveryToken::shared_ptr MessageDelivery::getMessageDeliveryToken(const std::string& destination, 
                                                                   u_int8_t confirmMode, u_int8_t acquireMode)
 {
-    return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination, confirmMode, acquireMode));
+    return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination, confirmMode, acquireMode, false));
+}
+
+DeliveryToken::shared_ptr MessageDelivery::getPreviewMessageDeliveryToken(const std::string& destination, 
+                                                                  u_int8_t confirmMode, u_int8_t acquireMode)
+{
+    return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination, confirmMode, acquireMode, true));
 }
 
 void MessageDelivery::deliver(QueuedMessage& msg, 
