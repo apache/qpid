@@ -22,8 +22,10 @@ ssn = conn.session("my-session", timeout=10)
 
 ssn.queue_declare("asdf")
 
+
 ssn.message_transfer("this", None, None, Message("testing..."))
-ssn.message_transfer("is", None, None, Message("more testing..."))
+props = ssn.delivery_properties(routing_key="asdf")
+ssn.message_transfer("is", None, None, Message(props, "more testing..."))
 ssn.message_transfer("a")
 ssn.message_transfer("test")
 

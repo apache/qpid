@@ -28,9 +28,9 @@ class SessionDelegate(Client):
   def queue_query(self, qq):
     return qq.type.result.type.new((qq.queue,), {})
 
-  def message_transfer(self, cmd, header, body):
+  def message_transfer(self, cmd, headers, body):
     m = Message(body)
-    m.header = header
+    m.headers = headers
     self.session.message_transfer(cmd.destination, cmd.accept_mode, cmd.acquire_mode, m)
 
   def message_accept(self, messages):
