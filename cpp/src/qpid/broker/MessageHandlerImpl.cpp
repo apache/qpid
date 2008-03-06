@@ -137,7 +137,7 @@ MessageHandlerImpl::subscribe(uint16_t /*ticket*/,
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
 
     string tag = destination;
-    state.consume(MessageDelivery::getMessageDeliveryToken(destination, confirmMode, acquireMode), 
+    state.consume(MessageDelivery::getPreviewMessageDeliveryToken(destination, confirmMode, acquireMode), 
                     tag, queue, noLocal, confirmMode == 1, acquireMode == 0, exclusive, &filter);
 }
 

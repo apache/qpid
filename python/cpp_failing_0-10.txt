@@ -2,9 +2,6 @@ tests.codec.FieldTableTestCase.test_field_table_decode
 tests.codec.FieldTableTestCase.test_field_table_multiple_name_value_pair
 tests.codec.FieldTableTestCase.test_field_table_name_value_pair
 tests_0-10.query.QueryTests.test_exchange_bound_header
-tests_0-10.persistence.PersistenceTests.test_ack_message_from_deleted_queue
-tests_0-10.persistence.PersistenceTests.test_delete_queue_after_publish
-tests_0-10.persistence.PersistenceTests.test_queue_deletion
 tests_0-10.tx.TxTests.test_auto_rollback
 tests_0-10.tx.TxTests.test_commit
 tests_0-10.tx.TxTests.test_rollback
@@ -92,6 +89,4 @@ tests_0-10.queue.QueueTests.test_unbind_topic
 tests_0-10.broker.BrokerTests.test_closed_channel
 tests_0-10.broker.BrokerTests.test_ack_and_no_ack
 tests_0-10.broker.BrokerTests.test_invalid_channel
-tests_0-10.broker.BrokerTests.test_simple_delivery_queued
-tests_0-10.broker.BrokerTests.test_simple_delivery_immediate
 tests_0-10.example.ExampleTest.test_example

@@ -33,6 +33,40 @@
     </doc>
   </domain>
 
+  <domain name="delivery-properties-010">
+    <struct size="long" pack="short" type="1025">
+      <field name="discard-unroutable" domain="bit" label="controls discard of unroutable messages"/>
+      <field name="immediate" domain="bit" label="Consider message unroutable if it cannot be
+        processed immediately"/>
+      <field name="redelivered" domain="bit" label="redelivery flag"/>
+      <field name="priority" domain="octet" label="message priority, 0 to 9"
+        required="true"/>
+      <field name="delivery-mode" domain="octet" label="message persistence requirement"
+        required="true"/>
+      <field name="ttl" domain="longlong" label="time to live in ms"/>
+      <field name="timestamp" domain="longlong" label="message timestamp"/>
+      <field name="expiration" domain="longlong" label="message expiration time"/>
+      <field name="exchange" domain="shortstr" label="originating exchange"/>
+      <field name="routing-key" domain="shortstr" label="message routing key"/>
+      <field name="resume-id" domain="mediumstr" label="global id for message transfer"/>
+      <field name="resume-ttl" domain="longlong" label="ttl in ms for interrupted message data"/>
+    </struct>
+  </domain>
+
+  <domain name="message-properties-010">
+    <struct size="long" pack="short" type="1027">
+      <field name="content-length" domain="longlong" label="length of the body segment in bytes"/>
+      <field name="message-id" domain="uuid" label="application message identifier"/>
+      <field name="correlation-id" domain="mediumstr" label="application correlation identifier"/>
+      <field name="reply-to" domain="reply-to" label="destination to reply to"/>
+      <field name="content-type" domain="shortstr" label="MIME content type"/>
+      <field name="content-encoding" domain="shortstr" label="MIME content encoding"/>
+      <field name="user-id" domain="mediumstr" label="creating user id"/>
+      <field name="app-id" domain="mediumstr" label="creating application id"/>
+      <field name="application-headers" domain="table" label="application specific headers table"/>
+    </struct>
+  </domain>
+
 <class name = "connection010" index = "1">
 
 <method name = "start" index="1">
