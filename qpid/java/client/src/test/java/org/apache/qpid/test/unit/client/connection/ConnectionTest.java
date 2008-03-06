@@ -178,6 +178,10 @@ public class ConnectionTest extends TestCase
         {
             // PASS
         }
+        finally
+        {
+            connection.close();
+        }
     }
 
     public void testClientIdIsPopulatedAutomatically() throws Exception
@@ -185,6 +189,7 @@ public class ConnectionTest extends TestCase
         Connection connection = new AMQConnection(_broker, "guest", "guest",
                                                   null, "test");
         assertNotNull(connection.getClientID());
+        connection.close();
     }
 
     public static junit.framework.Test suite()

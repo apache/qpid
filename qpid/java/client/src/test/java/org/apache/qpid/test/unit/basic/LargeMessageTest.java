@@ -42,13 +42,15 @@ public class LargeMessageTest extends QpidTestCase
 
     private Destination _destination;
     private AMQSession _session;
-
+    private AMQConnection _connection;
+    
     protected void setUp() throws Exception
     {
         super.setUp();
         try
         {
-            init((AMQConnection) getConnection("guest", "guest"));
+            _connection = (AMQConnection) getConnection("guest", "guest");
+            init( _connection );
         }
         catch (Exception e)
         {
@@ -58,6 +60,7 @@ public class LargeMessageTest extends QpidTestCase
 
     protected void tearDown() throws Exception
     {
+        _connection.close();
         super.tearDown();
     }
 
