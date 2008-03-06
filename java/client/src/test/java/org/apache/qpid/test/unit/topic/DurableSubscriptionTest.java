@@ -162,7 +162,10 @@ public class DurableSubscriptionTest extends QpidTestCase
         _logger.info("Receive message on consumer 3 :expecting null");
         msg = consumer3.receive(100);
         assertEquals(null, msg);
-
+        // we need to unsubscribe as the session is NO_ACKNOWLEDGE
+        // messages for the durable subscriber are not deleted so the test cannot
+        // be run twice in a row
+        session2.unsubscribe("MySubscription");
         con.close();
     }
 
