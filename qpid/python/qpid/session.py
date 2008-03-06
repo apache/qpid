@@ -19,7 +19,7 @@
 
 from threading import Event, RLock
 from invoker import Invoker
-from datatypes import RangeSet, Struct, Future
+from datatypes import RangedSet, Struct, Future
 from codec010 import StringCodec
 from assembler import Segment
 from queue import Queue
@@ -170,7 +170,7 @@ class Receiver:
     self.session = session
     self.next_id = None
     self.next_offset = None
-    self._completed = RangeSet()
+    self._completed = RangedSet()
 
   def received(self, seg):
     if self.next_id == None or self.next_offset == None:
@@ -220,8 +220,6 @@ class Sender:
       else:
         idx += 1
 
-from queue import Queue, Closed, Empty
-
 class Delegate:
 
   def __init__(self, session):
@@ -238,6 +236,7 @@ class Client(Delegate):
   def message_transfer(self, cmd, headers, body):
     m = Message(body)
     m.headers = headers
+    m.id = cmd.id
     messages = self.session.incoming(cmd.destination)
     messages.put(m)
     msg.debug("RECV: %s", m)
