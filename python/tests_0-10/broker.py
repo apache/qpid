@@ -70,7 +70,7 @@ class BrokerTests(TestBase010):
         body = "Immediate Delivery"
         session.message_transfer("amq.fanout", None, None, Message(body))
         msg = queue.get(timeout=5)
-        self.assert_(msg.content.body == body)
+        self.assert_(msg.body == body)
 
     def test_simple_delivery_queued(self):
         """
@@ -89,7 +89,7 @@ class BrokerTests(TestBase010):
         session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = consumer_tag)
         queue = session.incoming(consumer_tag)
         msg = queue.get(timeout=5)
-        self.assert_(msg.content.body == body)
+        self.assert_(msg.body == body)
 
     def test_invalid_channel(self):
         channel = self.client.channel(200)

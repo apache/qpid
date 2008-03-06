@@ -26,6 +26,8 @@
 #include "Buffer.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/DeliveryProperties010.h"
+#include "qpid/framing/MessageProperties010.h"
 #include <iostream>
 
 #include <boost/optional.hpp>
@@ -75,8 +77,10 @@ class AMQHeaderBody :  public AMQBody
     };
 
     // Could use boost::mpl::fold to construct a larger set.
-    typedef PropSet<PropSet<Empty, DeliveryProperties>,
-                    MessageProperties> Properties;
+    typedef  PropSet< PropSet< PropSet<PropSet<Empty, DeliveryProperties>, 
+                                       MessageProperties>, 
+                               DeliveryProperties010>, 
+                      MessageProperties010> Properties;
 
     Properties properties;
     

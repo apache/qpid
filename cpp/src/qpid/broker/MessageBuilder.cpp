@@ -37,29 +37,30 @@ MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThre
 
 void MessageBuilder::handle(AMQFrame& frame)
 {
+    uint8_t type = frame.getBody()->type();
     switch(state) {
     case METHOD:
-        checkType(METHOD_BODY, frame.getBody()->type());
+        checkType(METHOD_BODY, type);
         state = HEADER;
         break;
     case HEADER:
-        switch (frame.getBody()->type()) {
-        case CONTENT_BODY:
-            //TODO: rethink how to handle non-existent headers...
+        if (type == CONTENT_BODY) {
+            //TODO: rethink how to handle non-existent headers(?)...
             //didn't get a header: add in a dummy
-            message->getFrames().append(AMQFrame(AMQHeaderBody()));            
-            break;
-        case HEADER_BODY:            
-            break;
-        default:
+            AMQFrame header;
+            header.setBody(AMQHeaderBody());
+            header.setBof(false);
+            header.setEof(false);
+            message->getFrames().append(header);            
+        } else if (type != HEADER_BODY) {
             throw CommandInvalidException(
                 QPID_MSG("Invalid frame sequence for message, expected header or content got " 
-                         << type_str(frame.getBody()->type()) << ")"));
+                         << type_str(type) << ")"));
         }
         state = CONTENT;
         break;
     case CONTENT:
-        checkType(CONTENT_BODY, frame.getBody()->type());
+        checkType(CONTENT_BODY, type);
         break;
     default:
         throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (state=" << state << ")"));
