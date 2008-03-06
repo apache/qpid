@@ -20,7 +20,7 @@
 from unittest import TestCase
 from qpid.datatypes import *
 
-class RangeSetTest(TestCase):
+class RangedSetTest(TestCase):
 
   def check(self, ranges):
     posts = []
@@ -39,7 +39,7 @@ class RangeSetTest(TestCase):
       idx += 2
 
   def test(self):
-    rs = RangeSet()
+    rs = RangedSet()
 
     self.check(rs.ranges)
 
@@ -85,7 +85,7 @@ class RangeSetTest(TestCase):
     rs.add(-3)
     self.check(rs.ranges)
 
-    rs.add_range(Range(1, 20))
+    rs.add(1, 20)
     assert 21 not in rs
     assert 20 in rs
     self.check(rs.ranges)

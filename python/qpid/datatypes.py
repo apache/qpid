@@ -42,20 +42,26 @@ class Message:
       self.headers = args[:-1]
     else:
       self.headers = None
+    self.id = None
 
   def __repr__(self):
     args = []
     if self.headers:
-      args.extend(self.headers)
+      args.extend(map(repr, self.headers))
     if self.body:
-      args.append(self.body)
-    return "Message(%s)" % ", ".join(map(repr, args))
+      args.append(repr(self.body))
+    if self.id is not None:
+      args.append("id=%s" % self.id)
+    return "Message(%s)" % ", ".join(args)
 
 class Range:
 
-  def __init__(self, lower, upper):
+  def __init__(self, lower, upper = None):
     self.lower = lower
-    self.upper = upper
+    if upper is None:
+      self.upper = lower
+    else:
+      self.upper = upper
 
   def __contains__(self, n):
     return self.lower <= n and n <= self.upper
@@ -69,16 +75,15 @@ class Range:
   def span(self, r):
     return Range(min(self.lower, r.lower), max(self.upper, r.upper))
 
-  def __str__(self):
+  def __repr__(self):
     return "Range(%s, %s)" % (self.lower, self.upper)
 
-  def __repr__(self):
-    return str(self)
+class RangedSet:
 
-class RangeSet:
-
-  def __init__(self):
+  def __init__(self, *args):
     self.ranges = []
+    for n in args:
+      self.add(n)
 
   def __contains__(self, n):
     for r in self.ranges:
@@ -100,14 +105,11 @@ class RangeSet:
         idx += 1
     self.ranges.append(range)
 
-  def add(self, n):
-    self.add_range(Range(n, n))
-
-  def __str__(self):
-    return "RangeSet(%s)" % str(self.ranges)
+  def add(self, lower, upper = None):
+    self.add_range(Range(lower, upper))
 
   def __repr__(self):
-    return str(self)
+    return "RangedSet(%s)" % str(self.ranges)
 
 class Future:
   def __init__(self, initial=None):
