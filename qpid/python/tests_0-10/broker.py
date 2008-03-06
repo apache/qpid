@@ -18,9 +18,8 @@
 #
 from qpid.client import Closed
 from qpid.queue import Empty
-from qpid.content import Content
 from qpid.testlib import TestBase010
-from qpid.datatypes import Message
+from qpid.datatypes import Message, RangedSet
 
 class BrokerTests(TestBase010):
     """Tests for basic Broker functionality"""
@@ -31,28 +30,30 @@ class BrokerTests(TestBase010):
         consumer. Second, this test tries to explicitly receive and
         acknowledge a message with an acknowledging consumer.
         """
-        ch = self.channel
-        self.queue_declare(ch, queue = "myqueue")
+        session = self.session
+        session.queue_declare(queue = "myqueue", exclusive=True, auto_delete=True)
 
         # No ack consumer
         ctag = "tag1"
-        self.subscribe(ch, queue = "myqueue", destination = ctag)
+        session.message_subscribe(queue = "myqueue", destination = ctag)
+        session.message_flow(destination=ctag, unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination=ctag, unit=1, value=0xFFFFFFFF)
         body = "test no-ack"
-        ch.message_transfer(content = Content(body, properties = {"routing_key" : "myqueue"}))
-        msg = self.client.queue(ctag).get(timeout = 5)
-        self.assert_(msg.content.body == body)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="myqueue"), body))
+        msg = session.incoming(ctag).get(timeout = 5)
+        self.assert_(msg.body == body)
 
         # Acknowledging consumer
-        self.queue_declare(ch, queue = "otherqueue")
+        session.queue_declare(queue = "otherqueue", exclusive=True, auto_delete=True)
         ctag = "tag2"
-        self.subscribe(ch, queue = "otherqueue", destination = ctag, confirm_mode = 1)
-        ch.message_flow(destination=ctag, unit=0, value=0xFFFFFFFF)
-        ch.message_flow(destination=ctag, unit=1, value=0xFFFFFFFF)
+        session.message_subscribe(queue = "otherqueue", destination = ctag, accept_mode = 1)
+        session.message_flow(destination=ctag, unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination=ctag, unit=1, value=0xFFFFFFFF)
         body = "test ack"
-        ch.message_transfer(content = Content(body, properties = {"routing_key" : "otherqueue"}))
-        msg = self.client.queue(ctag).get(timeout = 5)
-        msg.complete()
-        self.assert_(msg.content.body == body)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="otherqueue"), body))
+        msg = session.incoming(ctag).get(timeout = 5)
+        session.message_accept(RangedSet(msg.id))
+        self.assert_(msg.body == body)
         
     def test_simple_delivery_immediate(self):
         """
@@ -90,22 +91,3 @@ class BrokerTests(TestBase010):
         queue = session.incoming(consumer_tag)
         msg = queue.get(timeout=5)
         self.assert_(msg.body == body)
-
-    def test_invalid_channel(self):
-        channel = self.client.channel(200)
-        try:
-            channel.queue_declare(exclusive=True)
-            self.fail("Expected error on queue_declare for invalid channel")
-        except Closed, e:
-            self.assertConnectionException(504, e.args[0])
-        
-    def test_closed_channel(self):
-        channel = self.client.channel(200)
-        channel.session_open()
-        channel.session_close()
-        try:
-            channel.queue_declare(exclusive=True)
-            self.fail("Expected error on queue_declare for closed channel")
-        except Closed, e:
-            if isinstance(e.args[0], str): self.fail(e)
-            self.assertConnectionException(504, e.args[0])
