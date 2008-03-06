@@ -37,7 +37,7 @@ class StandardExchangeVerifier:
     def verifyDirectExchange(self, ex):
         """Verify that ex behaves like a direct exchange."""
         self.queue_declare(queue="q")
-        self.channel.queue_bind(queue="q", exchange=ex, routing_key="k")
+        self.session.exchange_bind(queue="q", exchange=ex, routing_key="k")
         self.assertPublishConsume(exchange=ex, queue="q", routing_key="k")
         try:
             self.assertPublishConsume(exchange=ex, queue="q", routing_key="kk")
@@ -47,34 +47,34 @@ class StandardExchangeVerifier:
     def verifyFanOutExchange(self, ex):
         """Verify that ex behaves like a fanout exchange."""
         self.queue_declare(queue="q") 
-        self.channel.queue_bind(queue="q", exchange=ex)
+        self.session.exchange_bind(queue="q", exchange=ex)
         self.queue_declare(queue="p") 
-        self.channel.queue_bind(queue="p", exchange=ex)
+        self.session.exchange_bind(queue="p", exchange=ex)
         for qname in ["q", "p"]: self.assertPublishGet(self.consume(qname), ex)
 
     def verifyTopicExchange(self, ex):
         """Verify that ex behaves like a topic exchange"""
         self.queue_declare(queue="a")
-        self.channel.queue_bind(queue="a", exchange=ex, routing_key="a.#.b.*")
+        self.session.exchange_bind(queue="a", exchange=ex, routing_key="a.#.b.*")
         q = self.consume("a")
         self.assertPublishGet(q, ex, "a.b.x")
         self.assertPublishGet(q, ex, "a.x.b.x")
         self.assertPublishGet(q, ex, "a.x.x.b.x")
         # Shouldn't match
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b.x.y"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"x.a.b.x"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))
+        self.session.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))        
+        self.session.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b.x.y"}))        
+        self.session.message_transfer(destination=ex, content=Content(properties={'routing_key':"x.a.b.x"}))        
+        self.session.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))
         self.assert_(q.empty())
 
     def verifyHeadersExchange(self, ex):
         """Verify that ex is a headers exchange"""
         self.queue_declare(queue="q")
-        self.channel.queue_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
+        self.session.exchange_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
         q = self.consume("q")
         headers = {"name":"fred", "age":3}
         self.assertPublishGet(q, exchange=ex, properties=headers)
-        self.channel.message_transfer(destination=ex) # No headers, won't deliver
+        self.session.message_transfer(destination=ex) # No headers, won't deliver
         self.assertEmpty(q);                 
         
 
@@ -215,7 +215,7 @@ class DeclareMethodPassiveFieldNotFoundRuleTests(TestBase):
     """
     def test(self):
         try:
-            self.channel.exchange_declare(exchange="humpty_dumpty", passive=True)
+            self.session.exchange_declare(exchange="humpty_dumpty", passive=True)
             self.fail("Expected 404 for passive declaration of unknown exchange.")
         except Closed, e:
             self.assertChannelException(404, e.args[0])
@@ -275,10 +275,10 @@ class HeadersExchangeTests(TestBase):
         self.assertPublishGet(self.q, exchange="amq.match", properties=headers)
 
     def myBasicPublish(self, headers):
-        self.channel.message_transfer(destination="amq.match", content=Content("foobar", properties={'application_headers':headers}))
+        self.session.message_transfer(destination="amq.match", content=Content("foobar", properties={'application_headers':headers}))
         
     def testMatchAll(self):
-        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
+        self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred", "age":3, "extra":"ignoreme"})
         
@@ -290,7 +290,7 @@ class HeadersExchangeTests(TestBase):
         self.assertEmpty(self.q)
 
     def testMatchAny(self):
-        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":"fred", "age":3})
+        self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred"})
         self.myAssertPublishGet({"name":"fred", "ignoreme":10})
         self.myAssertPublishGet({"ignoreme":10, "age":3})
@@ -307,15 +307,15 @@ class MiscellaneousErrorsTests(TestBase):
     """
     def testTypeNotKnown(self):
         try:
-            self.channel.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
+            self.session.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
             self.fail("Expected 503 for declaration of unknown exchange type.")
         except Closed, e:
             self.assertConnectionException(503, e.args[0])
 
     def testDifferentDeclaredType(self):
-        self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
+        self.session.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
         try:
-            self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
+            self.session.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
             self.fail("Expected 530 for redeclaration of exchange with different type.")
         except Closed, e:
             self.assertConnectionException(530, e.args[0])
@@ -327,9 +327,9 @@ class MiscellaneousErrorsTests(TestBase):
     
 class ExchangeTests(TestBase):
     def testHeadersBindNoMatchArg(self):
-        self.channel.queue_declare(queue="q", exclusive=True, auto_delete=True)
+        self.session.queue_declare(queue="q", exclusive=True, auto_delete=True)
         try: 
-            self.channel.queue_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
+            self.session.exchange_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
             self.fail("Expected failure for missing x-match arg.")
         except Closed, e:    
             self.assertConnectionException(541, e.args[0])

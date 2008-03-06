@@ -30,7 +30,7 @@ namespace broker{
 
     std::string TransferAdapter::getRoutingKey(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        const framing::DeliveryProperties010* p = f.getHeaders()->get<framing::DeliveryProperties010>();
         return p ? p->getRoutingKey() : empty;
     }
 
@@ -60,5 +60,11 @@ namespace broker{
     std::string PreviewAdapter::getExchange(const framing::FrameSet& f)
     {
         return f.as<framing::MessageTransferBody>()->getDestination();
+    }
+
+    std::string PreviewAdapter::getRoutingKey(const framing::FrameSet& f)
+    {
+        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        return p ? p->getRoutingKey() : empty;
     }
 }}

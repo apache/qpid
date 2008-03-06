@@ -89,12 +89,12 @@ bool SemanticState::exists(const string& consumerTag){
 }
 
 void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut, 
-                      Queue::shared_ptr queue, bool nolocal, bool acks, bool acquire,
-                      bool exclusive, const FieldTable*)
+                            Queue::shared_ptr queue, bool nolocal, bool ackRequired, bool acquire,
+                            bool exclusive, const FieldTable*)
 {
     if(tagInOut.empty())
         tagInOut = tagGenerator.generate();
-    std::auto_ptr<ConsumerImpl> c(new ConsumerImpl(this, token, tagInOut, queue, acks, nolocal, acquire));
+    std::auto_ptr<ConsumerImpl> c(new ConsumerImpl(this, token, tagInOut, queue, ackRequired, nolocal, acquire));
     queue->consume(*c, exclusive);//may throw exception
     outputTasks.addOutputTask(c.get());
     consumers.insert(tagInOut, c.release());
