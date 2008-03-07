@@ -122,7 +122,6 @@ class Type(Named, Node):
 
   def register(self, node):
     Named.register(self, node)
-    node.types.append(self)
     Node.register(self)
 
 class Primitive(Coded, Type):
@@ -132,6 +131,11 @@ class Primitive(Coded, Type):
     Type.__init__(self, name, children)
     self.fixed = fixed
     self.variable = variable
+
+  def register(self, node):
+    Type.register(self, node)
+    if self.code is not None:
+      self.spec.types[self.code] = self
 
   def is_present(self, value):
     if self.fixed == 0:
@@ -265,7 +269,8 @@ class Struct(Composite):
 
   def register(self, node):
     Composite.register(self, node)
-    self.spec.structs[self.code] = self
+    if self.code is not None:
+      self.spec.structs[self.code] = self
 
   def __str__(self):
     fields = ",\n    ".join(["%s: %s" % (f.name, f.type.qname)
@@ -384,7 +389,6 @@ class Class(Named, Coded, Node):
     Named.__init__(self, name)
     Coded.__init__(self, code)
     Node.__init__(self, children)
-    self.types = []
     self.controls = []
     self.commands = []
 
@@ -441,6 +445,16 @@ class Exception(Named, Node):
 
 class Spec(Node):
 
+  ENCODINGS = {
+    basestring: "vbin16",
+    int: "int32",
+    long: "int64",
+    None.__class__: "void",
+    list: "list",
+    tuple: "list",
+    dict: "map"
+    }
+
   def __init__(self, major, minor, port, children):
     Node.__init__(self, children)
     self.major = major
@@ -448,7 +462,7 @@ class Spec(Node):
     self.port = port
     self.constants = []
     self.classes = []
-    self.types = []
+    self.types = {}
     self.qname = None
     self.spec = self
     self.klass = None
@@ -456,6 +470,14 @@ class Spec(Node):
     self.controls = {}
     self.commands = {}
     self.structs = {}
+
+  def encoding(self, klass):
+    if Spec.ENCODINGS.has_key(klass):
+      return self.named[Spec.ENCODINGS[klass]]
+    for base in klass.__bases__:
+      result = self.encoding(base)
+      if result != None:
+        return result
 
 class Implement:
 
