@@ -32,16 +32,20 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                const std::string _tag,
                                DeliveryToken::shared_ptr _token, 
                                const DeliveryId _id,
-                               bool _acquired, bool _confirmed) : msg(_msg), 
-                                                                  queue(_queue), 
-                                                                  tag(_tag),
-                                                                  token(_token),
-                                                                  id(_id),
-                                                                  acquired(_acquired),
-                                                                  confirmed(_confirmed),
-                                                                  pull(false), 
-                                                                  cancelled(false)
+                               bool _acquired, bool accepted) : msg(_msg), 
+                                                                queue(_queue), 
+                                                                tag(_tag),
+                                                                token(_token),
+                                                                id(_id),
+                                                                acquired(_acquired),
+                                                                pull(false), 
+                                                                cancelled(false),
+                                                                credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
+                                                                size(msg.payload ? msg.payload->contentSize() : 0),
+                                                                completed(false),
+                                                                ended(accepted)
 {
+    if (accepted) setEnded();
 }
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
@@ -50,14 +54,23 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                        queue(_queue), 
                                                        id(_id),
                                                        acquired(true),
-                                                       confirmed(false),
                                                        pull(true),
-                                                       cancelled(false)
+                                                       cancelled(false),
+                                                       credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
+                                                       size(msg.payload ? msg.payload->contentSize() : 0),
+                                                       completed(false),
+                                                       ended(false)
 {}
 
+void DeliveryRecord::setEnded()
+{
+    ended = true;
+    //reset msg pointer, don't need to hold on to it anymore
+    msg.payload = boost::intrusive_ptr<Message>();
+}
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
-    if (acquired && !confirmed) {
+    if (acquired && !ended) {
         queue->dequeue(ctxt, msg.payload);
     }
 }
@@ -79,7 +92,7 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
 }
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
-    if (!confirmed) {
+    if (!ended) {
         if(pull || cancelled){
             //if message was originally sent as response to get, we must requeue it
 
@@ -96,7 +109,7 @@ void DeliveryRecord::redeliver(SemanticState* const session) {
 
 void DeliveryRecord::requeue() const
 {
-    if (acquired && !confirmed) {
+    if (acquired && !ended) {
         msg.payload->redeliver();
         queue->requeue(msg);
     }
@@ -104,9 +117,22 @@ void DeliveryRecord::requeue() const
 
 void DeliveryRecord::release() 
 {
-    if (acquired && !confirmed) {
+    if (acquired && !ended) {
         queue->requeue(msg);
         acquired = false;
+        setEnded();
+    }
+}
+
+void DeliveryRecord::complete() 
+{
+    completed = true; 
+}
+
+void DeliveryRecord::accept(TransactionContext* ctxt) {
+    if (acquired && !ended) {
+        queue->dequeue(ctxt, msg.payload);
+        setEnded();
     }
 }
 
@@ -124,9 +150,9 @@ void DeliveryRecord::reject()
     }
 }
 
-void DeliveryRecord::updateByteCredit(uint32_t& credit) const
+uint32_t DeliveryRecord::getCredit() const
 {
-    credit += msg.payload->getRequiredCredit();
+    return credit;
 }
 
 
@@ -134,7 +160,7 @@ void DeliveryRecord::addTo(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch.size += msg.payload->contentSize();
+        prefetch.size += size;
         prefetch.count++;
     }    
 }
@@ -143,7 +169,7 @@ void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch.size -= msg.payload->contentSize();
+        prefetch.size -= size;
         prefetch.count--;
     }
 }

@@ -35,7 +35,7 @@ namespace qpid {
         {
             intrusive_ptr<Message> payload;
             framing::SequenceNumber position;
-			Queue* queue;
+            Queue* queue;
 			
             QueuedMessage(Queue* q, intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
 			               payload(msg), position(sn), queue(q) {}
