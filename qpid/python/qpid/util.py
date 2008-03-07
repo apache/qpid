@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, socket
+import os, socket, time
 
 def connect(host, port):
   sock = socket.socket()
@@ -40,3 +40,28 @@ def listen(host, port, predicate = lambda: True, bound = lambda: None):
 
 def mtime(filename):
   return os.stat(filename).st_mtime
+
+def wait(condition, predicate, timeout=None):
+  condition.acquire()
+  try:
+    passed = 0
+    start = time.time()
+    while not predicate():
+      if timeout is None:
+        condition.wait()
+      elif passed < timeout:
+        condition.wait(timeout - passed)
+      else:
+        return False
+      passed = time.time() - start
+    return True
+  finally:
+    condition.release()
+
+def notify(condition, action=lambda: None):
+  condition.acquire()
+  try:
+    action()
+    condition.notifyAll()
+  finally:
+    condition.release()

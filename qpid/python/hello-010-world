@@ -29,13 +29,13 @@ ssn.message_transfer("is", None, None, Message(props, "more testing..."))
 ssn.message_transfer("a")
 ssn.message_transfer("test")
 
-m1 = ssn.incoming("this").get()
+m1 = ssn.incoming("this").get(timeout=10)
 print m1
-m2 = ssn.incoming("is").get()
+m2 = ssn.incoming("is").get(timeout=10)
 print m2
-m3 = ssn.incoming("a").get()
+m3 = ssn.incoming("a").get(timeout=10)
 print m3
-m4 = ssn.incoming("test").get()
+m4 = ssn.incoming("test").get(timeout=10)
 print m4
 
 ssn.message_accept(RangedSet(m1.id, m2.id, m3.id, m4.id))
