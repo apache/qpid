@@ -429,40 +429,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (messageListener == null)
+        if (messageListener != null && !_synchronousQueue.isEmpty())
         {
-           /* _0_10session.getQpidSession().messageStop(getConsumerTag().toString());
-            _0_10session.getQpidSession()
-                    .messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
-            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                      org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
-                                                      0xFFFFFFFF);
-            _0_10session.getQpidSession().sync();
-            */
-        }
-        else
-        {
-            if(! _synchronousQueue.isEmpty())
+            Iterator messages=_synchronousQueue.iterator();
+            while (messages.hasNext())
             {
-                Iterator messages=_synchronousQueue.iterator();
-                while (messages.hasNext())
-                {
-                    AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
-                    messages.remove();
-                    _session.rejectMessage(message, true);
-                }
-            }
-            if (_connection.started())
-            {
-                _0_10session.getQpidSession()
-                        .messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
-                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                                          AMQSession_0_10.MAX_PREFETCH);
-                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
-                                                          0xFFFFFFFF);
-                _0_10session.getQpidSession().sync();
+                AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+                messages.remove();
+                _session.rejectMessage(message, true);
             }
         }
     }
@@ -482,16 +456,4 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         _isStarted = false;
     }
 
-    public void close() throws JMSException
-    {
-        super.close();
-        // release message that may be staged
-        Iterator messages=_synchronousQueue.iterator();
-        while (messages.hasNext())
-        {
-            AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
-            messages.remove();
-            _session.rejectMessage(message, true);
-        }
-    }
 }
