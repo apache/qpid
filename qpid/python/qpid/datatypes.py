@@ -67,10 +67,15 @@ class Range:
     return self.lower <= n and n <= self.upper
 
   def touches(self, r):
+    # XXX
     return (self.lower - 1 in r or
             self.upper + 1 in r or
             r.lower - 1 in self or
-            r.upper + 1 in self)
+            r.upper + 1 in self or
+            self.lower in r or
+            self.upper in r or
+            r.lower in self or
+            r.upper in self)
 
   def span(self, r):
     return Range(min(self.lower, r.lower), max(self.upper, r.upper))
