@@ -18,10 +18,10 @@
 #
 from qpid.client import Client, Closed
 from qpid.queue import Empty
-from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase010
+from qpid.datatypes import Message
 
-class QueueTests(TestBase):
+class QueueTests(TestBase010):
     """Tests for 'methods' on the amqp queue 'class'"""
 
     def test_purge(self):
@@ -31,9 +31,9 @@ class QueueTests(TestBase):
         session = self.session
         #setup, declare a queue and add some messages to it:
         session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
-        session.message_transfer(content=Content("one", properties={'routing_key':"test-queue"}))
-        session.message_transfer(content=Content("two", properties={'routing_key':"test-queue"}))
-        session.message_transfer(content=Content("three", properties={'routing_key':"test-queue"}))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "one"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "two"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "three"))
 
         #check that the queue now reports 3 messages:
         session.queue_declare(queue="test-queue")
@@ -46,15 +46,16 @@ class QueueTests(TestBase):
         self.assertEqual(0, reply.message_count)        
 
         #send a further message and consume it, ensuring that the other messages are really gone
-        session.message_transfer(content=Content("four", properties={'routing_key':"test-queue"}))
-        self.subscribe(queue="test-queue", destination="tag")
-        queue = self.client.queue("tag")
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "four"))
+        session.message_subscribe(queue="test-queue", destination="tag")
+        session.message_flow(destination="tag", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="tag", unit=1, value=0xFFFFFFFF)
+        queue = session.incoming("tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("four", msg.content.body)
+        self.assertEqual("four", msg.body)
 
         #check error conditions (use new sessions): 
-        session = self.client.session(2)
-        session.session_open()
+        session = self.conn.session("error-checker")
         try:
             #queue specified but doesn't exist:
             session.queue_purge(queue="invalid-queue")
@@ -62,20 +63,13 @@ class QueueTests(TestBase):
         except Closed, e:
             self.assertChannelException(404, e.args[0])
 
-        session = self.client.session(3)
-        session.session_open()
+        session = self.conn.session("error-checker")
         try:
             #queue not specified and none previously declared for channel:
             session.queue_purge()
             self.fail("Expected failure when purging unspecified queue")
         except Closed, e:
             self.assertConnectionException(530, e.args[0])
-
-        #cleanup    
-        other = self.connect()
-        session = other.session(1)
-        session.session_open()
-        session.exchange_delete(exchange="test-exchange")
 
     def test_declare_exclusive(self):
         """
@@ -167,32 +161,32 @@ class QueueTests(TestBase):
         self.subscribe(queue="queue-1", destination="queue-1")
         self.subscribe(queue="queue-2", destination="queue-2")
 
-        queue1 = self.client.queue("queue-1")
-        queue2 = self.client.queue("queue-2")
+        queue1 = session.incoming("queue-1")
+        queue2 = session.incoming("queue-2")
 
         session.queue_bind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
         session.queue_bind(exchange=exchange, queue="queue-2", routing_key=routing_key, arguments=args)
 
         #send a message that will match both bindings
         session.message_transfer(destination=exchange,
-                                 content=Content("one", properties={'routing_key':routing_key, 'application_headers':headers}))
+                                 message=Message(session.delivery_properties(routing_key=routing_key, application_headers=headers), "one"))
         
         #unbind first queue
         session.queue_unbind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
         
         #send another message
         session.message_transfer(destination=exchange,
-                                 content=Content("two", properties={'routing_key':routing_key, 'application_headers':headers}))
+                                 message=Message(session.delivery_properties(routing_key=routing_key, application_headers=headers), "two", ))
 
         #check one queue has both messages and the other has only one
-        self.assertEquals("one", queue1.get(timeout=1).content.body)
+        self.assertEquals("one", queue1.get(timeout=1).body)
         try:
             msg = queue1.get(timeout=1)
-            self.fail("Got extra message: %s" % msg.content.body)
+            self.fail("Got extra message: %s" % msg.body)
         except Empty: pass
 
-        self.assertEquals("one", queue2.get(timeout=1).content.body)
-        self.assertEquals("two", queue2.get(timeout=1).content.body)
+        self.assertEquals("one", queue2.get(timeout=1).body)
+        self.assertEquals("two", queue2.get(timeout=1).body)
         try:
             msg = queue2.get(timeout=1)
             self.fail("Got extra message: " + msg)
@@ -207,9 +201,9 @@ class QueueTests(TestBase):
 
         #straight-forward case:
         session.queue_declare(queue="delete-me")
-        session.message_transfer(content=Content("a", properties={'routing_key':"delete-me"}))
-        session.message_transfer(content=Content("b", properties={'routing_key':"delete-me"}))
-        session.message_transfer(content=Content("c", properties={'routing_key':"delete-me"}))
+        session.message_transfer(message=Message("a", session.delivery_properties(routing_key="delete-me")))
+        session.message_transfer(message=Message("b", session.delivery_properties(routing_key="delete-me")))
+        session.message_transfer(message=Message("c", session.delivery_properties(routing_key="delete-me")))
         session.queue_delete(queue="delete-me")
         #check that it has gone be declaring passively
         try:
@@ -238,7 +232,7 @@ class QueueTests(TestBase):
         #create a queue and add a message to it (use default binding):
         session.queue_declare(queue="delete-me-2")
         session.queue_declare(queue="delete-me-2", passive=True)
-        session.message_transfer(content=Content("message", properties={'routing_key':"delete-me-2"}))
+        session.message_transfer(message=Message("message", session.delivery_properties(routing_key="delete-me-2")))
 
         #try to delete, but only if empty:
         try:
@@ -253,9 +247,9 @@ class QueueTests(TestBase):
 
         #empty queue:
         self.subscribe(session, destination="consumer_tag", queue="delete-me-2")
-        queue = self.client.queue("consumer_tag")
+        queue = session.incoming("consumer_tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("message", msg.content.body)
+        self.assertEqual("message", msg.body)
         session.message_cancel(destination="consumer_tag")
 
         #retry deletion on empty queue:

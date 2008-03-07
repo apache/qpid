@@ -38,7 +38,7 @@ class MultiVersionConnectionInputHandler : public qpid::sys::ConnectionInputHand
     Broker& broker; 
     const std::string id;
 
-    bool check(bool fail = true);
+    void check();
 
 public:
     MultiVersionConnectionInputHandler(qpid::sys::ConnectionOutputHandler* out, Broker& broker, const std::string& id);

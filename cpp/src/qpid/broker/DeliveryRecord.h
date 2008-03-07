@@ -47,32 +47,45 @@ class DeliveryRecord{
     DeliveryToken::shared_ptr token;
     DeliveryId id;
     bool acquired;
-    const bool confirmed;
     const bool pull;
     bool cancelled;
+    const uint32_t credit;
+    const uint64_t size;
+
+    bool completed;
+    bool ended;
+
+    void setEnded();
 
   public:
     DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
                    const DeliveryId id, bool acquired, bool confirmed = false);
     DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
             
-    void dequeue(TransactionContext* ctxt = 0) const;
     bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
     bool coveredBy(const framing::AccumulatedAck* const range) const;
+
+    void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
     void release();
     void reject();
     void cancel(const std::string& tag);
     void redeliver(SemanticState* const);
-    void updateByteCredit(uint32_t& credit) const;
+    void acquire(DeliveryIds& results);
+    void complete();
+    void accept(TransactionContext* ctxt);
+
+    bool isAcquired() const { return acquired; }
+    bool isComplete() const { return completed; }
+    bool isRedundant() const { return ended && completed; }
+
+    uint32_t getCredit() const;
     void addTo(Prefetch&) const;
     void subtractFrom(Prefetch&) const;
     const std::string& getTag() const { return tag; } 
     bool isPull() const { return pull; }
-    bool isAcquired() const { return acquired; }
-    void acquire(DeliveryIds& results);
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };

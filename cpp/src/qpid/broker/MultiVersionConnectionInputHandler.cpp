@@ -64,7 +64,7 @@ void MultiVersionConnectionInputHandler::idleIn()
 
 bool MultiVersionConnectionInputHandler::doOutput()
 {
-    return check(false) &&  handler->doOutput();
+    return handler.get() &&  handler->doOutput();
 }
     
 qpid::framing::ProtocolInitiation MultiVersionConnectionInputHandler::getInitiation()
@@ -74,17 +74,14 @@ qpid::framing::ProtocolInitiation MultiVersionConnectionInputHandler::getInitiat
 
 void MultiVersionConnectionInputHandler::closed()
 {
-    check();
-    handler->closed();
+    if (handler.get()) handler->closed();
+    //else closed before initiated, nothing to do
 }
 
-bool MultiVersionConnectionInputHandler::check(bool fail)
+void MultiVersionConnectionInputHandler::check()
 {
     if (!handler.get()) { 
-        if (fail) throw qpid::framing::InternalErrorException("Handler not initialised!");
-        else return false;
-    } else {
-        return true;
+        throw qpid::framing::InternalErrorException("Handler not initialised!");
     }
 }
 
