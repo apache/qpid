@@ -89,3 +89,14 @@ class RangedSetTest(TestCase):
     assert 21 not in rs
     assert 20 in rs
     self.check(rs.ranges)
+
+  def testAddSelf(self):
+    a = RangedSet()
+    a.add(0, 8)
+    self.check(a.ranges)
+    a.add(0, 8)
+    self.check(a.ranges)
+    assert len(a.ranges) == 1
+    range = a.ranges[0]
+    assert range.lower == 0
+    assert range.upper == 8

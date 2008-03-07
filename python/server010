@@ -7,6 +7,16 @@ from qpid.spec010 import load
 from qpid.session import Client
 from qpid.datatypes import Message
 
+import logging, sys
+
+if "-v" in sys.argv:
+  level = logging.DEBUG
+else:
+  level = logging.WARN
+
+format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+logging.basicConfig(level=level, format=format, datefmt='%H:%M:%S')
+
 spec = load("../specs/amqp.0-10.xml")
 
 class Server:
@@ -15,6 +25,7 @@ class Server:
     return delegates.Server(connection, self.session)
 
   def session(self, session):
+    session.auto_sync = False
     return SessionDelegate(session)
 
 class SessionDelegate(Client):

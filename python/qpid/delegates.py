@@ -20,6 +20,7 @@
 import connection010
 import session
 from util import notify
+from datatypes import RangedSet
 
 class Delegate:
 
@@ -78,6 +79,23 @@ class Delegate:
     ssn = ch.session
     ssn.receiver.next_id = cp.command_id
     ssn.receiver.next_offset = cp.command_offset
+
+  def session_completed(self, ch, cmp):
+    ch.session.sender.completed(cmp.commands)
+    notify(ch.session.condition)
+
+  def session_flush(self, ch, f):
+    rcv = ch.session.receiver
+    if f.expected:
+      if rcv.next_id == None:
+        exp = None
+      else:
+        exp = RangedSet(rcv.next_id)
+      ch.session_expected(exp)
+    if f.confirmed:
+      ch.session_confirmed(rcv._completed)
+    if f.completed:
+      ch.session_completed(rcv._completed)
 
 class Server(Delegate):
 
