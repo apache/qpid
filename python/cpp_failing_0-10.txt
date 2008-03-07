@@ -63,5 +63,3 @@ tests_0-10.queue.QueueTests.test_delete_simple
 tests_0-10.queue.QueueTests.test_purge
 tests_0-10.queue.QueueTests.test_bind
 tests_0-10.queue.QueueTests.test_unbind_headers
-tests_0-10.exchange.RecommendedTypesRuleTests.testTopic
-tests_0-10.exchange.RequiredInstancesRuleTests.testAmqTopic
