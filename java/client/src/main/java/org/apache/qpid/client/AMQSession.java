@@ -2197,7 +2197,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         {
             UnprocessedMessage message = (UnprocessedMessage) messages.next();
 
-            if ((consumerTag == null) || message.getConsumerTag().equals(consumerTag))
+            if ((consumerTag == null) || message.getConsumerTag().equals(consumerTag.toString()))
             {
                 if (_logger.isDebugEnabled())
                 {
