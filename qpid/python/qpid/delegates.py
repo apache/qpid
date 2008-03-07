@@ -19,6 +19,7 @@
 
 import connection010
 import session
+from util import notify
 
 class Delegate:
 
@@ -49,7 +50,8 @@ class Delegate:
     self.connection.sock.close()
 
   def connection_close_ok(self, ch, close_ok):
-    self.connection.closed.set()
+    self.connection.opened = False
+    notify(self.connection.condition)
 
   def session_attach(self, ch, a):
     try:
@@ -61,7 +63,7 @@ class Delegate:
       ch.session_detached(a.name)
 
   def session_attached(self, ch, a):
-    ch.session.opened.set()
+    notify(ch.session.condition)
 
   def session_detach(self, ch, d):
     self.connection.detach(d.name, ch)
@@ -70,7 +72,7 @@ class Delegate:
   def session_detached(self, ch, d):
     ssn = self.connection.detach(d.name, ch)
     if ssn is not None:
-      ssn.closed.set()
+      notify(ch.session.condition)
 
   def session_command_point(self, ch, cp):
     ssn = ch.session
@@ -91,8 +93,9 @@ class Server(Delegate):
     pass
 
   def connection_open(self, ch, open):
-    self.connection.opened.set()
+    self.connection.opened = True
     ch.connection_open_ok()
+    notify(self.connection.condition)
 
 class Client(Delegate):
 
@@ -108,4 +111,5 @@ class Client(Delegate):
     ch.connection_open()
 
   def connection_open_ok(self, ch, open_ok):
-    self.connection.opened.set()
+    self.connection.opened = True
+    notify(self.connection.condition)
