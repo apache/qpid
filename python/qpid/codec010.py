@@ -20,10 +20,17 @@
 from packer import Packer
 from datatypes import RangedSet
 
+class CodecException(Exception): pass
+
 class Codec(Packer):
 
   def __init__(self, spec):
     self.spec = spec
+
+  def write_void(self, v):
+    assert v == None
+  def read_void(self):
+    return None
 
   def write_bit(self, b):
     if not b: raise ValueError(b)
@@ -148,10 +155,26 @@ class Codec(Packer):
     self.write(b)
 
   def write_map(self, m):
-    self.write_uint32(0) #hack
+    sc = StringCodec(self.spec)
+    for k, v in m.items():
+      type = self.spec.encoding(v.__class__)
+      if type == None:
+        raise CodecException("no encoding for %s" % v.__class__)
+      sc.write_str8(k)
+      sc.write_uint8(type.code)
+      type.encode(sc, v)
+    # XXX: need to put in count when CPP supports it
+    self.write_vbin32(sc.encoded)
   def read_map(self):
-    size = self.read_uint32() #hack
-    self.read(size)           #hack
+    sc = StringCodec(self.spec, self.read_vbin32())
+    result = {}
+    while sc.encoded:
+      k = sc.read_str8()
+      code = sc.read_uint8()
+      type = self.spec.types[code]
+      v = type.decode(sc)
+      result[k] = v
+    return result
 
   def write_array(self, a):
     pass

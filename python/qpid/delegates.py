@@ -17,8 +17,7 @@
 # under the License.
 #
 
-import connection010
-import session
+import os, connection010, session
 from util import notify
 from datatypes import RangedSet
 
@@ -117,12 +116,16 @@ class Server(Delegate):
 
 class Client(Delegate):
 
+  PROPERTIES = {"product": "qpid python client",
+                "version": "development",
+                "platform": os.name}
+
   def start(self):
     self.connection.write_header(self.spec.major, self.spec.minor)
     self.connection.read_header()
 
   def connection_start(self, ch, start):
-    ch.connection_start_ok()
+    ch.connection_start_ok(client_properties=Client.PROPERTIES)
 
   def connection_tune(self, ch, tune):
     ch.connection_tune_ok()
