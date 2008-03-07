@@ -58,7 +58,7 @@ class QueueTests(TestBase010):
         session = self.conn.session("error-checker")
         try:
             #queue specified but doesn't exist:
-            session.queue_purge(queue="invalid-queue")
+            session.queue_purge(queue="invalid-queue")            
             self.fail("Expected failure when purging non-existent queue")
         except Closed, e:
             self.assertChannelException(404, e.args[0])
@@ -119,7 +119,7 @@ class QueueTests(TestBase010):
         session.queue_bind(queue="queue-1", exchange="amq.direct", routing_key="key1")
 
         #use the queue name where the routing key is not specified:
-        session.queue_bind(queue="queue-1", exchange="amq.direct")
+        session.exchange_bind(queue="queue-1", exchange="amq.direct")
 
         #try and bind to non-existant exchange
         try:
@@ -151,32 +151,43 @@ class QueueTests(TestBase010):
     def test_unbind_headers(self):
         self.unbind_test(exchange="amq.match", args={ "x-match":"all", "a":"b"}, headers={"a":"b"})
 
-    def unbind_test(self, exchange, routing_key="", args=None, headers={}):
+    def unbind_test(self, exchange, routing_key="", args=None, headers=None):
         #bind two queues and consume from them
         session = self.session
         
         session.queue_declare(queue="queue-1", exclusive=True, auto_delete=True)
         session.queue_declare(queue="queue-2", exclusive=True, auto_delete=True)
 
-        self.subscribe(queue="queue-1", destination="queue-1")
-        self.subscribe(queue="queue-2", destination="queue-2")
+        session.message_subscribe(queue="queue-1", destination="queue-1")
+        session.message_flow(destination="queue-1", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="queue-1", unit=1, value=0xFFFFFFFF)
+        session.message_subscribe(queue="queue-2", destination="queue-2")
+        session.message_flow(destination="queue-2", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="queue-2", unit=1, value=0xFFFFFFFF)
 
         queue1 = session.incoming("queue-1")
         queue2 = session.incoming("queue-2")
 
-        session.queue_bind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
-        session.queue_bind(exchange=exchange, queue="queue-2", routing_key=routing_key, arguments=args)
+        session.exchange_bind(exchange=exchange, queue="queue-1", binding_key=routing_key, arguments=args)
+        session.exchange_bind(exchange=exchange, queue="queue-2", binding_key=routing_key, arguments=args)
 
+        dp = session.delivery_properties(routing_key=routing_key)
+        if (headers):
+            mp = session.message_properties(application_headers=headers)
+            msg1 = Message(dp, mp, "one")
+            msg2 = Message(dp, mp, "two")
+        else:
+            msg1 = Message(dp, "one")
+            msg2 = Message(dp, "two")
+            
         #send a message that will match both bindings
-        session.message_transfer(destination=exchange,
-                                 message=Message(session.delivery_properties(routing_key=routing_key, application_headers=headers), "one"))
+        session.message_transfer(destination=exchange, message=msg1)
         
         #unbind first queue
-        session.queue_unbind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
+        session.exchange_unbind(exchange=exchange, queue="queue-1", binding_key=routing_key)
         
         #send another message
-        session.message_transfer(destination=exchange,
-                                 message=Message(session.delivery_properties(routing_key=routing_key, application_headers=headers), "two", ))
+        session.message_transfer(destination=exchange, message=msg2)
 
         #check one queue has both messages and the other has only one
         self.assertEquals("one", queue1.get(timeout=1).body)
@@ -320,7 +331,7 @@ class QueueTests(TestBase010):
 
         #NOTE: this assumes there is no timeout in use
 
-        #check that it has gone be declaring passively
+        #check that it has gone by declaring it passively
         try:
             session.queue_declare(queue="auto-delete-me", passive=True)
             self.fail("Expected queue to have been deleted")
