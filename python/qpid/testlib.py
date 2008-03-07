@@ -353,5 +353,5 @@ class TestBase010(unittest.TestCase):
         self.session = self.conn.session("test-session", timeout=10)
 
     def tearDown(self):
-        self.session.close(timeout=10)
+        if not self.session.error(): self.session.close(timeout=10)
         self.conn.close(timeout=10)

@@ -20,6 +20,7 @@ from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.testlib import TestBase010
 from qpid.datatypes import Message
+from qpid.session import SessionException
 
 class QueueTests(TestBase010):
     """Tests for 'methods' on the amqp queue 'class'"""
@@ -54,22 +55,31 @@ class QueueTests(TestBase010):
         msg = queue.get(timeout=1)
         self.assertEqual("four", msg.body)
 
-        #check error conditions (use new sessions): 
-        session = self.conn.session("error-checker")
+    def test_purge_queue_exists(self):
+        """        
+        Test that the correct exception is thrown is no queue exists
+        for the name specified in purge        
+        """        
+        session = self.session
         try:
             #queue specified but doesn't exist:
             session.queue_purge(queue="invalid-queue")            
             self.fail("Expected failure when purging non-existent queue")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code) #not-found
 
-        session = self.conn.session("error-checker")
+    def test_purge_empty_name(self):        
+        """
+        Test that the correct exception is thrown is no queue name
+        is specified for purge
+        """        
+        session = self.session
         try:
             #queue not specified and none previously declared for channel:
             session.queue_purge()
             self.fail("Expected failure when purging unspecified queue")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
+        except SessionException, e:
+            self.assertEquals(531, e.args[0].error_code) #illegal-argument
 
     def test_declare_exclusive(self):
         """
