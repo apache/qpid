@@ -88,7 +88,7 @@ class SemanticState : public framing::FrameHandler::Chains,
         void addMessageCredit(uint32_t value);
         void flush();
         void stop();
-        void adjustFlow(const DeliveryRecord&);    
+        void complete(DeliveryRecord&);    
         Queue::shared_ptr getQueue() { return queue; }
         bool isBlocked() const { return blocked; }
 
@@ -122,7 +122,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
-    void adjustFlow(const DeliveryRecord&);
+    void complete(DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void requestDispatch(ConsumerImpl&);
