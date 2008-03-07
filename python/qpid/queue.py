@@ -35,10 +35,12 @@ class Queue(BaseQueue):
 
   def __init__(self, *args, **kwargs):
     BaseQueue.__init__(self, *args, **kwargs)
+    self.error = None
     self.listener = None
     self.thread = None
 
-  def close(self):
+  def close(self, error = None):
+    self.error = error
     self.put(Queue.END)
 
   def get(self, block = True, timeout = None):
@@ -47,7 +49,7 @@ class Queue(BaseQueue):
       # this guarantees that any other waiting threads or any future
       # calls to get will also result in a Closed exception
       self.put(Queue.END)
-      raise Closed()
+      raise Closed(self.error)
     else:
       return result
 
