@@ -670,7 +670,16 @@
         <field name="commands" domain="sequence-set"/>
         <field name="set-redelivered" domain="bit"/>
     </method>
-
+    <method name = "acquire" index="5">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="transfers" domain="sequence-set"/>
+        <result>
+            <struct size="long" type="4">
+                <field name="transfers" domain="sequence-set"/>
+            </struct>
+        </result>
+    </method>
 
     <method name = "subscribe" index="7">
         <doc>blah, blah</doc>
