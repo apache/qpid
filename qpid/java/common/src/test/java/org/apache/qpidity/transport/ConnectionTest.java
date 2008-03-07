@@ -62,12 +62,12 @@ public class ConnectionTest extends TestCase
             public void closed() {}
         };
 
-        MinaHandler.accept("0.0.0.0", port, server);
+        MinaHandler.accept("localhost", port, server);
     }
 
     private Connection connect(final Condition closed)
     {
-        Connection conn = MinaHandler.connect("0.0.0.0", port, new ConnectionDelegate()
+        Connection conn = MinaHandler.connect("localhost", port, new ConnectionDelegate()
         {
             public SessionDelegate getSessionDelegate()
             {
