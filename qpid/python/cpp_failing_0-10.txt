@@ -39,8 +39,6 @@ tests_0-10.dtx.DtxTests.test_start_join
 tests_0-10.dtx.DtxTests.test_start_join_and_resume
 tests_0-10.dtx.DtxTests.test_suspend_resume
 tests_0-10.dtx.DtxTests.test_suspend_start_end_resume
-tests_0-10.message.MessageTests.test_acquire
-tests_0-10.message.MessageTests.test_subscribe_not_acquired_3
 tests_0-10.message.MessageTests.test_consume_exclusive
 tests_0-10.message.MessageTests.test_consume_no_local
 tests_0-10.message.MessageTests.test_consume_no_local_awkward
@@ -60,6 +58,6 @@ tests_0-10.queue.QueueTests.test_declare_passive
 tests_0-10.queue.QueueTests.test_delete_ifempty
 tests_0-10.queue.QueueTests.test_delete_ifunused
 tests_0-10.queue.QueueTests.test_delete_simple
-tests_0-10.queue.QueueTests.test_purge
 tests_0-10.queue.QueueTests.test_bind
 tests_0-10.queue.QueueTests.test_unbind_headers
+tests_0-10.queue.QueueTests.test_purge_empty_name

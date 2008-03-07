@@ -367,16 +367,20 @@ void SessionAdapter::MessageHandlerImpl::accept(const framing::SequenceSet& comm
     commands.for_each(acceptOp);
 }
 
-/*
-void SessionAdapter::MessageHandlerImpl::acquire(const SequenceSet& transfers)
+framing::Message010AcquireResult SessionAdapter::MessageHandlerImpl::acquire(const framing::SequenceSet& transfers)
 {
+    //TODO: change this when SequenceNumberSet is deleted along with preview code
     SequenceNumberSet results;
-    RangedOperation op = boost::bind(&SemanticState::acquire, &state, _1, _2, boost::ref(results));
-    transfers.processRanges(op);
+    RangedOperation f = boost::bind(&SemanticState::acquire, &state, _1, _2, boost::ref(results));
+    transfers.for_each(f);
+
     results = results.condense();
-    getProxy().getMessage().acquired(results);
+    SequenceSet acquisitions;
+    RangedOperation g = boost::bind(&SequenceSet::add, &acquisitions, _1, _2);
+    results.processRanges(g);
+
+    return Message010AcquireResult(acquisitions);
 }
-*/
 
 
 void SessionAdapter::ExecutionHandlerImpl::sync()

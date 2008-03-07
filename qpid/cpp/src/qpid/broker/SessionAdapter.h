@@ -149,6 +149,8 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         void release(const framing::SequenceSet& commands,
                      bool setRedelivered);
         
+        framing::Message010AcquireResult acquire(const framing::SequenceSet&);
+
         void subscribe(const string& queue,
                        const string& destination,
                        uint8_t acceptMode,
