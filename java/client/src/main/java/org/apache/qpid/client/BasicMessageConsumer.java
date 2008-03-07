@@ -105,15 +105,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private final int _acknowledgeMode;
 
-    /** Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode */
-    private int _outstanding;
-
-    /**
-     * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode. Enabled when _outstannding
-     * number of msgs >= _prefetchHigh and disabled at < _prefetchLow
-     */
-    private boolean _dups_ok_acknowledge_send;
-
     private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
     /** List of tags delievered, The last of which which should be acknowledged on commit in transaction mode. */
@@ -253,9 +244,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         switch (_acknowledgeMode)
         {
-            case Session.DUPS_OK_ACKNOWLEDGE:
-                _receivedDeliveryTags.add(msg.getDeliveryTag());
-                break;
 
             case Session.CLIENT_ACKNOWLEDGE:
                 _unacknowledgedDeliveryTags.add(msg.getDeliveryTag());
@@ -282,8 +270,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      *
      * @return boolean if the acquisition was successful
      *
-     * @throws JMSException
-     * @throws InterruptedException
+     * @throws JMSException if a listener has already been set or another thread is receiving
+     * @throws InterruptedException if interrupted
      */
     private boolean acquireReceiving(boolean immediate) throws JMSException, InterruptedException
     {
@@ -505,7 +493,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * We can get back either a Message or an exception from the queue. This method examines the argument and deals with
      * it by throwing it (if an exception) or returning it (in any other case).
      *
-     * @param o
+     * @param o the object to return or throw
      *
      * @return a message only if o is a Message
      *
@@ -772,28 +760,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 break;
 
             case Session.DUPS_OK_ACKNOWLEDGE:
-            /*(    if (++_outstanding >= _prefetchHigh)
-                {
-                    _dups_ok_acknowledge_send = true;
-                }
-
-                //Can't use <= as _prefetchHigh may equal _prefetchLow so no acking would occur.
-                if (_outstanding < _prefetchLow)
-                {
-                    _dups_ok_acknowledge_send = false;
-                }
-
-                if (_dups_ok_acknowledge_send)
-                {
-                    if (!_session.isInRecovery())
-                    {
-                        _session.acknowledgeMessage(msg.getDeliveryTag(), true);
-                        _outstanding = 0;
-                    }
-                }
-
-                break;
-             */
             case Session.AUTO_ACKNOWLEDGE:
                 // we do not auto ack a message if the application code called recover()
                 if (!_session.isInRecovery())
