@@ -112,9 +112,14 @@ class RangedSet:
     return "RangedSet(%s)" % str(self.ranges)
 
 class Future:
-  def __init__(self, initial=None):
+  def __init__(self, initial=None, exception=Exception):
     self.value = initial
+    self._error = None
     self._set = threading.Event()
+
+  def error(self, error):
+    self._error = error
+    self._set.set()
 
   def set(self, value):
     self.value = value
@@ -122,6 +127,8 @@ class Future:
 
   def get(self, timeout=None):
     self._set.wait(timeout)
+    if self._error != None:
+      raise exception(self._error)
     return self.value
 
   def is_set(self):
