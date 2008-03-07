@@ -82,8 +82,11 @@ public class DupsOkTest extends VMTestCase
 
         consumer.setMessageListener(new MessageListener()
         {
+            int _msgCount = 0;
+
             public void onMessage(Message message)
             {
+                _msgCount++;
                 if (message == null)
                 {
                     fail("Should not get null messages");
@@ -98,12 +101,22 @@ public class DupsOkTest extends VMTestCase
                             assertEquals("The queue should have 4999 msgs left", 4999, getMessageCount(_queue.getQueueName()));
                         }*/
 
-                        if (message.getIntProperty("count") == 9999)
+                        if (message.getIntProperty("count") == MSG_COUNT)
                         {
-                            assertEquals("The queue should have 0 msgs left", 0, getMessageCount(_queue.getQueueName()));
+                            try
+                            {
+                                int remainingMessages = getMessageCount(_queue.getQueueName());
+                                if(remainingMessages != 0)
+                                {
 
-                            //This is the last message so release test.
-                            _awaitCompletion.countDown();
+                                    assertEquals("The queue should have 0 msgs left, seen " + _msgCount + " messages.", 0, getMessageCount(_queue.getQueueName()));
+                                }
+                            }
+                            finally
+                            {
+                                //This is the last message so release test.
+                                _awaitCompletion.countDown();
+                            }
                         }
 
                     }
