@@ -96,7 +96,7 @@ class Assembler(Framer):
     remaining = segment.payload
 
     first = True
-    while remaining:
+    while first or remaining:
       payload = remaining[:self.max_payload]
       remaining = remaining[self.max_payload:]
 
