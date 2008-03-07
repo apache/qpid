@@ -38,6 +38,12 @@ print m3
 m4 = ssn.incoming("test").get(timeout=10)
 print m4
 
+print ssn.sender._completed, ssn.sender.next_id
+ssn.sync(10)
+print ssn.sender.segments
+
+ssn.channel.session_flush(completed=True)
+
 ssn.message_accept(RangedSet(m1.id, m2.id, m3.id, m4.id))
 
 print ssn.queue_query("testing")

@@ -26,9 +26,8 @@ from codec010 import StringCodec
 from session import Session
 from invoker import Invoker
 from spec010 import Control, Command
+from exceptions import *
 import delegates
-
-class Timeout(Exception): pass
 
 class ChannelBusy(Exception): pass
 

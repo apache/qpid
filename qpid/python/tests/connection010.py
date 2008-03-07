@@ -39,6 +39,7 @@ class TestServer:
     return Server(connection, delegate=self.session)
 
   def session(self, session):
+    session.auto_sync = False
     return TestSession(session, self.queue)
 
 class TestSession(Delegate):
