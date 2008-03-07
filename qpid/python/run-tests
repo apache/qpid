@@ -21,7 +21,7 @@
 import sys, logging
 from qpid.testlib import testrunner
 
-if "-v" in sys.argv:
+if "-vv" in sys.argv:
   level = logging.DEBUG
 else:
   level = logging.WARN
