@@ -104,6 +104,7 @@
                         <exclude>**/testcases/RollbackTest.class</exclude>
                         <exclude>**/testcases/TTLTest.class</exclude>
                         <exclude>**/testcases/FailoverTest.class</exclude>
+<exclude>**/SimpleACLTest.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
