@@ -249,24 +249,6 @@ public class AMQSession_0_10 extends AMQSession
         getCurrentException();
     }
 
-    /**
-     * We need to release message that may be pre-fetched in the local queue
-     *
-     * @throws JMSException
-     */
-    public void close() throws JMSException
-    {
-        super.close();
-        // We need to release pre-fetched messages
-        Iterator messages=_queue.iterator();
-        while (messages.hasNext())
-        {
-            UnprocessedMessage message=(UnprocessedMessage) messages.next();
-            messages.remove();
-            rejectMessage(message, true);
-        }
-    }
-
 
     /**
      * Commit the receipt and the delivery of all messages exchanged by this session resources.
@@ -426,7 +408,8 @@ public class AMQSession_0_10 extends AMQSession
         getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
-        if(consumer.isStrated())
+        // only if not immediat prefetch
+        if(consumer.isStrated() || _immediatePrefetch)
         {
             // set the flow
             getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
@@ -654,19 +637,12 @@ public class AMQSession_0_10 extends AMQSession
 
     void start() throws AMQException
     {
-        suspendChannel(false);
+        super.start();
         for(BasicMessageConsumer  c:  _consumers.values())
         {
               c.start();
         }
-        // If the event dispatcher is not running then start it too.
-        if (hasMessageListeners())
-        {
-            startDistpatcherIfNecessary();
-        }
     }
-
-
 
 
     void stop() throws AMQException
@@ -678,27 +654,7 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-   synchronized void startDistpatcherIfNecessary()
-    {
-        // If IMMEDIATE_PREFETCH is not set then we need to start fetching
-        if (!_immediatePrefetch)
-        {
-            // We do this now if this is the first call on a started connection
-            if (isSuspended() &&  _firstDispatcher.getAndSet(false))
-            {
-                try
-                {
-                    suspendChannel(false);
-                }
-                catch (AMQException e)
-                {
-                    _logger.info("Unsuspending channel threw an exception:" + e);
-                }
-            }
-        }
-
-        startDistpatcherIfNecessary(false);
-    }
+ 
 
 
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
