@@ -27,3 +27,4 @@ from assembler import *
 from datatypes import *
 from connection010 import *
 from spec010 import *
+from codec010 import *
