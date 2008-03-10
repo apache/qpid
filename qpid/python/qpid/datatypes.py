@@ -21,15 +21,48 @@ import threading
 
 class Struct:
 
-  def __init__(self, fields):
-    self.__dict__ = fields
+  def __init__(self, _type, *args, **kwargs):
+    if len(args) > len(_type.fields):
+      raise TypeError("%s() takes at most %s arguments (%s given)" %
+                      (_type.name, len(_type.fields), len(args)))
+
+    self._type = _type
+
+    idx = 0
+    for field in _type.fields:
+      if idx < len(args):
+        arg = args[idx]
+        if kwargs.has_key(field.name):
+          raise TypeError("%s() got multiple values for keyword argument '%s'" %
+                          (_type.name, field.name))
+      elif kwargs.has_key(field.name):
+        arg = kwargs.pop(field.name)
+      else:
+        arg = field.default()
+      setattr(self, field.name, arg)
+      idx += 1
+
+    if kwargs:
+      unexpected = kwargs.keys()[0]
+      raise TypeError("%s() got an unexpected keywoard argument '%s'" %
+                      (_type.name, unexpected))
+
+  def __getitem__(self, name):
+    return getattr(self, name)
+
+  def __setitem__(self, name, value):
+    if not hasattr(self, name):
+      raise AttributeError("'%s' object has no attribute '%s'" %
+                           (self._type.name, name))
+    setattr(self, name, value)
 
   def __repr__(self):
-    return "Struct(%s)" % ", ".join(["%s=%r" % (k, v)
-                                     for k, v in self.__dict__.items()])
-
-  def fields(self):
-    return self.__dict__
+    fields = []
+    for f in self._type.fields:
+      v = self[f.name]
+      if f.type.is_present(v):
+        fields.append("%s=%r" % (f.name, v))
+    return "%s(%s)" % (self._type.name, ", ".join(fields))
 
 class Message:
 
