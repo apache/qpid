@@ -37,7 +37,7 @@ class SessionDelegate(Client):
     print "Queue %s declared..." % qd.queue
 
   def queue_query(self, qq):
-    return qq.type.result.type.new((qq.queue,), {})
+    return qq._type.result.type.new((qq.queue,), {})
 
   def message_transfer(self, cmd, headers, body):
     m = Message(body)
