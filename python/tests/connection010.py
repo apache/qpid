@@ -49,7 +49,7 @@ class TestSession(Delegate):
     self.queue = queue
 
   def queue_query(self, qq):
-    return qq.type.result.type.new((qq.queue,), {})
+    return qq._type.result.type.new((qq.queue,), {})
 
   def message_transfer(self, cmd, header, body):
     self.queue.put((cmd, header, body))

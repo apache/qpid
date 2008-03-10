@@ -46,9 +46,9 @@ class Segment:
 
   def decode_command(self, spec):
     sc = StringCodec(spec, self.payload)
-    cmd = sc.read_command()
+    hdr, cmd = sc.read_command()
     cmd.id = self.id
-    return cmd
+    return hdr, cmd
 
   def decode_header(self, spec):
     sc = StringCodec(spec, self.payload)

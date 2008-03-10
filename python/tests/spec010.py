@@ -31,11 +31,11 @@ class SpecTest(TestCase):
   def testSessionHeader(self):
     hdr = self.spec["session.header"]
     sc = StringCodec(self.spec)
-    hdr.encode(sc, Struct({"sync": True}))
+    hdr.encode(sc, Struct(hdr, sync=True))
     assert sc.encoded == "\x01\x01"
 
     sc = StringCodec(self.spec)
-    hdr.encode(sc, Struct({"sync": False}))
+    hdr.encode(sc, Struct(hdr, sync=False))
     assert sc.encoded == "\x01\x00"
 
   def encdec(self, type, value):
@@ -45,16 +45,20 @@ class SpecTest(TestCase):
     return decoded
 
   def testMessageProperties(self):
-    props = Struct({"content_length": 0xDEADBEEF,
-                    "reply_to":
-                      Struct({"exchange": "the exchange name", "routing_key": "the routing key"})})
-    dec = self.encdec(self.spec["message.message_properties"], props)
+    mp = self.spec["message.message_properties"]
+    rt = self.spec["message.reply_to"]
+
+    props = Struct(mp, content_length=0xDEADBEEF,
+                   reply_to=Struct(rt, exchange="the exchange name",
+                                   routing_key="the routing key"))
+    dec = self.encdec(mp, props)
     assert props.content_length == dec.content_length
     assert props.reply_to.exchange == dec.reply_to.exchange
     assert props.reply_to.routing_key == dec.reply_to.routing_key
 
   def testMessageSubscribe(self):
-    cmd = Struct({"exclusive": True, "destination": "this is a test"})
+    ms = self.spec["message.subscribe"]
+    cmd = Struct(ms, exclusive=True, destination="this is a test")
     dec = self.encdec(self.spec["message.subscribe"], cmd)
     assert cmd.exclusive == dec.exclusive
     assert cmd.destination == dec.destination

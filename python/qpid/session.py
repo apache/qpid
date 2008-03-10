@@ -129,7 +129,8 @@ class Session(Invoker):
 
     cmd = type.new(args, kwargs)
     sc = StringCodec(self.spec)
-    sc.write_command(type, cmd)
+    hdr = Struct(self.spec["session.header"])
+    sc.write_command(hdr, cmd)
 
     seg = Segment(True, (message == None or
                          (message.headers == None and message.body == None)),
@@ -174,10 +175,10 @@ class Session(Invoker):
 
   def dispatch(self, assembly):
     segments = assembly[:]
-    cmd = assembly.pop(0).decode(self.spec)
+    hdr, cmd = assembly.pop(0).decode(self.spec)
     args = []
 
-    for st in cmd.type.segments:
+    for st in cmd._type.segments:
       if assembly:
         seg = assembly[0]
         if seg.type == st.segment_type:
@@ -188,10 +189,10 @@ class Session(Invoker):
 
     assert len(assembly) == 0
 
-    attr = cmd.type.qname.replace(".", "_")
+    attr = cmd._type.qname.replace(".", "_")
     result = getattr(self.delegate, attr)(cmd, *args)
 
-    if cmd.type.result:
+    if cmd._type.result:
       self.execution_result(cmd.id, result)
 
     if result is not INCOMPLETE:

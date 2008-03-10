@@ -38,7 +38,7 @@ class Delegate:
 
     if seg.track == self.control:
       cntrl = seg.decode(self.spec)
-      attr = cntrl.type.qname.replace(".", "_")
+      attr = cntrl._type.qname.replace(".", "_")
       getattr(self, attr)(ch, cntrl)
     elif ssn is None:
       ch.session_detached()
