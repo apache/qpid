@@ -77,12 +77,21 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     Session010Handler* getSession010Handler() { throw framing::NotImplementedException("Class not implemented"); }
 
   private:
+    //common base for utility methods etc that are specific to this adapter
+    struct HandlerHelper : public HandlerImpl 
+    {
+        HandlerHelper(SemanticState& s) : HandlerImpl(s) {}
+
+        Queue::shared_ptr getQueue(const string& name) const;
+    };
+
+
     class ExchangeHandlerImpl :
         public Exchange010Handler,
-        public HandlerImpl
+        public HandlerHelper
     {
       public:
-        ExchangeHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
+        ExchangeHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
         
         void declare(const std::string& exchange, const std::string& type,
                      const std::string& alternateExchange, 
@@ -109,10 +118,10 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 
     class QueueHandlerImpl :
         public Queue010Handler,
-        public HandlerImpl
+        public HandlerHelper
     {
       public:
-        QueueHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
+        QueueHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
         
         void declare(const std::string& queue,
                      const std::string& alternateExchange, 
@@ -127,7 +136,7 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 
     class MessageHandlerImpl :
         public Message010Handler,
-        public HandlerImpl
+        public HandlerHelper
     {
         typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
         RangedOperation releaseOp;
@@ -175,10 +184,10 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     
     };
 
-    class ExecutionHandlerImpl : public Execution010Handler, public HandlerImpl
+    class ExecutionHandlerImpl : public Execution010Handler, public HandlerHelper
     {
     public:
-        ExecutionHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
+        ExecutionHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 
         void sync();            
         void result(uint32_t commandId, const string& value);        
