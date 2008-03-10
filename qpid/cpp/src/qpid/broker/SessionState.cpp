@@ -223,8 +223,13 @@ void SessionState::handle(AMQFrame& frame)
         } else {
             handleContent(frame, commandId);
         }
-    } catch(const ChannelException& e) {
+    } catch(const SessionException& e) {
         //TODO: better implementation of new exception handling mechanism
+
+        //0-10 final changes the types of exceptions, 'model layer'
+        //exceptions will all be session exceptions regardless of
+        //current channel/connection classification
+
         AMQMethodBody* m = frame.getMethod();
         if (m) {
             getProxy().getExecution010().exception(e.code, commandId, m->amqpClassId(), m->amqpMethodId(), 0, e.what(), FieldTable());
