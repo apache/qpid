@@ -58,10 +58,6 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     private VirtualHostRegistry _virtualHostRegistry;
 
-
-    //fixme Why is this not used.
-    private final Map<String, VirtualHost> _virtualHosts = new ConcurrentHashMap<String, VirtualHost>();
-
     private PluginManager _pluginManager;
 
 
@@ -113,7 +109,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _accessManager = ACLManager.loadACLManager("default", _configuration);
 
-        _databaseManager = new ConfigurationFilePrincipalDatabaseManager();
+        _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 

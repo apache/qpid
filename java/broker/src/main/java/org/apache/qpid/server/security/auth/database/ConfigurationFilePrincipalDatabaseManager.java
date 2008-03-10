@@ -50,17 +50,16 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
     Map<String, PrincipalDatabase> _databases;
 
-    public ConfigurationFilePrincipalDatabaseManager() throws Exception
+    public ConfigurationFilePrincipalDatabaseManager(Configuration configuration) throws Exception
     {
         _logger.info("Initialising PrincipleDatabase authentication manager");
-        _databases = initialisePrincipalDatabases();
+        _databases = initialisePrincipalDatabases(configuration);
     }
 
-    private Map<String, PrincipalDatabase> initialisePrincipalDatabases() throws Exception
+    private Map<String, PrincipalDatabase> initialisePrincipalDatabases(Configuration configuration) throws Exception
     {
-        Configuration config = ApplicationRegistry.getInstance().getConfiguration();
-        List<String> databaseNames = config.getList(_base + ".name");
-        List<String> databaseClasses = config.getList(_base + ".class");
+        List<String> databaseNames = configuration.getList(_base + ".name");
+        List<String> databaseClasses = configuration.getList(_base + ".class");
         Map<String, PrincipalDatabase> databases = new HashMap<String, PrincipalDatabase>();
 
         if (databaseNames.size() == 0)
@@ -85,7 +84,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
                 throw new Exception("Principal databases must implement the PrincipalDatabase interface");
             }
 
-            initialisePrincipalDatabase((PrincipalDatabase) o, config, i);
+            initialisePrincipalDatabase((PrincipalDatabase) o, configuration, i);
 
             String name = databaseNames.get(i);
             if ((name == null) || (name.length() == 0))
@@ -200,7 +199,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             }
 
             String jmxaccesssFile = null;
-            
+
             try
             {
                 jmxaccesssFile = PropertyUtils.replaceProperties(jmxaccesslist.get(0));
