@@ -166,7 +166,7 @@ class Channel(Invoker):
   def invoke(self, type, args, kwargs):
     cntrl = type.new(args, kwargs)
     sc = StringCodec(self.connection.spec)
-    sc.write_control(type, cntrl)
+    sc.write_control(cntrl)
     self.connection.write_segment(Segment(True, True, type.segment_type,
                                           type.track, self.id, sc.encoded))
 

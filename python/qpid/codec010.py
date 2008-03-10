@@ -18,7 +18,7 @@
 #
 
 from packer import Packer
-from datatypes import RangedSet
+from datatypes import RangedSet, Struct
 
 class CodecException(Exception): pass
 
@@ -184,27 +184,32 @@ class Codec(Packer):
   def read_struct32(self):
     size = self.read_uint32()
     code = self.read_uint16()
-    struct = self.spec.structs[code]
-    return struct.decode_fields(self)
+    type = self.spec.structs[code]
+    fields = type.decode_fields(self)
+    return Struct(type, **fields)
   def write_struct32(self, value):
     sc = StringCodec(self.spec)
-    sc.write_uint16(value.type.code)
-    value.type.encode_fields(sc, value)
+    sc.write_uint16(value._type.code)
+    value._type.encode_fields(sc, value)
     self.write_vbin32(sc.encoded)
 
   def read_control(self):
     cntrl = self.spec.controls[self.read_uint16()]
     return cntrl.decode(self)
-  def write_control(self, type, ctrl):
+  def write_control(self, ctrl):
+    type = ctrl._type
     self.write_uint16(type.code)
     type.encode(self, ctrl)
 
   def read_command(self):
-    cmd = self.spec.commands[self.read_uint16()]
-    return cmd.decode(self)
-  def write_command(self, type, cmd):
-    self.write_uint16(type.code)
-    type.encode(self, cmd)
+    type = self.spec.commands[self.read_uint16()]
+    hdr = self.spec["session.header"].decode(self)
+    cmd = type.decode(self)
+    return hdr, cmd
+  def write_command(self, hdr, cmd):
+    self.write_uint16(cmd._type.code)
+    hdr._type.encode(self, hdr)
+    cmd._type.encode(self, cmd)
 
   def read_size(self, width):
     if width > 0:

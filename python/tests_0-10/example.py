@@ -60,7 +60,7 @@ class ExampleTest (TestBase010):
         session.exchange_declare("test", "direct")
 
         # Here we use keyword arguments.
-        session.queue_declare(session, queue="test-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="test-queue", exchange="test", binding_key="key")
 
         # Call Session.subscribe to register as a consumer.

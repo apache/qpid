@@ -269,7 +269,7 @@ class QueueTests(TestBase010):
         session = self.conn.session("replacement", 2)
 
         #empty queue:
-        session.message_subscribe(session, destination="consumer_tag", queue="delete-me-2")
+        session.message_subscribe(destination="consumer_tag", queue="delete-me-2")
         session.message_flow(destination="consumer_tag", unit=0, value=0xFFFFFFFF)
         session.message_flow(destination="consumer_tag", unit=1, value=0xFFFFFFFF)
         queue = session.incoming("consumer_tag")

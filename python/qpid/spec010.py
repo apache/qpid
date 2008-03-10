@@ -188,34 +188,18 @@ class Composite(Type, Coded):
     self.pack = pack
 
   def new(self, args, kwargs):
-    if len(args) > len(self.fields):
-      raise TypeError("%s takes at most %s arguments (%s given)" %
-                      (self.name, len(self.fields), len(self.args)))
-
-    result = {"type": self}
-
-    for a, f, in zip(args, self.fields):
-      result[f.name] = a
-
-    for k, v in kwargs.items():
-      f = self.named.get(k)
-      if f == None:
-        raise TypeError("%s got an unexpected keyword argument '%s'" %
-                        (self.name, k))
-      result[f.name] = v
-
-    return datatypes.Struct(result)
+    return datatypes.Struct(self, *args, **kwargs)
 
   def decode(self, codec):
     codec.read_size(self.size)
-    return self.decode_fields(codec)
+    return datatypes.Struct(self, **self.decode_fields(codec))
 
   def decode_fields(self, codec):
     flags = 0
     for i in range(self.pack):
       flags |= (codec.read_uint8() << 8*i)
 
-    result = {"type": self}
+    result = {}
 
     for i in range(len(self.fields)):
       f = self.fields[i]
@@ -223,7 +207,7 @@ class Composite(Type, Coded):
         result[f.name] = f.type.decode(codec)
       else:
         result[f.name] = None
-    return datatypes.Struct(result)
+    return result
 
   def encode(self, codec, value):
     sc = StringCodec(self.spec)
@@ -231,12 +215,11 @@ class Composite(Type, Coded):
     codec.write_size(self.size, len(sc.encoded))
     codec.write(sc.encoded)
 
-  def encode_fields(self, codec, value):
-    values = value.__dict__
+  def encode_fields(self, codec, values):
     flags = 0
     for i in range(len(self.fields)):
       f = self.fields[i]
-      if f.type.is_present(values.get(f.name)):
+      if f.type.is_present(values[f.name]):
         flags |= (0x1 << i)
     for i in range(self.pack):
       codec.write_uint8((flags >> 8*i) & 0xFF)
@@ -252,6 +235,9 @@ class Field(Named, Node, Lookup):
     Node.__init__(self, children)
     self.type = type
     self.exceptions = []
+
+  def default(self):
+    return None
 
   def register(self, node):
     Named.register(self, node)
@@ -328,22 +314,9 @@ class Command(Instruction):
   def register(self, node):
     Instruction.register(self, node)
     node.commands.append(self)
-    self.header = self.spec["session.header"]
     self.spec.commands[self.code] = self
     self.segment_type = self.spec["segment_type.command"].value
     self.track = self.spec["track.command"].value
-
-  def decode(self, codec):
-    hdr = self.header.decode(codec)
-    args = Instruction.decode(self, codec)
-    result = {}
-    result.update(hdr.fields())
-    result.update(args.fields())
-    return datatypes.Struct(result)
-
-  def encode(self, codec, cmd):
-    self.header.encode(codec, cmd)
-    Instruction.encode(self, codec, cmd)
 
 class Header(Segment, Node):
 
