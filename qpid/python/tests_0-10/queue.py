@@ -99,7 +99,7 @@ class QueueTests(TestBase010):
             c2.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
             self.fail("Expected second exclusive queue_declare to raise a channel exception")
         except Closed, e:
-            self.assertChannelException(405, e.args[0])
+            self.assertEquals(405, e.args[0].error_code)
 
 
     def test_declare_passive(self):
@@ -114,8 +114,8 @@ class QueueTests(TestBase010):
             #other connection should not be allowed to declare this:
             session.queue_declare(queue="passive-queue-2", passive=True)
             self.fail("Expected passive declaration of non-existant queue to raise a channel exception")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code) #not-found
 
 
     def test_bind(self):
@@ -136,7 +136,7 @@ class QueueTests(TestBase010):
             session.queue_bind(queue="queue-1", exchange="an-invalid-exchange", routing_key="key1")
             self.fail("Expected bind to non-existant exchange to fail")
         except Closed, e:
-            self.assertChannelException(404, e.args[0])
+            self.assertEquals(404, e.args[0].error_code)
 
         #need to reopen a session:    
         session = self.client.session(2)
@@ -147,7 +147,7 @@ class QueueTests(TestBase010):
             session.queue_bind(queue="queue-2", exchange="amq.direct", routing_key="key1")
             self.fail("Expected bind of non-existant queue to fail")
         except Closed, e:
-            self.assertChannelException(404, e.args[0])
+            self.assertEquals(404, e.args[0].error_code)
 
     def test_unbind_direct(self):
         self.unbind_test(exchange="amq.direct", routing_key="key")
@@ -222,25 +222,28 @@ class QueueTests(TestBase010):
 
         #straight-forward case:
         session.queue_declare(queue="delete-me")
-        session.message_transfer(message=Message("a", session.delivery_properties(routing_key="delete-me")))
-        session.message_transfer(message=Message("b", session.delivery_properties(routing_key="delete-me")))
-        session.message_transfer(message=Message("c", session.delivery_properties(routing_key="delete-me")))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me"), "a"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me"), "b"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me"), "c"))
         session.queue_delete(queue="delete-me")
         #check that it has gone be declaring passively
         try:
             session.queue_declare(queue="delete-me", passive=True)
             self.fail("Queue has not been deleted")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
+    def test_delete_queue_exists(self):
+        """
+        Test core queue deletion behaviour
+        """
         #check attempted deletion of non-existant queue is handled correctly:    
-        session = self.client.session(2)
-        session.session_open()
+        session = self.session
         try:
             session.queue_delete(queue="i-dont-exist", if_empty=True)
             self.fail("Expected delete of non-existant queue to fail")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
         
 
@@ -253,21 +256,22 @@ class QueueTests(TestBase010):
         #create a queue and add a message to it (use default binding):
         session.queue_declare(queue="delete-me-2")
         session.queue_declare(queue="delete-me-2", passive=True)
-        session.message_transfer(message=Message("message", session.delivery_properties(routing_key="delete-me-2")))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me-2"), "message"))
 
         #try to delete, but only if empty:
         try:
             session.queue_delete(queue="delete-me-2", if_empty=True)
             self.fail("Expected delete if_empty to fail for non-empty queue")
-        except Closed, e:
-            self.assertChannelException(406, e.args[0])
+        except SessionException, e:
+            self.assertEquals(406, e.args[0].error_code)
 
-        #need new channel now:    
-        session = self.client.session(2)
-        session.session_open()
+        #need new session now:    
+        session = self.conn.session("replacement", 2)
 
         #empty queue:
-        self.subscribe(session, destination="consumer_tag", queue="delete-me-2")
+        session.message_subscribe(session, destination="consumer_tag", queue="delete-me-2")
+        session.message_flow(destination="consumer_tag", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="consumer_tag", unit=1, value=0xFFFFFFFF)
         queue = session.incoming("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.body)
@@ -280,30 +284,29 @@ class QueueTests(TestBase010):
         try:
             session.queue_declare(queue="delete-me-2", passive=True)
             self.fail("Queue has not been deleted")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
         
     def test_delete_ifunused(self):
         """
         Test that if_unused field of queue_delete is honoured
         """
-        session = self.channel
+        session = self.session
 
         #create a queue and register a consumer:
         session.queue_declare(queue="delete-me-3")
         session.queue_declare(queue="delete-me-3", passive=True)
-        self.subscribe(destination="consumer_tag", queue="delete-me-3")
+        session.message_subscribe(destination="consumer_tag", queue="delete-me-3")
 
         #need new session now:    
-        session2 = self.client.session(2)
-        session2.session_open()
+        session2 = self.conn.session("replacement", 2)
+
         #try to delete, but only if empty:
         try:
             session2.queue_delete(queue="delete-me-3", if_unused=True)
             self.fail("Expected delete if_unused to fail for queue with existing consumer")
-        except Closed, e:
-            self.assertChannelException(406, e.args[0])
-
+        except SessionException, e:
+            self.assertEquals(406, e.args[0].error_code)
 
         session.message_cancel(destination="consumer_tag")    
         session.queue_delete(queue="delete-me-3", if_unused=True)
@@ -311,8 +314,8 @@ class QueueTests(TestBase010):
         try:
             session.queue_declare(queue="delete-me-3", passive=True)
             self.fail("Queue has not been deleted")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
 
     def test_autodelete_shared(self):
@@ -345,7 +348,7 @@ class QueueTests(TestBase010):
         try:
             session.queue_declare(queue="auto-delete-me", passive=True)
             self.fail("Expected queue to have been deleted")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
 
