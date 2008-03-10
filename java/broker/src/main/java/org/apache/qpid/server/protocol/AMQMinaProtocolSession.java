@@ -348,7 +348,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                     _logger.info("Closing connection due to: " + e.getMessage());
                 }
 
-                markChannelawaitingCloseOk(channelId);
+                markChannelAwaitingCloseOk(channelId);
                 closeSession();
                 _stateManager.changeState(AMQState.CONNECTION_CLOSING);
                 writeFrame(e.getCloseFrame(channelId));
@@ -537,7 +537,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             try
             {
                 channel.close(this);
-                markChannelawaitingCloseOk(channelId);
+                markChannelAwaitingCloseOk(channelId);
             }
             finally
             {
@@ -552,7 +552,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         _closingChannelsList.remove(new Integer(channelId));
     }
 
-    private void markChannelawaitingCloseOk(int channelId)
+    private void markChannelAwaitingCloseOk(int channelId)
     {
         _closingChannelsList.add(channelId);
     }

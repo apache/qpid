@@ -2377,7 +2377,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @todo Verify the destiation is valid or throw an exception.
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    public AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    private AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
@@ -2445,7 +2445,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return ++_nextProducerId;
     }
 
-    public AMQProtocolHandler getProtocolHandler()
+    private AMQProtocolHandler getProtocolHandler()
     {
         return _connection.getProtocolHandler();
     }

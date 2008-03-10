@@ -24,36 +24,36 @@ import junit.framework.TestCase;
 public class AMQShortStringTest extends TestCase
 {
 
-    AMQShortString Hello = new AMQShortString("Hello");
-    AMQShortString Hell = new AMQShortString("Hell");
-    AMQShortString Goodbye = new AMQShortString("Goodbye");
-    AMQShortString Good = new AMQShortString("Good");
-    AMQShortString Bye = new AMQShortString("Bye");
+    public static final AMQShortString HELLO = new AMQShortString("Hello");
+    public static final AMQShortString HELL = new AMQShortString("Hell");
+    public static final AMQShortString GOODBYE = new AMQShortString("Goodbye");
+    public static final AMQShortString GOOD = new AMQShortString("Good");
+    public static final AMQShortString BYE = new AMQShortString("BYE");
 
     public void testStartsWith()
     {
-        assertTrue(Hello.startsWith(Hell));
+        assertTrue(HELLO.startsWith(HELL));
 
-        assertFalse(Hell.startsWith(Hello));
+        assertFalse(HELL.startsWith(HELLO));
 
-        assertTrue(Goodbye.startsWith(Good));
+        assertTrue(GOODBYE.startsWith(GOOD));
 
-        assertFalse(Good.startsWith(Goodbye));
+        assertFalse(GOOD.startsWith(GOODBYE));
     }
 
     public void testEndWith()
     {
-        assertFalse(Hell.endsWith(Hello));
+        assertFalse(HELL.endsWith(HELLO));
 
-        assertTrue(Goodbye.endsWith(new AMQShortString("bye")));
+        assertTrue(GOODBYE.endsWith(new AMQShortString("bye")));
 
-        assertFalse(Goodbye.endsWith(Bye));
+        assertFalse(GOODBYE.endsWith(BYE));
     }
 
 
     public void testEquals()
     {
-        assertEquals(Goodbye, new AMQShortString("Goodbye"));
+        assertEquals(GOODBYE, new AMQShortString("Goodbye"));
         assertEquals(new AMQShortString("A"), new AMQShortString("A"));
         assertFalse(new AMQShortString("A").equals(new AMQShortString("a")));
     }

@@ -33,19 +33,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PrincipalPermissions
 {
 
-    private static final int CONSUME_QUEUES_KEY = 0;
-    private static final int CONSUME_TEMPORARY_KEY = 1;
-    private static final int CONSUME_OWN_QUEUES_ONLY_KEY = 2;
+    private static final Object CONSUME_QUEUES_KEY = new Object();
+    private static final Object CONSUME_TEMPORARY_KEY = new Object();
+    private static final Object CONSUME_OWN_QUEUES_ONLY_KEY = new Object();
 
-    private static final int CREATE_QUEUES_KEY = 0;
-    private static final int CREATE_EXCHANGES_KEY = 1;
+    private static final Object CREATE_QUEUES_KEY = new Object();
+    private static final Object CREATE_EXCHANGES_KEY = new Object();
 
-    private static final int CREATE_QUEUE_TEMPORARY_KEY = 2;
-    private static final int CREATE_QUEUE_QUEUES_KEY = 1;
-    private static final int CREATE_QUEUE_EXCHANGES_KEY = 0;
+    private static final Object CREATE_QUEUE_TEMPORARY_KEY = new Object();
+    private static final Object CREATE_QUEUE_QUEUES_KEY = new Object();
+    private static final Object CREATE_QUEUE_EXCHANGES_KEY = new Object();
 
-    private static final int CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY = 0;
-    private static final int CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY = 1;
+    private static final Object CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY = new Object();
+    private static final Object CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY = new Object();
 
     private static final int PUBLISH_EXCHANGES_KEY = 0;
 
@@ -316,15 +316,7 @@ public class PrincipalPermissions
                 // The existence of this user specific PP can be validated in the map SimpleXML maintains.
             case BIND: // Parameters : QueueBindMethod , Exchange , AMQQueue, AMQShortString routingKey
 
-//                QueueDeclareBody body = (QueueDeclareBody) parameters[0];
-
                 Exchange exchange = (Exchange) parameters[1];
-
-                if (exchange.getName().equals("<<default>>"))
-                {
-                    // Binding to <<default>> can not be programmed via ACLs due to '<','>' unable to be used in the XML
-                    System.err.println("Binding on exchange <<default>> not alowed via ACLs");
-                }
 
                 AMQQueue bind_queueName = (AMQQueue) parameters[2];
                 AMQShortString routingKey = (AMQShortString) parameters[3];

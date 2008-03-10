@@ -209,8 +209,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
         catch (RuntimeException e)
         {
-            _logger.warn(e.getMessage());
-            e.printStackTrace();
+            _logger.error(e.getMessage(), e);
         }
 
         if (Boolean.getBoolean("protectio"))

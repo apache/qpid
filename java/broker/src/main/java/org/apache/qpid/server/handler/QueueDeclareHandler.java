@@ -55,7 +55,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return _instance;
     }
 
-    @Configured(path = "queue.auto_register", defaultValue = "false")
+    @Configured(path = "queue.auto_register", defaultValue = "true")
     public boolean autoRegister;
 
     private final AtomicInteger _counter = new AtomicInteger();
@@ -74,9 +74,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore store = virtualHost.getMessageStore();
 
-        // Perform ACL on queue Creation
-        virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
 
+        if (!body.getPassive())
+        {
+            //Perform ACL if request is not passive
+            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+        }
 
 
         final AMQShortString queueName;
@@ -119,10 +122,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     if (autoRegister)
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
-
-                        // Perform ACL to control bindings
-                        virtualHost.getAccessManager().authorise(session, Permission.BIND, body,
-                                                                 defaultExchange, queue, queueName);
 
                         queue.bind(queueName, null, defaultExchange);
                         _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");

@@ -45,10 +45,15 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         final String QpidExampleHome = System.getProperty("QPID_EXAMPLE_HOME");
         final File defaultaclConfigFile = new File(QpidExampleHome, "etc/acl.config.xml");
 
-        if (!defaultaclConfigFile.exists() || System.getProperty("QPID_HOME") == null)
+        if (!defaultaclConfigFile.exists())
         {
             System.err.println("Configuration file not found:" + defaultaclConfigFile);
             fail("Configuration file not found:" + defaultaclConfigFile);
+        }
+
+        if (System.getProperty("QPID_HOME") == null)
+        {
+            fail("QPID_HOME not set");
         }
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
@@ -175,9 +180,9 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             conn.start();
 
-            //Create Temporary Queue
-            ((AMQSession) sesh).declareQueue((AMQDestination) sesh.createTemporaryQueue(),
-                                             ((AMQSession) sesh).getProtocolHandler());
+            //Create Temporary Queue  - can't use the createTempQueue as QueueName is null.
+            ((AMQSession) sesh).createQueue(new AMQShortString("doesnt_matter_as_autodelete_means_tmp"),
+                                            true, false, false);
 
             conn.close();
         }
@@ -198,8 +203,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             conn.start();
 
             //Create a Named Queue
-            ((AMQSession) sesh).declareQueue((AMQDestination) sesh.createQueue("IllegalQueue"),
-                                             ((AMQSession) sesh).getProtocolHandler());
+            ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
             fail("Test failed as Queue creation succeded.");
         }
@@ -391,8 +395,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             conn.start();
 
             //Create Temporary Queue
-            ((AMQSession) sesh).declareQueue((AMQDestination) sesh.createQueue("example.RequestQueue"),
-                                             ((AMQSession) sesh).getProtocolHandler());
+            ((AMQSession) sesh).createQueue(new AMQShortString("example.RequestQueue"), false, false, false);
 
             conn.close();
         }
@@ -402,7 +405,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateNamedQueueInValid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateNamedQueueInvalid() throws JMSException, URLSyntaxException, AMQException
     {
         try
         {
@@ -413,8 +416,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             conn.start();
 
             //Create a Named Queue
-            ((AMQSession) sesh).declareQueue((AMQDestination) sesh.createQueue("IllegalQueue"),
-                                             ((AMQSession) sesh).getProtocolHandler());
+            ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
             fail("Test failed as creation succeded.");
         }
@@ -434,8 +436,8 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             conn.start();
 
-            ((AMQSession) sesh).declareQueue((AMQDestination) sesh.createTemporaryQueue(),
-                                             ((AMQSession) sesh).getProtocolHandler());
+            ((AMQSession) sesh).createQueue(new AMQShortString("again_ensure_auto_delete_queue_for_temporary"),
+                                            true, false, false);
 
             fail("Test failed as creation succeded.");
         }

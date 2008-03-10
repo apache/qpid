@@ -59,8 +59,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
 
-        //Perform ACL
-        virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+        if (!body.getPassive())
+        {
+            //Perform ACL if request is not passive
+            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+        }
 
         if (_logger.isDebugEnabled())
         {

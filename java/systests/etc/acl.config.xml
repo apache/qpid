@@ -219,10 +219,6 @@
         <timeoutFactor>2.0</timeoutFactor>
     </heartbeat>
 
-    <queue>
-        <auto_register>false</auto_register>
-    </queue>
-
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
 

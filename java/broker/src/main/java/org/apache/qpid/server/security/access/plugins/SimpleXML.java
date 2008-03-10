@@ -46,9 +46,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SimpleXML implements ACLPlugin
 {
-    private static final Logger _logger = ACLManager.getLogger();
-
     private Map<String, PrincipalPermissions> _users;
+    private final AccessResult GRANTED = new AccessResult(this, AccessResult.AccessStatus.GRANTED);
 
     public SimpleXML()
     {
@@ -57,8 +56,6 @@ public class SimpleXML implements ACLPlugin
 
     public void setConfiguaration(Configuration config)
     {
-        _logger.info("SimpleXML Configuration");
-
         processConfig(config);
     }
 
@@ -87,7 +84,6 @@ public class SimpleXML implements ACLPlugin
         for (String user : users)
         {
             grant(Permission.PUBLISH, user);
-            _logger.info("PUBLISH:GRANTED:USER:" + user + " for all destinations");
         }
 
         // Process exchange limited users
@@ -113,7 +109,6 @@ public class SimpleXML implements ACLPlugin
                 for (String user : users)
                 {
                     grant(Permission.PUBLISH, user, exchangeName, routingKeyValue);
-                    _logger.info("PUBLISH:GRANTED:USER:" + user + " on Exchange '" + exchangeName + "' for key '" + routingKeyValue + "'");
                 }
 
                 //Apply permissions to Groups
@@ -129,7 +124,6 @@ public class SimpleXML implements ACLPlugin
             for (String user : users)
             {
                 grant(Permission.PUBLISH, user, exchangeName);
-                _logger.info("PUBLISH:GRANTED:USER:" + user + " on Exchange:" + exchangeName);
             }
 
             //Apply permissions to Groups
@@ -172,21 +166,6 @@ public class SimpleXML implements ACLPlugin
             for (String user : users)
             {
                 grant(Permission.CONSUME, user, queueName, temporary, ownQueues);
-                if (temporary)
-                {
-                    if (ownQueues)
-                    {
-                        _logger.info("CONSUME:GRANTED:USER:" + user + " on temporary queues owned by user.");
-                    }
-                    else
-                    {
-                        _logger.info("CONSUME:GRANTED:USER:" + user + " on all temporary queues.");
-                    }
-                }
-                else
-                {
-                    _logger.info("CONSUME:GRANTED:USER:" + user + " on queue '" + queueName + "'");
-                }
             }
 
             //See if we have another config
@@ -200,7 +179,6 @@ public class SimpleXML implements ACLPlugin
         for (String user : users)
         {
             grant(Permission.CONSUME, user);
-            _logger.info("CONSUME:GRANTED:USER:" + user + " from all queues.");
         }
     }
 
@@ -237,12 +215,6 @@ public class SimpleXML implements ACLPlugin
                           (queueName.equals("") ? null : queueName),
                           (exchange.equals("") ? null : exchange),
                           (routingKey.equals("") ? null : routingKey));
-                    
-                    _logger.info("CREATE :GRANTED:USER:" + user + " for "
-                            + (queueName.equals("") ? "" : "queue '" + queueName + "' ")
-                            + (exchange.equals("") ? "" : "exchange '" + exchange + "' ")
-                            + (routingKey.equals("") ? "" : " rk '" + routingKey + "' ")
-                            + (temporary ? " temporary:" + temporary : ""));
                 }
 
                 //See if we have another config
@@ -256,14 +228,6 @@ public class SimpleXML implements ACLPlugin
             for (String user : users)
             {
                 grant(Permission.CREATE, user, temporary, queueName);
-                if (temporary)
-                {
-                    _logger.info("CREATE :GRANTED:USER:" + user + " from temporary queues on any exchange.");
-                }
-                else
-                {
-                    _logger.info("CREATE :GRANTED:USER:" + user + " from queue '" + queueName + "' on any exchange.");
-                }
             }
 
             //See if we have another config
@@ -285,7 +249,6 @@ public class SimpleXML implements ACLPlugin
             for (String user : users)
             {
                 grant(Permission.CREATE, user, exchange, clazz);
-                _logger.info("CREATE:GRANTED:USER:" + user + " for exchange '" + exchange + ":class:'" + clazz);
             }
 
             //See if we have another config
@@ -299,7 +262,6 @@ public class SimpleXML implements ACLPlugin
         for (String user : users)
         {
             grant(Permission.CREATE, user);
-            _logger.info("CREATE:GRANTED:USER:" + user + " from all queues & exchanges.");
         }
 
 
@@ -326,15 +288,12 @@ public class SimpleXML implements ACLPlugin
         //Get the Users Permissions
         PrincipalPermissions permissions = _users.get(username);
 
-        _logger.warn("Processing :" + permission + " for:" + username + ":" + permissions+":"+parameters.length);
-
         if (permissions != null)
         {
             switch (permission)
             {
                 case ACCESS:
-                    _logger.warn("GRANTED:"+permission);
-                    return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                    return GRANTED;
                 case BIND:  // Body QueueDeclareBody - Parameters : Exchange, Queue, QueueName
                     // Body QueueBindBody - Paramters : Exchange, Queue, QueueName
                     if (parameters.length == 3)
@@ -342,23 +301,20 @@ public class SimpleXML implements ACLPlugin
                         // Parameters : Exchange, Queue, RoutingKey
                         if (permissions.authorise(Permission.BIND, body, parameters[0], parameters[1], parameters[2]))
                         {
-                            _logger.warn("GRANTED:"+permission);
-                            return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                            return GRANTED;
                         }
                     }
                     break;
                 case CONSUME: // Parameters : none
                     if (parameters.length == 1 && permissions.authorise(Permission.CONSUME, parameters[0]))
                     {
-                        _logger.warn("GRANTED:"+permission);
-                        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                        return GRANTED;
                     }
                     break;
                 case CREATE: // Body : QueueDeclareBody | ExchangeDeclareBody - Parameters : none
                     if (permissions.authorise(Permission.CREATE, body))
                     {
-                        _logger.warn("GRANTED:"+permission);
-                        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                        return GRANTED;
                     }
                     break;
                 case PUBLISH: // Body : BasicPublishBody  Parameters : exchange
@@ -367,8 +323,7 @@ public class SimpleXML implements ACLPlugin
                         if (permissions.authorise(Permission.PUBLISH, ((Exchange) parameters[0]).getName(),
                                                   ((BasicPublishBody) body).getRoutingKey()))
                         {
-                            _logger.warn("GRANTED:"+permission);
-                            return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                            return GRANTED;
                         }
                     }
                     break;
@@ -381,51 +336,7 @@ public class SimpleXML implements ACLPlugin
             }
         }
 
-        _logger.warn("Access Denied for :" + permission + " for:" + username + ":" + permissions);
         //todo potential refactor this ConnectionException Out of here
         throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, error);
     }
-
-//todo use or lose
-//        if (accessObject instanceof VirtualHost)
-//        {
-//            VirtualHostAccess[] hosts = lookupVirtualHost(user.getName());
-//
-//            if (hosts != null)
-//            {
-//                for (VirtualHostAccess host : hosts)
-//                {
-//                    if (accessObject.getAccessableName().equals(host.getVirtualHost()))
-//                    {
-//                        if (host.getAccessRights().allows(rights))
-//                        {
-//                            return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
-//                        }
-//                        else
-//                        {
-//                            return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        else if (accessObject instanceof AMQQueue)
-//        {
-//            String[] queues = lookupQueue(username, ((AMQQueue) accessObject).getVirtualHost());
-//
-//            if (queues != null)
-//            {
-//                for (String queue : queues)
-//                {
-//                    if (accessObject.getAccessableName().equals(queue))
-//                    {
-//                        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
-//                    }
-//                }
-//            }
-//        }
-
-//        return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
-//    }
-
 }

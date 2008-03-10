@@ -325,7 +325,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         for (int i = 0; i < otherString.length(); i++)
         {
-            if (_data[i] != otherString._data[i])
+            if (charAt(i) != otherString.charAt(i))
             {
                 return false;
             }
@@ -646,7 +646,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
 
 
-        return new AMQShortString(data,0,size);  
+        return new AMQShortString(data,0,size);
     }
 
     public int toIntValue()
