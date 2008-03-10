@@ -24,6 +24,7 @@ package org.apache.qpid.server.security.acl;
 import junit.framework.TestCase;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.*;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.AMQException;
