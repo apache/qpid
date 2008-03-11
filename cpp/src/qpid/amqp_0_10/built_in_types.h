@@ -42,16 +42,16 @@ typedef void Void;
 typedef bool Bit;
 typedef bool Boolean;
 typedef char Char;
+typedef int8_t Int8;
 typedef int16_t Int16;
 typedef int32_t Int32;
 typedef int64_t Int64;
-typedef int8_t Int8;
+typedef uint8_t Bin8;
+typedef uint8_t Uint8;
 typedef uint16_t Uint16;
 typedef uint32_t CharUtf32 ;
 typedef uint32_t Uint32;
 typedef uint64_t Uint64;
-typedef uint8_t Bin8;
-typedef uint8_t Uint8;
 
 template <size_t N> struct Bin : public boost::array<char, N> {
     template <class S> void serialize(S& s) { s.raw(this->begin(), this->size()); }
@@ -81,8 +81,18 @@ typedef Decimal<Uint8, Int64> Dec64;
 template <class T, class SizeType>
 struct SerializableString : public std::basic_string<T> {
     using std::basic_string<T>::operator=;
-    template <class S> void serialize(S& s) {
+
+    template <class S> void serialize(S& s) { s.split(*this); }
+
+    template <class S> void encode(S& s) const {
         s(SizeType(this->size()))(this->begin(), this->end());
+    }
+
+    template <class S> void decode(S& s) {
+        SizeType newSize;
+        s(newSize);
+        this->resize(newSize);
+        s(this->begin(), this->end());
     }
 };
 
@@ -114,21 +124,29 @@ struct Map  { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
 struct Struct32  { template <class S> void serialize(S&) {} };
 
-// Serializable enum support
-template <class E, class Store> struct Enum {
-    Store value;
-    Enum() {}
-    Enum(E v) : value(v) {}
-    Enum(Store v) : value(v) {}
-    Enum& operator=(E v) { value=v; return *this; }
-    Enum& operator=(Store v) { value=v; return *this; }
-    operator E() const { return value; }
-    operator Store() const { return value; }
-    template <class S> void serialize(S& s) { s(value); }
+// FIXME aconway 2008-03-10: dummy ostream operators
+template <class T> std::ostream& operator<<(std::ostream& o, const Array<T>&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const ByteRanges&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const Map&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const Struct32&) { return o; }
+
+/** Serialization helper for enums */
+template <class Enum, class Int=uint8_t>
+struct SerializableEnum {
+    Enum& value;
+    SerializableEnum(Enum & e) : value(e) {}
+    template <class S> void serialize(S& s) { s.split(*this); }
+    template <class S> void encode(S& s) const { s(Int(value)); }
+    template <class S> void decode(S& s) { Int i; s(i); value=Enum(i); }
 };
 
-enum SegmentTypeEnum { CONTROL, COMMAND, HEADER, BODY };
-typedef Enum<SegmentTypeEnum, uint8_t> SegmentType;
+enum SegmentType { CONTROL, COMMAND, HEADER, BODY };
+
+inline SerializableEnum<SegmentType> serializable(SegmentType& st) {
+    return SerializableEnum<SegmentType>(st);
+}
 
 }} // namespace qpid::amqp_0_10
 

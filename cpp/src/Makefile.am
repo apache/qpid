@@ -109,6 +109,10 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/Holder.h \
   qpid/amqp_0_10/Codec.h \
   qpid/amqp_0_10/Decimal.h \
+  qpid/amqp_0_10/Segment.h \
+  qpid/amqp_0_10/Segment.cpp \
+  qpid/amqp_0_10/Assembly.h \
+  qpid/amqp_0_10/Assembly.cpp \
   qpid/Serializer.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
