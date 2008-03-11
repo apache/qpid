@@ -72,7 +72,7 @@ std::string HeadersExchange::getMatch(const FieldTable* args)
     return what->get<std::string>();
 }
 
-bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
+bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args){
     RWlock::ScopedWlock locker(lock);
     std::string what = getMatch(args);
     if (what != all && what != any)
@@ -85,7 +85,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/
             break;
 
     if (i == bindings.end()) {
-        Binding::shared_ptr binding (new Binding ("", queue, this));
+        Binding::shared_ptr binding (new Binding (bindingKey, queue, this));
         HeaderMap headerMap(*args, binding);
 
         bindings.push_back(headerMap);
@@ -98,12 +98,18 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/
     }
 }
 
-bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args){
     RWlock::ScopedWlock locker(lock);
     Bindings::iterator i;
-    for (i = bindings.begin(); i != bindings.end(); i++)
-        if (i->first == *args && i->second->queue == queue)
-            break;
+    for (i = bindings.begin(); i != bindings.end(); i++) {
+        if (args) {
+            if (i->first == *args && i->second->queue == queue)
+                break;
+        } else {
+            if (i->second->key == bindingKey && i->second->queue == queue)
+                break;
+        }
+    }
 
     if (i != bindings.end()) {
         bindings.erase(i);

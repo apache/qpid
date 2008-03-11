@@ -126,27 +126,26 @@ class QueueTests(TestBase010):
         session.queue_declare(queue="queue-1", exclusive=True, auto_delete=True)
 
         #straightforward case, both exchange & queue exist so no errors expected:
-        session.queue_bind(queue="queue-1", exchange="amq.direct", routing_key="key1")
+        session.exchange_bind(queue="queue-1", exchange="amq.direct", binding_key="key1")
 
         #use the queue name where the routing key is not specified:
         session.exchange_bind(queue="queue-1", exchange="amq.direct")
 
         #try and bind to non-existant exchange
         try:
-            session.queue_bind(queue="queue-1", exchange="an-invalid-exchange", routing_key="key1")
+            session.exchange_bind(queue="queue-1", exchange="an-invalid-exchange", binding_key="key1")
             self.fail("Expected bind to non-existant exchange to fail")
-        except Closed, e:
+        except SessionException, e:
             self.assertEquals(404, e.args[0].error_code)
 
-        #need to reopen a session:    
-        session = self.client.session(2)
-        session.session_open()
 
+    def test_bind_queue_existence(self):
+        session = self.session
         #try and bind non-existant queue:
         try:
-            session.queue_bind(queue="queue-2", exchange="amq.direct", routing_key="key1")
+            session.exchange_bind(queue="queue-2", exchange="amq.direct", binding_key="key1")
             self.fail("Expected bind of non-existant queue to fail")
-        except Closed, e:
+        except SessionException, e:
             self.assertEquals(404, e.args[0].error_code)
 
     def test_unbind_direct(self):
