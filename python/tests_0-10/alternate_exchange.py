@@ -16,12 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-from qpid.client import Client, Closed
+import traceback
 from qpid.queue import Empty
-from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.datatypes import Message
+from qpid.testlib import TestBase010
+from qpid.session import SessionException
 
-class AlternateExchangeTests(TestBase):
+class AlternateExchangeTests(TestBase010):
     """
     Tests for the new mechanism for message returns introduced in 0-10
     and available in 0-9 for preview
@@ -31,36 +32,42 @@ class AlternateExchangeTests(TestBase):
         """
         Test that unroutable messages are delivered to the alternate-exchange if specified
         """
-        channel = self.channel
+        session = self.session
         #create an exchange with an alternate defined
-        channel.exchange_declare(exchange="secondary", type="fanout")
-        channel.exchange_declare(exchange="primary", type="direct", alternate_exchange="secondary")
+        session.exchange_declare(exchange="secondary", type="fanout")
+        session.exchange_declare(exchange="primary", type="direct", alternate_exchange="secondary")
 
         #declare, bind (to the alternate exchange) and consume from a queue for 'returned' messages
-        channel.queue_declare(queue="returns", exclusive=True, auto_delete=True)
-        channel.queue_bind(queue="returns", exchange="secondary")
-        self.subscribe(destination="a", queue="returns")
-        returned = self.client.queue("a")
+        session.queue_declare(queue="returns", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="returns", exchange="secondary")
+        session.message_subscribe(destination="a", queue="returns")
+        session.message_flow(destination="a", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="a", unit=1, value=0xFFFFFFFF)
+        returned = session.incoming("a")
 
         #declare, bind (to the primary exchange) and consume from a queue for 'processed' messages
-        channel.queue_declare(queue="processed", exclusive=True, auto_delete=True)
-        channel.queue_bind(queue="processed", exchange="primary", routing_key="my-key")
-        self.subscribe(destination="b", queue="processed")
-        processed = self.client.queue("b")
+        session.queue_declare(queue="processed", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="processed", exchange="primary", binding_key="my-key")
+        session.message_subscribe(destination="b", queue="processed")
+        session.message_flow(destination="b", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="b", unit=1, value=0xFFFFFFFF)
+        processed = session.incoming("b")
 
         #publish to the primary exchange
         #...one message that makes it to the 'processed' queue:
-        channel.message_transfer(destination="primary", content=Content("Good", properties={'routing_key':"my-key"}))
+        dp=self.session.delivery_properties(routing_key="my-key")
+        session.message_transfer(destination="primary", message=Message(dp, "Good"))
         #...and one that does not:
-        channel.message_transfer(destination="primary", content=Content("Bad", properties={'routing_key':"unused-key"}))
+        dp=self.session.delivery_properties(routing_key="unused-key")
+        session.message_transfer(destination="primary", message=Message(dp, "Bad"))
 
         #delete the exchanges
-        channel.exchange_delete(exchange="primary")
-        channel.exchange_delete(exchange="secondary")
+        session.exchange_delete(exchange="primary")
+        session.exchange_delete(exchange="secondary")
 
         #verify behaviour
-        self.assertEqual("Good", processed.get(timeout=1).content.body)
-        self.assertEqual("Bad", returned.get(timeout=1).content.body)
+        self.assertEqual("Good", processed.get(timeout=1).body)
+        self.assertEqual("Bad", returned.get(timeout=1).body)
         self.assertEmpty(processed)
         self.assertEmpty(returned)
 
@@ -68,29 +75,32 @@ class AlternateExchangeTests(TestBase):
         """
         Test that messages in a queue being deleted are delivered to the alternate-exchange if specified
         """
-        channel = self.channel
+        session = self.session
         #set up a 'dead letter queue':
-        channel.exchange_declare(exchange="dlq", type="fanout")
-        channel.queue_declare(queue="deleted", exclusive=True, auto_delete=True)
-        channel.queue_bind(exchange="dlq", queue="deleted")
-        self.subscribe(destination="dlq", queue="deleted")
-        dlq = self.client.queue("dlq")
+        session.exchange_declare(exchange="dlq", type="fanout")
+        session.queue_declare(queue="deleted", exclusive=True, auto_delete=True)
+        session.exchange_bind(exchange="dlq", queue="deleted")
+        session.message_subscribe(destination="dlq", queue="deleted")
+        session.message_flow(destination="dlq", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="dlq", unit=1, value=0xFFFFFFFF)
+        dlq = session.incoming("dlq")
 
         #create a queue using the dlq as its alternate exchange:
-        channel.queue_declare(queue="delete-me", alternate_exchange="dlq")
+        session.queue_declare(queue="delete-me", alternate_exchange="dlq")
         #send it some messages:
-        channel.message_transfer(content=Content("One", properties={'routing_key':"delete-me"}))
-        channel.message_transfer(content=Content("Two", properties={'routing_key':"delete-me"}))
-        channel.message_transfer(content=Content("Three", properties={'routing_key':"delete-me"}))
+        dp=self.session.delivery_properties(routing_key="delete-me")
+        session.message_transfer(message=Message(dp, "One"))
+        session.message_transfer(message=Message(dp, "Two"))
+        session.message_transfer(message=Message(dp, "Three"))
         #delete it:
-        channel.queue_delete(queue="delete-me")
+        session.queue_delete(queue="delete-me")
         #delete the dlq exchange:
-        channel.exchange_delete(exchange="dlq")
+        session.exchange_delete(exchange="dlq")
 
         #check the messages were delivered to the dlq:
-        self.assertEqual("One", dlq.get(timeout=1).content.body)
-        self.assertEqual("Two", dlq.get(timeout=1).content.body)
-        self.assertEqual("Three", dlq.get(timeout=1).content.body)
+        self.assertEqual("One", dlq.get(timeout=1).body)
+        self.assertEqual("Two", dlq.get(timeout=1).body)
+        self.assertEqual("Three", dlq.get(timeout=1).body)
         self.assertEmpty(dlq)
 
     def test_delete_while_used_by_queue(self):
@@ -98,23 +108,19 @@ class AlternateExchangeTests(TestBase):
         Ensure an exchange still in use as an alternate-exchange for a
         queue can't be deleted
         """
-        channel = self.channel
-        channel.exchange_declare(exchange="alternate", type="fanout")
-        channel.queue_declare(queue="q", exclusive=True, auto_delete=True, alternate_exchange="alternate")
-        try:
-            channel.exchange_delete(exchange="alternate")
-            self.fail("Expected deletion of in-use alternate-exchange to fail")
-        except Closed, e:
-            #cleanup:
-            other = self.connect()
-            channel = other.channel(1)
-            channel.session_open()
-            channel.exchange_delete(exchange="alternate")
-            channel.session_close()
-            other.close()
-            
-            self.assertConnectionException(530, e.args[0])            
+        session = self.session
+        session.exchange_declare(exchange="alternate", type="fanout")
 
+        session = self.conn.session("alternate", 2)
+        session.queue_declare(queue="q", exclusive=True, auto_delete=True, alternate_exchange="alternate")
+        try:
+            session.exchange_delete(exchange="alternate")
+            self.fail("Expected deletion of in-use alternate-exchange to fail")
+        except SessionException, e:
+            session = self.session
+            session.queue_delete(queue="q")
+            session.exchange_delete(exchange="alternate")
+            self.assertEquals(530, e.args[0].error_code)            
 
 
     def test_delete_while_used_by_exchange(self):
@@ -122,25 +128,19 @@ class AlternateExchangeTests(TestBase):
         Ensure an exchange still in use as an alternate-exchange for 
         another exchange can't be deleted
         """
-        channel = self.channel
-        channel.exchange_declare(exchange="alternate", type="fanout")
-        channel.exchange_declare(exchange="e", type="fanout", alternate_exchange="alternate")
-        try:
-            channel.exchange_delete(exchange="alternate")
-            #cleanup:
-            channel.exchange_delete(exchange="e")
-            self.fail("Expected deletion of in-use alternate-exchange to fail")
-        except Closed, e:
-            #cleanup:
-            other = self.connect()
-            channel = other.channel(1)
-            channel.session_open()
-            channel.exchange_delete(exchange="e")
-            channel.exchange_delete(exchange="alternate")
-            channel.session_close()
-            other.close()
+        session = self.session
+        session.exchange_declare(exchange="alternate", type="fanout")
 
-            self.assertConnectionException(530, e.args[0])
+        session = self.conn.session("alternate", 2)
+        session.exchange_declare(exchange="e", type="fanout", alternate_exchange="alternate")
+        try:
+            session.exchange_delete(exchange="alternate")
+            self.fail("Expected deletion of in-use alternate-exchange to fail")
+        except SessionException, e:
+            session = self.session
+            session.exchange_delete(exchange="e")
+            session.exchange_delete(exchange="alternate")
+            self.assertEquals(530, e.args[0].error_code)
             
 
     def assertEmpty(self, queue):
@@ -148,4 +148,3 @@ class AlternateExchangeTests(TestBase):
             msg = queue.get(timeout=1) 
             self.fail("Queue not empty: " + msg)
         except Empty: None
-
