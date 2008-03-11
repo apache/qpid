@@ -38,6 +38,8 @@ class HeadersExchange : public virtual Exchange {
     Bindings bindings;
     qpid::sys::RWlock lock;
 
+    static std::string getMatch(const framing::FieldTable* args);
+
   public:
     static const std::string typeName;
 

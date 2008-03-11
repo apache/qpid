@@ -27,6 +27,7 @@ import Queue, logging, traceback
 from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.client import Closed
+from qpid.session import SessionException
 
 
 class TestHelper(TestBase010):
@@ -48,6 +49,11 @@ class TestHelper(TestBase010):
     def createMessage(self, key="", body=""):
         return Message(self.session.delivery_properties(routing_key=key), body)
 
+    def getApplicationHeaders(self, msg):
+        for h in msg.headers:
+            if hasattr(h, 'application_headers'): return getattr(h, 'application_headers')
+        return None            
+
     def assertPublishGet(self, queue, exchange="", routing_key="", properties=None):
         """
         Publish to exchange and assert queue.get() returns the same message.
@@ -59,7 +65,7 @@ class TestHelper(TestBase010):
         msg = queue.get(timeout=1)
         self.assertEqual(body, msg.body)
         if (properties):
-            self.assertEqual(properties, msg.content['application_headers'])
+            self.assertEqual(properties, self.getApplicationHeaders(msg))
 
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
@@ -294,8 +300,8 @@ class DeclareMethodPassiveFieldNotFoundRuleTests(TestHelper):
         try:
             self.session.exchange_declare(exchange="humpty_dumpty", passive=True)
             self.fail("Expected 404 for passive declaration of unknown exchange.")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
 
 class DeclareMethodDurableFieldSupportRuleTests(TestHelper):
@@ -352,7 +358,8 @@ class HeadersExchangeTests(TestHelper):
         self.assertPublishGet(self.q, exchange="amq.match", properties=headers)
 
     def myBasicPublish(self, headers):
-        self.session.message_transfer(destination="amq.match", content=Content("foobar", properties={'application_headers':headers}))
+        mp=self.session.message_properties(application_headers=headers)
+        self.session.message_transfer(destination="amq.match", message=Message(mp, "foobar"))
         
     def testMatchAll(self):
         self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
@@ -386,21 +393,17 @@ class MiscellaneousErrorsTests(TestHelper):
         try:
             self.session.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
             self.fail("Expected 503 for declaration of unknown exchange type.")
-        except Closed, e:
-            self.assertConnectionException(503, e.args[0])
+        except SessionException, e:
+            self.assertEquals(503, e.args[0].error_code)
 
     def testDifferentDeclaredType(self):
-        self.session.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
+        self.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
         try:
-            self.session.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
+            session = self.conn.session("alternate", 2)
+            session.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
             self.fail("Expected 530 for redeclaration of exchange with different type.")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
-        #cleanup    
-        other = self.connect()
-        c2 = other.channel(1)
-        c2.session_open()
-        c2.exchange_delete(exchange="test_different_declared_type_exchange")
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
     
 class ExchangeTests(TestHelper):
     def testHeadersBindNoMatchArg(self):
@@ -408,5 +411,5 @@ class ExchangeTests(TestHelper):
         try: 
             self.session.exchange_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
             self.fail("Expected failure for missing x-match arg.")
-        except Closed, e:    
-            self.assertConnectionException(541, e.args[0])
+        except SessionException, e:    
+            self.assertEquals(541, e.args[0].error_code)

@@ -47,7 +47,7 @@ namespace broker{
 
     const framing::FieldTable* TransferAdapter::getApplicationHeaders(const framing::FrameSet& f)
     {
-        const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
+        const framing::MessageProperties010* p = f.getHeaders()->get<framing::MessageProperties010>();
         return p ? &(p->getApplicationHeaders()) : 0;
     }
 
@@ -67,4 +67,11 @@ namespace broker{
         const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
         return p ? p->getRoutingKey() : empty;
     }
+
+    const framing::FieldTable* PreviewAdapter::getApplicationHeaders(const framing::FrameSet& f)
+    {
+        const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
+        return p ? &(p->getApplicationHeaders()) : 0;
+    }
+
 }}
