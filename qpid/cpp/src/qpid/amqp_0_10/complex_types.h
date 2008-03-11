@@ -22,6 +22,8 @@
  *
  */
 
+#include "built_in_types.h"
+
 namespace qpid {
 namespace amqp_0_10 {
 
@@ -37,12 +39,31 @@ template <class V, class CV, class H> struct Visitable {
     virtual void accept(ConstVisitor&) const = 0;
 };
 
+struct Command;
+struct Control;
+
+struct Action {  // Marker for commands & controls
+    virtual ~Action() {}
+    virtual Command* getCommand() { return 0; }
+    virtual Control* getControl() { return 0; }
+
+    virtual const Command* getCommand() const {
+        return const_cast<Action*>(this)->getCommand();
+    }
+    virtual const Control* getControl() const {
+        return const_cast<Action*>(this)->getControl();
+    }
+};
+
 struct CommandVisitor;
 struct ConstCommandVisitor;
 struct CommandHolder;
 struct Command
-    : public Visitable<CommandVisitor, ConstCommandVisitor, CommandHolder>
+    : public Action,
+      public Visitable<CommandVisitor, ConstCommandVisitor, CommandHolder>
 {
+    using Action::getCommand;
+    Command* getCommand() { return this; }
     uint8_t getCode() const;
     uint8_t getClassCode() const;
     const char* getName() const;
@@ -53,8 +74,11 @@ struct ControlVisitor;
 struct ConstControlVisitor;
 struct ControlHolder;
 struct Control
-    : public Visitable<ControlVisitor, ConstControlVisitor, ControlHolder>
+    : public Action,
+      public Visitable<ControlVisitor, ConstControlVisitor, ControlHolder>
 {
+    using Action::getControl;
+    Control* getControl() { return this; }
     uint8_t getCode() const;
     uint8_t getClassCode() const;
     const char* getName() const;
@@ -74,6 +98,10 @@ struct Struct
 };
 
 
+template <SegmentType E> struct ActionType;
+template <> struct ActionType<CONTROL> { typedef Control type; };
+template <> struct ActionType<COMMAND> { typedef Command type; };
+    
 }} // namespace qpid::amqp_0_10
 
 #endif  /*!QPID_AMQP_0_10_COMPLEX_TYPES_H*/

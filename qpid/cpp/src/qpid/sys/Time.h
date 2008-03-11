@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <limits>
+#include <iosfwd>
 
 namespace qpid {
 namespace sys {
@@ -54,6 +55,8 @@ class AbsTime {
   friend bool operator>(const AbsTime& a, const AbsTime& b);
 };
 
+std::ostream& operator << (std::ostream&, const AbsTime&);
+
 class Duration {
     static int64_t max() { return std::numeric_limits<int64_t>::max(); }
     int64_t nanosecs;
@@ -67,6 +70,7 @@ class Duration {
     inline operator int64_t() const;
 };
 
+std::ostream& operator << (std::ostream&, const Duration&);
 
 AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     time_ns(d == Duration::max() ? max() : t.time_ns+d.nanosecs)

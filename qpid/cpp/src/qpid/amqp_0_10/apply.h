@@ -79,11 +79,7 @@ typename F::result_type apply(const F& functor, Visitable& visitable) {
     return visitor.getResult();
 }
 
-template <class R, bool Const=false> struct ApplyFunctor {
-    typedef R result_type;
-    static const bool IS_CONST=Const;
-};
-template <class R> struct ConstApplyFunctor : public ApplyFunctor<R, true> {};
+template <class R> struct ApplyFunctor { typedef R result_type; };
 
 }} // namespace qpid::amqp_0_10
 

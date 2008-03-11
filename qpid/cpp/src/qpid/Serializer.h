@@ -23,59 +23,71 @@
  */
 
 #include <boost/utility/enable_if.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/is_class.hpp>
-#include <algorithm>
+#include <boost/type_traits/is_base_and_derived.hpp>
 
 namespace qpid {
+namespace serialize { 
 
-// FIXME aconway 2008-03-03: Doc - esp decoding
-template <class Derived> class Serializer {
+// FIXME aconway 2008-03-03: Document.
+// Encoder/Decoder concept: add op() for primitive types, raw(),
+// op()(Iter, Iter). Note split, encode, decode.
+// 
+
+// FIXME aconway 2008-03-09: document - non-intrusive serialzation.
+// Default rule calls member. Enums must provide an override rule.
+
+/** Overload for types that do not provide a serialize() member.*/
+template <class T> T& serializable(T& t) { return t; }
+
+template <class Derived> class Encoder {
   public:
-    typedef Serializer result_type; // unary functor requirement.
+    typedef Derived& result_type; // unary functor requirement.
 
-    static const bool IS_DECODER=false;
-
-    /** Generic handler for class objects, call serialize() */
+    /** Default op() calls serializable() free function */
     template <class T>
-    typename boost::enable_if<boost::is_class<T>, Derived&>::type
-    operator()(T& t) {
-        t.serialize(self());
-        return self();
+    Derived& operator()(const T& t) {
+        serializable(const_cast<T&>(t)).serialize(self()); return self();
     }
 
-    /** Generic handler for const class objects, call serialize() */
+    /** Split serialize() into encode()/decode() */
     template <class T>
-    typename boost::enable_if<boost::is_class<T>, Derived&>::type
-    operator()(const T& t) {
-        assert(!Derived::IS_DECODER); // We won't modify the value.
-        // const_cast so we don't need 2 serialize() members for every class.
-        const_cast<T&>(t).serialize(self());
-        return self();
-    }
-
-    template <class T, bool=false> struct Split {
-        Split(Derived& s, T& t) { t.encode(s); }
-    };
+    Derived& split(const T& t) { t.encode(self()); return self(); }
     
-    template <class T> struct Split<T,true> {
-        Split(Derived& s, T& t) { t.decode(s); }
-    };
-    /**
-     * Called by classes that want to receive separate
-     * encode()/decode() calls.
-     */
+  private:
+    Derived& self() { return *static_cast<Derived*>(this); }
+};
+
+template <class Derived> class Decoder {
+  public:
+    typedef Derived& result_type; // unary functor requirement.
+
+    /** Default op() calls serializable() free function */
     template <class T>
-    void split(T& t) { Split<T, Derived::IS_DECODER>(self(),t); }
+    Derived& operator()(T& t) {
+        serializable(t).serialize(self()); return self();
+    }
+
+    /** Split serialize() into encode()/decode() */
+    template <class T>
+    Derived& split(T& t) { t.decode(self()); return self(); }
+    
 
   private:
     Derived& self() { return *static_cast<Derived*>(this); }
 };
 
+/** Serialize a type by converting it to/from another type */
+template <class Type, class AsType>
+struct SerializeAs {
+    Type& value;
+    SerializeAs(Type & t) : value(t) {}
+    template <class S> void serialize(S& s) { s.split(*this); }
+    template <class S> void encode(S& s) const { s(AsType(value)); }
+    template <class S> void decode(S& s) { AsType x; s(x); value=x; }
+};
 
+}} // namespace qpid::serialize
 
-
-
-} // namespace qpid
-
+// FIXME aconway 2008-03-09: rename to serialize.h
+// 
 #endif  /*!QPID_SERIALIZER_H*/
