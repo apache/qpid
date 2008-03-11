@@ -15,11 +15,13 @@ class Specification < CppGen
     genl
     typename=d.name.typename
     if d.enum
-      scope("enum #{typename}Enum {", "};") { 
+      scope("enum #{typename} {", "};") { 
         genl d.enum.choices.map { |c|
           "#{c.name.constname} = #{c.value}" }.join(",\n")
       }
-      genl "typedef Enum<#{typename}Enum, uint8_t> #{typename};"
+      scope("inline SerializableEnum<#{typename}, uint8_t> serializable(#{typename}& e) {") {
+        genl "return SerializableEnum<#{typename}>(e);"
+      }
     else
       genl "typedef #{d.amqp2cpp} #{typename};"
     end
@@ -52,11 +54,20 @@ class Specification < CppGen
       ctor_decl(x.classname, x.parameters) unless x.fields.empty?
       genl "void accept(Visitor&);" 
       genl "void accept(ConstVisitor&) const;"
+      if (x.fields.empty?)
+        genl "template <class S> void serialize(S&) {}"
+      else
+        scope("template <class S> void serialize(S& s) {") {
+          gen "s"; x.fields.each { |f| gen "(#{f.cppname})"}; genl ";"
+        }
+      end
       genl
       yield if block
     }
+    genl "std::ostream& operator << (std::ostream&, const #{x.classname}&);"
   end
 
+  # FIXME aconway 2008-03-10: packing, coding
   def action_struct_cpp(x)
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
@@ -73,6 +84,12 @@ class Specification < CppGen
       genl "void #{x.classname}::accept(Visitor& v) {  v.visit(*this); }"
       genl "void #{x.classname}::accept(ConstVisitor& v) const { v.visit(*this); }"
     end
+    genl
+    scope("std::ostream& operator << (std::ostream& o, const #{x.classname}&#{"x" unless x.fields.empty?}) {") {
+      genl "return o << \"[#{x.fqname}\";";
+      x.fields.each{ |f| genl "o << \" #{f.name}=\" << x.#{f.cppname};" }
+      genl "o << \"];\";"
+    }
   end
 
   # structs
@@ -87,13 +104,6 @@ class Specification < CppGen
       function_defn("template <class T> void invoke", ["T& target"]) {
         genl "target.#{a.funcname}(#{a.values.join(', ')});"
       }
-      if (a.fields.empty?)
-        genl "template <class S> void serialize(S&) {}"
-      else
-        scope("template <class S> void serialize(S& s) {") {
-          gen "s"; a.fields.each { |f| gen "(#{f.cppname})"}; genl ";"
-        }
-      end
     }
   end
   
@@ -108,6 +118,7 @@ class Specification < CppGen
       include "#{@dir}/built_in_types"
       include "#{@dir}/complex_types"
       include "<boost/call_traits.hpp>"
+      include "<iosfwd>"
       genl "using boost::call_traits;"
       namespace(@ns) {
         # Top level 
@@ -133,6 +144,7 @@ class Specification < CppGen
 
     cpp_file("#{@dir}/specification") { 
       include "#{@dir}/specification"
+      include "<iostream>"
       # FIXME aconway 2008-03-04: add Struct visitors.
       ["Command","Control"].each { |x| include "#{@dir}/Apply#{x}" }
       namespace(@ns) { 

@@ -26,7 +26,7 @@ QPID_AUTO_TEST_SUITE(VisitorTestSuite)
 
 using  namespace qpid::amqp_0_10;
 
-struct GetCode : public ConstApplyFunctor<uint8_t> {
+struct GetCode : public ApplyFunctor<uint8_t> {
     template <class T> uint8_t operator()(const T&) const { return T::CODE; }
 };
 

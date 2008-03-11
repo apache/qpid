@@ -22,7 +22,7 @@
 #include "PrivatePosix.h"
 
 #include "qpid/sys/Time.h"
-
+#include <ostream>
 #include <time.h>
 #include <sys/time.h>
 
@@ -40,7 +40,7 @@ AbsTime AbsTime::now() {
 struct timespec& toTimespec(struct timespec& ts, const Duration& t) {
     ts.tv_sec  = t / TIME_SEC;
     ts.tv_nsec = t % TIME_SEC;
-    return ts;
+    return ts; 
 }
 
 struct timeval& toTimeval(struct timeval& tv, const Duration& t) {
@@ -51,6 +51,30 @@ struct timeval& toTimeval(struct timeval& tv, const Duration& t) {
 
 Duration toTime(const struct timespec& ts) {
     return ts.tv_sec*TIME_SEC + ts.tv_nsec;
+}
+
+std::ostream& operator<<(std::ostream& o, const Duration& d) {
+    return o << int64_t(d) << "ns";   
+}
+
+std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
+    static const char * month_abbrevs[] = {
+        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
+    };
+    struct tm * timeinfo;
+    time_t rawtime(t.timeValue()/TIME_SEC);
+    timeinfo = localtime (&rawtime);
+    char time_string[100];
+    sprintf ( time_string,
+              "%d-%s-%02d %02d:%02d:%02d",
+              1900 + timeinfo->tm_year,
+              month_abbrevs[timeinfo->tm_mon],
+              timeinfo->tm_mday,
+              timeinfo->tm_hour,
+              timeinfo->tm_min,
+              timeinfo->tm_sec
+    );
+    return o << time_string;
 }
 
 }}

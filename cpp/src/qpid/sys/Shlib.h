@@ -56,12 +56,6 @@ class Shlib {
                                        this->getSymbol(symbol)));
     }
     
-    /** Look up symbol in shared library. */
-        template <class T*>
-    void* getSymbol(const std::string& symbol) {
-        return getSymbol<T>(symbol.c_str());
-    }
-
   private:
     void* handle;
     void load(const char* libname);
