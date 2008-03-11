@@ -352,6 +352,12 @@ class TestBase010(unittest.TestCase):
         self.conn.start(timeout=10)        
         self.session = self.conn.session("test-session", timeout=10)
 
+    def connect(self):
+        spec = testrunner.spec
+        conn = Connection(connect(testrunner.host, testrunner.port), spec)
+        conn.start(timeout=10)
+        return conn
+
     def tearDown(self):
         if not self.session.error(): self.session.close(timeout=10)
         self.conn.close(timeout=10)

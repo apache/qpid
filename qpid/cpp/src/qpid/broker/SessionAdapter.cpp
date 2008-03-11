@@ -38,7 +38,8 @@ SessionAdapter::SessionAdapter(SemanticState& s) :
     exchangeImpl(s),
     queueImpl(s),
     messageImpl(s),
-    executionImpl(s)
+    executionImpl(s),
+    txImpl(s)
 {}
 
 
@@ -402,6 +403,23 @@ void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t /*errorCode*/,
                                                      const framing::FieldTable& /*errorInfo*/)
 {
     //TODO
+}
+
+
+
+void SessionAdapter::TxHandlerImpl::select()
+{
+    state.startTx();
+}
+
+void SessionAdapter::TxHandlerImpl::commit()
+{
+    state.commit(&getBroker().getStore());
+}
+
+void SessionAdapter::TxHandlerImpl::rollback()
+{    
+    state.rollback();
 }
 
 
