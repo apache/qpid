@@ -21,6 +21,7 @@
 #include "HeadersExchange.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/log/Statement.h"
 #include <algorithm>
 
 
@@ -35,9 +36,10 @@ using namespace qpid::sys;
 using namespace qpid::broker;
 
 namespace {
-    const StringValue all("all");
-    const StringValue any("any");
+    const std::string all("all");
+    const std::string any("any");
     const std::string x_match("x-match");
+    const std::string empty;
 }
 
 HeadersExchange::HeadersExchange(const string& _name, Manageable* _parent) :
@@ -55,11 +57,27 @@ HeadersExchange::HeadersExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
 
+std::string HeadersExchange::getMatch(const FieldTable* args)
+{
+    if (!args) {
+        throw InternalErrorException(QPID_MSG("No arguments given."));
+    }
+    FieldTable::ValuePtr what = args->get(x_match);
+    if (!what) {
+        return empty;
+    }
+    if (!what->convertsTo<std::string>()) {
+        throw InternalErrorException(QPID_MSG("Invalid x-match value binding to headers exchange."));
+    }
+    return what->get<std::string>();
+}
+
 bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     RWlock::ScopedWlock locker(lock);
-    FieldTable::ValuePtr what = args->get(x_match);
-    if (!what || (*what != all && *what != any)) 
+    std::string what = getMatch(args);
+    if (what != all && what != any)
         throw InternalErrorException(QPID_MSG("Invalid x-match value binding to headers exchange."));
+
     Bindings::iterator i;
 
     for (i = bindings.begin(); i != bindings.end(); i++)
@@ -100,6 +118,8 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey
 
 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
+    if (!args) return;//can't match if there were no headers passed in
+
     RWlock::ScopedRlock locker(lock);
     uint32_t count(0);
 
@@ -153,10 +173,8 @@ namespace
 
 bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
     typedef FieldTable::ValueMap Map;
-    FieldTable::ValuePtr what = bind.get(x_match);
-    if (!what) {
-        return false;
-    } else if (*what == all) {
+    std::string what = getMatch(&bind);
+    if (what == all) {
         for (Map::const_iterator i = bind.begin();
              i != bind.end();
              ++i)
@@ -169,7 +187,7 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
             }
         }
         return true;
-    } else if (*what == any) {
+    } else if (what == any) {
         for (Map::const_iterator i = bind.begin();
              i != bind.end();
              ++i)
