@@ -114,7 +114,7 @@ class Range:
     return Range(min(self.lower, r.lower), max(self.upper, r.upper))
 
   def __repr__(self):
-    return "Range(%s, %s)" % (self.lower, self.upper)
+    return "%s-%s" % (self.lower, self.upper)
 
 class RangedSet:
 
@@ -147,7 +147,7 @@ class RangedSet:
     self.add_range(Range(lower, upper))
 
   def __repr__(self):
-    return "RangedSet(%s)" % str(self.ranges)
+    return str(self.ranges)
 
 class Future:
   def __init__(self, initial=None, exception=Exception):
