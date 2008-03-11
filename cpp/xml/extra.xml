@@ -723,6 +723,22 @@
     </method>
 </class>
 
+<class name="tx010" index="5">
+    <doc>blah, blah</doc>
+    <method name = "select" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+    </method>
+    <method name = "commit" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+    </method>
+    <method name = "rollback" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+    </method>
+</class>
+
 <class name="exchange010" index="7">
     <doc>blah, blah</doc>
     <method name = "declare" index="1">

@@ -221,6 +221,12 @@ class Codec(Packer):
       attr = "write_uint%d" % (width*8)
       getattr(self, attr)(n)
 
+  def write_uuid(self, s):
+    self.pack("16s", s)
+
+  def read_uuid(self):
+    return self.unpack("16s")
+
 
 
 class StringCodec(Codec):

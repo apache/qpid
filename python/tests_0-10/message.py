@@ -96,31 +96,29 @@ class MessageTests(TestBase010):
 
     def test_consume_exclusive(self):
         """
-        Test that the exclusive flag is honoured in the consume method
+        Test an exclusive consumer prevents other consumer being created
         """
         session = self.session
-        #setup, declare a queue:
         session.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
-
-        #check that an exclusive consumer prevents other consumer being created:
-        self.subscribe(destination="first", queue="test-queue-2", exclusive=True)
+        session.message_subscribe(destination="first", queue="test-queue-2", exclusive=True)
         try:
-            self.subscribe(destination="second", queue="test-queue-2")
+            session.message_subscribe(destination="second", queue="test-queue-2")
             self.fail("Expected consume request to fail due to previous exclusive consumer")
-        except Closed, e:
-            self.assertChannelException(403, e.args[0])
+        except SessionException, e:
+            self.assertEquals(403, e.args[0].error_code)
 
-        #open new session and cleanup last consumer:
-        session = self.client.session(2)
-        session.session_open()
-
-        #check that an exclusive consumer cannot be created if a consumer already exists:
-        self.subscribe(session, destination="first", queue="test-queue-2")
+    def test_consume_exclusive2(self):
+        """
+        Check that an exclusive consumer cannot be created if a consumer already exists:
+        """
+        session = self.session
+        session.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
+        session.message_subscribe(destination="first", queue="test-queue-2")
         try:
-            self.subscribe(destination="second", queue="test-queue-2", exclusive=True)
+            session.message_subscribe(destination="second", queue="test-queue-2", exclusive=True)
             self.fail("Expected exclusive consume request to fail due to previous consumer")
-        except Closed, e:
-            self.assertChannelException(403, e.args[0])
+        except SessionException, e:
+            self.assertEquals(403, e.args[0].error_code)
 
     def test_consume_queue_not_found(self):
         """
