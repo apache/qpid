@@ -18,10 +18,12 @@
 #
 from qpid.client import Client, Closed
 from qpid.queue import Empty
-from qpid.content import Content
-
 from qpid.testlib import TestBase010
 from qpid.datatypes import Message, RangedSet
+from qpid.session import SessionException
+
+from qpid.content import Content
+
 
 class MessageTests(TestBase010):
     """Tests for 'methods' on the amqp message 'class'"""
@@ -120,26 +122,26 @@ class MessageTests(TestBase010):
         except Closed, e:
             self.assertChannelException(403, e.args[0])
 
-    def test_consume_queue_errors(self):
+    def test_consume_queue_not_found(self):
         """
         Test error conditions associated with the queue field of the consume method:
         """
         session = self.session
         try:
             #queue specified but doesn't exist:
-            self.subscribe(queue="invalid-queue", destination="")
+            session.message_subscribe(queue="invalid-queue", destination="a")
             self.fail("Expected failure when consuming from non-existent queue")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
-        session = self.client.session(2)
-        session.session_open()
+    def test_consume_queue_not_specified(self):
+        session = self.session
         try:
             #queue not specified and none previously declared for channel:
-            self.subscribe(session, queue="", destination="")
+            session.message_subscribe(destination="a")
             self.fail("Expected failure when consuming from unspecified queue")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
+        except SessionException, e:
+            self.assertEquals(531, e.args[0].error_code)
 
     def test_consume_unique_consumers(self):
         """
@@ -150,12 +152,12 @@ class MessageTests(TestBase010):
         session.queue_declare(queue="test-queue-3", exclusive=True, auto_delete=True)
 
         #check that attempts to use duplicate tags are detected and prevented:
-        self.subscribe(destination="first", queue="test-queue-3")
+        session.message_subscribe(destination="first", queue="test-queue-3")
         try:
-            self.subscribe(destination="first", queue="test-queue-3")
+            session.message_subscribe(destination="first", queue="test-queue-3")
             self.fail("Expected consume request to fail due to non-unique tag")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
 
     def test_cancel(self):
         """
