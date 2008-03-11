@@ -56,7 +56,7 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     Exchange010Handler* getExchange010Handler(){ return &exchangeImpl; }
     Queue010Handler* getQueue010Handler(){ return &queueImpl;  }
     Execution010Handler* getExecution010Handler(){ return &executionImpl; }
-
+    Tx010Handler* getTx010Handler(){ return &txImpl; }
 
     BasicHandler* getBasicHandler() { throw framing::NotImplementedException("Class not implemented");  }
     ExchangeHandler* getExchangeHandler(){ throw framing::NotImplementedException("Class not implemented");  }
@@ -201,10 +201,22 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 
     };
 
+    class TxHandlerImpl : public Tx010Handler, public HandlerHelper
+    {
+      public:
+        TxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
+        
+        void select();
+        void commit();
+        void rollback();
+    };
+
+
     ExchangeHandlerImpl exchangeImpl;
     QueueHandlerImpl queueImpl;
     MessageHandlerImpl messageImpl;
     ExecutionHandlerImpl executionImpl;
+    TxHandlerImpl txImpl;
 };
 }} // namespace qpid::broker
 
