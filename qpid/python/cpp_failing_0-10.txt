@@ -1,15 +1,10 @@
 tests.codec.FieldTableTestCase.test_field_table_decode
 tests.codec.FieldTableTestCase.test_field_table_multiple_name_value_pair
 tests.codec.FieldTableTestCase.test_field_table_name_value_pair
-tests_0-10.query.QueryTests.test_exchange_bound_header
 tests_0-10.tx.TxTests.test_auto_rollback
 tests_0-10.tx.TxTests.test_commit
 tests_0-10.tx.TxTests.test_rollback
 tests_0-10.execution.ExecutionTests.test_flush
-tests_0-10.alternate_exchange.AlternateExchangeTests.test_delete_while_used_by_exchange
-tests_0-10.alternate_exchange.AlternateExchangeTests.test_delete_while_used_by_queue
-tests_0-10.alternate_exchange.AlternateExchangeTests.test_queue_delete
-tests_0-10.alternate_exchange.AlternateExchangeTests.test_unroutable
 tests_0-10.dtx.DtxTests.test_bad_resume
 tests_0-10.dtx.DtxTests.test_end
 tests_0-10.dtx.DtxTests.test_end_suspend_and_fail
@@ -46,5 +41,3 @@ tests_0-10.testlib.TestBaseTest.testAssertEmptyPass
 tests_0-10.testlib.TestBaseTest.testMessageProperties
 tests_0-10.queue.QueueTests.test_autodelete_shared
 tests_0-10.queue.QueueTests.test_declare_exclusive
-tests_0-10.queue.QueueTests.test_bind
-tests_0-10.queue.QueueTests.test_unbind_headers
