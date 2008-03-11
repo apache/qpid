@@ -20,6 +20,9 @@
 import os, connection010, session
 from util import notify
 from datatypes import RangedSet
+from logging import getLogger
+
+log = getLogger("qpid.io.ctl")
 
 class Delegate:
 
@@ -37,9 +40,10 @@ class Delegate:
       ch = ssn.channel
 
     if seg.track == self.control:
-      cntrl = seg.decode(self.spec)
-      attr = cntrl._type.qname.replace(".", "_")
-      getattr(self, attr)(ch, cntrl)
+      ctl = seg.decode(self.spec)
+      log.debug("RECV %s", ctl)
+      attr = ctl._type.qname.replace(".", "_")
+      getattr(self, attr)(ch, ctl)
     elif ssn is None:
       ch.session_detached()
     else:

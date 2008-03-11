@@ -27,6 +27,7 @@ from session import Session
 from invoker import Invoker
 from spec010 import Control, Command
 from exceptions import *
+from logging import getLogger
 import delegates
 
 class ChannelBusy(Exception): pass
@@ -149,6 +150,8 @@ class Connection(Assembler):
   def __repr__(self):
     return str(self)
 
+log = getLogger("qpid.io.ctl")
+
 class Channel(Invoker):
 
   def __init__(self, connection, id):
@@ -164,11 +167,12 @@ class Channel(Invoker):
       return None
 
   def invoke(self, type, args, kwargs):
-    cntrl = type.new(args, kwargs)
+    ctl = type.new(args, kwargs)
     sc = StringCodec(self.connection.spec)
-    sc.write_control(cntrl)
+    sc.write_control(ctl)
     self.connection.write_segment(Segment(True, True, type.segment_type,
                                           type.track, self.id, sc.encoded))
+    log.debug("SENT %s", ctl)
 
   def __str__(self):
     return "%s[%s]" % (self.connection, self.id)

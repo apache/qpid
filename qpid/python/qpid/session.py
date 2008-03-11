@@ -28,6 +28,8 @@ from util import wait, notify
 from exceptions import *
 from logging import getLogger
 
+log = getLogger("qpid.io.cmd")
+
 class SessionDetached(Exception): pass
 
 def client(*args):
@@ -142,6 +144,8 @@ class Session(Invoker):
 
     self.send(seg)
 
+    log.debug("SENT %s %s %s", seg.id, hdr, cmd)
+
     if message != None:
       if message.headers != None:
         sc = StringCodec(self.spec)
@@ -175,7 +179,10 @@ class Session(Invoker):
 
   def dispatch(self, assembly):
     segments = assembly[:]
+
     hdr, cmd = assembly.pop(0).decode(self.spec)
+    log.debug("RECV %s %s %s", cmd.id, hdr, cmd)
+
     args = []
 
     for st in cmd._type.segments:
@@ -291,7 +298,7 @@ class Delegate:
     finally:
       self.session.lock.release()
 
-msg = getLogger("qpid.ssn.msg")
+msg = getLogger("qpid.io.msg")
 
 class Client(Delegate):
 
@@ -301,5 +308,5 @@ class Client(Delegate):
     m.id = cmd.id
     messages = self.session.incoming(cmd.destination)
     messages.put(m)
-    msg.debug("RECV: %s", m)
+    msg.debug("RECV %s", m)
     return INCOMPLETE
