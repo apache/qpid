@@ -10,14 +10,6 @@ tests_0-10.alternate_exchange.AlternateExchangeTests.test_delete_while_used_by_e
 tests_0-10.alternate_exchange.AlternateExchangeTests.test_delete_while_used_by_queue
 tests_0-10.alternate_exchange.AlternateExchangeTests.test_queue_delete
 tests_0-10.alternate_exchange.AlternateExchangeTests.test_unroutable
-tests_0-10.exchange.DeclareMethodPassiveFieldNotFoundRuleTests.test
-tests_0-10.exchange.ExchangeTests.testHeadersBindNoMatchArg
-tests_0-10.exchange.HeadersExchangeTests.testMatchAll
-tests_0-10.exchange.HeadersExchangeTests.testMatchAny
-tests_0-10.exchange.MiscellaneousErrorsTests.testDifferentDeclaredType
-tests_0-10.exchange.MiscellaneousErrorsTests.testTypeNotKnown
-tests_0-10.exchange.RecommendedTypesRuleTests.testHeaders
-tests_0-10.exchange.RequiredInstancesRuleTests.testAmqMatch
 tests_0-10.dtx.DtxTests.test_bad_resume
 tests_0-10.dtx.DtxTests.test_end
 tests_0-10.dtx.DtxTests.test_end_suspend_and_fail
