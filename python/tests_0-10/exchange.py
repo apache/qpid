@@ -45,6 +45,7 @@ class TestHelper(TestBase010):
         except:
             print "Error on tearDown:"
             print traceback.print_exc()
+        TestBase010.tearDown(self)
 
     def createMessage(self, key="", body=""):
         return Message(self.session.delivery_properties(routing_key=key), body)

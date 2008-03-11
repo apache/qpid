@@ -44,7 +44,7 @@ class Struct:
 
     if kwargs:
       unexpected = kwargs.keys()[0]
-      raise TypeError("%s() got an unexpected keywoard argument '%s'" %
+      raise TypeError("%s() got an unexpected keyword argument '%s'" %
                       (_type.name, unexpected))
 
   def __getitem__(self, name):
