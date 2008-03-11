@@ -89,7 +89,7 @@ class Assembler(Framer):
 
       if frame.isLastFrame():
         self.fragments.pop(key)
-        log.debug("RECV: %s", seg)
+        log.debug("RECV %s", seg)
         return seg
 
   def write_segment(self, segment):
@@ -115,4 +115,4 @@ class Assembler(Framer):
                     payload)
       self.write_frame(frame)
 
-    log.debug("SENT: %s", segment)
+    log.debug("SENT %s", segment)

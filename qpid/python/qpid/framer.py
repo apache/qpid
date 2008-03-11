@@ -88,7 +88,7 @@ class Framer(Packer):
           raise Closed()
         else:
           continue
-      raw.debug("SENT: %r", buf[:n])
+      raw.debug("SENT %r", buf[:n])
       buf = buf[n:]
 
   def read(self, n):
@@ -109,7 +109,7 @@ class Framer(Packer):
       if len(s) == 0:
         raise Closed()
       data += s
-      raw.debug("RECV: %r", s)
+      raw.debug("RECV %r", s)
     return data
 
   def read_header(self):
@@ -125,7 +125,7 @@ class Framer(Packer):
     self.write(frame.payload)
     # XXX: NOT 0-10 FINAL, TEMPORARY WORKAROUND for C++
     self.write("\xCE")
-    frm.debug("SENT: %s", frame)
+    frm.debug("SENT %s", frame)
 
   def read_frame(self):
     flags, type, size, track, channel = self.unpack(Frame.HEADER)
@@ -136,5 +136,5 @@ class Framer(Packer):
     if end != "\xCE":
       raise FramingError()
     frame = Frame(flags, type, track, channel, payload)
-    frm.debug("RECV: %s", frame)
+    frm.debug("RECV %s", frame)
     return frame
