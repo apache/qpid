@@ -1,9 +1,6 @@
 tests.codec.FieldTableTestCase.test_field_table_decode
 tests.codec.FieldTableTestCase.test_field_table_multiple_name_value_pair
 tests.codec.FieldTableTestCase.test_field_table_name_value_pair
-tests_0-10.tx.TxTests.test_auto_rollback
-tests_0-10.tx.TxTests.test_commit
-tests_0-10.tx.TxTests.test_rollback
 tests_0-10.execution.ExecutionTests.test_flush
 tests_0-10.dtx.DtxTests.test_bad_resume
 tests_0-10.dtx.DtxTests.test_end
@@ -26,7 +23,6 @@ tests_0-10.dtx.DtxTests.test_start_join
 tests_0-10.dtx.DtxTests.test_start_join_and_resume
 tests_0-10.dtx.DtxTests.test_suspend_resume
 tests_0-10.dtx.DtxTests.test_suspend_start_end_resume
-tests_0-10.message.MessageTests.test_consume_exclusive
 tests_0-10.message.MessageTests.test_consume_no_local
 tests_0-10.message.MessageTests.test_consume_no_local_awkward
 tests_0-10.message.MessageTests.test_no_size
