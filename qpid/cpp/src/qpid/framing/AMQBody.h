@@ -22,8 +22,6 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
-#include "qpid/amqp_0_10/built_in_types.h"
-#include "qpid/amqp_0_10/complex_types.h"
 
 #include <ostream>
 
@@ -62,12 +60,6 @@ class AMQBody
     virtual AMQMethodBody* getMethod() { return 0; }
     virtual const AMQMethodBody* getMethod() const { return 0; }
 
-    virtual amqp_0_10::Command* getCommand() { return 0; }
-    virtual const amqp_0_10::Command* getCommand() const { return 0; }
-
-    virtual amqp_0_10::Control* getControl() { return 0; }
-    virtual const amqp_0_10::Control* getControl() const { return 0; }
-
     /** Match if same type and same class/method ID for methods */
     static bool match(const AMQBody& , const AMQBody& );
 };
@@ -78,9 +70,7 @@ enum BodyTypes {
     METHOD_BODY = 1,
     HEADER_BODY = 2,
     CONTENT_BODY = 3,
-    HEARTBEAT_BODY = 8,
-    COMMAND_BODY = 100+amqp_0_10::COMMAND,
-    CONTROL_BODY = 100+amqp_0_10::CONTROL
+    HEARTBEAT_BODY = 8
 };
 
 }} // namespace qpid::framing

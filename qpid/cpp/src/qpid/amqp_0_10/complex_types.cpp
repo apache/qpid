@@ -29,7 +29,7 @@ namespace amqp_0_10 {
 // Functors for getting static values from a visitable base type.
 
 #define QPID_STATIC_VALUE_GETTER(NAME, TYPE, VALUE) \
-    struct NAME : public ConstApplyFunctor<TYPE> {  \
+    struct NAME : public ApplyFunctor<TYPE> {  \
         template <class T> TYPE operator()(const T&) const { return T::VALUE; }\
     }
 

@@ -28,34 +28,55 @@
 #include <boost/type_traits/is_float.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/detail/endian.hpp>
+#include <boost/static_assert.hpp>
 
 namespace qpid {
 namespace amqp_0_10 {
+
+#ifdef BOOST_LITTLE_ENDIAN
+template <class T> void endianize(T& t) {
+    char*p =reinterpret_cast<char*>(&t);
+    std::reverse(p, p+sizeof(T));
+}
+#else
+template <class T> void endianize(T&) {}
+#endif
+
 /**
  * AMQP 0-10 encoding and decoding.
  */
-struct Codec {                  // FIXME aconway 2008-02-29: drop this wrapper?
+struct Codec {
+
+    // FIXME aconway 2008-02-29: drop this wrapper, rename to
+    // IteratorEncoder, IteratorDecoder?
 
     /** Encode to an output byte iterator */
     template <class OutIter>
-    class Encode : public Serializer<Encode<OutIter> > {
+    class Encode : public serialize::Encoder<Encode<OutIter> >
+    {
       public:
         Encode(OutIter o) : out(o) {}
 
-        using Serializer<Encode<OutIter> >::operator();
+        using serialize::Encoder<Encode<OutIter> >::operator();
 
-        template <class T>
-        typename boost::enable_if<boost::is_integral<T>, Encode&>::type
-        operator()(T x) {
-            endianize(x);
-            raw(&x, sizeof(x));
-            return *this;
-        }
+        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
+        Encode& operator()(bool x) { *out++=x; return *this;} 
 
-        // FIXME aconway 2008-02-20: correct float encoading?
-        template <class T>
-        typename boost::enable_if<boost::is_float<T>, Encode&>::type
-        operator()(const T& x) { raw(&x, sizeof(x)); return *this; }
+        Encode& operator()(char x) { *out++=x; return *this; }
+        Encode& operator()(int8_t x) { *out++=x; return *this; }
+        Encode& operator()(uint8_t x) { *out++=x; return *this; }
+
+        Encode& operator()(int16_t x) { return endian(x); }
+        Encode& operator()(int32_t x) { return endian(x); }
+        Encode& operator()(int64_t x) { return endian(x); }
+
+        Encode& operator()(uint16_t x) { return endian(x); }
+        Encode& operator()(uint32_t x) { return endian(x); }
+        Encode& operator()(uint64_t x) { return endian(x); }
+
+        Encode& operator()(float x) { return endian(x); }
+        Encode& operator()(double x) { return endian(x); }
+
 
         template <class Iter> Encode& operator()(Iter begin, Iter end) {
             std::for_each(begin, end, *this);
@@ -63,42 +84,45 @@ struct Codec {                  // FIXME aconway 2008-02-29: drop this wrapper?
         }
 
         void raw(const void* p, size_t n) {
-            std::copy((const char*)p, (const char*)p+n, out); 
+            std::copy((const char*)p, (const char*)p+n, out);
+            out += n;
         }
-        
+
+        OutIter pos() const { return out; }
+
       private:
+
+        template <class T> Encode& endian(T x) {
+            endianize(x); raw(&x, sizeof(x)); return *this;
+        }
+
         OutIter out;
     };
 
     template <class InIter>
-    class Decode : public Serializer<Decode<InIter> > {
+    class Decode : public serialize::Decoder<Decode<InIter> > {
       public:
         Decode(InIter i) : in(i) {}
 
-        static const bool IS_DECODER=true;
+        using serialize::Decoder<Decode<InIter> >::operator();
         
-        using Serializer<Decode<InIter> >::operator();
-        
-        template <class T>
-        typename boost::enable_if<boost::is_integral<T>, Decode&>::type
-        operator()(T& x) {
-            raw(&x, sizeof(x));
-            endianize(x);
-            return *this;
-        }
+        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
+        Decode& operator()(bool& x) { x=*in++; return *this; }
 
-        template <class T>
-        typename boost::enable_if<boost::is_float<T>, Decode&>::type
-        operator()(T& x) { raw(&x, sizeof(x)); return *this; }
+        Decode& operator()(char& x) { x=*in++; return *this; }
+        Decode& operator()(int8_t& x) { x=*in++; return *this; }
+        Decode& operator()(uint8_t& x) { x=*in++; return *this; }
 
-        template<class T, class SizeType>
-        Decode& operator()(SerializableString<T,SizeType>& str) {
-            SizeType n;
-            (*this)(n);
-            str.resize(n);
-            std::for_each(str.begin(), str.end(), *this);
-            return *this;
-        }
+        Decode& operator()(int16_t& x) { return endian(x); }
+        Decode& operator()(int32_t& x) { return endian(x); }
+        Decode& operator()(int64_t& x) { return endian(x); }
+
+        Decode& operator()(uint16_t& x) { return endian(x); }
+        Decode& operator()(uint32_t& x) { return endian(x); }
+        Decode& operator()(uint64_t& x) { return endian(x); }
+
+        Decode& operator()(float& x) { return endian(x); }
+        Decode& operator()(double& x) { return endian(x); }
 
         template <class Iter> Decode& operator()(Iter begin, Iter end) {
             std::for_each(begin, end, *this);
@@ -106,34 +130,47 @@ struct Codec {                  // FIXME aconway 2008-02-29: drop this wrapper?
         }
 
         void raw(void *p, size_t n) {
-            // FIXME aconway 2008-02-29: requires random access iterator,
-            // does this optimize to memcpy? Is there a better way?
             std::copy(in, in+n, (char*)p);
             in += n;
         }
 
+        InIter pos() const { return in; }
+
       private:
+
+        template <class T> Decode& endian(T& x) {
+            raw(&x, sizeof(x)); endianize(x); return *this;
+        }
+
         InIter in;
     };
 
     
-    class Size : public Serializer<Size> {
+    class Size : public serialize::Encoder<Size> {
       public:
         Size() : size(0) {}
 
         operator size_t() const { return size; }
 
-        using Serializer<Size>::operator();
-        
-        template <class T>
-        typename boost::enable_if<boost::is_arithmetic<T>, Size&>::type
-        operator()(const T&) { size += sizeof(T); return *this; }
+        using serialize::Encoder<Size>::operator();
 
-        template<class T, class SizeType>
-        Size& operator()(const SerializableString<T,SizeType>& str) {
-            size += sizeof(SizeType) + str.size()*sizeof(T);
-            return *this;
-        }
+        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
+        Size& operator()(bool x)  { size += sizeof(x); return *this; }
+        
+        Size& operator()(char x)  { size += sizeof(x); return *this; }
+        Size& operator()(int8_t x)  { size += sizeof(x); return *this; }
+        Size& operator()(uint8_t x)  { size += sizeof(x); return *this; }
+
+        Size& operator()(int16_t x)  { size += sizeof(x); return *this; }
+        Size& operator()(int32_t x)  { size += sizeof(x); return *this; }
+        Size& operator()(int64_t x)  { size += sizeof(x); return *this; }
+
+        Size& operator()(uint16_t x)  { size += sizeof(x); return *this; }
+        Size& operator()(uint32_t x)  { size += sizeof(x); return *this; }
+        Size& operator()(uint64_t x)  { size += sizeof(x); return *this; }
+
+        Size& operator()(float x)  { size += sizeof(x); return *this; }
+        Size& operator()(double x)  { size += sizeof(x); return *this; }
 
         template <class Iter>
         Size& operator()(const Iter& a, const Iter& b) {
@@ -147,27 +184,16 @@ struct Codec {                  // FIXME aconway 2008-02-29: drop this wrapper?
         size_t size;
     };
 
-    template <class OutIter> static Decode<OutIter> decode(const OutIter &i) {
-        return Decode<OutIter>(i);
+    // FIXME aconway 2008-03-11: rename to encoder(), decoder()
+    template <class InIter> static Decode<InIter> decode(const InIter &i) {
+        return Decode<InIter>(i);
     }
 
-    template <class InIter> static Encode<InIter> encode(InIter i) {
-        return Encode<InIter>(i);
+    template <class OutIter> static Encode<OutIter> encode(OutIter i) {
+        return Encode<OutIter>(i);
     }
 
     template <class T> static size_t size(const T& x) { return Size()(x); }
-
-  private:
-    template <class T> static inline void endianize(T& value) {
-#ifdef BOOST_LITTLE_ENDIAN
-        std::reverse((char*)&value, (char*)&value+sizeof(value));
-#else
-        (void)value;            // Avoid unused var warnings.
-#endif
-    }
-    static inline void endianize(char&) {}
-    static inline void endianize(uint8_t&) {}
-    static inline void endianize(int8_t&) {}
 };
 
 }} // namespace qpid::amqp_0_10

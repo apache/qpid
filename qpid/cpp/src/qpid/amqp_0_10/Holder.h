@@ -29,18 +29,29 @@ namespace amqp_0_10 {
 
 template <class DerivedHolder, class BaseHeld, size_t Size>
 struct Holder : public framing::Blob<Size, BaseHeld> {
-
     typedef framing::Blob<Size, BaseHeld> Base;
     
+    struct Assign : public ApplyFunctor<void> {
+        Holder& holder;
+        Assign(Holder& x) : holder(x) {}
+        template <class T> void operator()(const T& rhs) { holder=rhs; }
+    };
+
     Holder() {}
+    Holder(const BaseHeld& x) { *this=x; }
     template <class T> Holder(const T& value) : Base(value) {}
 
     using Base::operator=;
-
+    Holder& operator=(const BaseHeld& rhs) {
+        Assign assign(*this);
+        apply(assign, rhs);
+        return *this;
+    }
+    
     uint8_t getCode() const { return this->get()->getCode(); }
     uint8_t getClassCode() const { return this->get()->getClassCode(); }
     
-    template <class S> void encode(S& s) {
+    template <class S> void encode(S& s) const {
         s(getClassCode())(getCode());
     }
 
