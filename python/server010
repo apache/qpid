@@ -6,16 +6,16 @@ from qpid.util import connect, listen
 from qpid.spec010 import load
 from qpid.session import Client
 from qpid.datatypes import Message
+from qpid.log import enable, DEBUG, WARN
 
-import logging, sys
+import sys
 
 if "-v" in sys.argv:
-  level = logging.DEBUG
+  level = DEBUG
 else:
-  level = logging.WARN
+  level = WARN
 
-format = "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
-logging.basicConfig(level=level, format=format, datefmt='%H:%M:%S')
+enable("qpid", level)
 
 spec = load("../specs/amqp.0-10.xml")
 
