@@ -101,6 +101,7 @@ public class JMSPropertiesTest extends TestCase
         // assertEquals("JMS Delivery Mode mismatch",sentMsg.getJMSDeliveryMode(),rm.getJMSDeliveryMode());
         assertEquals("JMS Type mismatch", sentMsg.getJMSType(), rm.getJMSType());
         assertEquals("JMS Reply To mismatch", sentMsg.getJMSReplyTo(), rm.getJMSReplyTo());
+        assertTrue("JMSMessageID Does not start ID:", rm.getJMSMessageID().startsWith("ID:"));
 
         con.close();
     }

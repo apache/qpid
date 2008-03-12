@@ -121,7 +121,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (getContentHeaderProperties().getMessageIdAsString() == null)
         {
             StringBuilder b = new StringBuilder(39);
-            b.append("ID");
+            b.append("ID:");
             b.append(UUID.randomUUID());
             getContentHeaderProperties().setMessageId(b.toString());
         }
