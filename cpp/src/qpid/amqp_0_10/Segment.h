@@ -76,7 +76,7 @@ class Segment::const_iterator : public boost::iterator_facade<
     const_iterator() : frames(), p() {}
 
   private:
-#ifndef NDEBUG
+
     void invariant() const {
         assert(frames);
         assert(frames->begin() <= i);
@@ -88,7 +88,7 @@ class Segment::const_iterator : public boost::iterator_facade<
         invariant();
         assert(p < i->end());
     }
-#endif
+
     const_iterator(const Frames& f, Frames::const_iterator pos, const char* ptr)
         : frames(&f), i(pos), p(ptr) { skip_empty(); }
 
