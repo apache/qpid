@@ -394,15 +394,10 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public String getStringProperty(String propertyName) throws JMSException
     {
 
-        if (propertyName.startsWith("JMSX"))
+        //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
+        if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
         {
-            //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
-            if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
-            {
-                return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
-            }
-
-            return null;
+            return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
         }
         else
         {
