@@ -103,12 +103,14 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
+  qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/complex_types.h \
   qpid/amqp_0_10/complex_types.cpp \
   qpid/amqp_0_10/Holder.h \
   qpid/amqp_0_10/Codec.h \
   qpid/amqp_0_10/Decimal.h \
+  qpid/amqp_0_10/Frame.h \
   qpid/amqp_0_10/Segment.h \
   qpid/amqp_0_10/Segment.cpp \
   qpid/amqp_0_10/Assembly.h \
