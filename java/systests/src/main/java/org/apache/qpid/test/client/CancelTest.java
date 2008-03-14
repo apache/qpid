@@ -1,18 +1,4 @@
-package org.apache.qpid.test.client;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.test.VMTestCase;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.Session;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
-import java.util.Enumeration;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -33,9 +19,24 @@ import java.util.Enumeration;/*
  *
  */
 
+package org.apache.qpid.test.client;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.test.VMTestCase;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.JMSException;
+import javax.naming.NamingException;
+import java.util.Enumeration;
 public class CancelTest extends VMTestCase
 {
-    private static final Logger _logger = Logger.getLogger(QueueBrowserTest.class);
+    private static final Logger _logger = Logger.getLogger(QueueBrowserAutoAckTest.class);
 
     private Connection _clientConnection;
     private Session _clientSession;
