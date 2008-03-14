@@ -435,7 +435,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (!_connected)
         {
             String message = null;
-
+            try
+            {
+                Thread.sleep(150);
+            }
+            catch (InterruptedException e)
+            {
+                // Eat it, we've hopefully got all the exceptions if this happened
+            }
             if (exceptions.size() > 0)
             {
                 JMSException e = exceptions.get(0);
