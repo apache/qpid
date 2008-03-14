@@ -648,6 +648,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void closed(Throwable e) throws JMSException
     {
+        // This method needs to be improved. Throwables only arrive here from the mina : exceptionRecived
+        // calls through connection.closeAllSessions which is also called by the public connection.close()
+        // with a null cause
+        // When we are closing the Session due to a protocol session error we simply create a new AMQException
+        // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
+        // We need to determin here if the connection should be
+
         synchronized (_connection.getFailoverMutex())
         {
             if (e instanceof AMQDisconnectedException)
@@ -763,13 +770,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         BasicMessageConsumer consumer = _consumers.get(consumerTag.toIntValue());
         if (consumer != null)
         {
-            // fixme this isn't right.. needs to check if _queue contains data for this consumer
-            if (consumer.isAutoClose()) // && _queue.isEmpty())
-            {
-                consumer.closeWhenNoMessages(true);
-            }
-
-            if (!consumer.isNoConsume())
+            if (!consumer.isNoConsume())  // Normal Consumer
             {
                 // Clean the Maps up first
                 // Flush any pending messages for this consumerTag
@@ -785,7 +786,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 _dispatcher.rejectPending(consumer);
             }
-            else
+            else // Queue Browser
             {
                 // Just close the consumer
                 // fixme  the CancelOK is being processed before the arriving messages..
@@ -793,13 +794,28 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 // has yet to receive before the close comes in.
 
                 // consumer.markClosed();
+
+
+
+                if (consumer.isAutoClose())
+                {     // There is a small window where the message is between the two queues in the dispatcher.
+                    if (consumer.isClosed())
+                    {
+                        if (_logger.isInfoEnabled())
+                        {
+                            _logger.info("Closing consumer:" + consumer.debugIdentity());
+                        }
+
+                        deregisterConsumer(consumer);
+
+                    }
+                    else
+                    {
+                        _queue.add(new UnprocessedMessage.CloseConsumerMessage(consumer));
+                    }
+                }
             }
         }
-        else
-        {
-            _logger.warn("Unable to confirm cancellation of consumer (" + consumerTag + "). Not found in consumer map.");
-        }
-
     }
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
@@ -2934,7 +2950,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                 _lock.wait(2000);
                             }
 
-                            if (message.getDeliverBody().getDeliveryTag() <= _rollbackMark.get())
+                            if (!(message instanceof UnprocessedMessage.CloseConsumerMessage)
+                                && (message.getDeliverBody().getDeliveryTag() <= _rollbackMark.get()))
                             {
                                 rejectMessage(message, true);
                             }

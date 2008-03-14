@@ -38,6 +38,7 @@ import javax.jms.MessageListener;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -121,7 +122,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * on the queue.  This is used for queue browsing.
      */
     private final boolean _autoClose;
-    private boolean _closeWhenNoMessages;
 
     private final boolean _noConsume;
     private List<StackTraceElement> _closedStack = null;
@@ -358,7 +358,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
         catch (InterruptedException e)
         {
-            _logger.warn("Interrupted: " + e);
+            _logger.warn("Interrupted acquire: " + e);
             if (isClosed())
             {
                 return null;
@@ -369,11 +369,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         try
         {
-            if (closeOnAutoClose())
-            {
-                return null;
-            }
-
             Object o = null;
             if (l > 0)
             {
@@ -386,7 +381,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                     catch (InterruptedException e)
                     {
-                        _logger.warn("Interrupted: " + e);
+                        _logger.warn("Interrupted poll: " + e);
                         if (isClosed())
                         {
                             return null;
@@ -404,7 +399,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                     catch (InterruptedException e)
                     {
-                        _logger.warn("Interrupted: " + e);
+                        _logger.warn("Interrupted take: " + e);
                         if (isClosed())
                         {
                             return null;
@@ -423,20 +418,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         finally
         {
             releaseReceiving();
-        }
-    }
-
-    private boolean closeOnAutoClose() throws JMSException
-    {
-        if (isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
-        {
-            close(false);
-
-            return true;
-        }
-        else
-        {
-            return false;
         }
     }
 
@@ -468,11 +449,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         try
         {
-            if (closeOnAutoClose())
-            {
-                return null;
-            }
-
             Object o = _synchronousQueue.poll();
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
@@ -513,6 +489,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             throw e;
         }
+        else if (o instanceof UnprocessedMessage.CloseConsumerMessage)
+        {
+            _closed.set(true);
+            deregisterConsumer();
+            return null;
+        }
         else
         {
             return (AbstractJMSMessage) o;
@@ -526,31 +508,30 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close(boolean sendClose) throws JMSException
     {
-        // synchronized (_closed)
-
         if (_logger.isInfoEnabled())
         {
             _logger.info("Closing consumer:" + debugIdentity());
         }
 
-        synchronized (_connection.getFailoverMutex())
+        if (!_closed.getAndSet(true))
         {
-            if (!_closed.getAndSet(true))
+            if (_logger.isDebugEnabled())
             {
-                if (_logger.isDebugEnabled())
+                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+                if (_closedStack != null)
                 {
-                    StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-                    if (_closedStack != null)
-                    {
-                        _logger.debug(_consumerTag + " previously:" + _closedStack.toString());
-                    }
-                    else
-                    {
-                        _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
-                    }
+                    _logger.debug(_consumerTag + " previously:" + _closedStack.toString());
                 }
+                else
+                {
+                    _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
+                }
+            }
 
-                if (sendClose)
+            if (sendClose)
+            {
+                // The Synchronized block only needs to protect network traffic.
+                synchronized (_connection.getFailoverMutex())
                 {
                     BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(_consumerTag, false);
 
@@ -564,7 +545,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                         {
                             _logger.debug("CancelOk'd for consumer:" + debugIdentity());
                         }
-
                     }
                     catch (AMQException e)
                     {
@@ -575,24 +555,26 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                         throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
                     }
                 }
-                else
+            }
+            else
+            {
+                // //fixme this probably is not right
+                // if (!isNoConsume())
+                { // done in BasicCancelOK Handler but not sending one so just deregister.
+                    deregisterConsumer();
+                }
+            }
+
+            // This will occur if session.close is called closing all consumers we may be blocked waiting for a receive
+            // so we need to let it know it is time to close.
+            if ((_messageListener != null) && _receiving.get())
+            {
+                if (_logger.isInfoEnabled())
                 {
-                    // //fixme this probably is not right
-                    // if (!isNoConsume())
-                    { // done in BasicCancelOK Handler but not sending one so just deregister.
-                        deregisterConsumer();
-                    }
+                    _logger.info("Interrupting thread: " + _receivingThread);
                 }
 
-                if ((_messageListener != null) && _receiving.get())
-                {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info("Interrupting thread: " + _receivingThread);
-                    }
-
-                    _receivingThread.interrupt();
-                }
+                _receivingThread.interrupt();
             }
         }
     }
@@ -634,6 +616,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     void notifyMessage(UnprocessedMessage messageFrame)
     {
+        if (messageFrame instanceof UnprocessedMessage.CloseConsumerMessage)
+        {
+            notifyCloseMessage((UnprocessedMessage.CloseConsumerMessage) messageFrame);
+            return;
+        }
+
         final boolean debug = _logger.isDebugEnabled();
 
         if (debug)
@@ -646,12 +634,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final BasicDeliverBody deliverBody = messageFrame.getDeliverBody();
 
             AbstractJMSMessage jmsMessage =
-                _messageFactory.createMessage(deliverBody.getDeliveryTag(),
-                                              deliverBody.getRedelivered(),
-                                              deliverBody.getExchange(),
-                                              deliverBody.getRoutingKey(),
-                                              messageFrame.getContentHeader(),
-                                              messageFrame.getBodies());
+                    _messageFactory.createMessage(deliverBody.getDeliveryTag(),
+                                                  deliverBody.getRedelivered(),
+                                                  deliverBody.getExchange(),
+                                                  deliverBody.getRoutingKey(),
+                                                  messageFrame.getContentHeader(),
+                                                  messageFrame.getBodies());
 
             if (debug)
             {
@@ -688,9 +676,32 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    /**
-     * @param jmsMessage this message has already been processed so can't redo preDeliver
-     */
+    /** @param closeMessage this message signals that we should close the browser */
+    public void notifyCloseMessage(UnprocessedMessage.CloseConsumerMessage closeMessage)
+    {
+        if (isMessageListenerSet())
+        {
+            // Currently only possible to get this msg type with a browser.
+            // If we get the message here then we should probably just close this consumer.
+            // Though an AutoClose consumer with message listener is quite odd...
+            // Just log out the fact so we know where we are
+            _logger.warn("Using an AutoCloseconsumer with message listener is not supported.");
+        }
+        else
+        {
+            try
+            {
+                _synchronousQueue.put(closeMessage);
+            }
+            catch (InterruptedException e)
+            {
+                _logger.info(" SynchronousQueue.put interupted. Usually result of connection closing," +
+                             "but we shouldn't have close yet");
+            }
+        }
+    }
+
+    /** @param jmsMessage this message has already been processed so can't redo preDeliver */
     public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
         try
@@ -911,18 +922,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public boolean isNoConsume()
     {
         return _noConsume;
-    }
-
-    public void closeWhenNoMessages(boolean b)
-    {
-        _closeWhenNoMessages = b;
-
-        if (_closeWhenNoMessages && _synchronousQueue.isEmpty() && _receiving.get() && (_messageListener != null))
-        {
-            _closed.set(true);
-            _receivingThread.interrupt();
-        }
-
     }
 
     public void rollback()

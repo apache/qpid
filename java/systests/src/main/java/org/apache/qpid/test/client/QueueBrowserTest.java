@@ -14,14 +14,17 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.test.client;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.test.VMTestCase;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.AMQException;
 
 import javax.jms.Queue;
 import javax.jms.ConnectionFactory;
@@ -88,7 +91,6 @@ public class QueueBrowserTest extends VMTestCase
 
     private void checkQueueDepth(int depth) throws JMSException, NamingException
     {
-        sendMessages(depth);
 
         // create QueueBrowser
         _logger.info("Creating Queue Browser");
@@ -100,6 +102,19 @@ public class QueueBrowserTest extends VMTestCase
         {
             _logger.debug("Checking for " + depth + " messages with QueueBrowser");
         }
+
+        long queueDepth = 0;
+
+        try
+        {
+            queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _queue);
+        }
+        catch (AMQException e)
+        {
+        }
+
+        assertEquals("Session reports Queue depth not as expected", depth, queueDepth);
+
 
         int msgCount = 0;
         Enumeration msgs = queueBrowser.getEnumeration();
@@ -116,11 +131,7 @@ public class QueueBrowserTest extends VMTestCase
         }
 
         // check to see if all messages found
-//        assertEquals("browser did not find all messages", MSG_COUNT, msgCount);
-        if (msgCount != depth)
-        {
-            _logger.warn(msgCount + " off" + depth + " messages received.");
-        }
+        assertEquals("Browser did not find all messages", depth, msgCount);
 
         //Close browser
         queueBrowser.close();
@@ -132,39 +143,61 @@ public class QueueBrowserTest extends VMTestCase
      *
      */
 
-     public void testQueueBrowserMsgsRemainOnQueue() throws Exception
-     {
-         int messages = 10;
+    public void testQueueBrowserMsgsRemainOnQueue() throws Exception
+    {
+        int messages = 10;
 
-         checkQueueDepth(messages);
+        sendMessages(messages);
 
-         // VERIFY
+        checkQueueDepth(messages);
 
-         // continue and try to receive all messages
-         MessageConsumer consumer = _clientSession.createConsumer(_queue);
+        // VERIFY
 
-         _logger.info("Verify messages are still on the queue");
+        // continue and try to receive all messages
+        MessageConsumer consumer = _clientSession.createConsumer(_queue);
 
-         Message tempMsg;
+        _logger.info("Verify messages are still on the queue");
 
-         for (int msgCount = 0; msgCount < messages; msgCount++)
-         {
-             tempMsg = (TextMessage) consumer.receive(RECEIVE_TIMEOUT);
-             if (tempMsg == null)
-             {
-                 fail("Message " + msgCount + " not retrieved from queue");
-             }
-         }
+        Message tempMsg;
 
-         _logger.info("All messages recevied from queue");
-     }
+        for (int msgCount = 0; msgCount < messages; msgCount++)
+        {
+            tempMsg = (TextMessage) consumer.receive(RECEIVE_TIMEOUT);
+            if (tempMsg == null)
+            {
+                fail("Message " + msgCount + " not retrieved from queue");
+            }
+        }
 
-     /**
-      * This tests you can browse an empty queue, see QPID-785
-      * @throws Exception
-      */
-     public void testBrowsingEmptyQueue() throws Exception
-     {
-         checkQueueDepth(0);
-     }
+        consumer.close();
+
+        _logger.info("All messages recevied from queue");
+    }
+
+    /**
+     * This tests you can browse an empty queue, see QPID-785
+     *
+     * @throws Exception
+     */
+    public void testBrowsingEmptyQueue() throws Exception
+    {
+        checkQueueDepth(0);
+    }
+
+    public void loop() throws JMSException
+    {
+        int run = 0;
+        try
+        {
+            while (true)
+            {
+                System.err.println(run++ + ":************************************************************************");
+                testQueueBrowserMsgsRemainOnQueue();
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.error(e, e);
+        }
+    }
 }
