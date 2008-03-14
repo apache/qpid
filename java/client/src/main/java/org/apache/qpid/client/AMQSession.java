@@ -2294,9 +2294,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             public boolean processMethod(int channelId, AMQMethodBody frame) //throws AMQException
             {
                 boolean matches = super.processMethod(channelId, frame);
-                QueueDeclareOkBody declareOk = (QueueDeclareOkBody) frame;
-                _messageCount = declareOk.getMessageCount();
-                _consumerCount = declareOk.getConsumerCount();
+                if (matches)
+                {
+                    QueueDeclareOkBody declareOk = (QueueDeclareOkBody) frame;
+                    _messageCount = declareOk.getMessageCount();
+                    _consumerCount = declareOk.getConsumerCount();
+                }
                 return matches;
             }
 
