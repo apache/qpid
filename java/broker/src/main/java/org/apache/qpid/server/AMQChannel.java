@@ -349,7 +349,14 @@ public class AMQChannel
         return tag;
     }
 
-    public void unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
+    /**
+     * Unsubscribe a consumer from a queue.
+     * @param session
+     * @param consumerTag
+     * @return true if the consumerTag had a mapped queue that could be unregistered.
+     * @throws AMQException
+     */
+    public boolean unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
     {
         if (_log.isDebugEnabled())
         {
@@ -374,7 +381,9 @@ public class AMQChannel
         if (q != null)
         {
             q.unregisterProtocolSession(session, _channelId, consumerTag);
+            return true;
         }
+        return false;
     }
 
     /**
