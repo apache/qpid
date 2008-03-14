@@ -461,7 +461,7 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    public boolean isAutoClose()
+    private boolean isAutoClose()
     {
         return _autoClose;
     }
@@ -523,19 +523,24 @@ public class SubscriptionImpl implements Subscription
         {
             _logger.info("Closing autoclose subscription (" + debugIdentity() + "):" + this);
 
-            ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
-            converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
-            _sentClose = true;
-
-            //fixme JIRA do this better
+            boolean unregisteredOK = false;
             try
             {
-                channel.unsubscribeConsumer(protocolSession, consumerTag);
+                unregisteredOK = channel.unsubscribeConsumer(protocolSession, consumerTag);
             }
             catch (AMQException e)
             {
                 // Occurs if we cannot find the subscriber in the channel with protocolSession and consumerTag.
+                _logger.info("Unable to UnsubscribeConsumer :" + consumerTag +" so not going to send CancelOK.");
             }
+
+            if (unregisteredOK)
+            {
+                ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
+                converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
+                _sentClose = true;
+            }
+
         }
     }
 
@@ -664,6 +669,21 @@ public class SubscriptionImpl implements Subscription
     public AMQChannel getChannel()
     {
         return channel;
+    }
+
+    public void start()
+    {
+        //Check to see if we need to autoclose
+        if (filtersMessages())
+        {
+            if (isAutoClose())
+            {
+                if (_messages.isEmpty())
+                {
+                    autoclose();
+                }
+            }
+        }
     }
 
 }

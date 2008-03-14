@@ -700,6 +700,8 @@ public class AMQQueue implements Managable, Comparable
         {
             _subscribers.setExclusive(true);
         }
+
+        subscription.start();
     }
 
     private boolean isExclusive()
