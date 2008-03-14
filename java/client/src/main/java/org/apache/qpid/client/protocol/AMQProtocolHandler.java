@@ -30,7 +30,6 @@ import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -156,6 +155,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     /** Defines the default timeout to use for synchronous protocol commands. */
     private final long DEFAULT_SYNC_TIMEOUT = 1000 * 30;
 
+    /** Default buffer size for pending messages reads */
+    private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
+
+    /** Default buffer size for pending messages writes */
+    private static final String DEFAULT_WRITE_BUFFER_LIMIT = "262144";
+
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
      *
@@ -219,19 +224,14 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 //Add IO Protection Filters
                 IoFilterChain chain = session.getFilterChain();
 
-                int buf_size = 32768;
-                if (session.getConfig() instanceof SocketSessionConfig)
-                {
-                    buf_size = ((SocketSessionConfig) session.getConfig()).getReceiveBufferSize();
-                }
                 session.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
 
                 ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.read.buffer.limit", DEFAULT_READ_BUFFER_LIMIT)));
                 readfilter.attach(chain);
 
                 WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.write.buffer.limit", DEFAULT_WRITE_BUFFER_LIMIT)));
                 writefilter.attach(chain);
                 session.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
 

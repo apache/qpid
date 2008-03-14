@@ -33,7 +33,9 @@
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
         <qpidnio>false</qpidnio>
-        <protectio>false</protectio>
+        <protectio>
+            <enabled>false</enabled>
+        </protectio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
