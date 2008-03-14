@@ -1,5 +1,8 @@
 package org.apache.qpid.test.client;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.VMTestCase;
 
 import javax.jms.Connection;
@@ -69,14 +72,14 @@ public class DupsOkTest extends VMTestCase
         producerConnection.close();
     }
 
-    public void testDupsOK() throws NamingException, JMSException, InterruptedException
+    public void testDupsOK() throws NamingException, JMSException, InterruptedException, AMQException
     {
         //Create Client
         Connection clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         clientConnection.start();
 
-        Session clientSession = clientConnection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+        final Session clientSession = clientConnection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
 
         MessageConsumer consumer = clientSession.createConsumer(_queue);
 
@@ -105,12 +108,16 @@ public class DupsOkTest extends VMTestCase
                         {
                             try
                             {
-                                int remainingMessages = getMessageCount(_queue.getQueueName());
+                                long remainingMessages = ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue);
                                 if(remainingMessages != 0)
                                 {
 
                                     assertEquals("The queue should have 0 msgs left, seen " + _msgCount + " messages.", 0, getMessageCount(_queue.getQueueName()));
                                 }
+                            }
+                            catch (AMQException e)
+                            {
+                                assertNull("Got AMQException", e);
                             }
                             finally
                             {
@@ -144,9 +151,9 @@ public class DupsOkTest extends VMTestCase
 
 //        consumer.close();
 
+        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
         clientConnection.close();
 
-        assertEquals("The queue should have 0 msgs left", 0, getMessageCount(_queue.getQueueName()));
     }
 
 
