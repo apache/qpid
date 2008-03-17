@@ -46,7 +46,7 @@ using std::mem_fun;
 
 Queue::Queue(const string& _name, bool _autodelete, 
              MessageStore* const _store,
-             const ConnectionToken* const _owner,
+             const OwnershipToken* const _owner,
              Manageable* parent) :
 
     name(_name), 
@@ -582,7 +582,7 @@ void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue)
 
 }
 
-bool Queue::isExclusiveOwner(const ConnectionToken* const o) const 
+bool Queue::isExclusiveOwner(const OwnershipToken* const o) const 
 { 
     Mutex::ScopedLock locker(ownershipLock);
     return o == owner; 
@@ -594,7 +594,7 @@ void Queue::releaseExclusiveOwnership()
     owner = 0; 
 }
 
-bool Queue::setExclusiveOwner(const ConnectionToken* const o) 
+bool Queue::setExclusiveOwner(const OwnershipToken* const o) 
 { 
     Mutex::ScopedLock locker(ownershipLock);
     if (owner) {
