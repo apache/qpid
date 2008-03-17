@@ -26,10 +26,19 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 import javax.naming.Context;
+import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Map;
 
 public class VMTestCase extends TestCase
@@ -104,10 +113,36 @@ public class VMTestCase extends TestCase
 
     protected void tearDown() throws Exception
     {
+        purgeQueues();
+
         TransportConnection.killVMBroker(1);
         ApplicationRegistry.remove(1);
 
         super.tearDown();
+    }
+
+    private void purgeQueues() throws NamingException, JMSException
+    {
+        Connection connection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        Iterator<String> queueNames = new HashSet<String>(_queues.values()).iterator();
+
+
+        //todo this could be replaced with an AMQP purge queue command.
+        while (queueNames.hasNext())
+        {
+            MessageConsumer consumer = session.createConsumer(session.createQueue(queueNames.next()));
+
+            Message message = consumer.receive(RECEIVE_TIMEOUT);
+
+            while (message != null)
+            {
+                message = consumer.receive(RECEIVE_TIMEOUT);
+            }
+
+        }
     }
 
     public int getMessageCount(String queueName)
