@@ -28,7 +28,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include "qpid/framing/amqp_types.h"
-#include "ConnectionToken.h"
+#include "OwnershipToken.h"
 #include "Consumer.h"
 #include "Message.h"
 #include "qpid/framing/FieldTable.h"
@@ -63,7 +63,7 @@ namespace qpid {
             const string name;
             const bool autodelete;
             MessageStore* store;
-            const ConnectionToken* owner;
+            const OwnershipToken* owner;
             uint32_t consumerCount;
             bool exclusive;
             Listeners listeners;
@@ -100,7 +100,7 @@ namespace qpid {
 
             Queue(const string& name, bool autodelete = false, 
                   MessageStore* const store = 0, 
-                  const ConnectionToken* const owner = 0,
+                  const OwnershipToken* const owner = 0,
                   Manageable* parent = 0);
             ~Queue();
 
@@ -143,9 +143,9 @@ namespace qpid {
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
-            bool isExclusiveOwner(const ConnectionToken* const o) const;
+            bool isExclusiveOwner(const OwnershipToken* const o) const;
             void releaseExclusiveOwnership();
-            bool setExclusiveOwner(const ConnectionToken* const o);
+            bool setExclusiveOwner(const OwnershipToken* const o);
             bool hasExclusiveConsumer() const;
             bool hasExclusiveOwner() const;
             inline bool isDurable() const { return store != 0; }

@@ -86,19 +86,17 @@ class QueueTests(TestBase010):
         Test that the exclusive field is honoured in queue.declare
         """
         # TestBase.setUp has already opened session(1)
-        c1 = self.session
+        s1 = self.session
         # Here we open a second separate connection:
-        other = self.connect()
-        c2 = other.session(1)
-        c2.session_open()
+        s2 = self.conn.session("other", 2)
 
         #declare an exclusive queue:
-        c1.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
+        s1.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
         try:
             #other connection should not be allowed to declare this:
-            c2.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
+            s2.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
             self.fail("Expected second exclusive queue_declare to raise a channel exception")
-        except Closed, e:
+        except SessionException, e:
             self.assertEquals(405, e.args[0].error_code)
 
 
@@ -322,24 +320,23 @@ class QueueTests(TestBase010):
         Test auto-deletion (of non-exclusive queues)
         """
         session = self.session
-        other = self.connect()
-        session2 = other.session(1)
-        session2.session_open()
+        session2 =self.conn.session("other", 1)
 
         session.queue_declare(queue="auto-delete-me", auto_delete=True)
 
         #consume from both sessions
-        reply = session.basic_consume(queue="auto-delete-me")
-        session2.basic_consume(queue="auto-delete-me")
+        tag = "my-tag"
+        session.message_subscribe(queue="auto-delete-me", destination=tag)
+        session2.message_subscribe(queue="auto-delete-me", destination=tag)
 
         #implicit cancel
-        session2.session_close()
+        session2.close()
 
         #check it is still there
         session.queue_declare(queue="auto-delete-me", passive=True)
 
         #explicit cancel => queue is now unused again:
-        session.basic_cancel(consumer_tag=reply.consumer_tag)
+        session.message_cancel(destination=tag)
 
         #NOTE: this assumes there is no timeout in use
 
