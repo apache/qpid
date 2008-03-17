@@ -19,6 +19,7 @@
 #include "Connection.h"
 #include "DeliveryToken.h"
 #include "MessageDelivery.h"
+#include "Queue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <boost/format.hpp>
@@ -180,6 +181,22 @@ Exchange010BoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::str
     }
 }
 
+SessionAdapter::QueueHandlerImpl::QueueHandlerImpl(SemanticState& session) : HandlerHelper(session), broker(getBroker())
+{}
+
+
+SessionAdapter::QueueHandlerImpl::~QueueHandlerImpl()
+{
+    while (!exclusiveQueues.empty()) {
+        Queue::shared_ptr q(exclusiveQueues.front());
+        q->releaseExclusiveOwnership();
+        if (q->canAutoDelete()) {
+            Queue::tryAutoDelete(broker, q);
+        }
+        exclusiveQueues.erase(exclusiveQueues.begin());
+    }
+}
+
 Queue010QueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 {
     Queue::shared_ptr queue = getQueue(name);
@@ -212,7 +229,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             getBroker().getQueues().declare(
                 name, durable,
                 autoDelete,
-                exclusive ? &getConnection() : 0);
+                exclusive ? this : 0);
 	queue = queue_created.first;
 	assert(queue);
 	if (queue_created.second) { // This is a new queue
@@ -230,15 +247,15 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
 
             //handle automatic cleanup:
 	    if (exclusive) {
-		getConnection().exclusiveQueues.push_back(queue);
+		exclusiveQueues.push_back(queue);
 	    }
 	} else {
-            if (exclusive && queue->setExclusiveOwner(&getConnection())) {
-		getConnection().exclusiveQueues.push_back(queue);
+            if (exclusive && queue->setExclusiveOwner(this)) {
+		exclusiveQueues.push_back(queue);
             }
         }
     }
-    if (exclusive && !queue->isExclusiveOwner(&getConnection())) 
+    if (exclusive && !queue->isExclusiveOwner(this)) 
 	throw ResourceLockedException(
             QPID_MSG("Cannot grant exclusive access to queue "
                      << queue->getName()));

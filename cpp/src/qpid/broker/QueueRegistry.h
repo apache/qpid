@@ -48,7 +48,7 @@ class QueueRegistry{
      * was created by this declare call false if it already existed.
      */
     std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, bool autodelete = false, 
-                                               const ConnectionToken* const owner = 0);
+                                               const OwnershipToken* const owner = 0);
 
     /**
      * Destroy the named queue.
@@ -62,7 +62,6 @@ class QueueRegistry{
      * subsequent calls to find or declare with the same name.
      *
      */
-    void destroyLH (const string& name);
     void destroy   (const string& name);
     template <class Test> bool destroyIf(const string& name, Test test)
     {
@@ -107,6 +106,9 @@ private:
     int counter;
     MessageStore* store;
     management::Manageable* parent;
+
+    //destroy impl that assumes lock is already held:
+    void destroyLH (const string& name);
 };
 
     

@@ -111,14 +111,13 @@ class AlternateExchangeTests(TestBase010):
         session = self.session
         session.exchange_declare(exchange="alternate", type="fanout")
 
-        session = self.conn.session("alternate", 2)
-        session.queue_declare(queue="q", exclusive=True, auto_delete=True, alternate_exchange="alternate")
+        session2 = self.conn.session("alternate", 2)
+        session2.queue_declare(queue="q", exclusive=True, auto_delete=True, alternate_exchange="alternate")
         try:
-            session.exchange_delete(exchange="alternate")
+            session2.exchange_delete(exchange="alternate")
             self.fail("Expected deletion of in-use alternate-exchange to fail")
         except SessionException, e:
             session = self.session
-            session.queue_delete(queue="q")
             session.exchange_delete(exchange="alternate")
             self.assertEquals(530, e.args[0].error_code)            
 

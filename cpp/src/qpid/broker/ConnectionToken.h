@@ -21,13 +21,14 @@
 #ifndef _ConnectionToken_
 #define _ConnectionToken_
 
+#include "OwnershipToken.h"
 namespace qpid {
     namespace broker {
         /**
          * An empty interface allowing opaque implementations of some
          * form of token to identify a connection.
          */
-        class ConnectionToken{
+        class ConnectionToken : public OwnershipToken {
         public:
             virtual ~ConnectionToken(){}
         };
