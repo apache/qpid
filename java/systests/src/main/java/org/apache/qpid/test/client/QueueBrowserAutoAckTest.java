@@ -64,6 +64,16 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
     }
 
+    public void tearDown() throws Exception
+    {
+        if (_clientConnection != null)
+        {
+            _clientConnection.close();
+        }
+
+        super.tearDown();
+    }
+
     protected void sendMessages(int num) throws JMSException
     {
         Connection producerConnection = null;
