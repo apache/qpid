@@ -539,18 +539,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
 
             TransportConnection.getInstance(brokerDetail).connect(_protocolHandler, brokerDetail);
-             // this blocks until the connection has been set up or when an error
-             // has prevented the connection being set up
+            // this blocks until the connection has been set up or when an error
+            // has prevented the connection being set up
 
             //_protocolHandler.attainState(AMQState.CONNECTION_OPEN);
             AMQState state = _protocolHandler.attainState(openOrClosedStates);
-            if(state == AMQState.CONNECTION_OPEN)
+            if (state == AMQState.CONNECTION_OPEN)
             {
-
                 _failoverPolicy.attainedConnection();
 
                 // Again this should be changed to a suitable notify
                 _connected = true;
+            }
+            else if (state == AMQState.CONNECTION_CLOSED)
+            {
+                //We need to change protocol handler here as an error during the connect will not
+                // cause the StateManager to be replaced. So the state is out of sync on reconnect
+                // This occurs here when we need to re-negotiate protocol versions
+                _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_NOT_STARTED);
             }
         }
         catch (AMQException e)
