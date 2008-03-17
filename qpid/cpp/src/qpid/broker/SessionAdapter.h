@@ -25,8 +25,11 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/SequenceSet.h"
+#include "OwnershipToken.h"
 
+#include <vector>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -34,6 +37,7 @@ namespace broker {
 class Channel;
 class Connection;
 class Broker;
+class Queue;
 
 /**
  * Per-channel protocol adapter.
@@ -44,7 +48,7 @@ class Broker;
  * peer.
  * 
  */
-class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
+ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 {
   public:
     SessionAdapter(SemanticState& session);
@@ -116,12 +120,15 @@ class SessionAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
                             shared_ptr<Exchange> alternate);
     };
 
-    class QueueHandlerImpl :
-        public Queue010Handler,
-        public HandlerHelper
+    class QueueHandlerImpl : public Queue010Handler,
+            public HandlerHelper, public OwnershipToken
     {
+        Broker& broker;
+        std::vector< boost::shared_ptr<Queue> > exclusiveQueues;
+
       public:
-        QueueHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
+        QueueHandlerImpl(SemanticState& session);
+        ~QueueHandlerImpl();
         
         void declare(const std::string& queue,
                      const std::string& alternateExchange, 

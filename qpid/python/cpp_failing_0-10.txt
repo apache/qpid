@@ -33,5 +33,3 @@ tests_0-10.message.MessageTests.test_recover_requeue
 tests_0-10.testlib.TestBaseTest.testAssertEmptyFail
 tests_0-10.testlib.TestBaseTest.testAssertEmptyPass
 tests_0-10.testlib.TestBaseTest.testMessageProperties
-tests_0-10.queue.QueueTests.test_autodelete_shared
-tests_0-10.queue.QueueTests.test_declare_exclusive
