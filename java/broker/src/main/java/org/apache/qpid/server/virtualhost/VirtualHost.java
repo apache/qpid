@@ -286,6 +286,10 @@ public class VirtualHost implements Accessable
 
     public void close() throws Exception
     {
+        if (_houseKeepingTimer != null)
+        {
+            _houseKeepingTimer.cancel();
+        }
         if (_messageStore != null)
         {
             _messageStore.close();
