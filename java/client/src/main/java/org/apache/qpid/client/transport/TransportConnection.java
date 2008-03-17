@@ -332,15 +332,20 @@ public class TransportConnection
 
     public static void killVMBroker(int port)
     {
+        VmPipeAddress pipe;
         synchronized (_inVmPipeAddress)
         {
-            VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
+            pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
             if (pipe != null)
             {
                 _logger.info("Killing VM Broker:" + port);
                 _inVmPipeAddress.remove(port);
-                _acceptor.unbind(pipe);
             }
+        }
+        //This doesn't need to be sychronized
+        if (pipe != null)
+        {
+            _acceptor.unbind(pipe);
         }
     }
 
