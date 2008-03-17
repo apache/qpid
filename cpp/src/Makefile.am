@@ -295,6 +295,7 @@ nobase_include_HEADERS = \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionHandler.h \
   qpid/broker/ConnectionToken.h \
+  qpid/broker/OwnershipToken.h \
   qpid/broker/Consumer.h \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
