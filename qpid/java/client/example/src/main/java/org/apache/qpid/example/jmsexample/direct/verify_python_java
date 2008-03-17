@@ -1,0 +1,5 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+py=$PYTHON/direct
+clients java -cp  "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Consumer  py/direct_producer.py
+outputs ./direct_consumer.java.out  ./direct_producer.py.out
+
