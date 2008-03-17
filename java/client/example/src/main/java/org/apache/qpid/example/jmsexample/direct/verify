@@ -1,0 +1,4 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+clients java -cp  "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Consumer  java -cp  "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
+outputs ./direct_consumer.java.out  ./direct_producer.java.out
+
