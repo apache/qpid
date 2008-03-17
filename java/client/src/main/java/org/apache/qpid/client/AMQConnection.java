@@ -656,71 +656,71 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetchHigh, final int prefetchLow) throws JMSException
     {
-        synchronized(_sessionCreationLock)
+        synchronized (_sessionCreationLock)
         {
-        checkNotClosed();
+            checkNotClosed();
 
-        if (channelLimitReached())
-        {
-            throw new ChannelLimitReachedException(_maximumChannelCount);
-        }
+            if (channelLimitReached())
+            {
+                throw new ChannelLimitReachedException(_maximumChannelCount);
+            }
 
-        return new FailoverRetrySupport<org.apache.qpid.jms.Session, JMSException>(
-                new FailoverProtectedOperation<org.apache.qpid.jms.Session, JMSException>()
-                {
-                    public org.apache.qpid.jms.Session execute() throws JMSException, FailoverException
+            return new FailoverRetrySupport<org.apache.qpid.jms.Session, JMSException>(
+                    new FailoverProtectedOperation<org.apache.qpid.jms.Session, JMSException>()
                     {
-                        int channelId = _idFactory.incrementAndGet();
+                        public org.apache.qpid.jms.Session execute() throws JMSException, FailoverException
+                        {
+                            int channelId = _idFactory.incrementAndGet();
 
-                        if (_logger.isDebugEnabled())
-                        {
-                            _logger.debug("Write channel open frame for channel id " + channelId);
-                        }
-
-                        // We must create the session and register it before actually sending the frame to the server to
-                        // open it, so that there is no window where we could receive data on the channel and not be set
-                        // up to handle it appropriately.
-                        AMQSession session =
-                                new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
-                                               prefetchLow);
-                        // _protocolHandler.addSessionByChannel(channelId, session);
-                        registerSession(channelId, session);
-
-                        boolean success = false;
-                        try
-                        {
-                            createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
-                            success = true;
-                        }
-                        catch (AMQException e)
-                        {
-                            JMSException jmse = new JMSException("Error creating session: " + e);
-                            jmse.setLinkedException(e);
-                            throw jmse;
-                        }
-                        finally
-                        {
-                            if (!success)
+                            if (_logger.isDebugEnabled())
                             {
-                                deregisterSession(channelId);
+                                _logger.debug("Write channel open frame for channel id " + channelId);
                             }
-                        }
 
-                        if (_started)
-                        {
+                            // We must create the session and register it before actually sending the frame to the server to
+                            // open it, so that there is no window where we could receive data on the channel and not be set
+                            // up to handle it appropriately.
+                            AMQSession session =
+                                    new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
+                                                   prefetchLow);
+                            // _protocolHandler.addSessionByChannel(channelId, session);
+                            registerSession(channelId, session);
+
+                            boolean success = false;
                             try
                             {
-                                session.start();
+                                createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
+                                success = true;
                             }
                             catch (AMQException e)
                             {
-                                throw new JMSAMQException(e);
+                                JMSException jmse = new JMSException("Error creating session: " + e);
+                                jmse.setLinkedException(e);
+                                throw jmse;
                             }
-                        }
+                            finally
+                            {
+                                if (!success)
+                                {
+                                    deregisterSession(channelId);
+                                }
+                            }
 
-                        return session;
-                    }
-                }, this).execute();
+                            if (_started)
+                            {
+                                try
+                                {
+                                    session.start();
+                                }
+                                catch (AMQException e)
+                                {
+                                    throw new JMSAMQException(e);
+                                }
+                            }
+
+                            return session;
+                        }
+                    }, this).execute();
         }
     }
 
@@ -732,13 +732,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         // TODO: Be aware of possible changes to parameter order as versions change.
 
-        _protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
+        _protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId), ChannelOpenOkBody.class);
 
-        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
+        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(0, prefetchHigh, false);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
+        _protocolHandler.syncWrite(basicQosBody.generateFrame(channelId), BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -926,13 +926,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             else
             {
-            synchronized (getFailoverMutex())
-            {
                 if (!_closed.getAndSet(true))
                 {
-                    try
+
+                    synchronized (getFailoverMutex())
                     {
-                        long startCloseTime = System.currentTimeMillis();
+                        try
+                        {
+                            long startCloseTime = System.currentTimeMillis();
 
                         closeAllSessions(null, timeout, startCloseTime);
 

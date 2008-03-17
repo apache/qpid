@@ -594,14 +594,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                          + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
-        synchronized (_connection.getFailoverMutex())
+        // Ensure we only try and close an open session.
+        if (!_closed.getAndSet(true))
         {
-            // We must close down all producers and consumers in an orderly fashion. This is the only method
-            // that can be called from a different thread of control from the one controlling the session.
-            synchronized (_messageDeliveryLock)
+            synchronized (_connection.getFailoverMutex())
             {
-                // Ensure we only try and close an open session.
-                if (!_closed.getAndSet(true))
+                // We must close down all producers and consumers in an orderly fashion. This is the only method
+                // that can be called from a different thread of control from the one controlling the session.
+                synchronized (_messageDeliveryLock)
                 {
                     // we pass null since this is not an error case
                     closeProducersAndConsumers(null);
@@ -655,33 +655,37 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
         // We need to determin here if the connection should be
 
-        synchronized (_connection.getFailoverMutex())
+        if (e instanceof AMQDisconnectedException)
         {
-            if (e instanceof AMQDisconnectedException)
+            if (_dispatcher != null)
             {
-                if (_dispatcher != null)
-                {
-                    // Failover failed and ain't coming back. Knife the dispatcher.
-                    _dispatcher.interrupt();
-                }
+                // Failover failed and ain't coming back. Knife the dispatcher.
+                _dispatcher.interrupt();
             }
-            synchronized (_messageDeliveryLock)
-            {
-                // An AMQException has an error code and message already and will be passed in when closure occurs as a
-                // result of a channel close request
-                _closed.set(true);
-                AMQException amqe;
-                if (e instanceof AMQException)
-                {
-                    amqe = (AMQException) e;
-                }
-                else
-                {
-                    amqe = new AMQException("Closing session forcibly", e);
-                }
+        }
 
-                _connection.deregisterSession(_channelId);
-                closeProducersAndConsumers(amqe);
+        if (!_closed.getAndSet(true))
+        {
+            synchronized (_connection.getFailoverMutex())
+            {
+                synchronized (_messageDeliveryLock)
+                {
+                    // An AMQException has an error code and message already and will be passed in when closure occurs as a
+                    // result of a channel close request
+                    AMQException amqe;
+                    if (e instanceof AMQException)
+                    {
+                        amqe = (AMQException) e;
+                    }
+                    else
+                    {
+                        amqe = new AMQException("Closing session forcibly", e);
+                    }
+
+
+                    _connection.deregisterSession(_channelId);
+                    closeProducersAndConsumers(amqe);
+                }
             }
         }
     }
