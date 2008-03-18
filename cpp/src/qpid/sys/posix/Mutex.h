@@ -36,8 +36,8 @@ class Mutex : private boost::noncopyable {
     friend class Condition;
 
 public:
-    typedef ScopedLock<Mutex> ScopedLock;
-    typedef ScopedUnlock<Mutex> ScopedUnlock;
+    typedef ::qpid::sys::ScopedLock<Mutex> ScopedLock;
+    typedef ::qpid::sys::ScopedUnlock<Mutex> ScopedUnlock;
      
     inline Mutex();
     inline ~Mutex();
@@ -57,8 +57,8 @@ class RWlock : private boost::noncopyable {
     friend class Condition;
 
 public:
-    typedef ScopedRlock<RWlock> ScopedRlock;
-    typedef ScopedWlock<RWlock> ScopedWlock;
+    typedef ::qpid::sys::ScopedRlock<RWlock> ScopedRlock;
+    typedef ::qpid::sys::ScopedWlock<RWlock> ScopedWlock;
     
     inline RWlock();
     inline ~RWlock();
@@ -123,7 +123,7 @@ namespace {
  */
 struct PODMutex 
 {
-    typedef ScopedLock<PODMutex> ScopedLock;
+    typedef ::qpid::sys::ScopedLock<PODMutex> ScopedLock;
 
     inline void lock();  
     inline void unlock();
