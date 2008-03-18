@@ -19,6 +19,7 @@ import org.apache.qpidity.transport.ConnectionClose;
 import org.apache.qpidity.transport.ConnectionCloseOk;
 import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.ConnectionEvent;
+import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
@@ -141,7 +142,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
 
         // XXX: hardcoded version numbers
-        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
+        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, TransportConstants.CONNECTION_VERSION_MAJOR, TransportConstants.CONNECTION_VERSION_MINOR)));
 
         try
         {
