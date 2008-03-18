@@ -38,7 +38,6 @@ namespace broker {
 
 class Connection;
 
-// TODO aconway 2007-09-18: Rename to ConnectionHandler
 class ConnectionHandler : public framing::FrameHandler
 {
     struct Handler : public framing::AMQP_ServerOperations::Connection010Handler, 
@@ -82,7 +81,6 @@ class ConnectionHandler : public framing::FrameHandler
     std::auto_ptr<Handler> handler;
   public:
     ConnectionHandler(Connection& connection);
-    void init(const framing::ProtocolInitiation& header);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
 };

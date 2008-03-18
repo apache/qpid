@@ -28,6 +28,5 @@
 #include "AMQHeartbeatBody.h"
 #include "InputHandler.h"
 #include "OutputHandler.h"
-#include "InitiationHandler.h"
 #include "ProtocolInitiation.h"
 #include "ProtocolVersion.h"

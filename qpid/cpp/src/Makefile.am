@@ -131,7 +131,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/FieldValue.cpp \
   qpid/framing/FramingContent.cpp \
   qpid/framing/FrameSet.cpp \
-  qpid/framing/InitiationHandler.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
   qpid/framing/SessionState.cpp \
@@ -168,6 +167,8 @@ libqpidcommon_la_SOURCES = \
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
+  qpid/amqp_0_10/Connection.h \
+  qpid/amqp_0_10/Connection.cpp \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/SessionAdapter.cpp \
@@ -177,6 +178,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PersistableMessage.cpp \
   qpid/broker/Bridge.cpp \
   qpid/broker/PreviewConnection.cpp \
+  qpid/broker/PreviewConnectionCodec.cpp \
   qpid/broker/PreviewConnectionHandler.cpp \
   qpid/broker/PreviewSessionHandler.cpp \
   qpid/broker/PreviewSessionManager.cpp \
@@ -286,6 +288,7 @@ nobase_include_HEADERS = \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
   qpid/broker/PreviewConnection.h \
+  qpid/broker/PreviewConnectionCodec.h \
   qpid/broker/PreviewConnectionHandler.h \
   qpid/broker/PreviewSessionHandler.h \
   qpid/broker/PreviewSessionManager.h \
@@ -409,7 +412,6 @@ nobase_include_HEADERS = \
   qpid/framing/FramingContent.h \
   qpid/framing/Handler.h \
   qpid/framing/HeaderProperties.h \
-  qpid/framing/InitiationHandler.h \
   qpid/framing/Invoker.h \
   qpid/framing/InputHandler.h \
   qpid/framing/MethodContent.h \
@@ -459,6 +461,7 @@ nobase_include_HEADERS = \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
+  qpid/sys/ConnectionCodec.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \

@@ -24,12 +24,10 @@
 
 #include <stdint.h>
 #include "qpid/SharedObject.h"
+#include "ConnectionCodec.h"
 
 namespace qpid {
 namespace sys {
-
-class ConnectionInputHandlerFactory;
-class ConnectionInputHandler;
 
 class Acceptor : public qpid::SharedObject<Acceptor>
 {
@@ -38,10 +36,9 @@ class Acceptor : public qpid::SharedObject<Acceptor>
     virtual ~Acceptor() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
-    virtual void run(ConnectionInputHandlerFactory* factory) = 0;
-    virtual ConnectionInputHandler* connect(
-        const std::string& host, int16_t port,
-        ConnectionInputHandlerFactory* factory) = 0;
+    virtual void run(ConnectionCodec::Factory*) = 0;
+    virtual void connect(
+        const std::string& host, int16_t port, ConnectionCodec::Factory* codec) = 0;
 
     /** Note: this function is async-signal safe */
     virtual void shutdown() = 0;

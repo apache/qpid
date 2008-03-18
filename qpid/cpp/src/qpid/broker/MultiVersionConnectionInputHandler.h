@@ -44,12 +44,10 @@ public:
     MultiVersionConnectionInputHandler(qpid::sys::ConnectionOutputHandler* out, Broker& broker, const std::string& id);
     virtual ~MultiVersionConnectionInputHandler() {}
 
-    void initiated(const qpid::framing::ProtocolInitiation&);
     void received(qpid::framing::AMQFrame&);
     void idleOut();
     void idleIn();
     bool doOutput();    
-    qpid::framing::ProtocolInitiation getInitiation();
     void closed();
 };
 

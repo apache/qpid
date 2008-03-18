@@ -90,7 +90,9 @@ PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& brok
     adapter(*this),
     mgmtClosing(0),
     mgmtId(mgmtId_)
-{}
+{
+    initMgmt();
+}
 
 void PreviewConnection::initMgmt(bool asLink)
 {
@@ -132,12 +134,6 @@ void PreviewConnection::close(
     adapter.close(code, text, classId, methodId);
     channels.clear();
     getOutput().close();
-}
-
-void PreviewConnection::initiated(const framing::ProtocolInitiation& header) {
-    version = ProtocolVersion(header.getMajor(), header.getMinor());
-    adapter.init(header);
-    initMgmt();
 }
 
 void PreviewConnection::idleOut(){}
