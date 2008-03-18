@@ -28,8 +28,8 @@ Each line is a name=value pair. Blank lines and lines beginning with # are ignor
   # My qpidd configuration file.
   port=6000
   max-connections=10
-  log.output=stdout
-  log.output=/tmp/qpidd.log
+  log-output=stdout
+  log-output=/tmp/qpidd.log
 
 [ENVIRONMENT]
 .I QPID_<option>
