@@ -1301,7 +1301,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _logger.error("Throwable Received but no listener set: " + cause.getMessage());
         }
 
-        if (!(cause instanceof AMQUndeliveredException) && !(cause instanceof AMQAuthenticationException))
+        if (hardError(cause))
         {
             try
             {
@@ -1323,6 +1323,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             _logger.info("Not a hard-error connection not closing: " + cause.getMessage());
         }
+    }
+
+    private boolean hardError(Throwable cause)
+    {
+        if (cause instanceof AMQException)
+        {
+            return ((AMQException)cause).isHardError();
+        }
+
+        return true;
     }
 
     void registerSession(int channelId, AMQSession session)
