@@ -65,12 +65,10 @@ class Connection : public sys::ConnectionInputHandler,
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
-    void initiated(const framing::ProtocolInitiation& header);
     void idleOut();
     void idleIn();
     void closed();
     bool doOutput();
-    framing::ProtocolInitiation getInitiation() { return framing::ProtocolInitiation(version); }
 
     void closeChannel(framing::ChannelId channel);
 

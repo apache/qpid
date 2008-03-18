@@ -90,7 +90,9 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     adapter(*this),
     mgmtClosing(0),
     mgmtId(mgmtId_)
-{}
+{
+    initMgmt();
+}
 
 void Connection::initMgmt(bool asLink)
 {
@@ -132,12 +134,6 @@ void Connection::close(
     adapter.close(code, text, classId, methodId);
     channels.clear();
     getOutput().close();
-}
-
-void Connection::initiated(const framing::ProtocolInitiation& header) {
-    version = ProtocolVersion(header.getMajor(), header.getMinor());
-    adapter.init(header);
-    initMgmt();
 }
 
 void Connection::idleOut(){}

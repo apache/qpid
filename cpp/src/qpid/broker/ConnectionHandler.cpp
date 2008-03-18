@@ -38,17 +38,6 @@ const std::string PLAIN = "PLAIN";
 const std::string en_US = "en_US";
 }
 
-void ConnectionHandler::init(const framing::ProtocolInitiation& header) {
-    //need to send out a protocol header back to the client
-    handler->connection.getOutput().initiated(header);
-
-    FieldTable properties;
-    string mechanisms(PLAIN);
-    string locales(en_US);
-    handler->serverMode = true;    
-    handler->client.start(properties, mechanisms, locales);
-}
-
 void ConnectionHandler::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {
     handler->client.close(code, text, classId, methodId);
@@ -75,7 +64,15 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {}
+ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {
+    FieldTable properties;
+    string mechanisms(PLAIN);
+    string locales(en_US);
+    handler->serverMode = true;
+    handler->client.start(properties, mechanisms, locales);
+}
+
+
 
 ConnectionHandler::Handler:: Handler(Connection& c) : client(c.getOutput()), server(c.getOutput()), 
                                                       connection(c), serverMode(false) {}

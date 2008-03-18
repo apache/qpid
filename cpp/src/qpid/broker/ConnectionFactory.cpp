@@ -19,27 +19,32 @@
  *
  */
 #include "ConnectionFactory.h"
-#include "Connection.h"
-#include "MultiVersionConnectionInputHandler.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/amqp_0_10/Connection.h"
+#include "PreviewConnectionCodec.h"
 
 namespace qpid {
 namespace broker {
 
+using framing::ProtocolVersion;
 
-ConnectionFactory::ConnectionFactory(Broker& b) : broker(b)
-{}
+ConnectionFactory::ConnectionFactory(Broker& b) : broker(b) {}
 
+ConnectionFactory::~ConnectionFactory() {}
 
-ConnectionFactory::~ConnectionFactory()
-{
-
+sys::ConnectionCodec*
+ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
+    if (v == ProtocolVersion(99, 0)) 
+        return new PreviewConnectionCodec(out, broker, id);
+    if (v == ProtocolVersion(0, 10))
+        return new amqp_0_10::Connection(out, broker, id);
+    return 0;
 }
 
-qpid::sys::ConnectionInputHandler*
-ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out,
-                          const std::string& id)
-{
-    return new MultiVersionConnectionInputHandler(out, broker, id);
+sys::ConnectionCodec*
+ConnectionFactory::create(sys::OutputControl& out, const std::string& id) {
+        // FIXME aconway 2008-03-18: 
+        return new PreviewConnectionCodec(out, broker, id);
 }
 
 }} // namespace qpid::broker
