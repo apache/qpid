@@ -143,6 +143,8 @@ public class VMTestCase extends TestCase
             }
 
         }
+        
+        connection.close();
     }
 
     public int getMessageCount(String queueName)

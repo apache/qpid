@@ -462,17 +462,17 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         // The IoServiceListenerSupport seems to get stuck in with a managedSession that isn't closing when requested.
         // So it hangs waiting for the session.
-//        int messages = 50;
-//
-//        sendMessages("connection1", messages);
-//        sendMessages("connection2", messages);
-//
-//        failBroker();
-//
-//        checkQueueDepth(messages);
-//
-//        //Validate all messages still on Broker 1
-//        validate(messages);
+        int messages = 50;
+
+        sendMessages("connection1", messages);
+        sendMessages("connection2", messages);
+
+        failBroker();
+
+        checkQueueDepth(messages);
+
+        //Validate all messages still on Broker 1
+        validate(messages);
     }
 
     public void loop() throws JMSException
