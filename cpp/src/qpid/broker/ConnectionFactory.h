@@ -21,21 +21,23 @@
 #ifndef _ConnectionFactory_
 #define _ConnectionFactory_
 
-#include "qpid/sys/ConnectionInputHandlerFactory.h"
+#include "qpid/sys/ConnectionCodec.h"
 
 namespace qpid {
 namespace broker {
 class Broker;
 
-class ConnectionFactory : public qpid::sys::ConnectionInputHandlerFactory
-{
+class ConnectionFactory : public sys::ConnectionCodec::Factory {
   public:
     ConnectionFactory(Broker& b);
             
-    virtual qpid::sys::ConnectionInputHandler*
-    create(qpid::sys::ConnectionOutputHandler* out, const std::string& id);
-            
     virtual ~ConnectionFactory();
+
+    sys::ConnectionCodec*
+    create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
+
+    sys::ConnectionCodec*
+    create(sys::OutputControl&, const std::string& id);
 
   private:
     Broker& broker;

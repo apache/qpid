@@ -81,7 +81,6 @@ class PreviewConnectionHandler : public framing::FrameHandler
     std::auto_ptr<Handler> handler;
   public:
     PreviewConnectionHandler(PreviewConnection& connection);
-    void init(const framing::ProtocolInitiation& header);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
 };

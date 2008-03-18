@@ -286,19 +286,19 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-sys::ConnectionInputHandler* Broker::connect(
+void Broker::connect(
     const std::string& host, uint16_t port,
-    sys::ConnectionInputHandlerFactory* f)
+    sys::ConnectionCodec::Factory* f)
 {
-    return getAcceptor().connect(host, port, f ? f : &factory);
+    getAcceptor().connect(host, port, f ? f : &factory);
 }
 
-sys::ConnectionInputHandler* Broker::connect(
-    const Url& url, sys::ConnectionInputHandlerFactory* f)
+void Broker::connect(
+    const Url& url, sys::ConnectionCodec::Factory* f)
 {
     url.throwIfEmpty();
     TcpAddress addr=boost::get<TcpAddress>(url[0]);
-    return connect(addr.host, addr.port, f);
+    connect(addr.host, addr.port, f);
 }
 
 }} // namespace qpid::broker

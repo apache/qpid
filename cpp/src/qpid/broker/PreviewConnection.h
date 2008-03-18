@@ -50,8 +50,7 @@
 namespace qpid {
 namespace broker {
 
-class PreviewConnection : public sys::ConnectionInputHandler, 
-                   public ConnectionState
+class PreviewConnection : public sys::ConnectionInputHandler, public ConnectionState
 {
   public:
     PreviewConnection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
@@ -65,12 +64,10 @@ class PreviewConnection : public sys::ConnectionInputHandler,
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
-    void initiated(const framing::ProtocolInitiation& header);
     void idleOut();
     void idleIn();
     void closed();
     bool doOutput();
-    framing::ProtocolInitiation getInitiation() { return framing::ProtocolInitiation(version); }
 
     void closeChannel(framing::ChannelId channel);
 

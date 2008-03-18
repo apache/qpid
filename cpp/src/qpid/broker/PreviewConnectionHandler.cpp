@@ -37,14 +37,6 @@ const std::string PLAIN = "PLAIN";
 const std::string en_US = "en_US";
 }
 
-void PreviewConnectionHandler::init(const framing::ProtocolInitiation& header) {
-    FieldTable properties;
-    string mechanisms(PLAIN);
-    string locales(en_US);
-    handler->serverMode = true;
-    handler->client.start(header.getMajor(), header.getMinor(), properties, mechanisms, locales);
-}
-
 void PreviewConnectionHandler::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {
     handler->client.close(code, text, classId, methodId);
@@ -68,7 +60,13 @@ void PreviewConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
-PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection)  : handler(new Handler(connection)) {}
+PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection)  : handler(new Handler(connection)) {
+    FieldTable properties;
+    string mechanisms(PLAIN);
+    string locales(en_US);
+    handler->serverMode = true;
+    handler->client.start(0, 10, properties, mechanisms, locales);
+}
 
 PreviewConnectionHandler::Handler:: Handler(PreviewConnection& c) : client(c.getOutput()), server(c.getOutput()), 
                                                       connection(c), serverMode(false) {}

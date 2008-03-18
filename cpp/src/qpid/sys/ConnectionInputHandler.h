@@ -22,8 +22,6 @@
 #define _ConnectionInputHandler_
 
 #include "qpid/framing/InputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
 #include "OutputTask.h"
 #include "TimeoutHandler.h"
 
@@ -31,12 +29,10 @@ namespace qpid {
 namespace sys {
 
     class ConnectionInputHandler :
-        public qpid::framing::InitiationHandler,
         public qpid::framing::InputHandler, 
         public TimeoutHandler, public OutputTask
     {
     public:
-        virtual qpid::framing::ProtocolInitiation getInitiation() = 0;
         virtual void closed() = 0;
     };
 

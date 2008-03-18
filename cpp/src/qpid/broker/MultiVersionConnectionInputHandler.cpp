@@ -31,19 +31,6 @@ MultiVersionConnectionInputHandler::MultiVersionConnectionInputHandler(
     Broker& _broker, 
     const std::string& _id) : linkVersion(99,0), out(_out), broker(_broker), id(_id) {}
 
-    
-void MultiVersionConnectionInputHandler::initiated(const qpid::framing::ProtocolInitiation& i)
-{
-    if (i.getMajor() == 99 && i.getMinor() == 0) {
-        handler = std::auto_ptr<ConnectionInputHandler>(new PreviewConnection(out, broker, id));
-    } else if (i.getMajor() == 0 && i.getMinor() == 10) {
-        handler = std::auto_ptr<ConnectionInputHandler>(new Connection(out, broker, id));
-    } else {
-        throw qpid::framing::InternalErrorException("Unsupported version: " + i.getVersion().toString());        
-    }
-    handler->initiated(i);
-}
-
 void MultiVersionConnectionInputHandler::received(qpid::framing::AMQFrame& f)
 {
     check();
@@ -67,11 +54,6 @@ bool MultiVersionConnectionInputHandler::doOutput()
     return handler.get() &&  handler->doOutput();
 }
     
-qpid::framing::ProtocolInitiation MultiVersionConnectionInputHandler::getInitiation()
-{
-    return qpid::framing::ProtocolInitiation(linkVersion);
-}
-
 void MultiVersionConnectionInputHandler::closed()
 {
     if (handler.get()) handler->closed();
