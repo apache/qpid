@@ -30,8 +30,8 @@ namespace sys {
  */
 class AtomicCount {
   public:
-    typedef ScopedDecrement<AtomicCount> ScopedDecrement;
-    typedef ScopedIncrement<AtomicCount> ScopedIncrement;
+    typedef ::qpid::sys::ScopedDecrement<AtomicCount> ScopedDecrement;
+    typedef ::qpid::sys::ScopedIncrement<AtomicCount> ScopedIncrement;
 
     AtomicCount(long value = 0) : count(value) {}
     
