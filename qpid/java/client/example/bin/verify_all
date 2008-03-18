@@ -1,0 +1,26 @@
+#!/bin/sh
+# This script assumes QPID_SRC_HOME is set .
+
+if [[ "x$QPID_SRC_HOME" =  "x" ]]; then
+  echo "WARNING >>>  QPID_SRC_HOME needs to be set "  
+  exit
+fi
+
+export CPP=$QPID_SRC_HOME/cpp/examples/examples
+export PYTHON=$QPID_SRC_HOME/python/examples
+export JAVA=$QPID_SRC_HOME/java/client/example/src/main/java/org/apache/qpid/example/jmsexample
+
+QPID_LIBS=`find $QPID_SRC_HOME/java/build/lib -name '*.jar' | tr '\n' ":"`
+export CLASSPATH=$QPID_LIBS:$CLASSPATH
+
+verify=$QPID_SRC_HOME/cpp/examples/verify
+
+for dir in $(find $JAVA/ -maxdepth 1 -type d -not -name '*.svn')
+do
+  #echo "Dir" $dir
+  for script in $(find $dir -maxdepth 1 -type f -name 'verify*' -not -name '*.*')
+  do
+    #echo "Script"  $script
+    $verify $script
+  done
+done
