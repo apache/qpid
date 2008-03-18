@@ -22,7 +22,6 @@
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/framing/ProtocolInitiation.h"
 
 struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 
@@ -30,21 +29,10 @@ struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 
     ~MockConnectionInputHandler() {}
     
-    void initiated(const qpid::framing::ProtocolInitiation& pi) {
-        qpid::sys::Monitor::ScopedLock l(monitor);
-        init = pi;
-        setState(GOT_INIT);
-    }
-
     void received(qpid::framing::AMQFrame* framep) {
         qpid::sys::Monitor::ScopedLock l(monitor);
         frame = *framep;
         setState(GOT_FRAME);
-    }
-
-    qpid::framing::ProtocolInitiation waitForProtocolInit() {        
-        waitFor(GOT_INIT);
-        return init;
     }
 
     qpid::framing::AMQFrame waitForFrame() {        
@@ -65,7 +53,7 @@ struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
     void idleIn() {}
 
   private:
-    typedef enum { START, GOT_INIT, GOT_FRAME, CLOSED } State;
+    typedef enum { START, GOT_FRAME, CLOSED } State;
 
     void setState(State s) {
         state = s;
@@ -81,7 +69,6 @@ struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 
     qpid::sys::Monitor  monitor;
     State state;
-    qpid::framing::ProtocolInitiation init;
     qpid::framing::AMQFrame frame;
 };
 

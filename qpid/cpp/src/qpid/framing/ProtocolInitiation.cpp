@@ -58,6 +58,9 @@ bool ProtocolInitiation::decode(Buffer& buffer){
     }
 }
 
-//TODO: this should prbably be generated from the spec at some point to keep the version numbers up to date
+
+std::ostream& operator<<(std::ostream& o, const framing::ProtocolInitiation& pi) {
+    return o << int(pi.getMajor()) << "-" << int(pi.getMinor());
+}
 
 }} // namespace qpid::framing

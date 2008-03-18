@@ -45,7 +45,11 @@ public:
     inline uint8_t getMajor() const { return version.getMajor(); }
     inline uint8_t getMinor() const { return version.getMinor(); }
     inline ProtocolVersion getVersion() const { return version; }
+    bool operator==(ProtocolVersion v) const { return v == getVersion(); }
 };
+
+std::ostream& operator<<(std::ostream& o, const framing::ProtocolInitiation& pi);
+
 
 }
 }

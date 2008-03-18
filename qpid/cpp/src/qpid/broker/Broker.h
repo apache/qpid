@@ -119,12 +119,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
         ManagementMethod (uint32_t methodId, management::Args& args);
     
     /** Create a connection to another broker. */
-    sys::ConnectionInputHandler*
-    connect(const std::string& host, uint16_t port,
-            sys::ConnectionInputHandlerFactory* =0);
+    void connect(const std::string& host, uint16_t port,
+                 sys::ConnectionCodec::Factory* =0);
     /** Create a connection to another broker. */
-    sys::ConnectionInputHandler*
-    connect(const Url& url, sys::ConnectionInputHandlerFactory* =0);
+    void connect(const Url& url, sys::ConnectionCodec::Factory* =0);
 
   private:
     sys::Acceptor& getAcceptor() const;
