@@ -113,7 +113,7 @@ public class AcknowledgeTest extends VMTestCase
         _consumerB = _consumerSession.createConsumer(_queue);
         sendMessages(NUM_MESSAGES/2);
         int count = 0;
-        Message msg = _consumerB.receive(100);
+        Message msg = _consumerB.receive(1500);
         while (msg != null) 
         {
         	if (mode == Session.CLIENT_ACKNOWLEDGE)
@@ -131,6 +131,26 @@ public class AcknowledgeTest extends VMTestCase
         _consumerB.close();
         _consumerSession.close();
         assertEquals("Wrong number of messages on queue", NUM_MESSAGES - count, getMessageCount(_queue.getQueueName()));
+
+        // Clean up messages that may be left on the queue
+        _consumerSession = _con.createSession(transacted, mode);
+        _consumerA = _consumerSession.createConsumer(_queue);
+        msg = _consumerA.receive(1500);
+        while (msg != null)
+        {
+            if (mode == Session.CLIENT_ACKNOWLEDGE)
+            {
+                msg.acknowledge();
+            }
+            msg = _consumerA.receive(1500);
+        }
+        _consumerA.close();
+        if (transacted)
+        {
+            _consumerSession.commit();
+        }
+        _consumerSession.close();
+        super.tearDown();
     }
     
     public void test2ConsumersAutoAck() throws Exception

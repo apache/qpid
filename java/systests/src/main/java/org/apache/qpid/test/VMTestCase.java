@@ -160,9 +160,4 @@ public class VMTestCase extends TestCase
         return ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(_virtualhost.substring(1))
                 .getQueueRegistry().getQueue(new AMQShortString(queueName)).getMessageCount();
     }
-
-    public void testDummyinVMTestCase()
-    {
-        // keep maven happy
-    }
 }
