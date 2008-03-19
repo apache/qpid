@@ -31,11 +31,9 @@ public class SelectorParserTest extends TestCase
     }
 
     public void testLike()
-    {
-        //FAILING QPID-847
-        System.err.println("testLike disabled");
-        System.out.println("testLike disabled");
-//        testPass("Cost LIKE 2");
+    {        
+        testFail("Cost LIKE 2");
+        testPass("Cost LIKE 'Hello'");
     }
 
     public void testStringQuoted()
