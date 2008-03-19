@@ -54,6 +54,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -355,13 +356,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         if (_failoverState == FailoverState.NOT_STARTED)
         {
             // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
-            if (cause instanceof AMQConnectionClosedException)
+            if ((cause instanceof AMQConnectionClosedException) || cause instanceof IOException)
             {
                 _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
                 // this will attemp failover
 
                 sessionClosed(session);
-                _connection.exceptionReceived(cause);
             }
             else
             {
