@@ -115,7 +115,8 @@ public class VMTestCase extends TestCase
 
     protected void tearDown() throws Exception
     {
-        checkQueuesClean();
+        //Disabled
+//        checkQueuesClean();
 
         TransportConnection.killVMBroker(1);
         ApplicationRegistry.remove(1);
