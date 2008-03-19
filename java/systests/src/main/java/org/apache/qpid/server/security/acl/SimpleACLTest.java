@@ -160,6 +160,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             sesh.createConsumer(sesh.createQueue("IllegalQueue"));
             fail("Test failed as consumer was created.");
+            //conn will be automatically closed
         }
         catch (JMSException e)
         {
@@ -207,6 +208,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
             fail("Test failed as Queue creation succeded.");
+            //conn will be automatically closed
         }
         catch (AMQAuthenticationException amqe)
         {
@@ -348,6 +350,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             sesh.createConsumer(sesh.createQueue("Invalid"));
 
             fail("Test failed as consumer was created.");
+            //conn will be automatically closed
         }
         catch (JMSException e)
         {
@@ -374,6 +377,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             sesh.createConsumer(sesh.createTemporaryQueue());
             fail("Test failed as consumer was created.");
+            //conn will be automatically closed
         }
         catch (JMSException e)
         {
@@ -420,6 +424,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
             fail("Test failed as creation succeded.");
+            //conn will be automatically closed
         }
         catch (AMQAuthenticationException amqe)
         {
@@ -441,6 +446,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
                                             true, false, false);
 
             fail("Test failed as creation succeded.");
+            //conn will be automatically closed
         }
         catch (AMQAuthenticationException amqe)
         {
@@ -520,6 +526,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             assertNotNull("Client did not receive response message,", clientResponseMsg);
             assertEquals("Incorrect message received", "Response", ((TextMessage) clientResponseMsg).getText());
 
+            clientConnection.close();
         }
         catch (Exception e)
         {
