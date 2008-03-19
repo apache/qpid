@@ -37,7 +37,7 @@ public class FailoverBaseCase extends VMTestCase
     public void setUp() throws Exception
     {
         // Make Broker 2 the first one so we can kill it and allow VMTestCase to clean up vm://:1
-        _brokerlist = "vm://:2;vm://:1";
+        _brokerlist = "vm://:2?connectdelay='150';vm://:1?connectdelay='150'";
         _clientID = this.getClass().getName();
         _virtualhost = "/test";
 
