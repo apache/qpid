@@ -62,6 +62,8 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
+        //Ensure there are no messages on the queue to start with.
+        checkQueueDepth(0);
     }
 
     public void tearDown() throws Exception
@@ -139,6 +141,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             _logger.debug("Checking for " + depth + " messages with QueueBrowser");
         }
 
+        //Check what the session believes the queue count to be.
         long queueDepth = 0;
 
         try
@@ -151,7 +154,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         assertEquals("Session reports Queue depth not as expected", depth, queueDepth);
 
-
+        // Browse the queue to get a second opinion
         int msgCount = 0;
         Enumeration msgs = queueBrowser.getEnumeration();
 
@@ -277,8 +280,23 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
     protected void validate(int messages) throws JMSException
     {
-        // continue and try to receive all messages
-        MessageConsumer consumer = _clientSession.createConsumer(_queue);
+        //Create a new connection to validate message content
+        Connection connection = null;
+
+        try
+        {
+            connection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        }
+        catch (NamingException e)
+        {
+            fail("Unable to make validation connection");
+        }
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        connection.start();
+
+        MessageConsumer consumer = session.createConsumer(_queue);
 
         _logger.info("Verify messages are still on the queue");
 
@@ -293,13 +311,13 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             }
         }
 
-        consumer.close();
+        //Close this new connection
+        connection.close();
 
         _logger.info("All messages recevied from queue");
 
         //ensure no message left.
         checkQueueDepth(0);
-
     }
 
     protected void checkQueueDepthWithSelectors(int clients, int totalMessages) throws JMSException
@@ -387,7 +405,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         checkQueueDepth(messages);
 
-        for (int clients = 1; clients < 10; clients++)
+        for (int clients = 2; clients <= 10; clients++)
         {
             checkQueueDepthWithSelectors(clients, messages);
         }
@@ -458,8 +476,6 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
     public void testFailoverAsQueueBrowserCreated() throws JMSException
     {
-        System.err.println("Disabled... this appears to be a bug in mina.");
-
         // The IoServiceListenerSupport seems to get stuck in with a managedSession that isn't closing when requested.
         // So it hangs waiting for the session.
         int messages = 50;

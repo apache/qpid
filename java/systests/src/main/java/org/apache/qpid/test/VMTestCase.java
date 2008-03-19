@@ -21,16 +21,18 @@
 package org.apache.qpid.test;
 
 import junit.framework.TestCase;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.AMQException;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
+import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -94,14 +96,14 @@ public class VMTestCase extends TestCase
             env.put("connectionfactory." + c.getKey(), c.getValue());
         }
 
-        env.put("queue.queue", "queue");
+        _queues.put("queue", "queue");
 
         for (Map.Entry<String, String> q : _queues.entrySet())
         {
             env.put("queue." + q.getKey(), q.getValue());
         }
 
-        env.put("topic.topic", "topic");
+        _topics.put("topic", "topic");
 
         for (Map.Entry<String, String> t : _topics.entrySet())
         {
@@ -113,7 +115,7 @@ public class VMTestCase extends TestCase
 
     protected void tearDown() throws Exception
     {
-        purgeQueues();
+        checkQueuesClean();
 
         TransportConnection.killVMBroker(1);
         ApplicationRegistry.remove(1);
@@ -121,29 +123,35 @@ public class VMTestCase extends TestCase
         super.tearDown();
     }
 
-    private void purgeQueues() throws NamingException, JMSException
+    private void checkQueuesClean() throws NamingException, JMSException
     {
         Connection connection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        connection.start();
 
         Iterator<String> queueNames = new HashSet<String>(_queues.values()).iterator();
 
+        assertTrue("QueueNames doesn't have next", queueNames.hasNext());
 
-        //todo this could be replaced with an AMQP purge queue command.
         while (queueNames.hasNext())
         {
-            MessageConsumer consumer = session.createConsumer(session.createQueue(queueNames.next()));
+            Queue queue = session.createQueue(queueNames.next());
 
-            Message message = consumer.receive(RECEIVE_TIMEOUT);
-
-            while (message != null)
+            //Validate that the queue are  reporting empty.
+            long queueDepth = 0;
+            try
             {
-                message = consumer.receive(RECEIVE_TIMEOUT);
+                queueDepth = ((AMQSession) session).getQueueDepth((AMQDestination) queue);
+            }
+            catch (AMQException e)
+            {
+                //ignore
             }
 
+            assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
         }
-        
+
         connection.close();
     }
 
