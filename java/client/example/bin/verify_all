@@ -10,6 +10,14 @@ export CPP=$QPID_SRC_HOME/cpp/examples/examples
 export PYTHON=$QPID_SRC_HOME/python/examples
 export JAVA=$QPID_SRC_HOME/java/client/example/src/main/java/org/apache/qpid/example/jmsexample
 
+run_broker(){
+  $QPID_SRC_HOME/cpp/src/qpidd -d --no-data-dir
+}
+
+stop_broker(){
+  $QPID_SRC_HOME/cpp/src/qpidd -q
+}
+
 QPID_LIBS=`find $QPID_SRC_HOME/java/build/lib -name '*.jar' | tr '\n' ":"`
 export CLASSPATH=$QPID_LIBS:$CLASSPATH
 
@@ -17,10 +25,10 @@ verify=$QPID_SRC_HOME/cpp/examples/verify
 
 for dir in $(find $JAVA/ -maxdepth 1 -type d -not -name '*.svn')
 do
-  #echo "Dir" $dir
   for script in $(find $dir -maxdepth 1 -type f -name 'verify*' -not -name '*.*')
   do
-    #echo "Script"  $script
+    run_broker
     $verify $script
+    stop_broker
   done
 done
