@@ -1,0 +1,12 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+cpp=$CPP/request-response
+
+server_java(){
+java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Server
+}
+
+background "can receive messages" server_java
+clients $cpp/client
+PID=`ps -aux | grep 'qpid-client-incubating-M3.jar'|grep -v 'grep'|awk '{ print $2 }'`
+kill -9 $PID
+outputs "$cpp/client.out | remove_uuid" "server_java.out | remove_uuid"
