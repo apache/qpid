@@ -36,7 +36,7 @@ import javax.naming.NamingException;
 import java.util.Enumeration;
 public class CancelTest extends VMTestCase
 {
-    private static final Logger _logger = Logger.getLogger(QueueBrowserAutoAckTest.class);
+    private static final Logger _logger = Logger.getLogger(CancelTest.class);
 
     private Connection _clientConnection;
     private Session _clientSession;
