@@ -59,16 +59,20 @@ public class Consumer
      *
      * @param args Command line arguments.
      */
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
+        if (args.length == 0)
+        {
+            throw new Exception("You need to specify the JNDI name for the queue");
+        }
         Consumer syncConsumer = new Consumer();
-        syncConsumer.runTest();
+        syncConsumer.runTest(args[0]);
     }
 
     /**
      * Start the example.
      */
-    private void runTest()
+    private void runTest(String queueName)
     {
         try
         {
@@ -80,7 +84,7 @@ public class Consumer
             Context ctx = new InitialContext(properties);
 
             // look up destination
-            Destination destination = (Destination)ctx.lookup("fanoutQueue");
+            Destination destination = (Destination)ctx.lookup(queueName);
 
             // Lookup the connection factory
             ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");

@@ -39,17 +39,17 @@ public class Listener implements MessageListener
     /**
      * An object to synchronize on.
      */
-    private final static Object _lock = new Object();
+    private final Object _lock = new Object();
 
     /**
      * A boolean to indicate a clean finish.
      */
-    private static boolean _finished = false;
+    private boolean _finished = false;
 
     /**
      * A boolean to indicate an unsuccesful finish.
      */
-    private static boolean _failed = false;
+    private boolean _failed = false;
 
 
 
@@ -58,16 +58,20 @@ public class Listener implements MessageListener
      *
      * @param args Command line arguments.
      */
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
+        if (args.length == 0)
+        {
+            throw new Exception("You need to specify the JNDI name for the queue");
+        }
         Listener listener = new Listener();
-        listener.runTest();
+        listener.runTest(args[0]);
     }
 
     /**
      * Start the example.
      */
-    private void runTest()
+    private void runTest(String queueName)
     {
         try
         {
@@ -77,7 +81,7 @@ public class Listener implements MessageListener
             //Create the initial context
             Context ctx = new InitialContext(properties);
 
-            Destination destination = (Destination)ctx.lookup("fanoutQueue");
+            Destination destination = (Destination)ctx.lookup(queueName);
 
             // Declare the connection
             ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
