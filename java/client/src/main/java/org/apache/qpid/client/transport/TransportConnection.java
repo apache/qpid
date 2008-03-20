@@ -332,20 +332,17 @@ public class TransportConnection
 
     public static void killVMBroker(int port)
     {
-        VmPipeAddress pipe;
         synchronized (_inVmPipeAddress)
         {
-            pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
+            VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
             if (pipe != null)
             {
                 _logger.info("Killing VM Broker:" + port);
                 _inVmPipeAddress.remove(port);
+                // This does need to be sychronized as otherwise mina can hang
+                // if a new connection is made
+                _acceptor.unbind(pipe);
             }
-        }
-        //This doesn't need to be sychronized
-        if (pipe != null)
-        {
-            _acceptor.unbind(pipe);
         }
     }
 
