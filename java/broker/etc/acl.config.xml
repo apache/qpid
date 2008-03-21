@@ -60,11 +60,11 @@
             <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed -->
             <principal-database>
                 <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase</class>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
                         <name>passwordFile</name>
-                        <value>${conf}/qpid.passwd</value>
+                        <value>${conf}/passwd</value>
                     </attribute>
                 </attributes>
             </principal-database>
