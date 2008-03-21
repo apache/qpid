@@ -42,7 +42,7 @@
         <socketSendBuffer>32768</socketSendBuffer>
     </connector>
     <management>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <jmxport>8999</jmxport>
         <security-enabled>false</security-enabled>
     </management>
@@ -218,10 +218,6 @@
         <delay>0</delay>
         <timeoutFactor>2.0</timeoutFactor>
     </heartbeat>
-
-    <queue>
-        <auto_register>false</auto_register>
-    </queue>
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>

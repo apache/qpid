@@ -90,7 +90,7 @@
                         </property>
                         <property>
                             <name>QPID_EXAMPLE_HOME</name>
-                            <value>${basedir}</value>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
                         </property>
                         <property>
                             <name>QPID_HOME</name>
