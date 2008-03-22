@@ -185,7 +185,24 @@ class Comment(Leaf):
 ## Query Classes ##
 ###########################################################################
 
-class View:
+class Adder:
+
+  def __add__(self, other):
+    return Sum(self, other)
+
+class Sum(Adder):
+
+  def __init__(self, left, right):
+    self.left = left
+    self.right = right
+
+  def __iter__(self):
+    for x in self.left:
+      yield x
+    for x in self.right:
+      yield x
+
+class View(Adder):
 
   def __init__(self, source):
     self.source = source
