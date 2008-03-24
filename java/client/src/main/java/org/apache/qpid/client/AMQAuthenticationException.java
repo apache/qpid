@@ -41,7 +41,7 @@ public class AMQAuthenticationException extends AMQException
     }
     public boolean isHardError()
     {
-        return false;
+        return true;
     }
 
 }

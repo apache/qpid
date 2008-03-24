@@ -69,10 +69,14 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         {
             throw new IllegalArgumentException("principal must not be null");
         }
-        char[] pwd = _users.getProperty(principal.getName()).toCharArray();
+
+
+
+        final String pwd = _users.getProperty(principal.getName());
+
         if (pwd != null)
         {
-            callback.setPassword(pwd);
+            callback.setPassword(pwd.toCharArray());
         }
         else
         {
