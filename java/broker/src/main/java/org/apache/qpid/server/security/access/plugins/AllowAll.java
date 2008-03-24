@@ -33,9 +33,9 @@ public class AllowAll implements ACLPlugin
 {
     public AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters)
     {
-        if (ACLManager.getLogger().isInfoEnabled())
+        if (ACLManager.getLogger().isDebugEnabled())
         {
-            ACLManager.getLogger().info("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
+            ACLManager.getLogger().debug("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
                                         + " on " + body.getClass().getSimpleName()
                                         + (parameters == null || parameters.length == 0 ? "" : "-" + accessablesToString(parameters)));
         }
