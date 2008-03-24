@@ -28,6 +28,7 @@
 
 using std::list;
 using std::vector;
+using boost::intrusive_ptr;
 using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;

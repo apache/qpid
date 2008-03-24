@@ -21,13 +21,16 @@
 #ifndef _MessageStore_
 #define _MessageStore_
 
-#include <boost/shared_ptr.hpp>
-#include <qpid/Options.h>
 #include "PersistableExchange.h"
 #include "PersistableMessage.h"
 #include "PersistableQueue.h"
 #include "RecoveryManager.h"
 #include "TransactionalStore.h"
+
+#include <qpid/Options.h>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -96,7 +99,7 @@ public:
 	 * for that queue and avoid searching based on id. Set queue = 0 for
 	 * large message staging when the queue is not known.
      */
-    virtual void stage(intrusive_ptr<PersistableMessage>& msg) = 0;
+    virtual void stage(boost::intrusive_ptr<PersistableMessage>& msg) = 0;
             
     /**
      * Destroys a previously staged message. This only needs
@@ -109,7 +112,7 @@ public:
     /**
      * Appends content to a previously staged message
      */
-    virtual void appendContent(intrusive_ptr<const PersistableMessage>& msg,
+    virtual void appendContent(boost::intrusive_ptr<const PersistableMessage>& msg,
                                const std::string& data) = 0;
     
     /**
@@ -121,7 +124,7 @@ public:
      * meta-data).
      */
     virtual void loadContent(const qpid::broker::PersistableQueue& queue, 
-	                         intrusive_ptr<const PersistableMessage>& msg,
+	                         boost::intrusive_ptr<const PersistableMessage>& msg,
                              std::string& data, uint64_t offset, uint32_t length) = 0;
     
     /**
@@ -138,7 +141,7 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+    virtual void enqueue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue) = 0;
     
     /**
@@ -155,7 +158,7 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+    virtual void dequeue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue) = 0;
 
     /**

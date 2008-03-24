@@ -21,6 +21,7 @@
 #include "Timer.h"
 #include <iostream>
 
+using boost::intrusive_ptr;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::Monitor;

@@ -28,7 +28,7 @@
 using namespace qpid;
 using namespace qpid::broker;
 using boost::dynamic_pointer_cast;
-
+using boost::intrusive_ptr;
 
 static const uint8_t BASIC = 1;
 static const uint8_t MESSAGE = 2;

@@ -32,6 +32,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;

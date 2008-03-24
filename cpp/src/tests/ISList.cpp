@@ -24,6 +24,7 @@
 #include "test_tools.h"
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <vector>
 
 QPID_AUTO_TEST_SUITE(ISListTestSuite)
@@ -31,6 +32,7 @@ QPID_AUTO_TEST_SUITE(ISListTestSuite)
 using namespace qpid;
 using namespace std;
 using boost::assign::list_of;
+using boost::intrusive_ptr;
 
 // Comparison, op== and << for ILists in qpid namespace for template lookup.
 

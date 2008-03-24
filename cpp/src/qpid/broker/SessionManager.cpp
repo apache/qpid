@@ -36,6 +36,7 @@
 namespace qpid {
 namespace broker {
 
+using boost::intrusive_ptr;
 using namespace sys;
 using namespace framing;
 

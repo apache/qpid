@@ -30,7 +30,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::sys;
-using qpid::intrusive_ptr;
+using boost::intrusive_ptr;
 using boost::dynamic_pointer_cast;
 
 class TimerTest : public CppUnit::TestCase  

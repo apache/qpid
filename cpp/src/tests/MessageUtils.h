@@ -29,10 +29,10 @@ using namespace framing;
 
 struct MessageUtils
 {
-    static intrusive_ptr<Message> createMessage(const string& exchange, const string& routingKey, 
+    static boost::intrusive_ptr<Message> createMessage(const string& exchange, const string& routingKey, 
                                              const string& messageId, uint64_t contentSize = 0)
     {
-        intrusive_ptr<Message> msg(new Message());
+        boost::intrusive_ptr<Message> msg(new Message());
 
         AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
@@ -46,7 +46,7 @@ struct MessageUtils
         return msg;
     }
 
-    static void addContent(intrusive_ptr<Message> msg, const string& data)
+    static void addContent(boost::intrusive_ptr<Message> msg, const string& data)
     {
         AMQFrame content(in_place<AMQContentBody>(data));
         msg->getFrames().append(content);

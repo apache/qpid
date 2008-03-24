@@ -21,24 +21,28 @@
  * under the License.
  *
  */
+#include "OwnershipToken.h"
+#include "Consumer.h"
+#include "Message.h"
+#include "PersistableQueue.h"
+#include "QueuePolicy.h"
+#include "QueueBindings.h"
+
+#include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Serializer.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Queue.h"
+#include "qpid/framing/amqp_types.h"
+
 #include <vector>
 #include <memory>
 #include <deque>
 #include <set>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include "qpid/framing/amqp_types.h"
-#include "OwnershipToken.h"
-#include "Consumer.h"
-#include "Message.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Serializer.h"
-#include "qpid/sys/Monitor.h"
-#include "PersistableQueue.h"
-#include "QueuePolicy.h"
-#include "QueueBindings.h"
-#include "qpid/management/Manageable.h"
-#include "qpid/management/Queue.h"
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
     namespace broker {
@@ -80,7 +84,7 @@ namespace qpid {
             management::Queue::shared_ptr mgmtObject;
 
             void pop();
-            void push(intrusive_ptr<Message>& msg);
+            void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             bool seek(QueuedMessage& msg, Consumer& position);
             bool getNextMessage(QueuedMessage& msg, Consumer& c);
@@ -118,12 +122,12 @@ namespace qpid {
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
              */
-            void deliver(intrusive_ptr<Message>& msg);
+            void deliver(boost::intrusive_ptr<Message>& msg);
             /**
              * Dispatches the messages immediately to a consumer if
              * one is available or stores it for later if not.
              */
-            void process(intrusive_ptr<Message>& msg);
+            void process(boost::intrusive_ptr<Message>& msg);
             /**
              * Returns a message to the in-memory queue (due to lack
              * of acknowledegement from a receiver). If a consumer is
@@ -134,7 +138,7 @@ namespace qpid {
             /**
              * Used during recovery to add stored messages back to the queue
              */
-            void recover(intrusive_ptr<Message>& msg);
+            void recover(boost::intrusive_ptr<Message>& msg);
 
             void consume(Consumer& c, bool exclusive = false);
             void cancel(Consumer& c);
@@ -153,11 +157,11 @@ namespace qpid {
             inline bool isAutoDelete() const { return autodelete; }
             bool canAutoDelete() const;
 
-            bool enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg);
+            bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            bool dequeue(TransactionContext* ctxt, intrusive_ptr<Message> msg);
+            bool dequeue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**
              * dequeues from memory only
              */

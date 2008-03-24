@@ -28,6 +28,7 @@
 #include "ProtocolVersion.h"
 #include "BodyHolder.h"
 
+#include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
 
 namespace qpid {
@@ -38,7 +39,7 @@ class BodyHolder;
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame(intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }
+    AMQFrame(boost::intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }
     AMQFrame(const AMQBody& b) { setBody(b); init(); }
     ~AMQFrame();
 
@@ -50,7 +51,7 @@ class AMQFrame : public AMQDataBlock
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    intrusive_ptr<BodyHolder> getHolder() { return body; }
+    boost::intrusive_ptr<BodyHolder> getHolder() { return body; }
     
     AMQBody* getBody() { return body ? body->get() : 0; }
     const AMQBody* getBody() const { return body ? body->get() : 0; }
@@ -94,7 +95,7 @@ class AMQFrame : public AMQDataBlock
   private:
     void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
 
-    intrusive_ptr<BodyHolder> body;
+    boost::intrusive_ptr<BodyHolder> body;
     uint16_t channel : 16;
     uint8_t subchannel : 8;
     bool bof : 1;

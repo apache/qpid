@@ -25,12 +25,14 @@
 #include "Queue.h"
 #include "Message.h"
 
+#include <boost/intrusive_ptr.hpp>
+
 namespace qpid {
     namespace broker {
         class DeliverableMessage : public Deliverable{
-            intrusive_ptr<Message> msg;
+            boost::intrusive_ptr<Message> msg;
         public:
-            DeliverableMessage(intrusive_ptr<Message>& msg);
+            DeliverableMessage(boost::intrusive_ptr<Message>& msg);
             virtual void deliverTo(Queue::shared_ptr& queue);
             Message& getMessage();
             uint64_t contentSize();
