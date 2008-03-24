@@ -21,6 +21,7 @@
 #include "qpid/log/Statement.h"
 #include "TxPublish.h"
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 
 TxPublish::TxPublish(intrusive_ptr<Message> _msg) : msg(_msg) {}

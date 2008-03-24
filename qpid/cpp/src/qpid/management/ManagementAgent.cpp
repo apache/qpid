@@ -26,6 +26,7 @@
 #include <qpid/broker/MessageDelivery.h>
 #include <list>
 
+using boost::intrusive_ptr;
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::broker;

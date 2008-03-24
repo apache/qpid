@@ -24,7 +24,10 @@
 #include "MessageStore.h"
 #include "Queue.h"
 #include "RecoveryManager.h"
+
 #include "qpid/sys/Module.h"
+
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -55,16 +58,16 @@ public:
     void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                 const std::string& key, const framing::FieldTable& args);
     void recover(RecoveryManager& queues);
-    void stage(intrusive_ptr<PersistableMessage>& msg);
+    void stage(boost::intrusive_ptr<PersistableMessage>& msg);
     void destroy(PersistableMessage& msg);
-    void appendContent(intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
+    void appendContent(boost::intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
     void loadContent(const qpid::broker::PersistableQueue& queue, 
-	          intrusive_ptr<const PersistableMessage>& msg, std::string& data,
+	          boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
               uint64_t offset, uint32_t length);
 
-    void enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+    void enqueue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& queue);
-    void dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+    void dequeue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& queue);
     u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);

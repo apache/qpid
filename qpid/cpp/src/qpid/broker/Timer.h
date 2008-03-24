@@ -29,6 +29,8 @@
 #include <memory>
 #include <queue>
 
+#include <boost/intrusive_ptr.hpp>
+
 namespace qpid {
 namespace broker {
 
@@ -45,15 +47,15 @@ struct TimerTask : public RefCounted {
 };
 
 struct Later {
-    bool operator()(const intrusive_ptr<TimerTask>& a,
-                    const intrusive_ptr<TimerTask>& b) const;
+    bool operator()(const boost::intrusive_ptr<TimerTask>& a,
+                    const boost::intrusive_ptr<TimerTask>& b) const;
 };
 
 class Timer : private qpid::sys::Runnable {
   protected:
     qpid::sys::Monitor monitor;            
-    std::priority_queue<intrusive_ptr<TimerTask>,
-                        std::vector<intrusive_ptr<TimerTask> >,
+    std::priority_queue<boost::intrusive_ptr<TimerTask>,
+                        std::vector<boost::intrusive_ptr<TimerTask> >,
                         Later> tasks;
     qpid::sys::Thread runner;
     bool active;
@@ -64,7 +66,7 @@ class Timer : private qpid::sys::Runnable {
     Timer();
     virtual ~Timer();
 
-    void add(intrusive_ptr<TimerTask> task);
+    void add(boost::intrusive_ptr<TimerTask> task);
     void start();
     void stop();
 

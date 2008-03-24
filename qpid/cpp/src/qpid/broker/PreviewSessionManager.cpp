@@ -28,6 +28,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/range.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -105,7 +106,7 @@ void PreviewSessionManager::eraseExpired() {
     }
 }
 
-void PreviewSessionManager::add(const intrusive_ptr<Observer>& o) {
+void PreviewSessionManager::add(const boost::intrusive_ptr<Observer>& o) {
     observers.push_back(o);
 }
 

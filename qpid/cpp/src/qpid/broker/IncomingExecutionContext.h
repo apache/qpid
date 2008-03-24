@@ -21,16 +21,19 @@
 #ifndef _IncomingExecutionContext_
 #define _IncomingExecutionContext_
 
+#include "Message.h"
+
 #include "qpid/framing/AccumulatedAck.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "Message.h"
+
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 
 class IncomingExecutionContext
 {
-    typedef std::list<intrusive_ptr<Message> > Messages;
+    typedef std::list<boost::intrusive_ptr<Message> > Messages;
     framing::Window window;
     framing::AccumulatedAck completed;
     Messages incomplete;
@@ -45,7 +48,7 @@ public:
     void sync(const framing::SequenceNumber& point);
     framing::SequenceNumber next();
     void complete(const framing::SequenceNumber& command);
-    void track(intrusive_ptr<Message>);
+    void track(boost::intrusive_ptr<Message>);
 
     const framing::SequenceNumber& getMark();
     framing::SequenceNumberSet getRange();
