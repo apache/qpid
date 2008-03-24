@@ -20,6 +20,7 @@
  */
 #include "RecoveredEnqueue.h"
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 
 RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg) {}

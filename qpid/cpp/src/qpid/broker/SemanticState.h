@@ -32,6 +32,7 @@
 #include "NameGenerator.h"
 #include "Prefetch.h"
 #include "TxBuffer.h"
+
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AccumulatedAck.h"
 #include "qpid/framing/Uuid.h"
@@ -41,6 +42,8 @@
 #include <list>
 #include <map>
 #include <vector>
+
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -69,8 +72,8 @@ class SemanticState : public framing::FrameHandler::Chains,
         uint32_t msgCredit;
         uint32_t byteCredit;
 
-        bool checkCredit(intrusive_ptr<Message>& msg);
-        void allocateCredit(intrusive_ptr<Message>& msg);
+        bool checkCredit(boost::intrusive_ptr<Message>& msg);
+        void allocateCredit(boost::intrusive_ptr<Message>& msg);
 
       public:
         ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
@@ -78,8 +81,8 @@ class SemanticState : public framing::FrameHandler::Chains,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
-        bool filter(intrusive_ptr<Message> msg);            
-        bool accept(intrusive_ptr<Message> msg);            
+        bool filter(boost::intrusive_ptr<Message> msg);            
+        bool accept(boost::intrusive_ptr<Message> msg);            
         void notify();
 
         void setWindowMode();
@@ -116,9 +119,9 @@ class SemanticState : public framing::FrameHandler::Chains,
     boost::shared_ptr<Exchange> cacheExchange;
     sys::AggregateOutput outputTasks;
     
-    void route(intrusive_ptr<Message> msg, Deliverable& strategy);
+    void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
-    bool checkPrefetch(intrusive_ptr<Message>& msg);
+    bool checkPrefetch(boost::intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
@@ -177,7 +180,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
-    void handle(intrusive_ptr<Message> msg);
+    void handle(boost::intrusive_ptr<Message> msg);
     bool doOutput() { return outputTasks.doOutput(); }
 
     //preview only (completed == ack):

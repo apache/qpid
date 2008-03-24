@@ -21,14 +21,17 @@
 #ifndef _TxPublish_
 #define _TxPublish_
 
-#include <algorithm>
-#include <functional>
-#include <list>
 #include "Queue.h"
 #include "Deliverable.h"
 #include "Message.h"
 #include "MessageStore.h"
 #include "TxOp.h"
+
+#include <algorithm>
+#include <functional>
+#include <list>
+
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
     namespace broker {
@@ -45,24 +48,24 @@ namespace qpid {
         class TxPublish : public TxOp, public Deliverable{
             class Prepare{
                 TransactionContext* ctxt;
-                intrusive_ptr<Message>& msg;
+                boost::intrusive_ptr<Message>& msg;
             public:
-                Prepare(TransactionContext* ctxt, intrusive_ptr<Message>& msg);
+                Prepare(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg);
                 void operator()(Queue::shared_ptr& queue);            
             };
 
             class Commit{
-                intrusive_ptr<Message>& msg;
+                boost::intrusive_ptr<Message>& msg;
             public:
-                Commit(intrusive_ptr<Message>& msg);
+                Commit(boost::intrusive_ptr<Message>& msg);
                 void operator()(Queue::shared_ptr& queue);            
             };
 
-            intrusive_ptr<Message> msg;
+            boost::intrusive_ptr<Message> msg;
             std::list<Queue::shared_ptr> queues;
 
         public:
-            TxPublish(intrusive_ptr<Message> msg);
+            TxPublish(boost::intrusive_ptr<Message> msg);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

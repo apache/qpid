@@ -53,6 +53,7 @@ namespace broker {
 
 using std::mem_fun_ref;
 using std::bind2nd;
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;

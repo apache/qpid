@@ -35,6 +35,7 @@ namespace broker {
 
 using namespace framing;
 using sys::Mutex;
+using boost::intrusive_ptr;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;

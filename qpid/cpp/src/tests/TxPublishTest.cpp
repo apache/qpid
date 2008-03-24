@@ -30,6 +30,7 @@
 using std::list;
 using std::pair;
 using std::vector;
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 

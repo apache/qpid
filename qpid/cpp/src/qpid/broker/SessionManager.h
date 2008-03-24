@@ -27,12 +27,13 @@
 #include <qpid/sys/Mutex.h>
 #include <qpid/RefCounted.h>
 
-#include <boost/noncopyable.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-
 #include <set>
 #include <vector>
 #include <memory>
+
+#include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -70,12 +71,12 @@ class SessionManager : private boost::noncopyable {
     std::auto_ptr<SessionState> resume(const framing::Uuid&);
 
     /** Add an Observer. */
-    void add(const intrusive_ptr<Observer>&);
+    void add(const boost::intrusive_ptr<Observer>&);
     
   private:
     typedef boost::ptr_vector<SessionState> Suspended;
     typedef std::set<framing::Uuid> Active;
-    typedef std::vector<intrusive_ptr<Observer> > Observers;
+    typedef std::vector<boost::intrusive_ptr<Observer> > Observers;
 
     void erase(const framing::Uuid&);             
     void eraseExpired();             

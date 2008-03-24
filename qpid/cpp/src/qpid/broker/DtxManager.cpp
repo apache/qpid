@@ -27,6 +27,7 @@
 #include <boost/format.hpp>
 #include <iostream>
 
+using boost::intrusive_ptr;
 using qpid::sys::Mutex;
 using namespace qpid::ptr_map;
 using namespace qpid::broker;

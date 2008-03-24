@@ -33,11 +33,11 @@ namespace qpid {
 
         struct QueuedMessage
         {
-            intrusive_ptr<Message> payload;
+            boost::intrusive_ptr<Message> payload;
             framing::SequenceNumber position;
             Queue* queue;
 			
-            QueuedMessage(Queue* q, intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
+            QueuedMessage(Queue* q, boost::intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
 			               payload(msg), position(sn), queue(q) {}
             QueuedMessage(Queue* q) : queue(q) {}
         };
@@ -54,8 +54,8 @@ namespace qpid {
             bool preAcquires() const { return acquires; }
             virtual bool deliver(QueuedMessage& msg) = 0;
             virtual void notify() = 0;
-            virtual bool filter(intrusive_ptr<Message>) { return true; }
-            virtual bool accept(intrusive_ptr<Message>) { return true; }
+            virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
+            virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
             virtual ~Consumer(){}
         };
     }

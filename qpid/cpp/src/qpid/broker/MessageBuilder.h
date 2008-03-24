@@ -25,6 +25,8 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/RefCounted.h"
 
+#include <boost/intrusive_ptr.hpp>
+
 namespace qpid {
     namespace broker {
         class Message;
@@ -34,13 +36,13 @@ namespace qpid {
         public:
             MessageBuilder(MessageStore* const store, uint64_t stagingThreshold);
             void handle(framing::AMQFrame& frame);
-            intrusive_ptr<Message> getMessage() { return message; }
+            boost::intrusive_ptr<Message> getMessage() { return message; }
             void start(const framing::SequenceNumber& id);
             void end();
         private:
             enum State {DORMANT, METHOD, HEADER, CONTENT};
             State state;
-            intrusive_ptr<Message> message;
+            boost::intrusive_ptr<Message> message;
             MessageStore* const store;
             const uint64_t stagingThreshold;
             bool staging;

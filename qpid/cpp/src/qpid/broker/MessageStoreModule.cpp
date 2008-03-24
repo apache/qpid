@@ -25,6 +25,7 @@
 // This transfer protects against the unloading of the store lib prior to the handling of the exception
 #define TRANSFER_EXCEPTION(fn) try { fn; } catch (std::exception& e) { throw Exception(e.what()); }
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 
 MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}

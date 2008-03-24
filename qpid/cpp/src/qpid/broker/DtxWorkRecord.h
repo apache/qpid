@@ -21,14 +21,18 @@
 #ifndef _DtxWorkRecord_
 #define _DtxWorkRecord_
 
-#include <algorithm>
-#include <functional>
-#include <vector>
 #include "DtxBuffer.h"
 #include "DtxTimeout.h"
 #include "TransactionalStore.h"
+
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
+
+#include <algorithm>
+#include <functional>
+#include <vector>
+
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -48,7 +52,7 @@ class DtxWorkRecord
     bool rolledback;
     bool prepared;
     bool expired;
-    intrusive_ptr<DtxTimeout> timeout;
+    boost::intrusive_ptr<DtxTimeout> timeout;
     Work work;
     std::auto_ptr<TPCTransactionContext> txn;
     qpid::sys::Mutex lock;
@@ -65,8 +69,8 @@ public:
     void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
     void timedout();
-    void setTimeout(intrusive_ptr<DtxTimeout> t) { timeout = t; }
-    intrusive_ptr<DtxTimeout> getTimeout() { return timeout; }
+    void setTimeout(boost::intrusive_ptr<DtxTimeout> t) { timeout = t; }
+    boost::intrusive_ptr<DtxTimeout> getTimeout() { return timeout; }
 };
 
 }
