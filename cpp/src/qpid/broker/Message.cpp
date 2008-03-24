@@ -30,6 +30,7 @@
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/log/Statement.h"
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using std::string;

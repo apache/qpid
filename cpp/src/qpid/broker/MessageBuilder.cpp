@@ -25,6 +25,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/reply_exceptions.h"
 
+using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 

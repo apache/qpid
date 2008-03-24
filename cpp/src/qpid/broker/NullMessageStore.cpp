@@ -25,6 +25,8 @@
 
 #include <iostream>
 
+using boost::intrusive_ptr;
+
 namespace qpid{
 namespace broker{
 

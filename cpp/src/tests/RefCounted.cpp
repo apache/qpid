@@ -17,38 +17,15 @@
  */
 
 #include "qpid/RefCounted.h"
+#include <boost/intrusive_ptr.hpp>
 
 #include "unit_test.h"
 
 QPID_AUTO_TEST_SUITE(RefCountedTestSuiteTestSuite)
 
+using boost::intrusive_ptr;
 using namespace std;
 using namespace qpid;
-
-struct DummyCounted : public AbstractRefCounted {
-    DummyCounted() : count(0) {}
-    mutable int count;
-    virtual void addRef() const { count++; }
-    virtual void release() const { count--; }
-};
-
-BOOST_AUTO_TEST_CASE(testIntrusivePtr) {
-    DummyCounted dummy;
-    BOOST_CHECK_EQUAL(0, dummy.count);
-    {
-        intrusive_ptr<DummyCounted> p(&dummy);
-        BOOST_CHECK_EQUAL(1, dummy.count);
-        {
-            intrusive_ptr<DummyCounted> q(p);
-            BOOST_CHECK_EQUAL(2, dummy.count);
-            intrusive_ptr<DummyCounted> r;
-            r=q;
-            BOOST_CHECK_EQUAL(3, dummy.count);
-        }
-        BOOST_CHECK_EQUAL(1, dummy.count);
-    }
-    BOOST_CHECK_EQUAL(0, dummy.count);
-}
 
 struct CountMe : public RefCounted {
     static int instances;

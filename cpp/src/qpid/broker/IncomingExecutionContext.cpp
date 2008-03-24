@@ -25,6 +25,7 @@
 namespace qpid {
 namespace broker {
 
+using boost::intrusive_ptr;
 using qpid::framing::AccumulatedAck;
 using qpid::framing::SequenceNumber;
 using qpid::framing::SequenceNumberSet;

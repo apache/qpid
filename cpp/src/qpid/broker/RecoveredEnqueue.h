@@ -21,23 +21,26 @@
 #ifndef _RecoveredEnqueue_
 #define _RecoveredEnqueue_
 
-#include <algorithm>
-#include <functional>
-#include <list>
 #include "Deliverable.h"
 #include "Message.h"
 #include "MessageStore.h"
 #include "Queue.h"
 #include "TxOp.h"
 
+#include <boost/intrusive_ptr.hpp>
+
+#include <algorithm>
+#include <functional>
+#include <list>
+
 namespace qpid {
     namespace broker {
         class RecoveredEnqueue : public TxOp{
             Queue::shared_ptr queue;
-            intrusive_ptr<Message> msg;
+            boost::intrusive_ptr<Message> msg;
 
         public:
-            RecoveredEnqueue(Queue::shared_ptr queue, intrusive_ptr<Message> msg);
+            RecoveredEnqueue(Queue::shared_ptr queue, boost::intrusive_ptr<Message> msg);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
