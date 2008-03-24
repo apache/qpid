@@ -33,7 +33,7 @@
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
   <map property="release.excludes" value="${modules}">
-    <regexpmapper from="(.*)" to="\1/**"/>
+    <globmapper from="*" to="*/\*\*"/>
   </map>
 
   <property name="release.zip"          location="${release}/${project.namever}.zip"/>
@@ -88,11 +88,16 @@
   </target>
 
   <target name="manifest" depends="check-manifest" unless="manifest.done">
-    <manifestclasspath property="qpid.jar.classpath" jarfile="${qpid.jar}">
-      <classpath>
-        <fileset dir="${build.lib}" includes="**/*.jar" excludes="**/${qpid.jar.name}"/>
-      </classpath>
-    </manifestclasspath>
+    <path id="class.path">
+      <fileset dir="${build.lib}" >
+        <include name="*.jar"/>
+        <exclude name="${qpid.jar.name}"/>
+      </fileset>
+    </path>
+    <pathconvert property="qpid.jar.classpath" pathsep=":" dirsep="/">
+      <path refid="class.path"/>
+      <map from="${basedir}" to="lib/"/>
+    </pathconvert>
 
     <jar destfile="${qpid.jar}">
       <manifest>
