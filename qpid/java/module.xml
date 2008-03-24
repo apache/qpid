@@ -235,7 +235,7 @@
 
   <target name="libs" description="copy dependencies into build tree">
     <copy todir="${build.lib}" failonerror="false" flatten="true">
-      <path refid="module.libs"/>
+      <fileset dir="${basedir}${file.separator}.." includes="${module.libs}"/>
     </copy>
   </target>
 
