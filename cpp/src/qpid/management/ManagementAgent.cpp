@@ -25,6 +25,8 @@
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
 #include <list>
+#include <iostream>
+#include <fstream>
 
 using boost::intrusive_ptr;
 using namespace qpid::framing;
@@ -36,25 +38,62 @@ using namespace std;
 ManagementAgent::shared_ptr ManagementAgent::agent;
 bool                        ManagementAgent::enabled = 0;
 
-ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
+ManagementAgent::ManagementAgent (string _dataDir, uint16_t _interval) :
+    dataDir (_dataDir), interval (_interval)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
     nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
     nextRemotePrefix = 101;
+
+    // Get from file or generate and save to file.
+    if (dataDir.empty ())
+    {
+        uuid.generate ();
+        QPID_LOG (info, "ManagementAgent has no data directory, generated new broker ID: "
+                  << uuid);
+    }
+    else
+    {
+        string   filename (dataDir + "/brokerId");
+        ifstream inFile   (filename.c_str ());
+
+        if (inFile.good ())
+        {
+            inFile >> uuid;
+            inFile.close ();
+            QPID_LOG (debug, "ManagementAgent restored broker ID: " << uuid);
+        }
+        else
+        {
+            uuid.generate ();
+            QPID_LOG (info, "ManagementAgent generated broker ID: " << uuid);
+
+            ofstream outFile (filename.c_str ());
+            if (outFile.good ())
+            {
+                outFile << uuid << endl;
+                outFile.close ();
+                QPID_LOG (debug, "ManagementAgent saved broker ID");
+            }
+            else
+            {
+                QPID_LOG (warning, "ManagementAgent unable to save broker ID");
+            }
+        }
+    }
 }
 
 ManagementAgent::~ManagementAgent () {}
 
-void ManagementAgent::enableManagement (void)
+void ManagementAgent::enableManagement (string dataDir, uint16_t interval)
 {
     enabled = 1;
+    if (agent.get () == 0)
+        agent = shared_ptr (new ManagementAgent (dataDir, interval));
 }
 
 ManagementAgent::shared_ptr ManagementAgent::getAgent (void)
 {
-    if (enabled && agent.get () == 0)
-        agent = shared_ptr (new ManagementAgent (10));
-
     return agent;
 }
 
@@ -122,27 +161,25 @@ void ManagementAgent::clientAdded (void)
     }
 }
 
-void ManagementAgent::EncodeHeader (Buffer& buf, uint8_t opcode, uint8_t cls)
+void ManagementAgent::EncodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet ('A');
     buf.putOctet ('M');
-    buf.putOctet ('0');
     buf.putOctet ('1');
     buf.putOctet (opcode);
-    buf.putOctet (cls);
+    buf.putLong  (seq);
 }
 
-bool ManagementAgent::CheckHeader (Buffer& buf, uint8_t *opcode, uint8_t *cls)
+bool ManagementAgent::CheckHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
 {
     uint8_t h1 = buf.getOctet ();
     uint8_t h2 = buf.getOctet ();
     uint8_t h3 = buf.getOctet ();
-    uint8_t h4 = buf.getOctet ();
 
     *opcode = buf.getOctet ();
-    *cls    = buf.getOctet ();
+    *seq    = buf.getLong  ();
 
-    return h1 == 'A' && h2 == 'M' && h3 == '0' && h4 == '1';
+    return h1 == 'A' && h2 == 'M' && h3 == '1';
 }
 
 void ManagementAgent::SendBuffer (Buffer&  buf,
@@ -199,24 +236,24 @@ void ManagementAgent::PeriodicProcessing (void)
         if (object->getConfigChanged () || object->isDeleted ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer, 'C', 'C');
+            EncodeHeader (msgBuffer, 'c');
             object->writeConfig (msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt.config." + object->getClassName ();
+            routingKey = "mgmt." + uuid.str() + ".config." + object->getClassName ();
             SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
         if (object->getInstChanged ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer, 'C', 'I');
+            EncodeHeader (msgBuffer, 'i');
             object->writeInstrumentation (msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt.inst." + object->getClassName ();
+            routingKey = "mgmt." + uuid.str () + ".inst." + object->getClassName ();
             SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
@@ -231,6 +268,20 @@ void ManagementAgent::PeriodicProcessing (void)
         managementObjects.erase (*iter);
 
     deleteList.clear ();
+}
+
+void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
+                                           uint32_t code, string text)
+{
+    Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+    uint32_t outLen;
+
+    EncodeHeader (outBuffer, 'z', sequence);
+    outBuffer.putLong (code);
+    outBuffer.putShortString (text);
+    outLen = MA_BUFFER_SIZE - outBuffer.available ();
+    outBuffer.reset ();
+    SendBuffer (outBuffer, outLen, dExchange, replyToKey);
 }
 
 void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
@@ -295,13 +346,13 @@ void ManagementAgent::dispatchMethod (Message&      msg,
 
     Buffer   inBuffer  (inputBuffer,  MA_BUFFER_SIZE);
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
-    uint32_t outLen;
-    uint8_t  opcode, unused;
+    uint32_t outLen, sequence;
+    uint8_t  opcode;
 
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
 
-    if (!CheckHeader (inBuffer, &opcode, &unused))
+    if (!CheckHeader (inBuffer, &opcode, &sequence))
     {
         QPID_LOG (debug, "    Invalid content header");
         return;
@@ -313,8 +364,7 @@ void ManagementAgent::dispatchMethod (Message&      msg,
         return;
     }
 
-    uint32_t   methodId = inBuffer.getLong     ();
-    uint64_t   objId    = inBuffer.getLongLong ();
+    uint64_t   objId = inBuffer.getLongLong ();
     string     replyToKey;
 
     const framing::MessageProperties* p =
@@ -330,8 +380,7 @@ void ManagementAgent::dispatchMethod (Message&      msg,
         return;
     }
 
-    EncodeHeader (outBuffer, 'm');
-    outBuffer.putLong (methodId);
+    EncodeHeader (outBuffer, 'm', sequence);
 
     ManagementObjectMap::iterator iter = managementObjects.find (objId);
     if (iter == managementObjects.end ())
@@ -349,22 +398,20 @@ void ManagementAgent::dispatchMethod (Message&      msg,
     SendBuffer (outBuffer, outLen, dExchange, replyToKey);
 }
 
-void ManagementAgent::handleHello (Buffer&, string replyToKey)
+void ManagementAgent::handleBrokerRequest (Buffer&, string replyToKey, uint32_t sequence)
 {
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
 
-    uint8_t* dat = (uint8_t*) "Broker ID";
-    EncodeHeader (outBuffer, 'I');
-    outBuffer.putShort (9);
-    outBuffer.putRawData (dat, 9);
+    EncodeHeader (outBuffer, 'b', sequence);
+    uuid.encode  (outBuffer);
 
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     SendBuffer (outBuffer, outLen, dExchange, replyToKey);
 }
 
-void ManagementAgent::handlePackageQuery (Buffer&, string replyToKey)
+void ManagementAgent::handlePackageQuery (Buffer&, string replyToKey, uint32_t sequence)
 {
     for (PackageMap::iterator pIter = packages.begin ();
          pIter != packages.end ();
@@ -373,15 +420,17 @@ void ManagementAgent::handlePackageQuery (Buffer&, string replyToKey)
         Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
         uint32_t outLen;
 
-        EncodeHeader (outBuffer, 'p');
+        EncodeHeader (outBuffer, 'p', sequence);
         EncodePackageIndication (outBuffer, pIter);
         outLen = MA_BUFFER_SIZE - outBuffer.available ();
         outBuffer.reset ();
         SendBuffer (outBuffer, outLen, dExchange, replyToKey);
     }
+
+    sendCommandComplete (replyToKey, sequence);
 }
 
-void ManagementAgent::handlePackageInd (Buffer& inBuffer, string /*replyToKey*/)
+void ManagementAgent::handlePackageInd (Buffer& inBuffer, string /*replyToKey*/, uint32_t /*sequence*/)
 {
     std::string packageName;
 
@@ -389,7 +438,7 @@ void ManagementAgent::handlePackageInd (Buffer& inBuffer, string /*replyToKey*/)
     FindOrAddPackage (packageName);
 }
 
-void ManagementAgent::handleClassQuery (Buffer& inBuffer, string replyToKey)
+void ManagementAgent::handleClassQuery (Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
     std::string packageName;
 
@@ -405,16 +454,18 @@ void ManagementAgent::handleClassQuery (Buffer& inBuffer, string replyToKey)
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
-            EncodeHeader (outBuffer, 'q');
+            EncodeHeader (outBuffer, 'q', sequence);
             EncodeClassIndication (outBuffer, pIter, cIter);
             outLen = MA_BUFFER_SIZE - outBuffer.available ();
             outBuffer.reset ();
             SendBuffer (outBuffer, outLen, dExchange, replyToKey);
         }
     }
+
+    sendCommandComplete (replyToKey, sequence);
 }
 
-void ManagementAgent::handleSchemaQuery (Buffer& inBuffer, string replyToKey)
+void ManagementAgent::handleSchemaQuery (Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
     string         packageName;
     SchemaClassKey key;
@@ -436,7 +487,7 @@ void ManagementAgent::handleSchemaQuery (Buffer& inBuffer, string replyToKey)
 
             if (classInfo.writeSchemaCall != 0)
             {
-                EncodeHeader (outBuffer, 's');
+                EncodeHeader (outBuffer, 's', sequence);
                 classInfo.writeSchemaCall (outBuffer);
                 outLen = MA_BUFFER_SIZE - outBuffer.available ();
                 outBuffer.reset ();
@@ -459,7 +510,7 @@ uint32_t ManagementAgent::assignPrefix (uint32_t /*requestedPrefix*/)
     return nextRemotePrefix++;
 }
 
-void ManagementAgent::handleAttachRequest (Buffer& inBuffer, string replyToKey)
+void ManagementAgent::handleAttachRequest (Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
     string   label;
     uint32_t requestedPrefix;
@@ -472,17 +523,55 @@ void ManagementAgent::handleAttachRequest (Buffer& inBuffer, string replyToKey)
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
 
-    EncodeHeader (outBuffer, 'a');
+    EncodeHeader (outBuffer, 'a', sequence);
     outBuffer.putLong (assignedPrefix);
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     SendBuffer (outBuffer, outLen, dExchange, replyToKey);
 }
 
+void ManagementAgent::handleGetRequest (Buffer& inBuffer, string replyToKey, uint32_t sequence)
+{
+    FieldTable           ft;
+    FieldTable::ValuePtr value;
+
+    ft.decode (inBuffer);
+    value = ft.get ("_class");
+    if (value->empty () || !value->convertsTo<string> ())
+    {
+        // TODO: Send completion with an error code
+        return;
+    }
+
+    string className (value->get<string> ());
+
+    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+         iter != managementObjects.end ();
+         iter++)
+    {
+        ManagementObject::shared_ptr object = iter->second;
+        if (object->getClassName () == className)
+        {
+            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+
+            EncodeHeader (outBuffer, 'g', sequence);
+            object->writeConfig (outBuffer);
+            object->writeInstrumentation (outBuffer, true);
+            outLen = MA_BUFFER_SIZE - outBuffer.available ();
+            outBuffer.reset ();
+            SendBuffer (outBuffer, outLen, dExchange, replyToKey);
+        }
+    }
+
+    sendCommandComplete (replyToKey, sequence);
+}
+
 void ManagementAgent::dispatchAgentCommand (Message& msg)
 {
     Buffer   inBuffer (inputBuffer,  MA_BUFFER_SIZE);
-    uint8_t  opcode, unused;
+    uint8_t  opcode;
+    uint32_t sequence;
     string   replyToKey;
 
     const framing::MessageProperties* p =
@@ -498,15 +587,16 @@ void ManagementAgent::dispatchAgentCommand (Message& msg)
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
 
-    if (!CheckHeader (inBuffer, &opcode, &unused))
+    if (!CheckHeader (inBuffer, &opcode, &sequence))
         return;
 
-    if      (opcode == 'H') handleHello         (inBuffer, replyToKey);
-    else if (opcode == 'P') handlePackageQuery  (inBuffer, replyToKey);
-    else if (opcode == 'p') handlePackageInd    (inBuffer, replyToKey);
-    else if (opcode == 'Q') handleClassQuery    (inBuffer, replyToKey);
-    else if (opcode == 'S') handleSchemaQuery   (inBuffer, replyToKey);
-    else if (opcode == 'A') handleAttachRequest (inBuffer, replyToKey);
+    if      (opcode == 'B') handleBrokerRequest (inBuffer, replyToKey, sequence);
+    else if (opcode == 'P') handlePackageQuery  (inBuffer, replyToKey, sequence);
+    else if (opcode == 'p') handlePackageInd    (inBuffer, replyToKey, sequence);
+    else if (opcode == 'Q') handleClassQuery    (inBuffer, replyToKey, sequence);
+    else if (opcode == 'S') handleSchemaQuery   (inBuffer, replyToKey, sequence);
+    else if (opcode == 'A') handleAttachRequest (inBuffer, replyToKey, sequence);
+    else if (opcode == 'G') handleGetRequest    (inBuffer, replyToKey, sequence);
 }
 
 ManagementAgent::PackageMap::iterator ManagementAgent::FindOrAddPackage (std::string name)
@@ -528,7 +618,7 @@ ManagementAgent::PackageMap::iterator ManagementAgent::FindOrAddPackage (std::st
     EncodePackageIndication (outBuffer, result.first);
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
-    SendBuffer (outBuffer, outLen, mExchange, "mgmt.schema.package");
+    SendBuffer (outBuffer, outLen, mExchange, "mgmt." + uuid.str() + ".schema.package");
 
     return result.first;
 }

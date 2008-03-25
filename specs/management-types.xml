@@ -19,18 +19,19 @@
   under the License.
 -->
 
-<type name="objId"     base="REF"       cpp="uint64_t"    encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
-<type name="uint8"     base="U8"        cpp="uint8_t"     encode="@.putOctet (#)"       decode="# = @.getOctet ()"     accessor="direct" init="0"/>
-<type name="uint16"    base="U16"       cpp="uint16_t"    encode="@.putShort (#)"       decode="# = @.getShort ()"     accessor="direct" init="0"/>
-<type name="uint32"    base="U32"       cpp="uint32_t"    encode="@.putLong (#)"        decode="# = @.getLong ()"      accessor="direct" init="0"/>
-<type name="uint64"    base="U64"       cpp="uint64_t"    encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
-<type name="bool"      base="BOOL"      cpp="uint8_t"     encode="@.putOctet (#?1:0)"   decode="# = @.getOctet ()==1"  accessor="direct" init="0"/>
-<type name="sstr"      base="SSTR"      cpp="std::string" encode="@.putShortString (#)" decode="@.getShortString (#)"  accessor="direct" init='""'/>
-<type name="lstr"      base="LSTR"      cpp="std::string" encode="@.putLongString (#)"  decode="@.getLongString (#)"   accessor="direct" init='""'/>
-<type name="absTime"   base="ABSTIME"   cpp="uint64_t"    encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
-<type name="deltaTime" base="DELTATIME" cpp="uint64_t"    encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
-<type name="float"     base="FLOAT"     cpp="float"       encode="@.putFloat (#)"       decode="# = @.getFloat ()"     accessor="direct" init="0."/>
-<type name="double"    base="DOUBLE"    cpp="double"      encode="@.putDouble (#)"      decode="# = @.getDouble ()"    accessor="direct" init="0."/>
+<type name="objId"     base="REF"       cpp="uint64_t"      encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
+<type name="uint8"     base="U8"        cpp="uint8_t"       encode="@.putOctet (#)"       decode="# = @.getOctet ()"     accessor="direct" init="0"/>
+<type name="uint16"    base="U16"       cpp="uint16_t"      encode="@.putShort (#)"       decode="# = @.getShort ()"     accessor="direct" init="0"/>
+<type name="uint32"    base="U32"       cpp="uint32_t"      encode="@.putLong (#)"        decode="# = @.getLong ()"      accessor="direct" init="0"/>
+<type name="uint64"    base="U64"       cpp="uint64_t"      encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
+<type name="bool"      base="BOOL"      cpp="uint8_t"       encode="@.putOctet (#?1:0)"   decode="# = @.getOctet ()==1"  accessor="direct" init="0"/>
+<type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString (#)" decode="@.getShortString (#)"  accessor="direct" init='""'/>
+<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putLongString (#)"  decode="@.getLongString (#)"   accessor="direct" init='""'/>
+<type name="absTime"   base="ABSTIME"   cpp="uint64_t"      encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
+<type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong (#)"    decode="# = @.getLongLong ()"  accessor="direct" init="0"/>
+<type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat (#)"       decode="# = @.getFloat ()"     accessor="direct" init="0."/>
+<type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble (#)"      decode="# = @.getDouble ()"    accessor="direct" init="0."/>
+<type name="uuid"      base="UUID"      cpp="framing::Uuid" encode="#.encode (@)"         decode="#.decode (@)"          accessor="direct"/>
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet (#)"    decode="# = @.getOctet ()"    style="wm" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort (#)"    decode="# = @.getShort ()"    style="wm" accessor="counter" init="0"/>

@@ -106,11 +106,12 @@ void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 /*MGEN:Class.WriteConfig*/
 }
 
-void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf)
+void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf, bool skipHeaders)
 {
     instChanged = false;
 
-    writeTimestamps (buf);
+    if (!skipHeaders)
+        writeTimestamps (buf);
 /*MGEN:Class.WriteInst*/
 
     // Maintenance of hi-lo statistics

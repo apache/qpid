@@ -25,19 +25,20 @@
 #include "qpid/Options.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Timer.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "ManagementObject.h"
 #include <qpid/framing/AMQFrame.h>
 #include <boost/shared_ptr.hpp>
 
-namespace qpid { 
+namespace qpid {
 namespace management {
 
 class ManagementAgent
 {
   private:
 
-    ManagementAgent (uint16_t interval);
+    ManagementAgent (std::string dataDir, uint16_t interval);
 
   public:
 
@@ -45,7 +46,7 @@ class ManagementAgent
 
     typedef boost::shared_ptr<ManagementAgent> shared_ptr;
 
-    static void       enableManagement (void);
+    static void       enableManagement (std::string dataDir, uint16_t interval);
     static shared_ptr getAgent (void);
     static void       shutdown (void);
 
@@ -130,10 +131,12 @@ class ManagementAgent
     static shared_ptr            agent;
     static bool                  enabled;
 
+    qpid::framing::Uuid          uuid;
     qpid::sys::RWlock            userLock;
     broker::Timer                timer;
     broker::Exchange::shared_ptr mExchange;
     broker::Exchange::shared_ptr dExchange;
+    std::string                  dataDir;
     uint16_t                     interval;
     uint64_t                     nextObjectId;
     uint32_t                     nextRemotePrefix;
@@ -143,8 +146,8 @@ class ManagementAgent
     char outputBuffer[MA_BUFFER_SIZE];
 
     void PeriodicProcessing (void);
-    void EncodeHeader       (qpid::framing::Buffer& buf, uint8_t  opcode, uint8_t  cls = 0);
-    bool CheckHeader        (qpid::framing::Buffer& buf, uint8_t *opcode, uint8_t *cls);
+    void EncodeHeader       (qpid::framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
+    bool CheckHeader        (qpid::framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void SendBuffer         (qpid::framing::Buffer&       buf,
                              uint32_t                     length,
                              broker::Exchange::shared_ptr exchange,
@@ -164,16 +167,17 @@ class ManagementAgent
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
     uint32_t assignPrefix (uint32_t requestedPrefix);
-    void handleHello         (qpid::framing::Buffer& inBuffer, std::string replyToKey);
-    void handlePackageQuery  (qpid::framing::Buffer& inBuffer, std::string replyToKey);
-    void handlePackageInd    (qpid::framing::Buffer& inBuffer, std::string replyToKey);
-    void handleClassQuery    (qpid::framing::Buffer& inBuffer, std::string replyToKey);
-    void handleSchemaQuery   (qpid::framing::Buffer& inBuffer, std::string replyToKey);
-    void handleAttachRequest (qpid::framing::Buffer& inBuffer, std::string replyToKey);
+    void sendCommandComplete (std::string replyToKey, uint32_t sequence,
+                              uint32_t code = 0, std::string text = std::string("OK"));
+    void handleBrokerRequest (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handlePackageQuery  (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handlePackageInd    (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleClassQuery    (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleSchemaQuery   (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleAttachRequest (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleGetRequest    (qpid::framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
 };
 
 }}
             
-
-
 #endif  /*!_ManagementAgent_*/
