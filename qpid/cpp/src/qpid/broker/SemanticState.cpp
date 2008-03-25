@@ -574,7 +574,8 @@ void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
 
 void SemanticState::ConsumerImpl::flush()
 {
-    while(queue->dispatch(*this));
+    while(queue->dispatch(*this))
+        ;
     stop();
 }
 

@@ -21,7 +21,7 @@
 
 using namespace qpid::broker;
 
-Tokens makeTokens(char** begin, char** end)
+Tokens makeTokens(const char** begin, const char** end)
 {
     Tokens t;
     t.insert(t.end(), begin, end);
@@ -57,34 +57,34 @@ class TokensTest : public CppUnit::TestCase
     void testTokens() 
     {
         Tokens tokens("hello.world");
-        char* expect[] = {"hello", "world"};
+        const char* expect[] = {"hello", "world"};
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect), tokens);
         
         tokens = "a.b.c";
-        char* expect2[] = { "a", "b", "c" };
+        const char* expect2[] = { "a", "b", "c" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect2), tokens);
 
         tokens = "";
         CPPUNIT_ASSERT(tokens.empty());
 
         tokens = "x";
-        char* expect3[] = { "x" };
+        const char* expect3[] = { "x" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect3), tokens);
 
         tokens = (".x");
-        char* expect4[] = { "", "x" };
+        const char* expect4[] = { "", "x" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect4), tokens);
 
         tokens = ("x.");
-        char* expect5[] = { "x", "" };
+        const char* expect5[] = { "x", "" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect5), tokens);
 
         tokens = (".");
-        char* expect6[] = { "", "" };
+        const char* expect6[] = { "", "" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect6), tokens);        
 
         tokens = ("..");
-        char* expect7[] = { "", "", "" };
+        const char* expect7[] = { "", "", "" };
         CPPUNIT_ASSERT_EQUAL(TOKENS(expect7), tokens);        
     }
     

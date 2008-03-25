@@ -21,6 +21,7 @@
 
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/log/Statement.h"
+#include <algorithm>
 
 namespace qpid {
 namespace sys {
@@ -54,7 +55,7 @@ void AggregateOutput::addOutputTask(OutputTask* t)
      
 void AggregateOutput::removeOutputTask(OutputTask* t)
 {
-    TaskList::iterator i = find(tasks.begin(), tasks.end(), t);
+    TaskList::iterator i = std::find(tasks.begin(), tasks.end(), t);
     if (i != tasks.end()) tasks.erase(i);
 }
 

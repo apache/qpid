@@ -155,12 +155,6 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
     l.select(Selector(critical));
     TestOutput* out=new TestOutput(l);
 
-    // Time format is YYY-Month-dd hh:mm:ss
-    l.format(Logger::TIME);
-    QPID_LOG(critical, "foo");
-    string re("\\d\\d\\d\\d-[A-Z][a-z]+-\\d\\d \\d\\d:\\d\\d:\\d\\d foo\n");
-    BOOST_CHECK_REGEX(re, out->last());
-
     l.format(Logger::FILE);
     QPID_LOG(critical, "foo");
     BOOST_CHECK_EQUAL(out->last(), string(__FILE__)+": foo\n");
@@ -178,7 +172,7 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(~0);               // Everything
     QPID_LOG(critical, "foo");
-    re=".* critical \\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
+    string re=".* critical \\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
     BOOST_CHECK_REGEX(re, out->last());
 }
 
@@ -259,7 +253,7 @@ Statement statement(
 #define ARGC(argv) (sizeof(argv)/sizeof(char*))
 
 BOOST_AUTO_TEST_CASE(testOptionsParse) {
-    char* argv[]={
+    const char* argv[]={
         0,
         "--log-enable", "error+:foo",
         "--log-enable", "debug:bar",
@@ -272,7 +266,7 @@ BOOST_AUTO_TEST_CASE(testOptionsParse) {
         "--log-function", "YES"
     };
     qpid::log::Options opts;
-    opts.parse(ARGC(argv), argv);
+    opts.parse(ARGC(argv), const_cast<char**>(argv));
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     expect=list_of("x")("y");
@@ -294,14 +288,14 @@ BOOST_AUTO_TEST_CASE(testOptionsDefault) {
 }
 
 BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
-    char* argv[]={
+    const char* argv[]={
         0,
         "--log-enable", "error+:foo",
         "--log-enable", "debug:bar",
         "--log-enable", "info"
     };
     qpid::log::Options opts;
-    opts.parse(ARGC(argv), argv);
+    opts.parse(ARGC(argv), const_cast<char**>(argv));
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     Selector s(opts);
@@ -317,27 +311,27 @@ BOOST_AUTO_TEST_CASE(testOptionsFormat) {
     {
         Options opts;
         BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
-        char* argv[]={
+        const char* argv[]={
             0,
             "--log-time", "no", 
             "--log-level", "no",
             "--log-source", "1",
             "--log-thread",  "1"
         };
-        opts.parse(ARGC(argv), argv);
+        opts.parse(ARGC(argv), const_cast<char**>(argv));
         BOOST_CHECK_EQUAL(
             Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
     }
     {
         Options opts;           // Clear.
-        char* argv[]={
+        const char* argv[]={
             0,
             "--log-level", "no",
             "--log-thread", "true",
             "--log-function", "YES",
             "--log-time", "YES"
         };
-        opts.parse(ARGC(argv), argv);
+        opts.parse(ARGC(argv), const_cast<char**>(argv));
         BOOST_CHECK_EQUAL(
             Logger::THREAD|Logger::FUNCTION|Logger::TIME,
             l.format(opts));
@@ -348,14 +342,14 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     Logger& l=Logger::instance();
     l.clear();
     Options opts;
-    char* argv[]={
+    const char* argv[]={
         0,
         "--log-time", "no", 
         "--log-source", "yes",
         "--log-output", "logging.tmp",
         "--log-enable", "critical"
     };
-    opts.parse(ARGC(argv), argv);
+    opts.parse(ARGC(argv), const_cast<char**>(argv));
     l.configure(opts, "test");
     QPID_LOG(critical, "foo"); int srcline=__LINE__;
     ifstream log("logging.tmp");

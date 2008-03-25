@@ -29,7 +29,7 @@ namespace amqp_0_10 {
 Segment::Segment() : missing() {}
 
 bool Segment::isComplete() const {
-    return missing || !frames.empty() && (frames.back().testFlags(Frame::LAST_FRAME));
+    return missing || (!frames.empty() && (frames.back().testFlags(Frame::LAST_FRAME)));
 }
 
 Segment::const_iterator Segment::begin() const {

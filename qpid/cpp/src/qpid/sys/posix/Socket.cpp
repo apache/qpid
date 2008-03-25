@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <cstdlib>
+#include <string.h>
 
 #include <boost/format.hpp>
 
@@ -160,7 +161,7 @@ void Socket::connect(const std::string& host, int port) const
     struct hostent* hp = gethostbyname ( host.c_str() );
     if (hp == 0)
         throw Exception(QPID_MSG("Cannot resolve " << host << ": " << h_errstr(h_errno)));
-    memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
+    ::memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
     if (::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0)
         throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
 }
@@ -260,12 +261,12 @@ std::string Socket::getLocalAddress() const
     return impl->getName(true, true);
 }
 
-uint Socket::getLocalPort() const
+uint16_t Socket::getLocalPort() const
 {
     return atoi(impl->getService(true).c_str());
 }
 
-uint Socket::getRemotePort() const
+uint16_t Socket::getRemotePort() const
 {
     return atoi(impl->getService(true).c_str());
 }

@@ -21,7 +21,7 @@
 #include "Buffer.h"
 #include "FramingContent.h" 
 #include "FieldTable.h" 
-
+#include <string.h>
 namespace qpid {
 
 namespace framing {
