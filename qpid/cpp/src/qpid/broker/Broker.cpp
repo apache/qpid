@@ -127,7 +127,8 @@ Broker::Broker(const Broker::Options& conf) :
     dtxManager.setStore (store);
 
     if(conf.enableMgmt){
-        ManagementAgent::enableManagement ();
+        ManagementAgent::enableManagement (dataDir.isEnabled () ? dataDir.getPath () : string (),
+                                           conf.mgmtPubInterval);
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
 
