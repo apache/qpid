@@ -59,9 +59,12 @@ all-local:
 	test -d examples || cp -R $(srcdir)/examples .
 	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I../../$(top_srcdir)/src -I../../$(top_srcdir)/src/gen -I../../$(top_builddir)/src/gen -L../../$(top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
 
+# FIXME aconway 2008-03-25: Re-enable when python client has been fixed
+# to find .spec via PYTHONPATH.
+# 
 # Verify the examples in the buid tree.
-check-local: all-local verify
-	$(srcdir)/verify_all $(abs_top_srcdir)/..
+# check-local: all-local verify
+# 	$(srcdir)/verify_all $(abs_top_srcdir)/..
 
 # TODO:
 #  create a tarball for testing installed examples.

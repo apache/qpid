@@ -167,7 +167,7 @@ namespace qpid {
              */
             QueuedMessage dequeue();
 
-            const QueuePolicy* const getPolicy();
+            const QueuePolicy* getPolicy();
 
             void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
             boost::shared_ptr<Exchange> getAlternateExchange();

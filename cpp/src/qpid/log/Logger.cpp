@@ -23,7 +23,6 @@
 #include <boost/pool/detail/singleton.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <algorithm>
 #include <sstream>
@@ -31,6 +30,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <syslog.h>
+#include <time.h>
 
 
 namespace qpid {
@@ -111,7 +111,25 @@ void Logger::log(const Statement& s, const std::string& msg) {
     // Format the message outside the lock.
     std::ostringstream os;
     if (flags&TIME) 
-        os << boost::posix_time::second_clock::local_time() << " ";
+    {
+        const char * month_abbrevs[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
+        time_t rawtime;
+        struct tm * timeinfo;
+
+        time ( & rawtime );
+        timeinfo = localtime ( &rawtime );
+        char time_string[100];
+        sprintf ( time_string,
+                  "%d-%s-%02d %02d:%02d:%02d",
+                  1900 + timeinfo->tm_year,
+                  month_abbrevs[timeinfo->tm_mon],
+                  timeinfo->tm_mday,
+                  timeinfo->tm_hour,
+                  timeinfo->tm_min,
+                  timeinfo->tm_sec
+                );
+        os << time_string << " ";
+    }
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)

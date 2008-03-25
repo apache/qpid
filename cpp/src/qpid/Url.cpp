@@ -20,9 +20,11 @@
 #include "qpid/Exception.h"
 #include "qpid/Msg.h"
 
-#include <sstream>
+#include <limits.h>             // NB: must be before boost/spirit headers.
 #include <boost/spirit.hpp>
 #include <boost/spirit/actor.hpp>
+
+#include <sstream>
 
 #include <sys/ioctl.h>
 #include <net/if.h>

@@ -524,7 +524,7 @@ void Queue::setPolicy(std::auto_ptr<QueuePolicy> _policy)
     policy = _policy;
 }
 
-const QueuePolicy* const Queue::getPolicy()
+const QueuePolicy* Queue::getPolicy()
 {
     return policy.get();
 }

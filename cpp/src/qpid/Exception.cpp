@@ -24,6 +24,7 @@
 #include <typeinfo>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 
 namespace qpid {
 

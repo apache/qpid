@@ -26,6 +26,7 @@
 // Remove when we no longer need to support 1.33.
 // 
 #include <boost/version.hpp>
+#include <limits.h> // Must be inclued beofre boost/test headers.
 
 #if (BOOST_VERSION < 103400)
 

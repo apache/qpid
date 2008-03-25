@@ -24,6 +24,7 @@
 #include <sstream>
 #include <iostream>
 #include "qpid/framing/reply_exceptions.h"
+#include <stdlib.h>
 
 namespace qpid {
 
