@@ -24,6 +24,7 @@
 
 #include "qpid/amqp_0_10/built_in_types.h"
 #include <boost/shared_array.hpp>
+#include <string.h>
 
 namespace qpid {
 namespace amqp_0_10 {

@@ -93,8 +93,8 @@ public:
      */
     std::string getLocalAddress() const;
 
-    uint getLocalPort() const;
-    uint getRemotePort() const;
+    uint16_t getLocalPort() const;
+    uint16_t getRemotePort() const;
 
     
     /** Accept a connection from a socket that is already listening

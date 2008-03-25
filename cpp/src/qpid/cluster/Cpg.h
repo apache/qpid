@@ -23,6 +23,7 @@
 #include "qpid/cluster/Dispatchable.h"
 
 #include <cassert>
+#include <string.h>
 
 extern "C" {
 #include <openais/cpg.h>

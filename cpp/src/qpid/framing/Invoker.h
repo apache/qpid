@@ -42,7 +42,7 @@ class Invoker: public MethodBodyDefaultVisitor, protected StructHelper
       public:
         Result() : handled(false) {}
         const std::string& getResult() const { return result; }
-        const bool hasResult() const { return !result.empty(); }
+        bool hasResult() const { return !result.empty(); }
         bool wasHandled() const { return handled; }
         operator bool() const { return handled; }
 

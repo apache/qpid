@@ -93,7 +93,7 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
             if (allowUnknown) {
                 // This hideous workaround is required because boost 1.33 has a bug
                 // that causes 'allow_unregistered' to not work.
-                po::command_line_parser clp = po::command_line_parser(argc, argv).
+                po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
                     options(*this).allow_unregistered();
                 po::parsed_options opts     = clp.run();
                 po::parsed_options filtopts = clp.run();
@@ -105,7 +105,7 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
                 po::store(filtopts, vm);
             }
             else
-                po::store(po::parse_command_line(argc, argv, *this), vm);
+                po::store(po::parse_command_line(argc, const_cast<char**>(argv), *this), vm);
         }
         parsing="environment variables";
         po::store(po::parse_environment(*this, EnvOptMapper(*this)), vm);
