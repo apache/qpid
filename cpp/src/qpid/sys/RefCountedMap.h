@@ -28,6 +28,7 @@
 #include <boost/bind.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/cast.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -52,7 +53,7 @@ class RefCountedMapData : public Base {
 
   private:
       friend class RefCountedMap<Key, Data, Impl>;
-    intrusive_ptr<Map> map;
+    boost::intrusive_ptr<Map> map;
     typename Impl::iterator self;
 
   public:
@@ -79,7 +80,7 @@ class RefCountedMap : public RefCountedChild {
 
     // Acquire the lock and ensure map is not deleted before unlock.
     class Lock {
-        intrusive_ptr<const RefCountedMap> map;
+        boost::intrusive_ptr<const RefCountedMap> map;
         sys::Mutex::ScopedLock lock;
       public:
         Lock(const RefCountedMap* m) : map(m), lock(m->lock) {}
@@ -100,13 +101,13 @@ class RefCountedMap : public RefCountedChild {
     ~RefCountedMap() {}
     
     /** Return 0 if not found */
-    intrusive_ptr<Data> find(const Key& k) {
+    boost::intrusive_ptr<Data> find(const Key& k) {
         Lock l(this);
         iterator i = map.find(k);
         return (i == map.end()) ? 0 : i->second;
     }
 
-    bool insert(const Key& k, intrusive_ptr<Data> d) {
+    bool insert(const Key& k, boost::intrusive_ptr<Data> d) {
         Lock l(this);
         iterator i;
         bool inserted;
@@ -132,7 +133,7 @@ class RefCountedMap : public RefCountedChild {
     template <class F> void clear(F functor) {
         Lock l(this);
         while (!map.empty()) {
-            intrusive_ptr<Data> ptr;
+            boost::intrusive_ptr<Data> ptr;
             if (map.empty()) return;
             ptr = map.begin()->second;
             detach(map.begin());
@@ -143,7 +144,7 @@ class RefCountedMap : public RefCountedChild {
 
     /** Apply functor to each map entry. */
     template <class F> void apply(F functor) {
-        std::vector<intrusive_ptr<Data> > snapshot;
+        std::vector<boost::intrusive_ptr<Data> > snapshot;
         {
             // Take a snapshot referencing all values in map.
             Lock l(this);
