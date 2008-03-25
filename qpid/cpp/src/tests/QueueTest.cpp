@@ -36,7 +36,7 @@ using namespace qpid::sys;
 
 class TestConsumer : public virtual Consumer{
 public:
-    typedef shared_ptr<TestConsumer> shared_ptr;            
+    typedef boost::shared_ptr<TestConsumer> shared_ptr;            
 
     intrusive_ptr<Message> last;
     bool received;

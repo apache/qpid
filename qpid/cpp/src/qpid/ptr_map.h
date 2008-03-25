@@ -39,6 +39,9 @@ namespace ptr_map {
  *
  * @see http://www.boost.org/libs/ptr_container/doc/ptr_container.html#upgrading-from-boost-v-1-33
  */
+
+#include <boost/type_traits/remove_const.hpp>
+
 #if (BOOST_VERSION < 103400)
 
 template <class PtrMapIter>
@@ -48,7 +51,8 @@ typename PtrMapIter::pointer get_pointer(const PtrMapIter& i)
 #else
 
 template <class PtrMapIter>
-typename PtrMapIter::value_type::second_type get_pointer(const PtrMapIter& i)
+typename boost::remove_const<typename PtrMapIter::value_type::second_type>::type
+get_pointer(const PtrMapIter& i)
 { return i->second; }
 
 #endif
