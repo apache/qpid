@@ -57,6 +57,7 @@ class ManagementObject
     static const uint8_t TYPE_BOOL      = 11;
     static const uint8_t TYPE_FLOAT     = 12;
     static const uint8_t TYPE_DOUBLE    = 13;
+    static const uint8_t TYPE_UUID      = 14;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;
@@ -85,7 +86,8 @@ class ManagementObject
     virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
     virtual bool firstInstance        (void) = 0;
     virtual void writeConfig          (qpid::framing::Buffer& buf) = 0;
-    virtual void writeInstrumentation (qpid::framing::Buffer& buf) = 0;
+    virtual void writeInstrumentation (qpid::framing::Buffer& buf,
+                                       bool skipHeaders = false) = 0;
     virtual void doMethod             (std::string            methodName,
                                        qpid::framing::Buffer& inBuf,
                                        qpid::framing::Buffer& outBuf) = 0;

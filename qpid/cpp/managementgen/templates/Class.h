@@ -25,8 +25,9 @@
 
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/ManagementObject.h"
+#include "qpid/framing/Uuid.h"
 
-namespace qpid { 
+namespace qpid {
 namespace management {
 
 class /*MGEN:Class.NameCap*/ : public ManagementObject
@@ -45,7 +46,8 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     // Private Methods
     static void writeSchema   (qpid::framing::Buffer& buf);
     void writeConfig          (qpid::framing::Buffer& buf);
-    void writeInstrumentation (qpid::framing::Buffer& buf);
+    void writeInstrumentation (qpid::framing::Buffer& buf,
+                               bool skipHeaders = false);
     void doMethod             (std::string            methodName,
                                qpid::framing::Buffer& inBuf,
                                qpid::framing::Buffer& outBuf);

@@ -111,6 +111,10 @@ class ManagementData:
     finally:
       self.lock.release ()
 
+  def ctrlHandler (self, context, op, data):
+    if op == self.mclient.CTRL_BROKER_INFO:
+      pass
+
   def configHandler (self, context, className, list, timestamps):
     self.dataHandler (0, className, list, timestamps);
 
@@ -149,7 +153,7 @@ class ManagementData:
     self.client.start ({"LOGIN": username, "PASSWORD": password})
     self.channel = self.client.channel (1)
 
-    self.mclient = managementClient (self.spec, None, self.configHandler,
+    self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply)
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = managementChannel (self.channel, self.mclient.topicCb, self.mclient.replyCb)
@@ -194,6 +198,8 @@ class ManagementData:
               return "False"
             else:
               return "True"
+          elif typecode == 14:
+            return str (UUID (bytes=value))
     return "*type-error*"
 
   def getObjIndex (self, className, config):
