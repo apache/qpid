@@ -414,6 +414,7 @@ nobase_include_HEADERS = \
   qpid/framing/HeaderProperties.h \
   qpid/framing/Invoker.h \
   qpid/framing/InputHandler.h \
+  qpid/framing/InitiationHandler.h \
   qpid/framing/MethodContent.h \
   qpid/framing/BodyHolder.h \
   qpid/framing/MaxMethodBodySize.h \
