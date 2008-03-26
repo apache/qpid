@@ -80,7 +80,7 @@ class PreviewConnectionHandler : public framing::FrameHandler
     };
     std::auto_ptr<Handler> handler;
   public:
-    PreviewConnectionHandler(PreviewConnection& connection);
+    PreviewConnectionHandler(PreviewConnection& connection, bool isClient);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
 };

@@ -38,7 +38,7 @@ class PreviewConnectionCodec  : public sys::ConnectionCodec, public sys::Connect
     std::string identifier;
     
   public:
-    PreviewConnectionCodec(sys::OutputControl&, Broker&, const std::string& id);
+    PreviewConnectionCodec(sys::OutputControl&, Broker&, const std::string& id, bool isClient = false);
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool isClosed() const;

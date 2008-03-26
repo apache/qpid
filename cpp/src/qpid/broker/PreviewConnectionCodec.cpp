@@ -26,8 +26,8 @@ namespace broker {
 
 using sys::Mutex;
 
-PreviewConnectionCodec::PreviewConnectionCodec(sys::OutputControl& o, Broker& broker, const std::string& id)
-    : frameQueueClosed(false), output(o), connection(this, broker, id), identifier(id) {}
+PreviewConnectionCodec::PreviewConnectionCodec(sys::OutputControl& o, Broker& broker, const std::string& id, bool isClient)
+    : frameQueueClosed(false), output(o), connection(this, broker, id, isClient), identifier(id) {}
 
 size_t  PreviewConnectionCodec::decode(const char* buffer, size_t size) {
     framing::Buffer in(const_cast<char*>(buffer), size);

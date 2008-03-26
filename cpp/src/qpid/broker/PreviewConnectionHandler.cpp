@@ -60,12 +60,16 @@ void PreviewConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
-PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection)  : handler(new Handler(connection)) {
+PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection, bool isClient)  : handler(new Handler(connection)) {
     FieldTable properties;
     string mechanisms(PLAIN);
     string locales(en_US);
-    handler->serverMode = true;
-    handler->client.start(0, 10, properties, mechanisms, locales);
+    if (isClient) {
+        handler->serverMode = false;
+    }else {
+        handler->serverMode = true;
+        handler->client.start(99, 0, properties, mechanisms, locales);
+    }
 }
 
 PreviewConnectionHandler::Handler:: Handler(PreviewConnection& c) : client(c.getOutput()), server(c.getOutput()), 
@@ -128,7 +132,6 @@ void PreviewConnectionHandler::Handler::start(uint8_t /*versionMajor*/,
     string pwd = "qpidd";
     string response = ((char)0) + uid + ((char)0) + pwd;
     server.startOk(FieldTable(), PLAIN, response, en_US);
-    connection.initMgmt(true);
 }
 
 void PreviewConnectionHandler::Handler::secure(const string& /*challenge*/)
