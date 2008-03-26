@@ -146,8 +146,8 @@ public class QpidTestCase extends TestCase
 
     public void run(TestResult testResult)
     {
-        if( _exclusionList != null && _exclusionList.contains( getClass().getName() + "#*") || 
-                _exclusionList.contains( getClass().getName() + "#" + getName()))
+        if( _exclusionList != null && (_exclusionList.contains( getClass().getName() + "#*") ||
+                _exclusionList.contains( getClass().getName() + "#" + getName())))
         {
             _logger.info("Test: " + getName() + " is excluded");
             testResult.endTest(this);
