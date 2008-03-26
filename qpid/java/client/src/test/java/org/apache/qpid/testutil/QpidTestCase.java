@@ -18,11 +18,14 @@
 package org.apache.qpid.testutil;
 
 import junit.framework.TestCase;
+import junit.framework.TestResult;
 
 import javax.jms.Connection;
 import javax.naming.InitialContext;
-import java.io.InputStream;
-import java.io.IOException;
+import java.io.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -40,6 +43,63 @@ public class QpidTestCase extends TestCase
 {
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+
+    /**
+     * Some tests are excluded when the property test.excludes is set to true. 
+     * An exclusion list is either a file (prop test.excludesfile) which contains one test name
+     * to be excluded per line or a String (prop test.excludeslist) where tests to be excluded are
+     * separated by " ". Excluded tests are specified following the format:
+     * className#testName where className is the class of the test to be
+     * excluded and testName is the name of the test to be excluded.
+     * className#* excludes all the tests of the specified class.
+     */
+    static
+    {
+        if (Boolean.getBoolean("test.excludes"))
+        {
+            _logger.info("Some tests should be excluded, building the exclude list");
+            String exclusionListURI = System.getProperties().getProperty("test.excludesfile", "");
+            String exclusionListString = System.getProperties().getProperty("test.excludeslist", "");
+            File file=new File(exclusionListURI);
+            List<String> exclusionList = new ArrayList<String>();
+            if (file.exists())
+            {
+                _logger.info("Using exclude file: " + exclusionListURI);
+                try
+                {
+                    BufferedReader in = new BufferedReader(new FileReader(file));
+                    String excludedTest = in.readLine();
+                    do
+                    {
+                        exclusionList.add(excludedTest);
+                        excludedTest = in.readLine();
+                    }
+                    while (excludedTest != null);
+                }
+                catch (IOException e)
+                {
+                    _logger.warn("Exception when reading exclusion list", e);
+                }
+            }
+            else if( ! exclusionListString.equals(""))
+            {
+                _logger.info("Using excludeslist: " + exclusionListString);
+                // the exclusion list may be specified as a string
+                StringTokenizer t = new StringTokenizer(exclusionListString, " ");
+                while (t.hasMoreTokens())
+                {
+                    exclusionList.add(t.nextToken());
+                }
+            }
+            else
+            {
+                throw new RuntimeException("Aborting test: Cannot find excludes file nor excludes list");
+            }
+            _exclusionList = exclusionList;
+        }
+    }
+
+    private static List<String> _exclusionList;
 
     // system properties
     private static final String BROKER = "broker";
@@ -83,6 +143,21 @@ public class QpidTestCase extends TestCase
             _logger.info("==========  stop " + name + " ==========");
         }
     }
+
+    public void run(TestResult testResult)
+    {
+        if( _exclusionList != null && _exclusionList.contains( getClass().getName() + "#*") || 
+                _exclusionList.contains( getClass().getName() + "#" + getName()))
+        {
+            _logger.info("Test: " + getName() + " is excluded");
+            testResult.endTest(this);
+        }
+        else
+        {
+            super.run(testResult);
+        }
+    }
+
 
     private static final class Piper extends Thread
     {
