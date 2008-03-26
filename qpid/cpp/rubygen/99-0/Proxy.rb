@@ -43,6 +43,7 @@ EOS
       include "qpid/framing/Proxy.h"
       include "qpid/framing/Array.h"
       include "qpid/framing/amqp_types.h"
+      include "qpid/framing/amqp_structs.h"
       namespace("qpid::framing") { 
         cpp_class(@classname, "public Proxy") {
           public

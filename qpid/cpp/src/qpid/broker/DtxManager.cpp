@@ -54,6 +54,7 @@ void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionCon
 
 bool DtxManager::prepare(const std::string& xid) 
 { 
+    QPID_LOG(debug, "preparing: " << xid);
     try {
         return getWork(xid)->prepare();
     } catch (DtxTimeoutException& e) {
@@ -64,6 +65,7 @@ bool DtxManager::prepare(const std::string& xid)
 
 bool DtxManager::commit(const std::string& xid, bool onePhase) 
 { 
+    QPID_LOG(debug, "committing: " << xid);
     try {
         bool result = getWork(xid)->commit(onePhase);
         remove(xid);
@@ -76,6 +78,7 @@ bool DtxManager::commit(const std::string& xid, bool onePhase)
 
 void DtxManager::rollback(const std::string& xid) 
 { 
+    QPID_LOG(debug, "rolling back: " << xid);
     try {
         getWork(xid)->rollback();
         remove(xid);

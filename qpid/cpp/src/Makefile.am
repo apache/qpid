@@ -229,6 +229,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/System.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
+  qpid/broker/TxAccept.cpp \
   qpid/broker/TxAck.cpp \
   qpid/broker/TxBuffer.cpp \
   qpid/broker/TxPublish.cpp \
@@ -352,6 +353,7 @@ nobase_include_HEADERS = \
   qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
+  qpid/broker/TxAccept.h \
   qpid/broker/TxAck.h \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \
