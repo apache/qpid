@@ -53,7 +53,7 @@ namespace broker {
 class PreviewConnection : public sys::ConnectionInputHandler, public ConnectionState
 {
   public:
-    PreviewConnection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
+    PreviewConnection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~PreviewConnection ();
 
     /** Get the PreviewSessionHandler for channel. Create if it does not already exist */
@@ -76,7 +76,6 @@ class PreviewConnection : public sys::ConnectionInputHandler, public ConnectionS
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
-    void initMgmt(bool asLink = false);
 
   private:
     typedef boost::ptr_map<framing::ChannelId, PreviewSessionHandler> ChannelMap;

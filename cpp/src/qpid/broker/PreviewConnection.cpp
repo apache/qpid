@@ -85,16 +85,11 @@ public:
 };
 
 
-PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
+PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink) :
     ConnectionState(out_, broker_),
-    adapter(*this),
+    adapter(*this, isLink),
     mgmtClosing(0),
     mgmtId(mgmtId_)
-{
-    initMgmt();
-}
-
-void PreviewConnection::initMgmt(bool asLink)
 {
     Manageable* parent = broker.GetVhostObject ();
 
@@ -104,7 +99,7 @@ void PreviewConnection::initMgmt(bool asLink)
 
         if (agent.get () != 0)
         {
-            if (asLink) {
+            if (isLink) {
                 mgmtWrapper = std::auto_ptr<MgmtWrapper>(new MgmtLink(this, parent, agent, mgmtId));
             } else {
                 mgmtWrapper = std::auto_ptr<MgmtWrapper>(new MgmtClient(this, parent, agent, mgmtId));
