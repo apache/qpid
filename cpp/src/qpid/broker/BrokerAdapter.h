@@ -84,6 +84,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     Queue010Handler* getQueue010Handler() { throw framing::NotImplementedException("Class not implemented");  }
     Message010Handler* getMessage010Handler() { throw framing::NotImplementedException("Class not implemented");  }
     Tx010Handler* getTx010Handler() { throw framing::NotImplementedException("Class not implemented");  }
+    Dtx010Handler* getDtx010Handler() { throw framing::NotImplementedException("Class not implemented");  }
     Execution010Handler* getExecution010Handler() { throw framing::NotImplementedException("Class not implemented");  }
 
     // Handlers no longer implemented in BrokerAdapter:

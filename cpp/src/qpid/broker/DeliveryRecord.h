@@ -55,8 +55,6 @@ class DeliveryRecord{
     bool completed;
     bool ended;
 
-    void setEnded();
-
   public:
     DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
                    const DeliveryId id, bool acquired, bool confirmed = false);
@@ -76,6 +74,7 @@ class DeliveryRecord{
     void acquire(DeliveryIds& results);
     void complete();
     void accept(TransactionContext* ctxt);
+    void setEnded();
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }

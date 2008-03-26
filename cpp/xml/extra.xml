@@ -33,6 +33,14 @@
     </doc>
   </domain>
 
+  <domain name="xid010">
+    <struct size="short" pack="short">
+      <field name="format" domain="long" />
+      <field name="global-id" domain="shortstr" />
+      <field name="branch-id" domain="shortstr" />
+    </struct>
+  </domain>
+
   <domain name="delivery-properties-010">
     <struct size="long" pack="short" type="1025">
       <field name="discard-unroutable" domain="bit" label="controls discard of unroutable messages"/>
@@ -736,6 +744,99 @@
     <method name = "rollback" index="3">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
+    </method>
+</class>
+
+<class name="dtx010" index="6">
+    <doc>blah, blah</doc>
+    <method name = "select" index="1">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+    </method>
+    <method name = "start" index="2">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <field name="join" domain="bit"/>
+        <field name="resume" domain="bit"/>
+        <result>
+            <struct size="long" pack="short" type="1">
+                <field name="status" domain="short" />
+            </struct>
+        </result>
+    </method>
+    <method name = "end" index="3">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <field name="fail" domain="bit"/>
+        <field name="suspend" domain="bit"/>
+        <result>
+            <struct size="long" pack="short" type="1">
+                <field name="status" domain="short" />
+            </struct>
+        </result>
+    </method>
+    <method name = "commit" index="4">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <field name="one-phase" domain="bit"/>
+        <result>
+            <struct size="long" pack="short" type="1">
+                <field name="status" domain="short" />
+            </struct>
+        </result>
+    </method>
+    <method name = "forget" index="5">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+    </method>
+    <method name = "get-timeout" index="6">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <result>
+            <struct size="long" pack="short" type="2">
+                <field name="timeout" domain="long" />
+            </struct>
+        </result>
+    </method>
+    <method name = "prepare" index="7">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <result>
+            <struct size="long" pack="short" type="1">
+                <field name="status" domain="short" />
+            </struct>
+        </result>
+    </method>
+    <method name = "recover" index="8">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <result>
+            <struct size="long" pack="short" type="3">
+                <field name="in-doubt" domain="array" />
+            </struct>
+        </result>
+    </method>
+    <method name = "rollback" index="9">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <result>
+            <struct size="long" pack="short" type="1">
+                <field name="status" domain="short" />
+            </struct>
+        </result>
+    </method>
+    <method name = "set-timeout" index="10">
+        <doc>blah, blah</doc>
+        <chassis name="server" implement="MUST" />
+        <field name="xid" domain="xid010"/>
+        <field name="timeout" domain="long"/>
     </method>
 </class>
 
