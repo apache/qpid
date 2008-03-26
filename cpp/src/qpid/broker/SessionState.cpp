@@ -178,6 +178,7 @@ void SessionState::handleCommand(framing::AMQMethodBody* method, SequenceNumber&
     if (!invocation.wasHandled()) {
         throw NotImplementedException("Not implemented");
     } else if (invocation.hasResult()) {
+        nextOut++;//execution result is now a command, so the counter must be incremented
         getProxy().getExecution010().result(id, invocation.getResult());
     }
     if (method->isSync()) { 

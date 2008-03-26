@@ -340,7 +340,7 @@ void BrokerAdapter::TxHandlerImpl::select()
 
 void BrokerAdapter::TxHandlerImpl::commit()
 {
-    state.commit(&getBroker().getStore());
+    state.commit(&getBroker().getStore(), true);
 }
 
 void BrokerAdapter::TxHandlerImpl::rollback()

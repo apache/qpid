@@ -67,12 +67,8 @@ void DeliveryRecord::setEnded()
     ended = true;
     //reset msg pointer, don't need to hold on to it anymore
     msg.payload = boost::intrusive_ptr<Message>();
-}
 
-void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
-    if (acquired && !ended) {
-        queue->dequeue(ctxt, msg.payload);
-    }
+    QPID_LOG(debug, "DeliveryRecord::setEnded() id=" << id);
 }
 
 bool DeliveryRecord::matches(DeliveryId tag) const{
@@ -133,6 +129,12 @@ void DeliveryRecord::accept(TransactionContext* ctxt) {
     if (acquired && !ended) {
         queue->dequeue(ctxt, msg.payload);
         setEnded();
+    }
+}
+
+void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
+    if (acquired && !ended) {
+        queue->dequeue(ctxt, msg.payload);
     }
 }
 

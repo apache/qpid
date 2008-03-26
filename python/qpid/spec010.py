@@ -257,6 +257,7 @@ class Struct(Composite):
     Composite.register(self, node)
     if self.code is not None:
       self.spec.structs[self.code] = self
+    self.spec.structs_by_name[self.name] = self
 
   def __str__(self):
     fields = ",\n    ".join(["%s: %s" % (f.name, f.type.qname)
@@ -443,6 +444,7 @@ class Spec(Node):
     self.controls = {}
     self.commands = {}
     self.structs = {}
+    self.structs_by_name = {}
 
   def encoding(self, klass):
     if Spec.ENCODINGS.has_key(klass):

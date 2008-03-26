@@ -154,6 +154,7 @@ class Future:
     self.value = initial
     self._error = None
     self._set = threading.Event()
+    self.exception = exception
 
   def error(self, error):
     self._error = error
@@ -166,7 +167,7 @@ class Future:
   def get(self, timeout=None):
     self._set.wait(timeout)
     if self._error != None:
-      raise exception(self._error)
+      raise self.exception(self._error)
     return self.value
 
   def is_set(self):

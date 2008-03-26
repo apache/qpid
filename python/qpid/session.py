@@ -110,6 +110,8 @@ class Session(Invoker):
       for st in self.spec.structs.values():
         if st.name == name:
           return st
+      if self.spec.structs_by_name.has_key(name):  
+        return self.spec.structs_by_name[name]
       return None
 
   def invoke(self, type, args, kwargs):
@@ -289,8 +291,9 @@ class Delegate:
       self.session.exceptions.append(ex)
       error = self.session.error()
       for id in self.session.results:
-        f = self.session.results.pop(id)
+        f = self.session.results[id]
         f.error(error)
+      self.session.results.clear()
 
       for q in self.session._incoming.values():
         q.close(error)

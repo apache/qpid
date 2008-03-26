@@ -61,6 +61,7 @@ class Queue;
     Queue010Handler* getQueue010Handler(){ return &queueImpl;  }
     Execution010Handler* getExecution010Handler(){ return &executionImpl; }
     Tx010Handler* getTx010Handler(){ return &txImpl; }
+    Dtx010Handler* getDtx010Handler(){ return &dtxImpl; }
 
     BasicHandler* getBasicHandler() { throw framing::NotImplementedException("Class not implemented");  }
     ExchangeHandler* getExchangeHandler(){ throw framing::NotImplementedException("Class not implemented");  }
@@ -218,12 +219,45 @@ class Queue;
         void rollback();
     };
 
+    class DtxHandlerImpl : public Dtx010Handler, public HandlerHelper
+    {
+        std::string convert(const framing::Xid010& xid);
+
+      public:
+        DtxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
+
+        void select();
+            
+        framing::Dtx010StartResult start(const framing::Xid010& xid,
+                                         bool join,
+                                         bool resume);
+        
+        framing::Dtx010EndResult end(const framing::Xid010& xid,
+                                     bool fail,
+                                     bool suspend);
+        
+        framing::Dtx010CommitResult commit(const framing::Xid010& xid,
+                                           bool onePhase);
+        
+        void forget(const framing::Xid010& xid);
+        
+        framing::Dtx010GetTimeoutResult getTimeout(const framing::Xid010& xid);
+        
+        framing::Dtx010PrepareResult prepare(const framing::Xid010& xid);
+        
+        framing::Dtx010RecoverResult recover();
+        
+        framing::Dtx010RollbackResult rollback(const framing::Xid010& xid);
+        
+        void setTimeout(const framing::Xid010& xid, uint32_t timeout);        
+    };
 
     ExchangeHandlerImpl exchangeImpl;
     QueueHandlerImpl queueImpl;
     MessageHandlerImpl messageImpl;
     ExecutionHandlerImpl executionImpl;
     TxHandlerImpl txImpl;
+    DtxHandlerImpl dtxImpl;
 };
 }} // namespace qpid::broker
 
