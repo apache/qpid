@@ -13,7 +13,7 @@ public class Serial
     private long _max;
     private long _maxComparison;
 
-    public Serial(double serialbits)
+    public Serial(long serialbits)
     {
         if( serialbits < 2)
         {
