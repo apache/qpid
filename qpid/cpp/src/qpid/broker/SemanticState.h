@@ -167,7 +167,7 @@ class SemanticState : public framing::FrameHandler::Chains,
 
     bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void startTx();
-    void commit(MessageStore* const store);
+    void commit(MessageStore* const store, bool completeOnCommit);
     void rollback();
     void selectDtx();
     void startDtx(const std::string& xid, DtxManager& mgr, bool join);

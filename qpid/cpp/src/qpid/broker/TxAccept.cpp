@@ -18,41 +18,44 @@
  * under the License.
  *
  */
-#include "DtxAck.h"
+#include "TxAccept.h"
 #include "qpid/log/Statement.h"
 
 using std::bind1st;
 using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
+using qpid::framing::AccumulatedAck;
 
-DtxAck::DtxAck(const framing::AccumulatedAck& acked, std::list<DeliveryRecord>& unacked)
-{
-    remove_copy_if(unacked.begin(), unacked.end(), inserter(pending, pending.end()), 
-                   not1(bind2nd(mem_fun_ref(&DeliveryRecord::coveredBy), &acked)));
-}
+TxAccept::TxAccept(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked) : 
+    acked(_acked), unacked(_unacked) {}
 
-bool DtxAck::prepare(TransactionContext* ctxt) throw()
+bool TxAccept::prepare(TransactionContext* ctxt) throw()
 {
     try{
-        //record dequeue in the store
-        for (ack_iterator i = pending.begin(); i != pending.end(); i++) {
-            i->dequeue(ctxt);
+        //dequeue messages from their respective queues:
+        for (ack_iterator i = unacked.begin(); i != unacked.end(); i++) {
+            if (i->coveredBy(&acked)) {
+                i->dequeue(ctxt);
+            }
         }
         return true;
+    }catch(const std::exception& e){
+        QPID_LOG(error, "Failed to prepare: " << e.what());
+        return false;
     }catch(...){
         QPID_LOG(error, "Failed to prepare");
         return false;
     }
 }
 
-void DtxAck::commit() throw()
+void TxAccept::commit() throw() 
 {
-    pending.clear();
+    for (ack_iterator i = unacked.begin(); i != unacked.end(); i++) {
+        if (i->coveredBy(&acked)) i->setEnded();
+    }
+
+    unacked.remove_if(mem_fun_ref(&DeliveryRecord::isRedundant));
 }
 
-void DtxAck::rollback() throw()
-{
-    for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::requeue));
-    pending.clear();
-}
+void TxAccept::rollback() throw() {}
