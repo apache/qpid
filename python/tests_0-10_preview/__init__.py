@@ -25,6 +25,7 @@ from dtx import *
 from example import *
 from exchange import *
 from execution import *
+from management import *
 from message import *
 from query import *
 from queue import *
