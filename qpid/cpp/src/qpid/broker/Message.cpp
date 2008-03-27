@@ -84,6 +84,11 @@ bool Message::isPersistent()
     return getAdapter().isPersistent(frames);
 }
 
+bool Message::requiresAccept()
+{
+    return getAdapter().requiresAccept(frames);
+}
+
 uint32_t Message::getRequiredCredit() const
 {
     //add up payload for all header and content frames in the frameset

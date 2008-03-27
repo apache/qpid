@@ -69,6 +69,7 @@ public:
     bool isImmediate() const;
     const framing::FieldTable* getApplicationHeaders() const;
     bool isPersistent();
+    bool requiresAccept();
 
     framing::FrameSet& getFrames() { return frames; } 
     const framing::FrameSet& getFrames() const { return frames; } 
