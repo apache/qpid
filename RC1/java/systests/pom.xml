@@ -1,0 +1,202 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-systests</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-incubating-M2.1-SNAPSHOT</version>
+    <name>Qpid System Tests</name>
+    <url>http://cwiki.apache.org/confluence/display/qpid</url>
+
+    <parent>
+        <groupId>org.apache.qpid</groupId>
+        <artifactId>qpid</artifactId>
+        <version>1.0-incubating-M2.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <properties>
+        <topDirectoryLocation>..</topDirectoryLocation>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-client</artifactId>
+            <type>jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker</artifactId>
+            <type>jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>junit-toolkit</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <testSourceDirectory>${basedir}/src/main</testSourceDirectory>
+                    <testClassesDirectory>target/classes</testClassesDirectory>
+                    <includes>
+                        <include>**/*Test.class</include>
+                    </includes>
+
+                    <systemProperties>
+                        <property>
+                            <name>example.plugin.target</name>
+                            <value>${basedir}/${topDirectoryLocation}/plugins/target</value>
+                        </property>
+                        <property>
+                            <name>QPID_EXAMPLE_HOME</name>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
+                        </property>
+                        <property>
+                            <name>QPID_HOME</name>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
+                        </property>                        
+                    </systemProperties>
+
+                    <excludes>
+                        <exclude>**/testcases/ImmediateMessageTest.class</exclude>
+                        <exclude>**/testcases/MandatoryMessageTest.class</exclude>
+                        <exclude>**/testcases/RollbackTest.class</exclude>
+                        <exclude>**/testcases/TTLTest.class</exclude>
+                        <exclude>**/testcases/FailoverTest.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Runs the framework based tests against an in-vm broker. -->
+            <plugin>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>junit-toolkit-maven-plugin</artifactId>
+
+                <configuration>
+                    <systemproperties>
+                        <property>
+                            <name>log4j.configuration</name>
+                            <value>${log4j.configuration}</value>
+                        </property>
+                    </systemproperties>
+
+                    <testrunner>org.apache.qpid.junit.extensions.TKTestRunner</testrunner>
+
+                    <testrunneroptions>
+                        <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
+                        <!--<option>-d30S</option>-->
+                        <option>-o ${basedir}/target/surefire-reports</option>
+                        <option>--xml</option>
+                    </testrunneroptions>
+
+                    <testrunnerproperties>
+                        <property>
+                            <name>notApplicableAssertion</name>
+                            <value>warn</value>
+                        </property>
+                    </testrunnerproperties>
+
+                    <commands>
+                        <AMQBrokerManagerMBeanTest>-n AMQBrokerManagerMBeanTest org.apache.qpid.server.AMQBrokerManagerMBeanTest </AMQBrokerManagerMBeanTest>
+                        <TxAckTest>-n TxAckTest org.apache.qpid.server.ack.TxAckTest </TxAckTest>
+                        <!--<HeadersExchangeTest>-n HeadersExchangeTest org.apache.qpid.server.exchange.HeadersExchangeTest </HeadersExchangeTest>-->
+                        <ReturnUnroutableMandatoryMessageTest>-n ReturnUnroutableMandatoryMessageTest org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest </ReturnUnroutableMandatoryMessageTest>
+                        <!--<FailoverMethodTest>-n FailoverMethodTest org.apache.qpid.server.failover.FailoverMethodTest </FailoverMethodTest>-->
+                        <DeadlockTest>-n DeadlockTest org.apache.qpid.server.failure.DeadlockTest </DeadlockTest>
+                        <!--<PluginTest>-n PluginTest org.apache.qpid.server.plugins.PluginTest </PluginTest>-->
+                        <AMQProtocolSessionMBeanTest>-n AMQProtocolSessionMBeanTest org.apache.qpid.server.protocol.AMQProtocolSessionMBeanTest </AMQProtocolSessionMBeanTest>
+                        <MaxChannelsTest>-n MaxChannelsTest org.apache.qpid.server.protocol.MaxChannelsTest </MaxChannelsTest>
+                        <AckTest>-n AckTest org.apache.qpid.server.queue.AckTest </AckTest>
+                        <MessageReturnTest>-n MessageReturnTest org.apache.qpid.server.queue.MessageReturnTest </MessageReturnTest>
+                        <QueueDepthWithSelectorTest>-n QueueDepthWithSelectorTest org.apache.qpid.server.queue.QueueDepthWithSelectorTest </QueueDepthWithSelectorTest>
+                        <!--<SubscriptionManagerTest>-n SubscriptionManagerTest org.apache.qpid.server.queue.SubscriptionManagerTest </SubscriptionManagerTest>-->
+                        <SubscriptionSetTest>-n SubscriptionSetTest org.apache.qpid.server.queue.SubscriptionSetTest </SubscriptionSetTest>
+                        <TimeToLiveTest>-n TimeToLiveTest org.apache.qpid.server.queue.TimeToLiveTest </TimeToLiveTest>
+                        <TxnBufferTest>-n TxnBufferTest org.apache.qpid.server.txn.TxnBufferTest </TxnBufferTest>
+                        <!--<TxnTest>-n TxnTest org.apache.qpid.server.txn.TxnTest </TxnTest>-->
+                        <!--QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest-->
+
+                        <!--<Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>-->
+                        <!--<Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>-->
+                        <!--<Rollback-Test>-n Rollback-Test -s[1] org.apache.qpid.test.testcases.RollbackTest</Rollback-Test>-->
+                    </commands>
+
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>framework_tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>tktest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+        <!-- Include source files in built jar -->
+        <resources>
+            <resource>
+                <targetPath>src/</targetPath>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.java</include>
+                </includes>
+            </resource>
+            <resource>
+                <targetPath>src/</targetPath>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>systests.log4j</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+</project>
+
+

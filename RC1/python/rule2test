@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+#
+# Convert rules to tests
+#
+import sys, re, os.path
+from getopt import getopt, GetoptError
+from string import capitalize
+from xml import dom
+from xml.dom.minidom import parse
+
+def camelcase(s):
+    """Convert 'string like this' to 'StringLikeThis'"""
+    return "".join([capitalize(w) for w in re.split(re.compile("\W*"), s)])
+
+def uncapitalize(s): return s[0].lower()+s[1:]
+
+def ancestors(node):
+    "Return iterator of ancestors from top-level element to node"
+    def generator(node):
+        while node and node.parentNode:
+            yield node
+            node = node.parentNode
+    return reversed(list(generator(node)))
+
+def tagAndName(element):
+    nameAttr = element.getAttribute("name");
+    if (nameAttr) : return  camelcase(nameAttr) + camelcase(element.tagName)
+    else: return camelcase(element.tagName)
+
+def nodeText(n):
+    """Recursively collect text from all text nodes under n"""
+    if n.nodeType == dom.Node.TEXT_NODE:
+        return n.data
+    if n.childNodes:
+        return reduce(lambda t, c: t + nodeText(c),  n.childNodes, "")
+    return ""
+
+def cleanup(docString, level=8):
+    unindent = re.sub("\n[ \t]*", "\n", docString.strip())
+    emptyLines = re.sub("\n\n\n", "\n\n", unindent)
+    indented = re.sub("\n", "\n"+level*" ", emptyLines)
+    return level*" " + indented
+
+def printTest(test, docstring):
+    print "class %s(TestBase):" % test
+    print '    """'
+    print docstring
+    print '    """'
+    print
+    print
+    
+def printTests(doc, module):
+    """Returns dictionary { classname : [ (methodname, docstring)* ] * }"""
+    tests = {}
+    rules = doc.getElementsByTagName("rule")
+    for r in rules:
+        path = list(ancestors(r))
+        if module == path[1].getAttribute("name").lower():
+            test = "".join(map(tagAndName, path[2:])) + "Tests"
+            docstring = cleanup(nodeText(r), 4)
+            printTest(test, docstring)
+
+def usage(message=None):
+    if message: print >>sys.stderr, message
+    print >>sys.stderr, """
+rule2test [options] <amqpclass>
+
+Print test classes for each rule for the amqpclass in amqp.xml.
+
+Options:
+  -?/-h/--help : this message
+  -s/--spec <spec.xml> : file containing amqp XML spec 
+"""
+    return 1
+
+def main(argv):
+    try: opts, args = getopt(argv[1:], "h?s:", ["help", "spec="])
+    except GetoptError, e: return usage(e)
+    spec = "../specs/amqp.xml"          # Default
+    for opt, val in opts:
+        if (opt in ("-h", "-?", "--help")): return usage()
+        if (opt in ("-s", "--spec")): spec = val
+    doc = parse(spec)
+    if len(args) == 0: return usage()
+    printTests(doc, args[0])
+    return 0
+
+if (__name__ == "__main__"): sys.exit(main(sys.argv))
