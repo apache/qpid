@@ -208,7 +208,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageDelivery.cpp \
   qpid/broker/MessageHandlerImpl.cpp \
   qpid/broker/MessageStoreModule.cpp \
-  qpid/broker/MultiVersionConnectionInputHandler.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/QueueBindings.cpp \
@@ -330,7 +329,6 @@ nobase_include_HEADERS = \
   qpid/broker/MessageHandlerImpl.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.h \
-  qpid/broker/MultiVersionConnectionInputHandler.h \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.h \
   qpid/broker/Persistable.h \
@@ -471,7 +469,6 @@ nobase_include_HEADERS = \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
-  qpid/sys/RefCountedMap.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
   qpid/sys/Serializer.h \
