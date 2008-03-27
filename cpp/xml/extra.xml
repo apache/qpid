@@ -656,6 +656,7 @@
     <method name = "transfer" index="1">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
         <field name="destination" domain="shortstr"/>
         <field name="accept-mode" domain="octet"/>
         <field name="acquire-mode" domain="octet"/>
@@ -663,11 +664,13 @@
     <method name = "accept" index="2">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
         <field name="commands" domain="sequence-set"/>
     </method>
     <method name = "reject" index="3">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
+        <chassis name="client" implement="MUST" />
         <field name="commands" domain="sequence-set"/>
         <field name="code" domain="short"/>
         <field name="text" domain="shortstr"/>

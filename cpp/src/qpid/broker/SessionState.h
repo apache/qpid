@@ -33,10 +33,10 @@
 #include "qpid/management/Session.h"
 #include "SessionAdapter.h"
 #include "DeliveryAdapter.h"
+#include "IncompleteMessageList.h"
 #include "MessageBuilder.h"
 #include "SessionContext.h"
 #include "SemanticState.h"
-#include "IncomingExecutionContext.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -53,10 +53,11 @@ class AMQP_ClientProxy;
 
 namespace broker {
 
-class SessionHandler;
-class SessionManager;
 class Broker;
 class ConnectionState;
+class Message;
+class SessionHandler;
+class SessionManager;
 
 /**
  * Broker-side session state includes sessions handler chains, which may
@@ -132,12 +133,15 @@ class SessionState : public framing::SessionState,
     SemanticState semanticState;
     SessionAdapter adapter;
     MessageBuilder msgBuilder;
+    IncompleteMessageList incomplete;
 
     RangedOperation ackOp;
+    IncompleteMessageList::CompletionListener enqueuedOp;
 
     management::Session::shared_ptr mgmtObject;
     void handleCommand(framing::AMQMethodBody* method, framing::SequenceNumber& id);
     void handleContent(framing::AMQFrame& frame, framing::SequenceNumber& id);
+    void enqueued(boost::intrusive_ptr<Message> msg);
 
     friend class SessionManager;
 };

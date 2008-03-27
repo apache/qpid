@@ -53,8 +53,14 @@ namespace broker{
 
     bool TransferAdapter::isPersistent(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        const framing::DeliveryProperties010* p = f.getHeaders()->get<framing::DeliveryProperties010>();
         return p && p->getDeliveryMode() == 2;
+    }
+
+    bool TransferAdapter::requiresAccept(const framing::FrameSet& f)
+    {
+        const framing::Message010TransferBody* b = f.as<framing::Message010TransferBody>();
+        return b && b->getAcceptMode();
     }
 
     std::string PreviewAdapter::getExchange(const framing::FrameSet& f)
@@ -72,6 +78,12 @@ namespace broker{
     {
         const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
         return p ? &(p->getApplicationHeaders()) : 0;
+    }
+
+    bool PreviewAdapter::isPersistent(const framing::FrameSet& f)
+    {
+        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        return p && p->getDeliveryMode() == 2;
     }
 
 }}
