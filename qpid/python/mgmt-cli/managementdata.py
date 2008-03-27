@@ -156,8 +156,7 @@ class ManagementData:
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply)
     self.mclient.schemaListener (self.schemaHandler)
-    self.mch = managementChannel (self.channel, self.mclient.topicCb, self.mclient.replyCb)
-    self.mclient.addChannel (self.mch)
+    self.mch = self.mclient.addChannel (self.channel)
 
   def close (self):
     self.mclient.removeChannel (self.mch)
