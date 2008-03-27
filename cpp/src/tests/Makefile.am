@@ -40,7 +40,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ClientSessionTest.cpp \
 	SequenceSet.cpp \
 	serialize.cpp \
-	ProxyTemplate.cpp apply.cpp BoundedIterator.cpp
+	ProxyTemplate.cpp apply.cpp BoundedIterator.cpp \
+	IncompleteMessageList.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
