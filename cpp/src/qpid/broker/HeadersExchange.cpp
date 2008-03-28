@@ -102,7 +102,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
     RWlock::ScopedWlock locker(lock);
     Bindings::iterator i;
     for (i = bindings.begin(); i != bindings.end(); i++) {
-        if (args) {
+        if (bindingKey.empty() && args) {
             if (i->first == *args && i->second->queue == queue)
                 break;
         } else {
