@@ -70,6 +70,7 @@ namespace qpid {
             const OwnershipToken* owner;
             uint32_t consumerCount;
             bool exclusive;
+            bool noLocal;
             Listeners listeners;
             Messages messages;
             mutable qpid::sys::Mutex consumerLock;
@@ -118,6 +119,7 @@ namespace qpid {
 
             bool acquire(const QueuedMessage& msg);
 
+            bool isLocal(boost::intrusive_ptr<Message>& msg);
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.

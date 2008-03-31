@@ -44,8 +44,12 @@ void TxPublish::rollback() throw(){
 }
 
 void TxPublish::deliverTo(Queue::shared_ptr& queue){
-    queues.push_back(queue);
-    delivered = true;
+    if (!queue->isLocal(msg)) {
+        queues.push_back(queue);
+        delivered = true;
+    } else {
+        QPID_LOG(debug, "Won't enqueue local message for " << queue->getName());
+    }
 }
 
 TxPublish::Prepare::Prepare(TransactionContext* _ctxt, intrusive_ptr<Message>& _msg) 

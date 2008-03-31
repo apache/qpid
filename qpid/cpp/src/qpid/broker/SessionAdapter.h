@@ -21,11 +21,12 @@
 
 #include "HandlerImpl.h"
 
+#include "ConnectionToken.h"
+#include "OwnershipToken.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/SequenceSet.h"
-#include "OwnershipToken.h"
 
 #include <vector>
 #include <boost/function.hpp>
@@ -140,6 +141,7 @@ class Queue;
                      bool ifUnused, bool ifEmpty);
         void purge(const std::string& queue); 
         framing::Queue010QueryResult query(const std::string& queue);
+        bool isLocal(const ConnectionToken* t) const; 
     };
 
     class MessageHandlerImpl :

@@ -28,33 +28,33 @@ from qpid.content import Content
 class MessageTests(TestBase010):
     """Tests for 'methods' on the amqp message 'class'"""
 
-    def test_consume_no_local(self):
+    def test_no_local(self):
         """
         Test that the no_local flag is honoured in the consume method
         """
         session = self.session
-        #setup, declare two queues:
+        #setup, declare two queues one of which excludes delivery of locally sent messages
         session.queue_declare(queue="test-queue-1a", exclusive=True, auto_delete=True)
-        session.queue_declare(queue="test-queue-1b", exclusive=True, auto_delete=True)
-        #establish two consumers one of which excludes delivery of locally sent messages
+        session.queue_declare(queue="test-queue-1b", exclusive=True, auto_delete=True, arguments={'no-local':'true'})
+        #establish two consumers 
         self.subscribe(destination="local_included", queue="test-queue-1a")
-        self.subscribe(destination="local_excluded", queue="test-queue-1b", no_local=True)
+        self.subscribe(destination="local_excluded", queue="test-queue-1b")
 
         #send a message
-        session.message_transfer(content=Content(properties={'routing_key' : "test-queue-1a"}, body="consume_no_local"))
-        session.message_transfer(content=Content(properties={'routing_key' : "test-queue-1b"}, body="consume_no_local"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1a"), "deliver-me"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me"))
 
         #check the queues of the two consumers
         excluded = session.incoming("local_excluded")
         included = session.incoming("local_included")
         msg = included.get(timeout=1)
-        self.assertEqual("consume_no_local", msg.body)
+        self.assertEqual("deliver-me", msg.body)
         try:
             excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
         except Empty: None
 
-    def test_consume_no_local_awkward(self):
+    def test_no_local_awkward(self):
 
         """
         If an exclusive queue gets a no-local delivered to it, that
@@ -67,19 +67,18 @@ class MessageTests(TestBase010):
 
         session = self.session
         #setup:
-        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True, arguments={'no-local':'true'})
         #establish consumer which excludes delivery of locally sent messages
-        self.subscribe(destination="local_excluded", queue="test-queue", no_local=True)
+        self.subscribe(destination="local_excluded", queue="test-queue")
 
         #send a 'local' message
-        session.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="local"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "local"))
 
         #send a non local message
         other = self.connect()
-        session2 = other.session(1)
-        session2.session_open()
-        session2.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="foreign"))
-        session2.session_close()
+        session2 = other.session("my-session", 1)
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue"), "foreign"))
+        session2.close()
         other.close()
 
         #check that the second message only is delivered
