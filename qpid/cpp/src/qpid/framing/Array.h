@@ -47,8 +47,11 @@ class Array
     bool operator==(const Array& other) const;
 
     Array();
-    //only long string arrays can currently be created (any type can be decoded)
+    Array(uint8_t type);
+    //creates a longstr array
     Array(const std::vector<std::string>& in);
+
+    void add(ValuePtr value);
 
     template <class T>
     void collect(std::vector<T>& out)

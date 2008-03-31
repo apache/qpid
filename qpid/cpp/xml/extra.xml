@@ -87,11 +87,11 @@
             <doc>blah, blah</doc>
       </field>
 
-      <field name="mechanisms" domain="longstr" label="available security mechanisms">
+      <field name="mechanisms" domain="array" label="available security mechanisms">
             <doc>blah, blah</doc>
       </field>
 
-      <field name="locales" domain="longstr" label="available message locales">
+      <field name="locales" domain="array" label="available message locales">
       </field>
 
 </method>
@@ -316,7 +316,7 @@
         <assert check="regexp" value="^[a-zA-Z0-9/-_]+$" />
       </field>
 
-      <field name="capabilities" domain="shortstr" label="required capabilities">
+      <field name="capabilities" domain="array" label="required capabilities">
         <doc>
           The client can specify zero or more capability names, delimited by spaces. The server can
           use this string to how to process the client's connection request.
