@@ -30,6 +30,8 @@ namespace framing {
 
 Array::Array() : typeOctet(0xF0/*void*/) {}
 
+Array::Array(uint8_t type) : typeOctet(type) {}
+
 Array::Array(const std::vector<std::string>& in)
 {
     typeOctet = 0xA4;
@@ -38,6 +40,7 @@ Array::Array(const std::vector<std::string>& in)
         values.push_back(value);
     }
 } 
+
 
 uint32_t Array::size() const {
     //note: size is only included when used as a 'top level' type
@@ -107,6 +110,14 @@ bool Array::operator==(const Array& x) const {
     }
 
     return true;
+}
+
+void Array::add(ValuePtr value)
+{
+    if (typeOctet != value->getType()) {
+        throw SyntaxErrorException(QPID_MSG("Wrong type of value, expected " << typeOctet));
+    }
+    values.push_back(value);
 }
 
 
