@@ -23,6 +23,7 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
+#include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/cast.hpp>
 #include <boost/bind.hpp>
@@ -198,6 +199,12 @@ SessionAdapter::QueueHandlerImpl::~QueueHandlerImpl()
         exclusiveQueues.erase(exclusiveQueues.begin());
     }
 }
+    
+bool SessionAdapter::QueueHandlerImpl::isLocal(const ConnectionToken* t) const 
+{ 
+    return session.isLocal(t); 
+}
+
 
 Queue010QueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 {
