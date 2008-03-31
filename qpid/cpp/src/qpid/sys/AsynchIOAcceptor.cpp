@@ -27,6 +27,7 @@
 #include "Thread.h"
 
 #include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"
@@ -247,10 +248,11 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
             codec = factory->create(protocolInit.getVersion(), *this, identifier);
             if (!codec) {
-                // FIXME aconway 2008-03-18: send valid version header & close connection.
-                // FIXME aconway 2008-03-18: exception type
-                throw Exception(
-                    QPID_MSG("Protocol version not supported: " << protocolInit));
+                //TODO: may still want to revise this...
+                //send valid version header & close connection.
+                write(framing::ProtocolInitiation(framing::highestProtocolVersion));
+                readError = true;
+                aio->queueWriteClose();                
             }
         }
     }
