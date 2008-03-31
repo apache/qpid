@@ -50,15 +50,16 @@
         <principal-databases>
             <principal-database>
                 <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
                         <name>passwordFile</name>
-                        <value>${conf}/passwdVhost</value>
+                        <value>${conf}/passwd</value>
                     </attribute>
                 </attributes>
             </principal-database>
         </principal-databases>
+        
         <access>
             <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
         </access>
@@ -75,22 +76,6 @@
                 <store>
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
-
-                <security>
-                    <access>
-                        <class>org.apache.qpid.server.security.old.PrincipalDatabaseAccessManager</class>
-                        <attributes>
-                            <attribute>
-                                <name>principalDatabase</name>
-                                <value>passwordfile</value>
-                            </attribute>
-                            <attribute>
-                                <name>defaultAccessManager</name>
-                                <value>DenyAll</value>
-                            </attribute>
-                        </attributes>
-                    </access>
-                </security>
             </localhost>
         </virtualhost>
 
