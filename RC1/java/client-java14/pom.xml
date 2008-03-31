@@ -1,0 +1,224 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-client-java14</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-incubating-M2.1-RC1</version>
+    <name>Qpid Client for Java 1.4</name>
+    <url>http://cwiki.apache.org/confluence/display/qpid</url>
+
+    <parent>
+        <groupId>org.apache.qpid</groupId>
+        <artifactId>qpid</artifactId>
+        <version>1.0-incubating-M2.1-RC1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <properties>
+        <topDirectoryLocation>..</topDirectoryLocation>
+        <java.source.version>1.4</java.source.version>
+        <qpid.version>${pom.version}</qpid.version>
+        <qpid.targetDir>${project.build.directory}</qpid.targetDir>
+        <!--<qpid.root>${basedir}/..</qpid.root>-->
+        <sasl.properties>${basedir}/etc/sasl.properties</sasl.properties>
+
+        <!-- This is a dummy value to ensure this property exists, override in your settings.xml to your real 1.4 jdk location to run tests. -->
+        <jvm.1.4.bin>path/to/java1.4</jvm.1.4.bin>
+    </properties>
+
+    <dependencies>
+
+        <!-- These dependencies have to be re-declared here, because exluding the normal (non 1.4) client and common from the distribution takes out
+             these transitive dependencies too. -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jms_1.1_spec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+
+        <!-- Use the java 1.4 retrotranslated client. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-client</artifactId>
+            <type>jar</type>
+            <version>${pom.version}</version>
+            <classifier>java14</classifier>
+        </dependency>
+
+        <!-- Use the java 1.4 retrotranslated common library. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-common</artifactId>
+            <type>jar</type>
+            <version>${pom.version}</version>
+            <classifier>java14</classifier>
+        </dependency>
+
+        <!-- Use the java 1.4 retrotranslated integration tests. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-integrationtests</artifactId>
+            <type>jar</type>
+            <version>${pom.version}</version>
+            <classifier>java14</classifier>
+            <!--<scope>test</scope>-->
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>                
+            <artifactId>retrotranslator-runtime</artifactId>
+            <scope>package</scope>
+        </dependency>
+
+        <!-- Test dependencies. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <!-- Sets up the compiler plugin to compile on 1.4 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.source.version}</source>
+                    <target>${java.source.version}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Sets up the assembly plugin to use the assembly directions to build a 1.4 compatable client. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${assembly.version}</version>
+
+                <executions>
+
+                    <!-- Produces the distribution. -->
+                    <execution>
+                        <id>assembly-dist</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/client-java14-bin.xml</descriptor>
+                            </descriptors>
+                            <finalName>qpid-${pom.version}</finalName>
+                            <outputDirectory>${qpid.targetDir}</outputDirectory>
+                            <tarLongFileMode>gnu</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                    
+                    <!-- Produces a jar with all test dependencies in it. For convenience in running tests from command line. -->
+                    <!-- Todo: Replace this with a manifest only jar, its much quicker to build that. -->
+                    <execution>
+                        <id>assembly-alltestdeps</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/jar-with-dependencies.xml</descriptor>
+                            </descriptors>
+                            <outputDirectory>target</outputDirectory>
+                            <workDirectory>target/assembly/work</workDirectory>
+                        </configuration>              
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <!-- Sets up surefire to run during the integration-test phase instead of the test phase. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>surefire-it</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                            <forkMode>once</forkMode>
+                            <jvm>${jvm.1.4.bin}</jvm>
+                            <systemProperties>
+                                <property>
+                                    <name>amqj.logging.level</name>
+                                    <value>${amqj.logging.level}</value>
+                                </property>
+                                <property>
+                                    <name>log4j.configuration</name>
+                                    <value>${log4j.configuration}</value>
+                                </property>
+                                <property>
+                                    <name>amq.dynamicsaslregistrar.properties</name>
+                                    <value>${sasl.properties}</value>
+                                </property>
+                            </systemProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>
