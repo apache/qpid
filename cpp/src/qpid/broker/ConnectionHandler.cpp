@@ -66,8 +66,12 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 
 ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {
     FieldTable properties;
-    string mechanisms(PLAIN);
-    string locales(en_US);
+    Array mechanisms(0x95);
+    boost::shared_ptr<FieldValue> m(new Str16Value(PLAIN));
+    mechanisms.add(m);
+    Array locales(0x95);
+    boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
+    locales.add(l);
     handler->serverMode = true;
     handler->client.start(properties, mechanisms, locales);
 }
@@ -105,7 +109,7 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
 }
         
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
-    const string& /*capabilities*/, bool /*insist*/)
+                                      const framing::Array& /*capabilities*/, bool /*insist*/)
 {
     string knownhosts;
     client.openOk(knownhosts);

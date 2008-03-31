@@ -56,7 +56,7 @@ class ConnectionHandler : public framing::FrameHandler
         void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
         void heartbeat() {}
         void open(const std::string& virtualHost,
-                  const std::string& capabilities, bool insist); 
+                  const framing::Array& capabilities, bool insist); 
         void close(uint16_t replyCode, const std::string& replyText,
                    uint16_t classId, uint16_t methodId); 
         void closeOk(); 

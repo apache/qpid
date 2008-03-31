@@ -25,6 +25,11 @@
 namespace qpid {
 namespace framing {
 
+uint8_t FieldValue::getType()
+{
+    return typeOctet;
+}
+
 void FieldValue::setType(uint8_t type)
 {
     typeOctet = type;
@@ -105,6 +110,14 @@ StringValue::StringValue(const std::string& v) :
             reinterpret_cast<const uint8_t*>(v.data()+v.size())))
 {
 }
+
+Str16Value::Str16Value(const std::string& v) :
+    FieldValue(
+        0x95,
+        new VariableWidthValue<2>(
+            reinterpret_cast<const uint8_t*>(v.data()),
+            reinterpret_cast<const uint8_t*>(v.data()+v.size())))
+{}
 
 IntegerValue::IntegerValue(int v) :
     FieldValue(0x21, new FixedWidthValue<4>(v))
