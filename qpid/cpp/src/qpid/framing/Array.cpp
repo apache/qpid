@@ -80,24 +80,26 @@ void Array::decode(Buffer& buffer){
         throw SyntaxErrorException(QPID_MSG("Not enough data for array, expected " 
                                             << size << " bytes but only " << available << " available"));
     }
-    typeOctet = buffer.getOctet();
-    uint32_t count = buffer.getLong();
-
-    FieldValue dummy;
-    dummy.setType(typeOctet);
-    available = buffer.available();
-    if (available < count * dummy.getData().size()) {
-        throw SyntaxErrorException(QPID_MSG("Not enough data for array, expected " 
-                                            << count << " items of " << dummy.getData().size()
-                                            << " bytes each  but only " << available << " bytes available"));
+    if (size) {
+        typeOctet = buffer.getOctet();
+        uint32_t count = buffer.getLong();
+        
+        FieldValue dummy;
+        dummy.setType(typeOctet);
+        available = buffer.available();
+        if (available < count * dummy.getData().size()) {
+            throw SyntaxErrorException(QPID_MSG("Not enough data for array, expected " 
+                                                << count << " items of " << dummy.getData().size()
+                                                << " bytes each  but only " << available << " bytes available"));
+        }
+        
+        for (uint32_t i = 0; i < count; i++) {
+            ValuePtr value(new FieldValue);
+            value->setType(typeOctet);
+            value->getData().decode(buffer);
+            values.push_back(ValuePtr(value));
+        }    
     }
-
-    for (uint32_t i = 0; i < count; i++) {
-        ValuePtr value(new FieldValue);
-        value->setType(typeOctet);
-        value->getData().decode(buffer);
-        values.push_back(ValuePtr(value));
-    }    
 }
 
 
