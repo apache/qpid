@@ -64,7 +64,7 @@ class PreviewSessionState : public framing::SessionState,
 {
   public:
     ~PreviewSessionState();
-    bool isAttached() { return handler; }
+    bool isAttached() const { return handler; }
 
     void detach();
     void attach(PreviewSessionHandler& handler);
@@ -77,6 +77,7 @@ class PreviewSessionState : public framing::SessionState,
     
     /** @pre isAttached() */
     ConnectionState& getConnection();
+    bool isLocal(const ConnectionToken* t) const;
 
     uint32_t getTimeout() const { return timeout; }
     Broker& getBroker() { return broker; }

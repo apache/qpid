@@ -667,10 +667,3 @@ class DtxTests(TestBase010):
         dp=session.delivery_properties(routing_key=key)
         mp=session.message_properties(correlation_id=id)
         session.message_transfer(message=Message(dp, mp, body))
-
-    def subscribe(self, session=None, **keys):
-        session = session or self.session
-        consumer_tag = keys["destination"]
-        session.message_subscribe(**keys)
-        session.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)

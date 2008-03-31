@@ -361,3 +361,10 @@ class TestBase010(unittest.TestCase):
     def tearDown(self):
         if not self.session.error(): self.session.close(timeout=10)
         self.conn.close(timeout=10)
+
+    def subscribe(self, session=None, **keys):
+        session = session or self.session
+        consumer_tag = keys["destination"]
+        session.message_subscribe(**keys)
+        session.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)

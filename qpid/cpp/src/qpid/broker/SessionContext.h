@@ -38,6 +38,7 @@ class SessionContext : public sys::OutputControl
 {
   public:
     virtual ~SessionContext(){}
+    virtual bool isLocal(const ConnectionToken* t) const = 0;
     virtual ConnectionState& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;

@@ -70,7 +70,7 @@ class SessionState : public framing::SessionState,
 {
   public:
     ~SessionState();
-    bool isAttached() { return handler; }
+    bool isAttached() const { return handler; }
 
     void detach();
     void attach(SessionHandler& handler);
@@ -83,6 +83,7 @@ class SessionState : public framing::SessionState,
     
     /** @pre isAttached() */
     ConnectionState& getConnection();
+    bool isLocal(const ConnectionToken* t) const;
 
     uint32_t getTimeout() const { return timeout; }
     void setTimeout(uint32_t t) { timeout = t; }
