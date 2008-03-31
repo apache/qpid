@@ -30,6 +30,7 @@ namespace qpid {
          */
         class ConnectionToken : public OwnershipToken {
         public:
+            virtual bool isLocal(const ConnectionToken* t) const { return this == t; }
             virtual ~ConnectionToken(){}
         };
     }

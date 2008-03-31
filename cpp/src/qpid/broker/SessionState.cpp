@@ -96,6 +96,11 @@ ConnectionState& SessionState::getConnection() {
     return getHandler()->getConnection();
 }
 
+bool SessionState::isLocal(const ConnectionToken* t) const
+{
+    return isAttached() && &(handler->getConnection()) == t;
+}
+
 void SessionState::detach() {
     getConnection().outputTasks.removeOutputTask(&semanticState);
     Mutex::ScopedLock l(lock);

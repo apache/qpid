@@ -90,6 +90,11 @@ ConnectionState& PreviewSessionState::getConnection() {
     return getHandler()->getConnection();
 }
 
+bool PreviewSessionState::isLocal(const ConnectionToken* t) const
+{
+    return isAttached() && &(handler->getConnection()) == t;
+}
+
 void PreviewSessionState::detach() {
     getConnection().outputTasks.removeOutputTask(&semanticHandler->getSemanticState());
     Mutex::ScopedLock l(lock);
