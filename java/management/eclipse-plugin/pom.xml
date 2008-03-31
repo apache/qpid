@@ -23,13 +23,13 @@
     <groupId>org.apache.qpid.management</groupId>
     <artifactId>org.apache.qpid.management.ui</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-incubating-M2.1-SNAPSHOT</version>
+    <version>1.0-incubating-M2.1-RC1</version>
     <name>Qpid Management</name>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2.1-SNAPSHOT</version>
+        <version>1.0-incubating-M2.1-RC1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
