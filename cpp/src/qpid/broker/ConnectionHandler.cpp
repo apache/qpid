@@ -111,7 +111,7 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
-    string knownhosts;
+    framing::Array knownhosts;
     client.openOk(knownhosts);
 }
 
