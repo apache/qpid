@@ -96,13 +96,13 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProp
             connection.setUserId(uid);
         }
     }
-    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
+    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
 }
         
 void ConnectionHandler::Handler::secureOk(const string& /*response*/){}
         
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
-    uint32_t framemax, uint16_t heartbeat)
+    uint16_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
     connection.setHeartbeat(heartbeat);

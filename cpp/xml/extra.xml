@@ -173,7 +173,7 @@
         </doc>
       </field>
 
-      <field name="frame-max" domain="long" label="proposed maximum frame size">
+      <field name="frame-max" domain="short" label="proposed maximum frame size">
         <doc>
           The largest frame size that the server proposes for the connection. The client can
           negotiate a lower value. Zero means that the server does not impose any specific limit but
@@ -193,26 +193,8 @@
         </rule>
       </field>
 
-      <field name="heartbeat" domain="short" label="desired heartbeat delay">
-        <!-- TODO 0.82 - the heartbeat negotiation mechanism was changed during implementation
-          because the model documented here does not actually work properly.  The best model we
-          found is that the server proposes a heartbeat value to the client; the client can reply
-          with zero, meaning 'do not use heartbeats (as documented here), or can propose its own
-          heartbeat value, which the server should then accept.  This is different from the model
-          here which is disconnected - e.g. each side requests a heartbeat independently.  Basically
-          a connection is heartbeated in both ways, or not at all, depending on whether both peers
-          support heartbeating or not, and the heartbeat value should itself be chosen by the client
-          so that remote links can get a higher value.  Also, the actual heartbeat mechanism needs
-          documentation, and is as follows: so long as there is activity on a connection - in or out
-          - both peers assume the connection is active.  When there is no activity, each peer must
-          send heartbeat frames.  When no heartbeat frame is received after N cycles (where N is at
-          least 2), the connection can be considered to have died. /PH 2006/07/19
-        -->
-        <doc>
-          The delay, in seconds, of the connection heartbeat that the server wants. Zero means the
-          server does not want a heartbeat.
-        </doc>
-      </field>
+      <field name="heartbeat-min" domain="short" label="desired heartbeat delay"/>
+      <field name="heartbeat-max" domain="short" label="desired heartbeat delay"/>
     </method>
 
     <!-- - Method: connection.tune-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -243,7 +225,7 @@
         <assert check="le" value="channel-max" />
       </field>
 
-      <field name="frame-max" domain="long" label="negotiated maximum frame size">
+      <field name="frame-max" domain="short" label="negotiated maximum frame size">
         <doc>
           The largest frame size that the client and server will use for the connection. Zero means
           that the client does not impose any specific limit but may reject very large frames if it
