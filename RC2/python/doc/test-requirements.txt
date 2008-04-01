@@ -1,0 +1,10 @@
+ * start and stop server, possibly in different configurations, should
+   at least be able to specify host and port
+
+ * initiate multiple connections/server
+
+ * initiate multiple channels/connection
+
+ * enable positive and negative tests for any protocol interaction
+
+ * test harness must be as robust as possible to spec changes
