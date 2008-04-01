@@ -25,12 +25,12 @@
     <artifactId>qpid-distribution</artifactId>
     <packaging>jar</packaging>
     <name>Qpid Distribution</name>
-    <version>1.0-incubating-M2.1-RC1</version>
+    <version>1.0-incubating-M2.1</version>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2.1-RC1</version>
+        <version>1.0-incubating-M2.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
