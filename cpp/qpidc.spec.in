@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        24%{?dist}
+Release:        25%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -68,6 +68,13 @@ Requires: openais-devel
 %description -n %{qpidd}-devel
 Libraries and header files for developing extensions to the
 Qpid broker daemon.
+
+%pre
+getent group qpidd >/dev/null || groupadd -r qpidd
+getent passwd qpidd >/dev/null || \
+  useradd -r -m -g qpidd -d %{_localstatedir}/lib/qpidd -s /sbin/nologin \
+    -c "Owner of Qpidd Daemons" qpidd
+exit 0
 
 %prep
 %setup -q
@@ -157,6 +164,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Mon Mar 31 2008 Nuno Santos <nsantos@redhat.com> - 0.2-25
+- Create user qpidd, start qpidd service as qpidd
+
 * Mon Feb 18 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-24
 - Bug fix for TCK issue in Beta 3
 
