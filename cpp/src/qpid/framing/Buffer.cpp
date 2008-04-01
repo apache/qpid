@@ -22,6 +22,7 @@
 #include "FramingContent.h" 
 #include "FieldTable.h" 
 #include <string.h>
+#include <boost/format.hpp>
 namespace qpid {
 
 namespace framing {
@@ -255,6 +256,21 @@ void Buffer::getRawData(uint8_t* s, size_t len){
     checkAvailable(len);
     memcpy(s, data + position, len);
     position += len;
+}
+
+void Buffer::dump(std::ostream& out) const {
+    for (uint32_t i = position; i < size; i++)
+    {
+        if (i != position)
+            out << " ";
+        out << boost::format("%02x") % ((unsigned) (uint8_t) data[i]);
+    }
+}
+
+std::ostream& operator<<(std::ostream& out, const Buffer& b){
+    out << "Buffer[";
+    b.dump(out);
+    return out << "]";
 }
 
 }}

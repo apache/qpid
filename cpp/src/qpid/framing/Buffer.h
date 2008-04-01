@@ -112,7 +112,11 @@ class Buffer
 
     template <class T> void put(const T& data) { data.encode(*this); }
     template <class T> void get(T& data) { data.decode(*this); }
+
+    void dump(std::ostream&) const;
 };
+
+std::ostream& operator<<(std::ostream&, const Buffer&);
 
 }} // namespace qpid::framing
 
