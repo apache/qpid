@@ -328,7 +328,7 @@
 
       <chassis name="client" implement="MUST" />
 
-      <field name="known-hosts" domain="known-hosts" />
+      <field name="known-hosts" domain="array" />
     </method>
 
     <method name="redirect" synchronous="1" index="9" label="redirects client to other server">
