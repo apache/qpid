@@ -53,7 +53,7 @@ class ConnectionHandler : public framing::FrameHandler
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale); 
         void secureOk(const std::string& response); 
-        void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
+        void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat); 
         void heartbeat() {}
         void open(const std::string& virtualHost,
                   const framing::Array& capabilities, bool insist); 
