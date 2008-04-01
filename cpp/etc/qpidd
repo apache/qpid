@@ -19,6 +19,7 @@
 
 prog=qpidd
 lockfile=/var/lock/subsys/$prog
+pidfile=/var/run/qpidd.pid
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -31,19 +32,24 @@ RETVAL=0
 
 start() {
 	echo -n $"Starting Qpid AMQP daemon: "
-	daemon --check $prog "runuser -s /bin/sh qpidd -c \"$prog --daemon $QPIDD_OPTIONS\""
+	daemon --pidfile $pidfile --check $prog --user qpidd $prog --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
+	if [ $RETVAL = 0 ]; then
+	    touch $pidfile
+	    chown qpidd.qpidd $pidfile
+	    runuser -s /bin/sh qpidd -c "qpidd -c > $pidfile"
+	fi
 	return $RETVAL
 }
 
 stop() {
 	echo -n $"Stopping Qpid AMQP daemon: "
-	killproc $prog
+	killproc -p ${pidfile} $prog
 	RETVAL=$?
 	echo
-	[ $RETVAL = 0 ] && rm -f $lockfile
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
 }
 
 reload() {
