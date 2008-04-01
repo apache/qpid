@@ -1,0 +1,79 @@
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Qpid Common Utilities
+// ------------------------------------------------------------------
+
+Apache Qpid
+Copyright 2006-2007 Apache Software Foundation
+
+This product includes software developed at
+Apache Software Foundation (http://www.apache.org/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
+developed by QOS.ch  (http://www.qos.ch)
+Source included with binary builds at : http://slf4j.org/dist
+License: MIT License (http://www.slf4j.org/license.html)
+
+This product includes/uses software, Backport of JSR 166 (http://www.mathcs.emory.edu/dcl/util/backport-util-concurrent/),
+developed by Dawid Kurzyniec (http://www.mathcs.emory.edu/~dawidk/)
+License: Public Domain  (http://creativecommons.org/licenses/publicdomain)
+
+This product includes/uses software, JUnit Toolkit (http://sourceforge.net/projects/junit-toolkit/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache Log4j (http://logging.apache.org/log4j/1.2)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA Core API (http://directory.apache.org/projects/mina/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA SSL Filter (http://directory.apache.org/subprojects/mina/mina-filter-ssl)
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA Java5 Extensions (http://directory.apache.org/subprojects/mina/mina-java5)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Configuration (http://jakarta.apache.org/commons/),
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Logging API - commons-logging:commons-logging-api:jar:1.0.4
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Collections - commons-collections:commons-collections:jar:3.1,
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons CLI - commons-cli:commons-cli:jar:1.0
+Ideveloped by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Codec (http://jakarta.apache.org/commons/codec/),
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Lang - commons-lang:commons-lang:jar:2.1
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product uses/references the following software from Eclipse.
+License: Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)
+(Note: the versions are ommited and only the name is specified.)
+org.eclipse.jface
+org.eclipse.core.*
+org.eclipse.equinox.* 
+org.eclipse.osgi
+org.eclipse.swt
+Source available from : http://archive.eclipse.org/eclipse/downloads/drops/R-3.2-200606291905/index.php
+
+This product includes/uses software, ICU4J - ICU4J 3.4.4
+developed by the ICU Project (http://icu-project.org/)
+License: http://source.icu-project.org/repos/icu/icu/trunk/license.html
+
