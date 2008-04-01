@@ -31,7 +31,7 @@ RETVAL=0
 
 start() {
 	echo -n $"Starting Qpid AMQP daemon: "
-	daemon --check $prog $prog --daemon $QPIDD_OPTIONS
+	daemon --check $prog "runuser -s /bin/sh qpidd -c \"$prog --daemon $QPIDD_OPTIONS\""
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
