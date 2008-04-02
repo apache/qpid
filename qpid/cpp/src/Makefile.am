@@ -113,8 +113,13 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/Frame.h \
   qpid/amqp_0_10/Segment.h \
   qpid/amqp_0_10/Segment.cpp \
+  qpid/amqp_0_10/SerializableString.h \
   qpid/amqp_0_10/Assembly.h \
   qpid/amqp_0_10/Assembly.cpp \
+  qpid/amqp_0_10/Map.h \
+  qpid/amqp_0_10/Map.cpp \
+  qpid/amqp_0_10/UnknownType.h \
+  qpid/amqp_0_10/UnknownType.cpp \
   qpid/Serializer.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
