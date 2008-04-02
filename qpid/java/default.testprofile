@@ -1,0 +1,15 @@
+broker.version=0-8
+broker=vm
+broker.clean=${project.root}/clean-dir
+java.naming.provider.url=${project.root}/test-provider.properties
+test.excludes=true
+test.excludesfile=${project.root}/08ExcludeList
+log=info
+amqj.logging.level=$log
+root.logging.level=$log
+log4j.configuration=file://${project.root}/log4j-test.xml
+test.fork=no
+test.mem=512M
+test=*Test
+test1=*Tests
+
