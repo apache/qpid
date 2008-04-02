@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "qpid/BoundedIterator.h"
+#include <string.h>
 
 using namespace std;
 using namespace qpid;
