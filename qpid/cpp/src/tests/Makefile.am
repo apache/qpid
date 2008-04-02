@@ -41,7 +41,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SequenceSet.cpp \
 	serialize.cpp \
 	ProxyTemplate.cpp apply.cpp BoundedIterator.cpp \
-	IncompleteMessageList.cpp
+	IncompleteMessageList.cpp \
+	amqp_0_10/Map.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)

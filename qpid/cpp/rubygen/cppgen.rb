@@ -57,7 +57,6 @@ class String
   def cppsafe() CppMangle.include?(self) ? self+"_" : self; end
 
   def amqp2cpp()
-    throw 'Invalid "array".amqp2cpp' if self=="array"
     path=split(".")
     name=path.pop
     return name.typename if path.empty?
@@ -116,7 +115,7 @@ end
 class AmqpElement
   # convert my amqp type_ attribute to a C++ type.
   def amqp2cpp()
-    return "Array<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
+    return "ArrayDomain<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
     return type_.amqp2cpp
   end
 end
@@ -164,6 +163,11 @@ class AmqpAction
   def fqclassname() parent.name+"::"+classname; end
   def full_code() (containing_class.code.hex << 8)+code.hex; end
   include AmqpHasFields
+end
+
+class AmqpType
+  def typename() name.typename; end
+  def fixed?() fixed_width; end
 end
 
 class AmqpCommand < AmqpAction
@@ -281,10 +285,11 @@ class CppGen < Generator
     genl
     names = name.split("::")
     names.each { |n| genl "namespace #{n} {" }
+    genl "namespace {" if (names.empty?)
     genl
     yield
     genl
-    genl('}'*names.size+" // namespace "+name)
+    genl('}'*([names.size, 1].max)+" // namespace "+name)
     genl
   end
 

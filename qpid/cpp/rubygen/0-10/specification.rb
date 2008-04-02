@@ -117,6 +117,7 @@ class Specification < CppGen
     h_file("#{@dir}/specification") {
       include "#{@dir}/built_in_types"
       include "#{@dir}/complex_types"
+      include "#{@dir}/Map.h"
       include "<boost/call_traits.hpp>"
       include "<iosfwd>"
       genl "using boost::call_traits;"

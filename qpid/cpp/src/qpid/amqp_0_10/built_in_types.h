@@ -22,14 +22,16 @@
  */
 
 #include "Decimal.h"
+#include "SerializableString.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Time.h"
 #include <boost/array.hpp>
-#include <stdint.h>
+#include <boost/range/iterator_range.hpp>
 #include <string>
 #include <ostream>
 #include <vector>
+#include <stdint.h>
 
 /**@file Mapping from built-in AMQP types to C++ types */
 
@@ -37,26 +39,47 @@ namespace qpid {
 namespace amqp_0_10 {
 
 // Fixed size types
-typedef void Void;
+struct EmptyType { template <class S> void serialize(S&) {} };
+inline std::ostream& operator<<(std::ostream& o, const EmptyType&) { return o; } 
 
-typedef bool Bit;
+struct Void : public EmptyType {};
+struct  Bit : public EmptyType {};
+
 typedef bool Boolean;
 typedef char Char;
 typedef int8_t Int8;
 typedef int16_t Int16;
 typedef int32_t Int32;
 typedef int64_t Int64;
-typedef uint8_t Bin8;
 typedef uint8_t Uint8;
 typedef uint16_t Uint16;
-typedef uint32_t CharUtf32 ;
 typedef uint32_t Uint32;
 typedef uint64_t Uint64;
+
+// A struct to be distinct from the other 32 bit integrals.
+struct CharUtf32 {
+    uint32_t value;
+    CharUtf32(uint32_t n=0) : value(n) {}
+    operator uint32_t&() { return value; }
+    operator const uint32_t&() const { return value; }
+    template <class S> void serialize(S& s) { s(value); }
+};
 
 template <size_t N> struct Bin : public boost::array<char, N> {
     template <class S> void serialize(S& s) { s.raw(this->begin(), this->size()); }
 };
-        
+
+template <size_t N> std::ostream& operator<<(std::ostream& o, const Bin<N>& b) {
+    return o << boost::make_iterator_range(b.begin(), b.end());
+}
+
+template <> struct Bin<1> : public boost::array<char, 1> {
+    Bin(char c=0) { this->front() = c; }
+    operator char() { return this->front(); }
+    template <class S> void serialize(S& s) { s.raw(data(), size()); }
+};
+
+typedef Bin<1> Bin8;
 typedef Bin<128> Bin1024; 
 typedef Bin<16> Bin128;
 typedef Bin<2> Bin16;
@@ -76,58 +99,37 @@ typedef sys::AbsTime Datetime;
 typedef Decimal<Uint8, Int32> Dec32;
 typedef Decimal<Uint8, Int64> Dec64;
 
-
-/** Template for length-prefixed strings/arrays. */
-template <class T, class SizeType>
-struct SerializableString : public std::basic_string<T> {
-    using std::basic_string<T>::operator=;
-
-    template <class S> void serialize(S& s) { s.split(*this); }
-
-    template <class S> void encode(S& s) const {
-        s(SizeType(this->size()))(this->begin(), this->end());
-    }
-
-    template <class S> void decode(S& s) {
-        SizeType newSize;
-        s(newSize);
-        this->resize(newSize);
-        s(this->begin(), this->end());
-    }
-};
-
-// TODO aconway 2008-02-29: separate ostream ops
-template <class T, class SizeType>
-std::ostream& operator<<(std::ostream& o, const SerializableString<T,SizeType>& s) {
-    const std::basic_string<T> str(s);
-    return o << str.c_str();    // TODO aconway 2008-02-29: why doesn't o<<str work?
-}
-
 // Variable width types
+
 typedef SerializableString<Uint8, Uint8> Vbin8;
-typedef SerializableString<char, Uint8> Str8Latin;
+typedef SerializableString<char, Uint8, 1> Str8Latin;
 typedef SerializableString<char, Uint8> Str8;
 typedef SerializableString<Uint16, Uint8> Str8Utf16;
 
 typedef SerializableString<Uint8, Uint16> Vbin16;
-typedef SerializableString<char, Uint16> Str16Latin;
+typedef SerializableString<char, Uint16, 1> Str16Latin;
 typedef SerializableString<char, Uint16> Str16;
 typedef SerializableString<Uint16, Uint16> Str16Utf16;
 
 typedef SerializableString<Uint8, Uint32> Vbin32;
 
+// Forward declare class types.
+class Map;
+
 // FIXME aconway 2008-02-26: Unimplemented types:
-template <class T> struct Array : public std::vector<T>  { template <class S> void serialize(S&) {} };
+template <class T> struct  ArrayDomain : public std::vector<T>  {
+    template <class S> void serialize(S&) {}
+};
+struct Array { template <class S> void serialize(S&) {} };
 struct ByteRanges { template <class S> void serialize(S&) {} };
 struct SequenceSet  { template <class S> void serialize(S&) {} };
-struct Map  { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
 struct Struct32  { template <class S> void serialize(S&) {} };
 
 // FIXME aconway 2008-03-10: dummy ostream operators
-template <class T> std::ostream& operator<<(std::ostream& o, const Array<T>&) { return o; }
+template <class T> std::ostream& operator<<(std::ostream& o, const ArrayDomain<T>&) { return o; }
+inline std::ostream& operator<<(std::ostream& o, const Array&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const ByteRanges&) { return o; }
-inline std::ostream& operator<<(std::ostream& o, const Map&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const Struct32&) { return o; }
