@@ -6,6 +6,7 @@ public enum ErrorCode
     UNDEFINED(1,"undefined",true),
     MESSAGE_REJECTED(2,"message_rejected",true),
     CONNECTION_ERROR(3,"connection was closed",true),
+    UNSUPPORTED_PROTOCOL(4, "protocol version is unsupported", true),
 
     //This might change in the spec, the error class is not applicable
     NO_ERROR(200,"reply-success",true),

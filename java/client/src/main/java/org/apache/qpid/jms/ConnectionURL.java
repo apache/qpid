@@ -43,11 +43,7 @@ public interface ConnectionURL
     public static final String OPTIONS_TEMPORARY_QUEUE_EXCHANGE = "temporaryQueueExchange";
     public static final byte  URL_0_8 = 1;
     public static final byte  URL_0_10 = 2;
-
-    byte getURLVersion();
-
-    void setURLVersion(byte version);
-
+ 
     String getURL();
 
     String getFailoverMethod();
