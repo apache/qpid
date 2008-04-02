@@ -172,7 +172,8 @@
           description="execute unit tests">
 
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
-           haltonfailure="no" printsummary="on" timeout="600000" >
+           haltonfailure="${haltonfailure}" haltonerror="${haltonerror}" 
+           printsummary="on" timeout="600000" >
        
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
