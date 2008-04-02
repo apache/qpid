@@ -24,10 +24,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.net.MalformedURLException;
 
-import org.apache.qpid.client.url.URLParser_0_8;
-import org.apache.qpid.client.url.URLParser_0_10;
+import org.apache.qpid.client.url.URLParser;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -53,7 +51,6 @@ public class AMQConnectionURL implements ConnectionURL
     private AMQShortString _defaultTopicExchangeName;
     private AMQShortString _temporaryTopicExchangeName;
     private AMQShortString _temporaryQueueExchangeName;
-    private byte _urlVersion;
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
@@ -62,48 +59,7 @@ public class AMQConnectionURL implements ConnectionURL
         _options = new HashMap<String, String>();
         _brokers = new LinkedList<BrokerDetails>();
         _failoverOptions = new HashMap<String, String>();
-
-        if (!Boolean.getBoolean("SwitchCon"))
-        {
-            // We need to decided the version based on URL
-            if (fullURL.startsWith("qpid"))
-            {
-                //URLParser
-                URLParser_0_10 parser = null;
-                try
-                {
-                    parser = new URLParser_0_10(fullURL);
-                }
-                catch (MalformedURLException e)
-                {
-                    throw new URLSyntaxException(fullURL,e.getMessage(),0,0);
-                }
-                setBrokerDetails(parser.getAllBrokerDetails());
-                // use the first instance username and password
-                // This is temporary as the URL must be changed for olding this information as part of the full URL
-                BrokerDetails firstBroker = getBrokerDetails(0);
-                setUsername(firstBroker.getProperty(BrokerDetails.USERNAME));
-                setPassword(firstBroker.getProperty(BrokerDetails.PASSWORD));
-                setClientName(firstBroker.getProperty(BrokerDetails.CLIENT_ID));
-                setVirtualHost(firstBroker.getProperty(BrokerDetails.VIRTUAL_HOST));
-                _urlVersion = URL_0_10;
-            }
-            else
-            {
-                 new URLParser_0_8(this);
-                _urlVersion = URL_0_8;
-            }
-        }
-    }
-
-    public byte getURLVersion()
-    {
-        return _urlVersion;
-    }
-
-    public void setURLVersion(byte version)
-    {
-        _urlVersion = version;
+        new URLParser(this);
     }
 
     public String getURL()
