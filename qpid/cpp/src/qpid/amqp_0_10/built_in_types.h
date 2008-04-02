@@ -76,7 +76,7 @@ template <size_t N> std::ostream& operator<<(std::ostream& o, const Bin<N>& b) {
 template <> struct Bin<1> : public boost::array<char, 1> {
     Bin(char c=0) { this->front() = c; }
     operator char() { return this->front(); }
-    template <class S> void serialize(S& s) { s.raw(data(), size()); }
+    template <class S> void serialize(S& s) { s(front()); }
 };
 
 typedef Bin<1> Bin8;
