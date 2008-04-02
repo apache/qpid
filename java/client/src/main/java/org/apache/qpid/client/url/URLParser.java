@@ -11,11 +11,11 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
-public class URLParser_0_8
+public class URLParser
 {
     private AMQConnectionURL _url;
 
-    public URLParser_0_8(AMQConnectionURL url)throws URLSyntaxException
+    public URLParser(AMQConnectionURL url)throws URLSyntaxException
     {
         _url = url;
         parseURL(_url.getURL());

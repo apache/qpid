@@ -6,6 +6,7 @@ import javax.jms.JMSException;
 import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.jms.BrokerDetails;
@@ -14,6 +15,7 @@ import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +114,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword());
             _qpidConnection.setClosedListener(this);
+        }
+        catch(ProtocolException pe)
+        {
+           throw new AMQProtocolException(null, pe.getMessage(), pe);
         }
         catch (QpidException e)
         {
