@@ -27,14 +27,14 @@ using namespace qpid;
 QPID_AUTO_TEST_SUITE(BoundedIteratorTestSuite)
 
 BOOST_AUTO_TEST_CASE(testIncrement) {
-    char* b="ab";
-    char* e=b+strlen(b);
-    BoundedIterator<char*> i(b,e);
+    const char* b="ab";
+    const char* e=b+strlen(b);
+    BoundedIterator<const char*> i(b,e);
     BOOST_CHECK_EQUAL('a', *i);
     ++i;
     BOOST_CHECK_EQUAL('b', *i);
     ++i;
-    BOOST_CHECK(static_cast<char*>(i) == e);
+    BOOST_CHECK(static_cast<const char*>(i) == e);
     try {
         ++i;
         BOOST_FAIL("Expected exception");
@@ -43,9 +43,9 @@ BOOST_AUTO_TEST_CASE(testIncrement) {
 }
 
 BOOST_AUTO_TEST_CASE(testAdvance) {
-    char* b="abc";
-    char* e=b+strlen(b);
-    BoundedIterator<char*> i(b,e);
+    const char* b="abc";
+    const char* e=b+strlen(b);
+    BoundedIterator<const char*> i(b,e);
     i += 2;
     BOOST_CHECK_EQUAL('c', *i);
     try {
@@ -56,11 +56,11 @@ BOOST_AUTO_TEST_CASE(testAdvance) {
 }
 
 BOOST_AUTO_TEST_CASE(testDeref) {
-    char* b="ab";
-    char* e=b+strlen(b);
-    BoundedIterator<char*> i(b,e);
+    const char* b="ab";
+    const char* e=b+strlen(b);
+    BoundedIterator<const char*> i(b,e);
     i += 2;
-    BOOST_CHECK(static_cast<char*>(i) == e);
+    BOOST_CHECK(static_cast<const char*>(i) == e);
     try {
         (void)*i;
         BOOST_FAIL("Expected exception");
