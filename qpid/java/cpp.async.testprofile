@@ -12,3 +12,5 @@ test.fork=no
 test.mem=512M
 test=*Test
 test1=*Tests
+haltonfailure=no
+haltonerror=no
