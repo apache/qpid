@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(~0);               // Everything
     QPID_LOG(critical, "foo");
-    string re=".* critical \\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
+    string re=".* critical -?\\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
     BOOST_CHECK_REGEX(re, out->last());
 }
 

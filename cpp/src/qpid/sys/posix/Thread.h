@@ -38,7 +38,7 @@ class Thread
     /** ID of current thread for logging.
      * Workaround for broken Thread::current() in APR
      */
-    static long logId() { return current().id(); }
+    static unsigned long logId() { return current().id(); }
 
     inline static void yield();
 
@@ -48,7 +48,7 @@ class Thread
     
     inline void join();
 
-    inline long id();
+    inline unsigned long id();
         
   private:
     static void* runRunnable(void* runnable);
@@ -72,8 +72,8 @@ void Thread::join(){
         QPID_POSIX_ASSERT_THROW_IF(pthread_join(thread, 0));
 }
 
-long Thread::id() {
-    return long(thread);
+unsigned long Thread::id() {
+    return thread;
 }
 
 Thread::Thread(pthread_t thr) : thread(thr) {}
