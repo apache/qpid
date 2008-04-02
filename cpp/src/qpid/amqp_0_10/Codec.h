@@ -46,7 +46,6 @@ template <class T> void endianize(T&) {}
  * AMQP 0-10 encoding and decoding.
  */
 struct Codec {
-
     // FIXME aconway 2008-02-29: drop this wrapper, rename to
     // IteratorEncoder, IteratorDecoder?
 
@@ -79,7 +78,7 @@ struct Codec {
 
 
         template <class Iter> Encode& operator()(Iter begin, Iter end) {
-            std::for_each(begin, end, *this);
+            std::for_each(begin, end, serialize::ref(*this));
             return *this;
         }
 
@@ -125,7 +124,7 @@ struct Codec {
         Decode& operator()(double& x) { return endian(x); }
 
         template <class Iter> Decode& operator()(Iter begin, Iter end) {
-            std::for_each(begin, end, *this);
+            std::for_each(begin, end, serialize::ref(*this));
             return *this;
         }
 
@@ -172,9 +171,10 @@ struct Codec {
         Size& operator()(float x)  { size += sizeof(x); return *this; }
         Size& operator()(double x)  { size += sizeof(x); return *this; }
 
-        template <class Iter>
-        Size& operator()(const Iter& a, const Iter& b) {
-            size += (b-a)*sizeof(*a);
+        // FIXME aconway 2008-04-02: enable-if optimized (iter,iter) for
+        // iter on fixed-size type.
+        template <class Iter> Size& operator()(Iter begin, Iter end) {
+            std::for_each(begin, end, serialize::ref(*this));
             return *this;
         }
 

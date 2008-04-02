@@ -28,6 +28,16 @@
 namespace qpid {
 namespace serialize { 
 
+/** Wrapper to pass serializer functors by reference. */
+template <class S> struct SRef {
+    S& s;
+    SRef(S& ss) : s(ss) {}
+    template <class T> typename S::result_type operator()(T& x) { return s(x); }
+    template <class T> typename S::result_type operator()(const T& x) { return s(x); }
+};
+
+template <class S> SRef<S> ref(S& s) { return SRef<S>(s); }
+
 // FIXME aconway 2008-03-03: Document.
 // Encoder/Decoder concept: add op() for primitive types, raw(),
 // op()(Iter, Iter). Note split, encode, decode.
