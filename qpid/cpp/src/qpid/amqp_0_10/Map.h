@@ -85,14 +85,13 @@ class Map : public std::map<Str8, MapValue> {
   public:
     template <class S> void serialize(S& s) { s.split(*this); }
     template <class S> void encode(S& s) const;
-
-    // FIXME aconway 2008-04-02: better separation for size calcultion
-    // support for static size, optimized iterator size calc.
+    // Shortcut calculation for size.
     void encode(Codec::Size& s) const  { s.raw(0, contentSize() + 4/*size*/); }
 
     template <class S> void decode(S& s);
     
   private:
+    static void throwInvalidArg();
     uint32_t contentSize() const;
 };
 
@@ -157,18 +156,26 @@ template <class V> typename V::result_type MapValue::apply_visitor(const V& v) {
 }
 
 template <class S> void Map::encode(S& s) const {
-    s(contentSize())(uint32_t(size())); // size, count
+    // FIXME aconway 2008-04-03: replace preview mapping with 0-10 mapping:
+    // s(contentSize())(uint32_t(size())); // size, count
+    s(contentSize());
     for (const_iterator i = begin(); i != end(); ++i)
         s(i->first)(i->second); // key (type value)
 }
 
 template <class S> void Map::decode(S& s) {
-    uint32_t cSize, count;
-    // FIXME aconway 2008-04-02: runtime check that we consume exactly cSize.
-    s(cSize)(count);
-    for ( ; count > 0; --count) {
+    uint32_t cSize /*, count*/;
+    // FIXME aconway 2008-04-03: replace preview mapping with 0-10 mapping:
+    // s(contentSize())(uint32_t(size())); // size, count
+    // s(cSize)(count);
+    s(cSize);
+    typename S::Iterator start = s.pos();
+    // FIXME aconway 2008-04-03:  replace preview with 0-10:
+    // for ( ; count > 0; --count) {
+    while (uint32_t(std::distance(start, s.pos())) < cSize) {
         key_type k; MapValue v;
         s(k)(v);
+        if (uint32_t(std::distance(start, s.pos())) > cSize) throwInvalidArg();
         insert(value_type(k,v));
     }
 }

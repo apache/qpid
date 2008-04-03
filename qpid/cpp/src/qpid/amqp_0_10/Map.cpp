@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/amqp_0_10/specification.h" // for error constants.
 #include "Map.h"
 #include <ostream>
 
@@ -57,12 +58,12 @@ std::ostream& operator<<(std::ostream& o, const Map& map) {
 }
 
 uint32_t Map::contentSize() const {
-    uint32_t result=4;          // uint32_t count 
-    for (const_iterator i=begin(); i != end(); ++i) {
-        result += Codec::size(i->first);
-        result += Codec::size(i->second);
-    }
-    return result;
+    // FIXME aconway 2008-04-03: preview to 0-10 mapping: +4 for count.
+    return /*4 +*/ Codec::Size()(begin(), end()); 
+}
+
+void Map::throwInvalidArg() {
+    throw SessionException(execution::INVALID_ARGUMENT, "Invalid map encoding");
 }
 
 }} // namespace qpid::amqp_0_10

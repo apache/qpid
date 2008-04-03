@@ -29,6 +29,7 @@
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/detail/endian.hpp>
 #include <boost/static_assert.hpp>
+#include <iterator>
 
 namespace qpid {
 namespace amqp_0_10 {
@@ -46,17 +47,14 @@ template <class T> void endianize(T&) {}
  * AMQP 0-10 encoding and decoding.
  */
 struct Codec {
-    // FIXME aconway 2008-02-29: drop this wrapper, rename to
-    // IteratorEncoder, IteratorDecoder?
-
     /** Encode to an output byte iterator */
     template <class OutIter>
-    class Encoder : public serialize::Encoder<Encoder<OutIter> >
+    class Encoder : public EncoderBase<Encoder<OutIter> >
     {
       public:
         Encoder(OutIter o) : out(o) {}
 
-        using serialize::Encoder<Encoder<OutIter> >::operator();
+        using EncoderBase<Encoder<OutIter> >::operator();
 
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
         Encoder& operator()(bool x) { *out++=x; return *this;} 
@@ -77,14 +75,8 @@ struct Codec {
         Encoder& operator()(double x) { return endian(x); }
 
 
-        template <class Iter> Encoder& operator()(Iter begin, Iter end) {
-            std::for_each(begin, end, serialize::ref(*this));
-            return *this;
-        }
-
         void raw(const void* p, size_t n) {
-            std::copy((const char*)p, (const char*)p+n, out);
-            out += n;
+            out = std::copy((const char*)p, (const char*)p+n, out);
         }
 
         OutIter pos() const { return out; }
@@ -99,11 +91,13 @@ struct Codec {
     };
 
     template <class InIter>
-    class Decoder : public serialize::Decoder<Decoder<InIter> > {
+    class Decoder : public DecoderBase<Decoder<InIter> > {
       public:
+        typedef InIter Iterator;
+        
         Decoder(InIter i) : in(i) {}
 
-        using serialize::Decoder<Decoder<InIter> >::operator();
+        using DecoderBase<Decoder<InIter> >::operator();
         
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
         Decoder& operator()(bool& x) { x=*in++; return *this; }
@@ -123,14 +117,9 @@ struct Codec {
         Decoder& operator()(float& x) { return endian(x); }
         Decoder& operator()(double& x) { return endian(x); }
 
-        template <class Iter> Decoder& operator()(Iter begin, Iter end) {
-            std::for_each(begin, end, serialize::ref(*this));
-            return *this;
-        }
-
         void raw(void *p, size_t n) {
             std::copy(in, in+n, (char*)p);
-            in += n;
+            std::advance(in, n);
         }
 
         InIter pos() const { return in; }
@@ -145,13 +134,13 @@ struct Codec {
     };
 
     
-    class Size : public serialize::Encoder<Size> {
+    class Size : public EncoderBase<Size> {
       public:
         Size() : size(0) {}
 
         operator size_t() const { return size; }
 
-        using serialize::Encoder<Size>::operator();
+        using EncoderBase<Size>::operator();
 
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
         Size& operator()(bool x)  { size += sizeof(x); return *this; }
@@ -171,12 +160,9 @@ struct Codec {
         Size& operator()(float x)  { size += sizeof(x); return *this; }
         Size& operator()(double x)  { size += sizeof(x); return *this; }
 
-        // FIXME aconway 2008-04-02: enable-if optimized (iter,iter) for
-        // iter on fixed-size type.
-        template <class Iter> Size& operator()(Iter begin, Iter end) {
-            std::for_each(begin, end, serialize::ref(*this));
-            return *this;
-        }
+        // FIXME aconway 2008-04-03: optimize op()(Iter,Iter)
+        // for Iter with fixed-size value_type:
+        // distance(begin,end)*sizeof(value_type)
 
         void raw(const void*, size_t n){ size += n; }
 

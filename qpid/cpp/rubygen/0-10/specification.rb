@@ -19,8 +19,8 @@ class Specification < CppGen
         genl d.enum.choices.map { |c|
           "#{c.name.constname} = #{c.value}" }.join(",\n")
       }
-      scope("inline SerializableEnum<#{typename}, uint8_t> serializable(#{typename}& e) {") {
-        genl "return SerializableEnum<#{typename}>(e);"
+      scope("inline SerializeAs<#{typename}, uint8_t> serializable(#{typename}& e) {") {
+        genl "return SerializeAs<#{typename}, uint8_t>(e);"
       }
     else
       genl "typedef #{d.amqp2cpp} #{typename};"

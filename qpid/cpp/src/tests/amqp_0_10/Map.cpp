@@ -26,11 +26,6 @@
 using namespace qpid::amqp_0_10;
 using namespace std;
 
-namespace std {
-// Dummy += for back inserters so we can use them with the decoder.
-template <class C> back_insert_iterator<C>& operator+=(back_insert_iterator<C>& bi, size_t) { return bi; }
-}
-
 QPID_AUTO_TEST_SUITE(MapTestSuite)
 
  BOOST_AUTO_TEST_CASE(testGetSet) {
