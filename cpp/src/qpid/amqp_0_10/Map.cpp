@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/specification.h" // for error constants.
+#include "qpid/amqp_0_10/exceptions.h"
 #include "Map.h"
 #include <ostream>
 
@@ -63,7 +63,7 @@ uint32_t Map::contentSize() const {
 }
 
 void Map::throwInvalidArg() {
-    throw SessionException(execution::INVALID_ARGUMENT, "Invalid map encoding");
+    throw InvalidArgumentException("Invalid map encoding");
 }
 
 }} // namespace qpid::amqp_0_10
