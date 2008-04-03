@@ -52,16 +52,21 @@ struct Codec {
     class Encoder : public EncoderBase<Encoder<OutIter> >
     {
       public:
-        Encoder(OutIter o) : out(o) {}
+        typedef EncoderBase<Encoder<OutIter> > Base;
+        typedef OutIter Iterator;
+        
+        Encoder(OutIter o, size_t limit=Base::maxLimit()) : out(o) {
+            this->setLimit(limit);
+        }
 
         using EncoderBase<Encoder<OutIter> >::operator();
 
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
-        Encoder& operator()(bool x) { *out++=x; return *this;} 
+        Encoder& operator()(bool x) { raw(x); return *this;} 
 
-        Encoder& operator()(char x) { *out++=x; return *this; }
-        Encoder& operator()(int8_t x) { *out++=x; return *this; }
-        Encoder& operator()(uint8_t x) { *out++=x; return *this; }
+        Encoder& operator()(char x) { raw(x); return *this; }
+        Encoder& operator()(int8_t x) { raw(x); return *this; }
+        Encoder& operator()(uint8_t x) { raw(x); return *this; }
 
         Encoder& operator()(int16_t x) { return endian(x); }
         Encoder& operator()(int32_t x) { return endian(x); }
@@ -76,8 +81,11 @@ struct Codec {
 
 
         void raw(const void* p, size_t n) {
+            this->addBytes(n);
             out = std::copy((const char*)p, (const char*)p+n, out);
         }
+
+        void raw(char b) { this->addBytes(1); *out++=b; }
 
         OutIter pos() const { return out; }
 
@@ -93,18 +101,21 @@ struct Codec {
     template <class InIter>
     class Decoder : public DecoderBase<Decoder<InIter> > {
       public:
+        typedef DecoderBase<Decoder<InIter> > Base;
         typedef InIter Iterator;
         
-        Decoder(InIter i) : in(i) {}
+        Decoder(InIter i, size_t limit=Base::maxLimit()) : in(i) {
+            this->setLimit(limit);
+        }
 
         using DecoderBase<Decoder<InIter> >::operator();
         
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
-        Decoder& operator()(bool& x) { x=*in++; return *this; }
+        Decoder& operator()(bool& x) { raw((char&)x); return *this; }
 
-        Decoder& operator()(char& x) { x=*in++; return *this; }
-        Decoder& operator()(int8_t& x) { x=*in++; return *this; }
-        Decoder& operator()(uint8_t& x) { x=*in++; return *this; }
+        Decoder& operator()(char& x) { raw((char&)x); return *this; }
+        Decoder& operator()(int8_t& x) { raw((char&)x); return *this; }
+        Decoder& operator()(uint8_t& x) { raw((char&)x); return *this; }
 
         Decoder& operator()(int16_t& x) { return endian(x); }
         Decoder& operator()(int32_t& x) { return endian(x); }
@@ -118,10 +129,13 @@ struct Codec {
         Decoder& operator()(double& x) { return endian(x); }
 
         void raw(void *p, size_t n) {
+            this->addBytes(n);
             std::copy(in, in+n, (char*)p);
             std::advance(in, n);
         }
 
+        void raw(char &b) { this->addBytes(1); b=*in++; }
+            
         InIter pos() const { return in; }
 
       private:

@@ -97,6 +97,40 @@ BOOST_AUTO_TEST_CASE(testNetworkByteOrder) {
     BOOST_CHECK_EQUAL(s, s2);
 }
 
+BOOST_AUTO_TEST_CASE(testSetLimit) {
+    typedef Codec::Encoder<back_insert_iterator<string> > Encoder;
+    string data;
+    Encoder encode(back_inserter(data), 3);
+    encode('1')('2')('3');
+    try {
+        encode('4');
+        BOOST_FAIL("Expected exception");
+    } catch (...) {}            // FIXME aconway 2008-04-03: catch proper exception
+    BOOST_CHECK_EQUAL(data, "123");
+}
+
+BOOST_AUTO_TEST_CASE(testScopedLimit) {
+    typedef Codec::Encoder<back_insert_iterator<string> > Encoder;
+    string data;
+    Encoder encode(back_inserter(data), 10);
+    encode(Str8("123"));        // 4 bytes
+    {
+        Encoder::ScopedLimit l(encode, 3);
+        encode('a')('b')('c');
+        try {
+            encode('d');
+            BOOST_FAIL("Expected exception");
+        } catch(...) {}         // FIXME aconway 2008-04-03: catch proper exception
+    }
+    BOOST_CHECK_EQUAL(data, "\003123abc");
+    encode('x')('y')('z');
+    try {
+        encode('!');
+        BOOST_FAIL("Expected exception");
+    } catch(...) {}         // FIXME aconway 2008-04-03: catch proper exception
+    BOOST_CHECK_EQUAL(data.size(), 10u);
+}
+
 // Assign test values to the various types.
 void testValue(bool& b) { b = true; }
 void testValue(Bit&) { }
