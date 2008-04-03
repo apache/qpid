@@ -23,6 +23,7 @@
  */
 
 #include <algorithm>
+#include "qpid/Exception.h"     // FIXME aconway 2008-04-03: proper exception class.
 
 namespace qpid {
 
@@ -52,6 +53,23 @@ SerializablePair<T,U> serializable(std::pair<T,U>& p) {
  */
 template <class Derived> class Serializer {
   public:
+    /** Temporarily set a lower relative limit on the serializer */
+    class ScopedLimit {
+      public:
+        ScopedLimit(Serializer& s, size_t l)
+            : serializer(s), save(serializer.setLimit(l)) {}
+        
+        ~ScopedLimit() { serializer.setAbsLimit(save); }
+        
+      private:
+        Serializer& serializer;
+        size_t save;
+    };
+
+    static const size_t maxLimit() { return  std::numeric_limits<size_t>::max(); }
+    
+    Serializer() : bytes(0), limit(maxLimit()) {}
+    
     typedef Derived& result_type; // unary functor requirement.
 
     /** Wrapper functor to pass serializer functors by reference. */
@@ -74,8 +92,37 @@ template <class Derived> class Serializer {
         return self();
     }
 
+    /** Set limit relative to current position.
+     * @return old absolute limit.
+     */
+    size_t setLimit(size_t n) {
+        size_t l=limit;
+        limit = bytes+n;
+        return l;
+    }
+
+    /** Set absolute limit. */
+    void setAbsLimit(size_t n) {
+        limit = n;
+        if (bytes > limit)
+            throw Exception("Framing error: data overrun"); // FIXME aconway 2008-04-03: proper exception.
+    }
+
   protected:
     Derived& self() { return *static_cast<Derived*>(this); }
+    void addBytes(size_t n) {
+        size_t newBytes=bytes+n;
+        if (newBytes > limit)
+            throw Exception("Framing error: data overrun"); // FIXME aconway 2008-04-03: proper exception.
+        bytes = newBytes;
+    }
+    
+  private:
+    void checkLimit() {
+    }
+        
+    size_t bytes;               // how many bytes serialized.
+    size_t limit;               // bytes may not exceed this limit.
 };
 
 /**
