@@ -39,8 +39,10 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
 	SequenceSet.cpp \
-	serialize.cpp \
-	ProxyTemplate.cpp apply.cpp BoundedIterator.cpp \
+	amqp_0_10/serialize.cpp \
+	amqp_0_10/ProxyTemplate.cpp \
+	amqp_0_10/apply.cpp \
+	BoundedIterator.cpp \
 	IncompleteMessageList.cpp \
 	amqp_0_10/Map.cpp
 
