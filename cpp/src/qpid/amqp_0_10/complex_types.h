@@ -42,7 +42,7 @@ template <class V, class CV, class H> struct Visitable {
 struct Command;
 struct Control;
 
-struct Action {  // Marker for commands & controls
+struct Action {  // Base for commands & controls
     virtual ~Action() {}
     virtual Command* getCommand() { return 0; }
     virtual Control* getControl() { return 0; }
@@ -53,6 +53,8 @@ struct Action {  // Marker for commands & controls
     virtual const Control* getControl() const {
         return const_cast<Action*>(this)->getControl();
     }
+    static const uint8_t SIZE=0;
+    static const uint8_t PACK=2;
 };
 
 struct CommandVisitor;

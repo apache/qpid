@@ -35,16 +35,43 @@
 
 /**@file Mapping from built-in AMQP types to C++ types */
 
+
 namespace qpid {
 namespace amqp_0_10 {
 
+/** Wrapper that behaves like type T but is a distinct type for
+ * overloading purposes. Unique allows multiple distinc wrappers.
+ */
+template <class T, int Unique=0> struct Wrapper {
+    T value;
+    Wrapper() {}
+    Wrapper(const T& x) : value(x) {}
+    Wrapper& operator=(const T& x) { value=x; return *this; }
+    operator T&() { return value; }
+    operator const T&() const { return value; }
+    template <class S> void serialize(S& s) { s(value); }
+};
+
+template<class T>
+inline std::ostream& operator<<(std::ostream& o, const Wrapper<T>& w) {
+    return o << w.value;
+}
+
+/** Void type */
+struct Void { template <class S> void serialize(S&) {} };
+inline std::ostream& operator<<(std::ostream& o, const Void&) { return o; } 
+
+/** Bit type - bool value with no encoding. */
+struct  Bit : Wrapper<bool> {
+    template <class S> void serialize(S& s) { s.split(*this); }
+    template <class S> void encode(S&) const {}
+    template <class S> void decode(S&) { value=true; }
+};
+inline std::ostream& operator<<(std::ostream& o, const Bit& b) {
+    return o << b.value;
+}
+
 // Fixed size types
-struct EmptyType { template <class S> void serialize(S&) {} };
-inline std::ostream& operator<<(std::ostream& o, const EmptyType&) { return o; } 
-
-struct Void : public EmptyType {};
-struct  Bit : public EmptyType {};
-
 typedef bool Boolean;
 typedef char Char;
 typedef int8_t Int8;
@@ -55,15 +82,7 @@ typedef uint8_t Uint8;
 typedef uint16_t Uint16;
 typedef uint32_t Uint32;
 typedef uint64_t Uint64;
-
-// A struct to be distinct from the other 32 bit integrals.
-struct CharUtf32 {
-    uint32_t value;
-    CharUtf32(uint32_t n=0) : value(n) {}
-    operator uint32_t&() { return value; }
-    operator const uint32_t&() const { return value; }
-    template <class S> void serialize(S& s) { s(value); }
-};
+typedef Wrapper<uint32_t> CharUtf32;
 
 template <size_t N> struct Bin : public boost::array<char, N> {
     template <class S> void serialize(S& s) { s.raw(this->begin(), this->size()); }
