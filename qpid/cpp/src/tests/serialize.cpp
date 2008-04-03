@@ -22,6 +22,7 @@
 #include "unit_test.h"
 #include "qpid/amqp_0_10/built_in_types.h"
 #include "qpid/amqp_0_10/Codec.h"
+#include "qpid/amqp_0_10/PackedCodec.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ControlHolder.h"
 #include "qpid/amqp_0_10/Frame.h"
@@ -170,7 +171,7 @@ BOOST_AUTO_TEST_CASE(testControlEncodeDecode) {
     
     BOOST_CHECK_EQUAL(data.size(), Codec::size(h));
 
-    Codec::Decode<string::iterator> decode(data.begin());
+    Codec::Decoder<string::iterator> decode(data.begin());
     Control::Holder h2;
     decode(h2);
 
@@ -224,6 +225,17 @@ BOOST_AUTO_TEST_CASE(testFrameEncodeDecode) {
     BOOST_CHECK_EQUAL(std::string(f2.begin(), f2.end()),
                       std::string(d2, d2+sizeof(d2)));
     
+}
+
+BOOST_AUTO_TEST_CASE(testPackedCodec) {
+    int i=-1, j=-1, k=-1, l=-1;
+    std::string data;
+    Codec::encode(std::back_inserter(data))(1)(3);
+    PackedCodec::decode(0x5, Codec::decode(data.begin()))(i)(j)(k)(l);
+    BOOST_CHECK_EQUAL(i, 1);
+    BOOST_CHECK_EQUAL(j, 0);
+    BOOST_CHECK_EQUAL(k, 3);
+    BOOST_CHECK_EQUAL(l, 0);
 }
 
 QPID_AUTO_TEST_SUITE_END()
