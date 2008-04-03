@@ -106,6 +106,7 @@ class Segment::const_iterator : public boost::iterator_facade<
         p += n;
         skip_empty();
     }
+    
     void skip_empty() {
         invariant();
         while (p == i->end() && i != frames->end())
