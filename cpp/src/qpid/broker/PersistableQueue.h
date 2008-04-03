@@ -24,6 +24,7 @@
 
 #include <string>
 #include "Persistable.h"
+#include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
@@ -35,7 +36,7 @@ namespace broker {
 * persistableQueue
 */
 
-class ExternalQueueStore
+class ExternalQueueStore : public management::Manageable
 {
 public:
     virtual ~ExternalQueueStore() {};
@@ -58,11 +59,7 @@ public:
              delete externalQueueStore;
     };
 
-    inline void setExternalQueueStore(ExternalQueueStore* inst){
-        if (externalQueueStore!=inst && externalQueueStore) 
-             delete externalQueueStore; 
-        externalQueueStore = inst;
-    };
+    virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
     
     inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     

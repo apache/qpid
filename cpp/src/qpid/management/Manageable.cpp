@@ -29,6 +29,7 @@ std::string Manageable::StatusText (status_t status)
     case STATUS_UNKNOWN_OBJECT  : return "UnknownObject";
     case STATUS_UNKNOWN_METHOD  : return "UnknownMethod";
     case STATUS_NOT_IMPLEMENTED : return "NotImplemented";
+    case STATUS_INVALID_PARAMETER : return "InvalidParameter";
     }
 
     return "??";

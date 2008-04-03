@@ -632,6 +632,18 @@ bool Queue::hasExclusiveConsumer() const
     return exclusive; 
 }
 
+void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
+    if (externalQueueStore!=inst && externalQueueStore) 
+        delete externalQueueStore; 
+    externalQueueStore = inst;
+
+    if (inst) {
+        ManagementObject::shared_ptr childObj = inst->GetManagementObject();
+        if (childObj.get() != 0)
+            mgmtObject->set_storeRef(childObj->getObjectId());
+    }
+}
+
 ManagementObject::shared_ptr Queue::GetManagementObject (void) const
 {
     return dynamic_pointer_cast<ManagementObject> (mgmtObject);
