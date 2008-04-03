@@ -122,6 +122,7 @@
     <configElement name="durable"         type="bool"   access="RC"/>
     <configElement name="autoDelete"      type="bool"   access="RC"/>
     <configElement name="exclusive"       type="bool"   access="RC"/>
+    <configElement name="storeRef"        type="objId"  access="RO" desc="Reference to persistent queue (if durable)"/>
 
     <instElement name="msgTotalEnqueues"    type="count64" unit="message"     desc="Total messages enqueued"/>
     <instElement name="msgTotalDequeues"    type="count64" unit="message"     desc="Total messages dequeued"/>
