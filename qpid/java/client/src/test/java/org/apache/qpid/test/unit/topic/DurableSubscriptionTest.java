@@ -134,12 +134,12 @@ public class DurableSubscriptionTest extends QpidTestCase
         Message msg;
         msg = consumer1.receive();
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(1000);
         assertEquals(null, msg);
 
         msg = consumer2.receive();
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer2.receive(100);
+        msg = consumer2.receive(1000);
         assertEquals(null, msg);
 
         consumer2.close();
@@ -150,17 +150,17 @@ public class DurableSubscriptionTest extends QpidTestCase
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(1000);
         assertEquals("B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(1000);
         assertEquals(null, msg);
 
         _logger.info("Receive message on consumer 3 :expecting B");
-        msg = consumer3.receive(100);
+        msg = consumer3.receive(1000);
         assertEquals("B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
-        msg = consumer3.receive(100);
+        msg = consumer3.receive(1000);
         assertEquals(null, msg);
         // we need to unsubscribe as the session is NO_ACKNOWLEDGE
         // messages for the durable subscriber are not deleted so the test cannot
