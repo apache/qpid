@@ -34,7 +34,7 @@ namespace amqp_0_10 {
 struct PackedCodec {
     template <class Bits, class InnerDecoder>
     class Decoder :
-        public serialize::Decoder<PackedCodec::Decoder<Bits, InnerDecoder> >
+        public DecoderBase<PackedCodec::Decoder<Bits, InnerDecoder> >
     {
       public:
         Decoder(Bits b, const InnerDecoder& d)

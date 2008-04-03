@@ -21,11 +21,12 @@
  *
  */
 
-#include "Decimal.h"
-#include "SerializableString.h"
+#include "qpid/Serializer.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Time.h"
+#include "Decimal.h"
+#include "SerializableString.h"
 #include <boost/array.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <string>
@@ -153,21 +154,12 @@ inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o;
 inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const Struct32&) { return o; }
 
-/** Serialization helper for enums */
-template <class Enum, class Int=uint8_t>
-struct SerializableEnum {
-    Enum& value;
-    SerializableEnum(Enum & e) : value(e) {}
-    template <class S> void serialize(S& s) { s.split(*this); }
-    template <class S> void encode(S& s) const { s(Int(value)); }
-    template <class S> void decode(S& s) { Int i; s(i); value=Enum(i); }
-};
-
 enum SegmentType { CONTROL, COMMAND, HEADER, BODY };
 
-inline SerializableEnum<SegmentType> serializable(SegmentType& st) {
-    return SerializableEnum<SegmentType>(st);
+inline SerializeAs<SegmentType, uint8_t> serializable(SegmentType& st) {
+    return SerializeAs<SegmentType, uint8_t>(st);
 }
+
 
 }} // namespace qpid::amqp_0_10
 
