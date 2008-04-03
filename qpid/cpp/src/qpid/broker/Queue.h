@@ -60,7 +60,8 @@ namespace qpid {
          * registered consumers or be stored until dequeued or until one
          * or more consumers registers.
          */
-        class Queue : public boost::enable_shared_from_this<Queue>, public PersistableQueue, public management::Manageable {
+        class Queue : public boost::enable_shared_from_this<Queue>,
+            public PersistableQueue, public management::Manageable {
             typedef std::set<Consumer*> Listeners;
             typedef std::deque<QueuedMessage> Messages;
 
@@ -106,7 +107,7 @@ namespace qpid {
             Queue(const string& name, bool autodelete = false, 
                   MessageStore* const store = 0, 
                   const OwnershipToken* const owner = 0,
-                  Manageable* parent = 0);
+                  management::Manageable* parent = 0);
             ~Queue();
 
             bool dispatch(Consumer&);
@@ -182,6 +183,8 @@ namespace qpid {
 
             static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer);
             static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
+
+            virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
             // Manageable entry points
             management::ManagementObject::shared_ptr GetManagementObject (void) const;
