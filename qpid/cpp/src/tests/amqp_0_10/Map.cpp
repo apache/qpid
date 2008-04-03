@@ -88,6 +88,7 @@ BOOST_AUTO_TEST_CASE(testEncode) {
     map["A"] = true;
     map["b"] = Str8("hello");
     Codec::encode(back_inserter(data))(map);
+    BOOST_CHECK_EQUAL(Codec::size(map), data.size());
     Map map2;
     Codec::decode(data.begin())(map2);
     BOOST_CHECK_EQUAL(map.size(), 2u);
