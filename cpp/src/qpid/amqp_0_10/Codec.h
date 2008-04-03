@@ -51,33 +51,33 @@ struct Codec {
 
     /** Encode to an output byte iterator */
     template <class OutIter>
-    class Encode : public serialize::Encoder<Encode<OutIter> >
+    class Encoder : public serialize::Encoder<Encoder<OutIter> >
     {
       public:
-        Encode(OutIter o) : out(o) {}
+        Encoder(OutIter o) : out(o) {}
 
-        using serialize::Encoder<Encode<OutIter> >::operator();
+        using serialize::Encoder<Encoder<OutIter> >::operator();
 
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
-        Encode& operator()(bool x) { *out++=x; return *this;} 
+        Encoder& operator()(bool x) { *out++=x; return *this;} 
 
-        Encode& operator()(char x) { *out++=x; return *this; }
-        Encode& operator()(int8_t x) { *out++=x; return *this; }
-        Encode& operator()(uint8_t x) { *out++=x; return *this; }
+        Encoder& operator()(char x) { *out++=x; return *this; }
+        Encoder& operator()(int8_t x) { *out++=x; return *this; }
+        Encoder& operator()(uint8_t x) { *out++=x; return *this; }
 
-        Encode& operator()(int16_t x) { return endian(x); }
-        Encode& operator()(int32_t x) { return endian(x); }
-        Encode& operator()(int64_t x) { return endian(x); }
+        Encoder& operator()(int16_t x) { return endian(x); }
+        Encoder& operator()(int32_t x) { return endian(x); }
+        Encoder& operator()(int64_t x) { return endian(x); }
 
-        Encode& operator()(uint16_t x) { return endian(x); }
-        Encode& operator()(uint32_t x) { return endian(x); }
-        Encode& operator()(uint64_t x) { return endian(x); }
+        Encoder& operator()(uint16_t x) { return endian(x); }
+        Encoder& operator()(uint32_t x) { return endian(x); }
+        Encoder& operator()(uint64_t x) { return endian(x); }
 
-        Encode& operator()(float x) { return endian(x); }
-        Encode& operator()(double x) { return endian(x); }
+        Encoder& operator()(float x) { return endian(x); }
+        Encoder& operator()(double x) { return endian(x); }
 
 
-        template <class Iter> Encode& operator()(Iter begin, Iter end) {
+        template <class Iter> Encoder& operator()(Iter begin, Iter end) {
             std::for_each(begin, end, serialize::ref(*this));
             return *this;
         }
@@ -91,7 +91,7 @@ struct Codec {
 
       private:
 
-        template <class T> Encode& endian(T x) {
+        template <class T> Encoder& endian(T x) {
             endianize(x); raw(&x, sizeof(x)); return *this;
         }
 
@@ -99,31 +99,31 @@ struct Codec {
     };
 
     template <class InIter>
-    class Decode : public serialize::Decoder<Decode<InIter> > {
+    class Decoder : public serialize::Decoder<Decoder<InIter> > {
       public:
-        Decode(InIter i) : in(i) {}
+        Decoder(InIter i) : in(i) {}
 
-        using serialize::Decoder<Decode<InIter> >::operator();
+        using serialize::Decoder<Decoder<InIter> >::operator();
         
         // FIXME aconway 2008-03-10:  wrong encoding, need packing support
-        Decode& operator()(bool& x) { x=*in++; return *this; }
+        Decoder& operator()(bool& x) { x=*in++; return *this; }
 
-        Decode& operator()(char& x) { x=*in++; return *this; }
-        Decode& operator()(int8_t& x) { x=*in++; return *this; }
-        Decode& operator()(uint8_t& x) { x=*in++; return *this; }
+        Decoder& operator()(char& x) { x=*in++; return *this; }
+        Decoder& operator()(int8_t& x) { x=*in++; return *this; }
+        Decoder& operator()(uint8_t& x) { x=*in++; return *this; }
 
-        Decode& operator()(int16_t& x) { return endian(x); }
-        Decode& operator()(int32_t& x) { return endian(x); }
-        Decode& operator()(int64_t& x) { return endian(x); }
+        Decoder& operator()(int16_t& x) { return endian(x); }
+        Decoder& operator()(int32_t& x) { return endian(x); }
+        Decoder& operator()(int64_t& x) { return endian(x); }
 
-        Decode& operator()(uint16_t& x) { return endian(x); }
-        Decode& operator()(uint32_t& x) { return endian(x); }
-        Decode& operator()(uint64_t& x) { return endian(x); }
+        Decoder& operator()(uint16_t& x) { return endian(x); }
+        Decoder& operator()(uint32_t& x) { return endian(x); }
+        Decoder& operator()(uint64_t& x) { return endian(x); }
 
-        Decode& operator()(float& x) { return endian(x); }
-        Decode& operator()(double& x) { return endian(x); }
+        Decoder& operator()(float& x) { return endian(x); }
+        Decoder& operator()(double& x) { return endian(x); }
 
-        template <class Iter> Decode& operator()(Iter begin, Iter end) {
+        template <class Iter> Decoder& operator()(Iter begin, Iter end) {
             std::for_each(begin, end, serialize::ref(*this));
             return *this;
         }
@@ -137,7 +137,7 @@ struct Codec {
 
       private:
 
-        template <class T> Decode& endian(T& x) {
+        template <class T> Decoder& endian(T& x) {
             raw(&x, sizeof(x)); endianize(x); return *this;
         }
 
@@ -185,12 +185,12 @@ struct Codec {
     };
 
     // FIXME aconway 2008-03-11: rename to encoder(), decoder()
-    template <class InIter> static Decode<InIter> decode(const InIter &i) {
-        return Decode<InIter>(i);
+    template <class InIter> static Decoder<InIter> decode(const InIter &i) {
+        return Decoder<InIter>(i);
     }
 
-    template <class OutIter> static Encode<OutIter> encode(OutIter i) {
-        return Encode<OutIter>(i);
+    template <class OutIter> static Encoder<OutIter> encode(OutIter i) {
+        return Encoder<OutIter>(i);
     }
 
     template <class T> static size_t size(const T& x) { return Size()(x); }
