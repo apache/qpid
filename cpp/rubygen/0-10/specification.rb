@@ -112,31 +112,56 @@ class Specification < CppGen
   # Types that must be generated early because they are used by other types.
   def pregenerate?(x) not @amqp.used_by[x.fqname].empty?;  end
 
-  # Generate the log
-  def gen_specification()
-    h_file("#{@dir}/specification") {
+  def pregenerate_class?(c)
+    c.children.select{ |t| (t.is_a? AmqpStruct or t.is_a? AmqpDomain) and pregenerate? t} 
+  end
+  
+  # Typedefs, enums and forward declarations for classes.
+  def gen_specification_fwd()
+    h_file("#{@dir}/specification_fwd") { 
       include "#{@dir}/built_in_types"
-      include "#{@dir}/complex_types"
-      include "#{@dir}/Map.h"
-      include "<boost/call_traits.hpp>"
-      include "<iosfwd>"
-      genl "using boost::call_traits;"
       namespace(@ns) {
         # Top level 
         @amqp.domains.each { |d|
           # segment-type and track are are built in
           domain_h d unless ["track","segment-type"].include?(d.name)
         }
-        # Domains and structs that must be generated early because
-        # they are used by other definitions:
-        each_class_ns { |c|
-          class_h c
-          c.collect_all(AmqpDomain).each { |d| domain_h d if pregenerate? d }
-          c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
+        # Domains/structs that must be generated early because they are used by
+        # other definitions:
+        @amqp.classes.select{ |c| pregenerate_class?(c) }.each { |c|
+          namespace(c.nsname) { 
+            c.collect_all(AmqpDomain).each { |d| domain_h d if pregenerate? d }
+            c.collect_all(AmqpStruct).each { |s| genl "class #{s.classname};" if pregenerate? s }
+          }
         }
         # Now dependent domains/structs and actions
         each_class_ns { |c|
+          class_h c
           c.collect_all(AmqpDomain).each { |d| domain_h d unless pregenerate? d}
+          c.collect_all(AmqpStruct).each { |s| genl "class #{s.classname};" unless pregenerate? s }
+          c.collect_all(AmqpAction).each { |a| genl "class #{a.classname};" unless pregenerate? a }
+        }
+      }
+    }
+  end
+  
+  # Generate the specification files
+  def gen_specification()
+    h_file("#{@dir}/specification") {
+      include "#{@dir}/specification_fwd"
+      include "#{@dir}/complex_types"
+      include "#{@dir}/Map.h"
+      include "<boost/call_traits.hpp>"
+      include "<iosfwd>"
+      genl "using boost::call_traits;"
+      namespace(@ns) {
+        # Structs that must be generated early because
+        # they are used by other definitions:
+        each_class_ns { |c|
+           c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
+        }
+        # Now dependent domains/structs and actions
+        each_class_ns { |c|
           c.collect_all(AmqpStruct).each { |s| struct_h s unless pregenerate? s}
           c.collect_all(AmqpAction).each { |a| action_h a }
         }
@@ -270,6 +295,7 @@ class Specification < CppGen
   end
 
   def generate
+    gen_specification_fwd
     gen_specification
     gen_proxy
     gen_visitable("Command", @amqp.collect_all(AmqpCommand))

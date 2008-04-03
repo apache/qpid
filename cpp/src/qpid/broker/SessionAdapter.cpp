@@ -24,6 +24,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
 #include "qpid/log/Statement.h"
+#include "qpid/amqp_0_10/exceptions.h"
 #include <boost/format.hpp>
 #include <boost/cast.hpp>
 #include <boost/bind.hpp>
@@ -574,11 +575,11 @@ void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid010& xid,
 Queue::shared_ptr SessionAdapter::HandlerHelper::getQueue(const string& name) const {
     Queue::shared_ptr queue;
     if (name.empty()) {
-        throw SessionException(531, QPID_MSG("No queue name specified."));
+        throw amqp_0_10::IllegalArgumentException(QPID_MSG("No queue name specified."));
     } else {
         queue = session.getBroker().getQueues().find(name);
         if (!queue)
-            throw NotFoundException(QPID_MSG("Queue not found: "<<name));
+            throw amqp_0_10::NotFoundException(QPID_MSG("Queue not found: "<<name));
     }
     return queue;
 }
