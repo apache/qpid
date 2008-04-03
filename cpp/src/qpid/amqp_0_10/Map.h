@@ -157,7 +157,7 @@ template <class V> typename V::result_type MapValue::apply_visitor(const V& v) {
 }
 
 template <class S> void Map::encode(S& s) const {
-    s(contentSize())(size()); // size, count
+    s(contentSize())(uint32_t(size())); // size, count
     for (const_iterator i = begin(); i != end(); ++i)
         s(i->first)(i->second); // key (type value)
 }
