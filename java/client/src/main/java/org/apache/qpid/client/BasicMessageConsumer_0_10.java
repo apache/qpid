@@ -27,7 +27,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.transport.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.MessageFilter;
@@ -39,6 +38,7 @@ import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is a 0.10 message consumer.
@@ -71,6 +71,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * Indicate whether this consumer is started.
      */
     private boolean _isStarted = false;
+
+    /**
+     * Specify whether this consumer is performing a sync receive
+     */
+    private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
 
     //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
@@ -136,6 +141,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         if (messageOk)
         {
+            if (isMessageListenerSet() && ClientProperties.MAX_PREFETCH == 0)
+            {
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                        org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+            }
             _logger.debug("messageOk, trying to notify");
             super.notifyMessage(jmsMessage, channelId);
         }
@@ -307,23 +317,33 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             _logger.debug("messageOk " + messageOk);
             _logger.debug("_preAcquire " + _preAcquire);
         }
-        if (!messageOk && _preAcquire)
+        if (!messageOk)
         {
-            // this is the case for topics
-            // We need to ack this message
-            if (_logger.isDebugEnabled())
+            if (_preAcquire)
             {
-                _logger.debug("filterMessage - trying to ack message");
+                // this is the case for topics
+                // We need to ack this message
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("filterMessage - trying to ack message");
+                }
+                acknowledgeMessage(message);
             }
-            acknowledgeMessage(message);
-        }
-        else if (!messageOk)
-        {
-            if (_logger.isDebugEnabled())
+            else
             {
-                _logger.debug("Message not OK, releasing");
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Message not OK, releasing");
+                }
+                releaseMessage(message);
             }
-            releaseMessage(message);
+            // if we are syncrhonously waiting for a message
+            // and messages are not prefetched we then need to request another one
+            if(ClientProperties.MAX_PREFETCH == 0)
+            {
+               _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+            }
         }
         // now we need to acquire this message if needed
         // this is the case of queue with a message selector set
@@ -429,6 +449,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
+        if (messageListener != null && ClientProperties.MAX_PREFETCH == 0)
+        {
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        }
         if (messageListener != null && !_synchronousQueue.isEmpty())
         {
             Iterator messages=_synchronousQueue.iterator();
@@ -449,11 +474,44 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void start()
     {
         _isStarted = true;
+        if (_syncReceive.get())
+        {
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        }
     }
 
     public void stop()
     {
         _isStarted = false;
+    }
+
+    /**
+     * When messages are not prefetched we need to request a message from the
+     * broker.
+     * Note that if the timeout is too short a message may be queued in _synchronousQueue until
+     * this consumer closes or request it.
+     * @param l
+     * @return
+     * @throws InterruptedException
+     */
+    public Object getMessageFromQueue(long l) throws InterruptedException
+    {
+        if (isStrated() && ClientProperties.MAX_PREFETCH == 0 && _synchronousQueue.isEmpty())
+        {
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        }
+        if (ClientProperties.MAX_PREFETCH == 0)
+        {
+            _syncReceive.set(true);
+        }
+        Object o = super.getMessageFromQueue(l);
+        if (ClientProperties.MAX_PREFETCH == 0)
+        {
+            _syncReceive.set(false);
+        }
+        return o;
     }
 
 }

@@ -5,5 +5,6 @@ org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
 org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
-// this test needs durable subscribe states to be persisted
+// those tests need durable subscribe states to be persisted
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
+org.apache.qpid.test.unit.ct.DurableSubscriberTests#testDurSubRestoresMessageSelector 
