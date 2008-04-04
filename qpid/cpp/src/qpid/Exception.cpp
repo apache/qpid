@@ -33,31 +33,23 @@ std::string strError(int err) {
     return std::string(strerror_r(err, buf, sizeof(buf)));
 }
 
-Exception::Exception(const std::string& msg,
-                     const std::string& nm,
-                     uint16_t cd) throw()
-    : message(msg), name(nm), code(cd),
-      whatStr((name.empty() ? "" : name + ": ")+ msg)
-{
-    QPID_LOG(warning, "Exception: " << whatStr);
+Exception::Exception(const std::string& msg) throw() : message(msg) {
+    QPID_LOG(warning, "Exception: " << message);
 }
 
 Exception::~Exception() throw() {}
 
-std::string Exception::getMessage() const throw() { return message; }
-
-std::string Exception::getName() const throw() {
-    return name.empty() ? typeid(*this).name() : name;
-}
-
-uint16_t Exception::getCode() const throw() { return code; }
+std::string Exception::getPrefix() const { return typeid(*this).name(); }
 
 const char* Exception::what() const throw() {
-    if (whatStr.empty()) return typeid(*this).name();
-    else return whatStr.c_str();
+    if (whatStr.empty())
+        whatStr = getPrefix() +  ": " + message;    
+    return whatStr.c_str();
 }
 
 ClosedException::ClosedException(const std::string& msg)
-  : Exception(msg, "ClosedException") {}
+  : Exception(msg) {}
+
+std::string ClosedException::getPrefix() const { return "Closed"; }
 
 } // namespace qpid
