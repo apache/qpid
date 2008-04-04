@@ -185,6 +185,7 @@
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="test.excludes" value="${test.excludes}"/>
       <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
+      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>  
 
       <formatter type="plain"/>
       <formatter type="xml"/>
