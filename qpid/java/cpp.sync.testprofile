@@ -3,6 +3,7 @@ broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --log-output
 broker.clean=${build.data}
 java.naming.provider.url=${project.root}/test-provider.properties
 test.excludes=true
+max_prefetch=1000
 test.excludesfile=${project.root}/010ExcludeList
 log=info
 amqj.logging.level=$log
