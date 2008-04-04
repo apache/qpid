@@ -164,18 +164,17 @@ template <class S> void Map::encode(S& s) const {
 }
 
 template <class S> void Map::decode(S& s) {
-    uint32_t cSize /*, count*/;
+    uint32_t decodedSize /*, count*/;
     // FIXME aconway 2008-04-03: replace preview mapping with 0-10 mapping:
     // s(contentSize())(uint32_t(size())); // size, count
-    // s(cSize)(count);
-    s(cSize);
-    typename S::Iterator start = s.pos();
+    // s(decodedSize)(count);
+    s(decodedSize);
+    typename S::ScopedLimit l(s, decodedSize); // Make sure we don't overrun.
     // FIXME aconway 2008-04-03:  replace preview with 0-10:
     // for ( ; count > 0; --count) {
-    while (uint32_t(std::distance(start, s.pos())) < cSize) {
+    while (s.getLimit() > 0) {
         key_type k; MapValue v;
         s(k)(v);
-        if (uint32_t(std::distance(start, s.pos())) > cSize) throwInvalidArg();
         insert(value_type(k,v));
     }
 }
