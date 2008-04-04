@@ -91,7 +91,6 @@ class Map : public std::map<Str8, MapValue> {
     template <class S> void decode(S& s);
     
   private:
-    static void throwInvalidArg();
     uint32_t contentSize() const;
 };
 

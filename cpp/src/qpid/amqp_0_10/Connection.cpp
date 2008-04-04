@@ -20,6 +20,7 @@
  */
 #include "Connection.h"
 #include "qpid/log/Statement.h"
+#include "qpid/amqp_0_10/exceptions.h"
 
 namespace qpid {
 namespace amqp_0_10 {
@@ -64,8 +65,9 @@ size_t  Connection::encode(const char* buffer, size_t size) {
             QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
             frameQueue.pop();
     }
+    assert(frameQueue.empty() || frameQueue.front().size() <= size);
     if (!frameQueue.empty() && frameQueue.front().size() > size)
-        throw framing::ContentTooLargeException(QPID_MSG("Could not write frame, too large for buffer."));
+        throw InternalErrorException(QPID_MSG("Could not write frame, too large for buffer."));
     return out.getPosition();
 }
 
