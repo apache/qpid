@@ -115,8 +115,6 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/Segment.h \
   qpid/amqp_0_10/Segment.cpp \
   qpid/amqp_0_10/SerializableString.h \
-  qpid/amqp_0_10/Assembly.h \
-  qpid/amqp_0_10/Assembly.cpp \
   qpid/amqp_0_10/Map.h \
   qpid/amqp_0_10/Map.cpp \
   qpid/amqp_0_10/UnknownType.h \

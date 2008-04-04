@@ -22,6 +22,7 @@
  *
  */
 
+#include <limits>
 #include <algorithm>
 #include "qpid/Exception.h"     // FIXME aconway 2008-04-03: proper exception class.
 
@@ -101,6 +102,12 @@ template <class Derived> class Serializer {
         return l;
     }
 
+    /** Get the max number of bytes that can be processed under the
+     * current limit.
+     */
+    size_t getLimit() const {
+        return limit - bytes;
+    }
     /** Set absolute limit. */
     void setAbsLimit(size_t n) {
         limit = n;
