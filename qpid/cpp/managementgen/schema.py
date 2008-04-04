@@ -78,6 +78,7 @@ class SchemaType:
   def genAccessor (self, stream, varName, changeFlag = None):
     if self.accessor == "direct":
       stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
+      stream.write ("        sys::RWlock::ScopedWlock writeLock (accessLock);\n")
       if self.style != "mma":
         stream.write ("        " + varName + " = val;\n");
       if self.style == "wm":
@@ -97,6 +98,7 @@ class SchemaType:
       stream.write ("    }\n");
     elif self.accessor == "counter":
       stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1){\n");
+      stream.write ("        sys::RWlock::ScopedWlock writeLock (accessLock);\n")
       stream.write ("        " + varName + " += by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "High < " + varName + ")\n")
@@ -105,6 +107,7 @@ class SchemaType:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
       stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1){\n");
+      stream.write ("        sys::RWlock::ScopedWlock writeLock (accessLock);\n")
       stream.write ("        " + varName + " -= by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low > " + varName + ")\n")
@@ -796,6 +799,9 @@ class SchemaClass:
   def genNameLower (self, stream, variables):
     stream.write (self.name.lower ())
 
+  def genNamePackageCap (self, stream, variables):
+    stream.write (self.packageName.capitalize ())
+
   def genNamePackageLower (self, stream, variables):
     stream.write (self.packageName.lower ())
 
@@ -867,3 +873,28 @@ class PackageSchema:
 
   def getClasses (self):
     return self.classes
+
+  def genPackageNameUpper (self, stream, variables):
+    stream.write (self.packageName.upper ())
+
+  def genPackageNameCap (self, stream, variables):
+    stream.write (self.packageName.capitalize ())
+
+  def genClassIncludes (self, stream, variables):
+    for _class in self.classes:
+      stream.write ("#include \"qpid/management/")
+      _class.genNameCap (stream, variables)
+      stream.write (".h\"\n")
+
+  def genClassRegisters (self, stream, variables):
+    for _class in self.classes:
+      stream.write ("agent->RegisterClass (")
+      _class.genNameCap (stream, variables)
+      stream.write ("::packageName, ")
+      _class.genNameCap (stream, variables)
+      stream.write ("::className, ")
+      _class.genNameCap (stream, variables)
+      stream.write ("::md5Sum, ")
+      _class.genNameCap (stream, variables)
+      stream.write ("::writeSchema);\n")
+

@@ -35,7 +35,6 @@ string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackage
 string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/");
 uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
     {/*MGEN:Class.SchemaMD5*/};
-bool    /*MGEN:Class.NameCap*/::firstInst    = true;
 
 /*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
     ManagementObject(_core)
@@ -63,18 +62,6 @@ namespace {
     const string DEFAULT("default");
 }
 
-bool /*MGEN:Class.NameCap*/::firstInstance (void)
-{
-    Mutex::ScopedLock alock(accessorLock);
-    if (firstInst)
-    {
-        firstInst = false;
-        return true;
-    }
-
-    return false;
-}
-
 void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 {
     FieldTable ft;
@@ -100,6 +87,7 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 
 void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 {
+    sys::RWlock::ScopedRlock readLock (accessLock);
     configChanged = false;
 
     writeTimestamps (buf);
@@ -108,6 +96,7 @@ void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 
 void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf, bool skipHeaders)
 {
+    sys::RWlock::ScopedWlock writeLock (accessLock);
     instChanged = false;
 
     if (!skipHeaders)
