@@ -137,7 +137,9 @@
     <bzip2 src="${release.tar}" destfile="${release.bz2}"/>
   </target>
 
-  <target name="release" depends="zip,gzip,bzip2" description="build all release archives"/>
+  <target name="release" depends="zip,gzip" description="build all release archives except .bz2"/>
+
+  <target name="release-all" depends="zip,gzip,bzip2" description="build all release archives"/>
 
   <target name="clean" description="remove build and release artifacts">
     <iterate target="clean"/>
