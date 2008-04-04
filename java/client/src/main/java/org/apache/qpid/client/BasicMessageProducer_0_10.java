@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.DeliveryMode;
 
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.FiledTableSupport;
@@ -186,9 +187,15 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         try
         {
             ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),
-                                                                              message.get010Message(),
-                                                                              org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                                                              org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+                    message.get010Message(),
+                    org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                    org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+            if(deliveryMode == DeliveryMode.PERSISTENT && ClientProperties.FULLY_SYNC )
+            {
+                // we need to sync the delivery of this message
+                ((AMQSession_0_10) getSession()).getQpidSession().sync();
+            }
+
         }
         catch (IOException e)
         {
