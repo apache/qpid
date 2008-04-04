@@ -53,6 +53,10 @@ class ManagementAgent
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
                           broker::Exchange::shared_ptr directExchange);
+    void RegisterClass   (std::string packageName,
+                          std::string className,
+                          uint8_t*    md5Sum,
+                          ManagementObject::writeSchemaCall_t schemaCall);
     void addObject       (ManagementObject::shared_ptr object,
                           uint64_t                     persistenceId = 0,
                           uint64_t                     idOffset      = 10);
@@ -160,7 +164,9 @@ class ManagementAgent
 
     PackageMap::iterator FindOrAddPackage (std::string name);
     void AddClassLocal (PackageMap::iterator         pIter,
-                        ManagementObject::shared_ptr object);
+                        std::string                  className,
+                        uint8_t*                     md5Sum,
+                        ManagementObject::writeSchemaCall_t schemaCall);
     void EncodePackageIndication (qpid::framing::Buffer& buf,
                                   PackageMap::iterator   pIter);
     void EncodeClassIndication (qpid::framing::Buffer& buf,

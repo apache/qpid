@@ -23,7 +23,6 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/sys/Mutex.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/Uuid.h"
 
@@ -37,7 +36,6 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     static std::string packageName;
     static std::string className;
     static uint8_t     md5Sum[16];
-    static bool        firstInst;
 
     // Configuration Elements
 /*MGEN:Class.ConfigDeclarations*/
@@ -52,13 +50,12 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
                                qpid::framing::Buffer& inBuf,
                                qpid::framing::Buffer& outBuf);
     writeSchemaCall_t getWriteSchemaCall (void) { return writeSchema; }
-    bool firstInstance (void);
 
 /*MGEN:Class.InstChangedStub*/
   public:
 
+    friend class Package/*MGEN:Class.NamePackageCap*/;
     typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
-    qpid::sys::Mutex accessorLock;
 
     /*MGEN:Class.NameCap*/ (Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);

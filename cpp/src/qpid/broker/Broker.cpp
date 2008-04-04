@@ -29,6 +29,7 @@
 #include "NullMessageStore.h"
 #include "RecoveryManagerImpl.h"
 #include "TopicExchange.h"
+#include "qpid/management/PackageQpid.h"
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/management/ArgsBrokerEcho.h"
 
@@ -112,25 +113,13 @@ Broker::Broker(const Broker::Options& conf) :
     sessionManager(conf.ack),
     previewSessionManager(conf.ack)
 {
-    // Early-Initialize plugins
-    const Plugin::Plugins& plugins=Plugin::getPlugins();
-    for (Plugin::Plugins::const_iterator i = plugins.begin();
-         i != plugins.end();
-         i++)
-        (*i)->earlyInitialize(*this);
-
-    // If no plugin store module registered itself, set up the null store.
-    if (store == 0)
-        setStore (new NullMessageStore (false));
-
-    queues.setStore     (store);
-    dtxManager.setStore (store);
-
     if(conf.enableMgmt){
+        QPID_LOG(info, "Management enabled");
         ManagementAgent::enableManagement (dataDir.isEnabled () ? dataDir.getPath () : string (),
                                            conf.mgmtPubInterval);
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
+        qpid::management::PackageQpid packageInitializer (managementAgent);
 
         System* system = new System ();
         systemObject = System::shared_ptr (system);
@@ -157,6 +146,20 @@ Broker::Broker(const Broker::Options& conf) :
         exchanges.setParent (vhost);
     }
 
+    // Early-Initialize plugins
+    const Plugin::Plugins& plugins=Plugin::getPlugins();
+    for (Plugin::Plugins::const_iterator i = plugins.begin();
+         i != plugins.end();
+         i++)
+        (*i)->earlyInitialize(*this);
+
+    // If no plugin store module registered itself, set up the null store.
+    if (store == 0)
+        setStore (new NullMessageStore (false));
+
+    queues.setStore     (store);
+    dtxManager.setStore (store);
+
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     
     if (store != 0) {
@@ -172,7 +175,6 @@ Broker::Broker(const Broker::Options& conf) :
     declareStandardExchange(amq_match, HeadersExchange::typeName);
 
     if(conf.enableMgmt) {
-        QPID_LOG(info, "Management enabled");
         exchanges.declare(qpid_management, ManagementExchange::typeName);
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get (amq_direct);

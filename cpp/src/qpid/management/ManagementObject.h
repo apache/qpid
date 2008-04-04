@@ -24,6 +24,7 @@
 
 #include "Manageable.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Mutex.h"
 #include <qpid/framing/Buffer.h>
 #include <boost/shared_ptr.hpp>
 #include <map>
@@ -44,6 +45,7 @@ class ManagementObject
     bool        instChanged;
     bool        deleted;
     Manageable* coreObject;
+    sys::RWlock accessLock;
 
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;
@@ -84,7 +86,6 @@ class ManagementObject
     virtual ~ManagementObject () {}
 
     virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
-    virtual bool firstInstance        (void) = 0;
     virtual void writeConfig          (qpid::framing::Buffer& buf) = 0;
     virtual void writeInstrumentation (qpid::framing::Buffer& buf,
                                        bool skipHeaders = false) = 0;
