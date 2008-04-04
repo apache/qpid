@@ -48,9 +48,11 @@ if opts.include_prefix == ".":
 gen    = Generator     (outdir,   templatedir)
 schema = PackageSchema (typefile, schemafile, opts)
 
-gen.makeClassFiles  ("Class.h",   schema)
-gen.makeClassFiles  ("Class.cpp", schema)
-gen.makeMethodFiles ("Args.h",    schema)
+gen.makeClassFiles  ("Class.h",     schema)
+gen.makeClassFiles  ("Class.cpp",   schema)
+gen.makeMethodFiles ("Args.h",      schema)
+gen.makePackageFile ("Package.h",   schema)
+gen.makePackageFile ("Package.cpp", schema)
 
 if opts.makefile != None:
   gen.makeSingleFile ("Makefile.mk", opts.makefile, force=True)

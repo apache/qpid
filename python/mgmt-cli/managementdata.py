@@ -451,8 +451,9 @@ class ManagementData:
       rows = []
       sorted = self.schema.keys ()
       sorted.sort ()
-      for className in sorted:
-        tuple = self.schema[className]
+      for classKey in sorted:
+        tuple = self.schema[classKey]
+        className = classKey[0] + "." + classKey[1]
         row = (className, len (tuple[0]), len (tuple[1]), len (tuple[2]), len (tuple[3]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",

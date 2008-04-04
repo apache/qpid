@@ -114,6 +114,16 @@ void ManagementAgent::setExchange (broker::Exchange::shared_ptr _mexchange,
     dExchange = _dexchange;
 }
 
+void ManagementAgent::RegisterClass (string   packageName,
+                                     string   className,
+                                     uint8_t* md5Sum,
+                                     ManagementObject::writeSchemaCall_t schemaCall)
+{
+    RWlock::ScopedWlock writeLock (userLock);
+    PackageMap::iterator pIter = FindOrAddPackage (packageName);
+    AddClassLocal (pIter, className, md5Sum, schemaCall);
+}
+
 void ManagementAgent::addObject (ManagementObject::shared_ptr object,
                                  uint64_t                     /*persistenceId*/,
                                  uint64_t                     /*idOffset*/)
@@ -128,15 +138,6 @@ void ManagementAgent::addObject (ManagementObject::shared_ptr object,
 
     object->setObjectId (objectId);
     managementObjects[objectId] = object;
-
-    // If we've already seen instances of this object type, we're done.
-    if (!object->firstInstance ())
-        return;
-
-    // This is the first object of this type that we've seen, update the schema
-    // inventory.
-    PackageMap::iterator pIter = FindOrAddPackage (object->getPackageName ());
-    AddClassLocal (pIter, object);
 }
 
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
@@ -623,14 +624,16 @@ ManagementAgent::PackageMap::iterator ManagementAgent::FindOrAddPackage (std::st
     return result.first;
 }
 
-void ManagementAgent::AddClassLocal (PackageMap::iterator         pIter,
-                                     ManagementObject::shared_ptr object)
+void ManagementAgent::AddClassLocal (PackageMap::iterator  pIter,
+                                     string                className,
+                                     uint8_t*              md5Sum,
+                                     ManagementObject::writeSchemaCall_t schemaCall)
 {
     SchemaClassKey key;
     ClassMap&      cMap = pIter->second;
 
-    key.name = object->getClassName ();
-    memcpy (&key.hash, object->getMd5Sum (), 16);
+    key.name = className;
+    memcpy (&key.hash, md5Sum, 16);
 
     ClassMap::iterator cIter = cMap.find (key);
     if (cIter != cMap.end ())
@@ -641,7 +644,7 @@ void ManagementAgent::AddClassLocal (PackageMap::iterator         pIter,
               key.name);
     SchemaClass classInfo;
 
-    classInfo.writeSchemaCall = object->getWriteSchemaCall ();
+    classInfo.writeSchemaCall = schemaCall;
     cMap[key] = classInfo;
 
     // TODO: Publish a class-indication message
