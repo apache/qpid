@@ -187,7 +187,15 @@ class Generator:
       pass
 
     os.rename (tempFile, target)
-    print "Generated:", target    
+    print "Generated:", target
+
+  def targetPackageFile (self, schema, templateFile):
+    dot = templateFile.find(".")
+    if dot == -1:
+      raise ValueError ("Invalid template file name %s" % templateFile)
+    extension = templateFile[dot:len (templateFile)]
+    path = self.dest + "Package" + schema.getPackageName().capitalize() + extension
+    return path
 
   def targetClassFile (self, _class, templateFile):
     dot = templateFile.find(".")
@@ -243,6 +251,14 @@ class Generator:
           target = self.targetMethodFile (method, templateFile)
           stream = template.expand (method)
           self.writeIfChanged (stream, target, force)
+
+  def makePackageFile (self, templateFile, schema, force=False):
+    """ Generate a package-specific file """
+    template = Template (self.input + templateFile, self)
+    self.templateFiles.append (templateFile)
+    target = self.targetPackageFile (schema, templateFile)
+    stream = template.expand (schema)
+    self.writeIfChanged (stream, target, force)
 
   def makeSingleFile (self, templateFile, target, force=False):
     """ Generate a single expanded template """
