@@ -52,16 +52,6 @@ std::ostream& operator<<(std::ostream& out, const array<T,N>& a) {
 }
 } // boost
 
-namespace qpid {
-namespace sys {
-
-std::ostream& operator<<(std::ostream& out, const AbsTime& t) {
-    return out << t.timeValue();
-}
-}
-
-} // qpid
-
 QPID_AUTO_TEST_SUITE(SerializeTestSuite)
 
 using namespace std;
