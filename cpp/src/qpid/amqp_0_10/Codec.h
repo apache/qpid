@@ -54,16 +54,14 @@ struct Codec {
       public:
         typedef EncoderBase<Encoder<OutIter> > Base;
         typedef OutIter Iterator;
-        
+
         Encoder(OutIter o, size_t limit=Base::maxLimit()) : out(o) {
             this->setLimit(limit);
         }
 
         using EncoderBase<Encoder<OutIter> >::operator();
 
-        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
         Encoder& operator()(bool x) { raw(x); return *this;} 
-
         Encoder& operator()(char x) { raw(x); return *this; }
         Encoder& operator()(int8_t x) { raw(x); return *this; }
         Encoder& operator()(uint8_t x) { raw(x); return *this; }
@@ -78,7 +76,6 @@ struct Codec {
 
         Encoder& operator()(float x) { return endian(x); }
         Encoder& operator()(double x) { return endian(x); }
-
 
         void raw(const void* p, size_t n) {
             this->addBytes(n);
@@ -103,7 +100,7 @@ struct Codec {
       public:
         typedef DecoderBase<Decoder<InIter> > Base;
         typedef InIter Iterator;
-        
+
         Decoder(InIter i, size_t limit=Base::maxLimit()) : in(i) {
             this->setLimit(limit);
         }
@@ -135,7 +132,7 @@ struct Codec {
         }
 
         void raw(char &b) { this->addBytes(1); b=*in++; }
-            
+
         InIter pos() const { return in; }
 
       private:
