@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(testPacked) {
     const char* missing = "\5xy";
     Codec::decode(missing)(dummy);
     BOOST_CHECK(dummy.i);
-    BOOST_CHECK_EQUAL(dummy.i, 'x');
+    BOOST_CHECK_EQUAL(*dummy.i, 'x');
     BOOST_CHECK(!dummy.j);
     BOOST_CHECK_EQUAL(dummy.k, 'y');
 }
