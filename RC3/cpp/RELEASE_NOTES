@@ -1,0 +1,28 @@
+Apache Incubator Qpid .NET M2.1 Release Notes
+-------------------------------------------
+
+The Qpid M2.1 release contains support the for AMQP 0-8 specification.
+You can access the 0-8 specification using the following link.
+http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+
+For full details of Qpid capabilities, as they currently stand, see our
+detailed project documentation at:
+
+http://cwiki.apache.org/confluence/display/qpid/Qpid+.Net+Documentation
+
+From the link above you can access our Getting Started Guide, FAQ, Build How To
+and developer documentation.
+
+
+Known Issues/Outstanding Work
+-----------------------------
+
+You can view the outstanding task list for Qpid by visiting our JIRA:
+http://issues.apache.org/jira/browse/QPID
+
+
+M2.1 Tasks Completed
+-------------------
+
+The set of JIRA tasks completed as part of the M2.1 effort is available at:
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12312720&styleName=Html&projectId=12310520
