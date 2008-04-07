@@ -20,9 +20,9 @@
  */
 
 #include "unit_test.h"
+#include "qpid/amqp_0_10/Packer.h"
 #include "qpid/amqp_0_10/built_in_types.h"
 #include "qpid/amqp_0_10/Codec.h"
-#include "qpid/amqp_0_10/PackedCodec.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ControlHolder.h"
 #include "qpid/amqp_0_10/Frame.h"
@@ -31,12 +31,14 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/optional.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/back_inserter.hpp>
 #include <boost/mpl/copy.hpp>
 #include <boost/mpl/empty_sequence.hpp>
 #include <iterator>
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <netinet/in.h>
 
@@ -254,15 +256,55 @@ BOOST_AUTO_TEST_CASE(testFrameEncodeDecode) {
     
 }
 
-BOOST_AUTO_TEST_CASE(testPackedCodec) {
-    int i=-1, j=-1, k=-1, l=-1;
-    std::string data;
-    Codec::encode(std::back_inserter(data))(1)(3);
-    PackedCodec::decode(0x5, Codec::decode(data.begin()))(i)(j)(k)(l);
-    BOOST_CHECK_EQUAL(i, 1);
-    BOOST_CHECK_EQUAL(j, 0);
-    BOOST_CHECK_EQUAL(k, 3);
-    BOOST_CHECK_EQUAL(l, 0);
+struct DummyPacked {
+    static const uint8_t PACK=1;
+    boost::optional<char> i, j;
+    char k;
+    DummyPacked(char a=0, char b=0, char c=0) : i(a), j(b), k(c) {}
+    template <class S> void serialize(S& s) { s(i)(j)(k); }
+
+    string str() const {
+        ostringstream os;
+        os << i << j << k;
+        return os.str();
+    }
+};
+
+Packer<DummyPacked> serializable(DummyPacked& d) { return Packer<DummyPacked>(d); }
+
+BOOST_AUTO_TEST_CASE(testPackBits) {
+    DummyPacked d('a','b','c');
+    BOOST_CHECK_EQUAL(packBits(d), 7u);
+    d.j = boost::none;
+    BOOST_CHECK_EQUAL(packBits(d), 5u);    
+}
+
+
+BOOST_AUTO_TEST_CASE(testPacked) {
+    string data;
+
+    Codec::encode(back_inserter(data))('a')(boost::optional<char>('b'))(boost::optional<char>())('c');
+    BOOST_CHECK_EQUAL(data, "abc");
+    data.clear();
+    
+    DummyPacked dummy('a','b','c');
+
+    Codec::encode(back_inserter(data))(dummy);
+    BOOST_CHECK_EQUAL(data.size(), 4u);
+    BOOST_CHECK_EQUAL(data, string("\007abc"));
+    data.clear();
+
+    dummy.i = boost::none;
+    Codec::encode(back_inserter(data))(dummy);
+    BOOST_CHECK_EQUAL(data, string("\6bc"));
+    data.clear();
+
+    const char* missing = "\5xy";
+    Codec::decode(missing)(dummy);
+    BOOST_CHECK(dummy.i);
+    BOOST_CHECK_EQUAL(dummy.i, 'x');
+    BOOST_CHECK(!dummy.j);
+    BOOST_CHECK_EQUAL(dummy.k, 'y');
 }
 
 QPID_AUTO_TEST_SUITE_END()

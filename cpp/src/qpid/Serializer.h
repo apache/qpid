@@ -167,6 +167,7 @@ template <class Derived> class DecoderBase : public Serializer<Derived> {
 
     /** Default op() for non-primitive types. */
     template <class T> Derived& operator()(T& t) {
+
         serializable(t).serialize(self()); return self();
     }
 
