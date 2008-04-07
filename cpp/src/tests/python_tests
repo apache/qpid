@@ -2,10 +2,17 @@
 # Run the python tests.
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
+
+run() {
+    SPEC=$1
+    FAILING=$2
+    ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || exit 1
+}
+
 if test -d ../../../python ;  then
     cd ../../../python
-    test -z "$QPID_NO_PREVIEW" && ./run-tests --skip-self-test -v -s ../specs/amqp.0-10-preview.xml -I cpp_failing_0-10_preview.txt -b localhost:$QPID_PORT $PYTHON_TESTS
-    ./run-tests --skip-self-test -v -s "0-10" -I cpp_failing_0-10.txt -b localhost:$QPID_PORT $PYTHON_TESTS
+    run 0-10 cpp_failing_0-10.txt
+    test -z "$QPID_NO_PREVIEW" && run ../specs/amqp.0-10-preview.xml cpp_failing_0-10_preview.txt
 else
     echo Warning: python tests not found.
 fi

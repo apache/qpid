@@ -25,8 +25,9 @@
 #include "qpid/amqp_0_10/Codec.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ControlHolder.h"
-#include "qpid/amqp_0_10/Frame.h"
+#include "qpid/amqp_0_10/FrameHeader.h"
 #include "qpid/amqp_0_10/Map.h"
+#include "qpid/amqp_0_10/Unit.h"
 
 #include <boost/test/test_case_template.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -204,48 +205,6 @@ BOOST_AUTO_TEST_CASE(testControlEncodeDecode) {
     BOOST_CHECK_EQUAL(tune.heartbeatMax, 4u);
 }
 
-BOOST_AUTO_TEST_CASE(testFrameEncodeDecode) {
-    static const int overhead=12;
-    string data;
-    Frame r, c;
-    char d1[]="abcdefg";
-    r.refer(d1, d1+sizeof(d1));
-    r.setFlags(Frame::FIRST_FRAME);
-    r.setType(CONTROL);
-    r.setChannel(32);
-    r.setTrack(1);
-    char d2[]="01234567";
-    c.copy(d2, d2+sizeof(d2));
-
-    BOOST_CHECK_EQUAL(overhead+sizeof(d1), Codec::size(r));
-    BOOST_CHECK_EQUAL(overhead+sizeof(d2), Codec::size(c));
-    Codec::encode(std::back_inserter(data))(r)(c);
-    BOOST_CHECK_EQUAL(data.size(), Codec::size(r)+Codec::size(c));
-
-    FrameHeader fh;
-    std::string::iterator i = Codec::decode(data.begin())(fh).pos();
-    size_t s = fh.size();
-    BOOST_CHECK_EQUAL(s, sizeof(d1));
-    BOOST_CHECK_EQUAL(std::string(i, i+s), std::string(d1, d1+s));
-
-                      
-    Frame f1, f2;
-    Codec::decode(data.begin())(f1)(f2);
-    BOOST_CHECK_EQUAL(f1.size(), sizeof(d1));
-    BOOST_CHECK_EQUAL(std::string(f1.begin(), f1.size()),
-                      std::string(d1, sizeof(d1)));
-    BOOST_CHECK_EQUAL(f1.size(), r.size());
-    BOOST_CHECK_EQUAL(f1.getFlags(), Frame::FIRST_FRAME);
-    BOOST_CHECK_EQUAL(f1.getType(), CONTROL);
-    BOOST_CHECK_EQUAL(f1.getChannel(), 32);
-    BOOST_CHECK_EQUAL(f1.getTrack(), 1);
-
-    BOOST_CHECK_EQUAL(f2.size(), c.size());
-    BOOST_CHECK_EQUAL(std::string(f2.begin(), f2.end()),
-                      std::string(d2, d2+sizeof(d2)));
-    
-}
-
 struct DummyPacked {
     static const uint8_t PACK=1;
     boost::optional<char> i, j;
@@ -290,5 +249,38 @@ BOOST_AUTO_TEST_CASE(testPacked) {
     BOOST_CHECK(!dummy.j);
     BOOST_CHECK_EQUAL(dummy.k, 'y');
 }
+
+BOOST_AUTO_TEST_CASE(testUnit) {
+    string data;
+    Control::Holder h(in_place<connection::Tune>(1,2,3,4));
+    Codec::encode(std::back_inserter(data))(h);
+
+    Unit unit(FrameHeader(FIRST_FRAME|LAST_FRAME, CONTROL));
+    Codec::decode(data.begin())(unit);
+
+    BOOST_REQUIRE(unit.get<ControlHolder>());
+
+    string data2;
+    Codec::encode(back_inserter(data2))(unit);
+    
+    BOOST_CHECK_EQUAL(data, data2);
+}
+
+// FIXME aconway 2008-04-07: TODO
+// BOOST_AUTO_TEST_CASE(testAllSegmentTypes) {
+//     string data;
+//     int n = allSegmentTypes(Codec::encode(data));
+
+//     string data2;
+//     Codec::Decoder<string::iterator> decode(data.begin(), data.size());
+//     while (decode.pos() != data.end()) {
+//         Unit unit;
+//         decode(unit);
+//         Codec::encode(back_insert(data));
+//         --n;
+//     }
+//     BOOST_CHECK_EQUAL(n, 0);
+//     BOOST_CHECK_EQUAL(data, data2);
+// }
 
 QPID_AUTO_TEST_SUITE_END()

@@ -65,6 +65,7 @@ class Specification < CppGen
       yield if block
     }
     genl "std::ostream& operator << (std::ostream&, const #{x.classname}&);"
+    genl "bool operator==(const #{x.classname}&, const #{x.classname}&);"
   end
 
   # FIXME aconway 2008-03-10: packing, coding
