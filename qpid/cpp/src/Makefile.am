@@ -149,7 +149,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/MaxMethodBodySize.h \
   qpid/framing/TransferContent.cpp \
   qpid/assert.cpp qpid/assert.h \
-  qpid/BoundedIterator.h \
   qpid/Exception.cpp \
   qpid/Plugin.cpp \
   qpid/Url.cpp \

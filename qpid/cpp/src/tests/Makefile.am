@@ -42,7 +42,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	amqp_0_10/serialize.cpp \
 	amqp_0_10/ProxyTemplate.cpp \
 	amqp_0_10/apply.cpp \
-	BoundedIterator.cpp \
 	IncompleteMessageList.cpp \
 	amqp_0_10/Map.cpp
 
