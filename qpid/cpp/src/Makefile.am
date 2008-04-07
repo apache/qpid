@@ -109,7 +109,7 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/complex_types.cpp \
   qpid/amqp_0_10/Holder.h \
   qpid/amqp_0_10/Codec.h \
-  qpid/amqp_0_10/PackedCodec.h \
+  qpid/amqp_0_10/Packer.h \
   qpid/amqp_0_10/Decimal.h \
   qpid/amqp_0_10/Frame.h \
   qpid/amqp_0_10/Segment.h \
