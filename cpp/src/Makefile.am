@@ -107,16 +107,19 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/complex_types.h \
   qpid/amqp_0_10/complex_types.cpp \
+  qpid/amqp_0_10/Body.h \
+  qpid/amqp_0_10/Header.h \
+  qpid/amqp_0_10/FrameHeader.h \
+  qpid/amqp_0_10/FrameHeader.cpp \
   qpid/amqp_0_10/Holder.h \
   qpid/amqp_0_10/Codec.h \
   qpid/amqp_0_10/Packer.h \
   qpid/amqp_0_10/Decimal.h \
-  qpid/amqp_0_10/Frame.h \
-  qpid/amqp_0_10/Segment.h \
-  qpid/amqp_0_10/Segment.cpp \
   qpid/amqp_0_10/SerializableString.h \
   qpid/amqp_0_10/Map.h \
   qpid/amqp_0_10/Map.cpp \
+  qpid/amqp_0_10/Unit.h \
+  qpid/amqp_0_10/Unit.cpp \
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
   qpid/Serializer.h \
