@@ -23,6 +23,7 @@
  */
 
 #include <boost/optional.hpp>
+#include <boost/none.hpp>
 
 namespace qpid {
 namespace amqp_0_10 {
