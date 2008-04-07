@@ -1,41 +1,28 @@
-Apache Incubator Qpid C++ M2 Release Notes
+Apache Incubator Qpid .NET M2.1 Release Notes
 -------------------------------------------
 
-The Qpid M2 release contains support the for AMQP 0-8 specification.
+The Qpid M2.1 release contains support the for AMQP 0-8 specification.
 You can access the 0-8 specification using the following link.
 http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
 
 For full details of Qpid capabilities, as they currently stand, see our
 detailed project documentation at:
 
-http://cwiki.apache.org/confluence/pages/viewpage.action?pageId=28284
+http://cwiki.apache.org/confluence/display/qpid/Qpid+.Net+Documentation
 
-Please take time to go through the README file provided with the distro to get a good understanding about build system etc.
+From the link above you can access our Getting Started Guide, FAQ, Build How To
+and developer documentation.
 
 
-Known Issues
-------------
+Known Issues/Outstanding Work
+-----------------------------
 
 You can view the outstanding task list for Qpid by visiting our JIRA:
 http://issues.apache.org/jira/browse/QPID
 
-Bug		QPID-437 	c++ broker doesn't obey the mandatory flag
 
-
-M2 Tasks Completed
+M2.1 Tasks Completed
 -------------------
 
-Test		QPID-412 	Implement initial C++ interop tests
-Task		QPID-124 	Connect AMQP version from ProtocolInitiation object to all version-aware objects
-
-New Feature	QPID-154 	Logging/tracing for C++.
-New Feature	QPID-98 	implement durable exchanges
-New Feature	QPID-41 	Persistent storage for messages & durable queues
-
-Improvement	QPID-450 	C++ demos
-Improvement	QPID-64 	C++ cluster design.
-Improvement	QPID-62 	C++ event queue design.
-
-Bug		QPID-481 	c++ broker dosen't implement channel.flow
-Bug		QPID-467 	Complete Interop Testing
-Bug		QPID-123 	Sporadic failure on Python tests
+The set of JIRA tasks completed as part of the M2.1 effort is available at:
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12312720&styleName=Html&projectId=12310520
