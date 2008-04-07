@@ -252,12 +252,6 @@ struct DummyPacked {
     char k;
     DummyPacked(char a=0, char b=0, char c=0) : i(a), j(b), k(c) {}
     template <class S> void serialize(S& s) { s(i)(j)(k); }
-
-    string str() const {
-        ostringstream os;
-        os << i << j << k;
-        return os.str();
-    }
 };
 
 Packer<DummyPacked> serializable(DummyPacked& d) { return Packer<DummyPacked>(d); }
