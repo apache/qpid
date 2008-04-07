@@ -40,7 +40,7 @@ size_t  PreviewConnectionCodec::decode(const char* buffer, size_t size) {
 }
 
 bool PreviewConnectionCodec::canEncode() {
-    if (!frameQueueClosed) connection.doOutput();
+    if (!frameQueueClosed && frameQueue.empty()) connection.doOutput();
     return !frameQueue.empty();
 }
 
@@ -56,6 +56,7 @@ size_t  PreviewConnectionCodec::encode(const char* buffer, size_t size) {
             frameQueue.front().encode(out);
             QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
             frameQueue.pop();
+            if (!frameQueueClosed && frameQueue.empty()) connection.doOutput();
     }
     if (!frameQueue.empty() && frameQueue.front().size() > size)
         throw framing::ContentTooLargeException(QPID_MSG("Could not write frame, too large for buffer."));
