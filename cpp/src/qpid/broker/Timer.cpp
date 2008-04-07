@@ -36,7 +36,7 @@ TimerTask::TimerTask(AbsTime _time) :
 
 TimerTask::~TimerTask(){}
 
-void TimerTask::reset() { time.reset(AbsTime::now(), duration); }
+void TimerTask::reset() { time = AbsTime(AbsTime::now(), duration); }
 
 Timer::Timer() : active(false) 
 {

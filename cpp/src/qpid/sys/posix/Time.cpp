@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
         "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"
     };
     struct tm * timeinfo;
-    time_t rawtime(t.timeValue()/TIME_SEC);
+    time_t rawtime(t.time_ns/TIME_SEC);
     timeinfo = localtime (&rawtime);
     char time_string[100];
     sprintf ( time_string,
