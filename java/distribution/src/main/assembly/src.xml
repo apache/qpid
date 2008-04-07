@@ -93,8 +93,7 @@
       <directory>../../specs</directory>
       <outputDirectory>qpid-${qpid.version}-src/specs</outputDirectory>
       <includes>
-        <include>amqp.0-8.xml</include>
-        <include>cluster.0-8.xml</include>
+        <include>*</include>
       </includes>
   </fileSet>
 
