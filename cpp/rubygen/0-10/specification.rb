@@ -86,9 +86,10 @@ class Specification < CppGen
     end
     genl
     scope("std::ostream& operator << (std::ostream& o, const #{x.classname}&#{"x" unless x.fields.empty?}) {") {
-      genl "return o << \"[#{x.fqname}\";";
+      genl "o << \"[#{x.fqname}\";";
       x.fields.each{ |f| genl "o << \" #{f.name}=\" << x.#{f.cppname};" }
       genl "o << \"];\";"
+      genl "return o;"
     }
   end
 
@@ -158,7 +159,7 @@ class Specification < CppGen
         # Structs that must be generated early because
         # they are used by other definitions:
         each_class_ns { |c|
-           c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
+          c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
         }
         # Now dependent domains/structs and actions
         each_class_ns { |c|
@@ -272,7 +273,11 @@ class Specification < CppGen
           genl "template <class T> #{name}(const T& t) : #{holder_base}(t) {}"
           genl "using #{holder_base}::operator=;"
           genl "void set(uint8_t classCode, uint8_t code);"
-        }}}
+        }
+        genl
+        genl "std::ostream& operator<<(std::ostream& o, const #{name}& h);"
+      }
+    }
     
     cpp_file("#{@dir}/#{name}") {
       include "#{@dir}/#{name}"
@@ -286,7 +291,11 @@ class Specification < CppGen
               genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
             }
             genl "default: assert(0);"
-          }}}}
+          }}
+        genl
+        genl "std::ostream& operator<<(std::ostream& o, const #{name}& h) { return h.get() ? (o << *h.get()) : (o << \"<empty #{name}>\"); }"
+      }
+    }
   end
 
   def gen_visitable(base, subs)
