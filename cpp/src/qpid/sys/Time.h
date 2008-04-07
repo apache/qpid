@@ -31,39 +31,75 @@ namespace sys {
 
 class Duration;
 
-/** Times in nanoseconds */
+/** Class to represent an instant in time:
+ * The time resolution is in nanosecs, and this is held with 64 bits
+ * giving a total time span from about 25 million years ago to 25 million
+ * years hence. As an aside the internal time can sensibly be negative
+ * meaning before the epoch (probably 1/1/1970 although this class doesn't
+ * care).
+ *
+ * The AbsTime class is a value class and so you don't need to add any accessors
+ * to its internal state. If you think you want to replace its value,i
+ * You need to construct a new AbsTime and assign it, viz:
+ *
+ *  AbsTime when = AbsTime::now();
+ *  ...
+ *  when = AbsTime(when, 2*TIME_SEC); // Advance timer 2 secs
+ *
+ * If for some reason you need access to the internal nanosec value you need
+ * to convert the AbsTime to a Duration and use its conversion to int64_t, viz:
+ *
+ *  AbsTime now = AbsTime::now();
+ *
+ *  int64_t ns = Duration(now);
+ *
+ * However note that the nanosecond value that is returned here is not defined to be
+ * anything in particular and could vary from platform to platform.
+ *
+ * There are some sensible operations that are currently missing from AbsTime, but
+ * nearly all that's needed can be done with a mixture of AbsTimes and Durations.
+ *
+ * For example, convenience operators to add a Duration and AbsTime returning an AbsTime
+ * would fit here (although you can already perform the operation with one of the AbsTime
+ * constructors). However trying to add 2 AbsTimes doesn't make sense.
+ */
 class AbsTime {
     static int64_t max() { return std::numeric_limits<int64_t>::max(); }
     int64_t time_ns;
     
-  friend class Duration;
+    friend class Duration;
 	
-  public:
+public:
     inline AbsTime() {}
     inline AbsTime(const AbsTime& time0, const Duration& duration);
-    // Default asignment operation fine
+    // Default assignment operation fine
     // Default copy constructor fine
-    inline void reset(const AbsTime& time0, const Duration& duration);
 	 
     static AbsTime now();
     inline static AbsTime FarFuture();
-    int64_t timeValue() const { return time_ns; }
     bool operator==(const AbsTime& t) const { return t.time_ns == time_ns; }
     template <class S> void serialize(S& s) { s(time_ns); }
 
-  friend bool operator<(const AbsTime& a, const AbsTime& b);
-  friend bool operator>(const AbsTime& a, const AbsTime& b);
+    friend bool operator<(const AbsTime& a, const AbsTime& b);
+    friend bool operator>(const AbsTime& a, const AbsTime& b);
+    friend std::ostream& operator << (std::ostream&, const AbsTime&);
 };
 
 std::ostream& operator << (std::ostream&, const AbsTime&);
 
+/** Class to represent the duration between instants of time:
+ * As AbsTime this class also uses nanosecs for its time
+ * resolution. For the most part a duration can be dealt with like a
+ * 64 bit integer, and indeed there is an implicit conversion which
+ * makes this quite conveient.
+ */
 class Duration {
     static int64_t max() { return std::numeric_limits<int64_t>::max(); }
     int64_t nanosecs;
 
-  friend class AbsTime;
+    friend class AbsTime;
 
-  public:
+public:
     inline Duration(int64_t time0);
     inline explicit Duration(const AbsTime& time0);
     inline explicit Duration(const AbsTime& start, const AbsTime& finish);
@@ -75,11 +111,6 @@ std::ostream& operator << (std::ostream&, const Duration&);
 AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     time_ns(d == Duration::max() ? max() : t.time_ns+d.nanosecs)
 {}
-
-void AbsTime::reset(const AbsTime& t, const Duration& d)
-{
-    time_ns = d == Duration::max() ? max() : t.time_ns+d.nanosecs;
-}
 
 AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = max(); return ff;}
 
