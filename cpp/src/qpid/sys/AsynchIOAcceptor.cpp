@@ -301,7 +301,7 @@ void AsynchIOHandler::idle(AsynchIO&){
         return;
     }
     if (codec == 0) return;
-    while (codec->canEncode()) {
+    if (codec->canEncode()) {
         // Try and get a queued buffer if not then construct new one
         AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
         if (!buff) buff = new Buff;
