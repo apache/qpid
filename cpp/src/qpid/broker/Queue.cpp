@@ -473,8 +473,6 @@ namespace
 void Queue::create(const FieldTable& _settings)
 {
     settings = _settings;
-    //TODO: hold onto settings and persist them as part of encode
-    //      in fact settings should be passed in on construction
     if (store) {
         store->create(*this);
     }
