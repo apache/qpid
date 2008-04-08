@@ -24,7 +24,7 @@
 namespace qpid {
 namespace amqp_0_10 {
 
-void Unit::setVariant() {
+void Unit::updateVariant() {
     switch (header.getType()) {
       case CONTROL: variant=ControlHolder(); break;
       case COMMAND: variant=CommandHolder();
@@ -40,8 +40,16 @@ struct GetTypeVisitor : public boost::static_visitor<SegmentType> {
     SegmentType operator()(const Body&) const { return BODY; }
 };
 
-void Unit::setHeader(uint8_t flags) {
-    header.setFlags(flags);
+struct GetFlagsVisitor : public boost::static_visitor<uint8_t> {
+    uint8_t operator()(const CommandHolder& ) const { return FIRST_FRAME|LAST_FRAME|FIRST_SEGMENT; }
+    uint8_t operator()(const ControlHolder& ) const { return FIRST_FRAME|LAST_FRAME|FIRST_SEGMENT; }
+    uint8_t operator()(const Header& ) const { return FIRST_FRAME|LAST_FRAME; }
+    uint8_t operator()(const Body&) const { return 0; }
+};
+
+void Unit::updateHeader(uint8_t flags) {
+    GetFlagsVisitor flagger;
+    header.setFlags(flags | variant.apply_visitor(flagger));
     GetTypeVisitor getter;
     header.setType(variant.apply_visitor(getter));
     header.setDataSize(Codec::size(*this));
@@ -50,7 +58,7 @@ void Unit::setHeader(uint8_t flags) {
 }
 
 std::ostream& operator<<(std::ostream& o, const Unit& u) {
-    return o << u.getHeader() << " " << u.getVariant();
+    return o << u.getHeader() << " " << u.variant.type().name() << "[" << u.variant << "]";
 }
 
 }} // namespace qpid::amqp_0_10

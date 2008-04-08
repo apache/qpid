@@ -1,6 +1,3 @@
-#ifndef QPID_AMQP_0_10_BODY_H
-#define QPID_AMQP_0_10_BODY_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,35 +18,17 @@
  * under the License.
  *
  */
-#include <string>
-#include <ostream>
+#include "Array.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-/** Holds data from a body frame. */
-class Body {
-  public:
-    Body() {}
-    Body(size_t size_) : str(size_, '\0') {}
-    Body(const char* data_, size_t size_) : str(data_, size_) {}
-
-    size_t size() const { return str.size(); };
-    const char* data() const { return str.data(); }
-    char* data() { return const_cast<char*>(str.data()); }
-
-    template <class S> void serialize(S& s) { s.raw(data(), size()); }
-    
-  private:
-    std::string str;
-
-  friend std::ostream& operator<<(std::ostream&, const Body&);
-};
-
-inline std::ostream& operator<<(std::ostream& o, const Body& b) {
-    return o << b.str.substr(0, 16) << "... (" << b.size() << ")";
+std::ostream& operator<<(std::ostream& o, const Array& a) {
+    std::ostream_iterator<UnknownType> i(o, " ");
+    o << "Array<" << typeName(a.getType()) << "[";
+    std::copy(a.begin(), a.end(), i);
+    o << "]";
+    return o;
 }
 
 }} // namespace qpid::amqp_0_10
-
-#endif  /*!QPID_AMQP_0_10_BODY_H*/

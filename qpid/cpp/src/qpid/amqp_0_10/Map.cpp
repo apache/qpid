@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Map.h"
+#include "all_built_in_types.h"
 #include <ostream>
 
 namespace qpid {

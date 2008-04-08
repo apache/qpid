@@ -64,11 +64,11 @@ class Specification < CppGen
       genl
       yield if block
     }
+    genl "inline Packer<#{x.classname}> serializable(#{x.classname}& x) { return Packer<#{x.classname}>(x); }" unless x.respond_to? :pack and x.pack == "0"
     genl "std::ostream& operator << (std::ostream&, const #{x.classname}&);"
     genl "bool operator==(const #{x.classname}&, const #{x.classname}&);"
   end
 
-  # FIXME aconway 2008-03-10: packing, coding
   def action_struct_cpp(x)
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
@@ -89,7 +89,7 @@ class Specification < CppGen
     scope("std::ostream& operator << (std::ostream& o, const #{x.classname}&#{"x" unless x.fields.empty?}) {") {
       genl "o << \"[#{x.fqname}\";";
       x.fields.each{ |f| genl "o << \" #{f.name}=\" << x.#{f.cppname};" }
-      genl "o << \"];\";"
+      genl "o << \"]\";"
       genl "return o;"
     }
   end
@@ -151,8 +151,8 @@ class Specification < CppGen
   def gen_specification()
     h_file("#{@dir}/specification") {
       include "#{@dir}/specification_fwd"
-      include "#{@dir}/complex_types"
-      include "#{@dir}/Map.h"
+      include "#{@dir}/all_built_in_types"
+      include "#{@dir}/Packer.h"
       include "<boost/call_traits.hpp>"
       include "<iosfwd>"
       genl "using boost::call_traits;"
@@ -271,7 +271,7 @@ class Specification < CppGen
         holder_base="amqp_0_10::Holder<#{base}Holder, #{base}, #{base.downcase}_max::MAX>"
         struct("#{name}", "public #{holder_base}") {
           genl "#{name}() {}"
-          genl "template <class T> #{name}(const T& t) : #{holder_base}(t) {}"
+          genl "template <class T> explicit #{name}(const T& t) : #{holder_base}(t) {}"
           genl "using #{holder_base}::operator=;"
           genl "void set(uint8_t classCode, uint8_t code);"
         }
@@ -281,7 +281,8 @@ class Specification < CppGen
     }
     
     cpp_file("#{@dir}/#{name}") {
-      include "#{@dir}/#{name}"
+      include "#{name}"
+      include "exceptions.h"
       namespace(@ns) {
         genl "using framing::in_place;"
         genl
@@ -291,7 +292,7 @@ class Specification < CppGen
             subs.each { |s|
               genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
             }
-            genl "default: assert(0);"
+            genl "default: throw CommandInvalidException(QPID_MSG(\"Invalid class-#{base.downcase} key \" << std::hex << key));"
           }}
         genl
         genl "std::ostream& operator<<(std::ostream& o, const #{name}& h) { return h.get() ? (o << *h.get()) : (o << \"<empty #{name}>\"); }"

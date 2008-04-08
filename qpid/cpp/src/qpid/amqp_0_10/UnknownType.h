@@ -35,12 +35,13 @@ class UnknownType {
     uint8_t getCode() const { return code; }
     /** Size of fixed type or 0 if not fixed/0-length. -1 invalid */
     int fixed() const;
-    /** Bytes in size tyep for variable width. -1 invalid */
+    /** Bytes in size type for variable width. -1 invalid */
     int variable() const;
 
     typedef std::vector<char>::const_iterator const_iterator;
     const_iterator begin() const { return data.begin(); }
     const_iterator end() const { return data.end(); }
+    size_t size() const { return data.size(); }
 
     template <class S> void serialize(S& s) { s.split(*this); }
     template <class S> void encode(S& s) const;
