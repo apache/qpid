@@ -85,12 +85,13 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             break;
 
     if (i == bindings.end()) {
-        Binding::shared_ptr binding (new Binding (bindingKey, queue, this));
+        Binding::shared_ptr binding (new Binding (bindingKey, queue, this, *args));
         HeaderMap headerMap(*args, binding);
 
         bindings.push_back(headerMap);
         if (mgmtExchange.get() != 0) {
             mgmtExchange->inc_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindings();
         }
         return true;
     } else {
@@ -115,6 +116,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
         bindings.erase(i);
         if (mgmtExchange.get() != 0) {
             mgmtExchange->dec_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindings();
         }
         return true;
     } else {

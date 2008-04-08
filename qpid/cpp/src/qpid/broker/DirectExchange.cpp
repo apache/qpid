@@ -54,7 +54,8 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         Binding::shared_ptr binding (new Binding (routingKey, queue, this));
         bindings[routingKey].push_back(binding);
         if (mgmtExchange.get() != 0) {
-            mgmtExchange->inc_bindings ();
+            mgmtExchange->inc_bindings();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindings();
         }
         return true;
     } else{
@@ -78,6 +79,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
         }
         if (mgmtExchange.get() != 0) {
             mgmtExchange->dec_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindings();
         }
         return true;
     } else {

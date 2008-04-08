@@ -48,9 +48,9 @@ public:
     virtual void abort(TransactionContext& txn);
     virtual void collectPreparedXids(std::set<std::string>& xids);
 
-    virtual void create(PersistableQueue& queue);
+    virtual void create(PersistableQueue& queue, const framing::FieldTable& args);
     virtual void destroy(PersistableQueue& queue);
-    virtual void create(const PersistableExchange& exchange);
+    virtual void create(const PersistableExchange& exchange, const framing::FieldTable& args);
     virtual void destroy(const PersistableExchange& exchange);
 
     virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 

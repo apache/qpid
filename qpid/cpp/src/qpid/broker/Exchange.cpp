@@ -103,8 +103,9 @@ ManagementObject::shared_ptr Exchange::GetManagementObject (void) const
     return dynamic_pointer_cast<ManagementObject> (mgmtExchange);
 }
 
-Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* parent)
-    : queue(_queue), key(_key)
+Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* parent,
+                           FieldTable _args)
+    : queue(_queue), key(_key), args(_args)
 {
     if (parent != 0)
     {
@@ -116,7 +117,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
             {
                 uint64_t queueId = mo->getObjectId();
                 mgmtBinding = management::Binding::shared_ptr
-                    (new management::Binding (this, (Manageable*) parent, queueId, key));
+                    (new management::Binding (this, (Manageable*) parent, queueId, key, args));
                 agent->addObject (mgmtBinding);
             }
         }

@@ -65,7 +65,7 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(uint16_t /*ticket*/, const stri
             std::pair<Exchange::shared_ptr, bool> response = getBroker().getExchanges().declare(exchange, type, durable, args);
             if (response.second) {
                 if (durable) {
-                    getBroker().getStore().create(*response.first);
+                    getBroker().getStore().create(*response.first, args);
                 }
                 if (alternate) {
                     response.first->setAlternate(alternate);
