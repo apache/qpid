@@ -317,4 +317,3 @@ class Specification < CppGen
 end
 
 Specification.new($outdir, $amqp).generate();
-
