@@ -43,30 +43,33 @@ class Unit {
   public:
     typedef boost::variant<ControlHolder, CommandHolder, Header, Body> Variant;
 
-    Unit(const FrameHeader& h=FrameHeader()) : header(h) { setVariant(); }
+    explicit Unit(const FrameHeader& h=FrameHeader()) : header(h) { updateVariant(); }
 
+    /**
+     *@param flags: is ORed with the required flags for type T.
+     */
     template <class T>
-    Unit(const T& t, uint8_t flags) : variant(t) { setHeader(flags); }
+    explicit Unit(const T& t, uint8_t flags=0) : variant(t) { updateHeader(flags); }
 
+    void setHeader(FrameHeader& h) { header = h; updateVariant(); }
     const FrameHeader& getHeader() const { return header; }
 
     template<class T> const T* get() const { return boost::get<T>(&variant); }
     template<class T> T* get() { return boost::get<T>(&variant); }
-    template<class T> Unit& operator==(const T& t) { variant=t; return *this; }
+    template<class T> Unit& operator=(const T& t) { variant=t; return *this; }
     
     template <class S> void serialize(S& s) { variant.apply_visitor(s); s.split(*this); }
     template <class S> void encode(S&) const {} 
-    template <class S> void decode(S&) { setHeader(header.getFlags()); }
+    template <class S> void decode(S&) { updateHeader(header.getFlags()); }
 
-    const Variant& getVariant() const { return variant; }
-    Variant& getVariant() { return variant; }
-    
   private:
-    void setHeader(uint8_t flags);
-    void setVariant();
+    void updateHeader(uint8_t flags);
+    void updateVariant();
     
     Variant variant;
     FrameHeader header;
+
+  friend std::ostream& operator<<(std::ostream& o, const Unit& u);
 };
 
 std::ostream& operator<<(std::ostream& o, const Unit& u);

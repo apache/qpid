@@ -23,6 +23,7 @@
  */
 
 #include "built_in_types.h"
+#include <iosfwd>
 
 namespace qpid {
 namespace amqp_0_10 {
@@ -71,6 +72,7 @@ struct Command
     const char* getName() const;
     const char* getClassName() const;
 };
+std::ostream& operator<<(std::ostream&, const Command&);
 
 struct ControlVisitor;
 struct ConstControlVisitor;
@@ -86,6 +88,7 @@ struct Control
     const char* getName() const;
     const char* getClassName() const;
 };
+std::ostream& operator<<(std::ostream&, const Control&);
 
 struct StructVisitor;
 struct ConstStructVisitor;
@@ -98,7 +101,7 @@ struct Struct
     uint8_t getSize() const;
     uint8_t getClassCode() const;
 };
-
+std::ostream& operator<<(std::ostream&, const Struct&);
 
 template <SegmentType E> struct ActionType;
 template <> struct ActionType<CONTROL> { typedef Control type; };

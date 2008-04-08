@@ -85,10 +85,6 @@ template <> struct BlobHelper<void> {
  * In particular the user must ensure the blob is big enough for its
  * contents and must know the type of object in the blob to cast get().
  *
- * Objects can be allocated directly in place using
- * construct(in_place<T>(...))  or copied using operator=.
- * Constructing a new object in the blob destroys the old one.
- *
  * If BaseType is specified then only object that can be
  * safely static_cast to BaseType may be stored in the Blob.
  */
@@ -140,10 +136,16 @@ class Blob
     /** Copy a blob. */
     Blob(const Blob& b) { initialize(); assign(b); }
 
-    /** @see construct() */
+    /** Construct from in_place constructor */
     template<class InPlace>
     Blob(const InPlace & expr, typename EnableInPlace<InPlace>::type* =0) {
         initialize(); apply(expr);
+    }
+
+    /** Construct by copying an objecct constructor */
+    template<class T>
+    Blob(const T & t, typename DisableInPlace<T>::type* =0) {
+        initialize(); apply(in_place<T>(t));
     }
 
     ~Blob() { clear(); }
