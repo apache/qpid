@@ -119,7 +119,7 @@ void ManagementAgent::RegisterClass (string   packageName,
                                      uint8_t* md5Sum,
                                      ManagementObject::writeSchemaCall_t schemaCall)
 {
-    RWlock::ScopedWlock writeLock (userLock);
+    Mutex::ScopedLock lock (userLock);
     PackageMap::iterator pIter = FindOrAddPackage (packageName);
     AddClassLocal (pIter, className, md5Sum, schemaCall);
 }
@@ -128,7 +128,7 @@ void ManagementAgent::addObject (ManagementObject::shared_ptr object,
                                  uint64_t                     /*persistenceId*/,
                                  uint64_t                     /*idOffset*/)
 {
-    RWlock::ScopedWlock writeLock (userLock);
+    Mutex::ScopedLock lock (userLock);
     uint64_t objectId;
 
 //    if (persistenceId == 0)
@@ -219,7 +219,7 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
 void ManagementAgent::PeriodicProcessing (void)
 {
 #define BUFSIZE   65536
-    RWlock::ScopedWlock writeLock (userLock);
+    Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
@@ -289,7 +289,7 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
                                        const string&     routingKey,
                                        const FieldTable* /*args*/)
 {
-    RWlock::ScopedRlock readLock (userLock);
+    Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
 
     if (routingKey.compare (0, 13, "agent.method.") == 0)
