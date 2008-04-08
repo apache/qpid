@@ -67,7 +67,7 @@ template <class Derived> class Serializer {
         size_t save;
     };
 
-    static const size_t maxLimit() { return  std::numeric_limits<size_t>::max(); }
+    static size_t maxLimit() { return  std::numeric_limits<size_t>::max(); }
     
     Serializer() : bytes(0), limit(maxLimit()) {}
     
