@@ -1,6 +1,6 @@
 SUBDIRS = . tests
 
-EXTRA_DIST= $(platform_dist) 
+EXTRA_DIST= $(platform_dist) $(rgen_srcs)
 
 ## Generated code
 
