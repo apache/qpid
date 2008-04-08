@@ -22,7 +22,7 @@ Management API for Qpid
 """
 
 import qpid
-import base64
+import struct
 import socket
 from threading    import Thread
 from message      import Message
@@ -89,8 +89,8 @@ class managementChannel:
     to participate in the management protocol. """
     response         = ch.session_open (detached_lifetime=300)
     self.sessionId   = response.session_id
-    self.topicName   = "mgmt-"  + base64.urlsafe_b64encode (response.session_id)
-    self.replyName   = "reply-" + base64.urlsafe_b64encode (response.session_id)
+    self.topicName   = "mgmt-%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", response.session_id)
+    self.replyName   = "repl-%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", response.session_id)
     self.qpidChannel = ch
     self.tcb         = topicCb
     self.rcb         = replyCb
