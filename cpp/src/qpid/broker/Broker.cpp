@@ -196,7 +196,7 @@ void Broker::declareStandardExchange(const std::string& name, const std::string&
     bool storeEnabled = store != NULL;
     std::pair<Exchange::shared_ptr, bool> status = exchanges.declare(name, type, storeEnabled);
     if (status.second && storeEnabled) {
-        store->create(*status.first);
+        store->create(*status.first, framing::FieldTable ());
     }
 }
 

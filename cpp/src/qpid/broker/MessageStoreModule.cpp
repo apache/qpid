@@ -27,6 +27,7 @@
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
+using qpid::framing::FieldTable;
 
 MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}
 
@@ -37,9 +38,9 @@ MessageStoreModule::~MessageStoreModule()
 
 bool MessageStoreModule::init(const Options*) { return true; }
 
-void MessageStoreModule::create(PersistableQueue& queue)
+void MessageStoreModule::create(PersistableQueue& queue, const FieldTable& args)
 {
-    TRANSFER_EXCEPTION(store->create(queue));
+    TRANSFER_EXCEPTION(store->create(queue, args));
 }
 
 void MessageStoreModule::destroy(PersistableQueue& queue)
@@ -47,9 +48,9 @@ void MessageStoreModule::destroy(PersistableQueue& queue)
     TRANSFER_EXCEPTION(store->destroy(queue));
 }
 
-void MessageStoreModule::create(const PersistableExchange& exchange)
+void MessageStoreModule::create(const PersistableExchange& exchange, const FieldTable& args)
 {
-    TRANSFER_EXCEPTION(store->create(exchange));
+    TRANSFER_EXCEPTION(store->create(exchange, args));
 }
 
 void MessageStoreModule::destroy(const PersistableExchange& exchange)

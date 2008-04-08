@@ -51,12 +51,13 @@ namespace qpid {
                 typedef boost::shared_ptr<Binding>       shared_ptr;
                 typedef std::vector<Binding::shared_ptr> vector;
 
-                Queue::shared_ptr               queue;
-                const std::string               key;
-                const qpid::framing::FieldTable args;
+                Queue::shared_ptr         queue;
+                const std::string         key;
+                const framing::FieldTable args;
                 management::Binding::shared_ptr mgmtBinding;
 
-                Binding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent = 0);
+                Binding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent = 0,
+                        framing::FieldTable args = framing::FieldTable ());
                 ~Binding ();
                 management::ManagementObject::shared_ptr GetManagementObject () const;
                 management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args);

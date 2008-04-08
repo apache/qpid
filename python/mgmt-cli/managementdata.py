@@ -199,6 +199,8 @@ class ManagementData:
               return "True"
           elif typecode == 14:
             return str (UUID (bytes=value))
+          elif typecode == 15:
+            return str (value)
     return "*type-error*"
 
   def getObjIndex (self, className, config):
@@ -268,6 +270,10 @@ class ManagementData:
       return "float"
     elif typecode == 13:
       return "double"
+    elif typecode == 14:
+      return "uuid"
+    elif typecode == 15:
+      return "field-table"
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
