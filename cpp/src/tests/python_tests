@@ -3,10 +3,11 @@
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
 
+
 run() {
     SPEC=$1
     FAILING=$2
-    ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || exit 1
+    ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
 }
 
 if test -d ../../../python ;  then

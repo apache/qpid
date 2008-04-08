@@ -19,7 +19,8 @@
  *
  */
 #include "unit_test.h"
-#include "qpid/amqp_0_10/Map.h"
+#include "qpid/amqp_0_10/all_built_in_types.h"
+//FIXME aconway 2008-04-08: #include "qpid/amqp_0_10/allSegmentTypes.h"
 #include "qpid/amqp_0_10/Codec.h"
 #include <iostream>
 

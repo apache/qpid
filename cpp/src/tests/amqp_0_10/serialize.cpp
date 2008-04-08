@@ -20,6 +20,10 @@
  */
 
 #include "unit_test.h"
+
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/Buffer.h"
+
 #include "qpid/amqp_0_10/Packer.h"
 #include "qpid/amqp_0_10/built_in_types.h"
 #include "qpid/amqp_0_10/Codec.h"
@@ -28,6 +32,7 @@
 #include "qpid/amqp_0_10/FrameHeader.h"
 #include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Unit.h"
+#include "tests/allSegmentTypes.h"
 
 #include <boost/test/test_case_template.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -266,21 +271,71 @@ BOOST_AUTO_TEST_CASE(testUnit) {
     BOOST_CHECK_EQUAL(data, data2);
 }
 
-// FIXME aconway 2008-04-07: TODO
-// BOOST_AUTO_TEST_CASE(testAllSegmentTypes) {
-//     string data;
-//     int n = allSegmentTypes(Codec::encode(data));
+BOOST_AUTO_TEST_CASE(testArray) {
+    ArrayDomain<char> a;
+    a.resize(3, 'x');
+    string data;
+    Codec::encode(back_inserter(data))(a);
 
-//     string data2;
-//     Codec::Decoder<string::iterator> decode(data.begin(), data.size());
-//     while (decode.pos() != data.end()) {
-//         Unit unit;
-//         decode(unit);
-//         Codec::encode(back_insert(data));
-//         --n;
-//     }
-//     BOOST_CHECK_EQUAL(n, 0);
-//     BOOST_CHECK_EQUAL(data, data2);
+    ArrayDomain<char> b;
+    Codec::decode(data.begin())(b);
+    BOOST_CHECK_EQUAL(b.size(), 3u);
+    string data3;
+    Codec::encode(back_inserter(data3))(a);
+    BOOST_CHECK_EQUAL(data, data3);
+    
+    Array x;
+    Codec::decode(data.begin())(x);
+    BOOST_CHECK_EQUAL(x.size(), 3u);
+    BOOST_CHECK_EQUAL(x[0].size(), 1u);
+    BOOST_CHECK_EQUAL(*x[0].begin(), 'x');
+    BOOST_CHECK_EQUAL(*x[2].begin(), 'x');
+
+    string data2;
+    Codec::encode(back_inserter(data2))(x);
+    BOOST_CHECK_EQUAL(data,data2);
+}
+
+struct RecodeUnit {
+    template <class T>
+    void operator() (const T& t) {
+        using qpid::framing::Buffer;
+        using qpid::framing::AMQFrame;
+
+        Unit u(t);
+        connection::Start s;
+
+        string data;
+        Codec::encode(back_inserter(data))(u.getHeader())(u);
+        data.push_back(char(0xCE)); // Preview end-of-frame
+
+        Buffer buf(&data[0], data.size());
+        AMQFrame f;
+        f.decode(buf);
+
+        string data2(f.size(), ' ');
+        Buffer buf2(&data2[0], data.size());
+        f.encode(buf2);
+
+        BOOST_CHECK_EQUAL(data, data2);
+        
+        Codec::Decoder<string::iterator> decode(data2.begin());
+        FrameHeader h;
+        decode(h);
+        Unit u2(h);
+        decode(u2);
+
+        string data3;
+        Codec::encode(back_inserter(data3))(u.getHeader())(u);        
+
+        BOOST_CHECK_EQUAL(data3, data2);
+    }
+};
+
+// FIXME aconway 2008-04-08: TODO
+// BOOST_AUTO_TEST_CASE(testSerializeAllSegmentTypes) {
+//     RecodeUnit recode;
+//     allSegmentTypes(recode);
 // }
 
 QPID_AUTO_TEST_SUITE_END()

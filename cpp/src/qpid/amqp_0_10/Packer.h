@@ -126,13 +126,13 @@ template <class T> class Packer
 
     template <class S> void encode(S& s) const {
         Bits bits = packBits(data);
-        s(bits);
+        s.littleEnd(bits);
         data.serialize(s);
     }
 
     template <class S> void decode(S& s) {
         Bits bits;
-        s(bits);
+        s.littleEnd(bits);
         PackedDecoder<S, Bits> decode(s, bits);
         data.serialize(decode);
     }

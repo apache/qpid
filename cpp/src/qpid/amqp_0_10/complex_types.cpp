@@ -23,6 +23,7 @@
 #include "qpid/amqp_0_10/ApplyControl.h"
 // FIXME aconway 2008-03-04:  #include "qpid/amqp_0_10/ApplyStruct.h"
 #include "qpid/amqp_0_10/apply.h"
+#include <iostream>
 
 namespace qpid {
 namespace amqp_0_10 {
@@ -61,5 +62,17 @@ uint8_t Struct::getPack() const { assert(0); return 0; }
 uint8_t Struct::getSize() const { assert(0); return 0; }
 uint8_t Struct::getClassCode() const { assert(0); return 0; }
 
+struct PrintVisitor {
+    typedef std::ostream& result_type;
+    std::ostream& out;
+    PrintVisitor(std::ostream& o) : out(o) {}
+    template <class T> result_type operator()(const T& t) const { return out << t; }
+};
+
+std::ostream& operator<<(std::ostream& o, const Command& x) { return apply(PrintVisitor(o), x); }
+std::ostream& operator<<(std::ostream& o, const Control& x) { return apply(PrintVisitor(o), x); }
+// FIXME aconway 2008-04-07: 
+// std::ostream& operator<<(std::ostream& o, const Struct& x)  { apply(PrintVisitor(o), x); }
+    
 }} // namespace qpid::amqp_0_10
 

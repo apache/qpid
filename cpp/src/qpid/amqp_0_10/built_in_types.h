@@ -36,7 +36,6 @@
 
 /**@file Mapping from built-in AMQP types to C++ types */
 
-
 namespace qpid {
 namespace amqp_0_10 {
 
@@ -135,20 +134,17 @@ typedef SerializableString<Uint8, Uint32> Vbin32;
 
 // Forward declare class types.
 class Map;
+class UnknownType;
+template <class T> struct  ArrayDomain;
+typedef ArrayDomain<UnknownType> Array;
 
-// FIXME aconway 2008-02-26: Unimplemented types:
-template <class T> struct  ArrayDomain : public std::vector<T>  {
-    template <class S> void serialize(S&) {}
-};
-struct Array { template <class S> void serialize(S&) {} };
+// FIXME aconway 2008-04-08: TODO
 struct ByteRanges { template <class S> void serialize(S&) {} };
 struct SequenceSet  { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
 struct Struct32  { template <class S> void serialize(S&) {} };
 
 // FIXME aconway 2008-03-10: dummy ostream operators
-template <class T> std::ostream& operator<<(std::ostream& o, const ArrayDomain<T>&) { return o; }
-inline std::ostream& operator<<(std::ostream& o, const Array&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const ByteRanges&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }
