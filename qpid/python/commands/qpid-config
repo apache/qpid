@@ -30,28 +30,43 @@ from qpid.peer       import Closed
 from qpid.client     import Client
 from time            import sleep
 
-defspecpath  = "/usr/share/amqp/amqp.0-10-preview.xml"
-specpath     = defspecpath
-recursive    = False
-host         = "localhost"
+_defspecpath  = "/usr/share/amqp/amqp.0-10-preview.xml"
+_specpath     = _defspecpath
+_recursive    = False
+_host         = "localhost"
+_durable      = False
+_fileCount    = 8
+_fileSize     = 24
+
+FILECOUNT = "qpid.file_count"
+FILESIZE  = "qpid.file_size"
 
 def Usage ():
     print "Usage:  qpid-config [OPTIONS]"
     print "        qpid-config [OPTIONS] exchanges [filter-string]"
     print "        qpid-config [OPTIONS] queues    [filter-string]"
-    print "        qpid-config [OPTIONS] add exchange <type> <name> [durable]"
+    print "        qpid-config [OPTIONS] add exchange <type> <name> [AddExchangeOptions]"
     print "        qpid-config [OPTIONS] del exchange <name>"
-    print "        qpid-config [OPTIONS] add queue <name> [durable]"
+    print "        qpid-config [OPTIONS] add queue <name> [AddQueueOptions]"
     print "        qpid-config [OPTIONS] del queue <name>"
     print "        qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]"
     print "        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"
     print
     print "Options:"
-    print "    -b                   show bindings"
-    print "    -a <broker-addr>     default: localhost"
+    print "    -b [ --bindings ]                         Show bindings in queue or exchange list"
+    print "    -a [ --broker-addr ] Address (localhost)  Address of qpidd broker"
     print "         broker-addr is in the form:   hostname | ip-address [:<port>]"
     print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000"
-    print "    -s <amqp-spec-file>  default:", defspecpath
+    print "    -s [ --spec-file] Path (" + _defspecpath + ")"
+    print "                                              AMQP specification file"
+    print
+    print "Add Queue Options:"
+    print "    --durable           Queue is durable"
+    print "    --file-count N (8)  Number of files in queue's persistence journal"
+    print "    --file-size  N (24) File size in pages (64Kib/page)"
+    print
+    print "Add Exchange Options:"
+    print "    --durable           Exchange is durable"
     print
     sys.exit (1)
 
@@ -80,7 +95,7 @@ class BrokerManager:
 
     def ConnectToBroker (self):
         try:
-            self.spec     = qpid.spec.load (specpath)
+            self.spec     = qpid.spec.load (_specpath)
             self.client   = Client (self.broker.host, self.broker.port, self.spec)
             self.client.start ({"LOGIN":"guest","PASSWORD":"guest"})
             self.channel  = self.client.channel (1)
@@ -109,12 +124,12 @@ class BrokerManager:
 
         print
         print "   Total Queues: %d" % len (queues)
-        durable = 0
+        _durable = 0
         for queue in queues:
             if queue.durable:
-                durable = durable + 1
-        print "        durable: %d" % durable
-        print "    non-durable: %d" % (len (queues) - durable)
+                _durable = _durable + 1
+        print "        durable: %d" % _durable
+        print "    non-durable: %d" % (len (queues) - _durable)
 
     def ExchangeList (self, filter):
         self.ConnectToBroker ()
@@ -153,13 +168,25 @@ class BrokerManager:
         mc  = self.mclient
         mch = self.mchannel
         mc.syncWaitForStable (mch)
-        queues = mc.syncGetObjects (mch, "queue")
-        print "Durable  AutoDel  Excl  Bindings  Queue Name"
-        print "==============================================================="
+        queues   = mc.syncGetObjects (mch, "queue")
+        journals = mc.syncGetObjects (mch, "journal")
+        print "                                      Store Size"
+        print "Durable  AutoDel  Excl  Bindings  (files x file pages)  Queue Name"
+        print "==========================================================================================="
         for q in queues:
             if self.match (q.name, filter):
-                print "%4c%9c%7c%10d    %s" % (tf (q.durable), tf (q.autoDelete), tf (q.exclusive),
-                                               q.bindings, q.name)
+                args = q.arguments
+                if q.durable and FILESIZE in args and FILECOUNT in args:
+                    fs = int (args[FILESIZE])
+                    fc = int (args[FILECOUNT])
+                    print "%4c%9c%7c%10d%11dx%-14d%s" % \
+                        (YN (q.durable), YN (q.autoDelete),
+                         YN (q.exclusive), q.bindings, fc, fs, q.name)
+                else:
+                    if not _durable:
+                        print "%4c%9c%7c%10d                          %s" % \
+                            (YN (q.durable), YN (q.autoDelete),
+                             YN (q.exclusive), q.bindings, q.name)
 
     def QueueListRecurse (self, filter):
         self.ConnectToBroker ()
@@ -188,9 +215,6 @@ class BrokerManager:
         self.ConnectToBroker ()
         etype = args[0]
         ename = args[1]
-        _durable = False
-        if len (args) > 2 and args[2] == "durable":
-            _durable = True
 
         try:
             self.channel.exchange_declare (exchange=ename, type=etype, durable=_durable)
@@ -212,13 +236,14 @@ class BrokerManager:
         if len (args) < 1:
             Usage ()
         self.ConnectToBroker ()
-        qname = args[0]
-        _durable = False
-        if len (args) > 1 and args[1] == "durable":
-            _durable = True
+        qname    = args[0]
+        declArgs = {}
+        if _durable:
+            declArgs[FILECOUNT] = _fileCount
+            declArgs[FILESIZE]  = _fileSize
 
         try:
-            self.channel.queue_declare (queue=qname, durable=_durable)
+            self.channel.queue_declare (queue=qname, durable=_durable, arguments=declArgs)
         except Closed, e:
             print "Failed:", e
 
@@ -276,7 +301,7 @@ class BrokerManager:
             return False
         return True
 
-def tf (bool):
+def YN (bool):
     if bool:
         return 'Y'
     return 'N'
@@ -286,21 +311,28 @@ def tf (bool):
 ##
 
 try:
-    (optlist, cargs) = getopt.getopt (sys.argv[1:], "s:a:b")
+    longOpts = ("durable", "spec-file=", "bindings", "broker-addr=", "file-count=", "file-size=")
+    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:a:b", longOpts)
 except:
     Usage ()
 
 for opt in optlist:
-    if opt[0] == "-s":
-        specpath = opt[1]
-    if opt[0] == "-b":
-        recursive = True
-    if opt[0] == "-a":
-        host = opt[1]
+    if opt[0] == "-s" or opt[0] == "--spec-file":
+        _specpath = opt[1]
+    if opt[0] == "-b" or opt[0] == "--bindings":
+        _recursive = True
+    if opt[0] == "-a" or opt[0] == "--broker-addr":
+        _host = opt[1]
+    if opt[0] == "--durable":
+        _durable = True
+    if opt[0] == "--file-count":
+        _fileCount = int (opt[1])
+    if opt[0] == "--file-size":
+        _fileSize = int (opt[1])
 
 nargs = len (cargs)
-bm  = BrokerManager ()
-bm.SetBroker (Broker (host))
+bm    = BrokerManager ()
+bm.SetBroker (Broker (_host))
 
 if nargs == 0:
     bm.Overview ()
@@ -310,12 +342,12 @@ else:
     if nargs > 1:
         modifier = cargs[1]
     if cmd[0] == 'e':
-        if recursive:
+        if _recursive:
             bm.ExchangeListRecurse (modifier)
         else:
             bm.ExchangeList (modifier)
     elif cmd[0] == 'q':
-        if recursive:
+        if _recursive:
             bm.QueueListRecurse (modifier)
         else:
             bm.QueueList (modifier)

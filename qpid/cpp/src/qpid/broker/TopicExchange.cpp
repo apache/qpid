@@ -139,6 +139,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
         bindings[routingPattern].push_back(binding);
         if (mgmtExchange.get() != 0) {
             mgmtExchange->inc_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindings();
         }
         return true;
     }
@@ -159,6 +160,7 @@ bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, co
     if(qv.empty()) bindings.erase(bi);
     if (mgmtExchange.get() != 0) {
         mgmtExchange->dec_bindings ();
+        dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindings();
     }
     return true;
 }

@@ -351,6 +351,8 @@ class managementClient:
       codec.encode_double   (double (value))
     elif typecode == 14: # UUID
       codec.encode_uuid     (value)
+    elif typecode == 15: # FTABLE
+      codec.encode_table    (value)
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
@@ -384,6 +386,8 @@ class managementClient:
       data = codec.decode_double ()
     elif typecode == 14: # UUID
       data = codec.decode_uuid ()
+    elif typecode == 15: # FTABLE
+      data = codec.decode_table ()
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
     return data
