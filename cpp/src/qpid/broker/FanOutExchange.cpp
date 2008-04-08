@@ -54,6 +54,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/,
         bindings.push_back(binding);
         if (mgmtExchange.get() != 0) {
             mgmtExchange->inc_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindings();
         }
         return true;
     } else {
@@ -73,6 +74,7 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
         bindings.erase(i);
         if (mgmtExchange.get() != 0) {
             mgmtExchange->dec_bindings ();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindings();
         }
         return true;
     } else {

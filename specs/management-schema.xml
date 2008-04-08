@@ -122,6 +122,7 @@
     <configElement name="durable"         type="bool"   access="RC"/>
     <configElement name="autoDelete"      type="bool"   access="RC"/>
     <configElement name="exclusive"       type="bool"   access="RC"/>
+    <configElement name="arguments"       type="ftable" access="RO" desc="Arguments supplied in queue.declare"/>
     <configElement name="storeRef"        type="objId"  access="RO" desc="Reference to persistent queue (if durable)"/>
 
     <instElement name="msgTotalEnqueues"    type="count64" unit="message"     desc="Total messages enqueued"/>
@@ -180,10 +181,10 @@
   ===============================================================
   -->
   <class name="binding">
-    <configElement name="exchangeRef" type="objId" access="RC" index="y" parentRef="y"/>
-    <configElement name="queueRef"    type="objId" access="RC" index="y"/>
-    <configElement name="bindingKey"  type="sstr"  access="RC" index="y"/>
-<!--<configElement name="arguments"   type="fieldTable" access="RC"/> -->
+    <configElement name="exchangeRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="queueRef"    type="objId"  access="RC" index="y"/>
+    <configElement name="bindingKey"  type="sstr"   access="RC" index="y"/>
+    <configElement name="arguments"   type="ftable" access="RC"/>
 
     <instElement name="msgMatched" type="count64"/>
   </class>

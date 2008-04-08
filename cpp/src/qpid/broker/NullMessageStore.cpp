@@ -53,7 +53,7 @@ NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
-void NullMessageStore::create(PersistableQueue& queue)
+void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {
     QPID_LOG(info, "Queue '" << queue.getName() 
              << "' will not be durable. Persistence not enabled.");
@@ -63,7 +63,7 @@ void NullMessageStore::destroy(PersistableQueue&)
 {
 }
 
-void NullMessageStore::create(const PersistableExchange& exchange)
+void NullMessageStore::create(const PersistableExchange& exchange, const framing::FieldTable& /*args*/)
 {
     QPID_LOG(info, "Exchange'" << exchange.getName() 
              << "' will not be durable. Persistence not enabled.");

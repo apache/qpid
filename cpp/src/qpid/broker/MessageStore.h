@@ -26,6 +26,7 @@
 #include "PersistableQueue.h"
 #include "RecoveryManager.h"
 #include "TransactionalStore.h"
+#include "qpid/framing/FieldTable.h"
 
 #include <qpid/Options.h>
 
@@ -56,7 +57,8 @@ public:
     /**
      * Record the existence of a durable queue
      */
-    virtual void create(PersistableQueue& queue) = 0;
+    virtual void create(PersistableQueue& queue,
+                        const framing::FieldTable& args) = 0;
     /**
      * Destroy a durable queue
      */
@@ -65,7 +67,8 @@ public:
     /**
      * Record the existence of a durable exchange
      */
-    virtual void create(const PersistableExchange& exchange) = 0;
+    virtual void create(const PersistableExchange& exchange,
+                        const framing::FieldTable& args) = 0;
     /**
      * Destroy a durable exchange
      */

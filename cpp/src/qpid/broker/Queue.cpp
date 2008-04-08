@@ -474,7 +474,7 @@ void Queue::create(const FieldTable& _settings)
 {
     settings = _settings;
     if (store) {
-        store->create(*this);
+        store->create(*this, _settings);
     }
     configure(_settings);
 }
@@ -484,11 +484,13 @@ void Queue::configure(const FieldTable& _settings)
     std::auto_ptr<QueuePolicy> _policy(new QueuePolicy(_settings));
     if (_policy->getMaxCount() || _policy->getMaxSize()) {
         setPolicy(_policy);
-    }    
+    }
     if (owner) {
         noLocal = _settings.get(qpidNoLocal);
         QPID_LOG(debug, "Configured queue with no-local=" << noLocal);
     }
+    if (mgmtObject.get() != 0)
+        mgmtObject->set_arguments (_settings);
 }
 
 void Queue::destroy()

@@ -49,9 +49,9 @@ public:
     void abort(TransactionContext& txn);
     void collectPreparedXids(std::set<std::string>& xids);
 
-    void create(PersistableQueue& queue);
+    void create(PersistableQueue& queue, const framing::FieldTable& args);
     void destroy(PersistableQueue& queue);
-    void create(const PersistableExchange& exchange);
+    void create(const PersistableExchange& exchange, const framing::FieldTable& args);
     void destroy(const PersistableExchange& exchange);
     void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
               const std::string& key, const framing::FieldTable& args);
