@@ -34,13 +34,17 @@
 namespace qpid {
 namespace amqp_0_10 {
 
-#ifdef BOOST_LITTLE_ENDIAN
-template <class T> void endianize(T& t) {
+template <class T> void reverse(T& t) {
     char*p =reinterpret_cast<char*>(&t);
     std::reverse(p, p+sizeof(T));
 }
+
+#ifdef BOOST_LITTLE_ENDIAN
+template <class T> void bigEndian(T& t) { reverse(t); }
+template <class T> void littleEndian(T&) {}
 #else
-template <class T> void endianize(T&) {}
+template <class T> void littleEndian(T& t) { reverse(t); }
+template <class T> void bigEndian(T&) {}
 #endif
 
 /**
@@ -66,16 +70,16 @@ struct Codec {
         Encoder& operator()(int8_t x) { raw(x); return *this; }
         Encoder& operator()(uint8_t x) { raw(x); return *this; }
 
-        Encoder& operator()(int16_t x) { return endian(x); }
-        Encoder& operator()(int32_t x) { return endian(x); }
-        Encoder& operator()(int64_t x) { return endian(x); }
+        Encoder& operator()(int16_t x) { return networkByteOrder(x); }
+        Encoder& operator()(int32_t x) { return networkByteOrder(x); }
+        Encoder& operator()(int64_t x) { return networkByteOrder(x); }
 
-        Encoder& operator()(uint16_t x) { return endian(x); }
-        Encoder& operator()(uint32_t x) { return endian(x); }
-        Encoder& operator()(uint64_t x) { return endian(x); }
+        Encoder& operator()(uint16_t x) { return networkByteOrder(x); }
+        Encoder& operator()(uint32_t x) { return networkByteOrder(x); }
+        Encoder& operator()(uint64_t x) { return networkByteOrder(x); }
 
-        Encoder& operator()(float x) { return endian(x); }
-        Encoder& operator()(double x) { return endian(x); }
+        Encoder& operator()(float x) { return networkByteOrder(x); }
+        Encoder& operator()(double x) { return networkByteOrder(x); }
 
         void raw(const void* p, size_t n) {
             this->addBytes(n);
@@ -84,12 +88,16 @@ struct Codec {
 
         void raw(char b) { this->addBytes(1); *out++=b; }
 
+        template <class T> Encoder& littleEnd(T x) {
+            littleEndian(x); raw(&x, sizeof(x)); return *this;
+        }
+        
         OutIter pos() const { return out; }
 
       private:
 
-        template <class T> Encoder& endian(T x) {
-            endianize(x); raw(&x, sizeof(x)); return *this;
+        template <class T> Encoder& networkByteOrder(T x) {
+            bigEndian(x); raw(&x, sizeof(x)); return *this;
         }
 
         OutIter out;
@@ -114,16 +122,16 @@ struct Codec {
         Decoder& operator()(int8_t& x) { raw((char&)x); return *this; }
         Decoder& operator()(uint8_t& x) { raw((char&)x); return *this; }
 
-        Decoder& operator()(int16_t& x) { return endian(x); }
-        Decoder& operator()(int32_t& x) { return endian(x); }
-        Decoder& operator()(int64_t& x) { return endian(x); }
+        Decoder& operator()(int16_t& x) { return networkByteOrder(x); }
+        Decoder& operator()(int32_t& x) { return networkByteOrder(x); }
+        Decoder& operator()(int64_t& x) { return networkByteOrder(x); }
 
-        Decoder& operator()(uint16_t& x) { return endian(x); }
-        Decoder& operator()(uint32_t& x) { return endian(x); }
-        Decoder& operator()(uint64_t& x) { return endian(x); }
+        Decoder& operator()(uint16_t& x) { return networkByteOrder(x); }
+        Decoder& operator()(uint32_t& x) { return networkByteOrder(x); }
+        Decoder& operator()(uint64_t& x) { return networkByteOrder(x); }
 
-        Decoder& operator()(float& x) { return endian(x); }
-        Decoder& operator()(double& x) { return endian(x); }
+        Decoder& operator()(float& x) { return networkByteOrder(x); }
+        Decoder& operator()(double& x) { return networkByteOrder(x); }
 
         void raw(void *p, size_t n) {
             this->addBytes(n);
@@ -133,12 +141,16 @@ struct Codec {
 
         void raw(char &b) { this->addBytes(1); b=*in++; }
 
+        template <class T> Decoder& littleEnd(T& x) {
+            raw(&x, sizeof(x)); littleEndian(x); return *this;
+        }
+        
         InIter pos() const { return in; }
 
       private:
 
-        template <class T> Decoder& endian(T& x) {
-            raw(&x, sizeof(x)); endianize(x); return *this;
+        template <class T> Decoder& networkByteOrder(T& x) {
+            raw(&x, sizeof(x)); bigEndian(x); return *this;
         }
 
         InIter in;
@@ -177,6 +189,8 @@ struct Codec {
 
         void raw(const void*, size_t n){ size += n; }
 
+        template <class T> Size& littleEnd(T) { size+= sizeof(T); return *this; }
+
       private:
         size_t size;
     };
@@ -191,6 +205,7 @@ struct Codec {
     }
 
     template <class T> static size_t size(const T& x) { return Size()(x); }
+    template <class Iter> static size_t size(const Iter& a, const Iter& z) { return Size()(a,z); }
 };
 
 }} // namespace qpid::amqp_0_10

@@ -13,6 +13,7 @@ class TypeCode < CppGen
 
   def type_for_code_h()
     h_file("#{@dir}/TypeForCode") {
+      include "#{@dir}/built_in_types.h"      
       include "#{@dir}/UnknownType.h"
       namespace(@ns) {
         genl
@@ -61,17 +62,30 @@ class TypeCode < CppGen
   end
 
   def code_for_type_h()
-    h_file("#{@dir}/CodeForType") {
+    name="#{@dir}/CodeForType"
+    h_file(name) {
+      include "#{@dir}/built_in_types.h"
+      
       namespace(@ns) {
         genl
         genl "template <class T> struct CodeForType;"
         genl
         @types.each { |t|
-          genl "template <> struct CodeForType<#{t.typename}> { static const uint8_t value=#{t.code}; };"
+          genl "template <> struct CodeForType<#{t.typename}> { static const uint8_t value; };"
         }
         genl
         genl "template <class T> uint8_t codeFor(const T&) { return CodeForType<T>::value; }"
-      }}
+      }
+    }
+
+    cpp_file(name) {
+      include name
+      namespace(@ns) { 
+        @types.each { |t|
+          genl "const uint8_t CodeForType<#{t.typename}>::value=#{t.code};"
+        }
+      }
+    }
   end
   
   def generate
