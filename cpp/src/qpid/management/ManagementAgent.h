@@ -136,7 +136,7 @@ class ManagementAgent
     static bool                  enabled;
 
     qpid::framing::Uuid          uuid;
-    qpid::sys::RWlock            userLock;
+    qpid::sys::Mutex             userLock;
     broker::Timer                timer;
     broker::Exchange::shared_ptr mExchange;
     broker::Exchange::shared_ptr dExchange;
