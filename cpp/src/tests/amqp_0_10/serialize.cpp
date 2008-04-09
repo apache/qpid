@@ -20,6 +20,7 @@
  */
 
 #include "unit_test.h"
+#include "tests/allSegmentTypes.h"
 
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Buffer.h"
@@ -42,6 +43,7 @@
 #include <boost/mpl/back_inserter.hpp>
 #include <boost/mpl/copy.hpp>
 #include <boost/mpl/empty_sequence.hpp>
+#include <boost/current_function.hpp>
 #include <iterator>
 #include <string>
 #include <sstream>
@@ -299,6 +301,7 @@ BOOST_AUTO_TEST_CASE(testArray) {
 struct RecodeUnit {
     template <class T>
     void operator() (const T& t) {
+        BOOST_MESSAGE(BOOST_CURRENT_FUNCTION);
         using qpid::framing::Buffer;
         using qpid::framing::AMQFrame;
 
@@ -317,6 +320,7 @@ struct RecodeUnit {
         Buffer buf2(&data2[0], data.size());
         f.encode(buf2);
 
+        BOOST_CHECK_MESSAGE(data == data2, BOOST_CURRENT_FUNCTION);
         BOOST_CHECK_EQUAL(data, data2);
         
         Codec::Decoder<string::iterator> decode(data2.begin());
@@ -329,10 +333,10 @@ struct RecodeUnit {
         Codec::encode(back_inserter(data3))(u.getHeader())(u);        
 
         BOOST_CHECK_EQUAL(data3, data2);
+        BOOST_CHECK_MESSAGE(data3 == data2, BOOST_CURRENT_FUNCTION);
     }
 };
 
-// FIXME aconway 2008-04-08: TODO
 // BOOST_AUTO_TEST_CASE(testSerializeAllSegmentTypes) {
 //     RecodeUnit recode;
 //     allSegmentTypes(recode);
