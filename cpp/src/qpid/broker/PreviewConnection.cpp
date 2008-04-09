@@ -70,7 +70,7 @@ class PreviewConnection::MgmtLink : public PreviewConnection::MgmtWrapper
     Bridges cancelled;//holds list of bridges pending cancellation
     Bridges active;//holds active bridges
     uint channelCounter;
-    sys::Mutex lock;
+    sys::Mutex linkLock;
 
     void cancel(Bridge*);
 
@@ -88,7 +88,7 @@ public:
 PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink) :
     ConnectionState(out_, broker_),
     adapter(*this, isLink),
-    mgmtClosing(0),
+    mgmtClosing(false),
     mgmtId(mgmtId_)
 {
     Manageable* parent = broker.GetVhostObject ();
@@ -111,7 +111,7 @@ PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& brok
 PreviewConnection::~PreviewConnection () {}
 
 void PreviewConnection::received(framing::AMQFrame& frame){
-    if (mgmtClosing)
+    if (mgmtClosing) 
         close (403, "Closed by Management Request", 0, 0);
 
     if (frame.getChannel() == 0) {
@@ -159,6 +159,8 @@ bool PreviewConnection::doOutput()
     try{
         //process any pending mgmt commands:
         if (mgmtWrapper.get()) mgmtWrapper->processPending();
+        if (mgmtClosing) close (403, "Closed by Management Request", 0, 0);
+
 
         //then do other output as needed:
         return outputTasks.doOutput();
@@ -198,8 +200,9 @@ Manageable::status_t PreviewConnection::ManagementMethod (uint32_t methodId,
     switch (methodId)
     {
     case management::Client::METHOD_CLOSE :
-        mgmtClosing = 1;
+        mgmtClosing = true;
         if (mgmtWrapper.get()) mgmtWrapper->closing();
+        out->activateOutput();
         status = Manageable::STATUS_OK;
         break;
     case management::Link::METHOD_BRIDGE :
@@ -248,6 +251,7 @@ void PreviewConnection::MgmtLink::closing()
 
 void PreviewConnection::MgmtLink::processPending()
 {
+    Mutex::ScopedLock l(linkLock);
     //process any pending creates
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
@@ -266,6 +270,7 @@ void PreviewConnection::MgmtLink::processPending()
 
 void PreviewConnection::MgmtLink::process(PreviewConnection& connection, const management::Args& args)
 {   
+    Mutex::ScopedLock l(linkLock);
     created.push_back(new Bridge(channelCounter++, connection, 
                                  boost::bind(&MgmtLink::cancel, this, _1),
                                  dynamic_cast<const management::ArgsLinkBridge&>(args)));
@@ -273,6 +278,7 @@ void PreviewConnection::MgmtLink::process(PreviewConnection& connection, const m
 
 void PreviewConnection::MgmtLink::cancel(Bridge* b)
 {   
+    Mutex::ScopedLock l(linkLock);
     //need to take this out the active map and add it to the cancelled map
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
         if (&(*i) == b) {

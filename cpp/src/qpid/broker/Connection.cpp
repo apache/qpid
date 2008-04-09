@@ -70,7 +70,7 @@ class Connection::MgmtLink : public Connection::MgmtWrapper
     Bridges cancelled;//holds list of bridges pending cancellation
     Bridges active;//holds active bridges
     uint channelCounter;
-    sys::Mutex lock;
+    sys::Mutex linkLock;
 
     void cancel(Bridge*);
 
@@ -88,7 +88,7 @@ public:
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
     ConnectionState(out_, broker_),
     adapter(*this),
-    mgmtClosing(0),
+    mgmtClosing(false),
     mgmtId(mgmtId_)
 {
     initMgmt();
@@ -164,6 +164,7 @@ bool Connection::doOutput()
     try{
         //process any pending mgmt commands:
         if (mgmtWrapper.get()) mgmtWrapper->processPending();
+        if (mgmtClosing) close (403, "Closed by Management Request", 0, 0);
 
         //then do other output as needed:
         return outputTasks.doOutput();
@@ -203,8 +204,9 @@ Manageable::status_t Connection::ManagementMethod (uint32_t methodId,
     switch (methodId)
     {
     case management::Client::METHOD_CLOSE :
-        mgmtClosing = 1;
+        mgmtClosing = true;
         if (mgmtWrapper.get()) mgmtWrapper->closing();
+        out->activateOutput();
         status = Manageable::STATUS_OK;
         break;
     case management::Link::METHOD_BRIDGE :
@@ -253,6 +255,7 @@ void Connection::MgmtLink::closing()
 
 void Connection::MgmtLink::processPending()
 {
+    Mutex::ScopedLock l(linkLock);
     //process any pending creates
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
@@ -271,6 +274,7 @@ void Connection::MgmtLink::processPending()
 
 void Connection::MgmtLink::process(Connection& connection, const management::Args& args)
 {   
+    Mutex::ScopedLock l(linkLock);
     created.push_back(new Bridge(channelCounter++, connection, 
                                  boost::bind(&MgmtLink::cancel, this, _1),
                                  dynamic_cast<const management::ArgsLinkBridge&>(args)));
@@ -278,6 +282,7 @@ void Connection::MgmtLink::process(Connection& connection, const management::Arg
 
 void Connection::MgmtLink::cancel(Bridge* b)
 {   
+    Mutex::ScopedLock l(linkLock);
     //need to take this out the active map and add it to the cancelled map
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
         if (&(*i) == b) {
