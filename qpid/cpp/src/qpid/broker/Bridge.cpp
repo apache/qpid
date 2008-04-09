@@ -49,8 +49,6 @@ void Bridge::create()
     framing::AMQP_ServerProxy::Session session(channel);
     session.open(0);
 
-    //peer.getSession().open(0);
-
     if (args.i_src_is_local) {
         //TODO: handle 'push' here... simplest way is to create frames and pass them to Connection::received()
     } else {
@@ -62,7 +60,7 @@ void Bridge::create()
             string queue = "bridge_queue_";
             queue += Uuid(true).str();
             peer.getQueue().declare(0, queue, "", false, false, true, true, FieldTable());
-            peer.getQueue().bind(0, queue, args.i_dest, args.i_key, FieldTable());
+            peer.getQueue().bind(0, queue, args.i_src, args.i_key, FieldTable());
             peer.getMessage().subscribe(0, queue, args.i_dest, false, 0, 0, false, FieldTable());
             peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
             peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);

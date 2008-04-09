@@ -1,0 +1,24 @@
+#!/bin/sh
+# Run the federation tests.
+
+trap stop_brokers EXIT
+
+start_brokers() {
+    ../qpidd --daemon --port 0 --no-data-dir > qpidd.port
+    LOCAL_PORT=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir > qpidd.port
+    REMOTE_PORT=`cat qpidd.port`
+}
+
+stop_brokers() {
+        ../qpidd -q --port $LOCAL_PORT
+        ../qpidd -q --port $REMOTE_PORT
+}
+
+if test -d ../../../python ;  then
+    start_brokers
+    echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
+    export PYTHONPATH=../../../python
+    ./federation.py -v -s ../../../specs/amqp.0-10-preview.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT  || { echo "FAIL federation tests"; exit 1; }
+fi
+
