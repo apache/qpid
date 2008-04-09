@@ -149,6 +149,7 @@ class Queue;
         public HandlerHelper
     {
         typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
+        RangedOperation releaseRedeliveredOp;
         RangedOperation releaseOp;
         RangedOperation rejectOp;
         RangedOperation acceptOp;

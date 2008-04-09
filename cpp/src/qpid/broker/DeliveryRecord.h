@@ -67,7 +67,7 @@ class DeliveryRecord{
 
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
-    void release();
+    void release(bool setRedelivered);
     void reject();
     void cancel(const std::string& tag);
     void redeliver(SemanticState* const);
