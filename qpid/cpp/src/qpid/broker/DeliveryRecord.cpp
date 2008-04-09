@@ -111,9 +111,10 @@ void DeliveryRecord::requeue() const
     }
 }
 
-void DeliveryRecord::release() 
+void DeliveryRecord::release(bool setRedelivered) 
 {
     if (acquired && !ended) {
+        if (setRedelivered) msg.payload->redeliver();
         queue->requeue(msg);
         acquired = false;
         setEnded();
