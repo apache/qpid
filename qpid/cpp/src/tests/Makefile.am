@@ -118,7 +118,7 @@ check_PROGRAMS += $(testprogs) interop_runner
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest
-TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
+TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker run_federation_tests
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -126,6 +126,7 @@ EXTRA_DIST +=								\
   quick_topictest							\
   quick_perftest							\
   topictest								\
+  run_federation_tests							\
   .valgrind.supp							\
   .valgrindrc								\
   MessageUtils.h							\

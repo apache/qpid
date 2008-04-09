@@ -86,7 +86,7 @@ class RouteManager:
             self.mclient.syncWaitForStable (self.mch)
         except socket.error, e:
             print "Connect Error:", e
-            exit (1)
+            sys.exit (1)
 
     def getLink (self):
         links = self.mclient.syncGetObjects (self.mch, "link")
@@ -117,20 +117,20 @@ class RouteManager:
 
         if link == None:
             print "Protocol Error - Missing link ID"
-            exit (1)
+            sys.exit (1)
 
         bridges = mc.syncGetObjects (self.mch, "bridge")
         for bridge in bridges:
             if bridge.linkRef == link.id and bridge.dest == exchange and bridge.key == routingKey:
                 if not _quiet:
                     print "Duplicate Route - ignoring: %s(%s)" % (exchange, routingKey)
-                    exit (1)
-                exit (0)
+                    sys.exit (1)
+                sys.exit (0)
 
         if _verbose:
             print "Creating inter-broker binding..."
         bridgeArgs = {}
-        bridgeArgs["src"]          = "src"
+        bridgeArgs["src"]          = exchange
         bridgeArgs["dest"]         = exchange
         bridgeArgs["key"]          = routingKey
         bridgeArgs["src_is_queue"] = 0
@@ -147,8 +147,8 @@ class RouteManager:
         if link == None:
             if not _quiet:
                 print "No link found from %s to %s" % (self.src.name(), self.dest.name())
-                exit (1)
-            exit (0)
+                sys.exit (1)
+            sys.exit (0)
 
         bridges = mc.syncGetObjects (self.mch, "bridge")
         for bridge in bridges:
@@ -158,18 +158,18 @@ class RouteManager:
                 res = mc.syncCallMethod (self.mch, bridge.id, bridge.classKey, "close")
                 if res.status != 0:
                     print "Error closing bridge: %d - %s" % (res.status, res.statusText)
-                    exit (1)
+                    sys.exit (1)
                 if len (bridges) == 1:
                     if _verbose:
                         print "Last bridge on link, closing link..."
                     res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
                     if res.status != 0:
                         print "Error closing link: %d - %s" % (res.status, res.statusText)
-                        exit (1)
-                exit (0)
+                        sys.exit (1)
+                sys.exit (0)
         if not _quiet:
             print "Route not found"
-            exit (1)
+            sys.exit (1)
 
     def ListRoutes (self):
         mc = self.mclient
