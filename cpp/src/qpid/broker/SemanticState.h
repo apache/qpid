@@ -178,7 +178,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void flow(bool active);
     DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
-    void release(DeliveryId first, DeliveryId last);
+    void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);
     void handle(boost::intrusive_ptr<Message> msg);
     bool doOutput() { return outputTasks.doOutput(); }
