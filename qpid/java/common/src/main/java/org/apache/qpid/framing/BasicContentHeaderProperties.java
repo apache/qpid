@@ -108,6 +108,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _hasBeenUpdated = false;
         return result;
     }
+
     public void updated()
     {
         _hasBeenUpdated = true;
@@ -683,6 +684,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setMessageId(String messageId)
     {
+        _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= MESSAGE_ID_MASK;
         _messageId = (messageId == null) ? null : new AMQShortString(messageId);
