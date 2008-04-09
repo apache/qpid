@@ -39,7 +39,7 @@ using namespace framing;
 
 MessageHandlerImpl::MessageHandlerImpl(SemanticState& s) : 
     HandlerImpl(s),
-    releaseOp(boost::bind(&SemanticState::release, &state, _1, _2)),
+    releaseOp(boost::bind(&SemanticState::release, &state, _1, _2, false)),
     rejectOp(boost::bind(&SemanticState::reject, &state, _1, _2))
  {}
 

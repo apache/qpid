@@ -298,7 +298,8 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
 
 SessionAdapter::MessageHandlerImpl::MessageHandlerImpl(SemanticState& s) : 
     HandlerHelper(s),
-    releaseOp(boost::bind(&SemanticState::release, &state, _1, _2)),
+    releaseRedeliveredOp(boost::bind(&SemanticState::release, &state, _1, _2, true)),
+    releaseOp(boost::bind(&SemanticState::release, &state, _1, _2, false)),
     rejectOp(boost::bind(&SemanticState::reject, &state, _1, _2)),
     acceptOp(boost::bind(&SemanticState::accepted, &state, _1, _2))
  {}
@@ -314,9 +315,9 @@ void SessionAdapter::MessageHandlerImpl::transfer(const string& /*destination*/,
     //not yet used (content containing assemblies treated differently at present
 }
 
-    void SessionAdapter::MessageHandlerImpl::release(const SequenceSet& transfers, bool /*setRedelivered*/)
+void SessionAdapter::MessageHandlerImpl::release(const SequenceSet& transfers, bool setRedelivered)
 {
-    transfers.for_each(releaseOp);
+    transfers.for_each(setRedelivered ? releaseRedeliveredOp : releaseOp);
 }
 
 void
