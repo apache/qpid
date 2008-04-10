@@ -30,6 +30,7 @@
 #include "qpid/amqp_0_10/Codec.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ControlHolder.h"
+#include "qpid/amqp_0_10/StructHolder.h"
 #include "qpid/amqp_0_10/FrameHeader.h"
 #include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Unit.h"
@@ -216,8 +217,9 @@ struct DummyPacked {
     static const uint8_t PACK=1;
     boost::optional<char> i, j;
     char k;
-    DummyPacked(char a=0, char b=0, char c=0) : i(a), j(b), k(c) {}
-    template <class S> void serialize(S& s) { s(i)(j)(k); }
+    Bit l,m;
+    DummyPacked(char a=0, char b=0, char c=0) : i(a), j(b), k(c), l(), m() {}
+    template <class S> void serialize(S& s) { s(i)(j)(k)(l)(m); }
 };
 
 Packer<DummyPacked> serializable(DummyPacked& d) { return Packer<DummyPacked>(d); }
@@ -226,7 +228,9 @@ BOOST_AUTO_TEST_CASE(testPackBits) {
     DummyPacked d('a','b','c');
     BOOST_CHECK_EQUAL(packBits(d), 7u);
     d.j = boost::none;
-    BOOST_CHECK_EQUAL(packBits(d), 5u);    
+    BOOST_CHECK_EQUAL(packBits(d), 5u);
+    d.m = true;
+    BOOST_CHECK_EQUAL(packBits(d), 0x15u);
 }
 
 
@@ -296,6 +300,40 @@ BOOST_AUTO_TEST_CASE(testArray) {
     string data2;
     Codec::encode(back_inserter(data2))(x);
     BOOST_CHECK_EQUAL(data,data2);
+}
+
+BOOST_AUTO_TEST_CASE(testStruct) {
+    string data;
+
+    message::DeliveryProperties dp;
+    BOOST_CHECK(!dp.discardUnroutable);
+    dp.immediate = true;
+    dp.redelivered = false;
+    dp.priority = message::MEDIUM;
+    dp.exchange = "foo";
+
+    Codec::encode(back_inserter(data))(dp);
+    uint16_t encodedBits=uint8_t(data[1]); // Little-endian
+    encodedBits <<= 8;
+    encodedBits += uint8_t(data[0]);
+    BOOST_CHECK_EQUAL(encodedBits, packBits(dp));
+        
+    data.clear();
+    Struct::Holder h(dp);
+    Codec::encode(back_inserter(data))(h);    
+
+    Struct::Holder h2;
+    Codec::decode(data.begin())(h2);
+    BOOST_CHECK_EQUAL(h2.getClassCode(), Uint8(message::DeliveryProperties::CLASS_CODE));
+    BOOST_CHECK_EQUAL(h2.getCode(), Uint8(message::DeliveryProperties::CODE));
+    message::DeliveryProperties* dp2 =
+        dynamic_cast<message::DeliveryProperties*>(h2.get());
+    BOOST_CHECK(dp2);
+    BOOST_CHECK(!dp2->discardUnroutable);
+    BOOST_CHECK(dp2->immediate);
+    BOOST_CHECK(!dp2->redelivered);
+    BOOST_CHECK_EQUAL(dp2->priority, message::MEDIUM);
+    BOOST_CHECK_EQUAL(dp2->exchange, "foo");
 }
 
 struct RecodeUnit {

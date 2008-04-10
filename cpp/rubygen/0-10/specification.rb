@@ -38,10 +38,13 @@ class Specification < CppGen
     genl "const char* NAME=\"#{c.fqname}\";"
   end
 
+  def visitable?(x) x.code and x.size=="4"  end
+  
   # Used by structs, commands and controls.
   def action_struct_h(x, base, consts, &block)
     genl
-    struct(x.classname, "public #{base}") {
+    base = visitable?(x) ? ["public #{base}"] : []
+    struct(x.classname, *base) { 
       x.fields.each { |f| genl "#{f.amqp2cpp} #{f.cppname};" }
       genl
       genl "static const char* NAME;"
@@ -50,10 +53,13 @@ class Specification < CppGen
       }
       genl "static const uint8_t CLASS_CODE=#{x.containing_class.nsname}::CODE;"
       genl "static const char* CLASS_NAME;"
-      ctor_decl(x.classname,[])
-      ctor_decl(x.classname, x.parameters) unless x.fields.empty?
-      genl "void accept(Visitor&);" 
-      genl "void accept(ConstVisitor&) const;"
+      ctor_decl("explicit #{x.classname}", x.parameters(true))
+
+      if visitable? x
+        genl "void accept(Visitor&);" 
+        genl "void accept(ConstVisitor&) const;"
+      end
+
       if (x.fields.empty?)
         genl "template <class S> void serialize(S&) {}"
       else
@@ -75,13 +81,9 @@ class Specification < CppGen
     genl "const char* #{x.classname}::CLASS_NAME=#{x.containing_class.nsname}::NAME;"
     genl
     ctor=x.classname+"::"+x.classname
-    ctor_defn(ctor) {}
-    ctor_defn(ctor, x.parameters, x.initializers) {} if not x.fields.empty?
-    # FIXME aconway 2008-03-04: struct visitors
-    if x.is_a? AmqpStruct
-      genl "void #{x.classname}::accept(Visitor&) { assert(0); }"
-      genl "void #{x.classname}::accept(ConstVisitor&) const { assert(0); }"
-    else
+    ctor_defn(ctor, x.parameters, x.initializers) {}
+
+    if visitable? x
       genl "void #{x.classname}::accept(Visitor& v) {  v.visit(*this); }"
       genl "void #{x.classname}::accept(ConstVisitor& v) const { v.visit(*this); }"
     end
@@ -169,9 +171,7 @@ class Specification < CppGen
       include "#{@dir}/specification_fwd"
       include "#{@dir}/all_built_in_types"
       include "#{@dir}/Packer.h"
-      include "<boost/call_traits.hpp>"
       include "<iosfwd>"
-      genl "using boost::call_traits;"
       namespace(@ns) {
         # Structs that must be generated early because
         # they are used by other definitions:
@@ -190,8 +190,7 @@ class Specification < CppGen
       include "#{@dir}/specification"
       include "#{@dir}/exceptions"
       include "<iostream>"
-      # FIXME aconway 2008-03-04: add Struct visitors.
-      ["Command","Control"].each { |x| include "#{@dir}/Apply#{x}" }
+      ["Command","Control", "Struct"].each { |x| include "#{@dir}/Apply#{x}" }
       namespace(@ns) { 
         each_class_ns { |c|
           class_cpp c
@@ -328,8 +327,7 @@ class Specification < CppGen
     gen_proxy
     gen_visitable("Command", @amqp.collect_all(AmqpCommand))
     gen_visitable("Control", @amqp.collect_all(AmqpControl))
-    # FIXME aconway 2008-03-04: sort out visitable structs.
-    # gen_visitable("Struct", @amqp.collect_all(AmqpStruct))
+    gen_visitable("Struct", @amqp.collect_all(AmqpStruct).select { |s| s.code})
   end
 end
 
