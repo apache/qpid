@@ -152,6 +152,7 @@ end
 
 module AmqpHasFields
   def parameters() fields.map { |f| "#{f.paramtype} #{f.cppname}_"} end
+  def unused_parameters() fields.map { |f| "#{f.paramtype} /*#{f.cppname}_*/"} end
   def arguments() fields.map { |f| "#{f.cppname}_"} end
   def values() fields.map { |f| "#{f.cppname}"} end
   def initializers() fields.map { |f| "#{f.cppname}(#{f.cppname}_)"}  end

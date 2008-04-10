@@ -27,29 +27,36 @@
 namespace qpid {
 namespace amqp_0_10 {
 
-template <class DerivedHolder, class BaseHeld, size_t Size>
-struct Holder : public framing::Blob<Size, BaseHeld> {
-    typedef framing::Blob<Size, BaseHeld> Base;
-    
-    struct Assign : public ApplyFunctor<void> {
-        Holder& holder;
-        Assign(Holder& x) : holder(x) {}
-        template <class T> void operator()(const T& rhs) { holder=rhs; }
-    };
+using framing::in_place;
 
+template <class Invokable> struct InvokeVisitor {
+    typedef void result_type;
+    Invokable& target;     
+    InvokeVisitor(Invokable& i) : target(i) {}
+
+    template <class Action>
+    void operator()(const Action& action) { action.invoke(target); }
+};
+
+template <class DerivedHolder, class BaseHeld, size_t Size>
+class Holder : public framing::Blob<Size, BaseHeld> {
+    typedef framing::Blob<Size, BaseHeld> Base;
+
+  public:
+    
     Holder() {}
-    Holder(const BaseHeld& x) { *this=x; }
-    template <class T> Holder(const T& value) : Base(value) {}
+    template <class T> explicit Holder(const T& value) : Base(value) {}
 
     using Base::operator=;
-    Holder& operator=(const BaseHeld& rhs) {
-        Assign assign(*this);
-        apply(assign, rhs);
-        return *this;
-    }
+    Holder& operator=(const BaseHeld& rhs);
     
     uint8_t getCode() const { return this->get()->getCode(); }
     uint8_t getClassCode() const { return this->get()->getClassCode(); }
+
+    template <class Invokable> void invoke(Invokable& i) const {
+        InvokeVisitor<Invokable> v(i);
+        apply(v, *this->get());
+    }
     
     template <class S> void encode(S& s) const {
         s(getClassCode())(getCode());
@@ -65,7 +72,22 @@ struct Holder : public framing::Blob<Size, BaseHeld> {
         s.split(*this);
         apply(s, *this->get());
     }
+
+  private:
+    struct Assign : public ApplyFunctor<void> {
+        Holder& holder;
+        Assign(Holder& x) : holder(x) {}
+        template <class T> void operator()(const T& rhs) { holder=rhs; }
+    };
 };
+
+template <class D, class B, size_t S>
+Holder<D,B,S>& Holder<D,B,S>::operator=(const B& rhs) {
+    Assign assign(*this);
+    apply(assign, rhs);
+    return *this;
+}
+
 
 
 }} // namespace qpid::amqp_0_10
