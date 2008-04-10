@@ -90,6 +90,7 @@ struct Control
 };
 std::ostream& operator<<(std::ostream&, const Control&);
 
+// Note: only coded structs inherit from Struct.
 struct StructVisitor;
 struct ConstStructVisitor;
 struct StructHolder;

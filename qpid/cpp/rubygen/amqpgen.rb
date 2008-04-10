@@ -312,6 +312,7 @@ class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
+  def size() "4" end              # Encoded as a size 4 Struct
 end
 
 class AmqpControl < AmqpAction
