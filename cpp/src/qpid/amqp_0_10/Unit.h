@@ -34,15 +34,12 @@
 namespace qpid {
 namespace amqp_0_10 {
 
-
 /**
  * A Unit contains a frame header and associated value.
  * For all types except BODY the frame header is for a complete segment.
  */
 class Unit {
   public:
-    typedef boost::variant<ControlHolder, CommandHolder, Header, Body> Variant;
-
     explicit Unit(const FrameHeader& h=FrameHeader()) : header(h) { updateVariant(); }
 
     /**
@@ -57,12 +54,18 @@ class Unit {
     template<class T> const T* get() const { return boost::get<T>(&variant); }
     template<class T> T* get() { return boost::get<T>(&variant); }
     template<class T> Unit& operator=(const T& t) { variant=t; return *this; }
+
+    template <class V> typename V::result_type applyVisitor(V& v) const {
+        variant.apply_visitor(v); 
+    }
     
     template <class S> void serialize(S& s) { variant.apply_visitor(s); s.split(*this); }
     template <class S> void encode(S&) const {} 
     template <class S> void decode(S&) { updateHeader(header.getFlags()); }
 
   private:
+    typedef boost::variant<ControlHolder, CommandHolder, Header, Body> Variant;
+
     void updateHeader(uint8_t flags);
     void updateVariant();
     

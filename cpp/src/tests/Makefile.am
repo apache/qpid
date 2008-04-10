@@ -43,7 +43,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	amqp_0_10/ProxyTemplate.cpp \
 	amqp_0_10/apply.cpp \
 	IncompleteMessageList.cpp \
-	amqp_0_10/Map.cpp
+	amqp_0_10/Map.cpp \
+	amqp_0_10/handlers.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
