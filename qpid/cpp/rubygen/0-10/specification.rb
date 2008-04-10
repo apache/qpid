@@ -69,7 +69,7 @@ class Specification < CppGen
     genl "bool operator==(const #{x.classname}&, const #{x.classname}&);"
   end
 
-  def action_struct_cpp(x)
+  def action_struct_cpp(x, &block)
     genl
     genl "const char* #{x.classname}::NAME=\"#{x.fqname}\";"
     genl "const char* #{x.classname}::CLASS_NAME=#{x.containing_class.nsname}::NAME;"
@@ -92,6 +92,7 @@ class Specification < CppGen
       genl "o << \"]\";"
       genl "return o;"
     }
+    yield if block
   end
 
   # structs
@@ -103,13 +104,28 @@ class Specification < CppGen
   
   def action_h(a)
     action_struct_h(a, a.base, ["code"]) {
-      function_defn("template <class T> void invoke", ["T& target"]) {
-        genl "target.#{a.funcname}(#{a.values.join(', ')});"
+      struct("Handler") {
+        scope("void #{a.funcname}(", ");") {
+          genl a.parameters.join(",\n")
+        }
+      }
+      function_defn("template <class T> void invoke", ["T& target"], "const") {
+        genl "target.#{a.funcname}(#{a.values.join(', ')} );"
       }
     }
   end
   
-  def action_cpp(a) action_struct_cpp(a); end
+  def action_cpp(a)
+    action_struct_cpp(a) {
+      scope("void #{a.classname}::Handler::#{a.funcname}(", ")") {
+          genl a.unused_parameters.join(",\n")
+      }
+      scope {
+        genl "assert(0);"
+        genl "throw NotImplementedException(QPID_MSG(\"#{a.fqname} not implemented.\"));"
+      }
+    }
+  end
 
   # Types that must be generated early because they are used by other types.
   def pregenerate?(x) not @amqp.used_by[x.fqname].empty?;  end
@@ -172,6 +188,7 @@ class Specification < CppGen
 
     cpp_file("#{@dir}/specification") { 
       include "#{@dir}/specification"
+      include "#{@dir}/exceptions"
       include "<iostream>"
       # FIXME aconway 2008-03-04: add Struct visitors.
       ["Command","Control"].each { |x| include "#{@dir}/Apply#{x}" }
