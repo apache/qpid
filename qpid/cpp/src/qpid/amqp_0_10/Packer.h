@@ -24,6 +24,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/none.hpp>
+#include "qpid/amqp_0_10/built_in_types.h"
 
 namespace qpid {
 namespace amqp_0_10 {
@@ -60,17 +61,21 @@ class PackBits {
   public:
     PackBits() : bit(1), bits(0) {}
 
-    void setBit() { bits |= bit; bit <<= 1; }
-    void skipBit() { bit <<= 1; }
-
+    void setBit(bool b) { if (b) bits |= bit; bit <<= 1; }
     uint32_t getBits() { return bits; }
-    
-    template <class T> PackBits& operator()(const T&) { setBit(); return *this; }
 
+    /** The bit is always set for non-optional values. */
+    template <class T>
+    PackBits& operator()(const T&) { setBit(1); return *this; }
+
+    /** For optional values the bit is set if the value is present. */
     template <class T> PackBits& operator()(const boost::optional<T>& opt) {
-        opt ? setBit() : skipBit(); return *this;
+        setBit(opt); return *this;
     }
 
+    /** Bits are special optional values */
+    PackBits& operator()(Bit b) { setBit(b); return *this; }
+    
   private:
     uint32_t bit;
     uint32_t bits;
@@ -83,12 +88,23 @@ template<class T> uint32_t packBits(const T& t) {
     return pack.getBits();
 }
 
+/** Decode members enabled by Bits */
 template <class Decoder, class Bits>
 class PackedDecoder {
   public:
     PackedDecoder(Decoder& d, Bits b) : decode(d), bits(b) {}
 
-    template <class T> PackedDecoder& operator()(T& t) { decode(t); return *this; }
+    template <class T> PackedDecoder& operator()(T& t) {
+        if (bits & 1)
+            decode(t);
+        else
+            t = T();
+        // FIXME aconway 2008-04-10: When we have all optionals
+        // represented by boost::optional the line above should be:
+        // throw CommandInvalidException("A required value was omitted.");
+        bits >>= 1;
+        return *this;
+    }
     
     template <class T> PackedDecoder& operator()(boost::optional<T>& opt) {
         if (bits & 1) {

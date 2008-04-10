@@ -133,7 +133,10 @@ class AmqpField
     end
     return amqp2cpp
   end
-  def paramtype() "call_traits<#{fqtypename}>::param_type";  end
+  def paramtype()
+    /^(int|uint|char|boolean|bit)/ === type_ ? fqtypename : "const #{fqtypename}&"
+  end
+  def param_default() "=#{fqtypename}()"  end
 end
 
 class AmqpMethod
@@ -151,7 +154,11 @@ class AmqpMethod
 end
 
 module AmqpHasFields
-  def parameters() fields.map { |f| "#{f.paramtype} #{f.cppname}_"} end
+  def parameters(with_default=nil)
+    fields.map { |f|
+      "#{f.paramtype} #{f.cppname}_#{f.param_default if with_default}"
+    }
+  end
   def unused_parameters() fields.map { |f| "#{f.paramtype} /*#{f.cppname}_*/"} end
   def arguments() fields.map { |f| "#{f.cppname}_"} end
   def values() fields.map { |f| "#{f.cppname}"} end
@@ -239,6 +246,7 @@ class AmqpStruct
   def cppname() cpptype.name;  end # preview
   def fqclassname() containing_class.nsname+"::"+name.typename;  end
   def classname() name.typename; end
+  def full_code() (containing_class.code.hex << 8)+code.hex; end
 end
 
 class CppGen < Generator

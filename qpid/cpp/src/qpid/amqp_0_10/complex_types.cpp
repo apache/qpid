@@ -21,7 +21,7 @@
 
 #include "qpid/amqp_0_10/ApplyCommand.h"
 #include "qpid/amqp_0_10/ApplyControl.h"
-// FIXME aconway 2008-03-04:  #include "qpid/amqp_0_10/ApplyStruct.h"
+#include "qpid/amqp_0_10/ApplyStruct.h"
 #include "qpid/amqp_0_10/apply.h"
 #include <iostream>
 
@@ -52,15 +52,11 @@ uint8_t Control::getClassCode() const { return apply(GetClassCode(), *this); }
 const char* Control::getName() const { return apply(GetName(), *this); }
 const char* Control::getClassName() const { return apply(GetClassName(), *this); }
 
-// FIXME aconway 2008-03-04: Struct visitors
-// uint8_t Struct::getCode() const { return apply(GetCode(), *this); }
-// uint8_t Struct::getPack() const { return apply(GetPack(), *this); }
-// uint8_t Struct::getSize() const { return apply(GetSize(), *this); }
-// uint8_t Struct::getClassCode() const { return apply(GetClassCode(), *this); }
-uint8_t Struct::getCode() const { assert(0); return 0; }
-uint8_t Struct::getPack() const { assert(0); return 0; }
-uint8_t Struct::getSize() const { assert(0); return 0; }
-uint8_t Struct::getClassCode() const { assert(0); return 0; }
+
+uint8_t Struct::getCode() const { return apply(GetCode(), *this); }
+uint8_t Struct::getPack() const { return apply(GetPack(), *this); }
+uint8_t Struct::getSize() const { return apply(GetSize(), *this); }
+uint8_t Struct::getClassCode() const { return apply(GetClassCode(), *this); }
 
 struct PrintVisitor {
     typedef std::ostream& result_type;
@@ -71,8 +67,7 @@ struct PrintVisitor {
 
 std::ostream& operator<<(std::ostream& o, const Command& x) { return apply(PrintVisitor(o), x); }
 std::ostream& operator<<(std::ostream& o, const Control& x) { return apply(PrintVisitor(o), x); }
-// FIXME aconway 2008-04-07: 
-// std::ostream& operator<<(std::ostream& o, const Struct& x)  { apply(PrintVisitor(o), x); }
+std::ostream& operator<<(std::ostream& o, const Struct& x)  { return apply(PrintVisitor(o), x); }
     
 }} // namespace qpid::amqp_0_10
 
