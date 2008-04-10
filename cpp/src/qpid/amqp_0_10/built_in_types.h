@@ -61,14 +61,17 @@ inline std::ostream& operator<<(std::ostream& o, const Wrapper<T>& w) {
 struct Void { template <class S> void serialize(S&) {} };
 inline std::ostream& operator<<(std::ostream& o, const Void&) { return o; } 
 
-/** Bit type - bool value with no encoding. */
-struct  Bit : Wrapper<bool> {
-    template <class S> void serialize(S& s) { s.split(*this); }
-    template <class S> void encode(S&) const {}
-    template <class S> void decode(S&) { value=true; }
+/** Bit is a presence indicator - an optional value with no encoding. */
+struct Bit : public Wrapper<bool> {
+    Bit(bool b=false) : Wrapper<bool>(b) {}
+    using Wrapper<bool>::operator=;
+    template <class S> void serialize(S& s) { s.split(*this); } 
+    template <class S> void encode(S&) const { }
+    template <class S> void decode(S&) { *this = true; }
 };
+
 inline std::ostream& operator<<(std::ostream& o, const Bit& b) {
-    return o << b.value;
+    return o << bool(b);
 }
 
 // Fixed size types
