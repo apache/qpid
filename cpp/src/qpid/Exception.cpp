@@ -39,7 +39,7 @@ Exception::Exception(const std::string& msg) throw() : message(msg) {
 
 Exception::~Exception() throw() {}
 
-std::string Exception::getPrefix() const { return typeid(*this).name(); }
+std::string Exception::getPrefix() const { return "Exception"; }
 
 const char* Exception::what() const throw() {
     if (whatStr.empty())
