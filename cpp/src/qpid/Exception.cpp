@@ -34,7 +34,7 @@ std::string strError(int err) {
 }
 
 Exception::Exception(const std::string& msg) throw() : message(msg) {
-    QPID_LOG(warning, "Exception: " << message);
+    QPID_LOG(debug, "Exception thrown: " << message);
 }
 
 Exception::~Exception() throw() {}
