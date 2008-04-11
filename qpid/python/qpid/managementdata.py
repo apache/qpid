@@ -20,11 +20,26 @@
 #
 
 import qpid
+import socket
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
 from shlex           import split
-from qpid.client  import Client
+from qpid.client     import Client
+
+class Broker:
+  def __init__ (self, text):
+    colon = text.find (":")
+    if colon == -1:
+      host = text
+      self.port = 5672
+    else:
+      host = text[:colon]
+      self.port = int (text[colon+1:])
+    self.host = socket.gethostbyname (host)
+
+  def name (self):
+    return self.host + ":" + str (self.port)
 
 class ManagementData:
 
@@ -137,7 +152,7 @@ class ManagementData:
     if className not in self.schema:
       self.schema[className] = (configs, insts, methods, events)
 
-  def __init__ (self, disp, host, port=5672, username="guest", password="guest",
+  def __init__ (self, disp, host, username="guest", password="guest",
                 specfile="../../specs/amqp.0-10-preview.xml"):
     self.spec           = qpid.spec.load (specfile)
     self.lock           = Lock ()
@@ -149,7 +164,8 @@ class ManagementData:
     self.methodSeq      = 1
     self.methodsPending = {}
 
-    self.client = Client (host, port, self.spec)
+    self.broker = Broker (host)
+    self.client = Client (self.broker.host, self.broker.port, self.spec)
     self.client.start ({"LOGIN": username, "PASSWORD": password})
     self.channel = self.client.channel (1)
 
@@ -349,8 +365,11 @@ class ManagementData:
           else:
             active = active + 1
         rows.append ((self.displayClassName (name), active, deleted))
-      self.disp.table ("Management Object Types:",
-                       ("ObjectType", "Active", "Deleted"), rows)
+      if len (rows) != 0:
+        self.disp.table ("Management Object Types:",
+                         ("ObjectType", "Active", "Deleted"), rows)
+      else:
+        print "Waiting for next periodic update"
     finally:
       self.lock.release ()
 
@@ -363,20 +382,21 @@ class ManagementData:
         print ("Object type %s not known" % className)
       else:
         rows = []
-        sorted = self.tables[classKey].keys ()
-        sorted.sort ()
-        for objId in sorted:
-          (ts, config, inst) = self.tables[classKey][objId]
-          createTime  = self.disp.timestamp (ts[1])
-          destroyTime = "-"
-          if ts[2] > 0:
-            destroyTime = self.disp.timestamp (ts[2])
-          objIndex = self.getObjIndex (classKey, config)
-          row = (self.refName (objId), createTime, destroyTime, objIndex)
-          rows.append (row)
-        self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
-                         ("ID", "Created", "Destroyed", "Index"),
-                         rows)
+        if classKey in self.tables:
+          sorted = self.tables[classKey].keys ()
+          sorted.sort ()
+          for objId in sorted:
+            (ts, config, inst) = self.tables[classKey][objId]
+            createTime  = self.disp.timestamp (ts[1])
+            destroyTime = "-"
+            if ts[2] > 0:
+              destroyTime = self.disp.timestamp (ts[2])
+            objIndex = self.getObjIndex (classKey, config)
+            row = (self.refName (objId), createTime, destroyTime, objIndex)
+            rows.append (row)
+          self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
+                           ("ID", "Created", "Destroyed", "Index"),
+                           rows)
     finally:
       self.lock.release ()
 
