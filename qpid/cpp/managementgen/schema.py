@@ -115,6 +115,17 @@ class SchemaType:
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
+      stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
+      stream.write ("        sys::RWlock::ScopedWlock writeLock (accessLock);\n")
+      stream.write ("        " + varName + " = val;\n");
+      if self.style == "wm":
+        stream.write ("        if (" + varName + "Low  > val)\n")
+        stream.write ("            " + varName + "Low  = val;\n")
+        stream.write ("        if (" + varName + "High < val)\n")
+        stream.write ("            " + varName + "High = val;\n")
+      if changeFlag != None:
+        stream.write ("        " + changeFlag + " = true;\n")
+      stream.write ("    }\n");
 
   def genHiLoStatResets (self, stream, varName):
     if self.style == "wm":
