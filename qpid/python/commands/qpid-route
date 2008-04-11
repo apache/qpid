@@ -160,6 +160,9 @@ class RouteManager:
                     print "Error closing bridge: %d - %s" % (res.status, res.statusText)
                     sys.exit (1)
                 if len (bridges) == 1:
+                    link = self.getLink ()
+                    if link == None:
+                        sys.exit (0)
                     if _verbose:
                         print "Last bridge on link, closing link..."
                     res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
@@ -208,6 +211,7 @@ class RouteManager:
             elif _verbose:
                 print "Ok"
 
+        links = mc.syncGetObjects (self.mch, "link")
         for link in links:
             if _verbose:
                 print "Deleting Link: %s... " % link.address,
