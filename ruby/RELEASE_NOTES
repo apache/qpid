@@ -1,4 +1,4 @@
-Apache Incubator Qpid .NET M2.1 Release Notes
+Apache Incubator Qpid Ruby M2.1 Release Notes
 -------------------------------------------
 
 The Qpid M2.1 release contains support the for AMQP 0-8 specification.
@@ -8,7 +8,7 @@ http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
 For full details of Qpid capabilities, as they currently stand, see our
 detailed project documentation at:
 
-http://cwiki.apache.org/confluence/display/qpid/Qpid+.Net+Documentation
+http://cwiki.apache.org/confluence/display/qpid/Qpid+Ruby+Documentation
 
 From the link above you can access our Getting Started Guide, FAQ, Build How To
 and developer documentation.
