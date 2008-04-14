@@ -192,7 +192,10 @@ Options:
         user = user or self.user
         password = password or self.password
         client = qpid.client.Client(host, port, spec)
-        client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
+        if self.use08spec():         
+            client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
+        else:
+            client.start("\x00" + user + "\x00" + password, mechanism="PLAIN", tune_params=tune_params)
         return client
 
     def get_spec_file(self, fname):
