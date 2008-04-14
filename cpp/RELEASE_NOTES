@@ -1,9 +1,10 @@
 Apache Incubator Qpid C++ M2.1 Release Notes
 -------------------------------------------
 
-The Qpid M2.1 release contains support the for AMQP 0-8 specification.
-You can access the 0-8 specification using the following link.
-http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+The Qpid M2.1 release contains support the for AMQP 0-9 specification
+(excluding features marked in that specification as 'work in
+progress').  You can access the 0-9 specification using the following
+link.  http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
 
 For full details of Qpid capabilities, as they currently stand, see our
 detailed project documentation at:
