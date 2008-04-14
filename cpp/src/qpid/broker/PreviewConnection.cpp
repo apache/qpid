@@ -39,10 +39,6 @@
 #include <iostream>
 #include <assert.h>
 
-#if HAVE_SASL
-#include <sasl/sasl.h>
-#endif
-
 using namespace boost;
 using namespace qpid::sys;
 using namespace qpid::framing;
@@ -94,9 +90,6 @@ public:
 
 PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink) :
     ConnectionState(out_, broker_),
-#if HAVE_SASL
-    sasl_conn(NULL),
-#endif
     adapter(*this, isLink),
     mgmtClosing(false),
     mgmtId(mgmtId_)
@@ -119,12 +112,6 @@ PreviewConnection::PreviewConnection(ConnectionOutputHandler* out_, Broker& brok
 }
 
 PreviewConnection::~PreviewConnection () {
-#if HAVE_LIBSASL2
-    if (NULL != sasl_conn) {
-        sasl_dispose(&sasl_conn);
-        sasl_conn = NULL;
-    }
-#endif
 }
 
 void PreviewConnection::received(framing::AMQFrame& frame){

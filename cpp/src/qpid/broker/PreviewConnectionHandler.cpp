@@ -79,8 +79,23 @@ PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection
     }
 }
 
-PreviewConnectionHandler::Handler:: Handler(PreviewConnection& c) : client(c.getOutput()), server(c.getOutput()), 
-                                                      connection(c), serverMode(false) {}
+PreviewConnectionHandler::Handler::Handler(PreviewConnection& c) : 
+#if HAVE_SASL
+    sasl_conn(NULL),
+#endif
+    client(c.getOutput()), server(c.getOutput()), 
+    connection(c), serverMode(false)
+ {}
+
+PreviewConnectionHandler::Handler::~Handler() 
+{
+#if HAVE_LIBSASL2
+    if (NULL != sasl_conn) {
+        sasl_dispose(&sasl_conn);
+        sasl_conn = NULL;
+    }
+#endif
+}
 
 void PreviewConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProperties*/,
     const string& mechanism, 
@@ -99,18 +114,18 @@ void PreviewConnectionHandler::Handler::startOk(const framing::FieldTable& /*cli
             if (connection.getBroker().getOptions().auth) {
                 int code = sasl_server_new(BROKER_SASL_NAME,
                                            NULL, NULL, NULL, NULL, NULL, 0,
-                                           &connection.sasl_conn);
+                                           &sasl_conn);
 
                 if (SASL_OK != code) {
                     QPID_LOG(info, "SASL Plain: Connection creation failed: "
-                             << sasl_errdetail(connection.sasl_conn));
+                             << sasl_errdetail(sasl_conn));
 
                         // TODO: Change this to an exception signaling
                         // server error, when one is available
                     throw CommandInvalidException("Unable to perform authentication");
                 }
 
-                code = sasl_checkpass(connection.sasl_conn,
+                code = sasl_checkpass(sasl_conn,
                                       uid.c_str(), uid.length(),
                                       pwd.c_str(), pwd.length());
                 if (SASL_OK == code) {
@@ -119,7 +134,7 @@ void PreviewConnectionHandler::Handler::startOk(const framing::FieldTable& /*cli
                         // See man sasl_errors(3) or sasl/sasl.h for possible errors
                     QPID_LOG(info, "SASL Plain: Authentication rejected for "
                              << uid << ": "
-                             << sasl_errdetail(connection.sasl_conn));
+                             << sasl_errdetail(sasl_conn));
 
                         // TODO: Change this to an exception signaling
                         // authentication failure, when one is available
