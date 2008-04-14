@@ -21,8 +21,6 @@
 #ifndef _PreviewConnection_
 #define _PreviewConnection_
 
-#include "config.h"
-
 #include <memory>
 #include <sstream>
 #include <vector>
