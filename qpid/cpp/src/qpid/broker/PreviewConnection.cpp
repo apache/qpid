@@ -18,9 +18,6 @@
  * under the License.
  *
  */
-
-#include "config.h"
-
 #include "PreviewConnection.h"
 #include "SessionState.h"
 #include "BrokerAdapter.h"

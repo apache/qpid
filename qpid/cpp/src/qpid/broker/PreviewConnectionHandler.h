@@ -21,6 +21,8 @@
 #ifndef _PreviewConnectionAdapter_
 #define _PreviewConnectionAdapter_
 
+#include "config.h"
+
 #include <memory>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
@@ -85,6 +87,12 @@ class PreviewConnectionHandler : public framing::FrameHandler
         void openOk(const std::string& knownHosts);
         
         void redirect(const std::string& host, const std::string& knownHosts);        
+      private:
+#if HAVE_SASL
+        void processAuthenticationStep(int code,
+                                     const char *challenge,
+                                     unsigned int challenge_len);
+#endif
     };
     std::auto_ptr<Handler> handler;
   public:
