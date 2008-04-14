@@ -27,6 +27,7 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/StructHelper.h"
 
 #include <vector>
 #include <boost/function.hpp>
@@ -222,7 +223,7 @@ class Queue;
         void rollback();
     };
 
-    class DtxHandlerImpl : public Dtx010Handler, public HandlerHelper
+    class DtxHandlerImpl : public Dtx010Handler, public HandlerHelper, private framing::StructHelper
     {
         std::string convert(const framing::Xid010& xid);
 
