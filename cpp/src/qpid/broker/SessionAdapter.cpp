@@ -452,11 +452,10 @@ void SessionAdapter::TxHandlerImpl::rollback()
 
 std::string SessionAdapter::DtxHandlerImpl::convert(const framing::Xid010& xid)
 {
-    std::stringstream out;
-    out << xid.getFormat() << xid.getGlobalId() << xid.getBranchId();
-    return out.str();
+    std::string encoded;
+    encode(xid, encoded);
+    return encoded;
 }
-
 
 void SessionAdapter::DtxHandlerImpl::select()
 {
@@ -543,13 +542,14 @@ Dtx010RecoverResult SessionAdapter::DtxHandlerImpl::recover()
 {
     std::set<std::string> xids;
     getBroker().getStore().collectPreparedXids(xids);        
-
-    //TODO: remove the need to copy from one container type to another
-    std::vector<std::string> data;
+    /*
+     * create array of long structs
+     */
+    Array indoubt(0xAB);
     for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
-        data.push_back(*i);
+        boost::shared_ptr<FieldValue> xid(new Struct32Value(*i));
+        indoubt.add(xid);
     }
-    Array indoubt(data);
     return Dtx010RecoverResult(indoubt);
 }
 

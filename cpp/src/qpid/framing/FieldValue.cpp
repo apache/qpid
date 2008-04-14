@@ -119,6 +119,14 @@ Str16Value::Str16Value(const std::string& v) :
             reinterpret_cast<const uint8_t*>(v.data()+v.size())))
 {}
 
+Struct32Value::Struct32Value(const std::string& v) :
+    FieldValue(
+        0xAB,
+        new VariableWidthValue<4>(
+            reinterpret_cast<const uint8_t*>(v.data()),
+            reinterpret_cast<const uint8_t*>(v.data()+v.size())))
+{}
+
 IntegerValue::IntegerValue(int v) :
     FieldValue(0x21, new FixedWidthValue<4>(v))
 {

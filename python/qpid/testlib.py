@@ -132,6 +132,8 @@ Options:
 	# Abbreviations for default settings.
         if (self.specfile == "0-10"):
             self.spec = load(self.get_spec_file("amqp.0-10.xml"))
+        elif (self.specfile == "0-10-errata"):
+            self.spec = load(self.get_spec_file("amqp.0-10-qpid-errata.xml"))
         else:    
             if (self.specfile == "0-8"):
                 self.specfile = self.get_spec_file("amqp.0-8.xml")

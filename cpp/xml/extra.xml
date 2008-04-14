@@ -34,7 +34,7 @@
   </domain>
 
   <domain name="xid010">
-    <struct size="short" pack="short">
+    <struct size="long" pack="short" type="1540">
       <field name="format" domain="long" />
       <field name="global-id" domain="shortstr" />
       <field name="branch-id" domain="shortstr" />
