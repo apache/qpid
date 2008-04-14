@@ -33,6 +33,10 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
 
+#if HAVE_SASL
+#include <sasl/sasl.h>
+#endif
+
 namespace qpid {
 namespace broker {
 
@@ -44,12 +48,16 @@ class PreviewConnectionHandler : public framing::FrameHandler
     struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
         public framing::AMQP_ClientOperations::ConnectionHandler
     {
+#if HAVE_SASL
+        sasl_conn_t *sasl_conn;
+#endif
         framing::AMQP_ClientProxy::Connection client;
         framing::AMQP_ServerProxy::Connection server;
         PreviewConnection& connection;
         bool serverMode;
     
         Handler(PreviewConnection& connection);
+        ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale); 
