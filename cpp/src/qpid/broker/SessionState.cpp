@@ -230,6 +230,7 @@ void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
 {
     completed.add(msg->getCommandId());
     if (msg->requiresAccept()) {        
+        nextOut++;//accept is a command, so the counter must be incremented
         getProxy().getMessage010().accept(SequenceSet(msg->getCommandId()));        
     }
 }
