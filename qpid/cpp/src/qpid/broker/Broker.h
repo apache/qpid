@@ -22,6 +22,8 @@
  *
  */
 
+#include "config.h"
+
 #include "ConnectionFactory.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
@@ -76,6 +78,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint64_t stagingThreshold;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
+        bool auth;
         uint32_t ack;
     };
     
@@ -109,6 +112,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
+    Options& getOptions() { return config; }
 
     SessionManager& getSessionManager() { return sessionManager; }
     PreviewSessionManager& getPreviewSessionManager() { return previewSessionManager; }
