@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        25%{?dist}
+Release:        28%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -131,7 +131,7 @@ make check
 %_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
 %{_initrddir}/%{qpidd}
-%_localstatedir/lib/qpidd
+%attr(755, qpidd, qpidd) %_localstatedir/lib/qpidd
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
@@ -165,6 +165,10 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Mon Apr 14 2008 Nuno Santos <nsantos@redhat.com> - 0.2-28
+ - Fix home dir permissions
+ - Bumped for Fedora 9
+
 * Mon Mar 31 2008 Nuno Santos <nsantos@redhat.com> - 0.2-25
 - Create user qpidd, start qpidd service as qpidd
 
