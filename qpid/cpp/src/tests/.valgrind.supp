@@ -1,0 +1,32 @@
+{
+   Benign error in libcpg.
+   Memcheck:Param
+   socketcall.sendmsg(msg.msg_iov[i])
+   obj:*/libpthread-2.5.so
+   obj:*/libcpg.so.2.0.0
+}
+
+{
+   Uninitialised value problem in _dl_relocate (F7, F8)
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:*dl_*
+}
+
+{
+   False "possibly leaked" in boost program_options - global std::string var.
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.8
+   fun:_ZNSsC1EPKcRKSaIcE
+   obj:/usr/lib/libboost_program_options.so.1.33.1
+}
+
+{
+   Bogus epoll_ctl error on i386
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+}
+

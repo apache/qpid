@@ -1,0 +1,2 @@
+#!/bin/sh
+exec `dirname $0`/run_perftest 10000 --mode topic --qt 16

@@ -1,0 +1,253 @@
+#
+# Spec file for Qpid C++ packages: qpidc qpidc-devel, qpidd, qpidd-devel
+#
+%define qpidd qpidd
+
+Name:           @PACKAGE@
+Version:        @VERSION@
+Release:        25%{?dist}
+Summary:        Libraries for Qpid C++ client applications
+Group:          System Environment/Libraries
+License:        Apache Software License
+URL:            @URL@
+Source0:        @DOWNLOAD_URL@/%{name}-%{version}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+ExclusiveArch: i386 x86_64
+
+BuildRequires: boost-devel
+BuildRequires: cppunit-devel
+BuildRequires: doxygen
+BuildRequires: e2fsprogs-devel
+BuildRequires: graphviz
+BuildRequires: help2man
+BuildRequires: libtool
+BuildRequires: pkgconfig
+BuildRequires: ruby
+
+Requires: boost
+
+Requires(post):/sbin/chkconfig
+Requires(preun):/sbin/chkconfig
+Requires(preun):/sbin/service
+Requires(postun):/sbin/service
+
+%description
+Run-time libraries for AMQP client applications developed using Qpid
+C++. Clients exchange messages with an AMQP message broker using
+the AMQP protocol.
+
+%package devel
+Summary: Header files and documentation for developing Qpid C++ clients
+Group: Development/System
+Requires: %name = %version-%release
+Requires: boost-devel
+Requires: e2fsprogs-devel
+
+%description devel
+Libraries, header files and documentation for developing AMQP clients
+in C++ using Qpid.  Qpid implements the AMQP messaging specification.
+
+%package -n %{qpidd}
+Summary: An AMQP message broker daemon
+Group: System Environment/Daemons
+Requires: %name = %version-%release
+Requires: openais
+
+%description -n %{qpidd}
+A message broker daemon that receives stores and routes messages using
+the open AMQP messaging protocol.
+
+%package -n %{qpidd}-devel
+Summary: Libraries and header files for developing Qpid broker extensions
+Group: Development/System
+Requires: %name-devel = %version-%release
+Requires: %{qpidd} = %version-%release
+Requires: openais-devel
+
+%description -n %{qpidd}-devel
+Libraries and header files for developing extensions to the
+Qpid broker daemon.
+
+%pre
+getent group qpidd >/dev/null || groupadd -r qpidd
+getent passwd qpidd >/dev/null || \
+  useradd -r -m -g qpidd -d %{_localstatedir}/lib/qpidd -s /sbin/nologin \
+    -c "Owner of Qpidd Daemons" qpidd
+exit 0
+
+%prep
+%setup -q
+
+%build
+%configure --disable-static --without-cpg CXXFLAGS="-g -O3 -DNDEBUG"
+make %{?_smp_mflags}
+# Remove this generated perl file, we don't need it and it upsets rpmlint.
+rm docs/api/html/installdox
+
+%install
+rm -rf %{buildroot}
+make install-strip DESTDIR=%{buildroot}
+install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
+install -d -m0755 %{buildroot}%{_localstatedir}/lib/qpidd
+rm -f %{buildroot}%_libdir/*.a
+rm -f %{buildroot}%_libdir/*.la
+
+%clean
+rm -rf %{buildroot}
+
+%check
+make check
+
+%files
+%defattr(-,root,root,-)
+%doc LICENSE NOTICE README
+%_libdir/libqpidcommon.so.0
+%_libdir/libqpidcommon.so.0.1.0
+%_libdir/libqpidclient.so.0
+%_libdir/libqpidclient.so.0.1.0
+%config(noreplace) %_sysconfdir/qpidd.conf
+
+%files devel
+%defattr(-,root,root,-)
+%_includedir/qpid/*.h
+%_includedir/qpid/amqp_0_10
+%_includedir/qpid/client
+%_includedir/qpid/framing
+%_includedir/qpid/sys
+%_includedir/qpid/log
+%_includedir/qpid/management
+%_libdir/libqpidcommon.so
+%_libdir/libqpidclient.so
+%doc %_datadir/%{name}/examples
+%doc docs/api/html
+
+%files -n %{qpidd}
+%defattr(-,root,root,-)
+%_libdir/libqpidbroker.so.0
+%_libdir/libqpidbroker.so.0.1.0
+%_libdir/libqpidcluster.so.0
+%_libdir/libqpidcluster.so.0.1.0
+%_sbindir/%{qpidd}
+%{_initrddir}/%{qpidd}
+%_localstatedir/lib/qpidd
+%doc %_mandir/man1/%{qpidd}.*
+
+%files -n %{qpidd}-devel
+%defattr(-,root,root,-)
+%doc rpm/README.qpidd-devel
+%defattr(-,root,root,-)
+%_libdir/libqpidbroker.so
+%_libdir/libqpidcluster.so
+%_includedir/qpid/broker
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+
+%post -n %{qpidd}
+# This adds the proper /etc/rc*.d links for the script
+/sbin/chkconfig --add qpidd
+/sbin/ldconfig
+
+%preun -n %{qpidd}
+# Check that this is actual deinstallation, not just removing for upgrade.
+if [ $1 = 0 ]; then
+        /sbin/service qpidd stop >/dev/null 2>&1 || :
+        /sbin/chkconfig --del qpidd
+fi
+
+%postun -n %{qpidd}
+if [ "$1" -ge "1" ]; then
+        /sbin/service qpidd condrestart >/dev/null 2>&1 || :
+fi
+/sbin/ldconfig
+
+%changelog
+* Mon Mar 31 2008 Nuno Santos <nsantos@redhat.com> - 0.2-25
+- Create user qpidd, start qpidd service as qpidd
+
+* Mon Feb 18 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-24
+- Bug fix for TCK issue in Beta 3
+
+* Thu Feb 14 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-23
+- Bumped to pull in fixes for Beta 3
+
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-22
+- Added -g to compile flags for debug symbols.
+
+* Tue Feb 12 2008 Alan Conway <aconway@redhat.com> - 0.2-21
+- Create /var/lib/qpidd correctly.
+
+* Mon Feb 11 2008 Rafael Schloming <rafaels@redhat.com> - 0.2-20
+- bumped for Beta 3
+
+* Mon Jan 21 2008 Gordon Sim <gsim@redhat.com> - 0.2-18
+- bump up rev for recent changes to plugin modules & mgmt
+
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-17
+- add missing header file SessionManager.h
+
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-16
+- limit builds to i386 and x86_64 archs
+
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-15
+- add ruby as a build dependency
+
+* Tue Dec 18 2007 Nuno Santos <nsantos@redhat.com> - 0.2-14
+- include fixes from Gordon Sim (fragmentation, lazy-loading, staging) 
+  and Alan Conway (exception handling in the client).
+
+* Thu Dec 6 2007 Alan Conway <aconway@redhat.com> - 0.2-13
+- installcheck target to build examples in installation.
+
+* Thu Nov 8 2007 Alan Conway <aconway@redhat.com> - 0.2-10
+- added examples to RPM package.
+
+* Thu Oct 9 2007 Alan Conway <aconway@redhat.com> - 0.2-9
+- added config(noreplace) for qpidd.conf
+
+* Thu Oct 4 2007 Alan Conway <aconway@redhat.com> - 0.2-8
+- Added qpidd.conf configuration file.
+- Updated man page to detail configuration options.
+
+* Thu Sep 20 2007 Alan Conway <aconway@redhat.com> - 0.2-7
+- Removed apr dependency.
+
+* Wed Aug 1 2007 Alan Conway <aconway@redhat.com> - 0.2-6
+- added --disable-cluster flag
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-5
+- Add missing Requires: e2fsprogs-devel for qpidc-devel.
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-4
+- longer broker_start timeout to avoid failures in plague builds.
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-3
+- Add missing Requires: apr in qpidc.
+
+* Mon Apr 16 2007 Alan Conway <aconway@redhat.com> - 0.2-2
+- Bugfix for memory errors on x86_64.
+
+* Thu Apr 12 2007 Alan Conway <aconway@redhat.com> - 0.2-1
+- Bumped version number for rhm dependencies.
+
+* Wed Apr 11 2007 Alan Conway <aconway@redhat.com> - 0.1-5
+- Add qpidd-devel sub-package.
+
+* Mon Feb 19 2007 Jim Meyering <meyering@redhat.com> - 0.1-4
+- Address http://bugzilla.redhat.com/220630:
+- Remove redundant "cppunit" build-requires.
+- Add --disable-static.
+
+* Thu Jan 25 2007 Alan Conway <aconway@redhat.com> - 0.1-3
+- Applied Jim Meyerings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/<87hcugzmyp.fsf@rho.meyering.net>
+
+* Mon Dec 22 2006 Alan Conway <aconway@redhat.com> - 0.1-1
+- Fixed all rpmlint complaints (with help from David Lutterkort)
+- Added qpidd --daemon behaviour, fix init.rc scripts
+
+* Fri Dec  8 2006 David Lutterkort <dlutter@redhat.com> - 0.1-1
+- Initial version based on Jim Meyering's sketch and discussions with Alan
+  Conway
+

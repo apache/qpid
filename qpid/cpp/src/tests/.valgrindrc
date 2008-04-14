@@ -1,0 +1,7 @@
+--gen-suppressions=all
+--leak-check=full
+--demangle=yes
+--suppressions=.valgrind.supp
+--num-callers=25
+--trace-children=yes
+

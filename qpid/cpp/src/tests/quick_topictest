@@ -1,0 +1,9 @@
+#!/bin/sh
+# Quick and quiet topic test for make check.
+test -z "$srcdir" && srcdir=.
+$srcdir/topictest -s2 -m2 -b1 > topictest.log 2>&1 || {
+    echo $0 FAILED:
+    cat topictest.log
+    exit 1
+}
+rm topictest.log
