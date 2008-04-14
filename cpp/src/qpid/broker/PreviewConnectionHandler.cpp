@@ -20,11 +20,18 @@
  *
  */
 
+#include "config.h"
+
 #include "PreviewConnectionHandler.h"
 #include "PreviewConnection.h"
 #include "qpid/framing/ConnectionStartBody.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
+#include "qpid/log/Statement.h"
+
+#if HAVE_SASL
+#include <sasl/sasl.h>
+#endif
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -81,15 +88,61 @@ void PreviewConnectionHandler::Handler::startOk(const framing::FieldTable& /*cli
 {
     //TODO: handle SASL mechanisms more cleverly
     if (mechanism == PLAIN) {
+        QPID_LOG(info, "SASL Plain: Attempting authentication");
         if (response.size() > 0 && response[0] == (char) 0) {
             string temp = response.substr(1);
             string::size_type i = temp.find((char)0);
             string uid = temp.substr(0, i);
             string pwd = temp.substr(i + 1);
-            //TODO: authentication
+
+#if HAVE_SASL
+            if (connection.getBroker().getOptions().auth) {
+                int code = sasl_server_new(BROKER_SASL_NAME,
+                                           NULL, NULL, NULL, NULL, NULL, 0,
+                                           &connection.sasl_conn);
+
+                if (SASL_OK != code) {
+                    QPID_LOG(info, "SASL Plain: Connection creation failed: "
+                             << sasl_errdetail(connection.sasl_conn));
+
+                        // TODO: Change this to an exception signaling
+                        // server error, when one is available
+                    throw CommandInvalidException("Unable to perform authentication");
+                }
+
+                code = sasl_checkpass(connection.sasl_conn,
+                                      uid.c_str(), uid.length(),
+                                      pwd.c_str(), pwd.length());
+                if (SASL_OK == code) {
+                    QPID_LOG(info, "SASL Plain: Authentication accepted for " << uid);
+                } else {
+                        // See man sasl_errors(3) or sasl/sasl.h for possible errors
+                    QPID_LOG(info, "SASL Plain: Authentication rejected for "
+                             << uid << ": "
+                             << sasl_errdetail(connection.sasl_conn));
+
+                        // TODO: Change this to an exception signaling
+                        // authentication failure, when one is available
+                    throw ConnectionForcedException("Authentication failed");
+                }
+            } else {
+#endif
+                QPID_LOG(warning,
+                         "SASL Plain Warning: No Authentication Performed for "
+                         << uid);
+#if HAVE_SASL
+            }
+#endif
+
             connection.setUserId(uid);
         }
-    }
+    } else {
+			// The 0-10 spec states that if the client requests a
+			// mechanism not proposed by the server the server MUST
+			// close the connection. Assumption here is if we proposed
+			// a mechanism we'd have a case for it above.
+		throw NotImplementedException("Unsupported authentication mechanism");
+	}
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
 }
         
