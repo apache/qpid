@@ -80,14 +80,15 @@ exit 0
 %setup -q
 
 %build
-%configure --disable-static --without-cpg CXXFLAGS="-g -O3 -DNDEBUG"
+CXXFLAGS="%{optflags} -DNDEBUG -O3" \
+%configure --disable-static --without-cpg
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
 
 %install
 rm -rf %{buildroot}
-make install-strip DESTDIR=%{buildroot}
+make install DESTDIR=%{buildroot}
 install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
 install -d -m0755 %{buildroot}%{_localstatedir}/lib/qpidd
 rm -f %{buildroot}%_libdir/*.a
