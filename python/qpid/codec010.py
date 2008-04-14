@@ -195,21 +195,21 @@ class Codec(Packer):
 
   def read_control(self):
     cntrl = self.spec.controls[self.read_uint16()]
-    return cntrl.decode(self)
+    return Struct(cntrl, **cntrl.decode_fields(self))
   def write_control(self, ctrl):
     type = ctrl._type
     self.write_uint16(type.code)
-    type.encode(self, ctrl)
+    type.encode_fields(self, ctrl)
 
   def read_command(self):
     type = self.spec.commands[self.read_uint16()]
     hdr = self.spec["session.header"].decode(self)
-    cmd = type.decode(self)
+    cmd = Struct(type, **type.decode_fields(self))
     return hdr, cmd
   def write_command(self, hdr, cmd):
     self.write_uint16(cmd._type.code)
     hdr._type.encode(self, hdr)
-    cmd._type.encode(self, cmd)
+    cmd._type.encode_fields(self, cmd)
 
   def read_size(self, width):
     if width > 0:
