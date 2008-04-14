@@ -1,8 +1,0 @@
-#!/bin/sh
-# Run the python tests.
-if test -d ../../../python ;  then
-    cd ../../../python && ./run-tests -v -s ../specs/amqp.0-10-preview.xml -I cpp_failing_0-10.txt -b localhost:$QPID_PORT $PYTHON_TESTS
-else
-    echo Warning: python tests not found.
-fi
-
