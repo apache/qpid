@@ -212,6 +212,12 @@ class Str16Value : public FieldValue {
     Str16Value(const std::string& v);
 };
 
+class Struct32Value : public FieldValue {
+  public:
+    Struct32Value(const std::string& v);
+};
+
+
 /*
  * Basic integer value encodes as signed 32 bit
  */
