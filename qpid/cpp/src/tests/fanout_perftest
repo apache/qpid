@@ -1,2 +1,0 @@
-#!/bin/sh
-exec `dirname $0`/run_perftest 10000 --mode fanout --npubs 16 --nsubs 16 
