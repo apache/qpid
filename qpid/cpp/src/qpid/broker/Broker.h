@@ -22,8 +22,6 @@
  *
  */
 
-#include "config.h"
-
 #include "ConnectionFactory.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
