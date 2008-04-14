@@ -1,0 +1,6 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+background "Listening" ./listener
+background "Listening" ./listener
+background "Listening" ./listener
+clients ./fanout_producer
+outputs ./fanout_producer.out "./listener.out | remove_uuid" "./listenerX.out | remove_uuid" "./listenerXX.out | remove_uuid"
