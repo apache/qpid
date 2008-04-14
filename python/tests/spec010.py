@@ -26,7 +26,7 @@ from qpid.datatypes import Struct
 class SpecTest(TestCase):
 
   def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
+    self.spec = load(testrunner.get_spec_file("amqp.0-10-qpid-errata.xml"))
 
   def testSessionHeader(self):
     hdr = self.spec["session.header"]
@@ -62,3 +62,11 @@ class SpecTest(TestCase):
     dec = self.encdec(self.spec["message.subscribe"], cmd)
     assert cmd.exclusive == dec.exclusive
     assert cmd.destination == dec.destination
+
+  def testXid(self):
+    xid = self.spec["dtx.xid"]
+    sc = StringCodec(self.spec)
+    st = Struct(xid, format=0, global_id="gid", branch_id="bid")
+    xid.encode(sc, st)
+    assert sc.encoded == '\x00\x00\x00\x10\x06\x04\x07\x00\x00\x00\x00\x00\x03gid\x03bid'
+    assert xid.decode(sc).__dict__ == st.__dict__
