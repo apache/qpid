@@ -48,6 +48,10 @@
 #include <iostream>
 #include <memory>
 
+#if HAVE_SASL
+#include <sasl/sasl.h>
+#endif
+
 using qpid::sys::Acceptor;
 using qpid::framing::FrameHandler;
 using qpid::framing::ChannelId;
@@ -71,6 +75,15 @@ Broker::Options::Options(const std::string& name) :
     stagingThreshold(5000000),
     enableMgmt(1),
     mgmtPubInterval(10),
+#if HAVE_SASL
+    //Authentication disabled by default for now to allow any
+    //scripts etc that might fail authentication to be updated.
+    //Note that this is a temporary measure (GS 14-APR-2008).
+    auth(false),
+    //auth(true),
+#else
+    auth(false),
+#endif
     ack(0)
 {
     int c = sys::SystemInfo::concurrency();
@@ -94,6 +107,8 @@ Broker::Options::Options(const std::string& name) :
          "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
          "Management Publish Interval")
+        ("auth", optValue(auth, "yes|no"),
+         "Enable authentication, if disabled all incoming connections will be trusted")
         ("ack", optValue(ack, "N"),
          "Send session.ack/solicit-ack at least every N frames. 0 disables voluntary ack/solitict-ack");
 }
@@ -184,6 +199,23 @@ Broker::Broker(const Broker::Options& conf) :
     else
         QPID_LOG(info, "Management not enabled");
 
+    /**
+     * SASL setup, can fail and terminate startup
+     */
+    if (conf.auth) {
+#if HAVE_SASL
+        int code = sasl_server_init(NULL, BROKER_SASL_NAME);
+        if (code != SASL_OK) {
+                // TODO: Figure out who owns the char* returned by
+                // sasl_errstring, though it probably does not matter much
+            throw Exception(sasl_errstring(code, NULL, NULL));
+        }
+        QPID_LOG(info, "SASL enabled");
+#else
+        throw Exception("Requested authentication but SASL unavailable");
+#endif
+    }
+
     // Initialize plugins
     for (Plugin::Plugins::const_iterator i = plugins.begin();
          i != plugins.end();
@@ -236,6 +268,11 @@ Broker::~Broker() {
     shutdown();
     ManagementAgent::shutdown ();
     delete store;    
+    if (config.auth) {
+#if HAVE_SASL
+        sasl_done();
+#endif
+    }
 }
 
 uint16_t Broker::getPort() const  { return getAcceptor().getPort(); }
