@@ -164,7 +164,38 @@ AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 if test x$with_CPG = xyes; then
   CPPFLAGS+=" -DCPG"
 fi
-	
+
+
+# Setup --with-sasl/--without-sasl as arguments to configure
+AC_ARG_WITH([sasl],
+  [AS_HELP_STRING([--with-sasl], [Build with SASL authentication support])],
+  [WANT_SASL="$withval"],
+  [WANT_SASL=check])
+
+# Make sure --with-sasl/--without-sasl were only give yes|no|check
+AS_IF([test "x$WANT_SASL" != xyes -a \
+            "x$WANT_SASL" != xno -a \
+            "x$WANT_SASL" != xcheck],
+  [AC_MSG_ERROR([Bad value for --with-sasl: $withval])])
+
+# If we weren't explicitly asked /not/ to test, i.e. not given --without-sasl
+AS_IF([test "x$WANT_SASL" != xno],
+  # Perform tests for headers and libraries. Remember, AC_CHECK_LIB
+  # will give you some useful default behavior, e.g. setup LDFLAGS, if
+  # you do not give it a second argument, so try not to
+  [AC_CHECK_HEADER([sasl/sasl.h], , [HAVE_SASL_H=no])
+   AC_CHECK_LIB([sasl2], [sasl_checkpass], , [HAVE_SASL_LIB=no])
+   # If any of the tests failed
+   AS_IF([test "x$HAVE_SASL_H" = xno -o \
+               "x$HAVE_SASL_LIB" = xno],
+     # And we were given --with, then fail
+     [AS_IF([test "x$WANT_SASL" = xyes],
+       [AC_MSG_ERROR([sasl requested but not available])])],
+     # Otherwise, no tests failed, setup AC_SUBST/AC_DEFINE/AM_CONDITIONALs
+     [AC_DEFINE([BROKER_SASL_NAME], ["qpidd"],
+                [The SASL app name for the qpid Broker])
+      AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])])])
+
 # Files to generate	
 AC_CONFIG_FILES([
   qpidc.spec

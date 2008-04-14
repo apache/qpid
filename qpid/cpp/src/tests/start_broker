@@ -1,4 +1,4 @@
 #!/bin/sh
 rm -f qpidd.vglog qpidd.log
 test -n "$VALGRIND" && VALGRIND="$VALGRIND --log-file-exactly=qpidd.vglog --"
-exec libtool --mode=execute $VALGRIND ../qpidd --daemon --port 0 --log-output qpidd.log "$@" > qpidd.port
+exec libtool --mode=execute $VALGRIND ../qpidd --auth no --daemon --port 0 --log-output qpidd.log "$@" > qpidd.port

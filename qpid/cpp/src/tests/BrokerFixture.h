@@ -47,6 +47,7 @@ struct  BrokerFixture {
         opts.enableMgmt=false;  
         opts.workerThreads=1;
         opts.dataDir="";
+        opts.auth=false;
         broker = Broker::create(opts);
         // TODO aconway 2007-12-05: At one point BrokerFixture
         // tests could hang in Connection ctor if the following
