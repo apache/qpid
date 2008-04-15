@@ -49,7 +49,7 @@
 		<dependency>
 			<groupId>org.apache.qpid</groupId>
 			<artifactId>qpid-broker</artifactId>
-			<version>1.0-incubating-M2.1-SNAPSHOT</version>
+			<version>1.0-incubating-M3-SNAPSHOT</version>
 		</dependency>
                <dependency>
                    <groupId>org.apache.maven</groupId>
@@ -64,7 +64,7 @@
                 <dependency>
                   <groupId>org.apache.qpid</groupId>
                   <artifactId>junit-toolkit</artifactId>
-                  <version>1.0-incubating-M2.1-SNAPSHOT</version>
+                  <version>1.0-incubating-M3-SNAPSHOT</version>
                 </dependency>
 	</dependencies>
 
