@@ -3,7 +3,8 @@ $: << ".."                      # Include .. in load path
 require 'cppgen'
 
 
-class UnknownStructSub
+# Dummy element representing an unknown struct type.
+class UnknownStruct
   def visitable?() true end
   def fqclassname() "UnknownStruct" end
 end
@@ -264,10 +265,6 @@ class Specification < CppGen
   end
 
   def gen_visitor(base, subs)
-    if base=="Struct"
-      subs << UnknownStructSub.new
-    end
-
     h_file("#{@dir}/#{base}Visitor.h") { 
       include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace("#{@ns}") { 
@@ -293,16 +290,14 @@ class Specification < CppGen
       include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace(@ns){
         namespace("#{base.downcase}_max") {
-          gen "template <class M, class X> "
-          struct("Max") {
-            genl "static const size_t max=(M::max > sizeof(X)) ? M::max : sizeof(X);"
-          }
-          genl "struct Max000 { static const size_t max=0; };"
-          last="Max000"
+          genl "static const size_t MAX000=0;"
+          last="MAX000"
           subs.each { |s|
-            genl "typedef Max<#{last}, #{s.fqclassname}> #{last.succ!};"
+            sizeof="sizeof(#{s.fqclassname})"
+            genl "static const size_t #{last.succ} = #{sizeof} > #{last} ? #{sizeof} : #{last};"
+            last.succ!
           }
-          genl "static const int MAX=#{last}::max;"
+          genl "static const int MAX=#{last};"
         }
         holder_base="amqp_0_10::Holder<#{name}, #{base}, #{base.downcase}_max::MAX>"
         struct("#{name}", "public #{holder_base}") {
@@ -326,7 +321,7 @@ class Specification < CppGen
           genl "uint16_t key=(classCode<<8)+code;"
           scope ("switch(key) {") {
             subs.each { |s|
-              genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
+              genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;" unless (s.is_a? UnknownStruct)
             }
             genl "default: "
             indent { 
@@ -345,6 +340,7 @@ class Specification < CppGen
   end
 
   def gen_visitable(base, subs)
+     subs << UnknownStruct.new if base=="Struct" # Extra case for unknown structs.
     gen_holder(base, subs)
     gen_visitor(base, subs)
   end
