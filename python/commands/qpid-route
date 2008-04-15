@@ -79,7 +79,8 @@ class RouteManager:
         try:
             self.spec    = qpid.spec.load (_specpath)
             self.client  = Client (broker.host, broker.port, self.spec)
-            self.client.start ({"LOGIN":"guest","PASSWORD":"guest"})
+            self.client.start (response='\x00' + "guest" + '\x00' + "guest",
+                               mechanism="PLAIN")
             self.channel = self.client.channel (1)
             self.mclient = managementClient (self.spec)
             self.mch     = self.mclient.addChannel (self.channel)

@@ -58,8 +58,8 @@ class ManagementAgent
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
     void addObject       (ManagementObject::shared_ptr object,
-                          uint64_t                     persistenceId = 0,
-                          uint64_t                     idOffset      = 10);
+                          uint32_t                     persistId   = 0,
+                          uint32_t                     persistBank = 2);
     void clientAdded     (void);
     void dispatchCommand (broker::Deliverable&             msg,
                           const std::string&               routingKey,
@@ -142,7 +142,9 @@ class ManagementAgent
     broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;
     uint16_t                     interval;
-    uint64_t                     nextObjectId;
+    uint16_t                     bootSequence;
+    uint32_t                     localBank;
+    uint32_t                     nextObjectId;
     uint32_t                     nextRemotePrefix;
 
 #   define MA_BUFFER_SIZE 65536

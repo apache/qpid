@@ -136,7 +136,7 @@ Broker::Broker(const Broker::Options& conf) :
         managementAgent->setInterval (conf.mgmtPubInterval);
         qpid::management::PackageQpid packageInitializer (managementAgent);
 
-        System* system = new System ();
+        System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
         systemObject = System::shared_ptr (system);
 
         mgmtObject = management::Broker::shared_ptr (new management::Broker (this, system, conf.port));
@@ -149,7 +149,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_dataDirEnabled   (dataDir.isEnabled ());
         mgmtObject->set_dataDir          (dataDir.getPath ());
         
-        managementAgent->addObject (mgmtObject, 1, 0);
+        managementAgent->addObject (mgmtObject, 1, 1);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the
