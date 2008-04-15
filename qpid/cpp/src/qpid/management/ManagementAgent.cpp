@@ -42,20 +42,24 @@ ManagementAgent::ManagementAgent (string _dataDir, uint16_t _interval) :
     dataDir (_dataDir), interval (_interval)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
-    nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
+    localBank        = 3;
+    nextObjectId     = 1;
     nextRemotePrefix = 101;
 
     // Get from file or generate and save to file.
     if (dataDir.empty ())
     {
         uuid.generate ();
+        bootSequence = 1;
         QPID_LOG (info, "ManagementAgent has no data directory, generated new broker ID: "
                   << uuid);
     }
     else
     {
-        string   filename (dataDir + "/brokerId");
-        ifstream inFile   (filename.c_str ());
+        string   filename    (dataDir + "/brokerId");
+        string   seqFilename (dataDir + "/bootseq");
+        ifstream inFile      (filename.c_str ());
+        ifstream seqFile     (seqFilename.c_str ());
 
         if (inFile.good ())
         {
@@ -80,6 +84,26 @@ ManagementAgent::ManagementAgent (string _dataDir, uint16_t _interval) :
                 QPID_LOG (warning, "ManagementAgent unable to save broker ID");
             }
         }
+
+        if (seqFile.good ())
+        {
+            seqFile >> bootSequence;
+            seqFile.close ();
+        }
+        else
+            bootSequence = 1;
+
+        ofstream seqOut (seqFilename.c_str ());
+        if (seqOut.good ())
+        {
+            uint16_t nextSeq = (bootSequence + 1) & 0x7FFF;
+            if (nextSeq == 0)
+                nextSeq = 1;
+            seqOut << nextSeq << endl;
+            seqOut.close ();
+        }
+
+        QPID_LOG (debug, "ManagementAgent boot sequence: " << bootSequence);
     }
 }
 
@@ -125,16 +149,17 @@ void ManagementAgent::RegisterClass (string   packageName,
 }
 
 void ManagementAgent::addObject (ManagementObject::shared_ptr object,
-                                 uint64_t                     /*persistenceId*/,
-                                 uint64_t                     /*idOffset*/)
+                                 uint32_t                     persistId,
+                                 uint32_t                     persistBank)
 {
     Mutex::ScopedLock lock (userLock);
     uint64_t objectId;
 
-//    if (persistenceId == 0)
-        objectId = nextObjectId++;
-//    else
-//        objectId = 0x8000000000000000ULL | (persistenceId + idOffset);
+    if (persistId == 0)
+        objectId = ((uint64_t) bootSequence) << 48 |
+            ((uint64_t) localBank) << 24 | nextObjectId++;
+    else
+        objectId = ((uint64_t) persistBank) << 24 | persistId;
 
     object->setObjectId (objectId);
     managementObjects[objectId] = object;
@@ -384,7 +409,7 @@ void ManagementAgent::dispatchMethod (Message&      msg,
     EncodeHeader (outBuffer, 'm', sequence);
 
     ManagementObjectMap::iterator iter = managementObjects.find (objId);
-    if (iter == managementObjects.end ())
+    if (iter == managementObjects.end () || iter->second->isDeleted ())
     {
         outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
         outBuffer.putShortString (Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));

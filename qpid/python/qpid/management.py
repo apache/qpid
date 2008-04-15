@@ -83,11 +83,11 @@ class methodResult:
 class managementChannel:
   """ This class represents a connection to an AMQP broker. """
 
-  def __init__ (self, ch, topicCb, replyCb, cbContext):
+  def __init__ (self, ch, topicCb, replyCb, cbContext, _detlife=0):
     """ Given a channel on an established AMQP broker connection, this method
     opens a session and performs all of the declarations and bindings needed
     to participate in the management protocol. """
-    response         = ch.session_open (detached_lifetime=300)
+    response         = ch.session_open (detached_lifetime=_detlife)
     self.sessionId   = response.session_id
     self.topicName   = "mgmt-%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", response.session_id)
     self.replyName   = "repl-%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", response.session_id)
@@ -97,8 +97,8 @@ class managementChannel:
     self.context     = cbContext
     self.reqsOutstanding = 0
 
-    ch.queue_declare (queue=self.topicName, exclusive=1, auto_delete=1)
-    ch.queue_declare (queue=self.replyName, exclusive=1, auto_delete=1)
+    ch.queue_declare (queue=self.topicName, exclusive=True, auto_delete=True)
+    ch.queue_declare (queue=self.replyName, exclusive=True, auto_delete=True)
 
     ch.queue_bind (exchange="qpid.management",
                    queue=self.topicName, routing_key="mgmt.#")
