@@ -21,6 +21,7 @@
 
 import qpid
 import socket
+import struct
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
@@ -63,19 +64,24 @@ class ManagementData:
   #
 
   def registerObjId (self, objId):
-    if self.baseId == 0:
-      if objId & 0x8000000000000000L == 0:
-        self.baseId = objId - 1000
+    boot = objId & 0x7FFF000000000000L
+    if boot == 0:
+      return
+    self.bootSequence = boot
 
   def displayObjId (self, objId):
-    if objId & 0x8000000000000000L == 0:
-      return objId - self.baseId
-    return (objId & 0x7fffffffffffffffL) + 5000
+    bank = (objId & 0x0000FFFFFF000000L) >> 24
+    id   =  objId & 0x0000000000FFFFFFL
+    return bank * 1000 + id
 
   def rawObjId (self, displayId):
-    if displayId < 5000:
-      return displayId + self.baseId
-    return displayId - 5000 + 0x8000000000000000L
+    bank  = displayId / 1000
+    id    = displayId % 1000
+    if bank < 3:
+      objId = (bank << 24) + id
+    else:
+      objId = self.bootSequence + (bank << 24) + id
+    return objId
 
   def displayClassName (self, cls):
     (packageName, className, hash) = cls
@@ -158,7 +164,7 @@ class ManagementData:
     self.lock           = Lock ()
     self.tables         = {}
     self.schema         = {}
-    self.baseId         = 0
+    self.bootSequence   = 0
     self.disp           = disp
     self.lastUnit       = None
     self.methodSeq      = 1
@@ -166,7 +172,8 @@ class ManagementData:
 
     self.broker = Broker (host)
     self.client = Client (self.broker.host, self.broker.port, self.spec)
-    self.client.start ({"LOGIN": username, "PASSWORD": password})
+    self.client.start (response='\x00' + username + '\x00' + password,
+                       mechanism="PLAIN")
     self.channel = self.client.channel (1)
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
@@ -189,7 +196,7 @@ class ManagementData:
         if item[0] == key:
           typecode = item[1]
           unit     = item[2]
-          if (typecode >= 1 and typecode <= 5) or typecode >= 12:  # numerics
+          if (typecode >= 1 and typecode <= 5) or typecode == 12 or typecode == 13:  # numerics
             if unit == None or unit == self.lastUnit:
               return str (value)
             else:
@@ -214,7 +221,7 @@ class ManagementData:
             else:
               return "True"
           elif typecode == 14:
-            return str (UUID (bytes=value))
+            return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", value)
           elif typecode == 15:
             return str (value)
     return "*type-error*"

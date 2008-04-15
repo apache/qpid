@@ -69,7 +69,7 @@ Queue::Queue(const string& _name, bool _autodelete,
         if (agent.get () != 0)
         {
             mgmtObject = management::Queue::shared_ptr
-                (new management::Queue (this, parent, _name, _store != 0, _autodelete, 0));
+                (new management::Queue (this, parent, _name, _store != 0, _autodelete, _owner != 0));
 
             // Add the object to the management agent only if this queue is not durable.
             // If it's durable, we will add it later when the queue is assigned a persistenceId.

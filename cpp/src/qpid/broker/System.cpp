@@ -19,19 +19,51 @@
 
 #include "System.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/framing/Uuid.h"
 #include <sys/utsname.h>
+#include <iostream>
+#include <fstream>
 
-using namespace qpid::broker;
 using qpid::management::ManagementAgent;
+using namespace qpid::broker;
+using namespace std;
 
-System::System ()
+System::System (string _dataDir)
 {
     ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
 
     if (agent.get () != 0)
     {
+        framing::Uuid systemId;
+
+        if (_dataDir.empty ())
+        {
+            systemId.generate ();
+        }
+        else
+        {
+            string   filename (_dataDir + "/systemId");
+            ifstream inFile (filename.c_str ());
+
+            if (inFile.good ())
+            {
+                inFile >> systemId;
+                inFile.close ();
+            }
+            else
+            {
+                systemId.generate ();
+                ofstream outFile (filename.c_str ());
+                if (outFile.good ())
+                {
+                    outFile << systemId << endl;
+                    outFile.close ();
+                }
+            }
+        }
+
         mgmtObject = management::System::shared_ptr
-            (new management::System (this, "host"));
+            (new management::System (this, systemId));
         struct utsname _uname;
         if (uname (&_uname) == 0)
         {
@@ -42,7 +74,7 @@ System::System ()
             mgmtObject->set_machine  (std::string (_uname.machine));
         }
 
-        agent->addObject (mgmtObject, 3, 0);
+        agent->addObject (mgmtObject, 3, 1);
     }
 }
 
