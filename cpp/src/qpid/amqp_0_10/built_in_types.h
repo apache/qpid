@@ -137,6 +137,7 @@ typedef SerializableString<Uint8, Uint32> Vbin32;
 
 // Forward declare class types.
 class Map;
+class Struct32;
 class UnknownType;
 template <class T> struct  ArrayDomain;
 typedef ArrayDomain<UnknownType> Array;
@@ -145,13 +146,11 @@ typedef ArrayDomain<UnknownType> Array;
 struct ByteRanges { template <class S> void serialize(S&) {} };
 struct SequenceSet  { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
-struct Struct32  { template <class S> void serialize(S&) {} };
 
 // FIXME aconway 2008-03-10: dummy ostream operators
 inline std::ostream& operator<<(std::ostream& o, const ByteRanges&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }
-inline std::ostream& operator<<(std::ostream& o, const Struct32&) { return o; }
 
 enum SegmentType { CONTROL, COMMAND, HEADER, BODY };
 

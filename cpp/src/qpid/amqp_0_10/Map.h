@@ -171,7 +171,7 @@ template <class S> void Map::decode(S& s) {
     typename S::ScopedLimit l(s, decodedSize); // Make sure we don't overrun.
     // FIXME aconway 2008-04-03:  replace preview with 0-10:
     // for ( ; count > 0; --count) {
-    while (s.getLimit() > 0) {
+    while (s.bytesRemaining() > 0) {
         key_type k; MapValue v;
         s(k)(v);
         insert(value_type(k,v));
