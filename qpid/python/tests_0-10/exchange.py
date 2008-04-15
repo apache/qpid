@@ -23,10 +23,94 @@ Tests for exchange behaviour.
 Test classes ending in 'RuleTests' are derived from rules in amqp.xml.
 """
 
-import Queue, logging
-from qpid.testlib import TestBase
-from qpid.content import Content
+import Queue, logging, traceback
+from qpid.testlib import TestBase010
+from qpid.datatypes import Message
 from qpid.client import Closed
+from qpid.session import SessionException
+
+
+class TestHelper(TestBase010):
+    def setUp(self):
+        TestBase010.setUp(self)
+        self.queues = []
+        self.exchanges = []
+
+    def tearDown(self):
+        try:
+            for ssn, q in self.queues:
+                ssn.queue_delete(queue=q)
+            for ssn, ex in self.exchanges:
+                ssn.exchange_delete(exchange=ex)
+        except:
+            print "Error on tearDown:"
+            print traceback.print_exc()
+        TestBase010.tearDown(self)
+
+    def createMessage(self, key="", body=""):
+        return Message(self.session.delivery_properties(routing_key=key), body)
+
+    def getApplicationHeaders(self, msg):
+        for h in msg.headers:
+            if hasattr(h, 'application_headers'): return getattr(h, 'application_headers')
+        return None            
+
+    def assertPublishGet(self, queue, exchange="", routing_key="", properties=None):
+        """
+        Publish to exchange and assert queue.get() returns the same message.
+        """
+        body = self.uniqueString()
+        dp=self.session.delivery_properties(routing_key=routing_key)
+        mp=self.session.message_properties(application_headers=properties)
+        self.session.message_transfer(destination=exchange, message=Message(dp, mp, body))
+        msg = queue.get(timeout=1)
+        self.assertEqual(body, msg.body)
+        if (properties):
+            self.assertEqual(properties, self.getApplicationHeaders(msg))
+
+    def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
+        """
+        Publish a message and consume it, assert it comes back intact.
+        Return the Queue object used to consume.
+        """
+        self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
+
+    def assertEmpty(self, queue):
+        """Assert that the queue is empty"""
+        try:
+            queue.get(timeout=1)
+            self.fail("Queue is not empty.")
+        except Queue.Empty: None              # Ignore
+        
+    def queue_declare(self, session=None, *args, **keys):
+        session = session or self.session
+        reply = session.queue_declare(*args, **keys)
+        self.queues.append((session, keys["queue"]))
+        return reply
+
+    def exchange_declare(self, session=None, ticket=0, exchange='',
+                         type='', passive=False, durable=False,
+                         auto_delete=False,
+                         arguments={}):
+        session = session or self.session
+        reply = session.exchange_declare(exchange=exchange, type=type, passive=passive,durable=durable, auto_delete=auto_delete, arguments=arguments)
+        self.exchanges.append((session,exchange))
+        return reply
+
+    def uniqueString(self):
+        """Generate a unique string, unique for this TestBase instance"""
+        if not "uniqueCounter" in dir(self): self.uniqueCounter = 1;
+        return "Test Message " + str(self.uniqueCounter)
+
+    def consume(self, queueName):
+        """Consume from named queue returns the Queue object."""
+        if not "uniqueTag" in dir(self): self.uniqueTag = 1
+        else: self.uniqueTag += 1
+        consumer_tag = "tag" + str(self.uniqueTag)
+        self.session.message_subscribe(queue=queueName, destination=consumer_tag)
+        self.session.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
+        self.session.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)
+        return self.session.incoming(consumer_tag)
 
 
 class StandardExchangeVerifier:
@@ -37,7 +121,7 @@ class StandardExchangeVerifier:
     def verifyDirectExchange(self, ex):
         """Verify that ex behaves like a direct exchange."""
         self.queue_declare(queue="q")
-        self.channel.queue_bind(queue="q", exchange=ex, routing_key="k")
+        self.session.exchange_bind(queue="q", exchange=ex, binding_key="k")
         self.assertPublishConsume(exchange=ex, queue="q", routing_key="k")
         try:
             self.assertPublishConsume(exchange=ex, queue="q", routing_key="kk")
@@ -47,38 +131,38 @@ class StandardExchangeVerifier:
     def verifyFanOutExchange(self, ex):
         """Verify that ex behaves like a fanout exchange."""
         self.queue_declare(queue="q") 
-        self.channel.queue_bind(queue="q", exchange=ex)
+        self.session.exchange_bind(queue="q", exchange=ex)
         self.queue_declare(queue="p") 
-        self.channel.queue_bind(queue="p", exchange=ex)
+        self.session.exchange_bind(queue="p", exchange=ex)
         for qname in ["q", "p"]: self.assertPublishGet(self.consume(qname), ex)
 
     def verifyTopicExchange(self, ex):
         """Verify that ex behaves like a topic exchange"""
         self.queue_declare(queue="a")
-        self.channel.queue_bind(queue="a", exchange=ex, routing_key="a.#.b.*")
+        self.session.exchange_bind(queue="a", exchange=ex, binding_key="a.#.b.*")
         q = self.consume("a")
         self.assertPublishGet(q, ex, "a.b.x")
         self.assertPublishGet(q, ex, "a.x.b.x")
         self.assertPublishGet(q, ex, "a.x.x.b.x")
         # Shouldn't match
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b.x.y"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"x.a.b.x"}))        
-        self.channel.message_transfer(destination=ex, content=Content(properties={'routing_key':"a.b"}))
+        self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))        
+        self.session.message_transfer(destination=ex, message=self.createMessage("a.b.x.y"))        
+        self.session.message_transfer(destination=ex, message=self.createMessage("x.a.b.x"))        
+        self.session.message_transfer(destination=ex, message=self.createMessage("a.b"))
         self.assert_(q.empty())
 
     def verifyHeadersExchange(self, ex):
         """Verify that ex is a headers exchange"""
         self.queue_declare(queue="q")
-        self.channel.queue_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
+        self.session.exchange_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
         q = self.consume("q")
         headers = {"name":"fred", "age":3}
         self.assertPublishGet(q, exchange=ex, properties=headers)
-        self.channel.message_transfer(destination=ex) # No headers, won't deliver
+        self.session.message_transfer(destination=ex) # No headers, won't deliver
         self.assertEmpty(q);                 
         
 
-class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
+class RecommendedTypesRuleTests(TestHelper, StandardExchangeVerifier):
     """
     The server SHOULD implement these standard exchange types: topic, headers.
     
@@ -106,7 +190,7 @@ class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
         self.verifyHeadersExchange("h")
         
 
-class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
+class RequiredInstancesRuleTests(TestHelper, StandardExchangeVerifier):
     """
     The server MUST, in each virtual host, pre-declare an exchange instance
     for each standard exchange type that it implements, where the name of the
@@ -124,7 +208,7 @@ class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
         
     def testAmqMatch(self): self.verifyHeadersExchange("amq.match")
 
-class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
+class DefaultExchangeRuleTests(TestHelper, StandardExchangeVerifier):
     """
     The server MUST predeclare a direct exchange to act as the default exchange
     for content Publish methods and for default queue bindings.
@@ -144,20 +228,20 @@ class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
 
 # TODO aconway 2006-09-27: Fill in empty tests:
 
-class DefaultAccessRuleTests(TestBase):
+class DefaultAccessRuleTests(TestHelper):
     """
     The server MUST NOT allow clients to access the default exchange except
     by specifying an empty exchange name in the Queue.Bind and content Publish
     methods.
     """
 
-class ExtensionsRuleTests(TestBase):
+class ExtensionsRuleTests(TestHelper):
     """
     The server MAY implement other exchange types as wanted.
     """
 
 
-class DeclareMethodMinimumRuleTests(TestBase):
+class DeclareMethodMinimumRuleTests(TestHelper):
     """
     The server SHOULD support a minimum of 16 exchanges per virtual host and
     ideally, impose no limit except as defined by available resources.
@@ -168,7 +252,7 @@ class DeclareMethodMinimumRuleTests(TestBase):
     """
 
 
-class DeclareMethodTicketFieldValidityRuleTests(TestBase):
+class DeclareMethodTicketFieldValidityRuleTests(TestHelper):
     """
     The client MUST provide a valid access ticket giving "active" access to
     the realm in which the exchange exists or will be created, or "passive"
@@ -179,7 +263,7 @@ class DeclareMethodTicketFieldValidityRuleTests(TestBase):
     """
 
 
-class DeclareMethodExchangeFieldReservedRuleTests(TestBase):
+class DeclareMethodExchangeFieldReservedRuleTests(TestHelper):
     """
     Exchange names starting with "amq." are reserved for predeclared and
     standardised exchanges. The client MUST NOT attempt to create an exchange
@@ -189,7 +273,7 @@ class DeclareMethodExchangeFieldReservedRuleTests(TestBase):
     """
 
 
-class DeclareMethodTypeFieldTypedRuleTests(TestBase):
+class DeclareMethodTypeFieldTypedRuleTests(TestHelper):
     """
     Exchanges cannot be redeclared with different types.  The client MUST not
     attempt to redeclare an existing exchange with a different type than used
@@ -199,7 +283,7 @@ class DeclareMethodTypeFieldTypedRuleTests(TestBase):
     """
 
 
-class DeclareMethodTypeFieldSupportRuleTests(TestBase):
+class DeclareMethodTypeFieldSupportRuleTests(TestHelper):
     """
     The client MUST NOT attempt to create an exchange with a type that the
     server does not support.
@@ -208,20 +292,20 @@ class DeclareMethodTypeFieldSupportRuleTests(TestBase):
     """
 
 
-class DeclareMethodPassiveFieldNotFoundRuleTests(TestBase):
+class DeclareMethodPassiveFieldNotFoundRuleTests(TestHelper):
     """
     If set, and the exchange does not already exist, the server MUST raise a
     channel exception with reply code 404 (not found).    
     """
     def test(self):
         try:
-            self.channel.exchange_declare(exchange="humpty_dumpty", passive=True)
+            self.session.exchange_declare(exchange="humpty_dumpty", passive=True)
             self.fail("Expected 404 for passive declaration of unknown exchange.")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
 
-class DeclareMethodDurableFieldSupportRuleTests(TestBase):
+class DeclareMethodDurableFieldSupportRuleTests(TestHelper):
     """
     The server MUST support both durable and transient exchanges.
     
@@ -229,7 +313,7 @@ class DeclareMethodDurableFieldSupportRuleTests(TestBase):
     """
 
 
-class DeclareMethodDurableFieldStickyRuleTests(TestBase):
+class DeclareMethodDurableFieldStickyRuleTests(TestHelper):
     """
     The server MUST ignore the durable field if the exchange already exists.
     
@@ -237,7 +321,7 @@ class DeclareMethodDurableFieldStickyRuleTests(TestBase):
     """
 
 
-class DeclareMethodAutoDeleteFieldStickyRuleTests(TestBase):
+class DeclareMethodAutoDeleteFieldStickyRuleTests(TestHelper):
     """
     The server MUST ignore the auto-delete field if the exchange already
     exists.
@@ -246,7 +330,7 @@ class DeclareMethodAutoDeleteFieldStickyRuleTests(TestBase):
     """
 
 
-class DeleteMethodTicketFieldValidityRuleTests(TestBase):
+class DeleteMethodTicketFieldValidityRuleTests(TestHelper):
     """
     The client MUST provide a valid access ticket giving "active" access
     rights to the exchange's access realm.
@@ -256,18 +340,18 @@ class DeleteMethodTicketFieldValidityRuleTests(TestBase):
     """
 
 
-class DeleteMethodExchangeFieldExistsRuleTests(TestBase):
+class DeleteMethodExchangeFieldExistsRuleTests(TestHelper):
     """
     The client MUST NOT attempt to delete an exchange that does not exist.
     """
 
 
-class HeadersExchangeTests(TestBase):
+class HeadersExchangeTests(TestHelper):
     """
     Tests for headers exchange functionality.
     """
     def setUp(self):
-        TestBase.setUp(self)
+        TestHelper.setUp(self)
         self.queue_declare(queue="q")
         self.q = self.consume("q")
 
@@ -275,10 +359,11 @@ class HeadersExchangeTests(TestBase):
         self.assertPublishGet(self.q, exchange="amq.match", properties=headers)
 
     def myBasicPublish(self, headers):
-        self.channel.message_transfer(destination="amq.match", content=Content("foobar", properties={'application_headers':headers}))
+        mp=self.session.message_properties(application_headers=headers)
+        self.session.message_transfer(destination="amq.match", message=Message(mp, "foobar"))
         
     def testMatchAll(self):
-        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
+        self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred", "age":3, "extra":"ignoreme"})
         
@@ -290,7 +375,7 @@ class HeadersExchangeTests(TestBase):
         self.assertEmpty(self.q)
 
     def testMatchAny(self):
-        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":"fred", "age":3})
+        self.session.exchange_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":"fred", "age":3})
         self.myAssertPublishGet({"name":"fred"})
         self.myAssertPublishGet({"name":"fred", "ignoreme":10})
         self.myAssertPublishGet({"ignoreme":10, "age":3})
@@ -301,35 +386,31 @@ class HeadersExchangeTests(TestBase):
         self.assertEmpty(self.q)
 
 
-class MiscellaneousErrorsTests(TestBase):
+class MiscellaneousErrorsTests(TestHelper):
     """
     Test some miscellaneous error conditions
     """
     def testTypeNotKnown(self):
         try:
-            self.channel.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
+            self.session.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
             self.fail("Expected 503 for declaration of unknown exchange type.")
-        except Closed, e:
-            self.assertConnectionException(503, e.args[0])
+        except SessionException, e:
+            self.assertEquals(503, e.args[0].error_code)
 
     def testDifferentDeclaredType(self):
-        self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
+        self.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
         try:
-            self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
+            session = self.conn.session("alternate", 2)
+            session.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
             self.fail("Expected 530 for redeclaration of exchange with different type.")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
-        #cleanup    
-        other = self.connect()
-        c2 = other.channel(1)
-        c2.session_open()
-        c2.exchange_delete(exchange="test_different_declared_type_exchange")
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
     
-class ExchangeTests(TestBase):
+class ExchangeTests(TestHelper):
     def testHeadersBindNoMatchArg(self):
-        self.channel.queue_declare(queue="q", exclusive=True, auto_delete=True)
+        self.session.queue_declare(queue="q", exclusive=True, auto_delete=True)
         try: 
-            self.channel.queue_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
+            self.session.exchange_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
             self.fail("Expected failure for missing x-match arg.")
-        except Closed, e:    
-            self.assertConnectionException(541, e.args[0])
+        except SessionException, e:    
+            self.assertEquals(541, e.args[0].error_code)

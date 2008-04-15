@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import sys
+from qpid.connection010 import Connection
+from qpid.spec010 import load
+from qpid.util import connect
+from qpid.datatypes import Message, RangedSet
+from qpid.log import enable, DEBUG, WARN
+
+if "-v" in sys.argv:
+  level = DEBUG
+else:
+  level = WARN
+
+enable("qpid.io.ctl", level)
+enable("qpid.io.cmd", level)
+
+spec = load("../specs/amqp.0-10.xml")
+conn = Connection(connect("0.0.0.0", spec.port), spec)
+conn.start(timeout=10)
+
+ssn = conn.session("my-session", timeout=10)
+
+ssn.queue_declare("asdf")
+
+
+ssn.message_transfer("this", None, None, Message("testing..."))
+props = ssn.delivery_properties(routing_key="asdf")
+ssn.message_transfer("is", None, None, Message(props, "more testing..."))
+ssn.message_transfer("a")
+ssn.message_transfer("test")
+
+m1 = ssn.incoming("this").get(timeout=10)
+print m1
+m2 = ssn.incoming("is").get(timeout=10)
+print m2
+m3 = ssn.incoming("a").get(timeout=10)
+print m3
+m4 = ssn.incoming("test").get(timeout=10)
+print m4
+
+print ssn.sender._completed, ssn.sender.next_id
+ssn.sync(10)
+print ssn.sender.segments
+
+ssn.channel.session_flush(completed=True)
+
+ssn.message_accept(RangedSet(m1.id, m2.id, m3.id, m4.id))
+
+print ssn.queue_query("testing")
+
+ssn.close(timeout=10)
+conn.close(timeout=10)

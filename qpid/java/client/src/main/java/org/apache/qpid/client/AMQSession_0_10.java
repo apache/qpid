@@ -27,7 +27,6 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.FiledTableSupport;
-import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.ErrorCode;
@@ -45,7 +44,6 @@ import javax.jms.IllegalStateException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
 import java.util.Map;
-import java.util.Iterator;
 
 /**
  * This is a 0.10 Session
@@ -58,10 +56,6 @@ public class AMQSession_0_10 extends AMQSession
      */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession_0_10.class);
 
-    /**
-     * The maximum number of pre-fetched messages per destination
-     */
-    public static long MAX_PREFETCH = 1000;
 
     /**
      * The underlying QpidSession
@@ -100,8 +94,6 @@ public class AMQSession_0_10 extends AMQSession
 
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
-
-        MAX_PREFETCH = Integer.parseInt(System.getProperty("max_prefetch","1000"));
 
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = qpidConnection.createSession(0);
@@ -247,24 +239,6 @@ public class AMQSession_0_10 extends AMQSession
         getQpidSession().sync();
         getQpidSession().sessionClose();
         getCurrentException();
-    }
-
-    /**
-     * We need to release message that may be pre-fetched in the local queue
-     *
-     * @throws JMSException
-     */
-    public void close() throws JMSException
-    {
-        super.close();
-        // We need to release pre-fetched messages
-        Iterator messages=_queue.iterator();
-        while (messages.hasNext())
-        {
-            UnprocessedMessage message=(UnprocessedMessage) messages.next();
-            messages.remove();
-            rejectMessage(message, true);
-        }
     }
 
 
@@ -422,17 +396,23 @@ public class AMQSession_0_10 extends AMQSession
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
-
-        getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
+        if (ClientProperties.MAX_PREFETCH == 0)
+        {
+            getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
+        }
+        else
+        {
+            getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
+        }
         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
-        if(consumer.isStrated())
+        // only if not immediat prefetch
+        if(ClientProperties.MAX_PREFETCH > 0 && (consumer.isStrated() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
                     org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                    AMQSession_0_10.MAX_PREFETCH);
-
+                    ClientProperties.MAX_PREFETCH);
         }
         getQpidSession().sync();
         getCurrentException();
@@ -534,17 +514,27 @@ public class AMQSession_0_10 extends AMQSession
                 //only set if msg list is null
                 try
                 {
-                 //   if (consumer.getMessageListener() != null)
-                 //   {
-                        getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                                     MAX_PREFETCH);
-                  //  }
+                    if (ClientProperties.MAX_PREFETCH == 0)
+                    {
+                        if (consumer.getMessageListener() != null)
+                        {
+                            getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
+                                    Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                        }
+                    }
+                    else
+                    {
+                        getQpidSession()
+                                .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                        ClientProperties.MAX_PREFETCH);
+                    }
                     getQpidSession()
-                    .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
+                            .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE,
+                                    0xFFFFFFFF);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
-                    throw new AMQException(AMQConstant.INTERNAL_ERROR,"Error while trying to get the listener",e);
+                    throw new AMQException(AMQConstant.INTERNAL_ERROR, "Error while trying to get the listener", e);
                 }
             }
         }
@@ -654,19 +644,12 @@ public class AMQSession_0_10 extends AMQSession
 
     void start() throws AMQException
     {
-        suspendChannel(false);
+        super.start();
         for(BasicMessageConsumer  c:  _consumers.values())
         {
               c.start();
         }
-        // If the event dispatcher is not running then start it too.
-        if (hasMessageListeners())
-        {
-            startDistpatcherIfNecessary();
-        }
     }
-
-
 
 
     void stop() throws AMQException
@@ -678,27 +661,7 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-   synchronized void startDistpatcherIfNecessary()
-    {
-        // If IMMEDIATE_PREFETCH is not set then we need to start fetching
-        if (!_immediatePrefetch)
-        {
-            // We do this now if this is the first call on a started connection
-            if (isSuspended() &&  _firstDispatcher.getAndSet(false))
-            {
-                try
-                {
-                    suspendChannel(false);
-                }
-                catch (AMQException e)
-                {
-                    _logger.info("Unsuspending channel threw an exception:" + e);
-                }
-            }
-        }
-
-        startDistpatcherIfNecessary(false);
-    }
+ 
 
 
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException

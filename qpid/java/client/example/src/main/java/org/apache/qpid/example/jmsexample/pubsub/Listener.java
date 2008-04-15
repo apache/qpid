@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,14 +17,21 @@
  */
 package org.apache.qpid.example.jmsexample.pubsub;
 
-import org.apache.qpid.jms.TopicSubscriber;
+import java.util.Properties;
 
-import javax.jms.*;
-import javax.jms.Session;
+import javax.jms.BytesMessage;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicSession;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import java.util.Properties;
 
 /**
  * The example creates a TopicSubscriber on the specified
@@ -54,6 +61,18 @@ public class Listener
     {
         Listener listener=new Listener();
         listener.runTest();
+    }
+
+    private void createListener(Context ctx,TopicSession session,String topicName) throws Exception{
+        // lookup the topic usa
+        Topic topic=(Topic) ctx.lookup(topicName);
+        // Create a Message Subscriber
+        System.out.println(CLASS + ": Creating a Message Subscriber for topic " + topicName);
+        javax.jms.TopicSubscriber messageSubscriber=session.createSubscriber(topic);
+
+        // Set a message listener on the messageConsumer
+        messageSubscriber.setMessageListener(new MyMessageListener(topicName));
+
     }
 
     /**
@@ -94,77 +113,10 @@ public class Listener
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
             TopicSession session=connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // lookup the topic usa
-            Topic topic=(Topic) ctx.lookup("usa");
-            // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber for topic usa.#");
-            javax.jms.TopicSubscriber messageSubscriber=session.createSubscriber(topic);
-
-            // Bind each topic queue to the control queue so we know when to stop
-            /**
-             * The following line uses a temporary, experimental
-             * Qpid extension to add another binding to the topic's private queue.
-             * This extension is expected to be replaced by an alternative,
-             * less intrusive scheme in the very near future.
-             */
-            ((TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
-
-            // Set a message listener on the messageConsumer
-            messageSubscriber.setMessageListener(new MyMessageListener("usa"));
-
-            // lookup the topic europe
-            topic=(Topic) ctx.lookup("europe");
-            // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber for topic europe.#");
-            messageSubscriber=session.createSubscriber(topic);
-
-            // Bind each topic queue to the control queue so we know when to stop
-            /**
-             * The following line uses a temporary, experimental
-             * Qpid extension to add another binding to the topic's private queue.
-             * This extension is expected to be replaced by an alternative,
-             * less intrusive scheme in the very near future.
-             */
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
-
-            // Set a message listener on the messageConsumer
-            messageSubscriber.setMessageListener(new MyMessageListener("europe"));
-
-            // lookup the topic news
-            topic=(Topic) ctx.lookup("news");
-            // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber for topic #.news");
-            messageSubscriber=session.createSubscriber(topic);
-
-            // Bind each topic queue to the control queue so we know when to stop
-            /**
-             * The following line uses a temporary, experimental
-             * Qpid extension to add another binding to the topic's private queue.
-             * This extension is expected to be replaced by an alternative,
-             * less intrusive scheme in the very near future.
-             */
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
-
-            // Set a message listener on the messageConsumer
-            messageSubscriber.setMessageListener(new MyMessageListener("news"));
-
-            // lookup the topic weather
-            topic=(Topic) ctx.lookup("weather");
-            // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber for topic #.weather");
-            messageSubscriber=session.createSubscriber(topic);
-
-            // Bind each topic queue to the control queue so we know when to stop
-            /**
-             * The following line uses a temporary, experimental
-             * Qpid extension to add another binding to the topic's private queue.
-             * This extension is expected to be replaced by an alternative,
-             * less intrusive scheme in the very near future.
-             */
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
-
-            // Set a message listener on the messageConsumer
-            messageSubscriber.setMessageListener(new MyMessageListener("weather"));
+            createListener(ctx,session,"usa");
+            createListener(ctx,session,"europe");
+            createListener(ctx,session,"news");
+            createListener(ctx,session,"weather");
 
             // Now the messageConsumer is set up we can start the connection
             System.out.println(CLASS + ": Starting connection so TopicSubscriber can receive messages");
@@ -173,7 +125,7 @@ public class Listener
             // Wait for the messageConsumer to have received all the messages it needs
             synchronized (_lock)
             {
-                while (_finished < 3 && !_failed)
+                while (_finished < 4 && !_failed)
                 {
                     _lock.wait();
                 }

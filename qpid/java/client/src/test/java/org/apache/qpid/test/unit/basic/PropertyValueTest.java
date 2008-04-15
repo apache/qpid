@@ -60,6 +60,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
     private final List<String> messages = new ArrayList<String>();
     private int _count = 1;
     public String _connectionString = "vm://:1";
+    private static final String USERNAME = "guest";
 
     protected void setUp() throws Exception
     {

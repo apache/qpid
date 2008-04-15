@@ -29,6 +29,11 @@ from getopt import getopt, GetoptError
 from qpid.content import Content
 from qpid.message import Message
 
+#0-10 support
+from qpid.connection010 import Connection
+from qpid.spec010 import load
+from qpid.util import connect
+
 def findmodules(root):
     """Find potential python modules under directory root"""
     found = []
@@ -125,23 +130,29 @@ Options:
             if opt in ("-S", "--skip-self-test"): self.skip_self_test = True
             if opt in ("-F", "--spec-folder"): TestRunner.SPEC_FOLDER = value
 	# Abbreviations for default settings.
-        if (self.specfile == "0-8"):
-       	    self.specfile = self.get_spec_file("amqp.0-8.xml")
-        elif (self.specfile == "0-9"):
-            self.specfile = self.get_spec_file("amqp.0-9.xml")
-            self.errata.append(self.get_spec_file("amqp-errata.0-9.xml"))
+        if (self.specfile == "0-10"):
+            self.spec = load(self.get_spec_file("amqp.0-10.xml"))
+        else:    
+            if (self.specfile == "0-8"):
+                self.specfile = self.get_spec_file("amqp.0-8.xml")
+            elif (self.specfile == "0-9"):
+                self.specfile = self.get_spec_file("amqp.0-9.xml")
+                self.errata.append(self.get_spec_file("amqp-errata.0-9.xml"))
+                
+                if (self.specfile == None):
+                    self._die("No XML specification provided")
+                    print "Using specification from:", self.specfile
 
-	if (self.specfile == None):
-	    self._die("No XML specification provided")
-        print "Using specification from:", self.specfile
-        self.spec = qpid.spec.load(self.specfile, *self.errata)
+            self.spec = qpid.spec.load(self.specfile, *self.errata)
 
         if len(self.tests) == 0:
             if not self.skip_self_test:
                 self.tests=findmodules("tests")
             if self.use08spec():
                 self.tests+=findmodules("tests_0-8")
-            elif (self.spec.major == 0 and self.spec.minor == 10) or (self.spec.major == 99 and self.spec.minor == 0):
+            elif (self.spec.major == 99 and self.spec.minor == 0):
+                self.tests+=findmodules("tests_0-10_preview")                
+            elif (self.spec.major == 0 and self.spec.minor == 10):
                 self.tests+=findmodules("tests_0-10")
             else:
                 self.tests+=findmodules("tests_0-9")
@@ -181,7 +192,10 @@ Options:
         user = user or self.user
         password = password or self.password
         client = qpid.client.Client(host, port, spec)
-        client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
+        if self.use08spec():         
+            client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
+        else:
+            client.start("\x00" + user + "\x00" + password, mechanism="PLAIN", tune_params=tune_params)
         return client
 
     def get_spec_file(self, fname):
@@ -330,3 +344,30 @@ class TestBase(unittest.TestCase):
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
 
+class TestBase010(unittest.TestCase):
+    """
+    Base class for Qpid test cases. using the final 0-10 spec
+    """
+
+    def setUp(self):
+        spec = testrunner.spec
+        self.conn = Connection(connect(testrunner.host, testrunner.port), spec)
+        self.conn.start(timeout=10)        
+        self.session = self.conn.session("test-session", timeout=10)
+
+    def connect(self):
+        spec = testrunner.spec
+        conn = Connection(connect(testrunner.host, testrunner.port), spec)
+        conn.start(timeout=10)
+        return conn
+
+    def tearDown(self):
+        if not self.session.error(): self.session.close(timeout=10)
+        self.conn.close(timeout=10)
+
+    def subscribe(self, session=None, **keys):
+        session = session or self.session
+        consumer_tag = keys["destination"]
+        session.message_subscribe(**keys)
+        session.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)

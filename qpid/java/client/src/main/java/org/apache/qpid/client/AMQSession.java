@@ -618,6 +618,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                          // + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
+        if( _dispatcher != null )
+        {
+            _dispatcher.setConnectionStopped(true);
+        }
         synchronized (_connection.getFailoverMutex())
         {
             // We must close down all producers and consumers in an orderly fashion. This is the only method
@@ -2048,11 +2052,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     private void closeConsumers(Throwable error) throws JMSException
     {
-        if (_dispatcher != null)
-        {
-            _dispatcher.close();
-            _dispatcher = null;
-        }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
         final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList<BasicMessageConsumer>(_consumers.values());
@@ -2071,6 +2070,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
         }
         // at this point the _consumers map will be empty
+         if (_dispatcher != null)
+        {
+            _dispatcher.close();
+            _dispatcher = null;
+        }
     }
 
     /**
@@ -2584,7 +2588,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         {
             UnprocessedMessage message = (UnprocessedMessage) messages.next();
 
-            if ((consumerTag == null) || message.getConsumerTag().equals(consumerTag))
+            if ((consumerTag == null) || message.getConsumerTag().equals(consumerTag.toString()))
             {
                 if (_logger.isDebugEnabled())
                 {

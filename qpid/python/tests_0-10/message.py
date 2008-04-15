@@ -18,40 +18,43 @@
 #
 from qpid.client import Client, Closed
 from qpid.queue import Empty
-from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
-from qpid.reference import Reference, ReferenceId
+from qpid.testlib import TestBase010
+from qpid.datatypes import Message, RangedSet
+from qpid.session import SessionException
 
-class MessageTests(TestBase):
+from qpid.content import Content
+
+
+class MessageTests(TestBase010):
     """Tests for 'methods' on the amqp message 'class'"""
 
-    def test_consume_no_local(self):
+    def test_no_local(self):
         """
         Test that the no_local flag is honoured in the consume method
         """
-        channel = self.channel
-        #setup, declare two queues:
-        channel.queue_declare(queue="test-queue-1a", exclusive=True, auto_delete=True)
-        channel.queue_declare(queue="test-queue-1b", exclusive=True, auto_delete=True)
-        #establish two consumers one of which excludes delivery of locally sent messages
+        session = self.session
+        #setup, declare two queues one of which excludes delivery of locally sent messages
+        session.queue_declare(queue="test-queue-1a", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue-1b", exclusive=True, auto_delete=True, arguments={'no-local':'true'})
+        #establish two consumers 
         self.subscribe(destination="local_included", queue="test-queue-1a")
-        self.subscribe(destination="local_excluded", queue="test-queue-1b", no_local=True)
+        self.subscribe(destination="local_excluded", queue="test-queue-1b")
 
         #send a message
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue-1a"}, body="consume_no_local"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue-1b"}, body="consume_no_local"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1a"), "deliver-me"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me"))
 
         #check the queues of the two consumers
-        excluded = self.client.queue("local_excluded")
-        included = self.client.queue("local_included")
+        excluded = session.incoming("local_excluded")
+        included = session.incoming("local_included")
         msg = included.get(timeout=1)
-        self.assertEqual("consume_no_local", msg.content.body)
+        self.assertEqual("deliver-me", msg.body)
         try:
             excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
         except Empty: None
 
-    def test_consume_no_local_awkward(self):
+    def test_no_local_awkward(self):
 
         """
         If an exclusive queue gets a no-local delivered to it, that
@@ -62,141 +65,143 @@ class MessageTests(TestBase):
         deletes such messages.
         """
 
-        channel = self.channel
+        session = self.session
         #setup:
-        channel.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True, arguments={'no-local':'true'})
         #establish consumer which excludes delivery of locally sent messages
-        self.subscribe(destination="local_excluded", queue="test-queue", no_local=True)
+        self.subscribe(destination="local_excluded", queue="test-queue")
 
         #send a 'local' message
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="local"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "local"))
 
         #send a non local message
         other = self.connect()
-        channel2 = other.channel(1)
-        channel2.session_open()
-        channel2.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="foreign"))
-        channel2.session_close()
+        session2 = other.session("my-session", 1)
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue"), "foreign"))
+        session2.close()
         other.close()
 
         #check that the second message only is delivered
-        excluded = self.client.queue("local_excluded")
+        excluded = session.incoming("local_excluded")
         msg = excluded.get(timeout=1)
-        self.assertEqual("foreign", msg.content.body)
+        self.assertEqual("foreign", msg.body)
         try:
             excluded.get(timeout=1)
             self.fail("Received extra message")
         except Empty: None
         #check queue is empty
-        self.assertEqual(0, channel.queue_query(queue="test-queue").message_count)
+        self.assertEqual(0, session.queue_query(queue="test-queue").message_count)
 
 
     def test_consume_exclusive(self):
         """
-        Test that the exclusive flag is honoured in the consume method
+        Test an exclusive consumer prevents other consumer being created
         """
-        channel = self.channel
-        #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
-
-        #check that an exclusive consumer prevents other consumer being created:
-        self.subscribe(destination="first", queue="test-queue-2", exclusive=True)
+        session = self.session
+        session.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
+        session.message_subscribe(destination="first", queue="test-queue-2", exclusive=True)
         try:
-            self.subscribe(destination="second", queue="test-queue-2")
+            session.message_subscribe(destination="second", queue="test-queue-2")
             self.fail("Expected consume request to fail due to previous exclusive consumer")
-        except Closed, e:
-            self.assertChannelException(403, e.args[0])
+        except SessionException, e:
+            self.assertEquals(403, e.args[0].error_code)
 
-        #open new channel and cleanup last consumer:
-        channel = self.client.channel(2)
-        channel.session_open()
-
-        #check that an exclusive consumer cannot be created if a consumer already exists:
-        self.subscribe(channel, destination="first", queue="test-queue-2")
+    def test_consume_exclusive2(self):
+        """
+        Check that an exclusive consumer cannot be created if a consumer already exists:
+        """
+        session = self.session
+        session.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
+        session.message_subscribe(destination="first", queue="test-queue-2")
         try:
-            self.subscribe(destination="second", queue="test-queue-2", exclusive=True)
+            session.message_subscribe(destination="second", queue="test-queue-2", exclusive=True)
             self.fail("Expected exclusive consume request to fail due to previous consumer")
-        except Closed, e:
-            self.assertChannelException(403, e.args[0])
+        except SessionException, e:
+            self.assertEquals(403, e.args[0].error_code)
 
-    def test_consume_queue_errors(self):
+    def test_consume_queue_not_found(self):
         """
         Test error conditions associated with the queue field of the consume method:
         """
-        channel = self.channel
+        session = self.session
         try:
             #queue specified but doesn't exist:
-            self.subscribe(queue="invalid-queue", destination="")
+            session.message_subscribe(queue="invalid-queue", destination="a")
             self.fail("Expected failure when consuming from non-existent queue")
-        except Closed, e:
-            self.assertChannelException(404, e.args[0])
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
-        channel = self.client.channel(2)
-        channel.session_open()
+    def test_consume_queue_not_specified(self):
+        session = self.session
         try:
             #queue not specified and none previously declared for channel:
-            self.subscribe(channel, queue="", destination="")
+            session.message_subscribe(destination="a")
             self.fail("Expected failure when consuming from unspecified queue")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
+        except SessionException, e:
+            self.assertEquals(531, e.args[0].error_code)
 
     def test_consume_unique_consumers(self):
         """
         Ensure unique consumer tags are enforced
         """
-        channel = self.channel
+        session = self.session
         #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-3", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue-3", exclusive=True, auto_delete=True)
 
         #check that attempts to use duplicate tags are detected and prevented:
-        self.subscribe(destination="first", queue="test-queue-3")
+        session.message_subscribe(destination="first", queue="test-queue-3")
         try:
-            self.subscribe(destination="first", queue="test-queue-3")
+            session.message_subscribe(destination="first", queue="test-queue-3")
             self.fail("Expected consume request to fail due to non-unique tag")
-        except Closed, e:
-            self.assertConnectionException(530, e.args[0])
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
 
     def test_cancel(self):
         """
         Test compliance of the basic.cancel method
         """
-        channel = self.channel
+        session = self.session
         #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-4", exclusive=True, auto_delete=True)
-        self.subscribe(destination="my-consumer", queue="test-queue-4")
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue-4"}, body="One"))
+        session.queue_declare(queue="test-queue-4", exclusive=True, auto_delete=True)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-4"), "One"))
+
+        session.message_subscribe(destination="my-consumer", queue="test-queue-4")
+        session.message_flow(destination="my-consumer", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="my-consumer", unit=1, value=0xFFFFFFFF)
+
+        #should flush here
 
         #cancel should stop messages being delivered
-        channel.message_cancel(destination="my-consumer")
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue-4"}, body="Two"))
-        myqueue = self.client.queue("my-consumer")
+        session.message_cancel(destination="my-consumer")
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-4"), "Two"))
+        myqueue = session.incoming("my-consumer")
         msg = myqueue.get(timeout=1)
-        self.assertEqual("One", msg.content.body)
+        self.assertEqual("One", msg.body)
         try:
             msg = myqueue.get(timeout=1)
             self.fail("Got message after cancellation: " + msg)
         except Empty: None
 
         #cancellation of non-existant consumers should be handled without error
-        channel.message_cancel(destination="my-consumer")
-        channel.message_cancel(destination="this-never-existed")
+        session.message_cancel(destination="my-consumer")
+        session.message_cancel(destination="this-never-existed")
 
 
     def test_ack(self):
         """
         Test basic ack/recover behaviour
         """
-        channel = self.channel
-        channel.queue_declare(queue="test-ack-queue", exclusive=True, auto_delete=True)
+        session = self.conn.session("alternate-session", timeout=10)
+        session.queue_declare(queue="test-ack-queue", auto_delete=True)
 
-        self.subscribe(queue="test-ack-queue", destination="consumer_tag", confirm_mode=1)
-        queue = self.client.queue("consumer_tag")
+        session.message_subscribe(queue = "test-ack-queue", destination = "consumer")
+        session.message_flow(destination="consumer", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="consumer", unit=1, value=0xFFFFFFFF)
+        queue = session.incoming("consumer")
 
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="One"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Two"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Three"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Four"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-ack-queue"}, body="Five"))
+        delivery_properties = session.delivery_properties(routing_key="test-ack-queue")
+        for i in ["One", "Two", "Three", "Four", "Five"]:
+            session.message_transfer(message=Message(delivery_properties, i))
 
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
@@ -204,26 +209,36 @@ class MessageTests(TestBase):
         msg4 = queue.get(timeout=1)
         msg5 = queue.get(timeout=1)
 
-        self.assertEqual("One", msg1.content.body)
-        self.assertEqual("Two", msg2.content.body)
-        self.assertEqual("Three", msg3.content.body)
-        self.assertEqual("Four", msg4.content.body)
-        self.assertEqual("Five", msg5.content.body)
+        self.assertEqual("One", msg1.body)
+        self.assertEqual("Two", msg2.body)
+        self.assertEqual("Three", msg3.body)
+        self.assertEqual("Four", msg4.body)
+        self.assertEqual("Five", msg5.body)
 
-        msg2.complete(cumulative=True)#One and Two
-        msg4.complete(cumulative=False)
+        session.message_accept(RangedSet(msg1.id, msg2.id, msg4.id))#One, Two and Four
 
-        channel.message_recover(requeue=False)
+        #subscribe from second session here to ensure queue is not
+        #auto-deleted when alternate session closes (no need to ack on these):
+        self.session.message_subscribe(queue = "test-ack-queue", destination = "checker", accept_mode=1)
+
+        #now close the session, and see that the unacked messages are
+        #then redelivered to another subscriber:
+        session.close(timeout=10)
+
+        session = self.session
+        session.message_flow(destination="checker", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="checker", unit=1, value=0xFFFFFFFF)
+        queue = session.incoming("checker")
 
         msg3b = queue.get(timeout=1)
         msg5b = queue.get(timeout=1)
 
-        self.assertEqual("Three", msg3b.content.body)
-        self.assertEqual("Five", msg5b.content.body)
+        self.assertEqual("Three", msg3b.body)
+        self.assertEqual("Five", msg5b.body)
 
         try:
             extra = queue.get(timeout=1)
-            self.fail("Got unexpected message: " + extra.content.body)
+            self.fail("Got unexpected message: " + extra.body)
         except Empty: None
 
 
@@ -231,27 +246,27 @@ class MessageTests(TestBase):
         """
         Test recover behaviour
         """
-        channel = self.channel
-        channel.queue_declare(queue="queue-a", exclusive=True, auto_delete=True)
-        channel.queue_bind(exchange="amq.fanout", queue="queue-a")
-        channel.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
-        channel.queue_bind(exchange="amq.fanout", queue="queue-b")
+        session = self.session
+        session.queue_declare(queue="queue-a", exclusive=True, auto_delete=True)
+        session.queue_bind(exchange="amq.fanout", queue="queue-a")
+        session.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
+        session.queue_bind(exchange="amq.fanout", queue="queue-b")
 
         self.subscribe(queue="queue-a", destination="unconfirmed", confirm_mode=1)
         self.subscribe(queue="queue-b", destination="confirmed", confirm_mode=0)
-        confirmed = self.client.queue("confirmed")
-        unconfirmed = self.client.queue("unconfirmed")
+        confirmed = session.incoming("confirmed")
+        unconfirmed = session.incoming("unconfirmed")
 
         data = ["One", "Two", "Three", "Four", "Five"]
         for d in data:
-            channel.message_transfer(destination="amq.fanout", content=Content(body=d))
+            session.message_transfer(destination="amq.fanout", content=Content(body=d))
 
         for q in [confirmed, unconfirmed]:
             for d in data:
                 self.assertEqual(d, q.get(timeout=1).content.body)
             self.assertEmpty(q)
 
-        channel.message_recover(requeue=False)
+        session.message_recover(requeue=False)
 
         self.assertEmpty(confirmed)
 
@@ -259,29 +274,29 @@ class MessageTests(TestBase):
             msg = None
             for d in data:
                 msg = unconfirmed.get(timeout=1)
-                self.assertEqual(d, msg.content.body)
+                self.assertEqual(d, msg.body)
                 self.assertEqual(True, msg.content['redelivered'])
             self.assertEmpty(unconfirmed)
-            data.remove(msg.content.body)
+            data.remove(msg.body)
             msg.complete(cumulative=False)
-            channel.message_recover(requeue=False)
+            session.message_recover(requeue=False)
 
 
     def test_recover_requeue(self):
         """
         Test requeing on recovery
         """
-        channel = self.channel
-        channel.queue_declare(queue="test-requeue", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue="test-requeue", exclusive=True, auto_delete=True)
 
         self.subscribe(queue="test-requeue", destination="consumer_tag", confirm_mode=1)
-        queue = self.client.queue("consumer_tag")
+        queue = session.incoming("consumer_tag")
 
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="One"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Two"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Three"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Four"))
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Five"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="One"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Two"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Three"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Four"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Five"))
 
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
@@ -298,15 +313,15 @@ class MessageTests(TestBase):
         msg2.complete(cumulative=True)  #One and Two
         msg4.complete(cumulative=False)  #Four
 
-        channel.message_cancel(destination="consumer_tag")
+        session.message_cancel(destination="consumer_tag")
 
         #publish a new message
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Six"))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-requeue"}, body="Six"))
         #requeue unacked messages (Three and Five)
-        channel.message_recover(requeue=True)
+        session.message_recover(requeue=True)
 
         self.subscribe(queue="test-requeue", destination="consumer_tag")
-        queue2 = self.client.queue("consumer_tag")
+        queue2 = session.incoming("consumer_tag")
 
         msg3b = queue2.get(timeout=1)
         msg5b = queue2.get(timeout=1)
@@ -334,22 +349,22 @@ class MessageTests(TestBase):
         Test that the prefetch count specified is honoured
         """
         #setup: declare queue and subscribe
-        channel = self.channel
-        channel.queue_declare(queue="test-prefetch-count", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue="test-prefetch-count", exclusive=True, auto_delete=True)
         subscription = self.subscribe(queue="test-prefetch-count", destination="consumer_tag", confirm_mode=1)
-        queue = self.client.queue("consumer_tag")
+        queue = session.incoming("consumer_tag")
 
         #set prefetch to 5:
-        channel.message_qos(prefetch_count=5)
+        session.message_qos(prefetch_count=5)
 
         #publish 10 messages:
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-count"}, body="Message %d" % i))
+            session.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-count"}, body="Message %d" % i))
 
         #only 5 messages should have been delivered:
         for i in range(1, 6):
             msg = queue.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
         try:
             extra = queue.get(timeout=1)
             self.fail("Got unexpected 6th message in original queue: " + extra.content.body)
@@ -360,7 +375,7 @@ class MessageTests(TestBase):
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
 
         msg.complete()
 
@@ -376,22 +391,22 @@ class MessageTests(TestBase):
         Test that the prefetch size specified is honoured
         """
         #setup: declare queue and subscribe
-        channel = self.channel
-        channel.queue_declare(queue="test-prefetch-size", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue="test-prefetch-size", exclusive=True, auto_delete=True)
         subscription = self.subscribe(queue="test-prefetch-size", destination="consumer_tag", confirm_mode=1)
-        queue = self.client.queue("consumer_tag")
+        queue = session.incoming("consumer_tag")
 
         #set prefetch to 50 bytes (each message is 9 or 10 bytes):
-        channel.message_qos(prefetch_size=50)
+        session.message_qos(prefetch_size=50)
 
         #publish 10 messages:
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-size"}, body="Message %d" % i))
+            session.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-size"}, body="Message %d" % i))
 
         #only 5 messages should have been delivered (i.e. 45 bytes worth):
         for i in range(1, 6):
             msg = queue.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
 
         try:
             extra = queue.get(timeout=1)
@@ -403,7 +418,7 @@ class MessageTests(TestBase):
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
 
         msg.complete()
 
@@ -415,54 +430,58 @@ class MessageTests(TestBase):
         #make sure that a single oversized message still gets delivered
         large = "abcdefghijklmnopqrstuvwxyz"
         large = large + "-" + large;
-        channel.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-size"}, body=large))
+        session.message_transfer(content=Content(properties={'routing_key' : "test-prefetch-size"}, body=large))
         msg = queue.get(timeout=1)
-        self.assertEqual(large, msg.content.body)
+        self.assertEqual(large, msg.body)
 
     def test_reject(self):
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True, alternate_exchange="amq.fanout")
-        channel.queue_declare(queue = "r", exclusive=True, auto_delete=True)
-        channel.queue_bind(queue = "r", exchange = "amq.fanout")
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True, alternate_exchange="amq.fanout")
+        session.queue_declare(queue = "r", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue = "r", exchange = "amq.fanout")
 
-        self.subscribe(queue = "q", destination = "consumer", confirm_mode = 1)
-        channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body="blah, blah"))
-        msg = self.client.queue("consumer").get(timeout = 1)
-        self.assertEquals(msg.content.body, "blah, blah")
-        channel.message_reject([msg.command_id, msg.command_id])
+        session.message_subscribe(queue = "q", destination = "consumer")
+        session.message_flow(destination="consumer", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="consumer", unit=1, value=0xFFFFFFFF)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "blah, blah"))
+        msg = session.incoming("consumer").get(timeout = 1)
+        self.assertEquals(msg.body, "blah, blah")
+        session.message_reject(RangedSet(msg.id))
 
-        self.subscribe(queue = "r", destination = "checker")
-        msg = self.client.queue("checker").get(timeout = 1)
-        self.assertEquals(msg.content.body, "blah, blah")
+        session.message_subscribe(queue = "r", destination = "checker")
+        session.message_flow(destination="checker", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="checker", unit=1, value=0xFFFFFFFF)
+        msg = session.incoming("checker").get(timeout = 1)
+        self.assertEquals(msg.body, "blah, blah")
 
     def test_credit_flow_messages(self):
         """
         Test basic credit based flow control with unit = message
         """
         #declare an exclusive queue
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_subscribe(queue = "q", destination = "c")
-        channel.message_flow_mode(mode = 0, destination = "c")
+        session.message_subscribe(queue = "q", destination = "c")
+        session.message_set_flow_mode(flow_mode = 0, destination = "c")
         #send batch of messages to queue
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %d" % i))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "Message %d" % i))
 
         #set message credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 0, value = 5, destination = "c")
+        session.message_flow(unit = 0, value = 5, destination = "c")
         #set infinite byte credit
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
-        q = self.client.queue("c")
+        q = session.incoming("c")
         for i in range(1, 6):
-            self.assertDataEquals(channel, q.get(timeout = 1), "Message %d" % i)
+            self.assertDataEquals(session, q.get(timeout = 1), "Message %d" % i)
         self.assertEmpty(q)
 
         #increase credit again and check more are received
         for i in range(6, 11):
-            channel.message_flow(unit = 0, value = 1, destination = "c")
-            self.assertDataEquals(channel, q.get(timeout = 1), "Message %d" % i)
+            session.message_flow(unit = 0, value = 1, destination = "c")
+            self.assertDataEquals(session, q.get(timeout = 1), "Message %d" % i)
             self.assertEmpty(q)
 
     def test_credit_flow_bytes(self):
@@ -470,32 +489,32 @@ class MessageTests(TestBase):
         Test basic credit based flow control with unit = bytes
         """
         #declare an exclusive queue
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_subscribe(queue = "q", destination = "c")
-        channel.message_flow_mode(mode = 0, destination = "c")
+        session.message_subscribe(queue = "q", destination = "c")
+        session.message_set_flow_mode(flow_mode = 0, destination = "c")
         #send batch of messages to queue
         for i in range(10):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "abcdefgh"))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "abcdefgh"))
 
         #each message is currently interpreted as requiring msg_size bytes of credit
-        msg_size = 35
+        msg_size = 21
 
         #set byte credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 1, value = msg_size*5, destination = "c")
+        session.message_flow(unit = 1, value = msg_size*5, destination = "c")
         #set infinite message credit
-        channel.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
+        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
-        q = self.client.queue("c")
+        q = session.incoming("c")
         for i in range(5):
-            self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
+            self.assertDataEquals(session, q.get(timeout = 1), "abcdefgh")
         self.assertEmpty(q)
 
         #increase credit again and check more are received
         for i in range(5):
-            channel.message_flow(unit = 1, value = msg_size, destination = "c")
-            self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
+            session.message_flow(unit = 1, value = msg_size, destination = "c")
+            self.assertDataEquals(session, q.get(timeout = 1), "abcdefgh")
             self.assertEmpty(q)
 
 
@@ -504,30 +523,33 @@ class MessageTests(TestBase):
         Test basic window based flow control with unit = message
         """
         #declare an exclusive queue
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
-        channel.message_flow_mode(mode = 1, destination = "c")
+        session.message_subscribe(queue = "q", destination = "c")
+        session.message_set_flow_mode(flow_mode = 1, destination = "c")
         #send batch of messages to queue
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %d" % i))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "Message %d" % i))
 
         #set message credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 0, value = 5, destination = "c")
+        session.message_flow(unit = 0, value = 5, destination = "c")
         #set infinite byte credit
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
-        q = self.client.queue("c")
-        for i in range(1, 6):
+        q = session.incoming("c")
+        for i in range(1, 6):            
             msg = q.get(timeout = 1)
-            self.assertDataEquals(channel, msg, "Message %d" % i)
+            session.receiver._completed.add(msg.id)#TODO: this may be done automatically
+            self.assertDataEquals(session, msg, "Message %d" % i)
         self.assertEmpty(q)
 
         #acknowledge messages and check more are received
-        msg.complete(cumulative=True)
+        #TODO: there may be a nicer way of doing this
+        session.channel.session_completed(session.receiver._completed)
+
         for i in range(6, 11):
-            self.assertDataEquals(channel, q.get(timeout = 1), "Message %d" % i)
+            self.assertDataEquals(session, q.get(timeout = 1), "Message %d" % i)
         self.assertEmpty(q)
 
 
@@ -536,296 +558,368 @@ class MessageTests(TestBase):
         Test basic window based flow control with unit = bytes
         """
         #declare an exclusive queue
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
-        channel.message_flow_mode(mode = 1, destination = "c")
+        session.message_subscribe(queue = "q", destination = "c")
+        session.message_set_flow_mode(flow_mode = 1, destination = "c")
         #send batch of messages to queue
         for i in range(10):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "abcdefgh"))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "abcdefgh"))
 
         #each message is currently interpreted as requiring msg_size bytes of credit
-        msg_size = 40
+        msg_size = 19
 
         #set byte credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 1, value = msg_size*5, destination = "c")
+        session.message_flow(unit = 1, value = msg_size*5, destination = "c")
         #set infinite message credit
-        channel.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
+        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
-        q = self.client.queue("c")
+        q = session.incoming("c")
         msgs = []
         for i in range(5):
             msg = q.get(timeout = 1)
             msgs.append(msg)
-            self.assertDataEquals(channel, msg, "abcdefgh")
+            self.assertDataEquals(session, msg, "abcdefgh")
         self.assertEmpty(q)
 
         #ack each message individually and check more are received
         for i in range(5):
             msg = msgs.pop()
-            msg.complete(cumulative=False)
-            self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
+            #TODO: there may be a nicer way of doing this
+            session.receiver._completed.add(msg.id)
+            session.channel.session_completed(session.receiver._completed)
+            self.assertDataEquals(session, q.get(timeout = 1), "abcdefgh")
             self.assertEmpty(q)
 
     def test_subscribe_not_acquired(self):
         """
         Test the not-acquired modes works as expected for a simple case
         """
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 6):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %s" % i))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "Message %s" % i))
 
-        self.subscribe(queue = "q", destination = "a", acquire_mode = 1)
-        self.subscribe(queue = "q", destination = "b", acquire_mode = 1)
+        session.message_subscribe(queue = "q", destination = "a", acquire_mode = 1)
+        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "a")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        session.message_subscribe(queue = "q", destination = "b", acquire_mode = 1)
+        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "b")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
 
         for i in range(6, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %s" % i))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "Message %s" % i))
 
         #both subscribers should see all messages
-        qA = self.client.queue("a")
-        qB = self.client.queue("b")
+        qA = session.incoming("a")
+        qB = session.incoming("b")
         for i in range(1, 11):
             for q in [qA, qB]:
                 msg = q.get(timeout = 1)
-                self.assertEquals("Message %s" % i, msg.content.body)
-                msg.complete()
+                self.assertEquals("Message %s" % i, msg.body)
+                #TODO: tidy up completion
+                session.receiver._completed.add(msg.id)
 
+        #TODO: tidy up completion
+        session.channel.session_completed(session.receiver._completed)
         #messages should still be on the queue:
-        self.assertEquals(10, channel.queue_query(queue = "q").message_count)
+        self.assertEquals(10, session.queue_query(queue = "q").message_count)
 
     def test_acquire(self):
         """
         Test explicit acquire function
         """
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
-        channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "acquire me"))
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
-        self.subscribe(queue = "q", destination = "a", acquire_mode = 1, confirm_mode = 1)
-        msg = self.client.queue("a").get(timeout = 1)
+        #use fanout for now:
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "acquire me"))
+
+        session.message_subscribe(queue = "q", destination = "a", acquire_mode = 1)
+        session.message_flow(destination="a", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="a", unit=1, value=0xFFFFFFFF)
+        msg = session.incoming("a").get(timeout = 1)
+        self.assertEquals("acquire me", msg.body)
         #message should still be on the queue:
-        self.assertEquals(1, channel.queue_query(queue = "q").message_count)
+        self.assertEquals(1, session.queue_query(queue = "q").message_count)
 
-        channel.message_acquire([msg.command_id, msg.command_id])
+        transfers = RangedSet(msg.id)
+        response = session.message_acquire(transfers)
         #check that we get notification (i.e. message_acquired)
-        response = channel.control_queue.get(timeout=1)
-        self.assertEquals(response.transfers, [msg.command_id, msg.command_id])
+        self.assert_(msg.id in response.transfers)
         #message should have been removed from the queue:
-        self.assertEquals(0, channel.queue_query(queue = "q").message_count)
-        msg.complete()
-
-
+        self.assertEquals(0, session.queue_query(queue = "q").message_count)
+        session.message_accept(transfers)
 
 
     def test_release(self):
         """
         Test explicit release function
         """
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
-        channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "release me"))
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
-        self.subscribe(queue = "q", destination = "a", acquire_mode = 0, confirm_mode = 1)
-        msg = self.client.queue("a").get(timeout = 1)
-        channel.message_cancel(destination = "a")
-        channel.message_release([msg.command_id, msg.command_id])
-        msg.complete()
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "release me"))
+
+        session.message_subscribe(queue = "q", destination = "a")
+        session.message_flow(destination="a", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="a", unit=1, value=0xFFFFFFFF)
+        msg = session.incoming("a").get(timeout = 1)
+        self.assertEquals("release me", msg.body)
+        session.message_cancel(destination = "a")
+        session.message_release(RangedSet(msg.id))
 
         #message should not have been removed from the queue:
-        self.assertEquals(1, channel.queue_query(queue = "q").message_count)
+        self.assertEquals(1, session.queue_query(queue = "q").message_count)
 
     def test_release_ordering(self):
         """
         Test order of released messages is as expected
         """
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range (1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "released message %s" % (i)))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "released message %s" % (i)))
 
-        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
-        channel.message_flow(unit = 0, value = 10, destination = "a")
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
-        queue = self.client.queue("a")
+        session.message_subscribe(queue = "q", destination = "a")
+        session.message_flow(unit = 0, value = 10, destination = "a")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        queue = session.incoming("a")
         first = queue.get(timeout = 1)
-        for i in range (2, 10):
-            self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
+        for i in range(2, 10):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("released message %s" % (i), msg.body)
+            
         last = queue.get(timeout = 1)
         self.assertEmpty(queue)
-        channel.message_release([first.command_id, last.command_id])
-        last.complete()#will re-allocate credit, as in window mode
-        for i in range (1, 11):
-            self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
+        released = RangedSet()
+        released.add(first.id, last.id)
+        session.message_release(released)
+
+        #TODO: may want to clean this up...
+        session.receiver._completed.add(first.id, last.id)
+        session.channel.session_completed(session.receiver._completed)
+        
+        for i in range(1, 11):
+            self.assertEquals("released message %s" % (i), queue.get(timeout = 1).body)
 
     def test_ranged_ack(self):
         """
         Test acking of messages ranges
         """
-        channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
-        for i in range (1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message %s" % (i)))
+        session = self.conn.session("alternate-session", timeout=10)
 
-        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
-        channel.message_flow(unit = 0, value = 10, destination = "a")
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
-        queue = self.client.queue("a")
+        session.queue_declare(queue = "q", auto_delete=True)
+        delivery_properties = session.delivery_properties(routing_key="q")
         for i in range (1, 11):
-            self.assertEquals("message %s" % (i), queue.get(timeout = 1).content.body)
+            session.message_transfer(message=Message(delivery_properties, "message %s" % (i)))
+
+        session.message_subscribe(queue = "q", destination = "a")
+        session.message_flow(unit = 0, value = 10, destination = "a")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        queue = session.incoming("a")
+        ids = []
+        for i in range (1, 11):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message %s" % (i), msg.body)
+            ids.append(msg.id)
+            
         self.assertEmpty(queue)
 
-        #ack all but the third message (command id 2)
-        channel.execution_complete(cumulative_execution_mark=0xFFFFFFFF, ranged_execution_set=[0,1,3,6,7,7,8,9])
-        channel.message_recover()
-        self.assertEquals("message 3", queue.get(timeout = 1).content.body)
+        #ack all but the fourth message (command id 2)
+        accepted = RangedSet()
+        accepted.add(ids[0], ids[2])
+        accepted.add(ids[4], ids[9])
+        session.message_accept(accepted)
+
+        #subscribe from second session here to ensure queue is not
+        #auto-deleted when alternate session closes (no need to ack on these):
+        self.session.message_subscribe(queue = "q", destination = "checker")
+
+        #now close the session, and see that the unacked messages are
+        #then redelivered to another subscriber:
+        session.close(timeout=10)
+
+        session = self.session
+        session.message_flow(destination="checker", unit=0, value=0xFFFFFFFF)
+        session.message_flow(destination="checker", unit=1, value=0xFFFFFFFF)
+        queue = session.incoming("checker")
+
+        self.assertEquals("message 4", queue.get(timeout = 1).body)
         self.assertEmpty(queue)
 
     def test_subscribe_not_acquired_2(self):
-        channel = self.channel
+        session = self.session
 
         #publish some messages
-        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "message-%d" % (i)))
 
         #consume some of them
-        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
-        channel.message_flow_mode(mode = 0, destination = "a")
-        channel.message_flow(unit = 0, value = 5, destination = "a")
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        session.message_subscribe(queue = "q", destination = "a")
+        session.message_set_flow_mode(flow_mode = 0, destination = "a")
+        session.message_flow(unit = 0, value = 5, destination = "a")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
 
-        queue = self.client.queue("a")
+        queue = session.incoming("a")
         for i in range(1, 6):
             msg = queue.get(timeout = 1)
-            self.assertEquals("message-%d" % (i), msg.content.body)
-            msg.complete()
+            self.assertEquals("message-%d" % (i), msg.body)
+            #complete and accept
+            session.message_accept(RangedSet(msg.id))
+            #TODO: tidy up completion
+            session.receiver._completed.add(msg.id)
+            session.channel.session_completed(session.receiver._completed)
         self.assertEmpty(queue)
 
         #now create a not-acquired subscriber
-        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        session.message_subscribe(queue = "q", destination = "b", acquire_mode=1)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
 
         #check it gets those not consumed
-        queue = self.client.queue("b")
-        channel.message_flow(unit = 0, value = 1, destination = "b")
+        queue = session.incoming("b")
+        session.message_flow(unit = 0, value = 1, destination = "b")
         for i in range(6, 11):
             msg = queue.get(timeout = 1)
-            self.assertEquals("message-%d" % (i), msg.content.body)
-            msg.complete()
-        channel.message_flow(unit = 0, value = 1, destination = "b")
+            self.assertEquals("message-%d" % (i), msg.body)
+            session.message_release(RangedSet(msg.id))
+            #TODO: tidy up completion
+            session.receiver._completed.add(msg.id)
+            session.channel.session_completed(session.receiver._completed)
+        session.message_flow(unit = 0, value = 1, destination = "b")
         self.assertEmpty(queue)
 
         #check all 'browsed' messages are still on the queue
-        self.assertEqual(5, channel.queue_query(queue="q").message_count)
+        self.assertEqual(5, session.queue_query(queue="q").message_count)
 
     def test_subscribe_not_acquired_3(self):
-        channel = self.channel
+        session = self.session
 
         #publish some messages
-        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 11):
-            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "message-%d" % (i)))
 
         #create a not-acquired subscriber
-        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1, acquire_mode=1)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
-        channel.message_flow(unit = 0, value = 10, destination = "a")
+        session.message_subscribe(queue = "q", destination = "a", acquire_mode=1)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        session.message_flow(unit = 0, value = 10, destination = "a")
 
         #browse through messages
-        queue = self.client.queue("a")
+        queue = session.incoming("a")
         for i in range(1, 11):
             msg = queue.get(timeout = 1)
-            self.assertEquals("message-%d" % (i), msg.content.body)
+            self.assertEquals("message-%d" % (i), msg.body)
             if (i % 2):
                 #try to acquire every second message
-                channel.message_acquire([msg.command_id, msg.command_id])
+                response = session.message_acquire(RangedSet(msg.id))
                 #check that acquire succeeds
-                response = channel.control_queue.get(timeout=1)
-                self.assertEquals(response.transfers, [msg.command_id, msg.command_id])
-            msg.complete()
+                self.assert_(msg.id in response.transfers)
+                session.message_accept(RangedSet(msg.id))
+            else:
+                session.message_release(RangedSet(msg.id))
+            session.receiver._completed.add(msg.id)
+            session.channel.session_completed(session.receiver._completed)
         self.assertEmpty(queue)
 
         #create a second not-acquired subscriber
-        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
-        channel.message_flow(unit = 0, value = 1, destination = "b")
+        session.message_subscribe(queue = "q", destination = "b", acquire_mode=1)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        session.message_flow(unit = 0, value = 1, destination = "b")
         #check it gets those not consumed
-        queue = self.client.queue("b")
+        queue = session.incoming("b")
         for i in [2,4,6,8,10]:
             msg = queue.get(timeout = 1)
-            self.assertEquals("message-%d" % (i), msg.content.body)
-            msg.complete()
-        channel.message_flow(unit = 0, value = 1, destination = "b")
+            self.assertEquals("message-%d" % (i), msg.body)
+            session.message_release(RangedSet(msg.id))
+            session.receiver._completed.add(msg.id)
+            session.channel.session_completed(session.receiver._completed)
+        session.message_flow(unit = 0, value = 1, destination = "b")
         self.assertEmpty(queue)
 
         #check all 'browsed' messages are still on the queue
-        self.assertEqual(5, channel.queue_query(queue="q").message_count)
+        self.assertEqual(5, session.queue_query(queue="q").message_count)
 
     def test_release_unacquired(self):
-        channel = self.channel
+        session = self.session
 
         #create queue
-        self.queue_declare(queue = "q", exclusive=True, auto_delete=True, durable=True)
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
         #send message
-        channel.message_transfer(content=Content(properties={'routing_key' : "q", 'delivery_mode':2}, body = "my-message"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "my-message"))
 
         #create two 'browsers'
-        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1, acquire_mode=1)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
-        channel.message_flow(unit = 0, value = 10, destination = "a")
-        queueA = self.client.queue("a")
+        session.message_subscribe(queue = "q", destination = "a", acquire_mode=1)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        session.message_flow(unit = 0, value = 10, destination = "a")
+        queueA = session.incoming("a")
 
-        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
-        channel.message_flow(unit = 0, value = 10, destination = "b")
-        queueB = self.client.queue("b")
+        session.message_subscribe(queue = "q", destination = "b", acquire_mode=1)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+        session.message_flow(unit = 0, value = 10, destination = "b")
+        queueB = session.incoming("b")
         
         #have each browser release the message
         msgA = queueA.get(timeout = 1)
-        channel.message_release([msgA.command_id, msgA.command_id])
+        session.message_release(RangedSet(msgA.id))
 
         msgB = queueB.get(timeout = 1)
-        channel.message_release([msgB.command_id, msgB.command_id])
+        session.message_release(RangedSet(msgB.id))
         
         #cancel browsers
-        channel.message_cancel(destination = "a")
-        channel.message_cancel(destination = "b")
+        session.message_cancel(destination = "a")
+        session.message_cancel(destination = "b")
         
         #create consumer
-        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1, acquire_mode=0)
-        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
-        channel.message_flow(unit = 0, value = 10, destination = "c")
-        queueC = self.client.queue("c")
+        session.message_subscribe(queue = "q", destination = "c")
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "c")
+        session.message_flow(unit = 0, value = 10, destination = "c")
+        queueC = session.incoming("c")
         #consume the message then ack it
         msgC = queueC.get(timeout = 1)
-        msgC.complete()
+        session.message_accept(RangedSet(msgC.id))
         #ensure there are no other messages
         self.assertEmpty(queueC)
 
     def test_no_size(self):
         self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
-        ch = self.channel
+        ch = self.session
         ch.message_transfer(content=SizelessContent(properties={'routing_key' : "q"}, body="message-body"))
 
         ch.message_subscribe(queue = "q", destination="d", confirm_mode = 0)
         ch.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "d")
         ch.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "d")
 
-        queue = self.client.queue("d")
+        queue = session.incoming("d")
         msg = queue.get(timeout = 3)
-        self.assertEquals("message-body", msg.content.body)
+        self.assertEquals("message-body", msg.body)
 
-    def assertDataEquals(self, channel, msg, expected):
-        self.assertEquals(expected, msg.content.body)
+    def test_empty_body(self):
+        session = self.session
+        session.queue_declare(queue="xyz", exclusive=True, auto_delete=True)
+        props = session.delivery_properties(routing_key="xyz")
+        session.message_transfer(message=Message(props, ""))
+
+        consumer_tag = "tag1"
+        session.message_subscribe(queue="xyz", destination=consumer_tag)
+        session.message_flow(unit = 0, value = 0xFFFFFFFF, destination = consumer_tag)
+        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = consumer_tag)
+        queue = session.incoming(consumer_tag)
+        msg = queue.get(timeout=1)
+        self.assertEquals("", msg.body)
+        session.message_accept(RangedSet(msg.id))
+
+    def assertDataEquals(self, session, msg, expected):
+        self.assertEquals(expected, msg.body)
 
     def assertEmpty(self, queue):
         try:
             extra = queue.get(timeout=1)
-            self.fail("Queue not empty, contains: " + extra.content.body)
+            self.fail("Queue not empty, contains: " + extra.body)
         except Empty: None
 
 class SizelessContent(Content):

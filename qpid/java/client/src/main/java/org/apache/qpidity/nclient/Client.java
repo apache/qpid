@@ -11,6 +11,7 @@ import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ProtocolException;
 import org.apache.qpidity.nclient.impl.ClientSession;
 import org.apache.qpidity.nclient.impl.ClientSessionDelegate;
 import org.apache.qpidity.transport.Channel;
@@ -19,6 +20,7 @@ import org.apache.qpidity.transport.ConnectionClose;
 import org.apache.qpidity.transport.ConnectionCloseOk;
 import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.ConnectionEvent;
+import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
@@ -48,14 +50,14 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException
     {
-        Condition negotiationComplete = _lock.newCondition();
+        final Condition negotiationComplete = _lock.newCondition();
         closeOk = _lock.newCondition();
         _lock.lock();
 
         ConnectionDelegate connectionDelegate = new ConnectionDelegate()
         {
             private boolean receivedClose = false;
-
+            private String _unsupportedProtocol;
             public SessionDelegate getSessionDelegate()
             {
                 return new ClientSessionDelegate();
@@ -114,6 +116,32 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
                 this.receivedClose = true;
             }
+
+            @Override public void init(Channel ch, ProtocolHeader hdr)
+            {
+                // TODO: once the merge is done we'll need to update this code
+                // for handling 0.8 protocol version type i.e. major=8 and minor=0 :( 
+                if (hdr.getMajor() != TransportConstants.getVersionMajor()
+                        || hdr.getMinor() != TransportConstants.getVersionMinor())
+                {
+                    _unsupportedProtocol = TransportConstants.getVersionMajor() + "." +
+                                          TransportConstants.getVersionMinor();
+                    TransportConstants.setVersionMajor( hdr.getMajor() );
+                    TransportConstants.setVersionMinor( hdr.getMinor() );
+                    _lock.lock();
+                    negotiationComplete.signalAll();
+                    _lock.unlock();
+                }
+                else
+                {
+                    ch.connectionStart(hdr.getMajor(), hdr.getMinor(), null, "PLAIN", "utf8");
+                }
+            }
+
+            @Override public String getUnsupportedProtocol()
+            {
+                return _unsupportedProtocol;
+            }
         };
 
         connectionDelegate.setCondition(_lock,negotiationComplete);
@@ -122,8 +150,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
         connectionDelegate.setVirtualHost(virtualHost);
 
         if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
-        {
-            System.out.println("Using NIO");
+        {            
             if( _logger.isDebugEnabled())
             {
                 _logger.debug("using NIO");
@@ -141,13 +168,21 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
 
         // XXX: hardcoded version numbers
-        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
+        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, TransportConstants.getVersionMajor(),
+                TransportConstants.getVersionMinor())));
 
         try
         {
             negotiationComplete.await();
+            if( connectionDelegate.getUnsupportedProtocol() != null )
+            {
+                _conn.close();
+                throw new ProtocolException("Unsupported protocol version: " + connectionDelegate.getUnsupportedProtocol()
+                              , ErrorCode.UNSUPPORTED_PROTOCOL, null);
+
+            }
         }
-        catch (Exception e)
+        catch (InterruptedException e)
         {
             //
         }

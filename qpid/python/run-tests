@@ -18,8 +18,16 @@
 # under the License.
 #
 
-import sys
+import sys, logging
 from qpid.testlib import testrunner
+from qpid.log import enable, WARN, DEBUG
+
+if "-vv" in sys.argv:
+  level = DEBUG
+else:
+  level = WARN
+
+enable("qpid", level)
 
 if not testrunner.run(): sys.exit(1)
 
