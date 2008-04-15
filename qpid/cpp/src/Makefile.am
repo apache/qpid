@@ -104,7 +104,6 @@ libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
   qpid/amqp_0_10/apply.h \
-  qpid/amqp_0_10/all_built_in_types.h \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/complex_types.h \
   qpid/amqp_0_10/complex_types.cpp \
@@ -112,6 +111,7 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/Array.cpp \
   qpid/amqp_0_10/Body.h \
   qpid/amqp_0_10/Header.h \
+  qpid/amqp_0_10/Header.cpp \
   qpid/amqp_0_10/FrameHeader.h \
   qpid/amqp_0_10/FrameHeader.cpp \
   qpid/amqp_0_10/Holder.h \
@@ -125,6 +125,8 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/Unit.cpp \
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
+  qpid/amqp_0_10/UnknownStruct.h \
+  qpid/amqp_0_10/UnknownStruct.cpp \
   qpid/Serializer.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \

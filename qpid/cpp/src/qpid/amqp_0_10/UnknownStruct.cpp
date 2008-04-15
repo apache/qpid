@@ -18,11 +18,17 @@
  * under the License.
  *
  */
-#include "Frame.h"
+
+#include "qpid/amqp_0_10/StructVisitor.h"
+#include "qpid/amqp_0_10/UnknownStruct.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-bool Frame::match(const Frame& x) {
+void UnknownStruct::accept(Visitor& v) {  v.visit(*this); }
+void UnknownStruct::accept(ConstVisitor& v) const { v.visit(*this); }
+std::ostream& operator<<(std::ostream& o, const UnknownStruct& u) {
+    return o << "UnknownStruct[class=" << u.classCode << " code=" << u.code << "]";
 }
+
 }} // namespace qpid::amqp_0_10

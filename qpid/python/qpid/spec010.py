@@ -192,6 +192,9 @@ class Composite(Type, Coded):
 
   def decode(self, codec):
     codec.read_size(self.size)
+    if self.code is not None:
+      code = codec.read_uint16()
+      assert self.code == code
     return datatypes.Struct(self, **self.decode_fields(codec))
 
   def decode_fields(self, codec):
@@ -211,6 +214,8 @@ class Composite(Type, Coded):
 
   def encode(self, codec, value):
     sc = StringCodec(self.spec)
+    if self.code is not None:
+      sc.write_uint16(self.code)
     self.encode_fields(sc, value)
     codec.write_size(self.size, len(sc.encoded))
     codec.write(sc.encoded)

@@ -105,7 +105,7 @@ template <class Derived> class Serializer {
     /** Get the max number of bytes that can be processed under the
      * current limit.
      */
-    size_t getLimit() const {
+    size_t bytesRemaining() const {
         return limit - bytes;
     }
     /** Set absolute limit. */

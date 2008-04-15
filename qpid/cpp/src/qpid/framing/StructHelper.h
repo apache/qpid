@@ -34,7 +34,7 @@ class StructHelper
 public:
 
     template <class T> void encode(const T t, std::string& data) {
-        uint32_t size = t.size() + 2/*type*/;
+        uint32_t size = t.bodySize() + 2/*type*/;
         data.resize(size);
         Buffer wbuffer(const_cast<char*>(data.data()), size);
         wbuffer.putShort(T::TYPE);
