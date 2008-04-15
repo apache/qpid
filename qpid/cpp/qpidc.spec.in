@@ -1,5 +1,6 @@
 #
 # Spec file for Qpid C++ packages: qpidc qpidc-devel, qpidd, qpidd-devel
+# svn revision: $Rev$
 #
 %define qpidd qpidd
 
