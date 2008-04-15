@@ -138,6 +138,7 @@ typedef SerializableString<Uint8, Uint32> Vbin32;
 // Forward declare class types.
 class Map;
 class Struct32;
+class List;
 class UnknownType;
 template <class T> struct  ArrayDomain;
 typedef ArrayDomain<UnknownType> Array;

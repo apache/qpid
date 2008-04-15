@@ -1,3 +1,6 @@
+#ifndef QPID_AMQP_0_10_STRUCT32_H
+#define QPID_AMQP_0_10_STRUCT32_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,16 +22,39 @@
  *
  */
 
-#include "qpid/amqp_0_10/StructVisitor.h"
-#include "qpid/amqp_0_10/UnknownStruct.h"
+#include "qpid/amqp_0_10/StructHolder.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-void UnknownStruct::accept(Visitor& v) {  v.visit(*this); }
-void UnknownStruct::accept(ConstVisitor& v) const { v.visit(*this); }
-std::ostream& operator<<(std::ostream& o, const UnknownStruct& u) {
-    return o << "UnknownStruct[class=" << u.getClassCode() << " code=" << u.getCode() << "]";
-}
+class Struct32 : public StructHolder
+{
+  public:
+    Struct32() {}
 
+    template <class T> explicit Struct32(const T& t) : StructHolder(t) {}
+    
+    template <class S> void serialize(S& s) {
+        s.split(*this);
+        StructHolder::serialize(s);
+    }
+
+    template <class S> void encode(S& s) const {
+        s(contentSize());
+    }
+    
+    template <class S> void decode(S& s) {
+        uint32_t contentSz;
+        s(contentSz);
+        s.setLimit(contentSz);
+    }
+    
+  private:
+    uint32_t contentSize() const {
+        return Codec::size(static_cast<const StructHolder&>(*this));
+    }
+        
+};
 }} // namespace qpid::amqp_0_10
+
+#endif  /*!QPID_AMQP_0_10_STRUCT32_H*/
