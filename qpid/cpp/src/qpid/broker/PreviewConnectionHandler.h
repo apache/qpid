@@ -21,6 +21,8 @@
 #ifndef _PreviewConnectionAdapter_
 #define _PreviewConnectionAdapter_
 
+#include "config.h"
+
 #include <memory>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
@@ -33,6 +35,10 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
 
+#if HAVE_SASL
+#include <sasl/sasl.h>
+#endif
+
 namespace qpid {
 namespace broker {
 
@@ -44,12 +50,16 @@ class PreviewConnectionHandler : public framing::FrameHandler
     struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
         public framing::AMQP_ClientOperations::ConnectionHandler
     {
+#if HAVE_SASL
+        sasl_conn_t *sasl_conn;
+#endif
         framing::AMQP_ClientProxy::Connection client;
         framing::AMQP_ServerProxy::Connection server;
         PreviewConnection& connection;
         bool serverMode;
     
         Handler(PreviewConnection& connection);
+        ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale); 
@@ -77,6 +87,12 @@ class PreviewConnectionHandler : public framing::FrameHandler
         void openOk(const std::string& knownHosts);
         
         void redirect(const std::string& host, const std::string& knownHosts);        
+      private:
+#if HAVE_SASL
+        void processAuthenticationStep(int code,
+                                     const char *challenge,
+                                     unsigned int challenge_len);
+#endif
     };
     std::auto_ptr<Handler> handler;
   public:

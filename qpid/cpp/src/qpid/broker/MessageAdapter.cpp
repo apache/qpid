@@ -60,7 +60,7 @@ namespace broker{
     bool TransferAdapter::requiresAccept(const framing::FrameSet& f)
     {
         const framing::Message010TransferBody* b = f.as<framing::Message010TransferBody>();
-        return b && b->getAcceptMode();
+        return b && b->getAcceptMode() == 0/*EXPLICIT == 0*/;
     }
 
     std::string PreviewAdapter::getExchange(const framing::FrameSet& f)

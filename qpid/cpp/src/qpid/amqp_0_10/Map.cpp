@@ -18,7 +18,9 @@
  * under the License.
  *
  */
-#include "all_built_in_types.h"
+#include "Map.h"
+#include "qpid/amqp_0_10/Struct32.h"
+#include "qpid/amqp_0_10/Array.h"
 #include <ostream>
 
 namespace qpid {

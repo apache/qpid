@@ -21,8 +21,6 @@
 #ifndef _PreviewConnection_
 #define _PreviewConnection_
 
-#include "config.h"
-
 #include <memory>
 #include <sstream>
 #include <vector>
@@ -49,19 +47,11 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
-#if HAVE_SASL
-#include <sasl/sasl.h>
-#endif
-
 namespace qpid {
 namespace broker {
 
 class PreviewConnection : public sys::ConnectionInputHandler, public ConnectionState
 {
-#if HAVE_SASL
-  friend class PreviewConnectionHandler;
-#endif
-
   public:
     PreviewConnection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~PreviewConnection ();
@@ -85,11 +75,6 @@ class PreviewConnection : public sys::ConnectionInputHandler, public ConnectionS
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
-
-  protected:
-#if HAVE_SASL
-    sasl_conn_t *sasl_conn;
-#endif
 
   private:
     typedef boost::ptr_map<framing::ChannelId, PreviewSessionHandler> ChannelMap;

@@ -246,13 +246,19 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         if (protocolInit.decode(in)) {
             decoded = in.getPosition();
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
-            codec = factory->create(protocolInit.getVersion(), *this, identifier);
-            if (!codec) {
-                //TODO: may still want to revise this...
-                //send valid version header & close connection.
-                write(framing::ProtocolInitiation(framing::highestProtocolVersion));
+            try {
+                codec = factory->create(protocolInit.getVersion(), *this, identifier);
+                if (!codec) {
+                    //TODO: may still want to revise this...
+                    //send valid version header & close connection.
+                    write(framing::ProtocolInitiation(framing::highestProtocolVersion));
+                    readError = true;
+                    aio->queueWriteClose();                
+                }
+            } catch (const std::exception& e) {
+                QPID_LOG(error, e.what());
                 readError = true;
-                aio->queueWriteClose();                
+                aio->queueWriteClose();
             }
         }
     }

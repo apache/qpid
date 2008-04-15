@@ -281,6 +281,9 @@ class Delegate:
   def __init__(self, session):
     self.session = session
 
+  #XXX: do something with incoming accepts
+  def message_accept(self, ma): None
+
   def execution_result(self, er):
     future = self.session.results.pop(er.command_id)
     future.set(er.value)
