@@ -88,7 +88,12 @@ public class SubscriptionTestHelper implements Subscription
     {
         return null;
     }
-
+    
+    public void start()
+    {
+        //no-op
+    }
+    
     public void queueDeleted(AMQQueue queue)
     {
     }
@@ -157,4 +162,5 @@ public class SubscriptionTestHelper implements Subscription
     {
         return key.toString();
     }
+    
 }

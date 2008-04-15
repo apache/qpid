@@ -20,6 +20,8 @@
  */
 package org.apache.qpid;
 
+import javax.management.JMException;
+
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -38,7 +40,7 @@ public class AMQException extends Exception
 {
     /** Holds the AMQ error code constant associated with this exception. */
     private AMQConstant _errorCode;
-
+   
     /**
      * Creates an exception with an optional error code, optional message and optional underlying cause.
      *
@@ -52,6 +54,28 @@ public class AMQException extends Exception
         _errorCode = errorCode;
     }
 
+    /*
+     * Deprecated constructors brought from M2.1
+     */
+    @Deprecated
+    public AMQException (String msg) 
+    {
+        this(null, (msg == null) ? "" : msg);
+    }
+    
+    @Deprecated 
+    public AMQException (AMQConstant errorCode, String msg) 
+    {
+        this(errorCode, (msg == null) ? "" : msg, null);
+    }
+
+    @Deprecated
+    public AMQException(String msg, Exception cause)
+    {
+        this(null, msg, cause);
+    }
+
+    
     /**
      * Gets the AMQ protocol exception code associated with this exception.
      *
