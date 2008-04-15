@@ -18,16 +18,17 @@
  * under the License.
  *
  */
-#include <iostream>
+#include "Connector.h"
+
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/AMQFrame.h"
-#include "Connector.h"
-
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/Msg.h"
+
+#include <iostream>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
@@ -62,7 +63,7 @@ void Connector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
     socket.connect(host, port);
-    identifier=str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
+    identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
     closed = false;
     poller = Poller::shared_ptr(new Poller);
     aio = new AsynchIO(socket,
@@ -72,7 +73,7 @@ void Connector::connect(const std::string& host, int port){
                        0, // closed
                        0, // nobuffs
                        boost::bind(&Connector::writebuff, this, _1));
-    writer.setAio(aio);
+    writer.init(identifier, aio);
 }
 
 void Connector::init(){
@@ -184,11 +185,11 @@ Connector::Writer::Writer() : aio(0), buffer(0), lastEof(0)
 
 Connector::Writer::~Writer() { delete buffer; }
 
-void Connector::Writer::setAio(sys::AsynchIO* a) {
+void Connector::Writer::init(std::string id, sys::AsynchIO* a) {
     Mutex::ScopedLock l(lock);
+    identifier = id;
     aio = a;
     newBuffer(l);
-    identifier = str(format("[%1% %2%]") % aio->getSocket().getLocalPort() % aio->getSocket().getPeerAddress());
 }
 
 void Connector::Writer::handle(framing::AMQFrame& frame) { 

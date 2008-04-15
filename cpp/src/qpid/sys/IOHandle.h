@@ -1,5 +1,5 @@
-#ifndef _sys_posix_PrivatePosix_h
-#define _sys_posix_PrivatePosix_h
+#ifndef _sys_IOHandle_h
+#define _sys_IOHandle_h
 
 /*
  *
@@ -22,31 +22,24 @@
  *
  */
 
-#include "qpid/sys/Time.h"
-
-struct timespec;
-struct timeval;
-
 namespace qpid {
 namespace sys {
 
-// Private Time related implementation details
-struct timespec& toTimespec(struct timespec& ts, const Duration& t);
-struct timeval& toTimeval(struct timeval& tv, const Duration& t);
-Duration toTime(const struct timespec& ts);
+/**
+ * This is a class intended to abstract the Unix concept of file descriptor or the Windows concept of HANDLE
+ */
+class PollerHandle;
+class IOHandlePrivate;
+class IOHandle {
+    friend class PollerHandle;
 
-// Private fd related implementation details
-class IOHandlePrivate {
-public:
-    IOHandlePrivate(int f = -1) :
-            fd(f)
-    {}
-    
-    int fd;
+protected:
+    IOHandlePrivate* const impl;
+
+    IOHandle(IOHandlePrivate*);
+    virtual ~IOHandle();
 };
-
-int toFd(const IOHandlePrivate* h);
 
 }}
 
-#endif  /*!_sys_posix_PrivatePosix_h*/
+#endif // _sys_IOHandle_h

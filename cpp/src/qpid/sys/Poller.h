@@ -35,16 +35,16 @@ namespace sys {
 /**
  * Handle class to use for polling
  */
+class IOHandle;
 class Poller;
 class PollerHandlePrivate;
 class PollerHandle {
     friend class Poller;
 
     PollerHandlePrivate* const impl;
-    const Socket& socket;
 
 public:
-    PollerHandle(const Socket& s);
+    PollerHandle(const IOHandle& h);
     
     // Usual way to delete (will defer deletion until we
     // can't be returned from a Poller::wait any more)
@@ -52,8 +52,6 @@ public:
     
     // Class clients shouldn't ever use this
     virtual ~PollerHandle();
-    
-    const Socket& getSocket() const {return socket;}
 };
 
 /**

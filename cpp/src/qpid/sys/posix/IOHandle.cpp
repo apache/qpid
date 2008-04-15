@@ -1,6 +1,3 @@
-#ifndef _sys_posix_PrivatePosix_h
-#define _sys_posix_PrivatePosix_h
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,31 +19,24 @@
  *
  */
 
-#include "qpid/sys/Time.h"
+#include "qpid/sys/IOHandle.h"
 
-struct timespec;
-struct timeval;
+#include "PrivatePosix.h"
 
 namespace qpid {
 namespace sys {
 
-// Private Time related implementation details
-struct timespec& toTimespec(struct timespec& ts, const Duration& t);
-struct timeval& toTimeval(struct timeval& tv, const Duration& t);
-Duration toTime(const struct timespec& ts);
+int toFd(const IOHandlePrivate* h)
+{
+    return h->fd;
+}
 
-// Private fd related implementation details
-class IOHandlePrivate {
-public:
-    IOHandlePrivate(int f = -1) :
-            fd(f)
-    {}
-    
-    int fd;
-};
+IOHandle::IOHandle(IOHandlePrivate* h) :
+  impl(h)
+{}
 
-int toFd(const IOHandlePrivate* h);
+IOHandle::~IOHandle() {
+	delete impl;
+}
 
-}}
-
-#endif  /*!_sys_posix_PrivatePosix_h*/
+}} // namespace qpid::sys
