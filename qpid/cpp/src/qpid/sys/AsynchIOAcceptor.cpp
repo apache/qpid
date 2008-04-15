@@ -84,19 +84,20 @@ struct Buff : public AsynchIO::BufferBase {
 };
 
 class AsynchIOHandler : public OutputControl {
+    std::string identifier;
     AsynchIO* aio;
     ConnectionCodec::Factory* factory;
     ConnectionCodec* codec;
     bool readError;
-    std::string identifier;
     bool isClient;
 
     void write(const framing::ProtocolInitiation&);
 
   public:
-    AsynchIOHandler() :
+    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
+    	identifier(id),
         aio(0),
-        factory(0),
+        factory(f),
         codec(0),
         readError(false),
         isClient(false)
@@ -110,11 +111,8 @@ class AsynchIOHandler : public OutputControl {
 
     void setClient() { isClient = true; }
     
-    void init(AsynchIO* a, ConnectionCodec::Factory* f) {
+    void init(AsynchIO* a) {
         aio = a;
-        factory = f;
-        identifier = aio->getSocket().getPeerAddress();
-
     }
 
     // Output side
@@ -133,7 +131,7 @@ class AsynchIOHandler : public OutputControl {
 };
 
 void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionCodec::Factory* f) {
-    AsynchIOHandler* async = new AsynchIOHandler; 
+    AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
     AsynchIO* aio = new AsynchIO(s,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::eof, async, _1),
@@ -141,7 +139,8 @@ void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, Conn
                                  boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::nobuffs, async, _1),
                                  boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio, f);
+    async->init(aio);
+
     // Give connection some buffers to use
     for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff);
@@ -185,7 +184,7 @@ void AsynchIOAcceptor::connect(
 {
     Socket* socket = new Socket();//Should be deleted by handle when socket closes
     socket->connect(host, port);
-    AsynchIOHandler* async = new AsynchIOHandler; 
+    AsynchIOHandler* async = new AsynchIOHandler(socket->getPeerAddress(), f);
     async->setClient();
     AsynchIO* aio = new AsynchIO(*socket,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
@@ -194,7 +193,8 @@ void AsynchIOAcceptor::connect(
                                  boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::nobuffs, async, _1),
                                  boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio, f);
+    async->init(aio);
+
     // Give connection some buffers to use
     for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff);

@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/DeletionManager.h"
 #include "qpid/sys/posix/check.h"
@@ -54,11 +55,13 @@ class PollerHandlePrivate {
         MONITORED_HUNGUP
     };
 
+    int fd;
     ::__uint32_t events;
     FDStat stat;
     Mutex lock;
 
-    PollerHandlePrivate() :
+    PollerHandlePrivate(int f) :
+      fd(f),
       events(0),
       stat(ABSENT) {
     }
@@ -97,9 +100,8 @@ class PollerHandlePrivate {
     }
 };
 
-PollerHandle::PollerHandle(const Socket& s) :
-    impl(new PollerHandlePrivate),
-    socket(s)
+PollerHandle::PollerHandle(const IOHandle& h) :
+    impl(new PollerHandlePrivate(toFd(h.impl)))
 {}
 
 PollerHandle::~PollerHandle() {
@@ -201,7 +203,7 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
     }
     epe.data.ptr = &handle;
     
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, toFd(handle.socket.impl), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, eh.fd, &epe));
     
     // Record monitoring state of this fd
     eh.events = epe.events;
@@ -212,7 +214,7 @@ void Poller::delFd(PollerHandle& handle) {
     PollerHandlePrivate& eh = *handle.impl;
     ScopedLock<Mutex> l(eh.lock);
     assert(!eh.isIdle());
-    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, toFd(handle.socket.impl), 0);
+    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, eh.fd, 0);
     // Ignore EBADF since deleting a nonexistent fd has the overall required result!
     // And allows the case where a sloppy program closes the fd and then does the delFd()
     if (rc == -1 && errno != EBADF) {
@@ -231,7 +233,7 @@ void Poller::modFd(PollerHandle& handle, Direction dir) {
     epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
     epe.data.ptr = &handle;
     
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, toFd(handle.socket.impl), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
     
     // Record monitoring state of this fd
     eh.events = epe.events;
@@ -247,7 +249,7 @@ void Poller::rearmFd(PollerHandle& handle) {
     epe.events = eh.events;        
     epe.data.ptr = &handle;
 
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, toFd(handle.socket.impl), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
 
     eh.setActive();
 }

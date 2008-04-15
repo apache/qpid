@@ -38,19 +38,8 @@
 namespace qpid {
 namespace sys {
 
-class SocketPrivate {
-public:
-    SocketPrivate(int f = -1) :
-            fd(f)
-    {}
-    
-    int fd;
-
-    std::string getName(bool local, bool includeService = false) const;   
-    std::string getService(bool local) const;   
-};
-
-std::string SocketPrivate::getName(bool local, bool includeService) const
+namespace {
+std::string getName(int fd, bool local, bool includeService = false)
 {
     ::sockaddr_storage name; // big enough for any socket address    
     ::socklen_t namelen = sizeof(name);
@@ -80,7 +69,7 @@ std::string SocketPrivate::getName(bool local, bool includeService) const
     }
 }
 
-std::string SocketPrivate::getService(bool local) const
+std::string getService(int fd, bool local)
 {
     ::sockaddr_storage name; // big enough for any socket address    
     ::socklen_t namelen = sizeof(name);
@@ -101,20 +90,17 @@ std::string SocketPrivate::getService(bool local) const
         throw QPID_POSIX_ERROR(rc);
     return servName;
 }
+}
 
 Socket::Socket() :
-	impl(new SocketPrivate)
+	IOHandle(new IOHandlePrivate)
 {
 	createTcp();
 }
 
-Socket::Socket(SocketPrivate* sp) :
-	impl(sp)
+Socket::Socket(IOHandlePrivate* h) :
+	IOHandle(h)
 {}
-
-Socket::~Socket() {
-	delete impl;
-}
 
 void Socket::createTcp() const
 {
@@ -225,7 +211,7 @@ Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
 {
 	int afd = ::accept(impl->fd, addr, addrlen);
 	if ( afd >= 0)
-		return new Socket(new SocketPrivate(afd));
+		return new Socket(new IOHandlePrivate(afd));
 	else if (errno == EAGAIN)
 		return 0;
     else throw QPID_POSIX_ERROR(errno);
@@ -243,41 +229,32 @@ int Socket::write(const void *buf, size_t count) const
 
 std::string Socket::getSockname() const
 {
-    return impl->getName(true);
+    return getName(impl->fd, true);
 }
 
 std::string Socket::getPeername() const
 {
-    return impl->getName(false);
+    return getName(impl->fd, false);
 }
 
 std::string Socket::getPeerAddress() const
 {
-    return impl->getName(false, true);
+    return getName(impl->fd, false, true);
 }
 
 std::string Socket::getLocalAddress() const
 {
-    return impl->getName(true, true);
+    return getName(impl->fd, true, true);
 }
 
 uint16_t Socket::getLocalPort() const
 {
-    return atoi(impl->getService(true).c_str());
+    return atoi(getService(impl->fd, true).c_str());
 }
 
 uint16_t Socket::getRemotePort() const
 {
-    return atoi(impl->getService(true).c_str());
-}
-
-int Socket::toFd() const {
-    return impl->fd;
-}
-
-int toFd(const SocketPrivate* s)
-{
-    return s->fd;
+    return atoi(getService(impl->fd, true).c_str());
 }
 
 }} // namespace qpid::sys
