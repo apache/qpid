@@ -74,38 +74,38 @@ PreviewConnectionHandler::PreviewConnectionHandler(PreviewConnection& connection
     if (isClient) {
         handler->serverMode = false;
     }else {
-//
-// TODO: The code below is the proper way to create a mechanisms list,
-// but it cannot be done here because the sasl_conn has not been
-// initialized. Unfortunately, sasl_conn cannot be initialize here
-// because an exception thrown from this constructor will result in
-// the Broker exiting, and dropping core.
-//
-//#if HAVE_SASL
-//        const char *list;
-//        unsigned int list_len;
-//        int count;
-//        int code = sasl_listmech(sasl_conn, NULL,
-//                                 "", " ", "",
-//                                 &list, &list_len,
-//                                 &count);
-//
-//        if (SASL_OK != code) {
-//            QPID_LOG(info, "SASL: Mechanism listing failed: "
-//                     << sasl_errdetail(sasl_conn));
-//
-//                // TODO: Change this to an exception signaling
-//                // server error, when one is available
-//            throw CommandInvalidException("Mechanism listing failed");
-//        } else {
-//                // TODO: Figure out the proper way to specify multiple
-//                // mechanisms. Right now mechanisms are separated by
-//                // spaces.
-//            mechanisms = list;
-//        }
-//#else
-        mechanisms = PLAIN;
-//#endif
+#if HAVE_SASL
+        if (connection.getBroker().getOptions().auth) {
+            const char *list;
+            unsigned int list_len;
+            int count;
+            int code = sasl_listmech(handler->sasl_conn, NULL,
+                                     "", " ", "",
+                                     &list, &list_len,
+                                     &count);
+
+            if (SASL_OK != code) {
+                QPID_LOG(info, "SASL: Mechanism listing failed: "
+                         << sasl_errdetail(handler->sasl_conn));
+
+                    // TODO: Change this to an exception signaling
+                    // server error, when one is available
+                throw CommandInvalidException("Mechanism listing failed");
+            } else {
+                    // TODO: For 0-10 the mechanisms must be returned
+                    // in a list instead of space separated
+                mechanisms = list;
+            }
+        } else {
+#endif
+                // TODO: It would be more proper for this to be ANONYMOUS
+            mechanisms = PLAIN;
+#if HAVE_SASL
+        }
+#endif
+
+        QPID_LOG(info, "SASL: Sending mechanism list: " << mechanisms);
+
         handler->serverMode = true;
         handler->client.start(99, 0, properties, mechanisms, locales);
     }
@@ -117,7 +117,24 @@ PreviewConnectionHandler::Handler::Handler(PreviewConnection& c) :
 #endif
     client(c.getOutput()), server(c.getOutput()), 
     connection(c), serverMode(false)
- {}
+{
+#if HAVE_SASL
+    if (connection.getBroker().getOptions().auth) {
+        int code = sasl_server_new(BROKER_SASL_NAME,
+                                   NULL, NULL, NULL, NULL, NULL, 0,
+                                   &sasl_conn);
+
+        if (SASL_OK != code) {
+            QPID_LOG(info, "SASL: Connection creation failed: "
+                     << sasl_errdetail(sasl_conn));
+
+                // TODO: Change this to an exception signaling
+                // server error, when one is available
+            throw CommandInvalidException("Unable to perform authentication");
+        }
+    }
+#endif
+}
 
 PreviewConnectionHandler::Handler::~Handler() 
 {
@@ -191,27 +208,14 @@ void PreviewConnectionHandler::Handler::startOk(const framing::FieldTable& /*cli
 {
 #if HAVE_SASL
     if (connection.getBroker().getOptions().auth) {
-        int code = sasl_server_new(BROKER_SASL_NAME,
-                                   NULL, NULL, NULL, NULL, NULL, 0,
-                                   &sasl_conn);
-
-        if (SASL_OK != code) {
-            QPID_LOG(info, "SASL: Connection creation failed: "
-                     << sasl_errdetail(sasl_conn));
-
-                // TODO: Change this to an exception signaling
-                // server error, when one is available
-            throw CommandInvalidException("Unable to perform authentication");
-        }
-
         const char *challenge;
         unsigned int challenge_len;
 
         QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
-        code = sasl_server_start(sasl_conn,
-                                 mechanism.c_str(),
-                                 response.c_str(), response.length(),
-                                 &challenge, &challenge_len);
+        int code = sasl_server_start(sasl_conn,
+                                     mechanism.c_str(),
+                                     response.c_str(), response.length(),
+                                     &challenge, &challenge_len);
 
         processAuthenticationStep(code, challenge, challenge_len);
     } else {
