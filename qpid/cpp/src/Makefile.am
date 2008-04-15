@@ -62,7 +62,7 @@ qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
   qpid/sys/epoll/EpollPoller.cpp \
-  qpid/sys/DeletionManager.h \
+  qpid/sys/posix/IOHandle.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
@@ -469,15 +469,17 @@ nobase_include_HEADERS = \
   qpid/sys/AtomicCount.h \
   qpid/sys/BlockingQueue.h \
   qpid/sys/Condition.h \
+  qpid/sys/ConnectionCodec.h \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
   qpid/sys/ConnectionOutputHandler.h \
+  qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
+  qpid/sys/IOHandle.h \
   qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
-  qpid/sys/ConnectionCodec.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
