@@ -56,12 +56,12 @@ const char* Control::getClassName() const { return apply(GetClassName(), *this);
 // Special cases for UnknownStruct
 struct GetStructCode : public GetCode {
     using GetCode::operator();
-    uint8_t operator()(const UnknownStruct& u) const { return u.code; }
+    uint8_t operator()(const UnknownStruct& u) const { return u.getCode(); }
 };
 
 struct GetStructClassCode : public GetClassCode {
     using GetClassCode::operator();
-    uint8_t operator()(const UnknownStruct& u) const { return u.classCode; }
+    uint8_t operator()(const UnknownStruct& u) const { return u.getClassCode(); }
 };
 
 uint8_t Struct::getCode() const { return apply(GetStructCode(), *this); }
