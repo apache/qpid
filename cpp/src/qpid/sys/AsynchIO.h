@@ -40,6 +40,7 @@ public:
 private:
     Callback acceptedCallback;
     DispatchHandle handle;
+    const Socket& socket;
 
 public:
     AsynchAcceptor(const Socket& s, Callback callback);
@@ -94,6 +95,7 @@ private:
     ClosedCallback closedCallback;
     BuffersEmptyCallback emptyCallback;
     IdleCallback idleCallback;
+    const Socket& socket;
     std::deque<BufferBase*> bufferQueue;
     std::deque<BufferBase*> writeQueue;
     bool queuedClose;
@@ -119,7 +121,6 @@ public:
     void queueWriteClose();
     bool writeQueueEmpty() { return writeQueue.empty(); }
     BufferBase* getQueuedBuffer();
-    const Socket& getSocket() const { return DispatchHandle::getSocket(); }
 
 private:
     ~AsynchIO();
