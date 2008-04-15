@@ -770,5 +770,13 @@ under the License.
                 </plugins>
             </build>
         </profile>
+<!--- Build profile to ignore test failures. -->
+<profile>
+<id>ignore</id>
+<properties>
+<maven.test.failure.ignore>true</maven.test.failure.ignore>
+<maven.test.error.ignore>true</maven.test.error.ignore>
+</properties>
+</profile>
     </profiles>
 </project>

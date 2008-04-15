@@ -117,6 +117,8 @@ public class StreamMessageTest extends QpidTestCase
         {
             assertTrue("Expected MessageEOFException: " + e, e instanceof MessageEOFException);
         }
+        con.close();
+        con2.close();
     }
 
     public void testModifyReceivedMessageExpandsBuffer() throws Exception
@@ -152,5 +154,7 @@ public class StreamMessageTest extends QpidTestCase
         sm.writeInt(42);
         mandatoryProducer.send(sm);
         Thread.sleep(2000);
+        con.close();
+        con2.close();
     }
 }

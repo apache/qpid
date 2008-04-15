@@ -153,6 +153,15 @@ public final class AMQConstant
 
     public static final AMQConstant FRAME_MIN_SIZE = new AMQConstant(4096, "frame min size", true);
 
+    /**
+     * The server does not support the protocol version
+     */
+    public static final AMQConstant UNSUPPORTED_BROKER_PROTOCOL_ERROR = new AMQConstant(542, "broker unsupported protocol", true);
+    /**
+     * The client imp does not support the protocol version
+     */
+    public static final AMQConstant UNSUPPORTED_CLIENT_PROTOCOL_ERROR = new AMQConstant(543, "client unsupported protocol", true);
+
     /** The AMQP status code. */
     private int _code;
 

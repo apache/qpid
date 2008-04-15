@@ -157,42 +157,24 @@
     </copy>
   </target>
 
-  <property name="test" value="*Test"/>
-  <property name="test.mem" value="512M"/>
-
-  <property name="log" value="info"/>
-  <property name="amqj.logging.level" value="${log}"/>
-  <property name="root.logging.level" value="${log}"/>
-  <property name="log4j.configuration" value="file://${project.root}/log4j-test.xml"/>
-
   <property name="java.naming.factory.initial" value="org.apache.qpid.jndi.PropertiesFileInitialContextFactory"/>
-  <property name="java.naming.provider.url" value="${project.root}/test-provider.properties"/>
-
-  <condition property="brokerdefault" value="${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t" else="vm">
-    <isset property="cpp"/>
+  
+  <condition property="config" value="${profile}.testprofile" else="default.testprofile">
+      <and>
+          <isset property="profile"/>
+          <available file="${project.root}/${profile}.testprofile" type="file"/>
+      </and>
   </condition>
 
-  <condition property="broker" value="${brokerdefault} --load-module ${store} --store-async yes" else="${brokerdefault}">
-    <and>
-      <isset property="store"/>
-      <isset property="cpp"/>
-    </and>
-  </condition>
-
-  <condition property="broker.clean" value="${project.root}/clean-dir ${build.data}">
-    <isset property="cpp"/>
-  </condition>
-
-  <condition property="broker.version" value="0-10" else="0-8">
-    <isset property="cpp"/>
-  </condition>
+  <property file="${project.root}/${config}"/>
 
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
-    <junit fork="yes" haltonfailure="no" printsummary="on" timeout="600000">
 
-      <jvmarg value="-Xmx${test.mem}" />
-
+    <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
+           haltonfailure="${haltonfailure}" haltonerror="${haltonerror}" 
+           printsummary="on" timeout="600000" >
+       
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
@@ -201,15 +183,19 @@
       <sysproperty key="broker" value="${broker}"/>
       <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
+      <sysproperty key="test.excludes" value="${test.excludes}"/>
+      <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
+      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>  
 
       <formatter type="plain"/>
       <formatter type="xml"/>
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="yes" todir="${build.results}">
+      <batchtest fork="${test.fork}" todir="${build.results}">
         <fileset dir="${module.test.src}">
-          <include name="**/${test}.java"/>
+          <include name="**/${test1}.java"/>
+          <include name="**/${test}.java"/>     
         </fileset>
       </batchtest>
     </junit>
@@ -220,7 +206,7 @@
       <fileset dir="${module.bin}"/>
     </copy>
     <chmod dir="${build.bin}" perm="ugo+rx" includes="**/*"/>
-    <copy todir="${build.etc}" failonerror="false">
+   	 <copy todir="${build.etc}" failonerror="false">
       <fileset dir="${module.etc}"/>
     </copy>
   </target>
@@ -235,7 +221,7 @@
 
   <target name="libs" description="copy dependencies into build tree">
     <copy todir="${build.lib}" failonerror="false" flatten="true">
-      <path refid="module.libs"/>
+      <fileset dir="${basedir}${file.separator}.." includes="${module.libs}"/>
     </copy>
   </target>
 

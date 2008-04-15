@@ -96,11 +96,11 @@
 
   <target name="version" depends="check-version" if="version.stale">
     <!-- Write the version.properties out. -->
-    <propertyfile file="${version.file}">
-      <entry key="qpid.svnversion" value="${qpid.svnversion}"/>
-      <entry key="qpid.name" value="${project.name}"/>
-      <entry key="qpid.version" value="${project.version}"/>
-    </propertyfile>
+    <echo file="${version.file}" append="true">
+      qpid.svnversion=${qpid.svnversion}
+      qpid.name=${project.name}
+      qpid.version=${project.version}
+    </echo>
   </target>
 
   <target name="precompile" depends="gentools,jython,version"/>

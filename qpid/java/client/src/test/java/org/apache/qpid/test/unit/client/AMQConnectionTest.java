@@ -49,6 +49,7 @@ public class AMQConnectionTest extends QpidTestCase
 
     protected void tearDown() throws Exception
     {
+        _connection.close();
         super.tearDown();
     }
 

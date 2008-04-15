@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -41,6 +42,7 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpidity.transport.TransportConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -339,30 +341,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
-        /* This JVM arg is only used for test code
-         Unless u pass a url it is difficult to determine which version to use
-         Most of the test code use an AMQConnection constructor that doesn't use
-         the url. So you need this switch to say which code path to test.
-
-        Another complication is that when a constructor is called with out a url
-        they would construct a 0-8 url and pass into the construtor that takes a url.
-
-        In such an instance u need the jvm argument to force an 0-10 connection
-        Once the 0-10 code base stabilises, 0-10 will be the default.
-        */
-
-        if (Boolean.getBoolean("SwitchCon"))
+        _failoverPolicy = new FailoverPolicy(connectionURL);
+        if (_failoverPolicy.getCurrentBrokerDetails().getTransport().equals(BrokerDetails.VM))
         {
-            connectionURL.setURLVersion((Boolean.getBoolean("0-10")?  ConnectionURL.URL_0_10:ConnectionURL.URL_0_8));
-        }
-
-        if (connectionURL.getURLVersion() == ConnectionURL.URL_0_10)
-        {
-            _delegate = new AMQConnectionDelegate_0_10(this);
+            _delegate = new AMQConnectionDelegate_0_8(this);
         }
         else
         {
-            _delegate = new AMQConnectionDelegate_0_8(this);
+            // We always assume that the broker supports the lates AMQ protocol verions
+            // thie is currently 0.10
+            // TODO: use this code once we have switch to 0.10
+            // getDelegate();
+            _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
         final ArrayList<JMSException> exceptions = new ArrayList<JMSException>();
@@ -402,8 +392,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _username = connectionURL.getUsername();
         _password = connectionURL.getPassword();
 
-        _protocolVersion = connectionURL.getProtocolVersion();
-
         setVirtualHost(connectionURL.getVirtualHost());
 
         if (connectionURL.getDefaultQueueExchangeName() != null)
@@ -426,7 +414,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _temporaryTopicExchangeName = connectionURL.getTemporaryTopicExchangeName();
         }
 
-        _failoverPolicy = new FailoverPolicy(connectionURL);
 
          _protocolHandler = new AMQProtocolHandler(this);
 
@@ -441,6 +428,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             try
             {
                 makeBrokerConnection(_failoverPolicy.getNextBrokerDetails());
+            }
+            catch (AMQProtocolException pe)
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info(pe.getMessage());
+                    _logger.info("Trying broker supported protocol version: " +
+                            TransportConstants.getVersionMajor() + "." +
+                            TransportConstants.getVersionMinor());
+                }
+                // we need to check whether we have a delegate for the supported protocol
+                getDelegate();
             }
             catch (Exception e)
             {
@@ -540,6 +539,26 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
 
         return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
+    }
+
+    private void getDelegate() throws AMQProtocolException
+    {
+        try
+        {
+            Class c = Class.forName("org.apache.qpid.client.AMQConnectionDelegate_" +
+                    TransportConstants.getVersionMajor() + "_" +
+                    TransportConstants.getVersionMinor());
+             Class partypes[] = new Class[1];
+            partypes[0] = AMQConnection.class;
+            _delegate = (AMQConnectionDelegate) c.getConstructor(partypes).newInstance(this);
+        }
+        catch (Exception e)
+        {
+            throw new AMQProtocolException(AMQConstant.UNSUPPORTED_CLIENT_PROTOCOL_ERROR,
+                    "Protocol: " + TransportConstants.getVersionMajor() + "."
+            + TransportConstants.getVersionMinor() + " is rquired by the broker but is not " +
+                            "currently supported by this client library implementation", e);
+        }
     }
 
     protected AMQConnection(String username, String password, String clientName, String virtualHost)

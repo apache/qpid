@@ -198,7 +198,7 @@ class Codec:
     if (o < 0 or o > 255):
         raise ValueError('Valid range of octet is [0,255]')
 
-    self.pack("!B", o)
+    self.pack("!B", int(o))
 
   def decode_octet(self):
     """
@@ -215,7 +215,7 @@ class Codec:
     if (o < 0 or o > 65535):
         raise ValueError('Valid range of short int is [0,65535]: %s' % o)
 
-    self.pack("!H", o)
+    self.pack("!H", int(o))
 
   def decode_short(self):
     """
@@ -233,7 +233,7 @@ class Codec:
     if (o < 0 or o > 4294967295):
       raise ValueError('Valid range of long int is [0,4294967295]')
 
-    self.pack("!L", o)
+    self.pack("!L", int(o))
 
   def decode_long(self):
     """
@@ -264,6 +264,38 @@ class Codec:
     decodes a long long (64 bits) in network byte order
     """
     return self.unpack("!Q")
+
+  def encode_float(self, o):
+    self.pack("!f", o)
+
+  def decode_float(self):
+    return self.unpack("!f")
+
+  def encode_double(self, o):
+    self.pack("!d", o)
+
+  def decode_double(self):
+    return self.unpack("!d")
+
+  def encode_bin128(self, b):
+    for idx in range (0,16):
+      self.pack("!B", ord (b[idx]))
+
+  def decode_bin128(self):
+    result = ""
+    for idx in range (0,16):
+      result = result + chr (self.unpack("!B"))
+    return result
+
+  def encode_raw(self, len, b):
+    for idx in range (0,len):
+      self.pack("!B", b[idx])
+
+  def decode_raw(self, len):
+    result = ""
+    for idx in range (0,len):
+      result = result + chr (self.unpack("!B"))
+    return result
 
   def enc_str(self, fmt, s):
     """
