@@ -159,7 +159,7 @@ class Specification < CppGen
   end
 
   # Generate struct definitions into a separate header file so the
-  # can be included by Struct32.h without circularity.
+  # can be included by StructHolder.h without circularity.
   def gen_structs()
     h_file("#{@dir}/structs") { 
       include "#{@dir}/specification_fwd"
@@ -177,7 +177,7 @@ class Specification < CppGen
     
     cpp_file("#{@dir}/structs") { 
       include "#{@dir}/structs"
-      include "#{@dir}/Struct32"
+      include "#{@dir}/StructHolder"
       namespace(@ns) {
         each_class_ns { |c|
           c.collect_all(AmqpStruct).each {  |s| struct_cpp(s) }
@@ -283,7 +283,7 @@ class Specification < CppGen
   end
 
   def gen_holder(base, subs)
-    name= (base=="Struct") ? "Struct32" : base+"Holder"
+    name=base+"Holder"
     h_file("#{@dir}/#{name}") {
       include "#{@dir}/Apply#{base}"
       include "#{@dir}/Holder"
