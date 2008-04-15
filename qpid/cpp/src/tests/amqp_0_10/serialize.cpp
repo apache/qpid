@@ -30,7 +30,7 @@
 #include "qpid/amqp_0_10/Codec.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ControlHolder.h"
-#include "qpid/amqp_0_10/StructHolder.h"
+#include "qpid/amqp_0_10/Struct32.h"
 #include "qpid/amqp_0_10/FrameHeader.h"
 #include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Unit.h"
@@ -213,6 +213,22 @@ BOOST_AUTO_TEST_CASE(testControlEncodeDecode) {
     BOOST_CHECK_EQUAL(tune.heartbeatMax, 4u);
 }
 
+BOOST_AUTO_TEST_CASE(testStruct32) {
+    message::DeliveryProperties dp;
+    dp.priority=message::MEDIUM;
+    dp.routingKey="foo";
+    Struct32 s(dp);
+    string data;
+    Codec::encode(back_inserter(data))(s);
+    BOOST_CHECK_EQUAL(data.size(), Codec::size(s));
+    Struct32 s2;
+    Codec::decode(data.begin())(s2);
+    message::DeliveryProperties* dp2 = s2.getIf<message::DeliveryProperties>();
+    BOOST_REQUIRE(dp2);
+    BOOST_CHECK_EQUAL(dp2->priority, message::MEDIUM);
+    BOOST_CHECK_EQUAL(dp2->routingKey, "foo");
+}
+
 struct DummyPacked {
     static const uint8_t PACK=1;
     boost::optional<char> i, j;
@@ -319,10 +335,10 @@ BOOST_AUTO_TEST_CASE(testStruct) {
     BOOST_CHECK_EQUAL(encodedBits, packBits(dp));
         
     data.clear();
-    Struct::Holder h(dp);
+    Struct32 h(dp);
     Codec::encode(back_inserter(data))(h);    
 
-    Struct::Holder h2;
+    Struct32 h2;
     Codec::decode(data.begin())(h2);
     BOOST_CHECK_EQUAL(h2.getClassCode(), Uint8(message::DeliveryProperties::CLASS_CODE));
     BOOST_CHECK_EQUAL(h2.getCode(), Uint8(message::DeliveryProperties::CODE));

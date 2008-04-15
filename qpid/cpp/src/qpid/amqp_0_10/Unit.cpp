@@ -27,9 +27,10 @@ namespace amqp_0_10 {
 void Unit::updateVariant() {
     switch (header.getType()) {
       case CONTROL: variant=ControlHolder(); break;
-      case COMMAND: variant=CommandHolder();
-      case HEADER: variant=Header();
-      case BODY: variant=Body(header.getDataSize());
+      case COMMAND: variant=CommandHolder(); break;
+      case HEADER: variant=Header(); break;
+      case BODY: variant=Body(header.getDataSize()); break;
+      default: assert(0);       // FIXME aconway 2008-04-14: exception?
     }
 }
 

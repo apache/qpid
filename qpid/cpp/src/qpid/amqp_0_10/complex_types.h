@@ -93,9 +93,9 @@ std::ostream& operator<<(std::ostream&, const Control&);
 // Note: only coded structs inherit from Struct.
 struct StructVisitor;
 struct ConstStructVisitor;
-struct StructHolder;
+struct Struct32;
 struct Struct
-    : public Visitable<StructVisitor, ConstStructVisitor, StructHolder>
+    : public Visitable<StructVisitor, ConstStructVisitor, Struct32>
 {
     uint8_t getCode() const;
     uint8_t getPack() const;

@@ -19,6 +19,7 @@
  *
  */
 
+#include "qpid/amqp_0_10/UnknownStruct.h"
 #include "qpid/amqp_0_10/ApplyCommand.h"
 #include "qpid/amqp_0_10/ApplyControl.h"
 #include "qpid/amqp_0_10/ApplyStruct.h"
@@ -52,11 +53,21 @@ uint8_t Control::getClassCode() const { return apply(GetClassCode(), *this); }
 const char* Control::getName() const { return apply(GetName(), *this); }
 const char* Control::getClassName() const { return apply(GetClassName(), *this); }
 
+// Special cases for UnknownStruct
+struct GetStructCode : public GetCode {
+    using GetCode::operator();
+    uint8_t operator()(const UnknownStruct& u) const { return u.code; }
+};
 
-uint8_t Struct::getCode() const { return apply(GetCode(), *this); }
+struct GetStructClassCode : public GetClassCode {
+    using GetClassCode::operator();
+    uint8_t operator()(const UnknownStruct& u) const { return u.classCode; }
+};
+
+uint8_t Struct::getCode() const { return apply(GetStructCode(), *this); }
+uint8_t Struct::getClassCode() const { return apply(GetStructClassCode(), *this); }
 uint8_t Struct::getPack() const { return apply(GetPack(), *this); }
 uint8_t Struct::getSize() const { return apply(GetSize(), *this); }
-uint8_t Struct::getClassCode() const { return apply(GetClassCode(), *this); }
 
 struct PrintVisitor {
     typedef std::ostream& result_type;
