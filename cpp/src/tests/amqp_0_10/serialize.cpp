@@ -221,10 +221,10 @@ BOOST_AUTO_TEST_CASE(testStruct32) {
     string data;
     Codec::encode(back_inserter(data))(s);
 
-//     uint32_t structSize;        // Starts with size
-//     Codec::decode(data.begin())(structSize);
-//     BOOST_CHECK_EQUAL(structSize, Codec::size(dp) + 4); // code+pack
-//     BOOST_CHECK_EQUAL(structSize, data.size()-4); 
+    uint32_t structSize;        // Starts with size
+    Codec::decode(data.begin())(structSize);
+    BOOST_CHECK_EQUAL(structSize, Codec::size(dp) + 2);  // +2 for code
+    BOOST_CHECK_EQUAL(structSize, data.size()-4);        // encoded body
     
     BOOST_CHECK_EQUAL(data.size(), Codec::size(s));
     Struct32 s2;
@@ -233,15 +233,19 @@ BOOST_AUTO_TEST_CASE(testStruct32) {
     BOOST_REQUIRE(dp2);
     BOOST_CHECK_EQUAL(dp2->priority, message::MEDIUM);
     BOOST_CHECK_EQUAL(dp2->routingKey, "foo");
+}
 
+BOOST_AUTO_TEST_CASE(testStruct32Unknown) {
     // Verify we can recode an unknown struct unchanged.
-//     data.clear();
-//     Codec::encode(back_inserter(data))(uint32_t(10));
-//     data.append(10, 'X');
-//     Codec::decode(data.begin())(s2);
-//     string data2;
-//     Codec::decode(back_inserter(data2));
-    // BOOST_CHECK_EQUAL(data, data2);
+    Struct32 s;
+    string data;
+    Codec::encode(back_inserter(data))(uint32_t(10));
+    data.append(10, 'X');
+    Codec::decode(data.begin())(s);
+    string data2;
+    Codec::encode(back_inserter(data2))(s);
+    BOOST_CHECK_EQUAL(data.size(), data2.size());
+    BOOST_CHECK_EQUAL(data, data2);
 }
 
 struct DummyPacked {
