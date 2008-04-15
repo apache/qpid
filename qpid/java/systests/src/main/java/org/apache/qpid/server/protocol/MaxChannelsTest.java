@@ -57,7 +57,7 @@ public class MaxChannelsTest extends TestCase
         {
             for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
             {
-                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null));
+                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null));
             }
         }
         catch (AMQException e)

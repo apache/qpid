@@ -34,7 +34,6 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.txn.MemoryTransactionManager;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.NullApplicationRegistry;
@@ -56,8 +55,6 @@ public class AckTest extends TestCase
 
     private TestableMemoryMessageStore _messageStore;
 
-    private MemoryTransactionManager _txm;
-
     private StoreContext _storeContext = new StoreContext();
 
     private AMQChannel _channel;
@@ -77,9 +74,8 @@ public class AckTest extends TestCase
     {
         super.setUp();
         _messageStore = new TestableMemoryMessageStore();
-        _txm = new MemoryTransactionManager();
         _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession, 5, _txm, _messageStore);
+        _channel = new AMQChannel(_protocolSession, 5, _messageStore);
 
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
