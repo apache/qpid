@@ -70,7 +70,11 @@ class MapValue {
     
 
   private:
-    static const size_t SIZE=128 < sizeof(Vbin32) ? sizeof(Vbin32) : 128;
+    // TODO aconway 2008-04-15: Estimate required size, we will get a
+    // compile error from static_assert in Blob.h if the estimate is too
+    // low. We can't use sizeof() directly because #include Struct32.h
+    // creates a circular dependency. Needs a better solution.
+    static const size_t SIZE=256;
     typedef framing::Blob<SIZE> Blob;
 
     template <class V> struct VisitVisitor;
