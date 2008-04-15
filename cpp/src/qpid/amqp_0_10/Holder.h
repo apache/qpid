@@ -73,6 +73,14 @@ class Holder : public framing::Blob<Size, BaseHeld> {
         apply(s, *this->get());
     }
 
+    template <class T> T* getIf() {
+        return (getClassCode()==T::CLASS_CODE && getCode()==T::CODE) ? static_cast<T*>(this->get()) : 0;
+    }
+
+    template <class T> const T* getIf() const {
+        return (getClassCode()==T::CLASS_CODE && getCode()==T::CODE) ? static_cast<T*>(this->get()) : 0;
+    }
+    
   private:
     struct Assign : public ApplyFunctor<void> {
         Holder& holder;
