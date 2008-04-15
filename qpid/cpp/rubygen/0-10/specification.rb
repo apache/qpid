@@ -2,6 +2,13 @@
 $: << ".."                      # Include .. in load path
 require 'cppgen'
 
+
+class UnknownStructSub
+  def visitable?() true end
+  def fqclassname() "UnknownStruct" end
+end
+
+
 class Specification < CppGen
   def initialize(outdir, amqp)
     super(outdir, amqp)
@@ -25,17 +32,6 @@ class Specification < CppGen
     else
       genl "typedef #{d.amqp2cpp} #{typename};"
     end
-  end
-
-  # class constants
-  
-  def class_h(c)
-    genl "const uint8_t CODE=#{c.code};"
-    genl "extern const char* NAME;"
-  end
-  
-  def class_cpp(c)
-    genl "const char* NAME=\"#{c.fqname}\";"
   end
 
   def visitable?(x) x.code and x.size=="4"  end
@@ -120,7 +116,7 @@ class Specification < CppGen
   def action_cpp(a)
     action_struct_cpp(a) {
       scope("void #{a.classname}::Handler::#{a.funcname}(", ")") {
-          genl a.unused_parameters.join(",\n")
+        genl a.unused_parameters.join(",\n")
       }
       scope {
         genl "assert(0);"
@@ -146,20 +142,44 @@ class Specification < CppGen
           # segment-type and track are are built in
           domain_h d unless ["track","segment-type"].include?(d.name)
         }
-        # Domains/structs that must be generated early because they are used by
-        # other definitions:
-        @amqp.classes.select{ |c| pregenerate_class?(c) }.each { |c|
-          namespace(c.nsname) { 
-            c.collect_all(AmqpDomain).each { |d| domain_h d if pregenerate? d }
-            c.collect_all(AmqpStruct).each { |s| genl "class #{s.classname};" if pregenerate? s }
+        each_class_ns { |c|
+          genl "const uint8_t CODE=#{c.code};" # class code
+          genl "extern const char* NAME;"
+          c.each_descendant { |x|
+            case x
+            when AmqpDomain then domain_h x 
+            when AmqpStruct then genl "class #{x.classname};" 
+            when AmqpAction then genl "class #{x.classname};" 
+            end
           }
         }
-        # Now dependent domains/structs and actions
+      }
+    }
+  end
+
+  # Generate struct definitions into a separate header file so the
+  # can be included by Struct32.h without circularity.
+  def gen_structs()
+    h_file("#{@dir}/structs") { 
+      include "#{@dir}/specification_fwd"
+      include "#{@dir}/Map.h"
+      include "#{@dir}/Array.h"
+      include "#{@dir}/complex_types.h"
+      include "#{@dir}/UnknownStruct.h"
+      include "#{@dir}/Packer.h"
+      namespace(@ns) {
         each_class_ns { |c|
-          class_h c
-          c.collect_all(AmqpDomain).each { |d| domain_h d unless pregenerate? d}
-          c.collect_all(AmqpStruct).each { |s| genl "class #{s.classname};" unless pregenerate? s }
-          c.collect_all(AmqpAction).each { |a| genl "class #{a.classname};" unless pregenerate? a }
+          c.collect_all(AmqpStruct).each { |s| struct_h s } 
+        }
+      }
+    }
+    
+    cpp_file("#{@dir}/structs") { 
+      include "#{@dir}/structs"
+      include "#{@dir}/Struct32"
+      namespace(@ns) {
+        each_class_ns { |c|
+          c.collect_all(AmqpStruct).each {  |s| struct_cpp(s) }
         }
       }
     }
@@ -168,23 +188,19 @@ class Specification < CppGen
   # Generate the specification files
   def gen_specification()
     h_file("#{@dir}/specification") {
-      include "#{@dir}/specification_fwd"
-      include "#{@dir}/all_built_in_types"
+      include "#{@dir}/specification_fwd.h"
+      include "#{@dir}/Map.h"
+      include "#{@dir}/Array.h"
+      include "#{@dir}/UnknownType.h"
+      include "#{@dir}/complex_types.h"
+      include "#{@dir}/Struct32"
       include "#{@dir}/Packer.h"
       include "<iosfwd>"
-      namespace(@ns) {
-        # Structs that must be generated early because
-        # they are used by other definitions:
+      namespace(@ns) { 
         each_class_ns { |c|
-          c.collect_all(AmqpStruct).each { |s| struct_h s if pregenerate? s }
-        }
-        # Now dependent domains/structs and actions
-        each_class_ns { |c|
-          c.collect_all(AmqpStruct).each { |s| struct_h s unless pregenerate? s}
           c.collect_all(AmqpAction).each { |a| action_h a }
         }
-      }
-    }
+      }}
 
     cpp_file("#{@dir}/specification") { 
       include "#{@dir}/specification"
@@ -193,14 +209,13 @@ class Specification < CppGen
       ["Command","Control", "Struct"].each { |x| include "#{@dir}/Apply#{x}" }
       namespace(@ns) { 
         each_class_ns { |c|
-          class_cpp c
+          genl "const char* NAME=\"#{c.fqname}\";"
           c.actions.each { |a| action_cpp a}
-          c.collect_all(AmqpStruct).each {  |s| struct_cpp(s) }
         }
       }
     }
   end
-  
+
   def gen_proxy()
     h_file("#{@dir}/ProxyTemplate.h") { 
       include "#{@dir}/specification"
@@ -247,10 +262,14 @@ class Specification < CppGen
         genl "virtual void visit(#{const}#{s.fqclassname}& x) { this->invoke(x); }" 
       }}
   end
-  
+
   def gen_visitor(base, subs)
+    if base=="Struct"
+      subs << UnknownStructSub.new
+    end
+
     h_file("#{@dir}/#{base}Visitor.h") { 
-      include "#{@dir}/specification"
+      include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace("#{@ns}") { 
         visitor_interface_h(base, subs, false)
         visitor_interface_h(base, subs, true)
@@ -265,12 +284,13 @@ class Specification < CppGen
       }
     }
   end
-  
+
   def gen_holder(base, subs)
-    name=base.caps+"Holder"
+    name= (base=="Struct") ? "Struct32" : base+"Holder"
     h_file("#{@dir}/#{name}") {
       include "#{@dir}/Apply#{base}"
       include "#{@dir}/Holder"
+      include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace(@ns){
         namespace("#{base.downcase}_max") {
           gen "template <class M, class X> "
@@ -284,7 +304,7 @@ class Specification < CppGen
           }
           genl "static const int MAX=#{last}::max;"
         }
-        holder_base="amqp_0_10::Holder<#{base}Holder, #{base}, #{base.downcase}_max::MAX>"
+        holder_base="amqp_0_10::Holder<#{name}, #{base}, #{base.downcase}_max::MAX>"
         struct("#{name}", "public #{holder_base}") {
           genl "#{name}() {}"
           genl "template <class T> explicit #{name}(const T& t) : #{holder_base}(t) {}"
@@ -308,8 +328,16 @@ class Specification < CppGen
             subs.each { |s|
               genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
             }
-            genl "default: throw CommandInvalidException(QPID_MSG(\"Invalid class-#{base.downcase} key \" << std::hex << key));"
-          }}
+            genl "default: "
+            indent { 
+              if (base=="Struct")
+                genl "*this=in_place<UnknownStruct>(classCode, code);"
+              else
+                genl "throw CommandInvalidException(QPID_MSG(\"Invalid class-#{base.downcase} key \" << std::hex << key));"
+              end
+            }
+          }
+        }
         genl
         genl "std::ostream& operator<<(std::ostream& o, const #{name}& h) { return h.get() ? (o << *h.get()) : (o << \"<empty #{name}>\"); }"
       }
@@ -325,9 +353,10 @@ class Specification < CppGen
     gen_specification_fwd
     gen_specification
     gen_proxy
+    gen_structs
     gen_visitable("Command", @amqp.collect_all(AmqpCommand))
     gen_visitable("Control", @amqp.collect_all(AmqpControl))
-    gen_visitable("Struct", @amqp.collect_all(AmqpStruct).select { |s| s.code})
+    gen_visitable("Struct",  @amqp.collect_all(AmqpStruct).select { |s| s.code})
   end
 end
 

@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_0_10_HEADER_H
-#define QPID_AMQP_0_10_HEADER_H
+#ifndef QPID_AMQP_0_10_UNKNOWNSTRUCT_H
+#define QPID_AMQP_0_10_UNKNOWNSTRUCT_H
 
 /*
  *
@@ -21,33 +21,23 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/built_in_types.h"
-#include "qpid/amqp_0_10/Struct32.h"
-#include <vector>
-#include <ostream>
+#include "qpid/amqp_0_10/complex_types.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-class Header : public std::vector<Struct32> {
-  public:
-    Header() {}
+struct UnknownStruct : public Struct, public Vbin32 {
+    static const uint8_t SIZE=4;
+    static const uint8_t PACK=2;
     
-    template <class S> void serialize(S& s) { s.split(*this); }
-    template <class S> void encode(S& s) const { s(this->begin(), this->end()); }
-    template <class S> void decode(S& s);
+    UnknownStruct(uint8_t cc=0, uint8_t c=0) : classCode(cc), code(c) {}
+    void accept(Visitor&);
+    void accept(ConstVisitor&) const;
+    uint8_t classCode, code;
 };
 
-template <class S> void Header::decode(S& s) {
-    this->clear();
-    while (s.bytesRemaining() > 0) {
-        this->push_back(Struct32());
-        s(this->back());
-    }
-}
-
-std::ostream& operator<<(std::ostream& o, const Header&);
+std::ostream& operator<<(std::ostream&, const UnknownStruct&);
 
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_AMQP_0_10_HEADER_H*/
+#endif  /*!QPID_AMQP_0_10_UNKNOWNSTRUCT_H*/

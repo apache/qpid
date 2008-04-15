@@ -1,6 +1,3 @@
-#ifndef QPID_AMQP_0_10_ALL_BUILT_IN_TYPES_H
-#define QPID_AMQP_0_10_ALL_BUILT_IN_TYPES_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,11 +18,17 @@
  * under the License.
  *
  */
+#include "Header.h"
 
-#include "built_in_types.h"
-#include "Map.h"
-#include "Array.h"
-#include "UnknownType.h"
-#include "complex_types.h"
+namespace qpid {
+namespace amqp_0_10 {
 
-#endif  /*!QPID_AMQP_0_10_ALL_BUILT_IN_TYPES_H*/
+std::ostream& operator<<(std::ostream& o, const Header& h) {
+    o << "Header[";
+    std::ostream_iterator<Struct32> i(o, " ");
+    std::copy(h.begin(), h.end(), i);
+    o << "]";
+    return o;
+}
+
+}} // namespace qpid::amqp_0_10
