@@ -1,8 +1,4 @@
-#ifndef QPID_AMQP_0_10_STRUCT32_H
-#define QPID_AMQP_0_10_STRUCT32_H
-
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -10,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,42 +18,13 @@
  *
  */
 
-#include "qpid/amqp_0_10/StructHolder.h"
+#include "Struct32.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-class Struct32 : public StructHolder
-{
-  public:
-    Struct32() {}
-
-    template <class T> explicit Struct32(const T& t) : StructHolder(t) {}
-    
-    template <class S> void serialize(S& s) {
-        s.split(*this);
-        StructHolder::serialize(s);
-    }
-
-    template <class S> void encode(S& s) const {
-        s(contentSize());
-    }
-    
-    template <class S> void decode(S& s) {
-        uint32_t contentSz;
-        s(contentSz);
-        s.setLimit(contentSz);
-    }
-    
-  private:
-    uint32_t contentSize() const {
-        return Codec::size(static_cast<const StructHolder&>(*this));
-    }
-        
-};
-
-std::ostream& operator<<(std::ostream&, const Struct32&);
+std::ostream& operator<<(std::ostream& o, const Struct32& s) {
+    return o << static_cast<const StructHolder&>(s);
+}
 
 }} // namespace qpid::amqp_0_10
-
-#endif  /*!QPID_AMQP_0_10_STRUCT32_H*/
