@@ -184,11 +184,22 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private AMQShortString(ByteBuffer data, final int length)
     {
-        byte[] dataBytes = new byte[length];
-        data.get(dataBytes);
-        _data = dataBytes;
+        if(data.isDirect() || data.isReadOnly())
+        {
+            byte[] dataBytes = new byte[length];
+            data.get(dataBytes);
+            _data = dataBytes;
+            _offset = 0;
+        }
+        else
+        {
+
+            _data = data.array();
+            _offset = data.arrayOffset() + data.position();
+            data.skip(length);
+
+        }
         _length = length;
-        _offset = 0;
 
     }
 
@@ -197,6 +208,20 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         _offset = from;
         _length = to - from;
         _data = data;
+    }
+
+    public AMQShortString shrink()
+    {
+        if(_data.length != _length)
+        {
+            byte[] dataBytes = new byte[_length];
+            System.arraycopy(_data,_offset,dataBytes,0,_length);
+            return new AMQShortString(dataBytes,0,_length);
+        }
+        else
+        {
+            return this;
+        }
     }
 
 
@@ -572,7 +597,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             ref = _globalInternMap.get(this);
             if((ref == null) || ((internString = ref.get()) == null))
             {
-                internString = new AMQShortString(getBytes());
+                internString = shrink();
                 ref = new WeakReference(internString);
                 _globalInternMap.put(internString, ref);
             }
