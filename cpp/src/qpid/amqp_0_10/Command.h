@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_0_10_HEADER_H
-#define QPID_AMQP_0_10_HEADER_H
+#ifndef QPID_AMQP_0_10_COMMAND_H
+#define QPID_AMQP_0_10_COMMAND_H
 
 /*
  *
@@ -21,33 +21,42 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/built_in_types.h"
-#include "qpid/amqp_0_10/Struct32.h"
-#include <vector>
-#include <ostream>
+
+#include "Control.h"
+#include "qpid/amqp_0_10/structs.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-class Header : public std::vector<Struct32> {
-  public:
-    Header() {}
+struct CommandVisitor;
+struct ConstCommandVisitor;
+struct CommandHolder;
+struct Command
+    : public Action,
+      public Visitable<CommandVisitor, ConstCommandVisitor, CommandHolder>
+{
+    using Action::getCommand;
+    Command* getCommand() { return this; }
+    uint8_t getCode() const;
+    uint8_t getClassCode() const;
+    const char* getName() const;
+    const char* getClassName() const;
 
-    template <class S> void serialize(S& s) { s.split(*this); }
-    template <class S> void encode(S& s) const { s(this->begin(), this->end()); }
-    template <class S> void decode(S& s);
+    session::Header sessionHeader;
 };
 
-template <class S> void Header::decode(S& s) {
-    this->clear();
-    while (s.bytesRemaining() > 0) {
-        this->push_back(Struct32());
-        s(this->back());
+std::ostream& operator<<(std::ostream&, const Command&);
+
+template <class T>
+struct CommandPacker : Packer<T> {
+    CommandPacker(T& t) : Packer<T>(t) {}
+    
+    template <class S> void serialize(S& s) { 
+        s(this->data.sessionHeader);
+        Packer<T>::serialize(s);
     }
-}
-
-std::ostream& operator<<(std::ostream& o, const Header&);
-
+};
+    
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_AMQP_0_10_HEADER_H*/
+#endif  /*!QPID_AMQP_0_10_COMMAND_H*/
