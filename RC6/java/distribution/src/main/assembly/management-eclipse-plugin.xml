@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<assembly>
+  <!-- id typically identifies the "type" (src vs bin etc) of the assembly -->
+  <id>management-console-win32</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <format>zip</format>
+  </formats>
+
+  <fileSets>
+
+  <!-- Include the currently hardwired Apache Legal bits -->
+    <fileSet>
+      <directory>../resources</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+      <includes>
+          <include>DISCLAIMER</include>
+          <include>LICENSE</include>
+          <include>NOTICE</include>
+          <include>README</include>
+      </includes>
+      <fileMode>0444</fileMode>
+    </fileSet>
+
+    <fileSet>
+      <directory>src/main/release</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+    </fileSet>
+
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>../release-docs</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+    </fileSet>
+
+
+    <fileSet>
+      <directory>..</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+      <includes>
+        <include>*.txt</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>../management/eclipse-plugin/src/main/resources/win32/configuration</directory>
+      <outputDirectory>qpidmc/configuration</outputDirectory>
+    </fileSet>
+
+    <fileSet>
+      <directory>../management/eclipse-plugin/src/main/resources</directory>
+      <outputDirectory>qpidmc/eclipse</outputDirectory>
+      <includes>
+        <include>*.*</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>../management/eclipse-plugin</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+      <includes>
+        <include>README.txt</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>../management/eclipse-plugin/bin</directory>
+      <outputDirectory>qpidmc/bin</outputDirectory>
+      <excludes>
+        <!-- Exclude the Unix scripts -->
+        <exclude>qpidmc*.sh</exclude>
+      </excludes>
+      <fileMode>0777</fileMode>
+    </fileSet>
+
+    <!-- Required to make eclipse load the JMXRemote SASL pluging -->
+    <!-- This should be removed as JMXRemote SASL module is not ASF license friendly -->
+    <!-- However management console doesn't seem to work without it -->
+    <fileSet>
+      <directory>../management/eclipse-plugin/src/main/resources/sasl</directory>
+      <outputDirectory>qpidmc/eclipse/plugins/jmxremote.sasl_1.0.1/META-INF</outputDirectory>
+      <includes>
+        <include>MANIFEST.MF</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>qpidmc/eclipse/plugins</outputDirectory>
+      <outputFileNameMapping>${artifactId}_${version}.${extension}</outputFileNameMapping>
+      <unpack>false</unpack>
+      <excludes>
+        <exclude>org.apache.qpid:qpid-distribution</exclude>
+        <exclude>org.apache.qpid:qpid-common</exclude>
+        <exclude>org.apache.qpid:qpid-broker</exclude>
+        <exclude>org.apache.qpid:qpid-client</exclude>
+        <exclude>commons-cli:commons-cli</exclude>
+        <exclude>commons-configuration:commons-configuration</exclude>
+        <exclude>commons-lang:commons-lang</exclude>
+        <exclude>org.apache.mina:mina-filter-ssl</exclude>
+        <exclude>org.apache.mina:mina-java5</exclude>
+        <exclude>backport-util-concurrent:backport-util-concurrent</exclude>
+        <exclude>org.slf4j:slf4j-simple</exclude>
+        <exclude>junit:junit</exclude>
+        <exclude>org.easymock:easymockclassextension</exclude>
+        <exclude>commons-codec:commons-codec</exclude>
+        <exclude>org.apache.geronimo.specs:geronimo-jms_1.1_spec</exclude>
+        <exclude>commons-collections:commons-collections</exclude>
+        <exclude>commons-lang:commons-lang</exclude>
+        <exclude>org.apache.mina:mina-core</exclude>
+        <exclude>commons-beanutils:commons-beanutils</exclude>
+        <exclude>commons-beanutils:commons-beanutils-core</exclude>
+        <exclude>commons-digester:commons-digester</exclude>
+        <exclude>commons-logging:commons-logging</exclude>
+        <exclude>commons-logging:commons-logging-api</exclude>
+        <exclude>dom4j:dom4j</exclude>
+        <exclude>isorelax:isorelax</exclude>
+        <exclude>jaxen:jaxen</exclude>
+        <exclude>log4j:log4j</exclude>
+        <exclude>msv:msv</exclude>
+        <exclude>xalan:xalan</exclude>
+        <exclude>xml-apis:xml-apis</exclude>
+        <exclude>saxpath:saxpath</exclude>
+        <exclude>servletapi:servletapi</exclude>
+        <exclude>relaxngDatatype:relaxngDatatype</exclude>
+        <exclude>xerces:xercesImpl</exclude>
+        <exclude>javax.servlet:servlet-api</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.runtime.compatibility.registry</exclude>
+      </excludes>
+      <scope>runtime</scope>
+    </dependencySet>
+    <dependencySet>
+      <outputDirectory>qpidmc/eclipse/plugins/org.eclipse.core.runtime.compatibility.registry_3.2.0</outputDirectory>
+      <outputFileNameMapping>${artifactId}_${version}/</outputFileNameMapping>
+      <unpack>true</unpack>
+      <includes>
+        <include>org.eclipse.core:org.eclipse.core.runtime.compatibility.registry</include>
+      </includes>
+      <scope>runtime</scope>
+    </dependencySet>
+  </dependencySets>
+
+</assembly>
