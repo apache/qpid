@@ -96,7 +96,6 @@ libqpidamqp_0_10_la_SOURCES= \
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
-  qpid/amqp_0_10/complex_types.h \
   qpid/amqp_0_10/complex_types.cpp \
   qpid/amqp_0_10/Array.h \
   qpid/amqp_0_10/Array.cpp \
