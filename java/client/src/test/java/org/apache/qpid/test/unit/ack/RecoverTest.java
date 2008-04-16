@@ -287,7 +287,7 @@ public class RecoverTest extends QpidTestCase
 
         con.start();
 
-        long waitTime = 300000L;
+        long waitTime = 30000L;
         long waitUntilTime = System.currentTimeMillis() + waitTime;
 
         synchronized (lock)

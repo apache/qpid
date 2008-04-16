@@ -22,6 +22,7 @@ package org.apache.qpidity;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.qpidity.security.AMQPCallbackHandler;
@@ -29,13 +30,12 @@ import org.apache.qpidity.security.CallbackHandlerRegistry;
 
 public class SecurityHelper
 {
-    public static String chooseMechanism(String mechanisms) throws UnsupportedEncodingException
+    public static String chooseMechanism(List<Object> mechanisms) throws UnsupportedEncodingException
     {
-        StringTokenizer tokenizer = new StringTokenizer(mechanisms, " ");
         HashSet mechanismSet = new HashSet();
-        while (tokenizer.hasMoreTokens())
+        for (Object m : mechanisms)
         {
-            mechanismSet.add(tokenizer.nextToken());
+            mechanismSet.add(m);
         }
 
         String preferredMechanisms = CallbackHandlerRegistry.getInstance().getMechanisms();

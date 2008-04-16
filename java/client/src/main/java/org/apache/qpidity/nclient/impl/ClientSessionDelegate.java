@@ -9,12 +9,11 @@ import org.apache.qpidity.nclient.MessagePartListener;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Data;
 import org.apache.qpidity.transport.Header;
-import org.apache.qpidity.transport.MessageAcquired;
 import org.apache.qpidity.transport.MessageReject;
 import org.apache.qpidity.transport.MessageTransfer;
 import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.Session;
-import org.apache.qpidity.transport.SessionClosed;
+import org.apache.qpidity.transport.SessionDetached;
 import org.apache.qpidity.transport.SessionDelegate;
 
 
@@ -23,9 +22,9 @@ public class ClientSessionDelegate extends SessionDelegate
     private MessageTransfer _currentTransfer;
     private MessagePartListener _currentMessageListener;
     
-    @Override public void sessionClosed(Session ssn,SessionClosed sessionClosed)
+    @Override public void sessionDetached(Session ssn, SessionDetached dtc)
     {
-        ((ClientSession)ssn).notifyException(new QpidException(sessionClosed.getReplyText(),ErrorCode.get(sessionClosed.getReplyCode()),null));
+        ((ClientSession)ssn).notifyException(new QpidException("", ErrorCode.get(dtc.getCode().getValue()),null));
     }
     
     //  --------------------------------------------
@@ -76,10 +75,5 @@ public class ClientSessionDelegate extends SessionDelegate
         ((ClientSession)session).notifyException(new QpidException("Message Rejected",ErrorCode.MESSAGE_REJECTED,null));
         session.processed(struct);
     }
-    
-    @Override public void messageAcquired(Session session, MessageAcquired struct) 
-    {
-        ((ClientSession)session).setAccquiredMessages(struct.getTransfers());
-        session.processed(struct);
-    }
+
 }

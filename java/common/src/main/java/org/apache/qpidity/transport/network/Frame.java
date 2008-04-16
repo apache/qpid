@@ -20,6 +20,7 @@
  */
 package org.apache.qpidity.transport.network;
 
+import org.apache.qpidity.transport.SegmentType;
 import org.apache.qpidity.transport.util.SliceIterator;
 
 import java.nio.ByteBuffer;
@@ -48,10 +49,6 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
     public static final byte L3 = 2;
     public static final byte L4 = 3;
 
-    public static final byte METHOD = 1;
-    public static final byte HEADER = 2;
-    public static final byte BODY = 3;
-
     public static final byte RESERVED = 0x0;
 
     public static final byte VERSION = 0x0;
@@ -62,13 +59,13 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
     public static final byte LAST_FRAME = 0x1;
 
     final private byte flags;
-    final private byte type;
+    final private SegmentType type;
     final private byte track;
     final private int channel;
     final private List<ByteBuffer> fragments;
     private int size;
 
-    public Frame(byte flags, byte type, byte track, int channel)
+    public Frame(byte flags, SegmentType type, byte track, int channel)
     {
         this.flags = flags;
         this.type = type;
@@ -99,7 +96,7 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
         return size;
     }
 
-    public byte getType()
+    public SegmentType getType()
     {
         return type;
     }
@@ -153,7 +150,7 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
     {
         StringBuilder str = new StringBuilder();
         str.append(String.format
-                   ("[%05d %05d %1d %1d %d%d%d%d]", getChannel(), getSize(),
+                   ("[%05d %05d %1d %1d %d%d%d%d] ", getChannel(), getSize(),
                     getTrack(), getType(),
                     isFirstSegment() ? 1 : 0, isLastSegment() ? 1 : 0,
                     isFirstFrame() ? 1 : 0, isLastFrame() ? 1 : 0));
@@ -170,7 +167,7 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
                 str.append(" | ");
             }
 
-            str.append(str(buf, 20));
+            str.append(str(buf));
         }
 
         return str.toString();

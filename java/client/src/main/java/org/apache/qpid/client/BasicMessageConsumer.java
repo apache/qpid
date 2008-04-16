@@ -131,13 +131,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     private boolean _dups_ok_acknowledge_send;
 
-    private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
-
-    /**
-     * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
-     */
-    private ConcurrentLinkedQueue<Long> _receivedDeliveryTags = new ConcurrentLinkedQueue<Long>();
-
     /**
      * The thread that was used to call receive(). This is important for being able to interrupt that thread if a
      * receive() is in progress.
@@ -276,10 +269,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-
         if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
-            _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
+            _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
         }
 
         _session.setInRecovery(false);
@@ -744,30 +736,10 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 }
                 else
                 {
-                    _receivedDeliveryTags.add(msg.getDeliveryTag());
+                    _session.addDeliveredMessage(msg.getDeliveryTag());
                 }
 
                 break;
-        }
-    }
-
-    /**
-     * Acknowledge up to last message delivered (if any). Used when commiting.
-     */
-    void acknowledgeLastDelivered()
-    {
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            long lastDeliveryTag = _receivedDeliveryTags.poll();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                lastDeliveryTag = _receivedDeliveryTags.poll();
-            }
-
-            assert _receivedDeliveryTags.isEmpty();
-
-            _session.acknowledgeMessage(lastDeliveryTag, true);
         }
     }
 
@@ -841,32 +813,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public void acknowledge() // throws JMSException
-    {
-        if (!isClosed())
-        {
-
-            Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
-            while (tags.hasNext())
-            {
-                _session.acknowledgeMessage(tags.next(), false);
-                tags.remove();
-            }
-        }
-        else
-        {
-            throw new IllegalStateException("Consumer is closed");
-        }
-    }
-
-    /**
-     * Called on recovery to reset the list of delivery tags
-     */
-    public void clearUnackedMessages()
-    {
-        _unacknowledgedDeliveryTags.clear();
-    }
-
     public boolean isAutoClose()
     {
         return _autoClose;
@@ -890,15 +836,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     public void rollback()
     {
-        clearUnackedMessages();
-
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            _logger.debug("Rejecting received messages in _receivedDTs (RQ)");
-        }
-
-        rollbackReceivedMessages();
-
         // rollback pending messages
         if (_synchronousQueue.size() > 0)
         {
@@ -941,39 +878,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
 
             clearReceiveQueue();
-        }
-    }
-
-    protected void rollbackReceivedMessages()
-    {
-        // rollback received but not committed messages
-        while (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags
-                        .size() + ") in _receivedDTs (RQ)" + "for consumer with tag:" + _consumerTag);
-            }
-
-            Long tag = _receivedDeliveryTags.poll();
-
-            if (tag != null)
-            {
-                if (_logger.isTraceEnabled())
-                {
-                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
-                }
-
-                _session.rejectMessage(tag, true);
-            }
-        }
-
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Queue _receivedDTs (RQ) was not empty after rejection");
-            }
         }
     }
 

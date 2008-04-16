@@ -9,7 +9,11 @@ import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
 import org.apache.qpidity.transport.MessageProperties;
+
+import java.util.UUID;
 
 public class DemoClient
 {
@@ -46,19 +50,20 @@ public class DemoClient
                      }
                 });
         ssn.queueDeclare("queue1", null, null);
-        ssn.queueBind("queue1", "amq.direct", "queue1",null);
+        ssn.exchangeBind("queue1", "amq.direct", "queue1",null);
         ssn.sync();
 
         ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
 
         // queue
-        ssn.messageTransfer("amq.direct", (short) 0, (short) 1);
-        ssn.header(new DeliveryProperties().setRoutingKey("queue1"),new MessageProperties().setMessageId("123"));
+        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
+        ssn.header(new DeliveryProperties().setRoutingKey("queue1"),
+                   new MessageProperties().setMessageId(UUID.randomUUID()));
         ssn.data("this is the data");
         ssn.endData();
 
         //reject
-        ssn.messageTransfer("amq.direct", (short) 0, (short) 1);
+        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
         ssn.data("this should be rejected");
         ssn.header(new DeliveryProperties().setRoutingKey("stocks"));
         ssn.endData();
@@ -71,17 +76,18 @@ public class DemoClient
         ssn.sync();
 
         ssn.queueDeclare("topic1", null, null);
-        ssn.queueBind("topic1", "amq.topic", "stock.*",null);
+        ssn.exchangeBind("topic1", "amq.topic", "stock.*",null);
         ssn.queueDeclare("topic2", null, null);
-        ssn.queueBind("topic2", "amq.topic", "stock.us.*",null);
+        ssn.exchangeBind("topic2", "amq.topic", "stock.us.*",null);
         ssn.queueDeclare("topic3", null, null);
-        ssn.queueBind("topic3", "amq.topic", "stock.us.rh",null);
+        ssn.exchangeBind("topic3", "amq.topic", "stock.us.rh",null);
         ssn.sync();
 
         // topic
-        ssn.messageTransfer("amq.topic", (short) 0, (short) 1);
+        ssn.messageTransfer("amq.topic", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
         ssn.data("Topic message");
-        ssn.header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),new MessageProperties().setMessageId("456"));
+        ssn.header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),
+                   new MessageProperties().setMessageId(UUID.randomUUID()));
         ssn.endData();
     }
 

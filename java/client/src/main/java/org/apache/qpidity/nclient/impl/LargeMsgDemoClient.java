@@ -14,6 +14,8 @@ import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.transport.DeliveryProperties;
 import org.apache.qpidity.transport.MessageProperties;
 
+import java.util.UUID;
+
 public class LargeMsgDemoClient
 {
     public static MessagePartListenerAdapter createAdapter()
@@ -49,7 +51,7 @@ public class LargeMsgDemoClient
                      }
                 });
         ssn.queueDeclare("queue1", null, null);
-        ssn.queueBind("queue1", "amq.direct", "queue1",null);
+        ssn.exchangeBind("queue1", "amq.direct", "queue1",null);
         ssn.sync();
 
         ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
@@ -59,7 +61,7 @@ public class LargeMsgDemoClient
            FileMessage msg = new FileMessage(new FileInputStream("/home/rajith/TestFile"),
                                              1024,
                                              new DeliveryProperties().setRoutingKey("queue1"),
-                                             new MessageProperties().setMessageId("123"));
+                                             new MessageProperties().setMessageId(UUID.randomUUID()));
 
            // queue
            ssn.messageStream("amq.direct",msg, (short) 0, (short) 1);

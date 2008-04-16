@@ -34,7 +34,7 @@
 
   <target name="check_jython_deps">
     <uptodate property="jython.notRequired" targetfile="${jython.timestamp}">
-      <srcfiles dir="${xml.spec.dir}" includes="amqp.0-10-preview.xml" />
+      <srcfiles dir="${xml.spec.dir}" includes="amqp.0-10-qpid-errata.xml" />
     </uptodate>
   </target>
 
@@ -42,10 +42,9 @@
     <java classname="org.python.util.jython" fork="true" failonerror="true">
       <arg value="-Dpython.cachedir.skip=true"/>
       <arg value="-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}"/>
-      <arg value="${basedir}/generate"/>
+      <arg value="${basedir}/codegen"/>
       <arg value="${module.precompiled}"/>
-      <arg value="org.apache.qpidity.transport"/>
-      <arg value="${xml.spec.dir}/amqp.0-10-preview.xml"/>
+      <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
       <classpath>
         <pathelement location="jython-2.2-rc2.jar"/>
       </classpath>

@@ -8,6 +8,7 @@ import org.apache.qpidity.nclient.Connection;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
+import org.apache.qpidity.transport.MessageCreditUnit;
 import org.apache.qpidity.transport.Option;
 
 
@@ -44,11 +45,11 @@ public class TopicListener implements MessageListener
         }
     }
 
-    public void prepareQueue(Session session,String queueName,String routingKey)
+    public void prepareQueue(Session session,String queueName,String bindingKey)
     {
         session.queueDeclare(queueName, null, null, Option.EXCLUSIVE, Option.AUTO_DELETE);
-        session.queueBind(queueName, "amq.topic", routingKey, null);
-        session.queueBind(queueName, "amq.topic", "control", null);
+        session.exchangeBind(queueName, "amq.topic", bindingKey, null);
+        session.exchangeBind(queueName, "amq.topic", "control", null);
 
         session.messageSubscribe(queueName,queueName,
                                  Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
@@ -56,8 +57,9 @@ public class TopicListener implements MessageListener
                                  new MessagePartListenerAdapter(this),
                                  null, Option.NO_OPTION);
         // issue credits
-        session.messageFlow(queueName, Session.MESSAGE_FLOW_UNIT_BYTE, Session.MESSAGE_FLOW_MAX_BYTES);
-        session.messageFlow(queueName, Session.MESSAGE_FLOW_UNIT_MESSAGE, 24);
+        // XXX: need to be able to set to null
+        session.messageFlow(queueName, MessageCreditUnit.BYTE, Session.MESSAGE_FLOW_MAX_BYTES);
+        session.messageFlow(queueName, MessageCreditUnit.MESSAGE, 24);
     }
 
     public void cancelSubscription(Session session,String dest)
@@ -106,7 +108,7 @@ public class TopicListener implements MessageListener
         listener.cancelSubscription(session,"weather");
 
         //cleanup
-        session.sessionClose();
+        session.sessionDetach(session.getName());
         try
         {
             con.close();
