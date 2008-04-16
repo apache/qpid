@@ -35,10 +35,11 @@ namespace amqp_0_10 {
 
 template <class T> class  ArrayDomain : public std::vector<T>  {
   public:
-    template <class S> void serialize(S& s) { s.split(*this); s(this->begin(), this->end()); }
+    template <class S> void serialize(S& s) { s.split(*this); }
 
     template <class S> void encode(S& s) const {
         s(contentSize())(CodeForType<T>::value)(uint32_t(this->size()));
+        s(this->begin(), this->end()); 
     }
 
     void encode(Codec::Size& s) const  { s.raw(0, contentSize() + 4/*size*/); }
@@ -46,12 +47,13 @@ template <class T> class  ArrayDomain : public std::vector<T>  {
     template <class S> void decode(S& s) {
         uint32_t size; uint8_t type; uint32_t count;
         s(size);
-        s.setLimit(size);
+        typename S::ScopedLimit l(s, size);
         s(type);
         if (type != CodeForType<T>::value)
             throw InvalidArgumentException(QPID_MSG("Array domain expected type " << CodeForType<T>::value << " but found " << type));
         s(count);
         this->resize(count);
+        s(this->begin(), this->end()); 
     }
 
   private:
@@ -76,10 +78,11 @@ template<> class ArrayDomain<UnknownType> : public std::vector<UnknownType> {
   public:
     ArrayDomain(uint8_t type_=0) : type(type_) {}
     
-    template <class S> void serialize(S& s) { s.split(*this); s(this->begin(), this->end()); }
+    template <class S> void serialize(S& s) { s.split(*this); }
 
     template <class S> void encode(S& s) const {
         s(contentSize())(type)(uint32_t(this->size()));
+        s(this->begin(), this->end());        
     }
 
     void encode(Codec::Size& s) const  { s.raw(0, contentSize() + 4/*size*/); }
@@ -87,10 +90,11 @@ template<> class ArrayDomain<UnknownType> : public std::vector<UnknownType> {
     template <class S> void decode(S& s) {
         uint32_t size; uint32_t count;
         s(size);
-        s.setLimit(size);
+        typename S::ScopedLimit l(s, size);
         s(type)(count);
         this->clear();
         this->resize(count, UnknownType(type));
+        s(this->begin(), this->end());
     }
 
     uint8_t getType() const { return type; }

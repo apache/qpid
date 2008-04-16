@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_0_10_HEADER_H
-#define QPID_AMQP_0_10_HEADER_H
+#ifndef QPID_AMQP_0_10_COMMMANDPACKER_H
+#define QPID_AMQP_0_10_COMMMANDPACKER_H
 
 /*
  *
@@ -21,33 +21,40 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/built_in_types.h"
-#include "qpid/amqp_0_10/Struct32.h"
-#include <vector>
-#include <ostream>
+
+#include "qpid/amqp_0_10/structs.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
-class Header : public std::vector<Struct32> {
+/**
+ * Packer for commands - serialize session.header before pack bits.
+ */
+template <class T>
+class CommmandPacker : public Packer<T>
+{
   public:
-    Header() {}
-
+    CommmandPacker(T& t) : Packer<T>(t) {}
     template <class S> void serialize(S& s) { s.split(*this); }
-    template <class S> void encode(S& s) const { s(this->begin(), this->end()); }
-    template <class S> void decode(S& s);
-};
 
-template <class S> void Header::decode(S& s) {
-    this->clear();
-    while (s.bytesRemaining() > 0) {
-        this->push_back(Struct32());
-        s(this->back());
+    template <class S> void encode(S& s) const {
+        s.sessionHeader(
+        Packer<T>::encode(s);
     }
-}
 
-std::ostream& operator<<(std::ostream& o, const Header&);
+    template <class S> void decode(S& s) {
+        Bits bits;
+        s.littleEnd(bits);
+        PackedDecoder<S, Bits> decode(s, bits);
+        data.serialize(decode);
+    }
+    
 
+  protected:
+    T& data;
+    
+    
+};
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_AMQP_0_10_HEADER_H*/
+#endif  /*!QPID_AMQP_0_10_COMMMANDPACKER_H*/
