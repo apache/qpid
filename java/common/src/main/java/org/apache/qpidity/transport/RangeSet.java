@@ -98,6 +98,13 @@ public class RangeSet implements Iterable<Range>
         ranges.clear();
     }
 
+    public RangeSet copy()
+    {
+        RangeSet copy = new RangeSet();
+        copy.ranges.addAll(ranges);
+        return copy;
+    }
+
     public String toString()
     {
         StringBuffer str = new StringBuffer();

@@ -31,7 +31,9 @@ public interface ProtocolDelegate<C>
 
     void init(C context, ProtocolHeader header);
 
-    void method(C context, Method method);
+    void control(C context, Method control);
+
+    void command(C context, Method command);
 
     void header(C context, Header header);
 

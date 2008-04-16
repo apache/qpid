@@ -31,13 +31,13 @@ public class DeclareQueue
 
         // declare and bind queue
         session.queueDeclare("message_queue", null, null);
-        session.queueBind("message_queue", "amq.direct", "routing_key", null);
+        session.exchangeBind("message_queue", "amq.direct", "routing_key", null);
 
         // confirm completion
         session.sync();
 
         //cleanup
-        session.sessionClose();
+        session.sessionDetach(session.getName());
         try
         {
             con.close();

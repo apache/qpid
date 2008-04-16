@@ -2,8 +2,9 @@ package org.apache.qpidity.transport;
 
 public class TransportConstants
 {
-    private static byte _protocol_version_minor = 0;
-    private static byte _protocol_version_major = 99;
+
+    private static byte _protocol_version_minor = 10;
+    private static byte _protocol_version_major = 0;
 
     public static void setVersionMajor(byte value)
     {
@@ -24,4 +25,5 @@ public class TransportConstants
     {
         return _protocol_version_minor;
     }
+
 }

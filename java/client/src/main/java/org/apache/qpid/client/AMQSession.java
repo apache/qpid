@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -201,8 +202,18 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
 
+    /**
+     * All the not yet acknowledged message tags
+     */
+    protected ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
+
+    /**
+     * All the delivered message tags
+     */
+    protected ConcurrentLinkedQueue<Long> _deliveredMessageTags = new ConcurrentLinkedQueue<Long>();
+
     /** Holds the dispatcher thread for this session. */
-    private Dispatcher _dispatcher;
+    protected Dispatcher _dispatcher;
 
     /** Holds the message factory factory for this session. */
     protected MessageFactoryRegistry _messageFactoryRegistry;
@@ -372,9 +383,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             throw new IllegalStateException("Session is already closed");
         }
 
-        for (BasicMessageConsumer consumer : _consumers.values())
+        while (true)
         {
-            consumer.acknowledge();
+            Long tag = _unacknowledgedMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+            acknowledgeMessage(tag, false);
         }
     }
 
@@ -553,15 +569,19 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         try
         {
-            // Acknowledge up to message last delivered (if any) for each consumer.
-            // need to send ack for messages delivered to consumers so far
-            for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
+            // Acknowledge all delivered messages
+            while (true)
             {
-                // Sends acknowledgement to server
-                i.next().acknowledgeLastDelivered();
+                Long tag = _deliveredMessageTags.poll();
+                if (tag == null)
+                {
+                    break;
+                }
+
+                acknowledgeMessage(tag, false);
             }
 
-            // Commits outstanding messages sent and outstanding acknowledgements.
+            // Commits outstanding messages and acknowledgments
             sendCommit();
         }
         catch (AMQException e)
@@ -1136,6 +1156,16 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         return _suspended;
     }
 
+    protected void addUnacknowledgedMessage(long id)
+    {
+        _unacknowledgedMessageTags.add(id);
+    }
+
+    protected void addDeliveredMessage(long id)
+    {
+        _deliveredMessageTags.add(id);
+    }
+
     /**
      * Invoked by the MINA IO thread (indirectly) when a message is received from the transport. Puts the message onto
      * the queue read by the dispatcher.
@@ -1167,7 +1197,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         AMQProtocolHandler protocolHandler = getProtocolHandler();
         declareExchange(amqd, protocolHandler, false);
-        AMQShortString queueName = declareQueue(amqd, protocolHandler);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler, false);
         bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName(),amqd);
     }
 
@@ -1213,11 +1243,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             if (!isSuspended)
             {
                 suspendChannel(true);
-            }
-
-            for (BasicMessageConsumer consumer : _consumers.values())
-            {
-                consumer.clearUnackedMessages();
             }
 
             if (_dispatcher != null)
@@ -1296,10 +1321,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                     suspendChannel(true);
                 }
 
-                if (_dispatcher != null)
-                {
-                    _dispatcher.rollback();
-                }
+                releaseForRollback();
 
                 sendRollback();
 
@@ -1318,6 +1340,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
         }
     }
+
+    public abstract void releaseForRollback();
 
     public abstract void  sendRollback() throws AMQException, FailoverException ;
 
@@ -1973,7 +1997,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                          final boolean noLocal)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
@@ -2111,7 +2136,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         declareExchange(amqd, protocolHandler, false);
 
-        AMQShortString queueName = declareQueue(amqd, protocolHandler);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler, consumer.isNoLocal());
 
         // store the consumer queue name
         consumer.setQueuename(queueName);
@@ -2317,7 +2342,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public abstract void sendSuspendChannel(boolean suspend) throws AMQException, FailoverException;
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
-    private class Dispatcher extends Thread
+    class Dispatcher extends Thread
     {
 
         /** Track the 'stopped' state of the dispatcher, a session starts in the stopped state. */

@@ -93,7 +93,7 @@ public class Data implements ProtocolEvent
             {
                 str.append(" | ");
             }
-            str.append(str(buf, 20));
+            str.append(str(buf));
         }
         str.append(")");
         return str.toString();

@@ -32,15 +32,14 @@ import java.util.UUID;
 class ChannelDelegate extends MethodDelegate<Channel>
 {
 
-    public @Override void sessionOpen(Channel channel, SessionOpen open)
+    public @Override void sessionAttach(Channel channel, SessionAttach atch)
     {
-        Session ssn = new Session();
+        Session ssn = new Session(atch.getName());
         ssn.attach(channel);
-        long lifetime = open.getDetachedLifetime();
-        ssn.sessionAttached(UUID.randomUUID(), lifetime);
+        ssn.sessionAttached(ssn.getName());
     }
 
-    public @Override void sessionClosed(Channel channel, SessionClosed closed)
+    public @Override void sessionDetached(Channel channel, SessionDetached closed)
     {
         channel.getSession().closed();
         // XXX: should we remove the channel from the connection? It

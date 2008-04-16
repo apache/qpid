@@ -144,7 +144,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             if (isMessageListenerSet() && ClientProperties.MAX_PREFETCH == 0)
             {
                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                        org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                          MessageCreditUnit.MESSAGE, 1);
             }
             _logger.debug("messageOk, trying to notify");
             super.notifyMessage(jmsMessage, channelId);
@@ -191,12 +191,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         // if there is a replyto destination then we need to request the exchange info
         ReplyTo replyTo = message.getMessageProperties().getReplyTo();
-        if (replyTo != null && replyTo.getExchangeName() != null && !replyTo.getExchangeName().equals(""))
+        if (replyTo != null && replyTo.getExchange() != null && !replyTo.getExchange().equals(""))
         {
             // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
             // the exchnage class will be set later from within the sesion thread
             String replyToUrl =  message.getMessageProperties().getReplyTo()
-                    .getExchangeName() + "/" + message.getMessageProperties().getReplyTo()
+                    .getExchange() + "/" + message.getMessageProperties().getReplyTo()
                     .getRoutingKey() + "/" + message.getMessageProperties().getReplyTo().getRoutingKey();
             newMessage.setReplyToURL(replyToUrl);
         }
@@ -225,21 +225,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             throw new JMSAMQException("Problem when stopping consumer", e);
         }
-    }
-
-    /**
-     * This is invoked just before a message is delivered to the njms consumer
-     */
-    void postDeliver(AbstractJMSMessage msg) throws JMSException
-    {
-        // notify the session
-        ((AMQSession_0_10) getSession()).addMessageTag(msg.getDeliveryTag());
-        //if (!Boolean.getBoolean("noAck"))
-        //{
-            super.postDeliver(msg);
-        //}
-
-
     }
 
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
@@ -277,6 +262,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             ((UnprocessedMessage_0_10) messageFrame).setReplyToURL(replyToUrl);
         }
         super.notifyMessage(messageFrame, channelId);
+    }
+
+    protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    {
+        _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
+        _session.setInRecovery(false);
     }
 
     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(
@@ -342,7 +333,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             if(ClientProperties.MAX_PREFETCH == 0)
             {
                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                         MessageCreditUnit.MESSAGE, 1);
             }
         }
         // now we need to acquire this message if needed
@@ -416,31 +407,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             RangeSet ranges = new RangeSet();
             ranges.add(message.getDeliveryTag());
 
-            _0_10session.getQpidSession()
-                    .messageAcquire(ranges, org.apache.qpidity.nclient.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
+            Acquired acq = _0_10session.getQpidSession().messageAcquire(ranges).get();
 
-            _logger.debug("acquireMessage, sent acquire message to broker");
-
-            _0_10session.getQpidSession().sync();
-
-            _logger.debug("acquireMessage, returned from sync");
-
-            RangeSet acquired = _0_10session.getQpidSession().getAccquiredMessages();
-
-            _logger.debug("acquireMessage, acquired range set " + acquired);
-
+            RangeSet acquired = acq.getTransfers();
             if (acquired != null && acquired.size() > 0)
             {
                 result = true;
             }
-
-            _logger.debug("acquireMessage, Trying to get current exception ");
-
-            _0_10session.getCurrentException();
-
-            _logger.debug("acquireMessage, returned from getting current exception ");
-
-            _logger.debug("acquireMessage, acquired range set " + acquired + " now returning " );
         }
         return result;
     }
@@ -452,7 +425,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (messageListener != null && ClientProperties.MAX_PREFETCH == 0)
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                      MessageCreditUnit.MESSAGE, 1);
         }
         if (messageListener != null && !_synchronousQueue.isEmpty())
         {
@@ -477,7 +450,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (_syncReceive.get())
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                      MessageCreditUnit.MESSAGE, 1);
         }
     }
 
@@ -500,7 +473,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (isStrated() && ClientProperties.MAX_PREFETCH == 0 && _synchronousQueue.isEmpty())
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                      MessageCreditUnit.MESSAGE, 1);
         }
         if (ClientProperties.MAX_PREFETCH == 0)
         {

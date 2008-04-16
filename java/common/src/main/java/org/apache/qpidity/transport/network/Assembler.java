@@ -37,6 +37,7 @@ import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolEvent;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Receiver;
+import org.apache.qpidity.transport.SegmentType;
 import org.apache.qpidity.transport.Struct;
 
 
@@ -118,7 +119,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
     {
         switch (frame.getType())
         {
-        case Frame.BODY:
+        case BODY:
             emit(frame, new Data(frame, frame.isFirstFrame(),
                                  frame.isLastFrame()));
             break;
@@ -158,22 +159,29 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         }
     }
 
-    private ProtocolEvent decode(Frame frame, byte type, List<ByteBuffer> segment)
+    private ProtocolEvent decode(Frame frame, SegmentType type, List<ByteBuffer> segment)
     {
         FragmentDecoder dec = new FragmentDecoder(segment.iterator());
 
         switch (type)
         {
-        case Frame.METHOD:
-            int methodType = dec.readShort();
-            Method method = Method.create(methodType);
-            method.read(dec);
-            return method;
-        case Frame.HEADER:
+        case CONTROL:
+            int controlType = dec.readUint16();
+            Method control = Method.create(controlType);
+            control.read(dec);
+            return control;
+        case COMMAND:
+            int commandType = dec.readUint16();
+            // read in the session header, right now we don't use it
+            dec.readUint16();
+            Method command = Method.create(commandType);
+            command.read(dec);
+            return command;
+        case HEADER:
             List<Struct> structs = new ArrayList();
             while (dec.hasRemaining())
             {
-                structs.add(dec.readLongStruct());
+                structs.add(dec.readStruct32());
             }
             return new Header(structs,frame.isLastFrame() && frame.isLastSegment());
         default:

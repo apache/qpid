@@ -38,30 +38,34 @@ public interface Sizer extends Encoder
 
     public static final Sizer NULL = new Sizer()
     {
-        public void flush() {};
+        public void flush() {}
 
-        public void writeBit(boolean b) {};
-        public void writeOctet(short b) {};
-        public void writeShort(int s) {};
-        public void writeLong(long i) {};
-        public void writeLonglong(long l) {};
+        public void writeBit(boolean b) {}
+        public void writeUint8(short b) {}
+        public void writeUint16(int s) {}
+        public void writeUint32(long i) {}
+        public void writeUint64(long l) {}
 
-        public void writeTimestamp(long l) {};
+        public void writeDatetime(long l) {}
+        public void writeUuid(UUID uuid) {}
 
-        public void writeShortstr(String s) {};
-        public void writeLongstr(String s) {};
+        public void writeSequenceNo(int s) {}
+        public void writeSequenceSet(RangeSet ranges) {} // XXX
+        public void writeByteRanges(RangeSet ranges) {} // XXX
 
-        public void writeRfc1982LongSet(RangeSet ranges) {};
-        public void writeUuid(UUID uuid) {};
+        public void writeStr8(String s) {}
+        public void writeStr16(String s) {}
 
-        public void writeContent(String c) {};
+        public void writeVbin8(byte[] bytes) {}
+        public void writeVbin16(byte[] bytes) {}
+        public void writeVbin32(byte[] bytes) {}
 
-        public void writeStruct(int type, Struct s) {};
-        public void writeLongStruct(Struct s) {};
+        public void writeStruct32(Struct s) {}
+        public void writeMap(Map<String,Object> map) {}
+        public void writeList(List<Object> list) {}
+        public void writeArray(List<Object> array) {}
 
-        public void writeTable(Map<String,Object> table) {};
-        public void writeSequence(List<Object> sequence) {};
-        public void writeArray(List<Object> array) {};
+        public void writeStruct(int type, Struct s) {}
 
         public int getSize() { return 0; }
 

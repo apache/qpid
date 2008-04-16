@@ -79,11 +79,11 @@ public class XAResourceImpl implements XAResource
         {
             throw new XAException(XAException.XAER_PROTO);
         }
-        Future<DtxCoordinationCommitResult> future;
+        Future<XaResult> future;
         try
         {
             future = _xaSession.getQpidSession()
-                    .dtxCoordinationCommit(XidImpl.convertToString(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
+                    .dtxCommit(XidImpl.convert(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
         }
         catch (QpidException e)
         {
@@ -94,24 +94,24 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         // now wait on the future for the result
-        DtxCoordinationCommitResult result = future.get();
-        int status = result.getStatus();
+        XaResult result = future.get();
+        DtxXaStatus status = result.getStatus();
         switch (status)
         {
-            case Constant.XA_OK:
+            case XA_OK:
                 // do nothing this ok
                 break;
-            case Constant.XA_HEURHAZ:
+            case XA_HEURHAZ:
                 throw new XAException(XAException.XA_HEURHAZ);
-            case Constant.XA_HEURCOM:
+            case XA_HEURCOM:
                 throw new XAException(XAException.XA_HEURCOM);
-            case Constant.XA_HEURRB:
+            case XA_HEURRB:
                 throw new XAException(XAException.XA_HEURRB);
-            case Constant.XA_HEURMIX:
+            case XA_HEURMIX:
                 throw new XAException(XAException.XA_HEURMIX);
-            case Constant.XA_RBROLLBACK:
+            case XA_RBROLLBACK:
                 throw new XAException(XAException.XA_RBROLLBACK);
-            case Constant.XA_RBTIMEOUT:
+            case XA_RBTIMEOUT:
                 throw new XAException(XAException.XA_RBTIMEOUT);
             default:
                 // this should not happen
@@ -149,13 +149,13 @@ public class XAResourceImpl implements XAResource
         {
             throw new XAException(XAException.XAER_PROTO);
         }
-        Future<DtxDemarcationEndResult> future;
+        Future<XaResult> future;
         try
         {
             future = _xaSession.getQpidSession()
-                    .dtxDemarcationEnd(XidImpl.convertToString(xid),
-                                       flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
-                                       flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
+                    .dtxEnd(XidImpl.convert(xid),
+                            flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
+                            flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
         }
         catch (QpidException e)
         {
@@ -166,16 +166,16 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         // now wait on the future for the result
-        DtxDemarcationEndResult result = future.get();
-        int status = result.getStatus();
+        XaResult result = future.get();
+        DtxXaStatus status = result.getStatus();
         switch (status)
         {
-            case Constant.XA_OK:
+            case XA_OK:
                 // do nothing this ok
                 break;
-            case Constant.XA_RBROLLBACK:
+            case XA_RBROLLBACK:
                 throw new XAException(XAException.XA_RBROLLBACK);
-            case Constant.XA_RBTIMEOUT:
+            case XA_RBTIMEOUT:
                 throw new XAException(XAException.XA_RBTIMEOUT);
             default:
                 // this should not happen
@@ -204,7 +204,8 @@ public class XAResourceImpl implements XAResource
         {
             throw new XAException(XAException.XAER_PROTO);
         }
-        _xaSession.getQpidSession().dtxCoordinationForget(new String(xid.getGlobalTransactionId()));
+        _xaSession.getQpidSession().dtxForget(new org.apache.qpidity.transport.Xid()
+                                              .setGlobalId((xid.getGlobalTransactionId())));
     }
 
     /**
@@ -223,8 +224,8 @@ public class XAResourceImpl implements XAResource
         {
             try
             {
-                Future<DtxCoordinationGetTimeoutResult> future =
-                        _xaSession.getQpidSession().dtxCoordinationGetTimeout(XidImpl.convertToString(_xid));
+                Future<GetTimeoutResult> future =
+                        _xaSession.getQpidSession().dtxGetTimeout(XidImpl.convert(_xid));
                 result = (int) future.get().getTimeout();
             }
             catch (QpidException e)
@@ -273,11 +274,11 @@ public class XAResourceImpl implements XAResource
         {
             throw new XAException(XAException.XAER_PROTO);
         }
-        Future<DtxCoordinationPrepareResult> future;
+        Future<XaResult> future;
         try
         {
             future = _xaSession.getQpidSession()
-                    .dtxCoordinationPrepare(XidImpl.convertToString(xid));
+                    .dtxPrepare(XidImpl.convert(xid));
         }
         catch (QpidException e)
         {
@@ -287,20 +288,20 @@ public class XAResourceImpl implements XAResource
             }
             throw new XAException(XAException.XAER_PROTO);
         }
-        DtxCoordinationPrepareResult result = future.get();
-        int status = result.getStatus();
+        XaResult result = future.get();
+        DtxXaStatus status = result.getStatus();
         int outcome;
         switch (status)
         {
-            case Constant.XA_OK:
+            case XA_OK:
                 outcome = XAResource.XA_OK;
                 break;
-            case Constant.XA_RDONLY:
+            case XA_RDONLY:
                 outcome = XAResource.XA_RDONLY;
                 break;
-            case Constant.XA_RBROLLBACK:
+            case XA_RBROLLBACK:
                 throw new XAException(XAException.XA_RBROLLBACK);
-            case Constant.XA_RBTIMEOUT:
+            case XA_RBTIMEOUT:
                 throw new XAException(XAException.XA_RBTIMEOUT);
             default:
                 // this should not happen
@@ -328,26 +329,16 @@ public class XAResourceImpl implements XAResource
     public Xid[] recover(int flag) throws XAException
     {
         // the flag is ignored
-        Future<DtxCoordinationRecoverResult> future = _xaSession.getQpidSession().dtxCoordinationRecover();
-        DtxCoordinationRecoverResult res = future.get();
+        Future<RecoverResult> future = _xaSession.getQpidSession().dtxRecover();
+        RecoverResult res = future.get();
         // todo make sure that the keys of the returned map are the xids
         Xid[] result = new Xid[res.getInDoubt().size()];
         int i = 0;
-        try
+        for (Object obj : res.getInDoubt())
         {
-            for (Object xid : res.getInDoubt())
-            {
-                result[i] = new XidImpl((String) xid);
-                i++;
-            }
-        }
-        catch (QpidException e)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert string into Xid ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
+            org.apache.qpidity.transport.Xid xid = (org.apache.qpidity.transport.Xid) obj;
+            result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
+            i++;
         }
         return result;
     }
@@ -365,11 +356,11 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         //      the flag is ignored
-        Future<DtxCoordinationRollbackResult> future;
+        Future<XaResult> future;
         try
         {
             future = _xaSession.getQpidSession()
-                    .dtxCoordinationRollback(XidImpl.convertToString(xid));
+                    .dtxRollback(XidImpl.convert(xid));
         }
         catch (QpidException e)
         {
@@ -380,24 +371,24 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         // now wait on the future for the result
-        DtxCoordinationRollbackResult result = future.get();
-        int status = result.getStatus();
+        XaResult result = future.get();
+        DtxXaStatus status = result.getStatus();
         switch (status)
         {
-            case Constant.XA_OK:
+            case XA_OK:
                 // do nothing this ok
                 break;
-            case Constant.XA_HEURHAZ:
+            case XA_HEURHAZ:
                 throw new XAException(XAException.XA_HEURHAZ);
-            case Constant.XA_HEURCOM:
+            case XA_HEURCOM:
                 throw new XAException(XAException.XA_HEURCOM);
-            case Constant.XA_HEURRB:
+            case XA_HEURRB:
                 throw new XAException(XAException.XA_HEURRB);
-            case Constant.XA_HEURMIX:
+            case XA_HEURMIX:
                 throw new XAException(XAException.XA_HEURMIX);
-            case Constant.XA_RBROLLBACK:
+            case XA_RBROLLBACK:
                 throw new XAException(XAException.XA_RBROLLBACK);
-            case Constant.XA_RBTIMEOUT:
+            case XA_RBTIMEOUT:
                 throw new XAException(XAException.XA_RBTIMEOUT);
             default:
                 // this should not happen
@@ -427,7 +418,7 @@ public class XAResourceImpl implements XAResource
             try
             {
                 _xaSession.getQpidSession()
-                        .dtxCoordinationSetTimeout(XidImpl.convertToString(_xid), timeout);
+                        .dtxSetTimeout(XidImpl.convert(_xid), timeout);
             }
             catch (QpidException e)
             {
@@ -467,13 +458,13 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         _xid = xid;
-        Future<DtxDemarcationStartResult> future;
+        Future<XaResult> future;
         try
         {
             future = _xaSession.getQpidSession()
-                    .dtxDemarcationStart(XidImpl.convertToString(xid),
-                                         flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
-                                         flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
+                    .dtxStart(XidImpl.convert(xid),
+                              flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
+                              flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
         }
         catch (QpidException e)
         {
@@ -484,16 +475,16 @@ public class XAResourceImpl implements XAResource
             throw new XAException(XAException.XAER_PROTO);
         }
         // now wait on the future for the result
-        DtxDemarcationStartResult result = future.get();
-        int status = result.getStatus();
+        XaResult result = future.get();
+        DtxXaStatus status = result.getStatus();
         switch (status)
         {
-            case Constant.XA_OK:
+            case XA_OK:
                 // do nothing this ok
                 break;
-            case Constant.XA_RBROLLBACK:
+            case XA_RBROLLBACK:
                 throw new XAException(XAException.XA_RBROLLBACK);
-            case Constant.XA_RBTIMEOUT:
+            case XA_RBTIMEOUT:
                 throw new XAException(XAException.XA_RBTIMEOUT);
             default:
                 // this should not happen

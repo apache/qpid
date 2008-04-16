@@ -59,7 +59,7 @@ class ToyBroker extends SessionDelegate
     public void messageAcquire(Session context, MessageAcquire struct)
     {
         System.out.println("\n==================> messageAcquire " );
-        context.messageAcquired(struct.getTransfers());
+        context.executionResult((int) struct.getId(), new Acquired(struct.getTransfers()));
     }
 
     @Override public void queueDeclare(Session ssn, QueueDeclare qd)
@@ -68,16 +68,16 @@ class ToyBroker extends SessionDelegate
         System.out.println("\n==================> declared queue: " + qd.getQueue() + "\n");
     }
 
-    @Override public void queueBind(Session ssn, QueueBind qb)
+    @Override public void exchangeBind(Session ssn, ExchangeBind qb)
     {
-        exchange.bindQueue(qb.getExchange(), qb.getRoutingKey(),qb.getQueue());
-        System.out.println("\n==================> bound queue: " + qb.getQueue() + " with routing key " + qb.getRoutingKey() + "\n");
+        exchange.bindQueue(qb.getExchange(), qb.getBindingKey(),qb.getQueue());
+        System.out.println("\n==================> bound queue: " + qb.getQueue() + " with binding key " + qb.getBindingKey() + "\n");
     }
 
     @Override public void queueQuery(Session ssn, QueueQuery qq)
     {
         QueueQueryResult result = new QueueQueryResult().queue(qq.getQueue());
-        ssn.executionResult(qq.getId(), result);
+        ssn.executionResult((int) qq.getId(), result);
     }
 
     @Override public void messageSubscribe(Session ssn, MessageSubscribe ms)
@@ -112,7 +112,8 @@ class ToyBroker extends SessionDelegate
     {
         if (xfr == null || body == null)
         {
-            ssn.connectionClose(503, "no method segment", 0, 0);
+            ssn.connectionClose(ConnectionCloseCode.FRAMING_ERROR,
+                                "no method segment");
             ssn.close();
             return;
         }
@@ -136,7 +137,7 @@ class ToyBroker extends SessionDelegate
     {
         if (xfr == null || body == null)
         {
-            ssn.connectionClose(503, "no method segment", 0, 0);
+            ssn.connectionClose(ConnectionCloseCode.FRAMING_ERROR, "no method segment");
             ssn.close();
             return;
         }
@@ -174,14 +175,16 @@ class ToyBroker extends SessionDelegate
         {
             RangeSet ranges = new RangeSet();
             ranges.add(xfr.getId());
-            ssn.messageReject(ranges, 0, "no such destination");
+            ssn.messageReject(ranges, MessageRejectCode.UNROUTABLE,
+                              "no such destination");
         }
     }
 
     private void transferMessageToPeer(Session ssn,String dest, Message m)
     {
         System.out.println("\n==================> Transfering message to: " +dest + "\n");
-        ssn.messageTransfer(dest, (short)0, (short)0);
+        ssn.messageTransfer(dest, MessageAcceptMode.EXPLICIT,
+                            MessageAcquireMode.PRE_ACQUIRED);
         ssn.header(m.header);
         for (Data d : m.body)
         {

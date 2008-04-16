@@ -20,7 +20,10 @@
  */
 package org.apache.qpidity.transport.codec;
 
+import java.io.UnsupportedEncodingException;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,19 +102,19 @@ abstract class AbstractDecoder implements Decoder
         nbits = 0;
     }
 
-    public short readOctet()
+    public short readUint8()
     {
         return uget();
     }
 
-    public int readShort()
+    public int readUint16()
     {
         int i = uget() << 8;
         i |= uget();
         return i;
     }
 
-    public long readLong()
+    public long readUint32()
     {
         long l = uget() << 24;
         l |= uget() << 16;
@@ -120,7 +123,12 @@ abstract class AbstractDecoder implements Decoder
         return l;
     }
 
-    public long readLonglong()
+    public int readSequenceNo()
+    {
+        return (int) readUint32();
+    }
+
+    public long readUint64()
     {
         long l = 0;
         for (int i = 0; i < 8; i++)
@@ -130,31 +138,67 @@ abstract class AbstractDecoder implements Decoder
         return l;
     }
 
-    public long readTimestamp()
+    public long readDatetime()
     {
-        return readLonglong();
+        return readUint64();
+    }
+
+    private static final String decode(byte[] bytes, String charset)
+    {
+        try
+        {
+            return new String(bytes, charset);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 
-    public String readShortstr()
+    public String readStr8()
     {
-        short size = readOctet();
+        short size = readUint8();
         byte[] bytes = new byte[size];
         get(bytes);
-        return new String(bytes);
+        return decode(bytes, "UTF-8");
     }
 
-    public String readLongstr()
+    public String readStr16()
     {
-        long size = readLong();
-        byte[] bytes = new byte[(int) size];
+        int size = readUint16();
+        byte[] bytes = new byte[size];
         get(bytes);
-        return new String(bytes);
+        return decode(bytes, "UTF-8");
     }
 
-    public RangeSet readRfc1982LongSet()
+    public byte[] readVbin8()
     {
-        int count = readShort()/8;
+        int size = readUint8();
+        byte[] bytes = new byte[size];
+        get(bytes);
+        return bytes;
+    }
+
+    public byte[] readVbin16()
+    {
+        int size = readUint16();
+        byte[] bytes = new byte[size];
+        get(bytes);
+        return bytes;
+    }
+
+    public byte[] readVbin32()
+    {
+        int size = (int) readUint32();
+        byte[] bytes = new byte[size];
+        get(bytes);
+        return bytes;
+    }
+
+    public RangeSet readSequenceSet()
+    {
+        int count = readUint16()/8;
         if (count == 0)
         {
             return null;
@@ -164,16 +208,21 @@ abstract class AbstractDecoder implements Decoder
             RangeSet ranges = new RangeSet();
             for (int i = 0; i < count; i++)
             {
-                ranges.add(readLong(), readLong());
+                ranges.add(readUint32(), readUint32());
             }
             return ranges;
         }
     }
 
+    public RangeSet readByteRanges()
+    {
+        throw new Error("not implemented");
+    }
+
     public UUID readUuid()
     {
-        long msb = readLonglong();
-        long lsb = readLonglong();
+        long msb = readUint64();
+        long lsb = readUint64();
         return new UUID(msb, lsb);
     }
 
@@ -194,34 +243,39 @@ abstract class AbstractDecoder implements Decoder
                 return null;
             }
         }
+        if (type > 0)
+        {
+            int code = readUint16();
+            assert code == type;
+        }
         st.read(this);
         return st;
     }
 
-    public Struct readLongStruct()
+    public Struct readStruct32()
     {
-        long size = readLong();
+        long size = readUint32();
         if (size == 0)
         {
             return null;
         }
         else
         {
-            int type = readShort();
+            int type = readUint16();
             Struct result = Struct.create(type);
             result.read(this);
             return result;
         }
     }
 
-    public Map<String,Object> readTable()
+    public Map<String,Object> readMap()
     {
-        long size = readLong();
+        long size = readUint32();
         int start = count;
         Map<String,Object> result = new LinkedHashMap();
         while (count < start + size)
         {
-            String key = readShortstr();
+            String key = readStr8();
             byte code = get();
             Type t = getType(code);
             Object value = read(t);
@@ -230,9 +284,9 @@ abstract class AbstractDecoder implements Decoder
         return result;
     }
 
-    public List<Object> readSequence()
+    public List<Object> readList()
     {
-        long size = readLong();
+        long size = readUint32();
         int start = count;
         List<Object> result = new ArrayList();
         while (count < start + size)
@@ -247,10 +301,15 @@ abstract class AbstractDecoder implements Decoder
 
     public List<Object> readArray()
     {
-        long size = readLong();
+        long size = readUint32();
+        if (size == 0)
+        {
+            return Collections.EMPTY_LIST;
+        }
+
         byte code = get();
         Type t = getType(code);
-        long count = readLong();
+        long count = readUint32();
 
         List<Object> result = new ArrayList<Object>();
         for (int i = 0; i < count; i++)
@@ -291,11 +350,11 @@ abstract class AbstractDecoder implements Decoder
         switch (width)
         {
         case 1:
-            return readOctet();
+            return readUint8();
         case 2:
-            return readShort();
+            return readUint16();
         case 4:
-            return readLong();
+            return readUint32();
         default:
             throw new IllegalStateException("illegal width: " + width);
         }
@@ -313,81 +372,72 @@ abstract class AbstractDecoder implements Decoder
     {
         switch (t)
         {
-        case OCTET:
-        case UNSIGNED_BYTE:
-            return readOctet();
-        case SIGNED_BYTE:
+        case BIN8:
+        case UINT8:
+            return readUint8();
+        case INT8:
             return get();
         case CHAR:
             return (char) get();
         case BOOLEAN:
             return get() > 0;
 
-        case TWO_OCTETS:
-        case UNSIGNED_SHORT:
-            return readShort();
+        case BIN16:
+        case UINT16:
+            return readUint16();
 
-        case SIGNED_SHORT:
-            return (short) readShort();
+        case INT16:
+            return (short) readUint16();
 
-        case FOUR_OCTETS:
-        case UNSIGNED_INT:
-            return readLong();
+        case BIN32:
+        case UINT32:
+            return readUint32();
 
-        case UTF32_CHAR:
-        case SIGNED_INT:
-            return (int) readLong();
+        case CHAR_UTF32:
+        case INT32:
+            return (int) readUint32();
 
         case FLOAT:
-            return Float.intBitsToFloat((int) readLong());
+            return Float.intBitsToFloat((int) readUint32());
 
-        case EIGHT_OCTETS:
-        case SIGNED_LONG:
-        case UNSIGNED_LONG:
+        case BIN64:
+        case UINT64:
+        case INT64:
         case DATETIME:
-            return readLonglong();
+            return readUint64();
 
         case DOUBLE:
-            return Double.longBitsToDouble(readLonglong());
-
-        case SIXTEEN_OCTETS:
-        case THIRTY_TWO_OCTETS:
-        case SIXTY_FOUR_OCTETS:
-        case _128_OCTETS:
-        case SHORT_BINARY:
-        case BINARY:
-        case LONG_BINARY:
-            return readBytes(t);
+            return Double.longBitsToDouble(readUint64());
 
         case UUID:
             return readUuid();
 
-        case SHORT_STRING:
-        case SHORT_UTF8_STRING:
-        case SHORT_UTF16_STRING:
-        case SHORT_UTF32_STRING:
-        case STRING:
-        case UTF8_STRING:
-        case UTF16_STRING:
-        case UTF32_STRING:
-        case LONG_STRING:
-        case LONG_UTF8_STRING:
-        case LONG_UTF16_STRING:
-        case LONG_UTF32_STRING:
+        case STR8:
+            return readStr8();
+
+        case STR16:
+            return readStr16();
+
+        case STR8_LATIN:
+        case STR8_UTF16:
+        case STR16_LATIN:
+        case STR16_UTF16:
             // XXX: need to do character conversion
             return new String(readBytes(t));
 
-        case TABLE:
-            return readTable();
-        case SEQUENCE:
-            return readSequence();
+        case MAP:
+            return readMap();
+        case LIST:
+            return readList();
         case ARRAY:
             return readArray();
+        case STRUCT32:
+            return readStruct32();
 
-        case FIVE_OCTETS:
-        case DECIMAL:
-        case NINE_OCTETS:
-        case LONG_DECIMAL:
+        case BIN40:
+        case DEC32:
+        case BIN72:
+        case DEC64:
             // XXX: what types are we supposed to use here?
             return readBytes(t);
 

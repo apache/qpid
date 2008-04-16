@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import os, sys, mllib
+from templating import Parser
+from genutil import *
+
+out_dir = sys.argv[1]
+spec_file = sys.argv[2]
+pkg_dir = os.path.join(out_dir, "org/apache/qpidity/transport")
+
+if not os.path.exists(pkg_dir):
+  os.makedirs(pkg_dir)
+
+spec = mllib.xml_parse(spec_file)
+
+def excludes(nd):
+  if (nd.parent is not None and
+      nd.parent.name == "class" and
+      nd.parent["@name"] in ("file", "stream")):
+    return False
+  else:
+    return True
+
+def execute(output, template, **kwargs):
+  f = open(template)
+  input = f.read()
+  f.close()
+  p = Parser(**kwargs)
+  p.parse(input)
+  fname = os.path.join(pkg_dir, output)
+  f = open(fname, "w")
+  f.write(p.output)
+  f.close()
+
+execute("Type.java", "Type.tpl", spec = spec)
+execute("Constant.java", "Constant.tpl", spec = spec)
+
+structs = spec.query["amqp/struct"] + \
+    spec.query["amqp/class/struct", excludes] + \
+    spec.query["amqp/class/command/result/struct", excludes]
+controls = spec.query["amqp/class/control", excludes]
+commands = spec.query["amqp/class/command", excludes]
+
+composites = structs + controls + commands
+
+for c in composites:
+  name = cname(c)
+  execute("%s.java" % name, "Composite.tpl", type = c, name = name)
+
+execute("MethodDelegate.java", "MethodDelegate.tpl", composites = composites)
+execute("Option.java", "Option.tpl", composites = composites)
+execute("Invoker.java", "Invoker.tpl", composites = controls + commands)
+execute("StructFactory.java", "StructFactory.tpl", composites = composites)
+
+def is_enum(nd):
+  return nd["enum"] is not None
+
+enums = spec.query["amqp/domain", is_enum] + \
+    spec.query["amqp/class/domain", is_enum]
+
+for e in enums:
+  name = cname(e)
+  execute("%s.java" % name, "Enum.tpl", name = name, type = e)

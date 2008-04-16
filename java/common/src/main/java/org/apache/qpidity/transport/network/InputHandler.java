@@ -22,10 +22,10 @@ package org.apache.qpidity.transport.network;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.transport.Constant;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Receiver;
+import org.apache.qpidity.transport.SegmentType;
 
 import static org.apache.qpidity.transport.util.Functions.*;
 
@@ -77,7 +77,7 @@ public class InputHandler implements Receiver<ByteBuffer>
     private byte minor;
 
     private byte flags;
-    private byte type;
+    private SegmentType type;
     private byte track;
     private int channel;
     private int size;
@@ -146,7 +146,7 @@ public class InputHandler implements Receiver<ByteBuffer>
             flags = buf.get();
             return FRAME_HDR_TYPE;
         case FRAME_HDR_TYPE:
-            type = buf.get();
+            type = SegmentType.get(buf.get());
             return FRAME_HDR_SIZE1;
         case FRAME_HDR_SIZE1:
             size = (0xFF & buf.get()) << 8;
@@ -218,7 +218,7 @@ public class InputHandler implements Receiver<ByteBuffer>
                 return FRAME_END;
             }
         case FRAME_END:
-            return expect(buf, Constant.FRAME_END, FRAME_HDR);
+            return expect(buf, OutputHandler.FRAME_END, FRAME_HDR);
         default:
             throw new IllegalStateException();
         }
