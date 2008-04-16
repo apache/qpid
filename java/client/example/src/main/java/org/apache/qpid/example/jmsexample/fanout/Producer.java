@@ -36,7 +36,7 @@ public class Producer
 
     /* The queue name  */
     private int numMessages = 10;
-    private short deliveryMode = 0;
+    private short deliveryMode = DeliveryMode.NON_PERSISTENT;
 
 
     /**
