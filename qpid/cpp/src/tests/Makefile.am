@@ -6,6 +6,7 @@ extra_libs = $(CPPUNIT_LIBS)
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
+lib_amqp_0_10 = $(abs_builddir)/../libqpidamqp_0_10.la
 
 #
 # Initialize variables that are incremented with +=
@@ -26,8 +27,8 @@ CLEANFILES=
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
-unit_test_LDADD=-lboost_unit_test_framework -lboost_regex \
-	$(lib_client) $(lib_broker) 
+unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
+	$(lib_client) $(lib_broker) $(lib_amqp_0_10)
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \

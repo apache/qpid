@@ -79,7 +79,7 @@ posix_plat_hdr = \
 platform_src = $(posix_plat_src)
 platform_hdr = $(posix_plat_hdr)
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidamqp_0_10.la
 
 include cluster.mk
 
@@ -92,17 +92,8 @@ noinst_LTLIBRARIES=libLogger.la
 libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
-libqpidcommon_la_LIBADD = \
-  -lboost_program_options \
-  -lboost_filesystem \
-  -luuid \
-  libLogger.la \
-  $(LIB_DLOPEN) \
-  $(LIB_CLOCK_GETTIME)
-
-libqpidcommon_la_SOURCES = \
-  $(rgen_common_cpp) \
-  $(platform_src) \
+libqpidamqp_0_10_la_SOURCES= \
+  $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
   qpid/amqp_0_10/complex_types.h \
@@ -128,7 +119,20 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
   qpid/amqp_0_10/UnknownStruct.h \
-  qpid/amqp_0_10/UnknownStruct.cpp \
+  qpid/amqp_0_10/UnknownStruct.cpp 
+
+libqpidcommon_la_LIBADD = \
+  -lboost_program_options \
+  -lboost_filesystem \
+  -luuid \
+  libLogger.la \
+  $(libqpidamqp_0_10_la_SOURCES) \
+  $(LIB_DLOPEN) \
+  $(LIB_CLOCK_GETTIME)
+
+libqpidcommon_la_SOURCES = \
+  $(rgen_framing_srcs) \
+  $(platform_src) \
   qpid/Serializer.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
@@ -254,7 +258,7 @@ libqpidbroker_la_SOURCES = \
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
-  $(rgen_client_cpp)				\
+  $(rgen_client_srcs)				\
   qpid/client/SessionBase.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\

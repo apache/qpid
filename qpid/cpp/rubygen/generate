@@ -63,18 +63,25 @@ if makefile
   Dir.chdir dir
   rgen_generator=generator_files.map{ |f| "$(rgen_dir)/#{f}" }
   rgen_srcs=GenFiles.get.map{ |f| "#{$outdir}/#{f}" }
-
+  rgen_subdirs={}
+  rgen_srcs.each { |src|
+    if src.match(%r{./gen/qpid/([^/]+)/})
+      subdir=$1
+      rgen_subdirs[subdir] ||= []
+      rgen_subdirs[subdir] << src
+    end
+  }
   File.open(makefile, 'w') { |out|
     out << <<EOS
 # Generated makefile fragment.
 # Including makefile defines $(rgen_dir) $(rgen_cmd) and $(specs).
 
 rgen_generator=#{make_continue rgen_generator}
-
-rgen_client_cpp=#{make_continue(rgen_srcs.grep(%r|/qpid/client/.+\.cpp$|))}
-
-rgen_common_cpp=#{make_continue(rgen_srcs.grep(%r{qpid/(framing|amqp_.+)/.+\.cpp$}))}
-
+EOS
+    rgen_subdirs.each_key { |subdir|
+      out << "\nrgen_#{subdir}_srcs = #{make_continue(rgen_subdirs[subdir])}\n"
+    }
+    out << <<EOS
 rgen_srcs=#{make_continue rgen_srcs}
 
 # Header file install rules.
