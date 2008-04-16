@@ -24,3 +24,8 @@ This product also includes software developed by:
   - The Mentalis Security Library, Copyright © 2002-2006, , The Mentalis.org Team
     under tterms based on the BSD license (http://www.mentalis.org/site/license.qpx).
     Available from http://www.mentalis.org/soft/projects/seclib/
+
+This product includes software, Apache Log4Net (http://logging.apache.org/log4net)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+
