@@ -31,6 +31,7 @@ import org.apache.qpidity.transport.ProtocolDelegate;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolEvent;
 import org.apache.qpidity.transport.ProtocolHeader;
+import org.apache.qpidity.transport.SegmentType;
 import org.apache.qpidity.transport.Sender;
 import org.apache.qpidity.transport.Struct;
 
@@ -76,50 +77,50 @@ public class Disassembler implements Sender<ConnectionEvent>,
         sender.close();
     }
 
-    private void fragment(byte flags, byte type, ConnectionEvent event,
+    private void fragment(byte flags, SegmentType type, ConnectionEvent event,
                           ByteBuffer buf, boolean first, boolean last)
     {
         if(!buf.hasRemaining())
         {
             //empty data
-              byte nflags = flags;
+            byte nflags = flags;
             if (first)
             {
                 nflags |= FIRST_FRAME;
                 first = false;
             }
-             nflags |= LAST_FRAME;
-              Frame frame = new Frame(nflags, type,
+            nflags |= LAST_FRAME;
+            Frame frame = new Frame(nflags, type,
                                     event.getProtocolEvent().getEncodedTrack(),
                                     event.getChannel());
-           // frame.addFragment(buf);
+            // frame.addFragment(buf);
             sender.send(frame);
         }
         else
         {
-        while (buf.hasRemaining())
-        {
-            ByteBuffer slice = buf.slice();
-            slice.limit(min(maxPayload, slice.remaining()));
-            buf.position(buf.position() + slice.remaining());
-
-            byte newflags = flags;
-            if (first)
+            while (buf.hasRemaining())
             {
-                newflags |= FIRST_FRAME;
-                first = false;
-            }
-            if (last && !buf.hasRemaining())
-            {
-                newflags |= LAST_FRAME;
-            }
+                ByteBuffer slice = buf.slice();
+                slice.limit(min(maxPayload, slice.remaining()));
+                buf.position(buf.position() + slice.remaining());
 
-            Frame frame = new Frame(newflags, type,
-                                    event.getProtocolEvent().getEncodedTrack(),
-                                    event.getChannel());
-            frame.addFragment(slice);
-            sender.send(frame);
-        }
+                byte newflags = flags;
+                if (first)
+                {
+                    newflags |= FIRST_FRAME;
+                    first = false;
+                }
+                if (last && !buf.hasRemaining())
+                {
+                    newflags |= LAST_FRAME;
+                }
+
+                Frame frame = new Frame(newflags, type,
+                                        event.getProtocolEvent().getEncodedTrack(),
+                                        event.getChannel());
+                frame.addFragment(slice);
+                sender.send(frame);
+            }
         }
     }
 
@@ -128,15 +129,40 @@ public class Disassembler implements Sender<ConnectionEvent>,
         sender.send(header);
     }
 
-    public void method(ConnectionEvent event, Method method)
+    public void control(ConnectionEvent event, Method method)
+    {
+        method(event, method, SegmentType.CONTROL);
+    }
+
+    public void command(ConnectionEvent event, Method method)
+    {
+        method(event, method, SegmentType.COMMAND);
+    }
+
+    private void method(ConnectionEvent event, Method method, SegmentType type)
     {
         SizeEncoder sizer = new SizeEncoder();
-        sizer.writeShort(method.getEncodedType());
+        sizer.writeUint16(method.getEncodedType());
+        if (type == SegmentType.COMMAND)
+        {
+            sizer.writeUint16(0);
+        }
         method.write(sizer);
 
         ByteBuffer buf = ByteBuffer.allocate(sizer.size());
         BBEncoder enc = new BBEncoder(buf);
-        enc.writeShort(method.getEncodedType());
+        enc.writeUint16(method.getEncodedType());
+        if (type == SegmentType.COMMAND)
+        {
+            if (method.isSync())
+            {
+                enc.writeUint16(0x0101);
+            }
+            else
+            {
+                enc.writeUint16(0x0100);
+            }
+        }
         method.write(enc);
         enc.flush();
         buf.flip();
@@ -148,7 +174,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
             flags |= LAST_SEG;
         }
 
-        fragment(flags, METHOD, event, buf, true, true);
+        fragment(flags, type, event, buf, true, true);
     }
 
     public void header(ConnectionEvent event, Header header)
@@ -159,24 +185,24 @@ public class Disassembler implements Sender<ConnectionEvent>,
             SizeEncoder sizer = new SizeEncoder();
             for (Struct st : header.getStructs())
             {
-                sizer.writeLongStruct(st);
+                sizer.writeStruct32(st);
             }
 
             buf = ByteBuffer.allocate(sizer.size());
             BBEncoder enc = new BBEncoder(buf);
             for (Struct st : header.getStructs())
             {
-                enc.writeLongStruct(st);
+                enc.writeStruct32(st);
                 enc.flush();
             }
             header.setBuf(buf);
         }
         else
         {
-            buf = header.getBuf();          
+            buf = header.getBuf();
         }
           buf.flip();
-        fragment((byte) 0x0, HEADER, event, buf, true, true);
+        fragment((byte) 0x0, SegmentType.HEADER, event, buf, true, true);
     }
 
     public void data(ConnectionEvent event, Data data)
@@ -187,7 +213,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
         {
             ByteBuffer buf = it.next();
             boolean last = data.isLast() && !it.hasNext();
-            fragment(LAST_SEG, BODY, event, buf, first, last);
+            fragment(LAST_SEG, SegmentType.BODY, event, buf, first, last);
             first = false;
         }
     }

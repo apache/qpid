@@ -38,26 +38,30 @@ public interface Decoder
 {
 
     boolean readBit();
-    short readOctet();
-    int readShort();
-    long readLong();
-    long readLonglong();
+    short readUint8();
+    int readUint16();
+    long readUint32();
+    long readUint64();
 
-    long readTimestamp();
-
-    String readShortstr();
-    String readLongstr();
-
-    RangeSet readRfc1982LongSet();
+    long readDatetime();
     UUID readUuid();
 
-    String readContent();
+    int readSequenceNo();
+    RangeSet readSequenceSet(); // XXX
+    RangeSet readByteRanges(); // XXX
+
+    String readStr8();
+    String readStr16();
+
+    byte[] readVbin8();
+    byte[] readVbin16();
+    byte[] readVbin32();
+
+    Struct readStruct32();
+    Map<String,Object> readMap();
+    List<Object> readList();
+    List<Object> readArray();
 
     Struct readStruct(int type);
-    Struct readLongStruct();
-
-    Map<String,Object> readTable();
-    List<Object> readSequence();
-    List<Object> readArray();
 
 }

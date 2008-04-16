@@ -31,9 +31,11 @@ import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.transport.MessageCreditUnit;
+import org.apache.qpidity.transport.MessageFlowMode;
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.transport.Option;
-import org.apache.qpidity.transport.BindingQueryResult;
+import org.apache.qpidity.transport.ExchangeBoundResult;
 import org.apache.qpidity.transport.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,7 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.Map;
 
@@ -67,11 +70,6 @@ public class AMQSession_0_10 extends AMQSession
      */
     private Object _currentExceptionLock = new Object();
     private QpidException _currentException;
-
-    /**
-     * All the not yet acknoledged message tags
-     */
-    private ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
 
     //--- constructors
 
@@ -123,19 +121,6 @@ public class AMQSession_0_10 extends AMQSession
 
         this(qpidConnection, con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(),
              defaultPrefetchHigh, defaultPrefetchLow);
-    }
-
-    //------- 0-10 specific methods
-
-    /**
-     * Add a message tag to be acknowledged
-     * This is used for client ack mode
-     *
-     * @param tag The id of the message to be acknowledged
-     */
-    void addMessageTag(long tag)
-    {
-        _unacknowledgedMessageTags.add(tag);
     }
 
     //------- overwritten methods of class AMQSession
@@ -219,7 +204,7 @@ public class AMQSession_0_10 extends AMQSession
         for (AMQShortString rk: destination.getBindingKeys())
         {
             _logger.debug("Binding queue : " + queueName.toString() + " exchange: " + exchangeName.toString() + " using binding key " + rk.asString());
-            getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), rk.toString(), args);
+            getQpidSession().exchangeBind(queueName.toString(), exchangeName.toString(), rk.toString(), args);
         }
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
@@ -237,7 +222,8 @@ public class AMQSession_0_10 extends AMQSession
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
         getQpidSession().sync();
-        getQpidSession().sessionClose();
+        getQpidSession().sessionRequestTimeout(0);
+        getQpidSession().sessionDetach(getQpidSession().getName());
         getCurrentException();
     }
 
@@ -285,16 +271,41 @@ public class AMQSession_0_10 extends AMQSession
     public void sendRecover() throws AMQException, FailoverException
     {
         // release all unack messages
-        /*RangeSet ranges = new RangeSet();
-        for (long messageTag : _unacknowledgedMessageTags)
+        RangeSet ranges = new RangeSet();
+        while (true)
         {
-            // release this message
-            ranges.add(messageTag);
-        }*/
-        getQpidSession().messageRecover(Option.REQUEUE);
+            Long tag = _unacknowledgedMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+            ranges.add(tag);
+        }
+        getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
+    }
+
+    public void releaseForRollback()
+    {
+        if (_dispatcher != null)
+        {
+            _dispatcher.rollback();
+        }
+
+        RangeSet ranges = new RangeSet();
+        while (true)
+        {
+            Long tag = _deliveredMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+
+            ranges.add(tag);
+        }
+        getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
     }
 
     /**
@@ -308,7 +319,7 @@ public class AMQSession_0_10 extends AMQSession
         // The value of requeue is always true
         RangeSet ranges = new RangeSet();
         ranges.add(deliveryTag);
-        getQpidSession().messageRelease(ranges);
+        getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         //I don't think we need to sync
     }
 
@@ -357,9 +368,8 @@ public class AMQSession_0_10 extends AMQSession
             rk = routingKey.toString();
         }
 
-        Future<BindingQueryResult> result =
-            getQpidSession().bindingQuery(exchangeName.toString(),queueName.toString(), rk, null);
-        BindingQueryResult bindingQueryResult = result.get();
+        ExchangeBoundResult bindingQueryResult =
+            getQpidSession().exchangeBound(exchangeName.toString(),queueName.toString(), rk, null).get();
 
         if (rk == null)
         {
@@ -394,25 +404,25 @@ public class AMQSession_0_10 extends AMQSession
                                           (Boolean.getBoolean("noAck") ?Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED:Session.TRANSFER_CONFIRM_MODE_REQUIRED),
                                           preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
-                                          consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
+
         if (ClientProperties.MAX_PREFETCH == 0)
         {
-            getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
+            getQpidSession().messageSetFlowMode(consumer.getConsumerTag().toString(), MessageFlowMode.CREDIT);
         }
         else
         {
-            getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
+            getQpidSession().messageSetFlowMode(consumer.getConsumerTag().toString(), MessageFlowMode.WINDOW);
         }
-        getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
+        getQpidSession().messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
         // only if not immediat prefetch
         if(ClientProperties.MAX_PREFETCH > 0 && (consumer.isStrated() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
-                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                    ClientProperties.MAX_PREFETCH);
+                                         MessageCreditUnit.MESSAGE,
+                                         ClientProperties.MAX_PREFETCH);
         }
         getQpidSession().sync();
         getCurrentException();
@@ -458,7 +468,8 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * Declare a queue with the given queueName
      */
-    public AMQShortString send0_10QueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    public AMQShortString send0_10QueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                               final boolean noLocal)
             throws AMQException, FailoverException
     {
         AMQShortString res;
@@ -471,10 +482,16 @@ public class AMQSession_0_10 extends AMQSession
         {
             res = amqd.getAMQQueueName();
         }
-        getQpidSession().queueDeclare(res.toString(), null, null,
+        Map<String,Object> arguments = null;
+        if (noLocal)
+        {
+            arguments = new HashMap<String,Object>();
+            arguments.put("no-local", true);
+        }
+        getQpidSession().queueDeclare(res.toString(), null, arguments,
                                       amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NO_OPTION,
                                       amqd.isDurable() ? Option.DURABLE : Option.NO_OPTION,
-                                      amqd.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
+                                      !amqd.isDurable() && amqd.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
         // passive --> false
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
@@ -519,18 +536,17 @@ public class AMQSession_0_10 extends AMQSession
                         if (consumer.getMessageListener() != null)
                         {
                             getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
-                                    Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                                                         MessageCreditUnit.MESSAGE, 1);
                         }
                     }
                     else
                     {
                         getQpidSession()
-                                .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                        ClientProperties.MAX_PREFETCH);
+                            .messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.MESSAGE,
+                                         ClientProperties.MAX_PREFETCH);
                     }
                     getQpidSession()
-                            .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE,
-                                    0xFFFFFFFF);
+                        .messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.BYTE, 0xFFFFFFFF);
                 }
                 catch (Exception e)
                 {
@@ -546,8 +562,8 @@ public class AMQSession_0_10 extends AMQSession
 
     public void sendRollback() throws AMQException, FailoverException
     {
-         getQpidSession().txRollback();
-       // We need to sync so that we get notify of an error.
+        getQpidSession().txRollback();
+        // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
     }
@@ -622,7 +638,8 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                          final boolean noLocal)
             throws AMQException
     {
         /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
@@ -636,7 +653,7 @@ public class AMQSession_0_10 extends AMQSession
                         {
                             amqd.setQueueName(new AMQShortString("TempQueue" + UUID.randomUUID()));
                         }
-                        return send0_10QueueDeclare(amqd, protocolHandler);
+                        return send0_10QueueDeclare(amqd, protocolHandler, noLocal);
                     }
                 }, _connection).execute();
     }

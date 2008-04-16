@@ -77,7 +77,7 @@ public class Channel extends Invoker
         connection.getConnectionDelegate().init(this, hdr);
     }
 
-    public void method(Void v, Method method)
+    public void control(Void v, Method method)
     {
         switch (method.getEncodedTrack())
         {
@@ -90,13 +90,15 @@ public class Channel extends Invoker
         case L3:
             method.delegate(session, sessionDelegate);
             break;
-        case L4:
-            method.delegate(session, sessionDelegate);
-            break;
         default:
             throw new IllegalStateException
                 ("unknown track: " + method.getEncodedTrack());
         }
+    }
+
+    public void command(Void v, Method method)
+    {
+        method.delegate(session, sessionDelegate);
     }
 
     public void header(Void v, Header header)

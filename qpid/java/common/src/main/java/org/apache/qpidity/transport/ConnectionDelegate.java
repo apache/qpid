@@ -26,7 +26,10 @@ import org.apache.qpidity.SecurityHelper;
 import org.apache.qpidity.QpidException;
 
 import java.io.UnsupportedEncodingException;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -79,17 +82,27 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     public void init(Channel ch, ProtocolHeader hdr)
     {
-        // XXX: hardcoded version
-        if (hdr.getMajor() != 0 && hdr.getMinor() != 10)
+        ch.getConnection().send(new ConnectionEvent(0, new ProtocolHeader
+                                                    (1,
+                                                     TransportConstants.getVersionMajor(),
+                                                     TransportConstants.getVersionMinor())));
+        if (hdr.getMajor() != TransportConstants.getVersionMajor() &&
+            hdr.getMinor() != TransportConstants.getVersionMinor())
         {
             // XXX
-            ch.getConnection().send(new ConnectionEvent(0, new ProtocolHeader(1, TransportConstants.getVersionMajor(),
-                    TransportConstants.getVersionMinor())));
+            ch.getConnection().send(new ConnectionEvent(0, new ProtocolHeader
+                                                        (1,
+                                                         TransportConstants.getVersionMajor(),
+                                                         TransportConstants.getVersionMinor())));
             ch.getConnection().close();
         }
         else
         {
-            ch.connectionStart(hdr.getMajor(), hdr.getMinor(), null, "PLAIN", "utf8");
+            List<Object> plain = new ArrayList<Object>();
+            plain.add("PLAIN");
+            List<Object> utf8 = new ArrayList<Object>();
+            utf8.add("utf8");
+            ch.connectionStart(null, plain, utf8);
         }
     }
 
@@ -99,13 +112,13 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
     @Override public void connectionStart(Channel context, ConnectionStart struct)
     {
         String mechanism = null;
-        String response = null;
+        byte[] response = null;
         try
         {
             mechanism = SecurityHelper.chooseMechanism(struct.getMechanisms());
             saslClient = Sasl.createSaslClient(new String[]{ mechanism },null, "AMQP", "localhost", null,
                                                   SecurityHelper.createCallbackHandler(mechanism,_username,_password ));
-            response = new String(saslClient.evaluateChallenge(new byte[0]),_locale);
+            response = saslClient.evaluateChallenge(new byte[0]);
         }
         catch (UnsupportedEncodingException e)
         {
@@ -128,12 +141,8 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
     {
         try
         {
-            String response = new String(saslClient.evaluateChallenge(struct.getChallenge().getBytes()),_locale);
+            byte[] response = saslClient.evaluateChallenge(struct.getChallenge());
             context.connectionSecureOk(response);
-        }
-        catch (UnsupportedEncodingException e)
-        {
-           // need error handling
         }
         catch (SaslException e)
         {
@@ -144,14 +153,14 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
     @Override public void connectionTune(Channel context, ConnectionTune struct)
     {
         // should update the channel max given by the broker.
-        context.connectionTuneOk(struct.getChannelMax(), struct.getFrameMax(), struct.getHeartbeat());
+        context.connectionTuneOk(struct.getChannelMax(), struct.getMaxFrameSize(), struct.getHeartbeatMax());
         context.connectionOpen(_virtualHost, null, Option.INSIST);
     }
 
 
     @Override public void connectionOpenOk(Channel context, ConnectionOpenOk struct)
     {
-        String knownHosts = struct.getKnownHosts();
+        List<Object> knownHosts = struct.getKnownHosts();
         if(_negotiationCompleteLock != null)
         {
             _negotiationCompleteLock.lock();
@@ -187,13 +196,13 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
             byte[] challenge = null;
             if ( challenge == null)
             {
-                context.connectionTune(Integer.MAX_VALUE,maxFrame, 0);
+                context.connectionTune(Integer.MAX_VALUE, maxFrame, 0, Integer.MAX_VALUE);
             }
             else
             {
                 try
                 {
-                    context.connectionSecure(new String(challenge,_locale));
+                    context.connectionSecure(challenge);
                 }
                 catch(Exception e)
                 {
@@ -218,16 +227,16 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
         try
         {
             saslServer = Sasl.createSaslServer(_mechanism, "AMQP", "ABC",new HashMap(),SecurityHelper.createCallbackHandler(_mechanism,_username,_password));
-            byte[] challenge = saslServer.evaluateResponse(struct.getResponse().getBytes());
+            byte[] challenge = saslServer.evaluateResponse(struct.getResponse());
             if ( challenge == null)
             {
-                context.connectionTune(Integer.MAX_VALUE,maxFrame, 0);
+                context.connectionTune(Integer.MAX_VALUE, maxFrame, 0, Integer.MAX_VALUE);
             }
             else
             {
                 try
                 {
-                    context.connectionSecure(new String(challenge,_locale));
+                    context.connectionSecure(challenge);
                 }
                 catch(Exception e)
                 {
@@ -250,8 +259,9 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     @Override public void connectionOpen(Channel context, ConnectionOpen struct)
     {
-       String hosts = "amqp:1223243232325";
-       context.connectionOpenOk(hosts);
+        List<Object> hosts = new ArrayList<Object>();
+        hosts.add("amqp:1223243232325");
+        context.connectionOpenOk(hosts);
     }
 
     public String getPassword()

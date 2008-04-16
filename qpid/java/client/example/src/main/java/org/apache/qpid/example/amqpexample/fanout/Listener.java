@@ -9,6 +9,10 @@ import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
+import org.apache.qpidity.transport.MessageCreditUnit;
+
 /**
  * This listens to messages on a queue and terminates
  * when it sees the final message
@@ -83,8 +87,9 @@ public class Listener implements MessageListener
 
 
         // issue credits
-        session.messageFlow("listener_destination", Session.MESSAGE_FLOW_UNIT_BYTE, Session.MESSAGE_FLOW_MAX_BYTES);
-        session.messageFlow("listener_destination", Session.MESSAGE_FLOW_UNIT_MESSAGE, 11);
+        // XXX
+        session.messageFlow("listener_destination", MessageCreditUnit.BYTE, Session.MESSAGE_FLOW_MAX_BYTES);
+        session.messageFlow("listener_destination", MessageCreditUnit.MESSAGE, 11);
 
         // confirm completion
         session.sync();
@@ -95,7 +100,7 @@ public class Listener implements MessageListener
         session.messageCancel("listener_destination");
 
         //cleanup
-        session.sessionClose();
+        session.sessionDetach(session.getName());
         try
         {
             con.close();

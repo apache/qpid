@@ -71,8 +71,6 @@ public abstract class Struct implements Encodable
         return type;
     }
 
-    public abstract boolean hasTicket();
-
     private final boolean isBit(Field<?,?> f)
     {
         return f.getType().equals(Boolean.class);
@@ -80,14 +78,7 @@ public abstract class Struct implements Encodable
 
     private final boolean packed()
     {
-        if (this instanceof Method)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return getPackWidth() > 0;
     }
 
     private final boolean encoded(Field<?,?> f)
@@ -147,11 +138,6 @@ public abstract class Struct implements Encodable
             }
         }
 
-        if (hasTicket())
-        {
-            dec.readShort();
-        }
-
         for (Field<?,?> f : fields)
         {
             if (encoded(f))
@@ -185,11 +171,6 @@ public abstract class Struct implements Encodable
             {
                 enc.writeBit(false);
             }
-        }
-
-        if (hasTicket())
-        {
-            enc.writeShort(0x0);
         }
 
         for (Field<?,?> f : fields)

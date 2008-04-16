@@ -100,12 +100,12 @@ public class ConnectionTest extends TestCase
         }
 
         Channel ch = conn.getChannel(0);
-        Session ssn = new Session();
+        Session ssn = new Session("test".getBytes());
         ssn.attach(ch);
 
         try
         {
-            ssn.sessionOpen(1234);
+            ssn.sessionAttach(ssn.getName());
             fail("writing to a closed socket succeeded");
         }
         catch (TransportException e)

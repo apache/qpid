@@ -241,28 +241,10 @@ public class XidImpl implements Xid
      * @return The String representation of this Xid
      * @throws QpidException In case of problem when converting this Xid into a string.
      */
-    public static String convertToString(Xid xid) throws QpidException
+    public static org.apache.qpidity.transport.Xid convert(Xid xid) throws QpidException
     {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("converting " + xid + " into a String");
-        }
-        try
-        {
-            ByteArrayOutputStream res = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(res);
-            out.writeLong(xid.getFormatId());
-            byte[] txId = xid.getGlobalTransactionId();
-            byte[] brId = xid.getBranchQualifier();
-            out.writeByte(txId.length);
-            out.writeByte(brId.length);
-            out.write(txId);
-            out.write(brId);
-            return res.toString();
-        }
-        catch (IOException e)
-        {
-            throw new QpidException("cannot convert the xid " + xid + " into a String", null, e);
-        }
+        return new org.apache.qpidity.transport.Xid(xid.getFormatId(),
+                                                    xid.getGlobalTransactionId(),
+                                                    xid.getBranchQualifier());
     }
 }

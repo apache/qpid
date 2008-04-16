@@ -20,6 +20,7 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.network.Frame;
 
 /**
  * Method
@@ -34,11 +35,12 @@ public abstract class Method extends Struct implements ProtocolEvent
     {
         // XXX: should generate separate factories for separate
         // namespaces
-        return (Method) Struct.create(type);
+        return (Method) StructFactory.createInstruction(type);
     }
 
     // XXX: command subclass?
     private long id;
+    private boolean sync = false;
 
     public final long getId()
     {
@@ -50,6 +52,16 @@ public abstract class Method extends Struct implements ProtocolEvent
         this.id = id;
     }
 
+    public final boolean isSync()
+    {
+        return sync;
+    }
+
+    void setSync(boolean value)
+    {
+        this.sync = value;
+    }
+
     public abstract boolean hasPayload();
 
     public abstract byte getEncodedTrack();
@@ -58,7 +70,14 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
-        delegate.method(context, this);
+        if (getEncodedTrack() == Frame.L4)
+        {
+            delegate.command(context, this);
+        }
+        else
+        {
+            delegate.control(context, this);
+        }
     }
 
 }
