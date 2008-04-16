@@ -1,0 +1,223 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+ 
+    http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-distribution</artifactId>
+    <packaging>jar</packaging>
+    <name>Qpid Distribution</name>
+    <version>1.0-incubating-M2.1</version>
+
+    <parent>
+        <groupId>org.apache.qpid</groupId>
+        <artifactId>qpid</artifactId>
+        <version>1.0-incubating-M2.1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <properties>
+        <topDirectoryLocation>..</topDirectoryLocation>
+        <java.source.version>1.5</java.source.version>
+        <qpid.version>${pom.version}</qpid.version>
+        <qpid.targetDir>${project.build.directory}</qpid.targetDir>
+
+        <!-- This is an assembly/distribution pom so no test code exists -->
+        <maven.test.skip>true</maven.test.skip>
+    </properties>
+
+    <repositories>
+      <repository>
+        <id>repo1.maven.org</id>
+        <name>Maven eclipse Repository</name>
+        <url>http://repo1.maven.org/eclipse</url>
+      </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>${pom.groupId}</groupId>
+            <artifactId>qpid-broker</artifactId>
+            <version>${pom.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>${pom.groupId}</groupId>
+            <artifactId>qpid-client</artifactId>
+            <version>${pom.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>${pom.groupId}.management</groupId>
+            <artifactId>org.apache.qpid.management.ui</artifactId>
+            <version>${pom.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>${java.source.version}</source>
+                        <target>${java.source.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${assembly.version}</version>
+                    <configuration>
+                        <descriptors>
+                               <descriptor>src/main/assembly/bin.xml</descriptor>
+                        </descriptors>
+                        <finalName>qpid-${pom.version}</finalName>
+                        <outputDirectory>${qpid.targetDir}</outputDirectory>
+                        <tarLongFileMode>gnu</tarLongFileMode>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <configuration>
+                        <finalName>qpid-incubating</finalName>
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>distribution-package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/bin.xml</descriptor>
+                                <descriptor>src/main/assembly/src.xml</descriptor>
+                                <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
+                                <descriptor>src/main/assembly/management-eclipse-plugin-unix.xml</descriptor>
+                            </descriptors>
+                            <finalName>qpid-${pom.version}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-source-plugin</artifactId>
+               <executions>
+                 <execution>
+                   <id>attach-sources</id>
+                   <goals>
+                     <goal>jar</goal>
+                   </goals>
+                 </execution>
+               </executions>
+            </plugin>
+
+        </plugins>
+
+         <defaultGoal>assembly:assembly</defaultGoal>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+
+            <dependencies>
+                <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-broker</artifactId>
+                    <version>${pom.version}</version>
+                    <type>jar</type>
+                </dependency>
+                <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-broker</artifactId>
+                    <version>${pom.version}</version>
+                    <type>test-jar</type>
+                </dependency>
+                <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-client</artifactId>
+                    <version>${pom.version}</version>
+                    <type>jar</type>
+                </dependency>
+                 <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-client</artifactId>
+                    <version>${pom.version}</version>
+                    <type>test-jar</type>
+                </dependency>
+                <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-perftests</artifactId>
+                    <version>${pom.version}</version>
+                    <type>test-jar</type>
+                </dependency>
+                <dependency>
+                    <groupId>${pom.groupId}</groupId>
+                    <artifactId>qpid-systests</artifactId>
+                    <version>${pom.version}</version>
+                    <type>test-jar</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>distribution-package</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                            <configuration>
+                                <descriptors>
+                                    <descriptor>src/main/assembly/bin-test.xml</descriptor>
+                                </descriptors>
+                                <finalName>qpid-${pom.version}</finalName>
+                            </configuration>
+                        </execution>
+                        </executions>
+                    </plugin>
+               </plugins>
+            </build>
+
+        </profile>
+    </profiles>
+
+</project>  

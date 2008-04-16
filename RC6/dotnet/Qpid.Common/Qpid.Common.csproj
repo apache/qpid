@@ -1,0 +1,213 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{77064C42-24D2-4CEB-9EA2-0EF481A43205}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Apache.Qpid</RootNamespace>
+    <AssemblyName>Apache.Qpid.Common</AssemblyName>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\net-2.0\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\net-2.0\release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=b32731d11ce58905">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\log4net\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AMQChannelClosedException.cs" />
+    <Compile Include="AMQConnectionClosedException.cs" />
+    <Compile Include="AMQDisconnectedException.cs" />
+    <Compile Include="AMQException.cs" />
+    <Compile Include="AMQInvalidArgumentException.cs" />
+    <Compile Include="AMQInvalidRoutingKeyException.cs" />
+    <Compile Include="AMQUndeliveredException.cs" />
+    <Compile Include="AssemblySettings.cs" />
+    <Compile Include="Collections\LinkedHashtable.cs" />
+    <Compile Include="Collections\ConsumerProducerQueue.cs" />
+    <Compile Include="Framing\AMQDataBlockDecoder.cs" />
+    <Compile Include="Framing\AMQDataBlockEncoder.cs" />
+    <Compile Include="Framing\AMQFrame.cs" />
+    <Compile Include="Framing\AMQMethodBody.cs" />
+    <Compile Include="Framing\AMQMethodBodyFactory.cs" />
+    <Compile Include="Framing\AMQProtocolHeaderException.cs" />
+    <Compile Include="Framing\AMQType.cs" />
+    <Compile Include="Framing\BasicContentHeaderProperties.cs" />
+    <Compile Include="Framing\CompositeAMQDataBlock.cs" />
+    <Compile Include="Framing\ContentBody.cs" />
+    <Compile Include="Framing\ContentBodyFactory.cs" />
+    <Compile Include="Framing\ContentHeaderBody.cs" />
+    <Compile Include="Framing\ContentHeaderBodyFactory.cs" />
+    <Compile Include="Framing\ContentHeaderPropertiesFactory.cs" />
+    <Compile Include="Framing\AMQTypedValue.cs" />
+    <Compile Include="Framing\AMQTypeMap.cs" />
+    <Compile Include="Framing\EncodingUtils.cs" />
+    <Compile Include="Framing\FieldTable.cs" />
+    <Compile Include="Framing\HeartbeatBody.cs" />
+    <Compile Include="Framing\HeartbeatBodyFactory.cs" />
+    <Compile Include="Framing\IBody.cs" />
+    <Compile Include="Framing\IDataBlock.cs" />
+    <Compile Include="Framing\AMQFrameDecodingException.cs" />
+    <Compile Include="Framing\IEncodableAMQDataBlock.cs" />
+    <Compile Include="Framing\IBodyFactory.cs" />
+    <Compile Include="Framing\IContentHeaderProperties.cs" />
+    <Compile Include="Framing\ProtocolInitiation.cs" />
+    <Compile Include="generated\AccessRequestBody.cs" />
+    <Compile Include="generated\AccessRequestOkBody.cs" />
+    <Compile Include="generated\BasicAckBody.cs" />
+    <Compile Include="generated\BasicCancelBody.cs" />
+    <Compile Include="generated\BasicCancelOkBody.cs" />
+    <Compile Include="generated\BasicConsumeBody.cs" />
+    <Compile Include="generated\BasicConsumeOkBody.cs" />
+    <Compile Include="generated\BasicDeliverBody.cs" />
+    <Compile Include="generated\BasicGetBody.cs" />
+    <Compile Include="generated\BasicGetEmptyBody.cs" />
+    <Compile Include="generated\BasicGetOkBody.cs" />
+    <Compile Include="generated\BasicPublishBody.cs" />
+    <Compile Include="generated\BasicQosBody.cs" />
+    <Compile Include="generated\BasicQosOkBody.cs" />
+    <Compile Include="generated\BasicRecoverBody.cs" />
+    <Compile Include="generated\BasicRecoverOkBody.cs" />
+    <Compile Include="generated\BasicRejectBody.cs" />
+    <Compile Include="generated\BasicReturnBody.cs" />
+    <Compile Include="generated\ChannelAlertBody.cs" />
+    <Compile Include="generated\ChannelCloseBody.cs" />
+    <Compile Include="generated\ChannelCloseOkBody.cs" />
+    <Compile Include="generated\ChannelFlowBody.cs" />
+    <Compile Include="generated\ChannelFlowOkBody.cs" />
+    <Compile Include="generated\ChannelOpenBody.cs" />
+    <Compile Include="generated\ChannelOpenOkBody.cs" />
+    <Compile Include="generated\ConnectionCloseBody.cs" />
+    <Compile Include="generated\ConnectionCloseOkBody.cs" />
+    <Compile Include="generated\ConnectionOpenBody.cs" />
+    <Compile Include="generated\ConnectionOpenOkBody.cs" />
+    <Compile Include="generated\ConnectionRedirectBody.cs" />
+    <Compile Include="generated\ConnectionSecureBody.cs" />
+    <Compile Include="generated\ConnectionSecureOkBody.cs" />
+    <Compile Include="generated\ConnectionStartBody.cs" />
+    <Compile Include="generated\ConnectionStartOkBody.cs" />
+    <Compile Include="generated\ConnectionTuneBody.cs" />
+    <Compile Include="generated\ConnectionTuneOkBody.cs" />
+    <Compile Include="generated\DtxSelectBody.cs" />
+    <Compile Include="generated\DtxSelectOkBody.cs" />
+    <Compile Include="generated\DtxStartBody.cs" />
+    <Compile Include="generated\DtxStartOkBody.cs" />
+    <Compile Include="generated\ExchangeBoundBody.cs" />
+    <Compile Include="generated\ExchangeBoundOkBody.cs" />
+    <Compile Include="generated\ExchangeDeclareBody.cs" />
+    <Compile Include="generated\ExchangeDeclareOkBody.cs" />
+    <Compile Include="generated\ExchangeDeleteBody.cs" />
+    <Compile Include="generated\ExchangeDeleteOkBody.cs" />
+    <Compile Include="generated\FileAckBody.cs" />
+    <Compile Include="generated\FileCancelBody.cs" />
+    <Compile Include="generated\FileCancelOkBody.cs" />
+    <Compile Include="generated\FileConsumeBody.cs" />
+    <Compile Include="generated\FileConsumeOkBody.cs" />
+    <Compile Include="generated\FileDeliverBody.cs" />
+    <Compile Include="generated\FileOpenBody.cs" />
+    <Compile Include="generated\FileOpenOkBody.cs" />
+    <Compile Include="generated\FilePublishBody.cs" />
+    <Compile Include="generated\FileQosBody.cs" />
+    <Compile Include="generated\FileQosOkBody.cs" />
+    <Compile Include="generated\FileRejectBody.cs" />
+    <Compile Include="generated\FileReturnBody.cs" />
+    <Compile Include="generated\FileStageBody.cs" />
+    <Compile Include="generated\MainRegistry.cs" />
+    <Compile Include="generated\MethodBodyDecoderRegistry.cs" />
+    <Compile Include="generated\QueueBindBody.cs" />
+    <Compile Include="generated\QueueBindOkBody.cs" />
+    <Compile Include="generated\QueueDeclareBody.cs" />
+    <Compile Include="generated\QueueDeclareOkBody.cs" />
+    <Compile Include="generated\QueueDeleteBody.cs" />
+    <Compile Include="generated\QueueDeleteOkBody.cs" />
+    <Compile Include="generated\QueuePurgeBody.cs" />
+    <Compile Include="generated\QueuePurgeOkBody.cs" />
+    <Compile Include="generated\StreamCancelBody.cs" />
+    <Compile Include="generated\StreamCancelOkBody.cs" />
+    <Compile Include="generated\StreamConsumeBody.cs" />
+    <Compile Include="generated\StreamConsumeOkBody.cs" />
+    <Compile Include="generated\StreamDeliverBody.cs" />
+    <Compile Include="generated\StreamPublishBody.cs" />
+    <Compile Include="generated\StreamQosBody.cs" />
+    <Compile Include="generated\StreamQosOkBody.cs" />
+    <Compile Include="generated\StreamReturnBody.cs" />
+    <Compile Include="generated\TestContentBody.cs" />
+    <Compile Include="generated\TestContentOkBody.cs" />
+    <Compile Include="generated\TestIntegerBody.cs" />
+    <Compile Include="generated\TestIntegerOkBody.cs" />
+    <Compile Include="generated\TestStringBody.cs" />
+    <Compile Include="generated\TestStringOkBody.cs" />
+    <Compile Include="generated\TestTableBody.cs" />
+    <Compile Include="generated\TestTableOkBody.cs" />
+    <Compile Include="generated\TunnelRequestBody.cs" />
+    <Compile Include="generated\TxCommitBody.cs" />
+    <Compile Include="generated\TxCommitOkBody.cs" />
+    <Compile Include="generated\TxRollbackBody.cs" />
+    <Compile Include="generated\TxRollbackOkBody.cs" />
+    <Compile Include="generated\TxSelectBody.cs" />
+    <Compile Include="generated\TxSelectOkBody.cs" />
+    <Compile Include="Collections\BlockingQueue.cs" />
+    <Compile Include="Collections\LinkedBlockingQueue.cs" />
+    <Compile Include="Collections\SynchronousQueue.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Protocol\AMQConstant.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Qpid.Buffer\Qpid.Buffer.csproj">
+      <Project>{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}</Project>
+      <Name>Qpid.Buffer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qpid.Codec\Qpid.Codec.csproj">
+      <Project>{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}</Project>
+      <Name>Qpid.Codec</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qpid.Messaging\Qpid.Messaging.csproj">
+      <Project>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</Project>
+      <Name>Qpid.Messaging</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="stylesheets\csharp.xsl" />
+    <Content Include="stylesheets\framing.xsl" />
+    <Content Include="stylesheets\java.xsl" />
+    <Content Include="stylesheets\prepare1.xsl" />
+    <Content Include="stylesheets\prepare2.xsl" />
+    <Content Include="stylesheets\prepare3.xsl" />
+    <Content Include="stylesheets\readme.txt" />
+    <Content Include="stylesheets\registry.xsl" />
+    <Content Include="stylesheets\utils.xsl" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
