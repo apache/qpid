@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/complex_types.h"
+#include "qpid/amqp_0_10/Struct.h"
 #include <string>
 
 namespace qpid {

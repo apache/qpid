@@ -9,6 +9,12 @@ class UnknownStruct
   def fqclassname() "UnknownStruct" end
 end
 
+# Dummy element representing a session.header field
+class SessionHeaderField
+  def amqp2cpp() "session::Header" end
+  def cppname() "sessionHeader" end
+  def name() "session-header" end
+end
 
 class Specification < CppGen
   def initialize(outdir, amqp)
@@ -36,7 +42,7 @@ class Specification < CppGen
   end
 
   def visitable?(x) x.code and x.size=="4"  end
-  
+
   # Used by structs, commands and controls.
   def action_struct_h(x, base, consts, &block)
     genl
@@ -67,7 +73,12 @@ class Specification < CppGen
       genl
       yield if block
     }
-    genl "inline Packer<#{x.classname}> serializable(#{x.classname}& x) { return Packer<#{x.classname}>(x); }" unless x.respond_to? :pack and x.pack == "0"
+    case x
+    when AmqpCommand then packer =  "CommandPacker"
+    when AmqpControl then packer =  "Packer"
+    when AmqpStruct then packer =  "SizedPacker"
+    end
+    genl "inline #{packer}<#{x.classname}> serializable(#{x.classname}& x) { return #{packer}<#{x.classname}>(x); }" unless x.respond_to? :pack and x.pack == "0"
     genl "std::ostream& operator << (std::ostream&, const #{x.classname}&);"
     genl "bool operator==(const #{x.classname}&, const #{x.classname}&);"
   end
@@ -86,7 +97,7 @@ class Specification < CppGen
     end
     genl
     scope("std::ostream& operator << (std::ostream& o, const #{x.classname}&#{"x" unless x.fields.empty?}) {") {
-      genl "o << \"[#{x.fqname}\";";
+      genl "o << \"#{x.fqname}[\";";
       x.fields.each{ |f| genl "o << \" #{f.name}=\" << x.#{f.cppname};" }
       genl "o << \"]\";"
       genl "return o;"
@@ -165,7 +176,7 @@ class Specification < CppGen
       include "#{@dir}/specification_fwd"
       include "#{@dir}/Map.h"
       include "#{@dir}/Array.h"
-      include "#{@dir}/complex_types.h"
+      include "#{@dir}/Struct.h"
       include "#{@dir}/UnknownStruct.h"
       include "#{@dir}/Packer.h"
       namespace(@ns) {
@@ -193,8 +204,9 @@ class Specification < CppGen
       include "#{@dir}/Map.h"
       include "#{@dir}/Array.h"
       include "#{@dir}/UnknownType.h"
-      include "#{@dir}/complex_types.h"
       include "#{@dir}/Struct32"
+      include "#{@dir}/Control.h"
+      include "#{@dir}/Command.h"
       include "#{@dir}/Packer.h"
       include "<iosfwd>"
       namespace(@ns) { 

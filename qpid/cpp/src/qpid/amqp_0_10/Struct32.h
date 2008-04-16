@@ -30,23 +30,24 @@ namespace amqp_0_10 {
 class Struct32 : public StructHolder
 {
   public:
-    Struct32() {}
+    Struct32();
 
     template <class T> explicit Struct32(const T& t) : StructHolder(t) {}
     
-    template <class S> void serialize(S& s) {
-        s.split(*this);
-        StructHolder::serialize(s);
-    }
+    template <class S> void serialize(S& s) { s.split(*this); }
+
+    using StructHolder::operator=;
 
     template <class S> void encode(S& s) const {
         s(contentSize());
+        const_cast<Struct32*>(this)->StructHolder::serialize(s);
     }
     
     template <class S> void decode(S& s) {
         uint32_t contentSz;
         s(contentSz);
-        s.setLimit(contentSz);
+        typename S::ScopedLimit l(s, contentSz);
+        StructHolder::serialize(s);
     }
     
   private:
