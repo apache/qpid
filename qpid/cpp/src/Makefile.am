@@ -100,6 +100,8 @@ libqpidamqp_0_10_la_SOURCES= \
   qpid/amqp_0_10/Array.h \
   qpid/amqp_0_10/Array.cpp \
   qpid/amqp_0_10/Body.h \
+  qpid/amqp_0_10/Command.h \
+  qpid/amqp_0_10/Control.h \
   qpid/amqp_0_10/Header.h \
   qpid/amqp_0_10/Header.cpp \
   qpid/amqp_0_10/FrameHeader.h \
@@ -111,6 +113,7 @@ libqpidamqp_0_10_la_SOURCES= \
   qpid/amqp_0_10/SerializableString.h \
   qpid/amqp_0_10/Map.h \
   qpid/amqp_0_10/Map.cpp \
+  qpid/amqp_0_10/Struct.h \
   qpid/amqp_0_10/Struct32.h \
   qpid/amqp_0_10/Struct32.cpp \
   qpid/amqp_0_10/Unit.h \
