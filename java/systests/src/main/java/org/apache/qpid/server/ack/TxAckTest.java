@@ -22,10 +22,8 @@ package org.apache.qpid.server.ack;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -103,8 +101,8 @@ public class TxAckTest extends TestCase
         {
             TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(),
                                                                           _storeContext, null,
-                                                                          new LinkedList<RequiredDeliveryException>(),
-                                                                          new HashSet<Long>());
+                                                                          new LinkedList<RequiredDeliveryException>()
+            );
             for (int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;

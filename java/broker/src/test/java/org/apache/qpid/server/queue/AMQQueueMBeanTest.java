@@ -44,7 +44,6 @@ import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
 import java.util.LinkedList;
-import java.util.HashSet;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -272,8 +271,8 @@ public class AMQQueueMBeanTest extends TestCase
 
         _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
                                                             null,
-                                                            new LinkedList<RequiredDeliveryException>(),
-                                                            new HashSet<Long>());
+                                                            new LinkedList<RequiredDeliveryException>()
+        );
 
         _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost);
         _queueMBean = new AMQQueueMBean(_queue);
