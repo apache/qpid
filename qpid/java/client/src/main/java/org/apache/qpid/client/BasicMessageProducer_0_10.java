@@ -104,7 +104,19 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         if (!deliveryProp.hasDeliveryMode() || deliveryProp.getDeliveryMode().getValue() != deliveryMode)
         {
-            deliveryProp.setDeliveryMode(MessageDeliveryMode.get((short) deliveryMode));
+            MessageDeliveryMode mode;
+            switch (deliveryMode)
+            {
+            case DeliveryMode.PERSISTENT:
+                mode = MessageDeliveryMode.PERSISTENT;
+                break;
+            case DeliveryMode.NON_PERSISTENT:
+                mode = MessageDeliveryMode.NON_PERSISTENT;
+                break;
+            default:
+                throw new IllegalArgumentException("illegal delivery mode: " + deliveryMode);
+            }
+            deliveryProp.setDeliveryMode(mode);
             message.setJMSDeliveryMode(deliveryMode);
         }
         if (!deliveryProp.hasPriority() || deliveryProp.getPriority().getValue() != priority)
