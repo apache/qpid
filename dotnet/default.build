@@ -207,7 +207,7 @@
 
         <property name="build.date" value="${datetime::now()}"/>
 
-        <zip zipfile="${build.dir}/Qpid.NET-${framework::get-target-framework()}-${datetime::get-year(build.date)}${datetime::get-month(build.date)}${datetime::get-day(build.date)}.zip">
+        <zip zipfile="${build.dir}/Qpid.NET-1.0-incubating-M${build.version.major}.${build.version.minor}-${framework::get-target-framework()}.zip" encoding="UTF-8">
             <fileset basedir="${build.dir}">
                 <include name="**/*.*"/>
                 <exclude name="**/*.Tests.*"/>
