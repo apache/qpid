@@ -52,14 +52,23 @@ public class Functions
     public static final String str(ByteBuffer buf, int limit)
     {
         StringBuilder str = new StringBuilder();
+        str.append('"');
+
         for (int i = 0; i < min(buf.remaining(), limit); i++)
         {
-            if (i > 0 && i % 2 == 0)
+            byte c = buf.get(buf.position() + i);
+
+            if (c > 31 && c < 127 && c != '\\')
             {
-                str.append(" ");
+                str.append((char)c);
             }
-            str.append(String.format("%02x", buf.get(buf.position() + i)));
+            else
+            {
+                str.append(String.format("\\x%02x", c));
+            }
         }
+
+        str.append('"');
 
         return str.toString();
     }

@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,36 +7,35 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpidity.njms;
+package org.apache.qpidity.transport;
 
-import javax.jms.JMSException;
 
 /**
- * Interface to abstract functionalities of temporary destinations.
+ * ClientDelegate
+ *
  */
-public interface TemporaryDestination
-{
-    /**
-     * Delete this temporary destination.
-     *
-      * @throws javax.jms.JMSException If the temporary destination cannot be deleted due to some internal error.
-     */
-    public void delete() throws JMSException;
 
-     /**
-     * Indicate whether this temporary destination is deleted
-     *  @return  True is this temporary destination is deleted, false otherwise 
-     */
-    public boolean isdeleted();
+public abstract class ClientDelegate extends ConnectionDelegate
+{
+
+    public void init(Channel ch, ProtocolHeader hdr)
+    {
+        if (hdr.getMajor() != TransportConstants.getVersionMajor() &&
+            hdr.getMinor() != TransportConstants.getVersionMinor())
+        {
+            throw new RuntimeException("version missmatch: " + hdr);
+        }
+    }
 
 }

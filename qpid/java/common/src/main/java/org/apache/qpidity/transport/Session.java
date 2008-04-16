@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.apache.qpidity.transport.Option.*;
 
 /**
  * Session
@@ -56,23 +57,34 @@ public class Session extends Invoker
     private static boolean ENABLE_REPLAY = false;
     private static final Logger log = Logger.get(Session.class);
 
+    private byte[] name;
+    private long timeout = 60000;
+
     // channel may be null
     Channel channel;
 
     // incoming command count
-    private long commandsIn = 0;
+    long commandsIn = 0;
     // completed incoming commands
     private final RangeSet processed = new RangeSet();
-    private long processedMark = -1;
     private Range syncPoint = null;
 
     // outgoing command count
     private long commandsOut = 0;
     private Map<Long,Method> commands = new HashMap<Long,Method>();
-    private long mark = 0;
+    private long maxComplete = -1;
 
     private AtomicBoolean closed = new AtomicBoolean(false);
 
+    public Session(byte[] name)
+    {
+        this.name = name;
+    }
+
+    public byte[] getName()
+    {
+        return name;
+    }
 
     public Map<Long,Method> getOutstandingCommands()
     {
@@ -133,25 +145,12 @@ public class Session extends Invoker
 
    public void flushProcessed()
     {
-        boolean first = true;
-        RangeSet rest = new RangeSet();
+        RangeSet copy;
         synchronized (processed)
         {
-            for (Range r: processed)
-            {
-                if (first && r.includes(processedMark))
-                {
-                    processedMark = r.getUpper();
-                }
-                else
-                {
-                    rest.add(r);
-                }
-
-                first = false;
-            }
+            copy = processed.copy();
         }
-        executionComplete(processedMark, rest);
+        sessionCompleted(copy);
     }
 
     void syncPoint()
@@ -193,22 +192,16 @@ public class Session extends Invoker
         log.debug("%s complete(%d, %d)", this, lower, upper);
         synchronized (commands)
         {
-            for (long id = lower; id <= upper; id++)
+            for (long id = maxComplete; id <= upper; id++)
             {
                 commands.remove(id);
             }
+            if (lower <= maxComplete + 1)
+            {
+                maxComplete = Math.max(maxComplete, upper);
+            }
             commands.notifyAll();
             log.debug("%s   commands remaining: %s", this, commands);
-        }
-    }
-
-    void complete(long mark)
-    {
-        synchronized (commands)
-        {
-            complete(this.mark, mark);
-            this.mark = mark;
-            commands.notifyAll();
         }
     }
 
@@ -218,9 +211,15 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                // You only need to keep the command if you need command level replay.
-                // If not we only need to keep track of commands to make sync work
-                commands.put(commandsOut++,(ENABLE_REPLAY?m:null));
+                long next = commandsOut++;
+                if (next == 0)
+                {
+                    sessionCommandPoint(0, 0);
+                }
+                if (ENABLE_REPLAY)
+                {
+                    commands.put(next, m);
+                }
                 channel.method(m);
             }
         }
@@ -230,7 +229,7 @@ public class Session extends Invoker
         }
     }
 
-     public void header(Header header)
+    public void header(Header header)
     {
         channel.header(header);
     }
@@ -269,21 +268,32 @@ public class Session extends Invoker
 
     public void sync()
     {
+        sync(timeout);
+    }
+
+    public void sync(long timeout)
+    {
         log.debug("%s sync()", this);
         synchronized (commands)
         {
             long point = commandsOut - 1;
 
-            if (mark < point)
+            if (maxComplete < point)
             {
-                executionSync();
+                ExecutionSync sync = new ExecutionSync();
+                sync.setSync(true);
+                invoke(sync);
             }
 
-            while (!closed.get() && mark < point)
+            long start = System.currentTimeMillis();
+            long elapsed = 0;
+            while (!closed.get() && elapsed < timeout && maxComplete < point)
             {
                 try {
-                    log.debug("%s   waiting for[%d]: %s", this, point, commands);
-                    commands.wait();
+                    log.debug("%s   waiting for[%d]: %d, %s", this, point,
+                              maxComplete, commands);
+                    commands.wait(timeout - elapsed);
+                    elapsed = System.currentTimeMillis() - start;
                 }
                 catch (InterruptedException e)
                 {
@@ -291,9 +301,16 @@ public class Session extends Invoker
                 }
             }
 
-            if (mark < point)
+            if (maxComplete < point)
             {
-                throw new RuntimeException("session closed");
+                if (closed.get())
+                {
+                    throw new RuntimeException("session closed");
+                }
+                else
+                {
+                    throw new RuntimeException("timed out waiting for sync");
+                }
             }
         }
     }
@@ -346,16 +363,19 @@ public class Session extends Invoker
             }
         }
 
-        public T get(long timeout, int nanos)
+        public T get(long timeout)
         {
             synchronized (this)
             {
-                while (!closed.get() && !isDone())
+                long start = System.currentTimeMillis();
+                long elapsed = 0;
+                while (!closed.get() && timeout - elapsed > 0 && !isDone())
                 {
                     try
                     {
                         log.debug("%s waiting for result: %s", Session.this, this);
-                        wait(timeout, nanos);
+                        wait(timeout - elapsed);
+                        elapsed = System.currentTimeMillis() - start;
                     }
                     catch (InterruptedException e)
                     {
@@ -364,22 +384,23 @@ public class Session extends Invoker
                 }
             }
 
-            if (!isDone())
+            if (isDone())
+            {
+                return result;
+            }
+            else if (closed.get())
             {
                 throw new RuntimeException("session closed");
             }
-
-            return result;
-        }
-
-        public T get(long timeout)
-        {
-            return get(timeout, 0);
+            else
+            {
+                return null;
+            }
         }
 
         public T get()
         {
-            return get(0);
+            return get(timeout);
         }
 
         public boolean isDone()
@@ -396,7 +417,8 @@ public class Session extends Invoker
 
     public void close()
     {
-        sessionClose();
+        sessionRequestTimeout(0);
+        sessionDetach(name);
         // XXX: channel.close();
     }
 

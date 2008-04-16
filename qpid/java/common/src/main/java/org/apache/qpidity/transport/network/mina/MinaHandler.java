@@ -200,7 +200,7 @@ public class MinaHandler<E> implements IoHandler
                                            ConnectionDelegate delegate)
     {
         return connect(host, port, new ConnectionBinding
-                       (delegate, InputHandler.State.FRAME_HDR));
+                       (delegate, InputHandler.State.PROTO_HDR));
     }
 
     private static class ConnectionBinding

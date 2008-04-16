@@ -41,8 +41,8 @@ public interface Session
 {
     public static final short TRANSFER_ACQUIRE_MODE_NO_ACQUIRE = 1;
     public static final short TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE = 0;
-    public static final short TRANSFER_CONFIRM_MODE_REQUIRED = 1;
-    public static final short TRANSFER_CONFIRM_MODE_NOT_REQUIRED = 0;
+    public static final short TRANSFER_CONFIRM_MODE_REQUIRED = 0;
+    public static final short TRANSFER_CONFIRM_MODE_NOT_REQUIRED = 1;
     public static final short MESSAGE_FLOW_MODE_CREDIT = 0;
     public static final short MESSAGE_FLOW_MODE_WINDOW = 1;
     public static final short MESSAGE_FLOW_UNIT_MESSAGE = 0;
@@ -63,17 +63,11 @@ public interface Session
      */
     public void sync();
 
-    /**
-     * Close this session and any associated resources.
-     */
-    public void sessionClose();
+    public void sessionDetach(byte[] name);
 
-    /**
-     * Suspend this session resulting in interrupting the traffic with the broker.
-     * <p> The session timer will start to tick in suspend.
-     * <p> When a session is suspend any operation of this session and of the associated resources are unavailable.
-     */
-    public void sessionSuspend();
+    public void sessionRequestTimeout(long expiry);
+
+    public byte[] getName();
 
     //------------------------------------------------------
     //                 Messaging methods
@@ -177,7 +171,7 @@ public interface Session
      *                    is acquired when the transfer starts
      *                    </ul>
      */
-    public void messageTransfer(String destination, short confirmMode, short acquireMode);
+    public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode);
 
     /**
      * Add a set of headers the following headers to the message being sent.
@@ -301,7 +295,7 @@ public interface Session
      * @param mode        <ul> <li>credit ({@link Session#MESSAGE_FLOW_MODE_CREDIT}): choose credit based flow control
      *                    <li> window ({@link Session#MESSAGE_FLOW_MODE_WINDOW}): choose window based flow control</ul>
      */
-    public void messageFlowMode(String destination, short mode);
+    public void messageSetFlowMode(String destination, MessageFlowMode mode);
 
 
     /**
@@ -322,7 +316,7 @@ public interface Session
      *                    </ul>
      * @param value       Number of credits, a value of 0 indicates an infinite amount of credit.
      */
-    public void messageFlow(String destination, short unit, long value);
+    public void messageFlow(String destination, MessageCreditUnit unit, long value);
 
     /**
      * Forces the broker to exhaust its credit supply.
@@ -364,24 +358,7 @@ public interface Session
      *               failed).
      * @param text   String describing the reason for a message transfer rejection.
      */
-    public void messageReject(RangeSet ranges, int code, String text);
-
-    /**
-     * This method asks the broker to redeliver all unacknowledged messages on a specified session.
-     * Zero or more messages may be redelivered. This method is only allowed on non-transacted
-     * sessions.
-     * <p> Following are valid options:
-     * <ul>
-     * <li>{@link Option#REQUEUE}: <p>IIf this field is not set, the message will be redelivered to the original recipient.
-     * If this option is ser, the server will attempt to requeue the message, potentially then delivering it
-     * to an alternative subscriber.
-     * <p/>
-     * </ul>
-     *
-     * @param _options see available options
-     */
-    public void messageRecover(Option... _options);
-
+    public void messageReject(RangeSet ranges, MessageRejectCode code, String text);
 
     /**
      * As it is possible that the broker does not manage to reject some messages, after completion of
@@ -407,31 +384,9 @@ public interface Session
      * The outcome of the acquisition is returned as an array of ranges of qcquired messages.
      * <p> This method should only be called on non-acquired messages.
      *
-     * @param mode   One of: <ul>
-     *               <li> any ({@link Session#MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE}): acquire any available
-     *               messages for consumption
-     *               <li> all ({@link Session#MESSAGE_ACQUIRE_MESSAGES_IF_ALL_ARE_AVAILABLE}): only acquire messages
-     *               if all are available for consumption
-     *               </ul>
      * @param ranges Ranges of messages to be acquired.
      */
-    public void messageAcquire(RangeSet ranges, short mode);
-
-    /**
-     * As it is possible that the broker does not manage to acquire some messages, after completion of
-     * {@link Session#messageAcquire} this method will return the ranges of acquired messages.
-     * <p> Note that {@link Session#messageAcquire} and this methods are asynchronous therefore for accessing to the
-     * previously acquired messages this method must be invoked in conjunction with {@link Session#sync()}.
-     * <p> A recommended invocation sequence would be:
-     * <ul>
-     * <li> {@link Session#messageAcquire}
-     * <li> {@link Session#sync()}
-     * <li> {@link Session#getAccquiredMessages()}
-     * </ul>
-     *
-     * @return returns the message ranges marked by the broker as acquired.
-     */
-    public RangeSet getAccquiredMessages();
+    public Future<Acquired> messageAcquire(RangeSet ranges);
 
     /**
      * Give up responsibility for processing ranges of messages.
@@ -439,7 +394,7 @@ public interface Session
      *
      * @param ranges Ranges of messages to be released.
      */
-    public void messageRelease(RangeSet ranges);
+    public void messageRelease(RangeSet ranges, Option ... options);
 
     // -----------------------------------------------
     //            Local transaction methods
@@ -519,7 +474,7 @@ public interface Session
      *                     routing keys depends on the exchange implementation.
      * @param arguments    Used for backward compatibility
      */
-    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
+    public void exchangeBind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
 
     /**
      * Unbind a queue from an exchange.
@@ -527,9 +482,8 @@ public interface Session
      * @param queueName    Specifies the name of the queue to unbind.
      * @param exchangeName The name of the exchange to unbind from.
      * @param routingKey   Specifies the routing key of the binding to unbind.
-     * @param arguments    Used for backward compatibility
      */
-    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
+    public void exchangeUnbind(String queueName, String exchangeName, String routingKey);
 
     /**
      * This method removes all messages from a queue. It does not cancel consumers. Purged messages
@@ -582,8 +536,8 @@ public interface Session
      * @param arguments  bacward compatibilties params.
      * @return Information on the specified binding.
      */
-    public Future<BindingQueryResult> bindingQuery(String exchange, String queue, String routingKey,
-                                                   Map<String, Object> arguments);
+    public Future<ExchangeBoundResult> exchangeBound(String exchange, String queue, String routingKey,
+                                                     Map<String, Object> arguments);
 
     // --------------------------------------
     //              exhcange methods

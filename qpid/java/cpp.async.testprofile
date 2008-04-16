@@ -1,6 +1,6 @@
 broker.version=0-10
 broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --log-output ${build.data}/broker.log --load-module ${project.root}/../../cppStore/cpp/lib/.libs/libbdbstore.so --store-async yes
-broker.clean=${build.data}
+broker.clean=${project.root}/clean-dir ${build.data}
 java.naming.provider.url=${project.root}/test-provider.properties
 max_prefetch=1000
 test.excludes=true
