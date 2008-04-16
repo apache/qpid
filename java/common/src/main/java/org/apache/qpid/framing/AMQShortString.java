@@ -90,7 +90,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private AMQShortString substring(final int from, final int to)
     {
-        return new AMQShortString(_data, from, to);
+        return new AMQShortString(_data, from+_offset, to+_offset);
     }
 
 
@@ -651,7 +651,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public int toIntValue()
     {
-        int pos = 0;
+        int pos = _offset;
         int val = 0;
 
 
@@ -660,7 +660,10 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             pos++;
         }
-        while(pos < _length)
+
+        final int end = _length + _offset;
+
+        while(pos < end)
         {
             int digit = (int) (_data[pos++] - ZERO);
             if((digit < 0) || (digit > 9))
@@ -679,7 +682,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public boolean contains(final byte b)
     {
-        for(int i = 0; i < _length; i++)
+        final int end = _length + _offset;
+        for(int i = _offset; i < end; i++)
         {
             if(_data[i] == b)
             {

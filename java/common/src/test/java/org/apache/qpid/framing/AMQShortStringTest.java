@@ -51,6 +51,53 @@ public class AMQShortStringTest extends TestCase
     }
 
 
+    public void testTokenize()
+    {
+        AMQShortString dotSeparatedWords = new AMQShortString("this.is.a.test.with.1.2.3.-numbers-and-then--dashes-");
+        AMQShortStringTokenizer dotTokenizer = dotSeparatedWords.tokenize((byte) '.');
+
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("this"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("is"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("a"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("test"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("with"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 1);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 2);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 3);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        AMQShortString dashString = dotTokenizer.nextToken();
+        assertEquals(new AMQShortString("-numbers-and-then--dashes-"),(dashString));
+
+        AMQShortStringTokenizer dashTokenizer = dashString.tokenize((byte)'-');
+        assertEquals(dashTokenizer.countTokens(), 7);
+
+        AMQShortString[] expectedResults = new AMQShortString[]
+                                                { AMQShortString.EMPTY_STRING,
+                                                  new AMQShortString("numbers"),
+                                                  new AMQShortString("and"),
+                                                  new AMQShortString("then"),
+                                                  AMQShortString.EMPTY_STRING,
+                                                  new AMQShortString("dashes"),
+                                                  AMQShortString.EMPTY_STRING };
+
+        for(int i = 0; i < 7; i++)
+        {
+            assertTrue(dashTokenizer.hasMoreTokens());
+            assertEquals(dashTokenizer.nextToken(), expectedResults[i]);
+        }
+
+        assertFalse(dotTokenizer.hasMoreTokens());
+    }
+
+
     public void testEquals()
     {
         assertEquals(GOODBYE, new AMQShortString("Goodbye"));
