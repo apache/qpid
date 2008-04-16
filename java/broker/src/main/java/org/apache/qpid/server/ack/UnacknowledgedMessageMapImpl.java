@@ -28,9 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.txn.TransactionalContext;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
@@ -51,13 +48,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         _map = new LinkedHashMap<Long, UnacknowledgedMessage>(prefetchLimit);
     }
 
-    /*public UnacknowledgedMessageMapImpl(Object lock, Map<Long, UnacknowledgedMessage> map)
-    {
-        _lock = lock;
-        _map = map;
-    } */
-
-    public void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs)
+    public void collect(Long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs)
     {
         if (multiple)
         {
@@ -213,14 +204,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    private void collect(long key, List<UnacknowledgedMessage> msgs)
+    private void collect(Long key, List<UnacknowledgedMessage> msgs)
     {
         synchronized (_lock)
         {
             for (Map.Entry<Long, UnacknowledgedMessage> entry : _map.entrySet())
             {
                 msgs.add(entry.getValue());
-                if (entry.getKey() == key)
+                if (entry.getKey().equals(key))
                 {
                     break;
                 }

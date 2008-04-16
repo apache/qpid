@@ -28,14 +28,18 @@ import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
 
 public class AllowAll implements ACLPlugin
 {
+
+    private static final Logger _logger = ACLManager.getLogger();
+
     public AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters)
     {
-        if (ACLManager.getLogger().isDebugEnabled())
+        if (_logger.isDebugEnabled())
         {
-            ACLManager.getLogger().debug("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
+            _logger.debug("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
                                         + " on " + body.getClass().getSimpleName()
                                         + (parameters == null || parameters.length == 0 ? "" : "-" + accessablesToString(parameters)));
         }

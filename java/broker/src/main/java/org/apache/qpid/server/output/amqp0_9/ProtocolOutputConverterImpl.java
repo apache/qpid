@@ -179,16 +179,21 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     private AMQBody createEncodedDeliverFrame(AMQMessage message, final int channelId, final long deliveryTag, final AMQShortString consumerTag)
             throws AMQException
     {
+
+
         final MessagePublishInfo pb = message.getMessagePublishInfo();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
 
 
-        final boolean isRedelivered = messageHandle.isRedelivered();
-        final AMQShortString exchangeName = pb.getExchange();
-        final AMQShortString routingKey = pb.getRoutingKey();
-
         final AMQBody returnBlock = new AMQBody()
         {
+
+
+
+            private final boolean _isRedelivered = messageHandle.isRedelivered();
+            private final AMQShortString _exchangeName = pb.getExchange();
+            private final AMQShortString _routingKey = pb.getRoutingKey();
+
 
             public AMQBody _underlyingBody;
 
@@ -196,9 +201,9 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             {
                 return METHOD_REGISTRY.createBasicDeliverBody(consumerTag,
                                                               deliveryTag,
-                                                              isRedelivered,
-                                                              exchangeName,
-                                                              routingKey);
+                                                              _isRedelivered,
+                                                              _exchangeName,
+                                                              _routingKey);
 
 
 

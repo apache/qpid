@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -40,7 +41,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     private MessagePublishInfo _messagePublishInfo;
 
-    private List<ContentChunk> _contentBodies = new LinkedList<ContentChunk>();
+    private List<ContentChunk> _contentBodies = new ArrayList<ContentChunk>();
 
     private boolean _redelivered;
 

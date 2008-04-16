@@ -65,8 +65,15 @@ public class ContentBody implements AMQBody
     {
         if (payload != null)
         {
-            ByteBuffer copy = payload.duplicate();
-            buffer.put(copy.rewind());
+            if(payload.isDirect() || payload.isReadOnly())
+            {            
+                ByteBuffer copy = payload.duplicate();
+                buffer.put(copy.rewind());
+            }
+            else
+            {
+                buffer.put(payload.array(),payload.arrayOffset(),payload.limit());
+            }
         }
     }
 

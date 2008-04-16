@@ -71,8 +71,17 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             while (it.hasNext())
             {
                 ContentBody cb = (ContentBody) it.next();
-                data.put(cb.payload);
-                cb.payload.release();
+                final ByteBuffer payload = cb.payload;
+                if(payload.isDirect() || payload.isReadOnly())
+                {
+                    data.put(payload);
+                }
+                else
+                {
+                    data.put(payload.array(), payload.arrayOffset(), payload.limit());
+                }
+
+                payload.release();
             }
 
             data.flip();
