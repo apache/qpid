@@ -53,7 +53,9 @@ public abstract class AMQDestination implements Destination, Referenceable
     private String _url;
     private AMQShortString _urlAsShortString;
 
-    private boolean _validated;
+    private boolean _checkedForQueueBinding;
+
+    private boolean _exchangeExistsChecked;
 
     private byte[] _byteEncoding;
     private static final int IS_DURABLE_MASK = 0x1;
@@ -202,14 +204,25 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     }
 
-    public boolean isValidated()
+    public boolean isCheckedForQueueBinding()
     {
-        return _validated;
+        return _checkedForQueueBinding;
     }
 
-    public void setValidated(boolean validated)
+    public void setCheckedForQueueBinding(boolean checkedForQueueBinding)
     {
-        _validated = validated;
+        _checkedForQueueBinding = checkedForQueueBinding;
+    }
+
+
+    public boolean isExchangeExistsChecked()
+    {
+        return _exchangeExistsChecked;
+    }
+
+    public void setExchangeExistsChecked(final boolean exchangeExistsChecked)
+    {
+        _exchangeExistsChecked = exchangeExistsChecked;
     }
 
     public String toURL()
