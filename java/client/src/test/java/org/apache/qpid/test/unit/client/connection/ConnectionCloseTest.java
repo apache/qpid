@@ -73,6 +73,13 @@ public class ConnectionCloseTest extends QpidTestCase
             receiver.close();
         }
 
+        // The finalizer is notifying connector thread waiting on a selector key.
+        // This should leave the finalizer enough time to notify those threads 
+        synchronized (this)
+        {
+            this.wait(1000);
+        }
+
         Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
 
         Map<Thread,StackTraceElement[]> delta = new HashMap<Thread,StackTraceElement[]>(after);
