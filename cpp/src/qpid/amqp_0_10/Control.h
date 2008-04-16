@@ -1,5 +1,5 @@
-#ifndef QPID_AMQP_0_10_COMPLEX_TYPES_H
-#define QPID_AMQP_0_10_COMPLEX_TYPES_H
+#ifndef QPID_AMQP_0_10_CONTROL_H
+#define QPID_AMQP_0_10_CONTROL_H
 
 /*
  *
@@ -22,23 +22,10 @@
  *
  */
 
-#include "built_in_types.h"
-#include <iosfwd>
+#include "Struct.h"
 
 namespace qpid {
 namespace amqp_0_10 {
-
-// Base classes for complex types.
-
-template <class V, class CV, class H> struct Visitable {
-    typedef V  Visitor;
-    typedef CV ConstVisitor;
-    typedef H  Holder;
-
-    virtual ~Visitable() {}
-    virtual void accept(Visitor&) = 0;
-    virtual void accept(ConstVisitor&) const = 0;
-};
 
 struct Command;
 struct Control;
@@ -58,22 +45,6 @@ struct Action {  // Base for commands & controls
     static const uint8_t PACK=2;
 };
 
-struct CommandVisitor;
-struct ConstCommandVisitor;
-struct CommandHolder;
-struct Command
-    : public Action,
-      public Visitable<CommandVisitor, ConstCommandVisitor, CommandHolder>
-{
-    using Action::getCommand;
-    Command* getCommand() { return this; }
-    uint8_t getCode() const;
-    uint8_t getClassCode() const;
-    const char* getName() const;
-    const char* getClassName() const;
-};
-std::ostream& operator<<(std::ostream&, const Command&);
-
 struct ControlVisitor;
 struct ConstControlVisitor;
 struct ControlHolder;
@@ -90,24 +61,10 @@ struct Control
 };
 std::ostream& operator<<(std::ostream&, const Control&);
 
-// Note: only coded structs inherit from Struct.
-struct StructVisitor;
-struct ConstStructVisitor;
-struct StructHolder;
-struct Struct
-    : public Visitable<StructVisitor, ConstStructVisitor, StructHolder>
-{
-    uint8_t getCode() const;
-    uint8_t getPack() const;
-    uint8_t getSize() const;
-    uint8_t getClassCode() const;
-};
-std::ostream& operator<<(std::ostream&, const Struct&);
-
 template <SegmentType E> struct ActionType;
 template <> struct ActionType<CONTROL> { typedef Control type; };
 template <> struct ActionType<COMMAND> { typedef Command type; };
     
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_AMQP_0_10_COMPLEX_TYPES_H*/
+#endif  /*!QPID_AMQP_0_10_CONTROL_H*/

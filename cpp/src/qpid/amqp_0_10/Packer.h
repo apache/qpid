@@ -123,10 +123,10 @@ class PackedDecoder {
 };
 
 /** Metafunction to compute type to contain pack bits. */
-template <int PackBytes> struct PackBitsType;
-template <> struct PackBitsType<1> { typedef uint8_t type; };
-template <> struct PackBitsType<2> { typedef uint16_t type; };
-template <> struct PackBitsType<4> { typedef uint32_t type; };
+template <int Bytes> struct UintOfSize;
+template <> struct UintOfSize<1> { typedef uint8_t type; };
+template <> struct UintOfSize<2> { typedef uint16_t type; };
+template <> struct UintOfSize<4> { typedef uint32_t type; };
 
 /**
  * Helper to serialize packed structs.
@@ -134,7 +134,7 @@ template <> struct PackBitsType<4> { typedef uint32_t type; };
 template <class T> class Packer
 {
   public:
-    typedef typename PackBitsType<T::PACK>::type Bits;
+    typedef typename UintOfSize<T::PACK>::type Bits;
 
     Packer(T& t) : data(t) {}
 
@@ -154,8 +154,38 @@ template <class T> class Packer
     }
     
 
-  private:
+  protected:
     T& data;
+};
+
+template <class T, uint8_t=T::SIZE> struct SizedPacker : public Packer<T> {
+    typedef typename UintOfSize<T::SIZE>::type Size;
+    
+    SizedPacker(T& t) : Packer<T>(t) {}
+
+    template <class S> void serialize(S& s) {
+        s.split(*this);
+    }
+
+    template <class S> void encode(S& s) const {
+        Codec::Size sizer;
+        this->data.serialize(sizer);
+        Size size=size_t(sizer)+T::PACK; // Size with pack bits.
+        s(size);
+        Packer<T>::encode(s);
+    }
+
+    template <class S> void decode(S& s) {
+        Size size;
+        s(size);
+        typename S::ScopedLimit l(s, size);
+        Packer<T>::decode(s);
+    }
+
+};
+
+template <class T> struct SizedPacker<T,0> : public Packer<T> {
+    SizedPacker(T& t) : Packer<T>(t) {}
 };
 
 }} // namespace qpid::amqp_0_10
