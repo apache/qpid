@@ -41,10 +41,10 @@ class Connection;
 class ConnectionHandler : public framing::FrameHandler
 {
     struct Handler : public framing::AMQP_ServerOperations::Connection010Handler, 
-        public framing::AMQP_ClientOperations::ConnectionHandler
+        public framing::AMQP_ClientOperations::Connection010Handler
     {
         framing::AMQP_ClientProxy::Connection010 client;
-        framing::AMQP_ServerProxy::Connection server;
+        framing::AMQP_ServerProxy::Connection010 server;
         Connection& connection;
         bool serverMode;
     
@@ -57,26 +57,24 @@ class ConnectionHandler : public framing::FrameHandler
         void heartbeat() {}
         void open(const std::string& virtualHost,
                   const framing::Array& capabilities, bool insist); 
-        void close(uint16_t replyCode, const std::string& replyText,
-                   uint16_t classId, uint16_t methodId); 
+        void close(uint16_t replyCode, const std::string& replyText); 
         void closeOk(); 
 
 
-        void start(uint8_t versionMajor,
-                   uint8_t versionMinor,
-                   const qpid::framing::FieldTable& serverProperties,
-                   const std::string& mechanisms,
-                   const std::string& locales);
+        void start(const qpid::framing::FieldTable& serverProperties,
+                   const framing::Array& mechanisms,
+                   const framing::Array& locales);
         
         void secure(const std::string& challenge);
         
         void tune(uint16_t channelMax,
-                  uint32_t frameMax,
-                  uint16_t heartbeat);
+                  uint16_t frameMax,
+                  uint16_t heartbeatMin,
+                  uint16_t heartbeatMax);
         
-        void openOk(const std::string& knownHosts);
+        void openOk(const framing::Array& knownHosts);
         
-        void redirect(const std::string& host, const std::string& knownHosts);        
+        void redirect(const std::string& host, const framing::Array& knownHosts);        
     };
     std::auto_ptr<Handler> handler;
   public:

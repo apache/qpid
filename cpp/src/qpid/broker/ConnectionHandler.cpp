@@ -26,6 +26,7 @@
 #include "qpid/framing/Connection010StartBody.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
+#include "qpid/log/Statement.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -38,9 +39,9 @@ const std::string PLAIN = "PLAIN";
 const std::string en_US = "en_US";
 }
 
-void ConnectionHandler::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId)
+void ConnectionHandler::close(ReplyCode code, const string& text, ClassId, MethodId)
 {
-    handler->client.close(code, text, classId, methodId);
+    handler->client.close(code, text);
 }
 
 void ConnectionHandler::handle(framing::AMQFrame& frame)
@@ -51,16 +52,16 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
         if (handler->serverMode) {
             handled = invoke(static_cast<AMQP_ServerOperations::Connection010Handler&>(*handler.get()), *method);
         } else {
-            handled = invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method);
+            handled = invoke(static_cast<AMQP_ClientOperations::Connection010Handler&>(*handler.get()), *method);
         }
         if (!handled) {
             handler->connection.getChannel(frame.getChannel()).in(frame);
         }
 
     }catch(ConnectionException& e){
-        handler->client.close(e.code, e.what(), method->amqpClassId(), method->amqpMethodId());
+        handler->client.close(e.code, e.what());
     }catch(std::exception& e){
-        handler->client.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
+        handler->client.close(541/*internal error*/, e.what());
     }
 }
 
@@ -116,9 +117,11 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
 }
 
         
-void ConnectionHandler::Handler::close(uint16_t /*replyCode*/, const string& /*replyText*/, 
-    uint16_t /*classId*/, uint16_t /*methodId*/)
+void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyText)
 {
+    if (replyCode != 200) {
+        QPID_LOG(warning, "Client closed connection with " << replyCode << ": " << replyText);
+    }
     client.closeOk();
     connection.getOutput().close();
 } 
@@ -128,11 +131,9 @@ void ConnectionHandler::Handler::closeOk(){
 } 
 
 
-void ConnectionHandler::Handler::start(uint8_t /*versionMajor*/,
-                                       uint8_t /*versionMinor*/,
-                                       const FieldTable& /*serverProperties*/,
-                                       const string& /*mechanisms*/,
-                                       const string& /*locales*/)
+void ConnectionHandler::Handler::start(const FieldTable& /*serverProperties*/,
+                                       const framing::Array& /*mechanisms*/,
+                                       const framing::Array& /*locales*/)
 {
     string uid = "qpidd";
     string pwd = "qpidd";
@@ -147,20 +148,21 @@ void ConnectionHandler::Handler::secure(const string& /*challenge*/)
 }
 
 void ConnectionHandler::Handler::tune(uint16_t channelMax,
-                                      uint32_t frameMax,
-                                      uint16_t heartbeat)
+                                      uint16_t frameMax,
+                                      uint16_t /*heartbeatMin*/,
+                                      uint16_t heartbeatMax)
 {
     connection.setFrameMax(frameMax);
-    connection.setHeartbeat(heartbeat);
-    server.tuneOk(channelMax, frameMax, heartbeat);
-    server.open("/", "", true);
+    connection.setHeartbeat(heartbeatMax);
+    server.tuneOk(channelMax, frameMax, heartbeatMax);
+    server.open("/", Array(), true);
 }
 
-void ConnectionHandler::Handler::openOk(const string& /*knownHosts*/)
+void ConnectionHandler::Handler::openOk(const framing::Array& /*knownHosts*/)
 {
 }
 
-void ConnectionHandler::Handler::redirect(const string& /*host*/, const string& /*knownHosts*/)
+void ConnectionHandler::Handler::redirect(const string& /*host*/, const framing::Array& /*knownHosts*/)
 {
     
 }
