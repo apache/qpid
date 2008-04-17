@@ -46,6 +46,7 @@ public:
     DeliveryProperties& getDeliveryProperties();
 
     const std::string& getData() const;
+    std::string& getData();
     const MessageProperties& getMessageProperties() const;
     const DeliveryProperties& getDeliveryProperties() const;
     bool hasMessageProperties() const;

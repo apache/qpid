@@ -101,6 +101,7 @@ libqpidamqp_0_10_la_SOURCES= \
   qpid/amqp_0_10/Array.cpp \
   qpid/amqp_0_10/Body.h \
   qpid/amqp_0_10/Command.h \
+  qpid/amqp_0_10/CommmandPacker.h \
   qpid/amqp_0_10/Control.h \
   qpid/amqp_0_10/Header.h \
   qpid/amqp_0_10/Header.cpp \
@@ -118,6 +119,7 @@ libqpidamqp_0_10_la_SOURCES= \
   qpid/amqp_0_10/Struct32.cpp \
   qpid/amqp_0_10/Unit.h \
   qpid/amqp_0_10/Unit.cpp \
+  qpid/amqp_0_10/UnitHandler.h \
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
   qpid/amqp_0_10/UnknownStruct.h \
@@ -300,6 +302,7 @@ nobase_include_HEADERS = \
   qpid/Url.h \
   qpid/InlineVector.h \
   qpid/InlineAllocator.h \
+  qpid/log/Statement.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
