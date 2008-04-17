@@ -39,6 +39,7 @@
 #include <numeric>
 #include <algorithm>
 #include <unistd.h>
+#include <math.h>
 
 
 using namespace std;
@@ -367,7 +368,7 @@ struct Controller : public Client {
                 double time=secs(start, end);
                 double txrate=opts.transfers/time;
                 double mbytes=(txrate*opts.size)/(1024*1024);
-                
+
                 if (!opts.summary) {
                     cout << endl << "Total " << opts.transfers << " transfers of "
                          << opts.size << " bytes in "

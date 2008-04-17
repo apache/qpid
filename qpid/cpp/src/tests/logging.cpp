@@ -37,7 +37,7 @@ using namespace std;
 using namespace boost;
 using namespace qpid::log;
 
-BOOST_AUTO_TEST_CASE(testStatementInit) {
+QPID_AUTO_TEST_CASE(testStatementInit) {
     Statement s=QPID_LOG_STATEMENT_INIT(debug); int line=__LINE__;
     BOOST_CHECK(!s.enabled);
     BOOST_CHECK_EQUAL(string(__FILE__), s.file);
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(testStatementInit) {
 }
 
 
-BOOST_AUTO_TEST_CASE(testSelector_enable) {
+QPID_AUTO_TEST_CASE(testSelector_enable) {
     Selector s;
     // Simple enable
     s.enable(debug,"foo");
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(testSelector_enable) {
     BOOST_CHECK(s.isEnabled(critical, "oops"));
 }
 
-BOOST_AUTO_TEST_CASE(testStatementEnabled) {
+QPID_AUTO_TEST_CASE(testStatementEnabled) {
     // Verify that the singleton enables and disables static
     // log statements.
     Logger& l = Logger::instance();
@@ -109,7 +109,7 @@ struct TestOutput : public Logger::Output {
 
 using boost::assign::list_of;
 
-BOOST_AUTO_TEST_CASE(testLoggerOutput) {
+QPID_AUTO_TEST_CASE(testLoggerOutput) {
     Logger l;
     l.clear();
     l.select(Selector(debug));
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(testLoggerOutput) {
     BOOST_CHECK_EQUAL(expect, out2->msg);
 }
 
-BOOST_AUTO_TEST_CASE(testMacro) {
+QPID_AUTO_TEST_CASE(testMacro) {
     Logger& l=Logger::instance();
     l.clear();
     l.select(Selector(info));
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(testMacro) {
     BOOST_CHECK_EQUAL(expect, out->msg);
 }
 
-BOOST_AUTO_TEST_CASE(testLoggerFormat) {
+QPID_AUTO_TEST_CASE(testLoggerFormat) {
     Logger& l = Logger::instance();
     l.select(Selector(critical));
     TestOutput* out=new TestOutput(l);
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
     BOOST_CHECK_REGEX(re, out->last());
 }
 
-BOOST_AUTO_TEST_CASE(testOstreamOutput) {
+QPID_AUTO_TEST_CASE(testOstreamOutput) {
     Logger& l=Logger::instance();
     l.clear();
     l.select(Selector(error));
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(testOstreamOutput) {
 }
 
 #if 0 // This test requires manual intervention. Normally disabled.
-BOOST_AUTO_TEST_CASE(testSyslogOutput) {
+QPID_AUTO_TEST_CASE(testSyslogOutput) {
     Logger& l=Logger::instance();
     l.clear();
     l.select(Selector(info));
@@ -225,7 +225,7 @@ clock_t timeLoop(int times, int (*fp)()) {
 // forever under valgrind. Not friendly for regular test runs.
 // 
 #if 0
-BOOST_AUTO_TEST_CASE(testOverhead) {
+QPID_AUTO_TEST_CASE(testOverhead) {
     // Ensure that the ratio of CPU time for an incrementing loop
     // with and without disabled log statements is in  acceptable limits.
     // 
@@ -252,7 +252,7 @@ Statement statement(
 
 #define ARGC(argv) (sizeof(argv)/sizeof(char*))
 
-BOOST_AUTO_TEST_CASE(testOptionsParse) {
+QPID_AUTO_TEST_CASE(testOptionsParse) {
     const char* argv[]={
         0,
         "--log-enable", "error+:foo",
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(testOptionsParse) {
     BOOST_CHECK(opts.thread);
 }
 
-BOOST_AUTO_TEST_CASE(testOptionsDefault) {
+QPID_AUTO_TEST_CASE(testOptionsDefault) {
     Options opts;
     vector<string> expect=list_of("stderr");
     BOOST_CHECK_EQUAL(expect, opts.outputs);
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(testOptionsDefault) {
     BOOST_CHECK(!(opts.source || opts.function || opts.thread));
 }
 
-BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
+QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
     const char* argv[]={
         0,
         "--log-enable", "error+:foo",
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
     BOOST_CHECK(s.isEnabled(critical, "foo"));
 }
 
-BOOST_AUTO_TEST_CASE(testOptionsFormat) {
+QPID_AUTO_TEST_CASE(testOptionsFormat) {
     Logger l;
     {
         Options opts;
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(testOptionsFormat) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
+QPID_AUTO_TEST_CASE(testLoggerConfigure) {
     Logger& l=Logger::instance();
     l.clear();
     Options opts;
@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     unlink("logging.tmp");
 }
 
-BOOST_AUTO_TEST_CASE(testQuoteNonPrintable) {
+QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
     l.clear();
     Options opts;

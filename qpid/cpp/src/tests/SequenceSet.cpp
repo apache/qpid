@@ -50,7 +50,7 @@ struct RangeExpectations
     }
 };
 
-BOOST_AUTO_TEST_CASE(testAdd) {
+QPID_AUTO_TEST_CASE(testAdd) {
     SequenceSet s;
     s.add(2);
     s.add(8,8);
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(testAdd) {
     RangeExpectations().expect(2, 10).check(t);
 }
 
-BOOST_AUTO_TEST_CASE(testAdd2) {
+QPID_AUTO_TEST_CASE(testAdd2) {
     SequenceSet s;
     s.add(7,6);
     s.add(4,4);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(testAdd2) {
     RangeExpectations().expect(2, 10).check(s);
 }
 
-BOOST_AUTO_TEST_CASE(testRemove) {
+QPID_AUTO_TEST_CASE(testRemove) {
     SequenceSet s;
     SequenceSet t;
     s.add(0, 10);

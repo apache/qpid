@@ -70,7 +70,7 @@ class Holder : public framing::Blob<Size, BaseHeld> {
 
     template <class S> void serialize(S& s) {
         s.split(*this);
-        apply(s, *this->get());
+        qpid::amqp_0_10::apply(s, *this->get());
     }
 
     template <class T> T* getIf() {
@@ -92,7 +92,7 @@ class Holder : public framing::Blob<Size, BaseHeld> {
 template <class D, class B, size_t S>
 Holder<D,B,S>& Holder<D,B,S>::operator=(const B& rhs) {
     Assign assign(*this);
-    apply(assign, rhs);
+    qpid::amqp_0_10::apply(assign, rhs);
     return *this;
 }
 

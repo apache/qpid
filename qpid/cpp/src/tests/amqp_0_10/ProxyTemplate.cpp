@@ -34,7 +34,7 @@ struct ToAny {
 
 struct AnyProxy : public ProxyTemplate<ToAny, boost::any> {};
 
-BOOST_AUTO_TEST_CASE(testAnyProxy) {
+QPID_AUTO_TEST_CASE(testAnyProxy) {
     AnyProxy p;
     boost::any a=p.connectionTune(1,2,3,4);
     BOOST_CHECK_EQUAL(a.type().name(), typeid(connection::Tune).name());

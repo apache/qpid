@@ -75,11 +75,13 @@ public:
     const framing::FrameSet& getFrames() const { return frames; } 
 
     template <class T> T* getProperties() {
-        return frames.getHeaders()->get<T>(true);
+        qpid::framing::AMQHeaderBody* p = frames.getHeaders();
+        return p->get<T>(true);
     }
 
     template <class T> const T* getProperties() const {
-        return frames.getHeaders()->get<T>();
+        qpid::framing::AMQHeaderBody* p = frames.getHeaders();
+        return p->get<T>(true);
     }
 
     template <class T> const T* getMethod() const {

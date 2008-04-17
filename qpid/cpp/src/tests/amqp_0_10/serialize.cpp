@@ -83,7 +83,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 
 // FIXME aconway 2008-04-15: 
 // // TODO aconway 2008-02-20: should test 64 bit integrals for order also.
-// BOOST_AUTO_TEST_CASE(testNetworkByteOrder) {
+// QPID_AUTO_TEST_CASE(testNetworkByteOrder) {
 //     string data;
 
 //     uint32_t l = 0x11223344;
@@ -99,7 +99,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(s, s2);
 // }
 
-// BOOST_AUTO_TEST_CASE(testSetLimit) {
+// QPID_AUTO_TEST_CASE(testSetLimit) {
 //     typedef Codec::Encoder<back_insert_iterator<string> > Encoder;
 //     string data;
 //     Encoder encode(back_inserter(data), 3);
@@ -111,7 +111,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(data, "123");
 // }
 
-// BOOST_AUTO_TEST_CASE(testScopedLimit) {
+// QPID_AUTO_TEST_CASE(testScopedLimit) {
 //     typedef Codec::Encoder<back_insert_iterator<string> > Encoder;
 //     string data;
 //     Encoder encode(back_inserter(data), 10);
@@ -153,7 +153,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 // void testValue(Map& m) { m["s"] = Str8("foobar"); m["b"] = true; m["c"] = uint16_t(42); }
 
 // //typedef mpl::vector<Str8, Str16>::type TestTypes;
-// BOOST_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
+// QPID_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
 // {
 //     string data;
 //     T t;
@@ -178,7 +178,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     template <class S> void serialize(S& s) { s.split(*this); }
 // };
 
-// BOOST_AUTO_TEST_CASE(testSplit) {
+// QPID_AUTO_TEST_CASE(testSplit) {
 //     string data;
 //     TestMe t1('x');
 //     Codec::encode(std::back_inserter(data))(t1);
@@ -193,7 +193,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(t2.value, 'x');
 // }
 
-// BOOST_AUTO_TEST_CASE(testControlEncodeDecode) {
+// QPID_AUTO_TEST_CASE(testControlEncodeDecode) {
 //     string data;
 //     Control::Holder h(in_place<connection::Tune>(1,2,3,4));
 //     Codec::encode(std::back_inserter(data))(h);
@@ -214,7 +214,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(tune.heartbeatMax, 4u);
 // }
 
-// BOOST_AUTO_TEST_CASE(testStruct32) {
+// QPID_AUTO_TEST_CASE(testStruct32) {
 //     message::DeliveryProperties dp;
 //     dp.priority=message::MEDIUM;
 //     dp.routingKey="foo";
@@ -236,7 +236,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(dp2->routingKey, "foo");
 // }
 
-// BOOST_AUTO_TEST_CASE(testStruct32Unknown) {
+// QPID_AUTO_TEST_CASE(testStruct32Unknown) {
 //     // Verify we can recode an unknown struct unchanged.
 //     Struct32 s;
 //     string data;
@@ -260,7 +260,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 
 // Packer<DummyPacked> serializable(DummyPacked& d) { return Packer<DummyPacked>(d); }
 
-// BOOST_AUTO_TEST_CASE(testPackBits) {
+// QPID_AUTO_TEST_CASE(testPackBits) {
 //     DummyPacked d('a','b','c');
 //     BOOST_CHECK_EQUAL(packBits(d), 7u);
 //     d.j = boost::none;
@@ -270,7 +270,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 // }
 
 
-// BOOST_AUTO_TEST_CASE(testPacked) {
+// QPID_AUTO_TEST_CASE(testPacked) {
 //     string data;
 
 //     Codec::encode(back_inserter(data))('a')(boost::optional<char>('b'))(boost::optional<char>())('c');
@@ -297,7 +297,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(dummy.k, 'y');
 // }
 
-// BOOST_AUTO_TEST_CASE(testUnitControl) {
+// QPID_AUTO_TEST_CASE(testUnitControl) {
 //     string data;
 //     Control::Holder h(in_place<connection::Tune>(1,2,3,4));
 //     Codec::encode(std::back_inserter(data))(h);
@@ -313,7 +313,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(data, data2);
 // }
 
-// BOOST_AUTO_TEST_CASE(testArray) {
+// QPID_AUTO_TEST_CASE(testArray) {
 //     ArrayDomain<char> a;
 //     a.resize(3, 'x');
 //     string data;
@@ -338,7 +338,7 @@ typedef concat2<FixedSizeTypes, VariableSizeTypes>::type AllTypes;
 //     BOOST_CHECK_EQUAL(data,data2);
 // }
 
-// BOOST_AUTO_TEST_CASE(testStruct) {
+// QPID_AUTO_TEST_CASE(testStruct) {
 //     string data;
 
 //     message::DeliveryProperties dp;
@@ -420,7 +420,7 @@ struct RecodeUnit {
     }
 };
 
-BOOST_AUTO_TEST_CASE(testSerializeAllSegmentTypes) {
+QPID_AUTO_TEST_CASE(testSerializeAllSegmentTypes) {
     RecodeUnit recode;
     allSegmentTypes(recode);
 }
