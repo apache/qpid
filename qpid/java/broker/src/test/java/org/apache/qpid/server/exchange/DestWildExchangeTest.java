@@ -38,8 +38,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.LinkedList;
 
 public class DestWildExchangeTest extends TestCase
@@ -565,8 +563,8 @@ public class DestWildExchangeTest extends TestCase
         MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
 
         TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
-                                                                       new LinkedList<RequiredDeliveryException>(),
-                                                                       new HashSet<Long>());
+                                                                       new LinkedList<RequiredDeliveryException>()
+        );
 
         AMQMessage message = new AMQMessage(0L, info, trancontext);
         message.setContentHeaderBody(new ContentHeaderBody());

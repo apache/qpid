@@ -39,6 +39,7 @@ import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
+import java.util.Enumeration;
 
 /**
  * @author Apache Software Foundation
@@ -84,6 +85,12 @@ public class JMSPropertiesTest extends QpidTestCase
         sentMsg.setJMSType(JMS_TYPE);
         sentMsg.setJMSReplyTo(JMS_REPLY_TO);
 
+        String JMSXGroupID_VALUE = "group";
+        sentMsg.setStringProperty("JMSXGroupID", JMSXGroupID_VALUE);
+        
+        int JMSXGroupSeq_VALUE = 1;
+        sentMsg.setIntProperty("JMSXGroupSeq", JMSXGroupSeq_VALUE);
+
         // send it
         producer.send(sentMsg);
 
@@ -100,6 +107,30 @@ public class JMSPropertiesTest extends QpidTestCase
         // assertEquals("JMS Delivery Mode mismatch",sentMsg.getJMSDeliveryMode(),rm.getJMSDeliveryMode());
         assertEquals("JMS Type mismatch", sentMsg.getJMSType(), rm.getJMSType());
         assertEquals("JMS Reply To mismatch", sentMsg.getJMSReplyTo(), rm.getJMSReplyTo());
+        assertTrue("JMSMessageID Does not start ID:", rm.getJMSMessageID().startsWith("ID:"));
+
+        //Validate that the JMSX values are correct
+        assertEquals("JMSXGroupID is not as expected:", JMSXGroupID_VALUE, rm.getStringProperty("JMSXGroupID"));
+        assertEquals("JMSXGroupSeq is not as expected:", JMSXGroupSeq_VALUE, rm.getIntProperty("JMSXGroupSeq"));
+
+        boolean JMSXGroupID_Available = false;
+        boolean JMSXGroupSeq_Available = false;
+        Enumeration props = con.getMetaData().getJMSXPropertyNames();
+        while (props.hasMoreElements())
+        {
+            String name = (String) props.nextElement();
+            if (name.equals("JMSXGroupID"))
+            {
+                JMSXGroupID_Available = true;
+            }
+            if (name.equals("JMSXGroupSeq"))
+            {
+                JMSXGroupSeq_Available = true;
+            }
+        }
+
+        assertTrue("JMSXGroupID not available.",JMSXGroupID_Available);
+        assertTrue("JMSXGroupSeq not available.",JMSXGroupSeq_Available);
 
         con.close();
     }

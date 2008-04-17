@@ -36,7 +36,6 @@ import org.apache.qpid.AMQException;
 import junit.framework.TestCase;
 
 import java.util.LinkedList;
-import java.util.HashSet;
 
 class MessageTestHelper extends TestCase
 {
@@ -45,8 +44,8 @@ class MessageTestHelper extends TestCase
     private final StoreContext _storeContext = new StoreContext();
 
     private final TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
-                                                                                 new LinkedList<RequiredDeliveryException>(),
-                                                                                 new HashSet<Long>());
+                                                                                 new LinkedList<RequiredDeliveryException>()
+    );
 
     MessageTestHelper() throws Exception
     {

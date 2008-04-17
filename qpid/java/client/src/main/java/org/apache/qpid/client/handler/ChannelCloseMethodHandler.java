@@ -104,6 +104,11 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener<Chann
         }
         // fixme why is this only done when the close is expected...
         // should the above forced closes not also cause a close?
+        // ----------
+        // Closing the session only when it is expected allows the errors to be processed
+        // Calling this here will prevent failover. So we should do this for all exceptions
+        // that should never cause failover. Such as authentication errors.
+
         session.channelClosed(channelId, errorCode, String.valueOf(reason));
     }
 }

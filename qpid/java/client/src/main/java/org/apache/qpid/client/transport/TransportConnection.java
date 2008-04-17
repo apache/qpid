@@ -340,9 +340,15 @@ public class TransportConnection
         VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
         if (pipe != null)
         {
-            _logger.info("Killing VM Broker:" + port);
-            _inVmPipeAddress.remove(port);
-            _acceptor.unbind(pipe);
+            VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
+            if (pipe != null)
+            {
+                _logger.info("Killing VM Broker:" + port);
+                _inVmPipeAddress.remove(port);
+                // This does need to be sychronized as otherwise mina can hang
+                // if a new connection is made
+                _acceptor.unbind(pipe);
+            }
         }
     }
 

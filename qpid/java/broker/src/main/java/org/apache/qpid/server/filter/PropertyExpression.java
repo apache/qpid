@@ -67,7 +67,7 @@ public class PropertyExpression implements Expression
                                                          message.getContentHeaderBody().properties;
                                                  AMQShortString replyTo = _properties.getReplyTo();
 
-                                                 return (replyTo == null) ? null : replyTo.toString();
+                                                 return (replyTo == null) ? null : replyTo;
                                              }
                                              catch (AMQException e)
                                              {
@@ -91,7 +91,7 @@ public class PropertyExpression implements Expression
                                                          message.getContentHeaderBody().properties;
                                                  AMQShortString type = _properties.getType();
 
-                                                 return (type == null) ? null : type.toString();
+                                                 return (type == null) ? null : type;
                                              }
                                              catch (AMQException e)
                                              {
@@ -206,7 +206,7 @@ public class PropertyExpression implements Expression
                                                          message.getContentHeaderBody().properties;
                                                  AMQShortString correlationId = _properties.getCorrelationId();
 
-                                                 return (correlationId == null) ? null : correlationId.toString();
+                                                 return (correlationId == null) ? null : correlationId;
                                              }
                                              catch (AMQException e)
                                              {
@@ -251,12 +251,12 @@ public class PropertyExpression implements Expression
 
     }
 
-    private final String name;
+    private final AMQShortString name;
     private final Expression jmsPropertyExpression;
 
     public PropertyExpression(String name)
     {
-        this.name = name;
+        this.name = new AMQShortString(name);
         jmsPropertyExpression = JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
@@ -283,7 +283,7 @@ public class PropertyExpression implements Expression
         }
     }
 
-    public String getName()
+    public AMQShortString getName()
     {
         return name;
     }
@@ -293,7 +293,7 @@ public class PropertyExpression implements Expression
      */
     public String toString()
     {
-        return name;
+        return name.toString();
     }
 
     /**

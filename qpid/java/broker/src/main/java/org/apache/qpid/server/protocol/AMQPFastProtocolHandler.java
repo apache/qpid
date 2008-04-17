@@ -265,10 +265,6 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
      */
     public void messageSent(IoSession protocolSession, Object object) throws Exception
     {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Message sent: " + object);
-        }
     }
 
     protected boolean isSSLClient(ConnectorConfiguration connectionConfig,

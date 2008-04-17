@@ -155,6 +155,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private void declareDestination(AMQDestination destination)
     {
+
         ExchangeDeclareBody body = getSession().getMethodRegistry().createExchangeDeclareBody(_session.getTicket(),
                                                                                               destination.getExchangeName(),
                                                                                               destination.getExchangeClass(),
@@ -425,7 +426,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                                    + ((destination != null) ? destination.getClass() : null));
         }
 
-        declareDestination((AMQDestination) destination);
+        AMQDestination amqDestination = (AMQDestination) destination;
+        if(!amqDestination.isExchangeExistsChecked())
+        {
+            declareDestination(amqDestination);
+            amqDestination.setExchangeExistsChecked(true);
+        }
     }
 
     protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,

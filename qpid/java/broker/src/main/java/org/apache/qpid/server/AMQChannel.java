@@ -134,7 +134,7 @@ public class AMQChannel
         _messageStore = messageStore;
 
         // by default the session is non-transactional
-        _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
+        _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
     }
 
     /** Sets this channel to be part of a local transaction */
@@ -508,7 +508,7 @@ public class AMQChannel
                 // if (_nonTransactedContext == null)
                 {
                     _nonTransactedContext =
-                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
+                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
                 }
 
                 deliveryContext = _nonTransactedContext;
@@ -571,7 +571,7 @@ public class AMQChannel
                 // if (_nonTransactedContext == null)
                 {
                     _nonTransactedContext =
-                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
+                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
                 }
 
                 deliveryContext = _nonTransactedContext;
@@ -798,7 +798,7 @@ public class AMQChannel
             if (_nonTransactedContext == null)
             {
                 _nonTransactedContext =
-                        new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
+                        new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
             }
 
             deliveryContext = _nonTransactedContext;

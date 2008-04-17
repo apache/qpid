@@ -70,7 +70,7 @@ public class AMQException extends Exception
     }
 
     @Deprecated
-    public AMQException(String msg, Exception cause)
+    public AMQException(String msg, Throwable cause)
     {
         this(null, msg, cause);
     }
@@ -84,5 +84,10 @@ public class AMQException extends Exception
     public AMQConstant getErrorCode()
     {
         return _errorCode;
+    }
+
+    public boolean isHardError()
+    {
+        return true;
     }
 }

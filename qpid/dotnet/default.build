@@ -68,7 +68,7 @@
 
     <!-- Runs 'svnversion' to get the repository revision into the build property 'build.svnversion'. -->
     <target name="svnversion" description="Runs svnversion to get the current repository version into a build script property.">
-        <exec program="svnversion.exe" output="svnversion_tmp.txt">
+        <exec program="svnversion" output="svnversion_tmp.txt">
             <arg value="-n"/>
         </exec>
 

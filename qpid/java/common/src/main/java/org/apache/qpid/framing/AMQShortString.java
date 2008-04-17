@@ -90,7 +90,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private AMQShortString substring(final int from, final int to)
     {
-        return new AMQShortString(_data, from, to);
+        return new AMQShortString(_data, from+_offset, to+_offset);
     }
 
 
@@ -184,11 +184,22 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private AMQShortString(ByteBuffer data, final int length)
     {
-        byte[] dataBytes = new byte[length];
-        data.get(dataBytes);
-        _data = dataBytes;
+        if(data.isDirect() || data.isReadOnly())
+        {
+            byte[] dataBytes = new byte[length];
+            data.get(dataBytes);
+            _data = dataBytes;
+            _offset = 0;
+        }
+        else
+        {
+
+            _data = data.array();
+            _offset = data.arrayOffset() + data.position();
+            data.skip(length);
+
+        }
         _length = length;
-        _offset = 0;
 
     }
 
@@ -197,6 +208,20 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         _offset = from;
         _length = to - from;
         _data = data;
+    }
+
+    public AMQShortString shrink()
+    {
+        if(_data.length != _length)
+        {
+            byte[] dataBytes = new byte[_length];
+            System.arraycopy(_data,_offset,dataBytes,0,_length);
+            return new AMQShortString(dataBytes,0,_length);
+        }
+        else
+        {
+            return this;
+        }
     }
 
 
@@ -325,7 +350,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         for (int i = 0; i < otherString.length(); i++)
         {
-            if (_data[i] != otherString._data[i])
+            if (charAt(i) != otherString.charAt(i))
             {
                 return false;
             }
@@ -572,7 +597,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             ref = _globalInternMap.get(this);
             if((ref == null) || ((internString = ref.get()) == null))
             {
-                internString = new AMQShortString(getBytes());
+                internString = shrink();
                 ref = new WeakReference(internString);
                 _globalInternMap.put(internString, ref);
             }
@@ -646,12 +671,12 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
 
 
-        return new AMQShortString(data,0,size);  
+        return new AMQShortString(data,0,size);
     }
 
     public int toIntValue()
     {
-        int pos = 0;
+        int pos = _offset;
         int val = 0;
 
 
@@ -660,7 +685,10 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             pos++;
         }
-        while(pos < _length)
+
+        final int end = _length + _offset;
+
+        while(pos < end)
         {
             int digit = (int) (_data[pos++] - ZERO);
             if((digit < 0) || (digit > 9))
@@ -679,7 +707,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public boolean contains(final byte b)
     {
-        for(int i = 0; i < _length; i++)
+        final int end = _length + _offset;
+        for(int i = _offset; i < end; i++)
         {
             if(_data[i] == b)
             {

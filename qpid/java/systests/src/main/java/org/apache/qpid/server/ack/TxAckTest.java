@@ -103,8 +103,8 @@ public class TxAckTest extends TestCase
         {
             TransactionalContext txnContext = new NonTransactionalContext(new MemoryMessageStore(),
                                                                           _storeContext, null,
-                                                                          new LinkedList<RequiredDeliveryException>(),
-                                                                          new HashSet<Long>());
+                                                                          new LinkedList<RequiredDeliveryException>()
+            );
             for (int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;

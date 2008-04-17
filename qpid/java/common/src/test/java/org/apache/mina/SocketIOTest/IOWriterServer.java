@@ -39,6 +39,9 @@ public class IOWriterServer
 
     static public int _PORT = 9999;
 
+    private static final String DEFAULT_READ_BUFFER = "262144";
+    private static final String DEFAULT_WRITE_BUFFER = "262144";
+
 
     private static class TestHandler extends IoHandlerAdapter
     {
@@ -52,14 +55,14 @@ public class IOWriterServer
         {
             IoFilterChain chain = ioSession.getFilterChain();
 
-            int buf_size = ((SocketSessionConfig) ioSession.getConfig()).getReceiveBufferSize();
-
             ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-            readfilter.setMaximumConnectionBufferSize(buf_size);
+            readfilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.read.buffer.limit", DEFAULT_READ_BUFFER)));
             readfilter.attach(chain);
 
             WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-            writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+
+            writefilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.write.buffer.limit", DEFAULT_WRITE_BUFFER)));
+
             writefilter.attach(chain);
 
         }

@@ -957,16 +957,21 @@ public class FieldTable
 
         if (_encodedForm != null)
         {
-
-            ByteBuffer encodedForm = _encodedForm.duplicate();
-
-            if (encodedForm.position() != 0)
+            if(buffer.isDirect() || buffer.isReadOnly())
             {
-                encodedForm.flip();
-            }
-            // _encodedForm.limit((int)getEncodedSize());
+                ByteBuffer encodedForm = _encodedForm.duplicate();
 
-            buffer.put(encodedForm);
+                if (encodedForm.position() != 0)
+                {
+                    encodedForm.flip();
+                }
+
+                buffer.put(encodedForm);
+            }
+            else
+            {
+                buffer.put(_encodedForm.array(),_encodedForm.arrayOffset(),(int)_encodedSize);
+            }
         }
         else if (_properties != null)
         {
