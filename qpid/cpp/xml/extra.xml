@@ -356,7 +356,7 @@
         <assert check="notnull" />
       </field>
 
-      <field name="known-hosts" domain="known-hosts" />
+      <field name="known-hosts" domain="array" />
     </method>
 
 <method name = "heartbeat" index="10">
@@ -391,18 +391,6 @@
 
       <field name="reply-code" domain="reply-code" />
       <field name="reply-text" domain="reply-text" />
-
-      <field name="class-id" domain="class-id" label="failing method class">
-        <doc>
-          When the close is provoked by a method exception, this is the class of the method.
-        </doc>
-      </field>
-
-      <field name="method-id" domain="method-id" label="failing method ID">
-        <doc>
-          When the close is provoked by a method exception, this is the ID of the method.
-        </doc>
-      </field>
     </method>
 
     <!-- - Method: connection.close-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
