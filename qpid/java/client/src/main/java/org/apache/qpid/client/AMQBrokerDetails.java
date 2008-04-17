@@ -119,6 +119,13 @@ public class AMQBrokerDetails implements BrokerDetails
                     int end = start;
                     boolean looking = true;
                     boolean found = false;
+                    // Throw an URL exception if the port number is not specified
+                    if (start == auth.length())
+                    {
+                        throw URLHelper.parseError(connection.toString().indexOf(auth) + end - 1,
+                                connection.toString().indexOf(auth) + end, "Port number must be specified",
+                                connection.toString());
+                    }
                     //Walk the authority looking for a port value.
                     while (looking)
                     {
