@@ -141,7 +141,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         if (messageOk)
         {
-            if (isMessageListenerSet() && ClientProperties.MAX_PREFETCH == 0)
+            if (isMessageListenerSet() && ! getSession().prefetch())
             {
                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                                                           MessageCreditUnit.MESSAGE, 1);
@@ -330,7 +330,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             // if we are syncrhonously waiting for a message
             // and messages are not prefetched we then need to request another one
-            if(ClientProperties.MAX_PREFETCH == 0)
+            if(! getSession().prefetch())
             {
                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                                                          MessageCreditUnit.MESSAGE, 1);
@@ -422,7 +422,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (messageListener != null && ClientProperties.MAX_PREFETCH == 0)
+        if (messageListener != null && ! getSession().prefetch())
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                                                       MessageCreditUnit.MESSAGE, 1);
@@ -470,17 +470,17 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     public Object getMessageFromQueue(long l) throws InterruptedException
     {
-        if (isStrated() && ClientProperties.MAX_PREFETCH == 0 && _synchronousQueue.isEmpty())
+        if (isStrated() && ! getSession().prefetch() && _synchronousQueue.isEmpty())
         {
             _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                                                       MessageCreditUnit.MESSAGE, 1);
         }
-        if (ClientProperties.MAX_PREFETCH == 0)
+        if (! getSession().prefetch())
         {
             _syncReceive.set(true);
         }
         Object o = super.getMessageFromQueue(l);
-        if (ClientProperties.MAX_PREFETCH == 0)
+        if (! getSession().prefetch())
         {
             _syncReceive.set(false);
         }
