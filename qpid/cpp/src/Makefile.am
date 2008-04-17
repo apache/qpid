@@ -79,7 +79,7 @@ posix_plat_hdr = \
 platform_src = $(posix_plat_src)
 platform_hdr = $(posix_plat_hdr)
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidamqp_0_10.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la 
 
 include cluster.mk
 
@@ -88,10 +88,12 @@ include cluster.mk
 # unused parameters in boost::date_time headers. So we build it
 # in a convenience library to link into libqpid_common.
 # 
-noinst_LTLIBRARIES=libLogger.la
+noinst_LTLIBRARIES=libLogger.la libqpidamqp_0_10.la
 libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
+# New 0-10 codec, to be integrated in future.
+# Currently built for tests only.
 libqpidamqp_0_10_la_SOURCES= \
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
@@ -130,7 +132,6 @@ libqpidcommon_la_LIBADD = \
   -lboost_filesystem \
   -luuid \
   libLogger.la \
-  $(libqpidamqp_0_10_la_SOURCES) \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
 

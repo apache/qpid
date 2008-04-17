@@ -21,33 +21,16 @@ worked around in Qpid.
 
 
 == Unit Tests ==
+Unit tests use the boost test framework, and are compiled to rogram
+ unit_test
+There are several options to control how test results are displayed,
+see
+ http://www.boost.org/doc/libs/1_35_0/libs/test/doc/components/utf/parameters/index.html
 
-Unit tests shared libraries containing CppUnit test plug-ins, run by
-the CppUnit DllPlugInTester program.
+NOTE: some unit tests are written as CppUnit plug-ins, we are moving away
+from CppUnit so new tests should use the boost framework.
 
-run-unit-tests runs tests under valgrind, you can run it directly.
-Library names (without path or .so) and CppUnit test paths can be
-specified on the command line or in env var UNIT_TESTS. For example:
-
-Selected test classes:
-./run-unit-tests ValueTest ClientChannelTest
-
-Individual test method
-./run-unit-tests ValueTest :ValueTest::testStringValueEquals
-
-You can also Build and run selected tests via make:
-make check TESTS=run-unit-tests UNIT_TESTS=ClientChannelTest
-
-NOTE: If you use DllPlugInTester directly note that if foobar.so is in
-the current directory then this will fail with "can't load plugin":
- # DllPluginTester foobar.so
-
-Instead you need to say:
- # DllPluginTester ./foobar.so
-
-DllPluginTester uses dlopen() which only searches for shlibs
-in the standard places unless the filename contains a "/".  In that
-case it just tries to open the filename.
+CppUnit tests are run by the script run-unit-tests.
 
 == System Tests ==
 
