@@ -35,8 +35,8 @@ namespace framing {
 SessionState::SessionState(uint32_t ack,  bool enableReplay, const Uuid& uuid) :
     state(ATTACHED),
     id(uuid),
-    lastReceived(-1),
-    lastSent(-1),
+    lastReceived(u_int32_t(-1)),
+    lastSent(u_int32_t(-1)),
     ackInterval(ack),
     sendAckAt(lastReceived+ackInterval),
     solicitAckAt(lastSent+ackInterval),
@@ -47,8 +47,8 @@ SessionState::SessionState(uint32_t ack,  bool enableReplay, const Uuid& uuid) :
 SessionState::SessionState(const Uuid& uuid) :
     state(ATTACHED),
     id(uuid),
-    lastReceived(-1),
-    lastSent(-1),
+    lastReceived(u_int32_t(-1)),
+    lastSent(u_int32_t(-1)),
     ackInterval(0),
     sendAckAt(0),
     solicitAckAt(0),

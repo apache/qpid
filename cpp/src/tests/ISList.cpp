@@ -67,94 +67,101 @@ struct Fixture {
     Fixture() :a('a'),b('b'),c('c'),d('d'),e('e') {}
 };
 
-BOOST_FIXTURE_TEST_CASE(default_ctor, Fixture) {
-    BOOST_CHECK(l.empty());
-    BOOST_CHECK(l.begin() == l.end());
-    BOOST_CHECK_EQUAL(0u, l.size());
+QPID_AUTO_TEST_CASE(default_ctor) {
+    Fixture fix;
+    BOOST_CHECK(fix.l.empty());
+    BOOST_CHECK(fix.l.begin() == fix.l.end());
+    BOOST_CHECK_EQUAL(0u, fix.l.size());
 }
 
-BOOST_FIXTURE_TEST_CASE(push_front, Fixture) {
-    l.push_front(&a);
-    BOOST_CHECK_EQUAL(1u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a));
-    l.push_front(&b);
-    BOOST_CHECK_EQUAL(2u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(b)(a));
+QPID_AUTO_TEST_CASE(push_front) {
+    Fixture fix;
+    fix.l.push_front(&(fix.a));
+    BOOST_CHECK_EQUAL(1u, fix.l.size());
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a));
+    fix.l.push_front(&(fix.b));
+    BOOST_CHECK_EQUAL(2u, fix.l.size());
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.b)(fix.a));
 }
 
-BOOST_FIXTURE_TEST_CASE(push_back, Fixture) {
-    l.push_back(&a);
-    BOOST_CHECK_EQUAL(1u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a));
-    l.push_back(&b);
-    BOOST_CHECK_EQUAL(2u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a)(b));
+QPID_AUTO_TEST_CASE(push_back) {
+    Fixture fix;
+    fix.l.push_back(&(fix.a));
+    BOOST_CHECK_EQUAL(1u, fix.l.size());
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a));
+    fix.l.push_back(&(fix.b));
+    BOOST_CHECK_EQUAL(2u, fix.l.size());
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a)(fix.b));
 }
 
-BOOST_FIXTURE_TEST_CASE(insert, Fixture) {
-    List::iterator i(l.begin());
-    i = l.insert(i, &a);
-    BOOST_CHECK_EQUAL(l, list_of(a));
-    BOOST_CHECK(i == l.begin());
+QPID_AUTO_TEST_CASE(insert) {
+    Fixture fix;
+    Fixture::List::iterator i(fix.l.begin());
+    i = fix.l.insert(i, &(fix.a));
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a));
+    BOOST_CHECK(i == fix.l.begin());
 
-    i = l.insert(i, &b);
-    BOOST_CHECK_EQUAL(l, list_of(b)(a));
-    BOOST_CHECK(i == l.begin());
+    i = fix.l.insert(i, &(fix.b));
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.b)(fix.a));
+    BOOST_CHECK(i == fix.l.begin());
 
     i++;
-    BOOST_CHECK_EQUAL(*i, a);    
-    i = l.insert(i, &c);
-    BOOST_CHECK_EQUAL(l, list_of(b)(c)(a));
-    BOOST_CHECK_EQUAL(*i, c);
+    BOOST_CHECK_EQUAL(*i, fix.a);    
+    i = fix.l.insert(i, &(fix.c));
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.b)(fix.c)(fix.a));
+    BOOST_CHECK_EQUAL(*i, fix.c);
 
-    i = l.insert(i, &d);
-    BOOST_CHECK_EQUAL(l, list_of(b)(d)(c)(a));
-    BOOST_CHECK_EQUAL(*i, d);
+    i = fix.l.insert(i, &(fix.d));
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.b)(fix.d)(fix.c)(fix.a));
+    BOOST_CHECK_EQUAL(*i, fix.d);
 }
 
-BOOST_FIXTURE_TEST_CASE(iterator_test, Fixture) {
-    l.push_back(&a);
-    l.push_back(&b);
+QPID_AUTO_TEST_CASE(iterator_test) {
+    Fixture fix;
+    fix.l.push_back(&(fix.a));
+    fix.l.push_back(&(fix.b));
     
-    List::iterator i = l.begin();
-    BOOST_CHECK_EQUAL(*i, a);
-    BOOST_CHECK_EQUAL(static_cast<Node*>(i), &a);
-    List::const_iterator ci = i;
-    BOOST_CHECK_EQUAL(static_cast<const Node*>(ci), &a);
+    Fixture::List::iterator i = fix.l.begin();
+    BOOST_CHECK_EQUAL(*i, fix.a);
+    BOOST_CHECK_EQUAL(static_cast<Fixture::Node*>(i), &(fix.a));
+    Fixture::List::const_iterator ci = i;
+    BOOST_CHECK_EQUAL(static_cast<const Fixture::Node*>(ci), &(fix.a));
 
     i++;
-    BOOST_CHECK_EQUAL(*i, b);    
-    BOOST_CHECK_EQUAL(static_cast<Node*>(i), &b);
+    BOOST_CHECK_EQUAL(*i, fix.b);    
+    BOOST_CHECK_EQUAL(static_cast<Fixture::Node*>(i), &(fix.b));
     i++;
-    BOOST_CHECK(i == l.end());
+    BOOST_CHECK(i == fix.l.end());
 }
 
-BOOST_FIXTURE_TEST_CASE(pop_front, Fixture) {
-    l.push_back(&a);
-    l.push_back(&b);
-    l.pop_front();
-    BOOST_CHECK_EQUAL(l, list_of(b));
-    l.pop_front();
-    BOOST_CHECK(l.empty());
+QPID_AUTO_TEST_CASE(pop_front) {
+    Fixture fix;
+    fix.l.push_back(&(fix.a));
+    fix.l.push_back(&(fix.b));
+    fix.l.pop_front();
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.b));
+    fix.l.pop_front();
+    BOOST_CHECK(fix.l.empty());
 }
 
-BOOST_FIXTURE_TEST_CASE(erase, Fixture) {
-    l.push_back(&a);
-    l.push_back(&b);
-    l.push_back(&c);
+QPID_AUTO_TEST_CASE(erase) {
+    Fixture fix;
+    fix.l.push_back(&(fix.a));
+    fix.l.push_back(&(fix.b));
+    fix.l.push_back(&(fix.c));
 
-    List::iterator i=l.begin();
+    Fixture::List::iterator i=fix.l.begin();
     i++;
-    l.erase(i);
-    BOOST_CHECK_EQUAL(l, list_of(a)(c));
+    fix.l.erase(i);
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a)(fix.c));
 
-    i=l.begin();
+    i=fix.l.begin();
     i++;
-    l.erase(i);
-    BOOST_CHECK_EQUAL(l, list_of(a));
+    fix.l.erase(i);
+    BOOST_CHECK_EQUAL(fix.l, list_of(fix.a));
 
-    l.erase(l.begin());
-    BOOST_CHECK(l.empty());
+    fix.l.erase(fix.l.begin());
+    BOOST_CHECK(fix.l.empty());
 }
 
 
@@ -193,7 +200,7 @@ struct IntrusiveNode : public NodeBase, public RefCounted,
 };
 
 
-BOOST_AUTO_TEST_CASE(intrusive_ptr_test) {
+QPID_AUTO_TEST_CASE(intrusive_ptr_test) {
     smart_pointer_test<IntrusiveNode>();
 }
 
@@ -202,7 +209,7 @@ struct SharedNode : public NodeBase, public ISListNode<boost::shared_ptr<SharedN
     SharedNode() : NodeBase(0) {}
 };
 
-BOOST_AUTO_TEST_CASE(shared_ptr_test) {
+QPID_AUTO_TEST_CASE(shared_ptr_test) {
     smart_pointer_test<SharedNode>();
 }
 

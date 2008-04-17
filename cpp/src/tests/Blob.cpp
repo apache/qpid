@@ -54,7 +54,7 @@ struct Bar : public Count<Bar> { Bar(int n) : Count<Bar>(n) {}; };
 
 typedef Blob<sizeof(Foo), Base> TestBlob ;
 
-BOOST_AUTO_TEST_CASE(testCtor) {
+QPID_AUTO_TEST_CASE(testBlobCtor) {
     {
         TestBlob empty;
         BOOST_CHECK(empty.empty());
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(testCtor) {
 }
 
 
-BOOST_AUTO_TEST_CASE(testAssign) {
+QPID_AUTO_TEST_CASE(testAssign) {
     {
         TestBlob b;
         b = Foo(2);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(testAssign) {
 }
 
 
-BOOST_AUTO_TEST_CASE(testClear) {
+QPID_AUTO_TEST_CASE(testClear) {
     TestBlob b(in_place<Foo>(5));
     TestBlob c(b);
     BOOST_CHECK(!c.empty());

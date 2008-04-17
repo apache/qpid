@@ -52,109 +52,117 @@ struct IListFixture {
 
 ostream& operator<<(ostream& o, const IListFixture::Node& n) { return o << n.value; }
 
-BOOST_FIXTURE_TEST_CASE(IList_default_ctor, IListFixture) {
-    List l;
+QPID_AUTO_TEST_CASE(IList_default_ctor) {
+    IListFixture fix;
+    IListFixture::List l;
     BOOST_CHECK(l.empty());
     BOOST_CHECK(l.begin() == l.end());
     BOOST_CHECK_EQUAL(0u, l.size());
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_push_front, IListFixture) {
-    List l;
-    l.push_front(&a);
+QPID_AUTO_TEST_CASE(IList_push_front) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_front(&(fix.a));
     BOOST_CHECK_EQUAL(1u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a));
-    l.push_front(&b);
+    BOOST_CHECK_EQUAL(l, list_of(fix.a));
+    l.push_front(&(fix.b));
     BOOST_CHECK_EQUAL(2u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(b)(a));
+    BOOST_CHECK_EQUAL(l, list_of(fix.b)(fix.a));
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_push_back, IListFixture) {
-    List l;
-    l.push_back(&a);
+QPID_AUTO_TEST_CASE(IList_push_back) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_back(&(fix.a));
     BOOST_CHECK_EQUAL(1u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a));
-    l.push_back(&b);
+    BOOST_CHECK_EQUAL(l, list_of(fix.a));
+    l.push_back(&(fix.b));
     BOOST_CHECK_EQUAL(2u, l.size());
-    BOOST_CHECK_EQUAL(l, list_of(a)(b));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a)(fix.b));
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_insert, IListFixture) {
-    List l;
-    List::iterator i(l.begin());
-    i = l.insert(i, &a);
-    BOOST_CHECK_EQUAL(l, list_of(a));
+QPID_AUTO_TEST_CASE(IList_insert) {
+    IListFixture fix;
+    IListFixture::List l;
+    IListFixture::List::iterator i(l.begin());
+    i = l.insert(i, &(fix.a));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a));
     BOOST_CHECK(i == l.begin());
 
-    i = l.insert(i, &b);
-    BOOST_CHECK_EQUAL(l, list_of(b)(a));
+    i = l.insert(i, &(fix.b));
+    BOOST_CHECK_EQUAL(l, list_of(fix.b)(fix.a));
     BOOST_CHECK(i == l.begin());
 
     i++;
-    BOOST_CHECK_EQUAL(*i, a);    
-    i = l.insert(i, &c);
-    BOOST_CHECK_EQUAL(l, list_of(b)(c)(a));
-    BOOST_CHECK_EQUAL(*i, c);
+    BOOST_CHECK_EQUAL(*i, fix.a);    
+    i = l.insert(i, &(fix.c));
+    BOOST_CHECK_EQUAL(l, list_of(fix.b)(fix.c)(fix.a));
+    BOOST_CHECK_EQUAL(*i, fix.c);
 
-    i = l.insert(i, &d);
-    BOOST_CHECK_EQUAL(l, list_of(b)(d)(c)(a));
-    BOOST_CHECK_EQUAL(*i, d);
+    i = l.insert(i, &(fix.d));
+    BOOST_CHECK_EQUAL(l, list_of(fix.b)(fix.d)(fix.c)(fix.a));
+    BOOST_CHECK_EQUAL(*i, fix.d);
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_iterator_test, IListFixture) {
-    List l;
-    l.push_back(&a);
-    l.push_back(&b);
+QPID_AUTO_TEST_CASE(IList_iterator_test) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_back(&(fix.a));
+    l.push_back(&(fix.b));
     
-    List::iterator i = l.begin();
-    BOOST_CHECK_EQUAL(*i, a);
-    BOOST_CHECK_EQUAL(static_cast<Node*>(i), &a);
-    List::const_iterator ci = i;
-    BOOST_CHECK_EQUAL(static_cast<const Node*>(ci), &a);
+    IListFixture::List::iterator i = l.begin();
+    BOOST_CHECK_EQUAL(*i, fix.a);
+    BOOST_CHECK_EQUAL(static_cast<IListFixture::Node*>(i), &(fix.a));
+    IListFixture::List::const_iterator ci = i;
+    BOOST_CHECK_EQUAL(static_cast<const IListFixture::Node*>(ci), &(fix.a));
 
     i++;
-    BOOST_CHECK_EQUAL(*i, b);    
-    BOOST_CHECK_EQUAL(static_cast<Node*>(i), &b);
+    BOOST_CHECK_EQUAL(*i, fix.b);    
+    BOOST_CHECK_EQUAL(static_cast<IListFixture::Node*>(i), &(fix.b));
     i++;
     BOOST_CHECK(i == l.end());
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_pop_front, IListFixture) {
-    List l;
-    l.push_back(&a);
-    l.push_back(&b);
-    BOOST_CHECK_EQUAL(l, list_of(a)(b));
+QPID_AUTO_TEST_CASE(IList_pop_front) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_back(&(fix.a));
+    l.push_back(&(fix.b));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a)(fix.b));
     l.pop_front();
-    BOOST_CHECK_EQUAL(l, list_of(b));
+    BOOST_CHECK_EQUAL(l, list_of(fix.b));
     l.pop_front();
     BOOST_CHECK(l.empty());
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_pop_back, IListFixture) {
-    List l;
-    l.push_back(&a);
-    l.push_back(&b);
+QPID_AUTO_TEST_CASE(IList_pop_back) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_back(&(fix.a));
+    l.push_back(&(fix.b));
     l.pop_back();
-    BOOST_CHECK_EQUAL(l, list_of(a));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a));
     l.pop_back();
     BOOST_CHECK(l.empty());
 }
 
-BOOST_FIXTURE_TEST_CASE(IList_erase, IListFixture) {
-    List l;
-    l.push_back(&a);
-    l.push_back(&b);
-    l.push_back(&c);
+QPID_AUTO_TEST_CASE(IList_erase) {
+    IListFixture fix;
+    IListFixture::List l;
+    l.push_back(&(fix.a));
+    l.push_back(&(fix.b));
+    l.push_back(&(fix.c));
 
-    List::iterator i=l.begin();
+    IListFixture::List::iterator i=l.begin();
     i++;
     l.erase(i);
-    BOOST_CHECK_EQUAL(l, list_of(a)(c));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a)(fix.c));
 
     i=l.begin();
     i++;
     l.erase(i);
-    BOOST_CHECK_EQUAL(l, list_of(a));
+    BOOST_CHECK_EQUAL(l, list_of(fix.a));
 
     l.erase(l.begin());
     BOOST_CHECK(l.empty());

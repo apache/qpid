@@ -74,7 +74,7 @@ bool operator==(const AMQFrame& a, const AMQFrame& b) {
 }} // namespace qpid::framing
 
 
-BOOST_AUTO_TEST_CASE(testSent) {
+QPID_AUTO_TEST_CASE(testSent) {
     // Test that we send solicit-ack at the right interval.
     AMQContentBody f; 
     SessionState s1(1);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testSent) {
     BOOST_CHECK(s3.sent(f));
 }
 
-BOOST_AUTO_TEST_CASE(testReplay) {
+QPID_AUTO_TEST_CASE(testReplay) {
     // Replay of all frames.
     SessionState session(100);
     sent(session, "abc"); 
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(testReplay) {
 
 }
 
-BOOST_AUTO_TEST_CASE(testReceived) {
+QPID_AUTO_TEST_CASE(testReceived) {
     // Check that we request acks at the right interval.
     AMQContentBody f;
     SessionState s1(1);

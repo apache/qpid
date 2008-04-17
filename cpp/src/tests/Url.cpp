@@ -28,7 +28,7 @@ using namespace boost::assign;
 
 QPID_AUTO_TEST_SUITE(UrlTestSuite)
 
-BOOST_AUTO_TEST_CASE(testUrl_str) {
+QPID_AUTO_TEST_CASE(testUrl_str) {
     Url url;
     url.push_back(TcpAddress("foo.com"));
     url.push_back(TcpAddress("bar.com", 6789));
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(testUrl_str) {
 }
 
 
-BOOST_AUTO_TEST_CASE(testUrl_parse) {
+QPID_AUTO_TEST_CASE(testUrl_parse) {
     Url url;
     url.parse("amqp:foo.com,tcp:bar.com:1234");
     BOOST_CHECK_EQUAL(2u, url.size());
