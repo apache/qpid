@@ -50,6 +50,10 @@
 
 namespace qpid { 
 
+namespace sys {
+    class Poller;
+}
+
 class Url;
 
 namespace broker {
@@ -129,6 +133,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
   private:
     sys::Acceptor& getAcceptor() const;
 
+    boost::shared_ptr<qpid::sys::Poller> poller;
     Options config;
     sys::Acceptor::shared_ptr acceptor;
     MessageStore* store;
