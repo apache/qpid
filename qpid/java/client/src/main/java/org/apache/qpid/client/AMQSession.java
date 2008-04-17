@@ -854,7 +854,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
 
                 if (consumer.isAutoClose())
-                {     // There is a small window where the message is between the two queues in the dispatcher.
+                {     
+                    // There is a small window where the message is between the two queues in the dispatcher.
                     if (consumer.isClosed())
                     {
                         if (_logger.isInfoEnabled())
@@ -863,11 +864,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         }
 
                         deregisterConsumer(consumer);
-
-                    }
-                    else
-                    {
-                        _queue.add(new UnprocessedMessage.CloseConsumerMessage(consumer));
                     }
                 }
             }
@@ -2957,8 +2953,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                 dispatchMessage(message);
                             }
 
-                            if (!(message instanceof UnprocessedMessage.CloseConsumerMessage)
-                                && (message.getDeliverBody().getDeliveryTag() <= _rollbackMark.get()))
+                            if (message.getDeliveryTag() <= _rollbackMark.get())
                             {
                                 rejectMessage(message, true);
                             }
