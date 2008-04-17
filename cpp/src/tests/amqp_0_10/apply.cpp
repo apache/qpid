@@ -48,7 +48,7 @@ struct TestFunctor {
     bool operator()(const T&) { return false; }
 };
 
-BOOST_AUTO_TEST_CASE(testApply) {
+QPID_AUTO_TEST_CASE(testApply) {
     connection::Tune tune(1,2,3,4);
     Control* p = &tune;
 
@@ -83,7 +83,7 @@ struct VoidTestFunctor {
     void operator()(const T&) { code=0xFF; }
 };
 
-BOOST_AUTO_TEST_CASE(testApplyVoid) {
+QPID_AUTO_TEST_CASE(testApplyVoid) {
     connection::Tune tune(1,2,3,4);
     Control* p = &tune;
     VoidTestFunctor tf;

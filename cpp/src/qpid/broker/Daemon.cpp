@@ -19,9 +19,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -33,7 +30,6 @@ namespace qpid {
 namespace broker {
 
 using namespace std;
-typedef boost::iostreams::stream<boost::iostreams::file_descriptor> fdstream;
 
 namespace {
 /** Throw an exception containing msg and strerror if throwIf is true.
@@ -45,7 +41,11 @@ void throwIf(bool condition, const string& msg, int errNo=errno) {
 }
 
 
-struct LockFile : public fdstream {
+/*--------------------------------------------------
+  Rewritten using low-level IO, for compatibility 
+  with earlier Boost versions, i.e. 103200.
+--------------------------------------------------*/
+struct LockFile {
 
     LockFile(const std::string& path_, bool create)
         : path(path_), fd(-1), created(create)
@@ -55,13 +55,12 @@ struct LockFile : public fdstream {
         fd = ::open(path.c_str(), flags, 0644);
         throwIf(fd < 0,"Cannot open "+path);
         throwIf(::lockf(fd, F_TLOCK, 0) < 0, "Cannot lock "+path);
-        open(boost::iostreams::file_descriptor(fd));
     }
 
     ~LockFile() {
         if (fd >= 0) {
             ::lockf(fd, F_ULOCK, 0);
-            close();
+            ::close(fd);
         }
     }
 
@@ -87,9 +86,13 @@ string Daemon::pidFile(uint16_t port) {
     return path.str();
 }
 
+/*--------------------------------------------------
+  Rewritten using low-level IO, for compatibility 
+  with earlier Boost versions, i.e. 103200.
+--------------------------------------------------*/
 void Daemon::fork()
 {
-    throwIf(pipe(pipeFds) < 0, "Can't create pipe");
+    throwIf(::pipe(pipeFds) < 0, "Can't create pipe");  
     throwIf((pid = ::fork()) < 0, "Daemon fork failed");
     if (pid == 0) {             // Child
         try {
@@ -115,9 +118,12 @@ void Daemon::fork()
         }
         catch (const exception& e) {
             QPID_LOG(critical, "Daemon startup failed: " << e.what());
-            fdstream pipe(pipeFds[1]);
-            assert(pipe.is_open());
-            pipe << "0 " << e.what() << endl;
+            stringstream pipeFailureMessage;
+            pipeFailureMessage <<  "0 " << e.what() << endl;
+            write ( pipeFds[1], 
+                    pipeFailureMessage.str().c_str(), 
+                    strlen(pipeFailureMessage.str().c_str())
+                  );
         }
     }
     else {                      // Parent
@@ -137,50 +143,101 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
 
+    /*--------------------------------------------------
+      Rewritten using low-level IO, for compatibility 
+      with earlier Boost versions, i.e. 103200.
+    --------------------------------------------------*/
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(pipeFds[0], &fds);
     int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
     throwIf(n==0, "Timed out waiting for daemon");
     throwIf(n<0, "Error waiting for daemon");
-    fdstream pipe(pipeFds[0]);
-    pipe.exceptions(ios::failbit|ios::badbit|ios::eofbit);
     uint16_t port = 0;
-    try {
-        pipe >> port;
-        if (port == 0) {
-            string errmsg;
-            pipe >> skipws;
-            getline(pipe, errmsg);
-            throw Exception("Daemon startup failed"+
-                            (errmsg.empty() ? string(".") : ": " + errmsg));
-        }
+    /*
+     * Read the child's port number from the pipe.
+     */
+    int desired_read = sizeof(uint16_t);
+    if ( desired_read > ::read(pipeFds[0], & port, desired_read) ) {
+      throw Exception("Cannot write lock file "+lockFile);
     }
-    catch (const fdstream::failure& e) {
-        throw Exception(string("Failed to read daemon port: ")+e.what());
-    }
+
+    /*
+     * If the port number is 0, the child has put an error message
+     * on the pipe.  Get it and throw it.
+     */
+     if ( 0 == port ) {
+       // Skip whitespace
+       char c = ' ';
+       while ( isspace(c) ) {
+         if ( 1 > ::read(pipeFds[0], &c, 1) )
+           throw Exception("Child port == 0, and no error message on pipe.");
+       }
+
+       // Get Message
+       string errmsg;
+       while ( 1 ) {
+         if ( 1 > ::read(pipeFds[0], &c, 1) )
+           throw Exception("Daemon startup failed"+
+                           (errmsg.empty() ? string(".") : ": " + errmsg));
+       }
+     }
+
     return port;
 }
 
+
+/*
+ * When the child is ready, it writes its pid to the
+ * lockfile and its port number on the pipe back to
+ * its parent process.  This indicates that the
+ * child has successfully daemonized.  When the parent
+ * hears the good news, it ill exit.
+ */
 void Daemon::ready(uint16_t port) { // child
     lockFile = pidFile(port);
     LockFile lf(lockFile, true);
-    lf << getpid() << endl;
-    if (lf.fail())
-        throw Exception("Cannot write lock file "+lockFile);
-    fdstream pipe(pipeFds[1]);
-    QPID_LOG(debug, "Daemon ready on port: " << port);
-    pipe << port << endl;
-    throwIf(!pipe.good(), "Error writing to parent");
+
+    /*---------------------------------------------------
+      Rewritten using low-level IO, for compatibility 
+      with earlier Boost versions, i.e. 103200.
+    ---------------------------------------------------*/
+    /*
+     * Write the PID to the lockfile.
+     */
+    pid_t pid = getpid();
+    int desired_write = sizeof(pid_t);
+    if ( desired_write > ::write(lf.fd, & pid, desired_write) ) {
+      throw Exception("Cannot write lock file "+lockFile);
+    }
+
+    /*
+     * Write the port number to the parent.
+     */
+     desired_write = sizeof(uint16_t);
+     if ( desired_write > ::write(pipeFds[1], & port, desired_write) ) {
+       throw Exception("Error writing to parent." );
+     }
+
+     QPID_LOG(debug, "Daemon ready on port: " << port);
 }
 
+/*
+ * The parent process reads the child's pid
+ * from the lockfile.
+ */
 pid_t Daemon::getPid(uint16_t port) {
     string name = pidFile(port);
-    LockFile lockFile(name, false);
+    LockFile lf(name, false);
     pid_t pid;
-    lockFile >> pid;
-    if (lockFile.fail())
-        throw Exception("Cannot read lock file "+name);
+    /*---------------------------------------------------
+      Rewritten using low-level IO, for compatibility 
+      with earlier Boost versions, i.e. 103200.
+    ---------------------------------------------------*/
+    int desired_read = sizeof(pid_t);
+    if ( desired_read > ::read(lf.fd, & pid, desired_read) ) {
+      throw Exception("Cannot read lock file " + name);
+    }
     if (kill(pid, 0) < 0 && errno != EPERM) {
         unlink(name.c_str());
         throw Exception("Removing stale lock file "+name);

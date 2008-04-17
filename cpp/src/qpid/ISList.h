@@ -49,13 +49,15 @@ template <class Pointer> class ISListNode {
     typedef Pointer pointer; 
     typedef typename Pointee<Pointer>::type  NodeType;
     typedef typename pointer_to_other<Pointer, const NodeType>::type const_pointer;
+
+    pointer getNext() { return next; }
+    pointer * getNextPtr() { return & next; }
+    const_pointer getNext() const { return next; }
     
   protected:
     ISListNode() : next() {}
     ISListNode(const ISListNode&) {} // Don't copy the next pointer.
 
-    pointer getNext() { return next; }
-    const_pointer getNext() const { return next; }
 
   private:
     pointer next;
@@ -151,6 +153,7 @@ template <class Node> class ISList : private boost::noncopyable {
 
         operator pointer() { return *pptr; }
         operator const_pointer() const { return *pptr; }
+        pointer* pptr;
         
       private:
       friend class boost::iterator_core_access;
@@ -158,10 +161,9 @@ template <class Node> class ISList : private boost::noncopyable {
         Iterator(const pointer* pp) : pptr(const_cast<pointer*>(pp)) {};
 
         T& dereference() const { return **pptr; }
-        void increment() { pptr = &(**pptr).next; }
+        void increment() { pptr = (**pptr).getNextPtr(); }
         bool equal(const Iterator& x) const { return pptr == x.pptr; }
 
-        pointer* pptr;
 
       friend class ISList<Node>;
     };

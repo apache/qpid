@@ -28,16 +28,26 @@
 #include <boost/version.hpp>
 #include <limits.h> // Must be inclued beofre boost/test headers.
 
-#if (BOOST_VERSION < 103400)
+#if (BOOST_VERSION < 103300)
+
+# include <boost/test/auto_unit_test.hpp>
+
+# define QPID_AUTO_TEST_SUITE(name)
+# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_UNIT_TEST(name)
+# define QPID_AUTO_TEST_SUITE_END()
+
+#elif (BOOST_VERSION < 103400)
 
 # include <boost/test/auto_unit_test.hpp>
 
 # define QPID_AUTO_TEST_SUITE(name) BOOST_AUTO_TEST_SUITE(name);
+# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
 # define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END();
 
 #else
 
 # define QPID_AUTO_TEST_SUITE(name) BOOST_AUTO_TEST_SUITE(name)
+# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
 # define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END()
 
 # include <boost/test/unit_test.hpp>

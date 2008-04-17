@@ -92,7 +92,7 @@ struct TestUnitHandler : public boost::static_visitor<void> {
     void operator()(const CommandHolder& c) { c.invoke(handler); }
 };
 
-BOOST_AUTO_TEST_CASE(testHandlers) {
+QPID_AUTO_TEST_CASE(testHandlers) {
     TestUnitHandler handler;
     Unit u;
 
