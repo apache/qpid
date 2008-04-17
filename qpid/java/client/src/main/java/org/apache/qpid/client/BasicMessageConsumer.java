@@ -455,20 +455,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
          return o;
      }
 
-    private boolean closeOnAutoClose() throws JMSException
-    {
-        if (isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
-        {
-            close(false);
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
     public Message receiveNoWait() throws JMSException
     {
         checkPreConditions();
@@ -540,12 +526,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
 
             throw e;
-        }
-        else if (o instanceof UnprocessedMessage.CloseConsumerMessage)
-        {
-            _closed.set(true);
-            deregisterConsumer();
-            return null;
         }
         else
         {
@@ -670,12 +650,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     void notifyMessage(UnprocessedMessage messageFrame)
     {
-        if (messageFrame instanceof UnprocessedMessage.CloseConsumerMessage)
-        {
-            notifyCloseMessage((UnprocessedMessage.CloseConsumerMessage) messageFrame);
-            return;
-        }
-
         final boolean debug = _logger.isDebugEnabled();
 
         if (debug)
@@ -724,32 +698,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H, B> messageFrame)
             throws Exception;
-
-
-    /** @param closeMessage this message signals that we should close the browser */
-    public void notifyCloseMessage(UnprocessedMessage.CloseConsumerMessage closeMessage)
-    {
-        if (isMessageListenerSet())
-        {
-            // Currently only possible to get this msg type with a browser.
-            // If we get the message here then we should probably just close this consumer.
-            // Though an AutoClose consumer with message listener is quite odd...
-            // Just log out the fact so we know where we are
-            _logger.warn("Using an AutoCloseconsumer with message listener is not supported.");
-        }
-        else
-        {
-            try
-            {
-                _synchronousQueue.put(closeMessage);
-            }
-            catch (InterruptedException e)
-            {
-                _logger.info(" SynchronousQueue.put interupted. Usually result of connection closing," +
-                             "but we shouldn't have close yet");
-            }
-        }
-    }
 
     /** @param jmsMessage this message has already been processed so can't redo preDeliver */
     public void notifyMessage(AbstractJMSMessage jmsMessage)
