@@ -187,7 +187,7 @@ libqpidcommon_la_SOURCES = \
   qpid/ISList.h \
   qpid/pointer_to_other.h
 
-libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
+libqpidbroker_la_LIBADD = libqpidcommon.la 
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   qpid/amqp_0_10/Connection.h \

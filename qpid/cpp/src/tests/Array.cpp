@@ -38,7 +38,7 @@ void populate(std::vector<std::string>& data, int count = 10)
     }
 }
 
-BOOST_AUTO_TEST_CASE(testEncodeDecode)
+QPID_AUTO_TEST_CASE(testEncodeDecode)
 {
     std::vector<std::string> data;
     populate(data);
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(testEncodeDecode)
     BOOST_CHECK(data == data2);
 }
 
-BOOST_AUTO_TEST_CASE(testAssignment)
+QPID_AUTO_TEST_CASE(testArrayAssignment)
 {
     std::vector<std::string> data;
     populate(data);

@@ -29,7 +29,7 @@ QPID_AUTO_TEST_SUITE(ShlibTestSuite)
 using namespace qpid::sys;
 typedef void (*CallMe)(int*);
 
-BOOST_AUTO_TEST_CASE(testShlib) {
+QPID_AUTO_TEST_CASE(testShlib) {
     Shlib sh(".libs/libshlibtest.so");
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(testShlib) {
     catch (const qpid::Exception&) {}
 }
     
-BOOST_AUTO_TEST_CASE(testAutoShlib) {
+QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
         AutoShlib sh(".libs/libshlibtest.so");

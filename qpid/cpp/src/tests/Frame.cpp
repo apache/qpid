@@ -29,7 +29,7 @@ using namespace std;
 using namespace qpid::framing;
 using namespace boost;
 
-BOOST_AUTO_TEST_CASE(testContentBody) {
+QPID_AUTO_TEST_CASE(testContentBody) {
     Frame f(42, AMQContentBody("foobar"));
     AMQBody* body=f.getBody();
     BOOST_CHECK(dynamic_cast<AMQContentBody*>(body));
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(testContentBody) {
     BOOST_CHECK_EQUAL(content->getData(), "foobar");
 }
 
-BOOST_AUTO_TEST_CASE(testMethodBody) {
+QPID_AUTO_TEST_CASE(testMethodBody) {
     FieldTable args;
     args.setString("foo", "bar");
     Frame f(
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(testMethodBody) {
     BOOST_CHECK_EQUAL(lexical_cast<string>(*f.getBody()), lexical_cast<string>(*g.getBody()));
 }
 
-BOOST_AUTO_TEST_CASE(testLoop) {
+QPID_AUTO_TEST_CASE(testLoop) {
     // Run in a loop so heap profiler can spot any allocations.
     Buffer b(1024);
     for (int i = 0; i < 100; ++i) {

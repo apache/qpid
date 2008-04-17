@@ -91,7 +91,7 @@ struct Callback : public Cpg::Handler {
     }
 };
 
-BOOST_AUTO_TEST_CASE(CpgBasic) {
+QPID_AUTO_TEST_CASE(CpgBasic) {
     // Verify basic functionality of cpg. This will catch any
     // openais configuration or permission errors.
     //

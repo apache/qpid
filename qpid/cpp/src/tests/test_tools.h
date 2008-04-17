@@ -68,8 +68,12 @@ inline bool regexPredicate(const std::string& re, const std::string& text) {
 }
 
 /** Check for regular expression match. You must #include <boost/regex.hpp> */
-#define BOOST_CHECK_REGEX(re, text) \
+#if (BOOST_VERSION < 103300)
+  #define BOOST_CHECK_REGEX(re, text)
+#else
+  #define BOOST_CHECK_REGEX(re, text) \
     BOOST_CHECK_PREDICATE(regexPredicate, (re)(text))
+#endif
 
 /** Check if types of two objects (as given by typeinfo::name()) match. */
 #define BOOST_CHECK_TYPEID_EQUAL(a,b) BOOST_CHECK_EQUAL(typeid(a).name(),typeid(b).name())

@@ -30,11 +30,11 @@ using namespace std;
 typedef InlineVector<int, 3> Vec;
 
 bool isInline(const Vec& v) {
-    return (char*)&v <= (char*)v.data() &&
-        (char*)v.data() < (char*)&v+sizeof(v);
+    return (char*)&v <= (char*)(&v[0]) &&
+        (char*)(&v[0]) < (char*)&v+sizeof(v);
 }
 
-BOOST_AUTO_TEST_CASE(testCtor) {
+QPID_AUTO_TEST_CASE(testCtor) {
     {
         Vec v;
         BOOST_CHECK(isInline(v));
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(testCtor) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(testInsert) {
+QPID_AUTO_TEST_CASE(testInsert) {
     Vec v;
     v.push_back(1);
     BOOST_CHECK_EQUAL(v.size(), 1u);

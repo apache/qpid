@@ -69,7 +69,7 @@ void execute(BoostFunctionSerializer& s, boost::function<void()> t)
     s.execute(t);
 }
 
-BOOST_AUTO_TEST_CASE(testSingleThread) {
+QPID_AUTO_TEST_CASE(testSingleThread) {
     // Verify that we call in the same thread by default.
     Tester tester;
     BoostFunctionSerializer s;
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(testSingleThread) {
 }
     
         
-BOOST_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
+QPID_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
     // Verify that we call in different thread if immediate=false.
     Tester tester;
     BoostFunctionSerializer s(false);
@@ -107,7 +107,7 @@ struct Caller : public Runnable, public Tester {
     BoostFunctionSerializer& serializer;
 };
 
-BOOST_AUTO_TEST_CASE(testDispatchThread) {
+QPID_AUTO_TEST_CASE(testDispatchThread) {
     BoostFunctionSerializer s;
     Caller caller(s);
     Thread threads[100];
@@ -138,7 +138,7 @@ void notifyDispatch() {
 }
 
 // Use externally created threads.
-BOOST_AUTO_TEST_CASE(testExternalDispatch) {
+QPID_AUTO_TEST_CASE(testExternalDispatch) {
     serializer.reset(new BoostFunctionSerializer(false, &notifyDispatch));
     Tester tester;
     for (int i = 0; i < 100; ++i) 
