@@ -47,7 +47,7 @@ public interface UnacknowledgedMessageMap
 
     void add(long deliveryTag, UnacknowledgedMessage message);
 
-    void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
+    void collect(Long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
 
     boolean contains(long deliveryTag) throws AMQException;
 

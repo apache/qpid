@@ -26,6 +26,7 @@ package org.apache.qpid.server.filter;
 import java.math.BigDecimal;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 
 /**
@@ -129,6 +130,12 @@ public class ConstantExpression implements Expression
     {
         return value;
     }
+
+    public void setValue(final Object value)
+    {
+        this.value = value;
+    }
+
 
     /**
      * @see java.lang.Object#toString()

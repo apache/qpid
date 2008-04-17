@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 
 /**
@@ -145,6 +146,11 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             if (rv == null)
             {
                 return null;
+            }
+
+            if(rv instanceof AMQShortString)
+            {
+                rv = rv.toString();
             }
 
             if (!(rv instanceof String))
@@ -448,7 +454,40 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         // try to convert up to allow the comparison.
         if (lc != rc)
         {
-            if (lc == Byte.class)
+            if(lc == AMQShortString.class)
+            {
+                if(rc == String.class)
+                {
+                    rv = new AMQShortString((String) rv);
+
+                    if(right instanceof ConstantExpression)
+                    {
+                        ((ConstantExpression)right).setValue(rv);
+                    }
+                }
+                else
+                {
+                    return Boolean.FALSE;
+                }
+            }
+            else if(lc == String.class)
+            {
+                if(rc == AMQShortString.class)
+                {
+                    lv = new AMQShortString((String) lv);
+
+                    if(left instanceof ConstantExpression)
+                    {
+                        ((ConstantExpression)left).setValue(lv);
+                    }
+                }
+                else
+                {
+                    return Boolean.FALSE;
+                }
+
+            }
+            else if (lc == Byte.class)
             {
                 if (rc == Short.class)
                 {

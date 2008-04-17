@@ -254,13 +254,6 @@ public class SubscriptionImpl implements Subscription
         {
             long deliveryTag = channel.getNextDeliveryTag();
 
-            // We don't need to add the message to the unacknowledgedMap as we don't need to know if the client
-            // received the message. If it is lost in transit that is not important.
-//            if (_acks)
-//            {
-//                channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
-//            }
-
             if (_sendLock.get())
             {
                 _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
@@ -283,25 +276,23 @@ public class SubscriptionImpl implements Subscription
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
+            final AMQMessage message = entry.getMessage();
+
             if (!_acks)
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("No ack mode so dequeuing message immediately: " + entry.getMessage().getMessageId());
+                    _logger.debug("No ack mode so dequeuing message immediately: " + message.getMessageId());
                 }
                 queue.dequeue(storeContext, entry);
             }
 
-/*
-            if (_sendLock.get())
-            {
-                _logger.error("Sending " + entry + " when subscriber(" + this + ") is closed!");
-            }
-*/
+            final ProtocolOutputConverter outputConverter = protocolSession.getProtocolOutputConverter();
+            final int channelId = channel.getChannelId();
 
             synchronized (channel)
             {
-                long deliveryTag = channel.getNextDeliveryTag();
+                final long deliveryTag = channel.getNextDeliveryTag();
 
 
                 if (_acks)
@@ -309,13 +300,13 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(entry, deliveryTag, consumerTag);
                 }
 
-                protocolSession.getProtocolOutputConverter().writeDeliver(entry.getMessage(), channel.getChannelId(), deliveryTag, consumerTag);
+                outputConverter.writeDeliver(message, channelId, deliveryTag, consumerTag);
 
 
             }
             if (!_acks)
             {
-                entry.getMessage().decrementReference(storeContext);
+                message.decrementReference(storeContext);
             }
         }
         finally

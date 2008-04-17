@@ -50,7 +50,10 @@ public class JMSSelectorFilter implements MessageFilter
         try
         {
             boolean match = _matcher.matches(message);
-            _logger.info(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
+            }
             return match;
         }
         catch (AMQException e)

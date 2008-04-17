@@ -33,7 +33,9 @@ import javax.jms.TextMessage;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.VMTestCase;
@@ -113,7 +115,7 @@ public class AcknowledgeTest extends VMTestCase
         _consumerB = _consumerSession.createConsumer(_queue);
         sendMessages(NUM_MESSAGES/2);
         int count = 0;
-        Message msg = _consumerB.receive(100);
+        Message msg = _consumerB.receive(1500);
         while (msg != null) 
         {
         	if (mode == Session.CLIENT_ACKNOWLEDGE)
@@ -130,7 +132,28 @@ public class AcknowledgeTest extends VMTestCase
         _consumerA.close();
         _consumerB.close();
         _consumerSession.close();
-        assertEquals("Wrong number of messages on queue", NUM_MESSAGES - count, getMessageCount(_queue.getQueueName()));
+        assertEquals("Wrong number of messages on queue", NUM_MESSAGES - count,
+                        ((AMQSession) _producerSession).getQueueDepth((AMQDestination) _queue));
+
+        // Clean up messages that may be left on the queue
+        _consumerSession = _con.createSession(transacted, mode);
+        _consumerA = _consumerSession.createConsumer(_queue);
+        msg = _consumerA.receive(1500);
+        while (msg != null)
+        {
+            if (mode == Session.CLIENT_ACKNOWLEDGE)
+            {
+                msg.acknowledge();
+            }
+            msg = _consumerA.receive(1500);
+        }
+        _consumerA.close();
+        if (transacted)
+        {
+            _consumerSession.commit();
+        }
+        _consumerSession.close();
+        super.tearDown();
     }
     
     public void test2ConsumersAutoAck() throws Exception

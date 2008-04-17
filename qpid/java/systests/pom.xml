@@ -90,7 +90,7 @@
                         </property>
                         <property>
                             <name>QPID_EXAMPLE_HOME</name>
-                            <value>${basedir}</value>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
                         </property>
                         <property>
                             <name>QPID_HOME</name>
@@ -155,7 +155,7 @@
                         <TimeToLiveTest>-n TimeToLiveTest org.apache.qpid.server.queue.TimeToLiveTest </TimeToLiveTest>
                         <TxnBufferTest>-n TxnBufferTest org.apache.qpid.server.txn.TxnBufferTest </TxnBufferTest>
                         <!--<TxnTest>-n TxnTest org.apache.qpid.server.txn.TxnTest </TxnTest>-->
-                        <QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest>
+                        <!--QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest-->
 
                         <!--<Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>-->
                         <!--<Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>-->

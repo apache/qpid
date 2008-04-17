@@ -60,6 +60,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     private PluginManager _pluginManager;
 
+    public ConfigurationFileApplicationRegistry(Configuration configuration)
+    {
+        super(configuration);
+    }
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
@@ -76,7 +80,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-    private static final Configuration config(File url) throws ConfigurationException
+    public static final Configuration config(File url) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
         // interpolation takes place accross the entirety of the

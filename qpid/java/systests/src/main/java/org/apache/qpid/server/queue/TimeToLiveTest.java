@@ -144,18 +144,18 @@ public class TimeToLiveTest extends TestCase
         clientConnection.start();
 
         //Receive Message 0
-        Message received = consumer.receive(100);
+        Message received = consumer.receive(1000);
         Assert.assertNotNull("First message not received", received);
         Assert.assertTrue("First message doesn't have first set.", received.getBooleanProperty("first"));
         Assert.assertEquals("First message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
 
 
-        received = consumer.receive(100);
+        received = consumer.receive(1000);
         Assert.assertNotNull("Final message not received", received);
         Assert.assertFalse("Final message has first set.", received.getBooleanProperty("first"));
         Assert.assertEquals("Final message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
 
-        received = consumer.receive(100);
+        received = consumer.receive(1000);
         Assert.assertNull("More messages received", received);
 
         clientConnection.close();

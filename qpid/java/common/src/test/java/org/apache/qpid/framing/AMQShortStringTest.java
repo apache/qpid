@@ -24,36 +24,83 @@ import junit.framework.TestCase;
 public class AMQShortStringTest extends TestCase
 {
 
-    AMQShortString Hello = new AMQShortString("Hello");
-    AMQShortString Hell = new AMQShortString("Hell");
-    AMQShortString Goodbye = new AMQShortString("Goodbye");
-    AMQShortString Good = new AMQShortString("Good");
-    AMQShortString Bye = new AMQShortString("Bye");
+    public static final AMQShortString HELLO = new AMQShortString("Hello");
+    public static final AMQShortString HELL = new AMQShortString("Hell");
+    public static final AMQShortString GOODBYE = new AMQShortString("Goodbye");
+    public static final AMQShortString GOOD = new AMQShortString("Good");
+    public static final AMQShortString BYE = new AMQShortString("BYE");
 
     public void testStartsWith()
     {
-        assertTrue(Hello.startsWith(Hell));
+        assertTrue(HELLO.startsWith(HELL));
 
-        assertFalse(Hell.startsWith(Hello));
+        assertFalse(HELL.startsWith(HELLO));
 
-        assertTrue(Goodbye.startsWith(Good));
+        assertTrue(GOODBYE.startsWith(GOOD));
 
-        assertFalse(Good.startsWith(Goodbye));
+        assertFalse(GOOD.startsWith(GOODBYE));
     }
 
     public void testEndWith()
     {
-        assertFalse(Hell.endsWith(Hello));
+        assertFalse(HELL.endsWith(HELLO));
 
-        assertTrue(Goodbye.endsWith(new AMQShortString("bye")));
+        assertTrue(GOODBYE.endsWith(new AMQShortString("bye")));
 
-        assertFalse(Goodbye.endsWith(Bye));
+        assertFalse(GOODBYE.endsWith(BYE));
+    }
+
+
+    public void testTokenize()
+    {
+        AMQShortString dotSeparatedWords = new AMQShortString("this.is.a.test.with.1.2.3.-numbers-and-then--dashes-");
+        AMQShortStringTokenizer dotTokenizer = dotSeparatedWords.tokenize((byte) '.');
+
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("this"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("is"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("a"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("test"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(new AMQShortString("with"),(dotTokenizer.nextToken()));
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 1);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 2);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        assertEquals(dotTokenizer.nextToken().toIntValue() , 3);
+        assertTrue(dotTokenizer.hasMoreTokens());
+        AMQShortString dashString = dotTokenizer.nextToken();
+        assertEquals(new AMQShortString("-numbers-and-then--dashes-"),(dashString));
+
+        AMQShortStringTokenizer dashTokenizer = dashString.tokenize((byte)'-');
+        assertEquals(dashTokenizer.countTokens(), 7);
+
+        AMQShortString[] expectedResults = new AMQShortString[]
+                                                { AMQShortString.EMPTY_STRING,
+                                                  new AMQShortString("numbers"),
+                                                  new AMQShortString("and"),
+                                                  new AMQShortString("then"),
+                                                  AMQShortString.EMPTY_STRING,
+                                                  new AMQShortString("dashes"),
+                                                  AMQShortString.EMPTY_STRING };
+
+        for(int i = 0; i < 7; i++)
+        {
+            assertTrue(dashTokenizer.hasMoreTokens());
+            assertEquals(dashTokenizer.nextToken(), expectedResults[i]);
+        }
+
+        assertFalse(dotTokenizer.hasMoreTokens());
     }
 
 
     public void testEquals()
     {
-        assertEquals(Goodbye, new AMQShortString("Goodbye"));
+        assertEquals(GOODBYE, new AMQShortString("Goodbye"));
         assertEquals(new AMQShortString("A"), new AMQShortString("A"));
         assertFalse(new AMQShortString("A").equals(new AMQShortString("a")));
     }

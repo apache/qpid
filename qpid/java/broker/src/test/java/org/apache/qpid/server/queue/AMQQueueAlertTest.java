@@ -40,7 +40,6 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
 import javax.management.Notification;
 import java.util.LinkedList;
-import java.util.HashSet;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
@@ -57,8 +56,8 @@ public class AMQQueueAlertTest extends TestCase
     private StoreContext _storeContext = new StoreContext();
     private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
                                                                                      null,
-                                                                                     new LinkedList<RequiredDeliveryException>(),
-                                                                                     new HashSet<Long>());
+                                                                                     new LinkedList<RequiredDeliveryException>()
+    );
 
     /**
      * Tests if the alert gets thrown when message count increases the threshold limit

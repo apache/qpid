@@ -90,8 +90,8 @@ public class AckTest extends TestCase
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
         TransactionalContext txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
-                                                                      new LinkedList<RequiredDeliveryException>(),
-                                                                      new HashSet<Long>());
+                                                                      new LinkedList<RequiredDeliveryException>()
+        );
         MessageHandleFactory factory = new MessageHandleFactory();
         for (int i = 1; i <= count; i++)
         {

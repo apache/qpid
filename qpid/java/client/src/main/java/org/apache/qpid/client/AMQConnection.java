@@ -1,5 +1,5 @@
 /*
- *
+*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -466,7 +466,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (!_connected)
         {
             String message = null;
-
+            try
+            {
+                Thread.sleep(150);
+            }
+            catch (InterruptedException e)
+            {
+                // Eat it, we've hopefully got all the exceptions if this happened
+            }
             if (exceptions.size() > 0)
             {
                 JMSException e = exceptions.get(0);
@@ -680,8 +687,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetchHigh, final int prefetchLow) throws JMSException
     {
-
-        return _delegate.createSession(transacted, acknowledgeMode, prefetchHigh, prefetchLow);
+        synchronized (_sessionCreationLock)
+        {
+            checkNotClosed();
+            return _delegate.createSession(transacted, acknowledgeMode, prefetchHigh, prefetchLow);
+        }
     }
 
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
@@ -692,13 +702,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         // TODO: Be aware of possible changes to parameter order as versions change.
 
-        _protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
+        _protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId), ChannelOpenOkBody.class);
 
-        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
+        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(0, prefetchHigh, false);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
+        _protocolHandler.syncWrite(basicQosBody.generateFrame(channelId), BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -886,9 +896,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             else
             {
-                synchronized (getFailoverMutex())
+                if (!_closed.getAndSet(true))
                 {
-                    if (!_closed.getAndSet(true))
+                    synchronized (getFailoverMutex())
                     {
                         try
                         {
@@ -1271,7 +1281,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _logger.error("Throwable Received but no listener set: " + cause.getMessage());
         }
 
-        if (!(cause instanceof AMQUndeliveredException) && !(cause instanceof AMQAuthenticationException))
+        if (hardError(cause))
         {
             try
             {
@@ -1293,6 +1303,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             _logger.info("Not a hard-error connection not closing: " + cause.getMessage());
         }
+    }
+
+    private boolean hardError(Throwable cause)
+    {
+        if (cause instanceof AMQException)
+        {
+            return ((AMQException)cause).isHardError();
+        }
+
+        return true;
     }
 
     void registerSession(int channelId, AMQSession session)

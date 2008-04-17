@@ -18,37 +18,34 @@
  * under the License.
  *
  */
-package org.apache.qpid;
+package org.apache.qpid.test.client;
 
-import org.apache.qpid.protocol.AMQConstant;
+import javax.jms.Queue;
+import javax.jms.ConnectionFactory;
+import javax.jms.Session;
 
-/**
- * AMQUndeliveredException indicates that a message, marked immediate or mandatory, could not be delivered.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents failure to delivery a message that must be delivered.
- * </table>
- */
-public class AMQUndeliveredException extends AMQException
+public class QueueBrowserTransactedTest extends QueueBrowserAutoAckTest
 {
-    private Object _bounced;
-
-    public AMQUndeliveredException(AMQConstant errorCode, String msg, Object bounced, Throwable cause)
+    public void setUp() throws Exception
     {
-        super(errorCode, msg, cause);
 
-        _bounced = bounced;
+        super.setUp();
+
+        _clientConnection.close();
+        _clientSession.close();
+
+        _queue = (Queue) _context.lookup("queue");
+
+        //Create Client
+        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+
+        _clientConnection.start();
+
+        _clientSession = _clientConnection.createSession(true, Session.SESSION_TRANSACTED);
+
+        //Ensure _queue is created
+        _clientSession.createConsumer(_queue).close();
     }
 
-    public Object getUndeliveredMessage()
-    {
-        return _bounced;
-    }
 
-    public boolean isHardError()
-    {
-        return false;
-    }
-    
 }

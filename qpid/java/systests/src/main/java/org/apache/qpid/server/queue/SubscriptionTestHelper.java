@@ -93,7 +93,7 @@ public class SubscriptionTestHelper implements Subscription
     {
         //no-op
     }
-    
+
     public void queueDeleted(AMQQueue queue)
     {
     }
@@ -126,11 +126,6 @@ public class SubscriptionTestHelper implements Subscription
     public void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst)
     {
         //no-op
-    }
-
-    public boolean isAutoClose()
-    {
-        return false;
     }
 
     public void close()
