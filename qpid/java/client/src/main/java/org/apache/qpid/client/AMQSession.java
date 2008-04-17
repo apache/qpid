@@ -2339,6 +2339,17 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
+    /**
+     * Indicates whether this session consumers pre-fetche messages
+     *
+     * @return true if this session consumers pre-fetche messages false otherwise
+     */
+    public boolean prefetch()
+    {
+        return getAMQConnection().getMaxPrefetch() > 0;
+    }
+
+
     public abstract void sendSuspendChannel(boolean suspend) throws AMQException, FailoverException;
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */

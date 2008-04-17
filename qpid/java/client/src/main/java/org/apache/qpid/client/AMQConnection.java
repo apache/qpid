@@ -152,6 +152,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     protected AMQConnectionDelegate _delegate;
 
+    // this connection maximum number of prefetched messages
+    private long _maxPrefetch;
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -231,6 +234,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
+        // set this connection maxPrefetch
+        if (connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH) != null)
+        {
+            _maxPrefetch = Long.parseLong( connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+        }
+        else
+        {
+            // use the defaul value set for all connections
+            _maxPrefetch = ClientProperties.MAX_PREFETCH;
+        }
+
         _failoverPolicy = new FailoverPolicy(connectionURL);
         if (_failoverPolicy.getCurrentBrokerDetails().getTransport().equals(BrokerDetails.VM))
         {
@@ -1178,5 +1192,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public AMQSession getSession(int channelId)
     {
         return _sessions.get(channelId);
+    }
+
+    /**
+     * Get the maximum number of messages that this connection can pre-fetch.
+     *
+     * @return The maximum number of messages that this connection can pre-fetch.
+     */
+    public long getMaxPrefetch()
+    {
+       return _maxPrefetch;
     }
 }

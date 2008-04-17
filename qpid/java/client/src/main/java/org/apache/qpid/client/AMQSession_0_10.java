@@ -406,7 +406,7 @@ public class AMQSession_0_10 extends AMQSession
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
 
-        if (ClientProperties.MAX_PREFETCH == 0)
+        if (! prefetch())
         {
             getQpidSession().messageSetFlowMode(consumer.getConsumerTag().toString(), MessageFlowMode.CREDIT);
         }
@@ -417,12 +417,12 @@ public class AMQSession_0_10 extends AMQSession
         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
         // only if not immediat prefetch
-        if(ClientProperties.MAX_PREFETCH > 0 && (consumer.isStrated() || _immediatePrefetch))
+        if(prefetch() && (consumer.isStrated() || _immediatePrefetch))
         {
             // set the flow
             getQpidSession().messageFlow(consumer.getConsumerTag().toString(),
                                          MessageCreditUnit.MESSAGE,
-                                         ClientProperties.MAX_PREFETCH);
+                                         getAMQConnection().getMaxPrefetch());
         }
         getQpidSession().sync();
         getCurrentException();
@@ -531,7 +531,7 @@ public class AMQSession_0_10 extends AMQSession
                 //only set if msg list is null
                 try
                 {
-                    if (ClientProperties.MAX_PREFETCH == 0)
+                    if (! prefetch())
                     {
                         if (consumer.getMessageListener() != null)
                         {
@@ -543,7 +543,7 @@ public class AMQSession_0_10 extends AMQSession
                     {
                         getQpidSession()
                             .messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.MESSAGE,
-                                         ClientProperties.MAX_PREFETCH);
+                                         getAMQConnection().getMaxPrefetch());
                     }
                     getQpidSession()
                         .messageFlow(consumer.getConsumerTag().toString(), MessageCreditUnit.BYTE, 0xFFFFFFFF);
