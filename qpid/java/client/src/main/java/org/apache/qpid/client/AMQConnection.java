@@ -258,7 +258,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
-    private ProtocolVersion _protocolVersion;
+    private ProtocolVersion _protocolVersion = ProtocolVersion.v0_9; // FIXME TGM, shouldn't need this
 
     protected AMQConnectionDelegate _delegate;
     
