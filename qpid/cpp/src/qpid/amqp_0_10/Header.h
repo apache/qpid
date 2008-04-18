@@ -32,7 +32,7 @@ namespace amqp_0_10 {
 class Header : public std::vector<Struct32> {
   public:
     Header() {}
-    
+
     template <class S> void serialize(S& s) { s.split(*this); }
     template <class S> void encode(S& s) const { s(this->begin(), this->end()); }
     template <class S> void decode(S& s);

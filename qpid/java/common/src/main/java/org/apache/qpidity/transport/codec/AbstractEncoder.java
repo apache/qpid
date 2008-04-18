@@ -20,8 +20,11 @@
  */
 package org.apache.qpidity.transport.codec;
 
+import java.io.UnsupportedEncodingException;
+
 import java.nio.ByteBuffer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,17 +51,17 @@ abstract class AbstractEncoder implements Encoder
     static
     {
         ENCODINGS.put(Boolean.class, Type.BOOLEAN);
-        ENCODINGS.put(String.class, Type.LONG_STRING);
-        ENCODINGS.put(Long.class, Type.SIGNED_LONG);
-        ENCODINGS.put(Integer.class, Type.SIGNED_INT);
-        ENCODINGS.put(Short.class, Type.SIGNED_SHORT);
-        ENCODINGS.put(Byte.class, Type.SIGNED_BYTE);
-        ENCODINGS.put(Map.class, Type.TABLE);
-        ENCODINGS.put(List.class, Type.SEQUENCE);
+        ENCODINGS.put(String.class, Type.STR16);
+        ENCODINGS.put(Long.class, Type.INT64);
+        ENCODINGS.put(Integer.class, Type.INT32);
+        ENCODINGS.put(Short.class, Type.INT16);
+        ENCODINGS.put(Byte.class, Type.INT8);
+        ENCODINGS.put(Map.class, Type.MAP);
+        ENCODINGS.put(List.class, Type.LIST);
         ENCODINGS.put(Float.class, Type.FLOAT);
         ENCODINGS.put(Double.class, Type.DOUBLE);
         ENCODINGS.put(Character.class, Type.CHAR);
-        ENCODINGS.put(byte[].class, Type.LONG_BINARY);
+        ENCODINGS.put(byte[].class, Type.VBIN32);
     }
 
     protected Sizer sizer()
@@ -120,14 +123,14 @@ abstract class AbstractEncoder implements Encoder
         flushBits();
     }
 
-    public void writeOctet(short b)
+    public void writeUint8(short b)
     {
         assert b < 0x100;
 
         put((byte) b);
     }
 
-    public void writeShort(int s)
+    public void writeUint16(int s)
     {
         assert s < 0x10000;
 
@@ -135,7 +138,7 @@ abstract class AbstractEncoder implements Encoder
         put(lsb(s));
     }
 
-    public void writeLong(long i)
+    public void writeUint32(long i)
     {
         assert i < 0x100000000L;
 
@@ -145,7 +148,12 @@ abstract class AbstractEncoder implements Encoder
         put(lsb(i));
     }
 
-    public void writeLonglong(long l)
+    public void writeSequenceNo(int i)
+    {
+        writeUint32(i);
+    }
+
+    public void writeUint64(long l)
     {
         for (int i = 0; i < 8; i++)
         {
@@ -154,45 +162,99 @@ abstract class AbstractEncoder implements Encoder
     }
 
 
-    public void writeTimestamp(long l)
+    public void writeDatetime(long l)
     {
-        writeLonglong(l);
+        writeUint64(l);
     }
 
-
-    public void writeShortstr(String s)
+    private static final String checkLength(String s, int n)
     {
-        if (s == null) { s = ""; }
-        if (s.length() > 255) {
-            throw new IllegalArgumentException(s);
-        }
-        writeOctet((short) s.length());
-        put(ByteBuffer.wrap(s.getBytes()));
-    }
-
-    public void writeLongstr(String s)
-    {
-        if (s == null) { s = ""; }
-        writeLong(s.length());
-        put(ByteBuffer.wrap(s.getBytes()));
-    }
-
-
-    public void writeRfc1982LongSet(RangeSet ranges)
-    {
-        if (ranges == null)
+        if (s == null)
         {
-            writeShort((short) 0);
+            return "";
+        }
+
+        if (s.length() > n)
+        {
+            throw new IllegalArgumentException("string too long: " + s);
         }
         else
         {
-            writeShort(ranges.size() * 8);
+            return s;
+        }
+    }
+
+    private static final byte[] encode(String s, String charset)
+    {
+        try
+        {
+            return s.getBytes(charset);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeStr8(String s)
+    {
+        s = checkLength(s, 255);
+        writeUint8((short) s.length());
+        put(ByteBuffer.wrap(encode(s, "UTF-8")));
+    }
+
+    public void writeStr16(String s)
+    {
+        s = checkLength(s, 65535);
+        writeUint16(s.length());
+        put(ByteBuffer.wrap(encode(s, "UTF-8")));
+    }
+
+    public void writeVbin8(byte[] bytes)
+    {
+        if (bytes == null) { bytes = new byte[0]; }
+        if (bytes.length > 255)
+        {
+            throw new IllegalArgumentException("array too long: " + bytes.length);
+        }
+        writeUint8((short) bytes.length);
+        put(ByteBuffer.wrap(bytes));
+    }
+
+    public void writeVbin16(byte[] bytes)
+    {
+        if (bytes == null) { bytes = new byte[0]; }
+        writeUint16(bytes.length);
+        put(ByteBuffer.wrap(bytes));
+    }
+
+    public void writeVbin32(byte[] bytes)
+    {
+        if (bytes == null) { bytes = new byte[0]; }
+        writeUint32(bytes.length);
+        put(ByteBuffer.wrap(bytes));
+    }
+
+    public void writeSequenceSet(RangeSet ranges)
+    {
+        if (ranges == null)
+        {
+            writeUint16((short) 0);
+        }
+        else
+        {
+            writeUint16(ranges.size() * 8);
             for (Range range : ranges)
             {
-                writeLong(range.getLower());
-                writeLong(range.getUpper());
+                writeUint32(range.getLower());
+                writeUint32(range.getUpper());
             }
         }
+    }
+
+    public void writeByteRanges(RangeSet ranges)
+    {
+        throw new Error("not implemented");
     }
 
     public void writeUuid(UUID uuid)
@@ -202,15 +264,10 @@ abstract class AbstractEncoder implements Encoder
         if (uuid != null)
         {
             msb = uuid.getMostSignificantBits();
-            uuid.getLeastSignificantBits();
+            lsb = uuid.getLeastSignificantBits();
         }
-        writeLonglong(msb);
-        writeLonglong(lsb);
-    }
-
-    public void writeContent(String c)
-    {
-        throw new Error("Deprecated");
+        writeUint64(msb);
+        writeUint64(lsb);
     }
 
     public void writeStruct(int type, Struct s)
@@ -237,22 +294,27 @@ abstract class AbstractEncoder implements Encoder
             }
         }
 
+        if (type > 0)
+        {
+            writeUint16(type);
+        }
+
         s.write(this);
     }
 
-    public void writeLongStruct(Struct s)
+    public void writeStruct32(Struct s)
     {
         if (s == null)
         {
-            writeLong(0);
+            writeUint32(0);
         }
         else
         {
             Sizer sizer = sizer();
-            sizer.writeShort(s.getEncodedType());
+            sizer.writeUint16(s.getEncodedType());
             s.write(sizer);
-            writeLong(sizer.size());
-            writeShort(s.getEncodedType());
+            writeUint32(sizer.size());
+            writeUint16(s.getEncodedType());
             s.write(this);
         }
     }
@@ -309,46 +371,46 @@ abstract class AbstractEncoder implements Encoder
         return null;
     }
 
-    public void writeTable(Map<String,Object> table)
+    public void writeMap(Map<String,Object> map)
     {
-        if (table == null)
+        if (map == null)
         {
-            writeLong(0);
+            writeUint32(0);
             return;
         }
 
         Sizer sizer = sizer();
-        sizer.writeTable(table);
+        sizer.writeMap(map);
         // XXX: - 4
-        writeLong(sizer.size() - 4);
-        writeTableEntries(table);
+        writeUint32(sizer.size() - 4);
+        writeMapEntries(map);
     }
 
-    protected void writeTableEntries(Map<String,Object> table)
+    protected void writeMapEntries(Map<String,Object> map)
     {
-        for (Map.Entry<String,Object> entry : table.entrySet())
+        for (Map.Entry<String,Object> entry : map.entrySet())
         {
             String key = entry.getKey();
             Object value = entry.getValue();
             Type type = encoding(value);
-            writeShortstr(key);
+            writeStr8(key);
             put(type.code);
             write(type, value);
         }
     }
 
-    public void writeSequence(List<Object> sequence)
+    public void writeList(List<Object> list)
     {
         Sizer sizer = sizer();
-        sizer.writeSequence(sequence);
+        sizer.writeList(list);
         // XXX: - 4
-        writeLong(sizer.size() - 4);
-        writeSequenceEntries(sequence);
+        writeUint32(sizer.size() - 4);
+        writeListEntries(list);
     }
 
-    protected void writeSequenceEntries(List<Object> sequence)
+    protected void writeListEntries(List<Object> list)
     {
-        for (Object value : sequence)
+        for (Object value : list)
         {
             Type type = encoding(value);
             put(type.code);
@@ -358,10 +420,15 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeArray(List<Object> array)
     {
+        if (array == null)
+        {
+            array = Collections.EMPTY_LIST;
+        }
+
         Sizer sizer = sizer();
         sizer.writeArray(array);
         // XXX: -4
-        writeLong(sizer.size() - 4);
+        writeUint32(sizer.size() - 4);
         writeArrayEntries(array);
     }
 
@@ -371,7 +438,7 @@ abstract class AbstractEncoder implements Encoder
 
         if (array.isEmpty())
         {
-            type = Type.VOID;
+            return;
         }
         else
         {
@@ -379,6 +446,8 @@ abstract class AbstractEncoder implements Encoder
         }
 
         put(type.code);
+
+        writeUint32(array.size());
 
         for (Object value : array)
         {
@@ -409,13 +478,13 @@ abstract class AbstractEncoder implements Encoder
         switch (width)
         {
         case 1:
-            writeOctet((short) size);
+            writeUint8((short) size);
             break;
         case 2:
-            writeShort(size);
+            writeUint16(size);
             break;
         case 4:
-            writeLong(size);
+            writeUint32(size);
             break;
         default:
             throw new IllegalStateException("illegal width: " + width);
@@ -444,11 +513,11 @@ abstract class AbstractEncoder implements Encoder
     {
         switch (t)
         {
-        case OCTET:
-        case UNSIGNED_BYTE:
-            writeOctet(coerce(Short.class, value));
+        case BIN8:
+        case UINT8:
+            writeUint8(coerce(Short.class, value));
             break;
-        case SIGNED_BYTE:
+        case INT8:
             put(coerce(Byte.class, value));
             break;
         case CHAR:
@@ -465,85 +534,78 @@ abstract class AbstractEncoder implements Encoder
             }
             break;
 
-        case TWO_OCTETS:
-        case UNSIGNED_SHORT:
-            writeShort(coerce(Integer.class, value));
+        case BIN16:
+        case UINT16:
+            writeUint16(coerce(Integer.class, value));
             break;
 
-        case SIGNED_SHORT:
-            writeShort(coerce(Short.class, value));
+        case INT16:
+            writeUint16(coerce(Short.class, value));
             break;
 
-        case FOUR_OCTETS:
-        case UNSIGNED_INT:
-            writeLong(coerce(Long.class, value));
+        case BIN32:
+        case UINT32:
+            writeUint32(coerce(Long.class, value));
             break;
 
-        case UTF32_CHAR:
-        case SIGNED_INT:
-            writeLong(coerce(Integer.class, value));
+        case CHAR_UTF32:
+        case INT32:
+            writeUint32(coerce(Integer.class, value));
             break;
 
         case FLOAT:
-            writeLong(Float.floatToIntBits(coerce(Float.class, value)));
+            writeUint32(Float.floatToIntBits(coerce(Float.class, value)));
             break;
 
-        case EIGHT_OCTETS:
-        case SIGNED_LONG:
-        case UNSIGNED_LONG:
+        case BIN64:
+        case UINT64:
+        case INT64:
         case DATETIME:
-            writeLonglong(coerce(Long.class, value));
+            writeUint64(coerce(Long.class, value));
             break;
 
         case DOUBLE:
             long bits = Double.doubleToLongBits(coerce(Double.class, value));
-            writeLonglong(bits);
-            break;
-
-        case SIXTEEN_OCTETS:
-        case THIRTY_TWO_OCTETS:
-        case SIXTY_FOUR_OCTETS:
-        case _128_OCTETS:
-        case SHORT_BINARY:
-        case BINARY:
-        case LONG_BINARY:
-            writeBytes(t, coerce(byte[].class, value));
+            writeUint64(bits);
             break;
 
         case UUID:
             writeUuid(coerce(UUID.class, value));
             break;
 
-        case SHORT_STRING:
-        case SHORT_UTF8_STRING:
-        case SHORT_UTF16_STRING:
-        case SHORT_UTF32_STRING:
-        case STRING:
-        case UTF8_STRING:
-        case UTF16_STRING:
-        case UTF32_STRING:
-        case LONG_STRING:
-        case LONG_UTF8_STRING:
-        case LONG_UTF16_STRING:
-        case LONG_UTF32_STRING:
+        case STR8:
+            writeStr8(coerce(String.class, value));
+            break;
+
+        case STR16:
+            writeStr16(coerce(String.class, value));
+            break;
+
+        case STR8_LATIN:
+        case STR8_UTF16:
+        case STR16_LATIN:
+        case STR16_UTF16:
             // XXX: need to do character conversion
             writeBytes(t, coerce(String.class, value).getBytes());
             break;
 
-        case TABLE:
-            writeTable((Map<String,Object>) coerce(Map.class, value));
+        case MAP:
+            writeMap((Map<String,Object>) coerce(Map.class, value));
             break;
-        case SEQUENCE:
-            writeSequence(coerce(List.class, value));
+        case LIST:
+            writeList(coerce(List.class, value));
             break;
         case ARRAY:
             writeArray(coerce(List.class, value));
             break;
+        case STRUCT32:
+            writeStruct32(coerce(Struct.class, value));
+            break;
 
-        case FIVE_OCTETS:
-        case DECIMAL:
-        case NINE_OCTETS:
-        case LONG_DECIMAL:
+        case BIN40:
+        case DEC32:
+        case BIN72:
+        case DEC64:
             // XXX: what types are we supposed to use here?
             writeBytes(t, coerce(byte[].class, value));
             break;

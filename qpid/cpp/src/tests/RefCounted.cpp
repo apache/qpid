@@ -35,7 +35,7 @@ struct CountMe : public RefCounted {
 
 int CountMe::instances=0;
 
-BOOST_AUTO_TEST_CASE(testRefCounted) {
+QPID_AUTO_TEST_CASE(testRefCounted) {
     BOOST_CHECK_EQUAL(0, CountMe::instances);
     intrusive_ptr<CountMe> p(new CountMe());
     BOOST_CHECK_EQUAL(1, CountMe::instances);

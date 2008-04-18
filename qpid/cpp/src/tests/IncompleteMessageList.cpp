@@ -56,7 +56,7 @@ struct Checker
     } 
 };
 
-BOOST_AUTO_TEST_CASE(testProcessSimple)
+QPID_AUTO_TEST_CASE(testProcessSimple)
 {
     IncompleteMessageList list;
     SequenceNumber counter(1);
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(testProcessSimple)
     list.process(Checker(), false);
 }
 
-BOOST_AUTO_TEST_CASE(testProcessWithIncomplete)
+QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
 {
     IncompleteMessageList list;
     SequenceNumber counter(1);
@@ -105,7 +105,7 @@ struct MockStore : public NullMessageStore
     }
 };
 
-BOOST_AUTO_TEST_CASE(testSyncProcessWithIncomplete)
+QPID_AUTO_TEST_CASE(testSyncProcessWithIncomplete)
 {
     IncompleteMessageList list;
     SequenceNumber counter(1);

@@ -127,6 +127,8 @@ public class AMQSession_0_8 extends AMQSession
 
     public void sendRecover() throws AMQException, FailoverException
     {
+        _unacknowledgedMessageTags.clear();
+
         if (isStrictAMQP())
         {
             // We can't use the BasicRecoverBody-OK method as it isn't part of the spec.
@@ -153,6 +155,25 @@ public class AMQSession_0_8 extends AMQSession
             {
                 throw new RuntimeException("Unsupported version of the AMQP Protocol: " + getProtocolHandler().getProtocolVersion());
             }
+        }
+    }
+
+    public void releaseForRollback()
+    {
+        while (true)
+        {
+            Long tag = _deliveredMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+
+            rejectMessage(tag, true);
+        }
+
+        if (_dispatcher != null)
+        {
+            _dispatcher.rollback();
         }
     }
 

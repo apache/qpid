@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -43,7 +44,7 @@ public class Producer
     private static final String CLASS = "Producer";
 
     private int numMessages = 10;
-    private short deliveryMode = 0;
+    private short deliveryMode = DeliveryMode.NON_PERSISTENT;
 
     /**
      * Create a Producer client.

@@ -67,11 +67,13 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
         }
     }
 
+    public static final int FRAME_END = 0xCE;
+
     public void frame(Frame frame)
     {
        ByteBuffer hdr = ByteBuffer.allocate(HEADER_SIZE +   frame.getSize() + 1);
         hdr.put(frame.getFlags());
-        hdr.put(frame.getType());
+        hdr.put((byte) frame.getType().getValue());
         hdr.putShort((short) (frame.getSize() + HEADER_SIZE));
         hdr.put(RESERVED);
         hdr.put(frame.getTrack());
@@ -84,7 +86,7 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
         {
             hdr.put(buf);
         }
-        hdr.put((byte) Constant.FRAME_END);
+        hdr.put((byte) FRAME_END);
         hdr.flip();
         synchronized (lock)
         {

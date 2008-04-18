@@ -80,6 +80,20 @@ class AMQFrame : public AMQDataBlock
     bool decode(Buffer& buffer); 
     uint32_t size() const;
 
+    // 0-10 terminology: first/last frame (in segment) first/last segment (in assembly)
+
+    bool isFirstSegment() const { return bof; }
+    bool isLastSegment() const { return eof; }
+    bool isFirstFrame() const { return bos; }
+    bool isLastFrame() const { return eos; }
+
+    void setFirstSegment(bool set=true) { bof = set; }
+    void setLastSegment(bool set=true) { eof = set; }
+    void setFirstFrame(bool set=true) { bos = set; }
+    void setLastFrame(bool set=true) { eos = set; }
+
+    // 0-9 terminology: beginning/end of frameset, beginning/end of segment.
+
     bool getBof() const { return bof; }
     void setBof(bool isBof) { bof = isBof; }
     bool getEof() const { return eof; }

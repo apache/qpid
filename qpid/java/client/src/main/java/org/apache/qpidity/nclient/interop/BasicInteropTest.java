@@ -13,6 +13,10 @@ import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
+import org.apache.qpidity.transport.MessageCreditUnit;
+import org.apache.qpidity.transport.MessageFlowMode;
 import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.transport.RangeSet;
 
@@ -66,14 +70,14 @@ public class BasicInteropTest implements ClosedListener
         System.out.println("------- Queue created --------");
 
         System.out.println("------- Binding a queue --------");
-        session.queueBind("testQueue", "test", "testKey", null);
+        session.exchangeBind("testQueue", "test", "testKey", null);
         session.sync();
         System.out.println("------- Queue bound --------");
     }
 
     public void testSendMessage(){
         System.out.println("------- Sending a message --------");
-        session.messageTransfer("test", Session.TRANSFER_CONFIRM_MODE_REQUIRED, Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+        session.messageTransfer("test", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
 
         Map<String,Object> props = new HashMap<String,Object>();
         props.put("name", "rajith");
@@ -111,11 +115,10 @@ public class BasicInteropTest implements ClosedListener
                                  null);
 
         System.out.println("------- Setting Credit mode --------");
-        session.messageFlowMode("myDest", Session.MESSAGE_FLOW_MODE_WINDOW);
+        session.messageSetFlowMode("myDest", MessageFlowMode.WINDOW);
         System.out.println("------- Setting Credit --------");
-        session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-        //session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
-        session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_BYTE, -1);
+        session.messageFlow("myDest", MessageCreditUnit.MESSAGE, 1);
+        session.messageFlow("myDest", MessageCreditUnit.BYTE, -1);
     }
 
     public void testMessageFlush()

@@ -53,6 +53,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
+    public static final String JMS_TYPE = "x-jms-type";
+
     protected boolean _redelivered;
 
     protected ByteBuffer _data;

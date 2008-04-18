@@ -19,6 +19,9 @@ package org.apache.qpid.client;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -33,6 +36,9 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpidity.nclient.util.ByteBufferMessage;
 import org.apache.qpidity.njms.ExceptionHelper;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageDeliveryMode;
+import org.apache.qpidity.transport.MessageDeliveryPriority;
+import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.transport.ReplyTo;
 
 /**
@@ -77,6 +83,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
         DeliveryProperties deliveryProp = message.get010Message().getDeliveryProperties();
+        MessageProperties messageProps = message.get010Message().getMessageProperties();
         // set the delivery properties
         if (!_disableTimestamps)
         {
@@ -95,14 +102,26 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             message.setJMSTimestamp(currentTime);
         }
 
-        if (deliveryProp.getDeliveryMode() != deliveryMode)
+        if (!deliveryProp.hasDeliveryMode() || deliveryProp.getDeliveryMode().getValue() != deliveryMode)
         {
-            deliveryProp.setDeliveryMode((byte) deliveryMode);
+            MessageDeliveryMode mode;
+            switch (deliveryMode)
+            {
+            case DeliveryMode.PERSISTENT:
+                mode = MessageDeliveryMode.PERSISTENT;
+                break;
+            case DeliveryMode.NON_PERSISTENT:
+                mode = MessageDeliveryMode.NON_PERSISTENT;
+                break;
+            default:
+                throw new IllegalArgumentException("illegal delivery mode: " + deliveryMode);
+            }
+            deliveryProp.setDeliveryMode(mode);
             message.setJMSDeliveryMode(deliveryMode);
         }
-        if (deliveryProp.getPriority() != priority)
+        if (!deliveryProp.hasPriority() || deliveryProp.getPriority().getValue() != priority)
         {
-            deliveryProp.setPriority((byte) priority);
+            deliveryProp.setPriority(MessageDeliveryPriority.get((short) priority));
             message.setJMSPriority(priority);
         }
         String excahngeName = destination.getExchangeName().toString();
@@ -131,27 +150,19 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         if (contentHeaderProperties.reset())
         {
             // set the application properties
-            message.get010Message().getMessageProperties()
-                    .setContentType(contentHeaderProperties.getContentType().toString());
+            messageProps.setContentType(contentHeaderProperties.getContentType().toString());
+            messageProps.setContentLength(message.getContentLength());
 
-            /* Temp hack to get the JMS client to interoperate with the python client
-               as it relies on content length to determine the boundaries for
-               message framesets. The python client should be fixed.
-            */
-            message.get010Message().getMessageProperties().setContentLength(message.getContentLength());
+            // XXX: fixme
+            String mid = message.getJMSMessageID();
+            messageProps.setMessageId(UUID.fromString(mid.substring(3)));
 
-
-            AMQShortString type = contentHeaderProperties.getType();
-            if (type != null)
-            {
-                message.get010Message().getMessageProperties().setType(type.toString());
-            }
-            message.get010Message().getMessageProperties().setMessageId(message.getJMSMessageID());
             AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
             if (correlationID != null)
             {
-                message.get010Message().getMessageProperties().setCorrelationId(correlationID.toString());
+                messageProps.setCorrelationId(correlationID.getBytes());
             }
+
             String replyToURL = contentHeaderProperties.getReplyToAsString();
             if (replyToURL != null)
             {
@@ -172,17 +183,34 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 {
                     throw ExceptionHelper.convertQpidExceptionToJMSException(e);
                 }
-                message.get010Message().getMessageProperties()
-                        .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
+                messageProps.setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
             }
+
+            Map<String,Object> map = null;
+
             if (contentHeaderProperties.getHeaders() != null)
             {
                 //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
                 contentHeaderProperties.getHeaders().remove(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
-                message.get010Message().getMessageProperties()
-                        .setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
+                map = FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders());
+            }
+
+            AMQShortString type = contentHeaderProperties.getType();
+            if (type != null)
+            {
+                if (map == null)
+                {
+                    map = new HashMap<String,Object>();
+                }
+                map.put(AbstractJMSMessage.JMS_TYPE, type.toString());
+            }
+
+            if (map != null)
+            {
+                messageProps.setApplicationHeaders(map);
             }
         }
+
         // send the message
         try
         {
@@ -190,7 +218,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                     message.get010Message(),
                     org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                     org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-            if(deliveryMode == DeliveryMode.PERSISTENT && ClientProperties.FULLY_SYNC )
+            if(deliveryMode == DeliveryMode.PERSISTENT && getSession().getAMQConnection().getSyncPersistence())
             {
                 // we need to sync the delivery of this message
                 ((AMQSession_0_10) getSession()).getQpidSession().sync();

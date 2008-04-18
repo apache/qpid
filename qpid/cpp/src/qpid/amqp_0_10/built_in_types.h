@@ -23,6 +23,7 @@
 
 #include "qpid/Serializer.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Time.h"
 #include "Decimal.h"
@@ -135,16 +136,18 @@ typedef SerializableString<Uint16, Uint16> Str16Utf16;
 
 typedef SerializableString<Uint8, Uint32> Vbin32;
 
+typedef framing::SequenceSet SequenceSet;
+
 // Forward declare class types.
 class Map;
 class Struct32;
+class List;
 class UnknownType;
 template <class T> struct  ArrayDomain;
 typedef ArrayDomain<UnknownType> Array;
 
 // FIXME aconway 2008-04-08: TODO
 struct ByteRanges { template <class S> void serialize(S&) {} };
-struct SequenceSet  { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
 
 // FIXME aconway 2008-03-10: dummy ostream operators

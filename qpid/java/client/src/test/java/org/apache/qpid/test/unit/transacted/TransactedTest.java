@@ -219,14 +219,7 @@ public class TransactedTest extends QpidTestCase
             // ensure sent messages are not visible and received messages are requeued
             expect("RB_A", consumer1.receive(1000), true);
             expect("RB_B", consumer1.receive(1000), true);
-            if( isBroker08() )
-            {
-                expect("RB_C", consumer1.receive(1000), true);
-            }
-            else
-            {
-                  expect("RB_C", consumer1.receive(1000), false);
-            }
+            expect("RB_C", consumer1.receive(1000), true);
             _logger.info("Starting new connection");
             testCon.start();
             testConsumer1 = testSession.createConsumer(queue1);

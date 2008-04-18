@@ -28,7 +28,7 @@ namespace amqp_0_10 {
 void UnknownStruct::accept(Visitor& v) {  v.visit(*this); }
 void UnknownStruct::accept(ConstVisitor& v) const { v.visit(*this); }
 std::ostream& operator<<(std::ostream& o, const UnknownStruct& u) {
-    return o << "UnknownStruct[class=" << u.classCode << " code=" << u.code << "]";
+    return o << "UnknownStruct[class=" << u.getClassCode() << " code=" << u.getCode() << "]";
 }
 
 }} // namespace qpid::amqp_0_10

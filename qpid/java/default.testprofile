@@ -1,10 +1,11 @@
 broker.version=0-8
 broker=vm
-broker.clean=${project.root}/clean-dir
+broker.clean=${project.root}/clean-dir ${build.data}
 java.naming.provider.url=${project.root}/test-provider.properties
 test.excludes=true
 test.excludesfile=${project.root}/08ExcludeList
 log=info
+max_prefetch=1000
 amqj.logging.level=$log
 root.logging.level=$log
 log4j.configuration=file://${project.root}/log4j-test.xml

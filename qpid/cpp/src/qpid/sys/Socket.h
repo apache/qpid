@@ -21,25 +21,22 @@
  * under the License.
  *
  */
+#include "IOHandle.h"
+
 #include <string>
-#include "qpid/sys/Time.h"
 
 struct sockaddr;
 
 namespace qpid {
 namespace sys {
 
-class SocketPrivate;
-class Socket
+class Duration;
+
+class Socket : public IOHandle
 {
-	friend class Poller;
-
-	SocketPrivate* const impl;
-
 public:
     /** Create a socket wrapper for descriptor. */
     Socket();
-    ~Socket();
 
     /** Create an initialized TCP socket */
     void createTcp() const;
@@ -106,10 +103,8 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
-    int toFd() const;
-    
 private:
-	Socket(SocketPrivate*);
+	Socket(IOHandlePrivate*);
 };
 
 }}

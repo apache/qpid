@@ -35,20 +35,16 @@ public abstract class SessionDelegate
 {
     public void init(Session ssn, ProtocolHeader hdr) { }
 
-    public void method(Session ssn, Method method) {
-        if (method.getEncodedTrack() == Frame.L4)
-        {
-            method.setId(ssn.nextCommandId());
-        }
-
+    public void control(Session ssn, Method method) {
         method.dispatch(ssn, this);
+    }
 
-        if (method.getEncodedTrack() == Frame.L4)
+    public void command(Session ssn, Method method) {
+        method.setId(ssn.nextCommandId());
+        method.dispatch(ssn, this);
+        if (!method.hasPayload())
         {
-            if (!method.hasPayload())
-            {
-                ssn.processed(method);
-            }
+            ssn.processed(method);
         }
     }
 
@@ -60,12 +56,12 @@ public abstract class SessionDelegate
 
     @Override public void executionResult(Session ssn, ExecutionResult result)
     {
-        ssn.result(result.getCommandId(), result.getData());
+        ssn.result(result.getCommandId(), result.getValue());
     }
 
-    @Override public void executionComplete(Session ssn, ExecutionComplete excmp)
+    @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
     {
-        RangeSet ranges = excmp.getRangedExecutionSet();
+        RangeSet ranges = cmp.getCommands();
         if (ranges != null)
         {
             for (Range range : ranges)
@@ -73,12 +69,27 @@ public abstract class SessionDelegate
                 ssn.complete(range.getLower(), range.getUpper());
             }
         }
-        ssn.complete(excmp.getCumulativeExecutionMark());
     }
 
-    @Override public void executionFlush(Session ssn, ExecutionFlush flush)
+    @Override public void sessionFlush(Session ssn, SessionFlush flush)
     {
-        ssn.flushProcessed();
+        if (flush.getCompleted())
+        {
+            ssn.flushProcessed();
+        }
+        if (flush.getConfirmed())
+        {
+            throw new Error("not implemented");
+        }
+        if (flush.getExpected())
+        {
+            throw new Error("not implemented");
+        }
+    }
+
+    @Override public void sessionCommandPoint(Session ssn, SessionCommandPoint scp)
+    {
+        ssn.commandsIn = scp.getCommandId();
     }
 
     @Override public void executionSync(Session ssn, ExecutionSync sync)

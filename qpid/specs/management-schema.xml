@@ -45,7 +45,7 @@
   ===============================================================
   -->
   <class name="system">
-    <configElement name="sysId" index="y" type="sstr" access="RC"/>
+    <configElement name="sysId" index="y" type="uuid" access="RC"/>
 
     <configElement name="osName"   type="sstr" access="RO" desc="Operating System Name"/>
     <configElement name="nodeName" type="sstr" access="RO" desc="Node Name"/>

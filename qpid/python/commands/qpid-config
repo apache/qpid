@@ -97,13 +97,17 @@ class BrokerManager:
         try:
             self.spec     = qpid.spec.load (_specpath)
             self.client   = Client (self.broker.host, self.broker.port, self.spec)
-            self.client.start ({"LOGIN":"guest","PASSWORD":"guest"})
+            self.client.start (response='\x00' + "guest" + '\x00' + "guest",
+                               mechanism="PLAIN")
             self.channel  = self.client.channel (1)
             self.mclient  = managementClient (self.spec)
             self.mchannel = self.mclient.addChannel (self.channel)
         except socket.error, e:
-            print "Connect Error:", e
-            exit (1)
+            print "Socket Error:", e
+            sys.exit (1)
+        except Closed, e:
+            print "Connect Failed:", e
+            sys.exit (1)
 
     def Overview (self):
         self.ConnectToBroker ()

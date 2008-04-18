@@ -55,8 +55,8 @@ private:
     } state;
 
 public:
-    DispatchHandle(const Socket& s, Callback rCb, Callback wCb, Callback dCb) :
-      PollerHandle(s),
+    DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
+      PollerHandle(h),
       readableCallback(rCb),
       writableCallback(wCb),
       disconnectedCallback(dCb),

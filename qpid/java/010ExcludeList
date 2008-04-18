@@ -3,8 +3,13 @@ org.apache.qpid.client.ResetMessageListenerTest#*
 // those tests should be run with prefetch off
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
-org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
 // those tests need durable subscribe states to be persisted
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
-org.apache.qpid.test.unit.ct.DurableSubscriberTests#testDurSubRestoresMessageSelector 
+// those tests require broker recovery
+org.apache.qpid.test.unit.ct.DurableSubscriberTests#*
+org.apache.qpid.test.unit.xa.TopicTest#testDurSubCrash
+org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
+org.apache.qpid.test.unit.xa.TopicTest#testRecover
+org.apache.qpid.test.unit.xa.QueueTest#testRecover
+org.apache.qpid.test.unit.xa.QueueTest#testSendAndRecover

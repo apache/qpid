@@ -21,19 +21,31 @@
  * under the License.
  *
  */
-#include "qpid/amqp_0_10/complex_types.h"
+#include "qpid/amqp_0_10/Struct.h"
+#include <string>
 
 namespace qpid {
 namespace amqp_0_10 {
 
-struct UnknownStruct : public Struct, public Vbin32 {
+class UnknownStruct : public Struct {
+  public:
     static const uint8_t SIZE=4;
     static const uint8_t PACK=2;
-    
+
+    template <class S> void serialize(S& s) { s.split(*this); s(data.begin(), data.end()); }
+    template <class S> void encode(S&) const { }
+    template <class S> void decode(S& s) { data.resize(s.bytesRemaining()); }
+
     UnknownStruct(uint8_t cc=0, uint8_t c=0) : classCode(cc), code(c) {}
     void accept(Visitor&);
     void accept(ConstVisitor&) const;
+
+    uint8_t getClassCode() const { return classCode; }
+    uint8_t getCode() const { return code; }
+    
+  private:
     uint8_t classCode, code;
+    std::string data;
 };
 
 std::ostream& operator<<(std::ostream&, const UnknownStruct&);

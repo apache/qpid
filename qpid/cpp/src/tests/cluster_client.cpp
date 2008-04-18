@@ -57,7 +57,7 @@ struct ClusterConnections : public vector<shared_ptr<Connection> > {
     }
 };
 
-BOOST_AUTO_TEST_CASE(testWiringReplication) {
+QPID_AUTO_TEST_CASE(testWiringReplication) {
     // Declare on one broker, use on others.
     ClusterConnections cluster;
     BOOST_REQUIRE(cluster.size() > 1);

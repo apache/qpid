@@ -38,8 +38,11 @@ AMQHeaderBody TransferContent::getHeader() const
     return header;
 }
 
-const std::string& TransferContent::getData() const
-{
+const std::string& TransferContent::getData() const {
+    return data;
+}
+
+std::string& TransferContent::getData() {
     return data;
 }
 

@@ -30,7 +30,7 @@ IntegerValue i(42);
 //FieldTableValue ft;
 //EmptyValue e;
 
-BOOST_AUTO_TEST_CASE(testStringValueEquals)
+QPID_AUTO_TEST_CASE(testStringValueEquals)
 {
     
     BOOST_CHECK(StringValue("abc") == s);
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(testStringValueEquals)
 
 }
 
-BOOST_AUTO_TEST_CASE(testIntegerValueEquals)
+QPID_AUTO_TEST_CASE(testIntegerValueEquals)
 {
     BOOST_CHECK(IntegerValue(42) == i);
     BOOST_CHECK(IntegerValue(5) != i);
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(testIntegerValueEquals)
 }
 
 #if 0
-BOOST_AUTO_TEST_CASE(testDecimalValueEquals)
+QPID_AUTO_TEST_CASE(testDecimalValueEquals)
 {
     BOOST_CHECK(DecimalValue(1234, 2) == d);
     BOOST_CHECK(DecimalValue(12345, 2) != d);
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(testDecimalValueEquals)
     BOOST_CHECK(d != s);
 }
 
-BOOST_AUTO_TEST_CASE(testFieldTableValueEquals)
+QPID_AUTO_TEST_CASE(testFieldTableValueEquals)
 {
     ft.getValue().setString("foo", "FOO");
     ft.getValue().setInt("magic", 7);

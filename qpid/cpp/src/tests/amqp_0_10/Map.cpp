@@ -31,7 +31,7 @@ using namespace std;
 
 QPID_AUTO_TEST_SUITE(MapTestSuite)
 
- BOOST_AUTO_TEST_CASE(testGetSet) {
+ QPID_AUTO_TEST_CASE(testGetSet) {
     MapValue v;
     v = Str8("foo");
     BOOST_CHECK(v.get<Str8>());
@@ -53,7 +53,7 @@ template <class R> struct TestVisitor : public MapValue::Visitor<R> {
     R operator()(const R& r) const { return r; }
 };
     
-BOOST_AUTO_TEST_CASE(testVisit) {
+QPID_AUTO_TEST_CASE(testVisit) {
     MapValue v;
     v = Str8("foo");
     BOOST_CHECK_EQUAL(v.apply_visitor(TestVisitor<Str8>()), "foo");
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(testVisit) {
 }
 
 
-BOOST_AUTO_TEST_CASE(testEncodeMapValue) {
+QPID_AUTO_TEST_CASE(testEncodeMapValue) {
     MapValue mv;
     std::string data;
     mv = Str8("hello");
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(testEncodeMapValue) {
     BOOST_CHECK_EQUAL(*mv2.get<Str8>(), "hello");
 }
 
-BOOST_AUTO_TEST_CASE(testEncode) {
+QPID_AUTO_TEST_CASE(testEncode) {
     Map map;
     std::string data;
     map["A"] = true;

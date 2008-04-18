@@ -262,6 +262,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     protected AMQConnectionDelegate _delegate;
     
+    // this connection maximum number of prefetched messages
+    private long _maxPrefetch;
+
+    //Indicates whether persistent messages are synchronized
+    private boolean _syncPersistence;
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -341,6 +347,27 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
+        // set this connection maxPrefetch
+        if (connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH) != null)
+        {
+            _maxPrefetch = Long.parseLong( connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+        }
+        else
+        {
+            // use the defaul value set for all connections
+            _maxPrefetch = ClientProperties.MAX_PREFETCH;
+        }
+
+        if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
+        {
+            _syncPersistence = Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+        }
+        else
+        {
+            // use the defaul value set for all connections
+            _syncPersistence = ClientProperties.SYNC_PERSISTENT;
+        }
+
         _failoverPolicy = new FailoverPolicy(connectionURL);
         if (_failoverPolicy.getCurrentBrokerDetails().getTransport().equals(BrokerDetails.VM))
         {
@@ -1444,5 +1471,25 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public boolean isFailingOver()
     {
         return (_protocolHandler.getFailoverLatch() != null);
+    }
+
+    /**
+     * Get the maximum number of messages that this connection can pre-fetch.
+     *
+     * @return The maximum number of messages that this connection can pre-fetch.
+     */
+    public long getMaxPrefetch()
+    {
+       return _maxPrefetch;
+    }
+
+    /**
+     * Indicates whether persistent messages are synchronized
+     *
+     * @return true if persistent messages are synchronized false otherwise
+     */
+    public boolean getSyncPersistence()
+    {
+        return _syncPersistence;
     }
 }

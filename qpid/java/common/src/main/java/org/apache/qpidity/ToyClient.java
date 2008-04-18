@@ -63,7 +63,7 @@ class ToyClient extends SessionDelegate
     public static final void main(String[] args)
     {
         Connection conn = MinaHandler.connect("0.0.0.0", 5672,
-                                              new ConnectionDelegate()
+                                              new ClientDelegate()
                                               {
                                                   public SessionDelegate getSessionDelegate()
                                                   {
@@ -80,9 +80,9 @@ class ToyClient extends SessionDelegate
                 TransportConstants.getVersionMinor())));
 
         Channel ch = conn.getChannel(0);
-        Session ssn = new Session();
+        Session ssn = new Session("my-session".getBytes());
         ssn.attach(ch);
-        ssn.sessionOpen(1234);
+        ssn.sessionAttach(ssn.getName());
 
         ssn.queueDeclare("asdf", null, null);
         ssn.sync();
@@ -111,13 +111,15 @@ class ToyClient extends SessionDelegate
         map.put("list", Arrays.asList(1, 2, 3));
         map.put("binary", new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 
-        ssn.messageTransfer("asdf", (short) 0, (short) 1);
+        ssn.messageTransfer("asdf", MessageAcceptMode.EXPLICIT,
+                            MessageAcquireMode.PRE_ACQUIRED);
         ssn.header(new DeliveryProperties(),
                    new MessageProperties().setApplicationHeaders(map));
         ssn.data("this is the data");
         ssn.endData();
 
-        ssn.messageTransfer("fdsa", (short) 0, (short) 1);
+        ssn.messageTransfer("fdsa", MessageAcceptMode.EXPLICIT,
+                            MessageAcquireMode.PRE_ACQUIRED);
         ssn.data("this should be rejected");
         ssn.endData();
         ssn.sync();
