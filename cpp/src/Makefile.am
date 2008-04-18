@@ -172,7 +172,7 @@ libqpidcommon_la_SOURCES = \
   qpid/Plugin.cpp \
   qpid/Url.cpp \
   qpid/sys/AggregateOutput.cpp \
-  qpid/sys/AsynchIOAcceptor.cpp \
+  qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/SystemInfo.cpp \
@@ -259,7 +259,8 @@ libqpidbroker_la_SOURCES = \
   qpid/management/Manageable.cpp \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementObject.cpp
+  qpid/management/ManagementObject.cpp \
+  qpid/sys/TCPIOPlugin.cpp
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
