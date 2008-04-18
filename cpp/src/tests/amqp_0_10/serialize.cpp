@@ -152,7 +152,7 @@ void testValue(Str8& s) { s = "foobar"; }
 void testValue(Map& m) { m["s"] = Str8("foobar"); m["b"] = true; m["c"] = uint16_t(42); }
 
 //typedef mpl::vector<Str8, Str16>::type TestTypes;
-QPID_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(testEncodeDecode, T, AllTypes)
 {
     string data;
     T t;
