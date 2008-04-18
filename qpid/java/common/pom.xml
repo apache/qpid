@@ -85,14 +85,14 @@
                             <params>
                                 <param>-Dpython.cachedir.skip=true</param>
                                 <param>-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}</param>
-                                <param>${basedir}/generate</param>
+                                <param>${basedir}/codegen</param>
                                 <param>${generated.path}</param>
-                                <param>org.apache.qpidity.transport</param>
-                                <param>${specs.dir}/amqp.0-10-preview.xml</param>
+                                <param>${specs.dir}/amqp.0-10-qpid-errata.xml</param>
+                                <param>${basedir}</param>
                             </params>
                             <sources>
-                              <source>${specs.dir}/amqp.0-10-preview.xml</source>
-                              <source>${basedir}/generate</source>
+                              <source>${specs.dir}/amqp.0-10-qpid-errata.xml</source>
+                              <source>${basedir}/codegen</source>
                             </sources>
                             <timestamp>${generated.path}/generated.timestamp</timestamp>
                         </configuration>
