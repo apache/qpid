@@ -6,6 +6,7 @@ from genutil import *
 
 out_dir = sys.argv[1]
 spec_file = sys.argv[2]
+tpl_dir = sys.argv[3]
 pkg_dir = os.path.join(out_dir, "org/apache/qpidity/transport")
 
 if not os.path.exists(pkg_dir):
@@ -22,7 +23,7 @@ def excludes(nd):
     return True
 
 def execute(output, template, **kwargs):
-  f = open(template)
+  f = open(os.path.join(tpl_dir, template))
   input = f.read()
   f.close()
   p = Parser(**kwargs)
