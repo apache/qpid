@@ -45,6 +45,7 @@
       <arg value="${basedir}/codegen"/>
       <arg value="${module.precompiled}"/>
       <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
+      <arg value="${basedir}"/>
       <classpath>
         <pathelement location="jython-2.2-rc2.jar"/>
       </classpath>
