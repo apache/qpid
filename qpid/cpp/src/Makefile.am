@@ -479,6 +479,7 @@ nobase_include_HEADERS = \
   qpid/sys/Acceptor.h \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
+  qpid/sys/AsynchIOHandler.h \
   qpid/sys/AtomicCount.h \
   qpid/sys/BlockingQueue.h \
   qpid/sys/Condition.h \
