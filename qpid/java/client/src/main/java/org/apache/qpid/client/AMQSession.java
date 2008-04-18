@@ -189,50 +189,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 _fastAccessConsumers[i] = null;
             }
         }
-
-
-        public void acknowledgeDelivered()
-        {
-
-            for(int i = 0; i<16; i++)
-            {
-                final BasicMessageConsumer c = _fastAccessConsumers[i];
-                if(c != null)
-                {
-                    c.acknowledgeDelivered();
-                }
-            }
-            if(!_slowAccessConsumers.isEmpty())
-            {
-                for (Iterator<BasicMessageConsumer> i = _slowAccessConsumers.values().iterator(); i.hasNext();)
-                {
-                    i.next().acknowledgeDelivered();
-                }
-            }
-        }
-
-        public void acknowledge() throws JMSException
-        {
-            for(int i = 0; i<16; i++)
-            {
-                final BasicMessageConsumer c = _fastAccessConsumers[i];
-                if(c != null)
-                {
-                    c.acknowledge();
-                }
-            }
-            if(!_slowAccessConsumers.isEmpty())
-            {
-                for (Iterator<BasicMessageConsumer> i = _slowAccessConsumers.values().iterator(); i.hasNext();)
-                {
-                    i.next().acknowledge();
-                }
-            }
-        }
     }
-
-
-
 
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
@@ -555,14 +512,22 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @throws IllegalStateException If the session is closed.
      */
-    public void acknowledge() throws JMSException
+    public void acknowledge() throws IllegalStateException
     {
         if (isClosed())
         {
             throw new IllegalStateException("Session is already closed");
         }
 
-        _consumers.acknowledge();
+        while (true)
+        {
+            Long tag = _unacknowledgedMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+            acknowledgeMessage(tag, false);
+        }
     }
 
     /**
