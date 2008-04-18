@@ -22,11 +22,20 @@
 
 namespace qpid {
 
-Plugin::Plugins Plugin::plugins;
+namespace {
+// This is a single threaded singleton implementation so
+// it is important to be sure that the first use of this
+// singleton is when the program is still single threaded
+Plugin::Plugins& thePlugins() {
+    static Plugin::Plugins plugins;
+
+    return plugins;
+}
+}
 
 Plugin::Plugin() {
     // Register myself.
-    plugins.push_back(this);
+    thePlugins().push_back(this);
 }
 
 Plugin::~Plugin() {}
@@ -34,7 +43,7 @@ Plugin::~Plugin() {}
 Options*  Plugin::getOptions() { return 0; }
 
 const Plugin::Plugins& Plugin::getPlugins() {
-    return plugins;
+    return thePlugins();
 }
 
 } // namespace qpid
