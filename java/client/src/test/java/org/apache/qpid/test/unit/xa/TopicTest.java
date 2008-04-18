@@ -1579,7 +1579,7 @@ public class TopicTest extends AbstractXATestCase
                     publisher.send(_message, DeliveryMode.PERSISTENT, 9 - i, 0);
                 }
                 //stConnection.close();
-
+                autoAclSession.close();
                 _logger.debug(" migrate the durable subscriber to an xa one");
                 _session = _topicConnection.createXATopicSession();
                 _xaResource = _session.getXAResource();
