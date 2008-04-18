@@ -218,7 +218,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                     message.get010Message(),
                     org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                     org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-            if(deliveryMode == DeliveryMode.PERSISTENT && ClientProperties.FULLY_SYNC )
+            if(deliveryMode == DeliveryMode.PERSISTENT && getSession().getAMQConnection().getSyncPersistence())
             {
                 // we need to sync the delivery of this message
                 ((AMQSession_0_10) getSession()).getQpidSession().sync();
