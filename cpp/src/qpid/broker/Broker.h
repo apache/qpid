@@ -43,7 +43,6 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/sys/Acceptor.h"
 #include "qpid/sys/Runnable.h"
 
 #include <vector>
@@ -51,6 +50,7 @@
 namespace qpid { 
 
 namespace sys {
+    class Acceptor;
     class Poller;
 }
 
@@ -124,6 +124,12 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
     
+    /** Add to the broker's acceptors */
+    void registerAccepter(boost::shared_ptr<sys::Acceptor>);
+
+    /** Accept connections */
+    void accept();
+
     /** Create a connection to another broker. */
     void connect(const std::string& host, uint16_t port,
                  sys::ConnectionCodec::Factory* =0);
@@ -131,11 +137,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void connect(const Url& url, sys::ConnectionCodec::Factory* =0);
 
   private:
-    sys::Acceptor& getAcceptor() const;
-
-    boost::shared_ptr<qpid::sys::Poller> poller;
+    boost::shared_ptr<sys::Poller> poller;
     Options config;
-    sys::Acceptor::shared_ptr acceptor;
+    std::vector< boost::shared_ptr<sys::Acceptor> > acceptors;
     MessageStore* store;
     DataDir dataDir;
 
@@ -149,6 +153,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;
     System::shared_ptr             systemObject;
+
+    // TODO: There is no longer a single acceptor so the use of the following needs to be fixed
+    // For the present just return the first acceptor registered.
+    boost::shared_ptr<sys::Acceptor> getAcceptor() const;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 };

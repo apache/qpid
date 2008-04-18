@@ -260,8 +260,7 @@ void Broker::setStore (MessageStore* _store)
 }
 
 void Broker::run() {
-
-    getAcceptor().run(poller, &factory);
+    accept();
 	
     Dispatcher d(poller);
     int numIOThreads = config.workerThreads;
@@ -296,18 +295,6 @@ Broker::~Broker() {
         sasl_done();
 #endif
     }
-}
-
-uint16_t Broker::getPort() const  { return getAcceptor().getPort(); }
-
-Acceptor& Broker::getAcceptor() const {
-    if (!acceptor) {
-        const_cast<Acceptor::shared_ptr&>(acceptor) =
-            Acceptor::create(config.port,
-                             config.connectionBacklog);
-        QPID_LOG(info, "Listening on port " << getPort());
-    }
-    return *acceptor;
 }
 
 ManagementObject::shared_ptr Broker::GetManagementObject(void) const
@@ -348,11 +335,41 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     return status;
 }
 
+boost::shared_ptr<Acceptor> Broker::getAcceptor() const {
+    assert(acceptors.size() > 0);
+#if 0
+    if (!acceptor) {
+        const_cast<Acceptor::shared_ptr&>(acceptor) =
+            Acceptor::create(config.port,
+                             config.connectionBacklog);
+        QPID_LOG(info, "Listening on port " << getPort());
+    }
+#endif
+    return acceptors[0];
+}
+
+void Broker::registerAccepter(Acceptor::shared_ptr acceptor) {
+    acceptors.push_back(acceptor);
+}
+
+// TODO: This can only work if there is only one acceptor
+uint16_t Broker::getPort() const  {
+    return getAcceptor()->getPort();
+}
+
+// TODO: This should iterate over all acceptors
+void Broker::accept() {
+    for (unsigned int i = 0; i < acceptors.size(); ++i)
+        acceptors[i]->run(poller, &factory);
+}
+
+
+// TODO: How to chose the acceptor to use for the connection
 void Broker::connect(
     const std::string& host, uint16_t port,
     sys::ConnectionCodec::Factory* f)
 {
-    getAcceptor().connect(poller, host, port, f ? f : &factory);
+    getAcceptor()->connect(poller, host, port, f ? f : &factory);
 }
 
 void Broker::connect(
