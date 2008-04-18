@@ -51,7 +51,7 @@ class SequenceSet {
 
   public:
     SequenceSet() {}
-    SequenceSet(const SequenceNumber& s) { add(s); }
+    explicit SequenceSet(const SequenceNumber& s) { add(s); }
 
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
