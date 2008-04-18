@@ -176,6 +176,7 @@ class managementClient:
     mch = managementChannel (channel, self.topicCb, self.replyCb, cbContext)
 
     self.channels.append (mch)
+    self.incOutstanding (mch)
     codec = Codec (StringIO (), self.spec)
     self.setHeader (codec, ord ('B'))
     msg = Content  (codec.stream.getvalue ())
@@ -213,6 +214,10 @@ class managementClient:
   def syncWaitForStable (self, channel):
     """ Synchronous (blocking) call to wait for schema stability on a channel """
     self.cv.acquire ()
+    if channel.reqsOutstanding == 0:
+      self.cv.release ()
+      return
+
     self.syncInFlight = True
     starttime = time ()
     while channel.reqsOutstanding != 0:
@@ -470,7 +475,6 @@ class managementClient:
     sendCodec = Codec (StringIO (), self.spec)
     seq = self.seqMgr.reserve ("outstanding")
     self.setHeader (sendCodec, ord ('P'), seq)
-    self.incOutstanding (ch)
     smsg = Content  (sendCodec.stream.getvalue ())
     smsg["content_type"] = "application/octet-stream"
     smsg["routing_key"]  = "agent"
@@ -508,7 +512,8 @@ class managementClient:
     if (cname, hash) not in self.packages[pname]:
       # Send a schema request
       sendCodec = Codec (StringIO (), self.spec)
-      self.setHeader (sendCodec, ord ('S'))
+      seq = self.seqMgr.reserve ("outstanding")
+      self.setHeader (sendCodec, ord ('S'), seq)
       self.incOutstanding (ch)
       sendCodec.encode_shortstr (pname)
       sendCodec.encode_shortstr (cname)
