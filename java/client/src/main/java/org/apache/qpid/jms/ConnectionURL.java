@@ -32,6 +32,7 @@ import java.util.List;
   */
 public interface ConnectionURL
 {
+    public static final String AMQ_SYNC_PERSISTENCE = "sync_persistence";
     public static final String AMQ_MAXPREFETCH = "maxprefetch";
     public static final String AMQ_PROTOCOL = "amqp";
     public static final String OPTIONS_BROKERLIST = "brokerlist";
