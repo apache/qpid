@@ -32,5 +32,5 @@ public class ClientProperties
     /**
      * When true a sync command is sent after every persistent messages. 
      */
-    public static boolean FULLY_SYNC = Boolean.getBoolean("fully_sync");
+    public static boolean SYNC_PERSISTENT = Boolean.getBoolean("sync_persistence");
 }

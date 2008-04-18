@@ -155,6 +155,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     // this connection maximum number of prefetched messages
     private long _maxPrefetch;
 
+    //Indicates whether persistent messages are synchronized
+    private boolean _syncPersistence;
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -243,6 +246,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             // use the defaul value set for all connections
             _maxPrefetch = ClientProperties.MAX_PREFETCH;
+        }
+
+        if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
+        {
+            _syncPersistence = Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+        }
+        else
+        {
+            // use the defaul value set for all connections
+            _syncPersistence = ClientProperties.SYNC_PERSISTENT;
         }
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
@@ -1202,5 +1215,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public long getMaxPrefetch()
     {
        return _maxPrefetch;
+    }
+
+    /**
+     * Indicates whether persistent messages are synchronized
+     *
+     * @return true if persistent messages are synchronized false otherwise
+     */
+    public boolean getSyncPersistence()
+    {
+        return _syncPersistence;
     }
 }
