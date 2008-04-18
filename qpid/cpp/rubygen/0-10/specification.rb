@@ -3,11 +3,18 @@ $: << ".."                      # Include .. in load path
 require 'cppgen'
 
 
-class UnknownStructSub
+# Dummy element representing an unknown struct type.
+class UnknownStruct
   def visitable?() true end
   def fqclassname() "UnknownStruct" end
 end
 
+# Dummy element representing a session.header field
+class SessionHeaderField
+  def amqp2cpp() "session::Header" end
+  def cppname() "sessionHeader" end
+  def name() "session-header" end
+end
 
 class Specification < CppGen
   def initialize(outdir, amqp)
@@ -35,7 +42,7 @@ class Specification < CppGen
   end
 
   def visitable?(x) x.code and x.size=="4"  end
-  
+
   # Used by structs, commands and controls.
   def action_struct_h(x, base, consts, &block)
     genl
@@ -66,7 +73,12 @@ class Specification < CppGen
       genl
       yield if block
     }
-    genl "inline Packer<#{x.classname}> serializable(#{x.classname}& x) { return Packer<#{x.classname}>(x); }" unless x.respond_to? :pack and x.pack == "0"
+    case x
+    when AmqpCommand then packer =  "CommandPacker"
+    when AmqpControl then packer =  "Packer"
+    when AmqpStruct then packer =  "SizedPacker"
+    end
+    genl "inline #{packer}<#{x.classname}> serializable(#{x.classname}& x) { return #{packer}<#{x.classname}>(x); }" unless x.respond_to? :pack and x.pack == "0"
     genl "std::ostream& operator << (std::ostream&, const #{x.classname}&);"
     genl "bool operator==(const #{x.classname}&, const #{x.classname}&);"
   end
@@ -85,7 +97,7 @@ class Specification < CppGen
     end
     genl
     scope("std::ostream& operator << (std::ostream& o, const #{x.classname}&#{"x" unless x.fields.empty?}) {") {
-      genl "o << \"[#{x.fqname}\";";
+      genl "o << \"#{x.fqname}[\";";
       x.fields.each{ |f| genl "o << \" #{f.name}=\" << x.#{f.cppname};" }
       genl "o << \"]\";"
       genl "return o;"
@@ -158,13 +170,13 @@ class Specification < CppGen
   end
 
   # Generate struct definitions into a separate header file so the
-  # can be included by Struct32.h without circularity.
+  # can be included by StructHolder.h without circularity.
   def gen_structs()
     h_file("#{@dir}/structs") { 
       include "#{@dir}/specification_fwd"
       include "#{@dir}/Map.h"
       include "#{@dir}/Array.h"
-      include "#{@dir}/complex_types.h"
+      include "#{@dir}/Struct.h"
       include "#{@dir}/UnknownStruct.h"
       include "#{@dir}/Packer.h"
       namespace(@ns) {
@@ -176,7 +188,7 @@ class Specification < CppGen
     
     cpp_file("#{@dir}/structs") { 
       include "#{@dir}/structs"
-      include "#{@dir}/Struct32"
+      include "#{@dir}/StructHolder"
       namespace(@ns) {
         each_class_ns { |c|
           c.collect_all(AmqpStruct).each {  |s| struct_cpp(s) }
@@ -192,8 +204,9 @@ class Specification < CppGen
       include "#{@dir}/Map.h"
       include "#{@dir}/Array.h"
       include "#{@dir}/UnknownType.h"
-      include "#{@dir}/complex_types.h"
       include "#{@dir}/Struct32"
+      include "#{@dir}/Control.h"
+      include "#{@dir}/Command.h"
       include "#{@dir}/Packer.h"
       include "<iosfwd>"
       namespace(@ns) { 
@@ -264,10 +277,6 @@ class Specification < CppGen
   end
 
   def gen_visitor(base, subs)
-    if base=="Struct"
-      subs << UnknownStructSub.new
-    end
-
     h_file("#{@dir}/#{base}Visitor.h") { 
       include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace("#{@ns}") { 
@@ -286,23 +295,21 @@ class Specification < CppGen
   end
 
   def gen_holder(base, subs)
-    name= (base=="Struct") ? "Struct32" : base+"Holder"
+    name=base+"Holder"
     h_file("#{@dir}/#{name}") {
       include "#{@dir}/Apply#{base}"
       include "#{@dir}/Holder"
       include base=="Struct" ? "#{@dir}/structs" : "#{@dir}/specification"
       namespace(@ns){
         namespace("#{base.downcase}_max") {
-          gen "template <class M, class X> "
-          struct("Max") {
-            genl "static const size_t max=(M::max > sizeof(X)) ? M::max : sizeof(X);"
-          }
-          genl "struct Max000 { static const size_t max=0; };"
-          last="Max000"
+          genl "static const size_t MAX000=0;"
+          last="MAX000"
           subs.each { |s|
-            genl "typedef Max<#{last}, #{s.fqclassname}> #{last.succ!};"
+            sizeof="sizeof(#{s.fqclassname})"
+            genl "static const size_t #{last.succ} = #{sizeof} > #{last} ? #{sizeof} : #{last};"
+            last.succ!
           }
-          genl "static const int MAX=#{last}::max;"
+          genl "static const int MAX=#{last};"
         }
         holder_base="amqp_0_10::Holder<#{name}, #{base}, #{base.downcase}_max::MAX>"
         struct("#{name}", "public #{holder_base}") {
@@ -326,7 +333,7 @@ class Specification < CppGen
           genl "uint16_t key=(classCode<<8)+code;"
           scope ("switch(key) {") {
             subs.each { |s|
-              genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;"
+              genl "case 0x#{s.full_code.to_s(16)}: *this=in_place<#{s.fqclassname}>(); break;" unless (s.is_a? UnknownStruct)
             }
             genl "default: "
             indent { 
@@ -345,6 +352,7 @@ class Specification < CppGen
   end
 
   def gen_visitable(base, subs)
+     subs << UnknownStruct.new if base=="Struct" # Extra case for unknown structs.
     gen_holder(base, subs)
     gen_visitor(base, subs)
   end

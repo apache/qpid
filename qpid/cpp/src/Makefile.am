@@ -62,7 +62,7 @@ qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
   qpid/sys/epoll/EpollPoller.cpp \
-  qpid/sys/DeletionManager.h \
+  qpid/sys/posix/IOHandle.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
@@ -79,7 +79,7 @@ posix_plat_hdr = \
 platform_src = $(posix_plat_src)
 platform_hdr = $(posix_plat_hdr)
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la 
 
 include cluster.mk
 
@@ -88,28 +88,23 @@ include cluster.mk
 # unused parameters in boost::date_time headers. So we build it
 # in a convenience library to link into libqpid_common.
 # 
-noinst_LTLIBRARIES=libLogger.la
+noinst_LTLIBRARIES=libLogger.la libqpidamqp_0_10.la
 libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
-libqpidcommon_la_LIBADD = \
-  -lboost_program_options \
-  -lboost_filesystem \
-  -luuid \
-  libLogger.la \
-  $(LIB_DLOPEN) \
-  $(LIB_CLOCK_GETTIME)
-
-libqpidcommon_la_SOURCES = \
-  $(rgen_common_cpp) \
-  $(platform_src) \
+# New 0-10 codec, to be integrated in future.
+# Currently built for tests only.
+libqpidamqp_0_10_la_SOURCES= \
+  $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
-  qpid/amqp_0_10/complex_types.h \
   qpid/amqp_0_10/complex_types.cpp \
   qpid/amqp_0_10/Array.h \
   qpid/amqp_0_10/Array.cpp \
   qpid/amqp_0_10/Body.h \
+  qpid/amqp_0_10/Command.h \
+  qpid/amqp_0_10/CommmandPacker.h \
+  qpid/amqp_0_10/Control.h \
   qpid/amqp_0_10/Header.h \
   qpid/amqp_0_10/Header.cpp \
   qpid/amqp_0_10/FrameHeader.h \
@@ -121,12 +116,28 @@ libqpidcommon_la_SOURCES = \
   qpid/amqp_0_10/SerializableString.h \
   qpid/amqp_0_10/Map.h \
   qpid/amqp_0_10/Map.cpp \
+  qpid/amqp_0_10/Struct.h \
+  qpid/amqp_0_10/Struct32.h \
+  qpid/amqp_0_10/Struct32.cpp \
   qpid/amqp_0_10/Unit.h \
   qpid/amqp_0_10/Unit.cpp \
+  qpid/amqp_0_10/UnitHandler.h \
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
   qpid/amqp_0_10/UnknownStruct.h \
-  qpid/amqp_0_10/UnknownStruct.cpp \
+  qpid/amqp_0_10/UnknownStruct.cpp 
+
+libqpidcommon_la_LIBADD = \
+  -lboost_program_options \
+  -lboost_filesystem \
+  -luuid \
+  libLogger.la \
+  $(LIB_DLOPEN) \
+  $(LIB_CLOCK_GETTIME)
+
+libqpidcommon_la_SOURCES = \
+  $(rgen_framing_srcs) \
+  $(platform_src) \
   qpid/Serializer.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
@@ -176,7 +187,7 @@ libqpidcommon_la_SOURCES = \
   qpid/ISList.h \
   qpid/pointer_to_other.h
 
-libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
+libqpidbroker_la_LIBADD = libqpidcommon.la 
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   qpid/amqp_0_10/Connection.h \
@@ -252,7 +263,7 @@ libqpidbroker_la_SOURCES = \
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
-  $(rgen_client_cpp)				\
+  $(rgen_client_srcs)				\
   qpid/client/SessionBase.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\
@@ -292,6 +303,7 @@ nobase_include_HEADERS = \
   qpid/Url.h \
   qpid/InlineVector.h \
   qpid/InlineAllocator.h \
+  qpid/log/Statement.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
@@ -469,15 +481,17 @@ nobase_include_HEADERS = \
   qpid/sys/AtomicCount.h \
   qpid/sys/BlockingQueue.h \
   qpid/sys/Condition.h \
+  qpid/sys/ConnectionCodec.h \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
   qpid/sys/ConnectionOutputHandler.h \
+  qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
+  qpid/sys/IOHandle.h \
   qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
-  qpid/sys/ConnectionCodec.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \

@@ -40,26 +40,30 @@ public interface Encoder
     void flush();
 
     void writeBit(boolean b);
-    void writeOctet(short b);
-    void writeShort(int s);
-    void writeLong(long i);
-    void writeLonglong(long l);
+    void writeUint8(short b);
+    void writeUint16(int s);
+    void writeUint32(long i);
+    void writeUint64(long l);
 
-    void writeTimestamp(long l);
-
-    void writeShortstr(String s);
-    void writeLongstr(String s);
-
-    void writeRfc1982LongSet(RangeSet ranges);
+    void writeDatetime(long l);
     void writeUuid(UUID uuid);
 
-    void writeContent(String c);
+    void writeSequenceNo(int s);
+    void writeSequenceSet(RangeSet ranges); // XXX
+    void writeByteRanges(RangeSet ranges); // XXX
+
+    void writeStr8(String s);
+    void writeStr16(String s);
+
+    void writeVbin8(byte[] bytes);
+    void writeVbin16(byte[] bytes);
+    void writeVbin32(byte[] bytes);
+
+    void writeStruct32(Struct s);
+    void writeMap(Map<String,Object> map);
+    void writeList(List<Object> list);
+    void writeArray(List<Object> array);
 
     void writeStruct(int type, Struct s);
-    void writeLongStruct(Struct s);
-
-    void writeTable(Map<String,Object> table);
-    void writeSequence(List<Object> sequence);
-    void writeArray(List<Object> array);
 
 }

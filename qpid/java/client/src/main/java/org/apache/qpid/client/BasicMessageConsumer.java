@@ -129,8 +129,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     private boolean _dups_ok_acknowledge_send;
 
-    private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
-
     /**
      * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
      */
@@ -287,7 +285,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-
+        // TGM FIXME not sure messages are being dealt with right
         switch (_session.getAcknowledgeMode())
         {
             case Session.DUPS_OK_ACKNOWLEDGE:
@@ -307,6 +305,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 }
 
                 break;
+            _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
         }
 
         _session.setInRecovery(false);
@@ -786,7 +785,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 }
                 else
                 {
-                    _receivedDeliveryTags.add(msg.getDeliveryTag());
+                    _session.addDeliveredMessage(msg.getDeliveryTag());
                 }
 
                 break;
@@ -987,15 +986,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     public void rollback()
     {
-        clearUnackedMessages();
-
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            _logger.debug("Rejecting received messages in _receivedDTs (RQ)");
-        }
-
-        rollbackReceivedMessages();
-
         rollbackPendingMessages();
     }
 
@@ -1053,39 +1043,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
 
             clearReceiveQueue();
-        }
-    }
-
-    protected void rollbackReceivedMessages()
-    {
-        // rollback received but not committed messages
-        while (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags
-                        .size() + ") in _receivedDTs (RQ)" + "for consumer with tag:" + _consumerTag);
-            }
-
-            Long tag = _receivedDeliveryTags.poll();
-
-            if (tag != null)
-            {
-                if (_logger.isTraceEnabled())
-                {
-                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
-                }
-
-                _session.rejectMessage(tag, true);
-            }
-        }
-
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Queue _receivedDTs (RQ) was not empty after rejection");
-            }
         }
     }
 

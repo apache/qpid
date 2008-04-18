@@ -4,6 +4,8 @@ import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
 
 public class TopicPublisher
 {
@@ -16,7 +18,7 @@ public class TopicPublisher
       deliveryProps.setRoutingKey(routing_key);
 
       for (int i=0; i<5; i++) {
-        session.messageTransfer("amq.topic", Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+        session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
         session.header(deliveryProps);
         session.data("Message " + i);
         session.endData();
@@ -26,7 +28,7 @@ public class TopicPublisher
 
     public void noMoreMessages(Session session)
     {
-        session.messageTransfer("amq.topic", Session.TRANSFER_CONFIRM_MODE_REQUIRED, Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+        session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
         session.header(new DeliveryProperties().setRoutingKey("control"));
         session.data("That's all, folks!");
         session.endData();
@@ -61,7 +63,7 @@ public class TopicPublisher
         session.sync();
 
         //cleanup
-        session.sessionClose();
+        session.sessionDetach(session.getName());
         try
         {
             con.close();

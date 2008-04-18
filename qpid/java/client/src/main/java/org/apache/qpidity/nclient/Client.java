@@ -1,6 +1,7 @@
 package org.apache.qpidity.nclient;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -15,10 +16,11 @@ import org.apache.qpidity.ProtocolException;
 import org.apache.qpidity.nclient.impl.ClientSession;
 import org.apache.qpidity.nclient.impl.ClientSessionDelegate;
 import org.apache.qpidity.transport.Channel;
+import org.apache.qpidity.transport.ClientDelegate;
 import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionClose;
+import org.apache.qpidity.transport.ConnectionCloseCode;
 import org.apache.qpidity.transport.ConnectionCloseOk;
-import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
@@ -54,7 +56,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
         closeOk = _lock.newCondition();
         _lock.lock();
 
-        ConnectionDelegate connectionDelegate = new ConnectionDelegate()
+        ClientDelegate connectionDelegate = new ClientDelegate()
         {
             private boolean receivedClose = false;
             private String _unsupportedProtocol;
@@ -100,7 +102,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
-                ErrorCode errorCode = ErrorCode.get(connectionClose.getReplyCode());
+                ErrorCode errorCode = ErrorCode.get(connectionClose.getReplyCode().getValue());
                 if (_closedListner == null && errorCode != ErrorCode.NO_ERROR)
                 {
                     throw new RuntimeException
@@ -131,10 +133,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
                     _lock.lock();
                     negotiationComplete.signalAll();
                     _lock.unlock();
-                }
-                else
-                {
-                    ch.connectionStart(hdr.getMajor(), hdr.getMinor(), null, "PLAIN", "utf8");
                 }
             }
 
@@ -233,7 +231,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     public void close() throws QpidException
     {
         Channel ch = _conn.getChannel(0);
-        ch.connectionClose(0, "client is closing", 0, 0);
+        ch.connectionClose(ConnectionCloseCode.NORMAL, "client is closing");
         _lock.lock();
         try
         {
@@ -258,9 +256,10 @@ public class Client implements org.apache.qpidity.nclient.Connection
     public Session createSession(long expiryInSeconds)
     {
         Channel ch = _conn.getChannel(_channelNo.incrementAndGet());
-        ClientSession ssn = new ClientSession();
+        ClientSession ssn = new ClientSession(UUID.randomUUID().toString().getBytes());
         ssn.attach(ch);
-        ssn.sessionOpen(expiryInSeconds);
+        ssn.sessionAttach(ssn.getName());
+        ssn.sessionRequestTimeout(expiryInSeconds);
         if (Boolean.getBoolean("batch") && System.getProperty("transport").equalsIgnoreCase("nio"))
         {
             System.out.println("using batching");
@@ -272,7 +271,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     public DtxSession createDTXSession(int expiryInSeconds)
     {
          ClientSession clientSession =  (ClientSession) createSession(expiryInSeconds);
-         clientSession.dtxDemarcationSelect();
+         clientSession.dtxSelect();
          return (DtxSession) clientSession;
     }
 

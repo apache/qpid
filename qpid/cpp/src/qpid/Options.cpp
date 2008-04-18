@@ -50,11 +50,49 @@ struct EnvOptMapper {
         static const std::string prefix("QPID_");
         if (envVar.substr(0, prefix.size()) == prefix) {
             string env = envVar.substr(prefix.size());
+#if (BOOST_VERSION >= 103300)
             typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
             OptDescs::const_iterator i =
                 find_if(opts.options().begin(), opts.options().end(), boost::bind(matchStr, env, _1));
             if (i != opts.options().end())
                 return (*i)->long_name();
+#else
+            /*===================================================================
+              For Boost version 103200 and below.
+
+              In Boost version 103200, the options_description::options member,
+              used above, is private.  So what I will do here is use the 
+              count() funtion, which returns a 1 or 0 indicating presence or
+              absence of the environment variable.  
+              
+              If it is present, I will return its name.  Env vars do not have
+              short and long forms, so the name is synonymous with the long 
+              name.  (This would not work for command line args.)
+              And if it's absent -- an empty string.
+            =====================================================================*/
+
+
+            /*------------------------------------------------------------
+              The env vars come in unaltered, i.e. QPID_FOO, but the 
+              options are stored normalized as "qpid-foo".  Change the
+              local variable "env" so it can be found by "opts".
+            ------------------------------------------------------------*/
+            for (std::string::iterator i = env.begin(); i != env.end(); ++i) 
+            {
+                *i = (*i == '_') 
+                     ? '-' 
+                     : ::tolower(*i);
+            }
+
+            if ( opts.count(env.c_str()) > 0 )
+            {
+              return env.c_str();
+            }
+            else
+            {
+              return string();
+            }
+#endif
         }
         return string();
     }
@@ -64,11 +102,19 @@ struct EnvOptMapper {
         if (pos == string::npos)
             return string();
         string key = line.substr (0, pos);
+#if (BOOST_VERSION >= 103300)
         typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
         OptDescs::const_iterator i = 
             find_if(opts.options().begin(), opts.options().end(), boost::bind(matchCase, key, _1));
         if (i != opts.options().end())
             return string (line) + "\n";
+#else
+        try {
+            po::option_description desc = opts.find(key.c_str());
+            return string (line) + "\n";
+        }
+        catch (const std::exception& e) {}
+#endif
         return string ();
     }
 
@@ -91,6 +137,7 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
         parsing="command line options";
         if (argc > 0 && argv != 0) {
             if (allowUnknown) {
+#if (BOOST_VERSION >= 103300)
                 // This hideous workaround is required because boost 1.33 has a bug
                 // that causes 'allow_unregistered' to not work.
                 po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
@@ -103,6 +150,7 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
                     if (!i->unregistered)
                         filtopts.options.push_back (*i);
                 po::store(filtopts, vm);
+#endif
             }
             else
                 po::store(po::parse_command_line(argc, const_cast<char**>(argv), *this), vm);
@@ -141,8 +189,10 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
     catch (const std::exception& e) {
         ostringstream msg;
         msg << "Error in " << parsing << ": " << e.what() << endl;
+#if (BOOST_VERSION >= 103300)
         if (find_nothrow("help", false))
             msg << "Use --help to see valid options" << endl;
+#endif
         throw Exception(msg.str());
     }
 }

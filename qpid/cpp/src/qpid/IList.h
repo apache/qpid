@@ -38,6 +38,8 @@ template <class Pointer> class IListNode {
     typedef Pointer pointer; 
     typedef typename Pointee<Pointer>::type  NodeType;
     typedef typename pointer_to_other<Pointer, const NodeType>::type const_pointer;
+
+    pointer prev, next;
     
   protected:
     IListNode() : prev() {}
@@ -49,7 +51,6 @@ template <class Pointer> class IListNode {
     const_pointer getPrev() const { return prev; }
 
   private:
-    pointer prev, next;
   friend class IList<NodeType>;
 };
 
@@ -168,10 +169,14 @@ template<class Node> class IList {
         template <class U> Iterator(
             const Iterator<U>& i,
             typename boost::enable_if_convertible<U*, T*>::type* = 0
-        ) : ptr(i.ptr) {}
+         ) : ptr(i.ptr) {}
 
         operator pointer() { return ptr; }
         operator const_pointer() const { return ptr; }
+
+
+        pointer ptr;
+
         
       private:
       friend class boost::iterator_core_access;
@@ -183,7 +188,6 @@ template<class Node> class IList {
         void decrement() { ptr = ptr->prev; }
         bool equal(const Iterator& x) const { return ptr == x.ptr; }
 
-        pointer ptr;
 
       friend class IList<Node>;
     };

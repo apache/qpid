@@ -4,6 +4,8 @@ import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
 
 public class FannoutProducer
 {
@@ -32,13 +34,13 @@ public class FannoutProducer
 
         for (int i=0; i<10; i++)
         {
-            session.messageTransfer("amq.fanout", Session.TRANSFER_CONFIRM_MODE_REQUIRED, Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+            session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
             session.header(deliveryProps);
             session.data("Message " + i);
             session.endData();
         }
 
-        session.messageTransfer("amq.fanout", Session.TRANSFER_CONFIRM_MODE_REQUIRED, Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+        session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
         session.header(deliveryProps);
         session.data("That's all, folks!");
         session.endData();
@@ -47,7 +49,7 @@ public class FannoutProducer
         session.sync();
 
         //cleanup
-        session.sessionClose();
+        session.sessionDetach(session.getName());
         try
         {
             con.close();

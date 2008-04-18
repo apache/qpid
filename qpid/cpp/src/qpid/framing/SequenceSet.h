@@ -21,35 +21,35 @@
 #ifndef _framing_SequenceSet_h
 #define _framing_SequenceSet_h
 
-#include <ostream>
-#include <list>
 #include "amqp_types.h"
 #include "Buffer.h"
 #include "SequenceNumber.h"
 #include "qpid/framing/reply_exceptions.h"
+#include <ostream>
+#include <list>
 
 namespace qpid {
 namespace framing {
 
-class SequenceSet
-{
-    struct Range
-    {
+class SequenceSet {
+    struct Range {
         SequenceNumber start;
         SequenceNumber end;
         
-        Range(SequenceNumber s, SequenceNumber e);
+        Range(SequenceNumber s=0, SequenceNumber e=0);
         bool contains(SequenceNumber i) const;
         bool intersects(const Range& r) const;
         bool merge(const Range& r);
         bool mergeable(const SequenceNumber& r) const;
         void encode(Buffer& buffer) const;
+
+        template <class S> void serialize(S& s) { s(start)(end); }
     };
 
     typedef std::list<Range> Ranges;
     Ranges ranges;
 
-public:
+  public:
     SequenceSet() {}
     SequenceSet(const SequenceNumber& s) { add(s); }
 
@@ -76,7 +76,11 @@ public:
         }
     }
 
-    friend std::ostream& operator<<(std::ostream&, const SequenceSet&);
+    template <class S> void serialize(S& s) { s.split(*this); s(ranges.begin(), ranges.end()); }
+    template <class S> void encode(S& s) const { s(uint16_t(ranges.size()*sizeof(Range))); }
+    template <class S> void decode(S& s) { uint16_t sz; s(sz); ranges.resize(sz/sizeof(Range)); }
+    
+  friend std::ostream& operator<<(std::ostream&, const SequenceSet&);
 };    
 
 

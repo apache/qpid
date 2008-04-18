@@ -18,15 +18,12 @@
  */
 package org.apache.qpidity.nclient;
 
-import org.apache.qpidity.transport.DtxCoordinationCommitResult;
-import org.apache.qpidity.transport.DtxCoordinationGetTimeoutResult;
-import org.apache.qpidity.transport.DtxCoordinationPrepareResult;
-import org.apache.qpidity.transport.DtxCoordinationRecoverResult;
-import org.apache.qpidity.transport.DtxCoordinationRollbackResult;
-import org.apache.qpidity.transport.DtxDemarcationEndResult;
-import org.apache.qpidity.transport.DtxDemarcationStartResult;
 import org.apache.qpidity.transport.Future;
+import org.apache.qpidity.transport.GetTimeoutResult;
 import org.apache.qpidity.transport.Option;
+import org.apache.qpidity.transport.RecoverResult;
+import org.apache.qpidity.transport.XaResult;
+import org.apache.qpidity.transport.Xid;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.
@@ -47,7 +44,7 @@ public interface DtxSession extends Session
      * @param options Possible options are: {@link Option#JOIN} and {@link Option#RESUME}.
      * @return Confirms to the client that the transaction branch is started or specify the error condition.
      */
-    public Future<DtxDemarcationStartResult> dtxDemarcationStart(String xid, Option... options);
+    public Future<XaResult> dtxStart(Xid xid, Option... options);
 
     /**
      * This method is called when the work done on behalf a transaction branch finishes or needs to
@@ -65,7 +62,7 @@ public interface DtxSession extends Session
      * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
      * @return Confirms to the client that the transaction branch is ended or specify the error condition.
      */
-    public Future<DtxDemarcationEndResult> dtxDemarcationEnd(String xid, Option... options);
+    public Future<XaResult> dtxEnd(Xid xid, Option... options);
 
     /**
      * Commit the work done on behalf a transaction branch. This method commits the work associated
@@ -79,14 +76,14 @@ public interface DtxSession extends Session
      * @param options Available option is: {@link Option#ONE_PHASE}
      * @return Confirms to the client that the transaction branch is committed or specify the error condition.
      */
-    public Future<DtxCoordinationCommitResult> dtxCoordinationCommit(String xid, Option... options);
+    public Future<XaResult> dtxCommit(Xid xid, Option... options);
 
     /**
      * This method is called to forget about a heuristically completed transaction branch.
      *
      * @param xid Specifies the xid of the transaction branch to be forgotten.
      */
-    public void dtxCoordinationForget(String xid);
+    public void dtxForget(Xid xid);
 
     /**
      * This method obtains the current transaction timeout value in seconds. If set-timeout was not
@@ -96,7 +93,7 @@ public interface DtxSession extends Session
      * @param xid Specifies the xid of the transaction branch for getting the timeout.
      * @return The current transaction timeout value in seconds.
      */
-    public Future<DtxCoordinationGetTimeoutResult> dtxCoordinationGetTimeout(String xid);
+    public Future<GetTimeoutResult> dtxGetTimeout(Xid xid);
 
     /**
      * This method prepares for commitment any message produced or consumed on behalf of xid.
@@ -112,7 +109,7 @@ public interface DtxSession extends Session
      *         <p/>
      *         xa-rbtimeout: The work represented by this transaction branch took too long.
      */
-    public Future<DtxCoordinationPrepareResult> dtxCoordinationPrepare(String xid);
+    public Future<XaResult> dtxPrepare(Xid xid);
 
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
@@ -120,7 +117,7 @@ public interface DtxSession extends Session
      * Todo The options ahould be removed once the xml is updated
      * @return a array of xids to be recovered.
      */
-    public Future<DtxCoordinationRecoverResult> dtxCoordinationRecover(Option... options);
+    public Future<RecoverResult> dtxRecover();
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
@@ -129,7 +126,7 @@ public interface DtxSession extends Session
      * @param xid Specifies the xid of the transaction branch that can be rolled back.
      * @return Confirms to the client that the transaction branch is rolled back or specify the error condition.
      */
-    public Future<DtxCoordinationRollbackResult> dtxCoordinationRollback(String xid);
+    public Future<XaResult> dtxRollback(Xid xid);
 
     /**
      * Sets the specified transaction branch timeout value in seconds.
@@ -137,5 +134,5 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch for setting the timeout.
      * @param timeout The transaction timeout value in seconds.
      */
-    public void dtxCoordinationSetTimeout(String xid, long timeout);
+    public void dtxSetTimeout(Xid xid, long timeout);
 }

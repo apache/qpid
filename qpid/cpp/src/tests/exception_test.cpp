@@ -70,30 +70,33 @@ struct Catcher : public Runnable {
     }
 };
 
-BOOST_FIXTURE_TEST_CASE(DisconnectedPop, ProxySessionFixture) {
-    ProxyConnection c(broker->getPort());
-    session.queueDeclare(arg::queue="q");
-    subs.subscribe(lq, "q");
-    Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(lq)));
-    connection.proxy.close();
+QPID_AUTO_TEST_CASE(DisconnectedPop) {
+    ProxySessionFixture fix;
+    ProxyConnection c(fix.broker->getPort());
+    fix.session.queueDeclare(arg::queue="q");
+    fix.subs.subscribe(fix.lq, "q");
+    Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
+    fix.connection.proxy.close();
     BOOST_CHECK(pop.join());
 }
 
-BOOST_FIXTURE_TEST_CASE(DisconnectedListen, ProxySessionFixture) {
+QPID_AUTO_TEST_CASE(DisconnectedListen) {
+    ProxySessionFixture fix;
     struct NullListener : public MessageListener {
         void received(Message&) { BOOST_FAIL("Unexpected message"); }
     } l;
-    ProxyConnection c(broker->getPort());
-    session.queueDeclare(arg::queue="q");
-    subs.subscribe(l, "q");
-    Thread t(subs);
-    connection.proxy.close();
+    ProxyConnection c(fix.broker->getPort());
+    fix.session.queueDeclare(arg::queue="q");
+    fix.subs.subscribe(l, "q");
+    Thread t(fix.subs);
+    fix.connection.proxy.close();
     t.join();
-    BOOST_CHECK_THROW(session.close(), InternalErrorException);    
+    BOOST_CHECK_THROW(fix.session.close(), InternalErrorException);    
 }
 
-BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, ProxySessionFixture) {
-    BOOST_CHECK_THROW(subs.subscribe(lq, "no such queue").sync(), NotFoundException);
+QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
+    ProxySessionFixture fix;
+    BOOST_CHECK_THROW(fix.subs.subscribe(fix.lq, "no such queue").sync(), NotFoundException);
 }
 
 QPID_AUTO_TEST_SUITE_END()

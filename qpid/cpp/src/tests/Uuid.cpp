@@ -35,7 +35,7 @@ struct UniqueSet : public std::set<Uuid> {
     }
 };
 
-BOOST_AUTO_TEST_CASE(testUuidCtor) {
+QPID_AUTO_TEST_CASE(testUuidCtor) {
     // Uniqueness
     boost::array<Uuid,1000> uuids;
     for_each(uuids.begin(), uuids.end(), mem_fun_ref(&Uuid::generate));
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(testUuidCtor) {
 boost::array<uint8_t, 16>  sample =  {{'\x1b', '\x4e', '\x28', '\xba', '\x2f', '\xa1', '\x11', '\xd2', '\x88', '\x3f', '\xb9', '\xa7', '\x61', '\xbd', '\xe3', '\xfb'}};
 const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
 
-BOOST_AUTO_TEST_CASE(testUuidIstream) {
+QPID_AUTO_TEST_CASE(testUuidIstream) {
     Uuid uuid;
     istringstream in(sampleStr);
     in >> uuid;
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(testUuidIstream) {
     BOOST_CHECK(uuid == sample);
 }
 
-BOOST_AUTO_TEST_CASE(testUuidOstream) {
+QPID_AUTO_TEST_CASE(testUuidOstream) {
     Uuid uuid(sample.c_array());
     ostringstream out;
     out << uuid;
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(testUuidOstream) {
     BOOST_CHECK_EQUAL(out.str(), sampleStr);
 }
 
-BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
+QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
     char* buff = static_cast<char*>(::alloca(Uuid::size()));
     Buffer wbuf(buff, Uuid::size());
     Uuid uuid(sample.c_array());

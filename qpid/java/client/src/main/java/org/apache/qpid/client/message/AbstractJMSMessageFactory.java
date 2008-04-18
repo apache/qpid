@@ -38,6 +38,8 @@ import javax.jms.JMSException;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -134,23 +136,48 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         MessageProperties mprop = (MessageProperties) contentHeader[0];
         DeliveryProperties devprop = (DeliveryProperties) contentHeader[1];
         props.setContentType(mprop.getContentType());
-        props.setCorrelationId(mprop.getCorrelationId());
+        props.setCorrelationId(asString(mprop.getCorrelationId()));
         String encoding = mprop.getContentEncoding();
         if (encoding != null && !encoding.equals(""))
         {
             props.setEncoding(encoding);
         }
-        props.setDeliveryMode((byte) devprop.getDeliveryMode());
+        if (devprop.hasDeliveryMode())
+        {
+            props.setDeliveryMode((byte) devprop.getDeliveryMode().getValue());
+        }
         props.setExpiration(devprop.getExpiration());
-        props.setMessageId(mprop.getMessageId());
-        props.setPriority((byte) devprop.getPriority());
+        UUID mid = mprop.getMessageId();
+        props.setMessageId(mid == null ? null : mid.toString());
+        if (devprop.hasPriority())
+        {
+            props.setPriority((byte) devprop.getPriority().getValue());
+        }
         props.setReplyTo(replyToURL);
         props.setTimestamp(devprop.getTimestamp());
-        props.setType(mprop.getType());
-        props.setUserId(mprop.getUserId());
+        String type = null;
+        Map<String,Object> map = mprop.getApplicationHeaders();
+        if (map != null)
+        {
+            type = (String) map.get(AbstractJMSMessage.JMS_TYPE);
+        }
+        props.setType(type);
+        props.setUserId(asString(mprop.getUserId()));
         props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));        
         AbstractJMSMessage message = createMessage(messageNbr, data, exchange, routingKey, props);        
         return message;
+    }
+
+    private static final String asString(byte[] bytes)
+    {
+        if (bytes == null)
+        {
+            return null;
+        }
+        else
+        {
+            return new String(bytes);
+        }
     }
 
 

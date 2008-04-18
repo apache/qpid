@@ -43,19 +43,15 @@ namespace qpid {
 namespace sys {
 
 class AsynchIOAcceptor : public Acceptor {
-    Poller::shared_ptr poller;
     Socket listener;
-    int numIOThreads;
     const uint16_t listeningPort;
+    std::auto_ptr<AsynchAcceptor> acceptor;
 
   public:
-    AsynchIOAcceptor(int16_t port, int backlog, int threads);
-    ~AsynchIOAcceptor() {}
-    void run(ConnectionCodec::Factory*);
-    void connect(const std::string& host, int16_t port, ConnectionCodec::Factory*);
+    AsynchIOAcceptor(int16_t port, int backlog);
+    void run(Poller::shared_ptr, ConnectionCodec::Factory*);
+    void connect(Poller::shared_ptr, const std::string& host, int16_t port, ConnectionCodec::Factory*);
 
-    void shutdown();
-        
     uint16_t getPort() const;
     std::string getHost() const;
 
@@ -63,15 +59,14 @@ class AsynchIOAcceptor : public Acceptor {
     void accepted(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*);
 };
 
-Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads)
+Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog)
 {
-    return Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog, threads));
+    return Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog));
 }
 
-AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog, int threads) :
-    poller(new Poller),
-    numIOThreads(threads),
-    listeningPort(listener.listen(port, backlog))
+AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog) :
+    listeningPort(listener.listen(port, backlog)),
+    acceptor(0)
 {}
 
 // Buffer definition
@@ -84,19 +79,20 @@ struct Buff : public AsynchIO::BufferBase {
 };
 
 class AsynchIOHandler : public OutputControl {
+    std::string identifier;
     AsynchIO* aio;
     ConnectionCodec::Factory* factory;
     ConnectionCodec* codec;
     bool readError;
-    std::string identifier;
     bool isClient;
 
     void write(const framing::ProtocolInitiation&);
 
   public:
-    AsynchIOHandler() :
+    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
+    	identifier(id),
         aio(0),
-        factory(0),
+        factory(f),
         codec(0),
         readError(false),
         isClient(false)
@@ -110,11 +106,8 @@ class AsynchIOHandler : public OutputControl {
 
     void setClient() { isClient = true; }
     
-    void init(AsynchIO* a, ConnectionCodec::Factory* f) {
+    void init(AsynchIO* a) {
         aio = a;
-        factory = f;
-        identifier = aio->getSocket().getPeerAddress();
-
     }
 
     // Output side
@@ -133,7 +126,7 @@ class AsynchIOHandler : public OutputControl {
 };
 
 void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionCodec::Factory* f) {
-    AsynchIOHandler* async = new AsynchIOHandler; 
+    AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
     AsynchIO* aio = new AsynchIO(s,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::eof, async, _1),
@@ -141,7 +134,8 @@ void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, Conn
                                  boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::nobuffs, async, _1),
                                  boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio, f);
+    async->init(aio);
+
     // Give connection some buffers to use
     for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff);
@@ -158,34 +152,21 @@ std::string AsynchIOAcceptor::getHost() const {
     return listener.getSockname();
 }
 
-void AsynchIOAcceptor::run(ConnectionCodec::Factory* fact) {
-    Dispatcher d(poller);
-    AsynchAcceptor
-        acceptor(listener,
-                 boost::bind(&AsynchIOAcceptor::accepted, this, poller, _1, fact));
-    acceptor.start(poller);
-	
-    std::vector<Thread> t(numIOThreads-1);
-
-    // Run n-1 io threads
-    for (int i=0; i<numIOThreads-1; ++i)
-        t[i] = Thread(d);
-
-    // Run final thread
-    d.run();
-	
-    // Now wait for n-1 io threads to exit
-    for (int i=0; i<numIOThreads-1; ++i) {
-        t[i].join();
-    }
+void AsynchIOAcceptor::run(Poller::shared_ptr poller, ConnectionCodec::Factory* fact) {
+    acceptor.reset(
+        new AsynchAcceptor(listener,
+                           boost::bind(&AsynchIOAcceptor::accepted, this, poller, _1, fact)));
+    acceptor->start(poller);
 }
     
 void AsynchIOAcceptor::connect(
-    const std::string& host, int16_t port, ConnectionCodec::Factory* f)
+    Poller::shared_ptr poller,
+    const std::string& host, int16_t port,
+    ConnectionCodec::Factory* f)
 {
     Socket* socket = new Socket();//Should be deleted by handle when socket closes
     socket->connect(host, port);
-    AsynchIOHandler* async = new AsynchIOHandler; 
+    AsynchIOHandler* async = new AsynchIOHandler(socket->getPeerAddress(), f);
     async->setClient();
     AsynchIO* aio = new AsynchIO(*socket,
                                  boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
@@ -194,21 +175,14 @@ void AsynchIOAcceptor::connect(
                                  boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
                                  boost::bind(&AsynchIOHandler::nobuffs, async, _1),
                                  boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio, f);
+    async->init(aio);
+
     // Give connection some buffers to use
     for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff);
     }
     aio->start(poller);
 }
-
-
-void AsynchIOAcceptor::shutdown() {
-    // NB: this function must be async-signal safe, it must not
-    // call any function that is not async-signal safe.
-    poller->shutdown();
-}
-
 
 void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
 {

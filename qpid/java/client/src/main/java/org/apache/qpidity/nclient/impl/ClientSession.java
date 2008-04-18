@@ -10,6 +10,8 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.MessagePartListener;
+import org.apache.qpidity.transport.MessageAcceptMode;
+import org.apache.qpidity.transport.MessageAcquireMode;
 import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.RangeSet;
@@ -45,13 +47,17 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
 
     private static  long MAX_NOT_SYNC_DATA_LENGH;
     private static  long MAX_NOT_FLUSH_DATA_LENGH;
+
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ClosedListener _exceptionListner;
-    private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
     private long _currentDataSizeNotSynced;
     private long _currentDataSizeNotFlushed;
 
+    public ClientSession(byte[] name)
+    {
+        super(name);
+    }
 
     public void messageAcknowledge(RangeSet ranges)
     {
@@ -60,20 +66,24 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
             super.processed(range);
         }
         super.flushProcessed();
+        messageAccept(ranges);
     }
 
-    public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode, MessagePartListener listener, Map<String, Object> filter, Option... options)
+    public void messageSubscribe(String queue, String destination, short acceptMode, short acquireMode, MessagePartListener listener, Map<String, Object> filter, Option... options)
     {
         setMessageListener(destination,listener);
-        super.messageSubscribe(queue, destination, confirmMode, acquireMode, filter, options);
+        super.messageSubscribe(queue, destination, MessageAcceptMode.get(acceptMode),
+                               MessageAcquireMode.get(acquireMode), null, 0, filter,
+                               options);
     }
 
-    public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
+    public void messageTransfer(String destination, Message msg, short acceptMode, short acquireMode) throws IOException
     {
         // The javadoc clearly says that this method is suitable for small messages
         // therefore reading the content in one shot.
         ByteBuffer  data = msg.readData();
-        super.messageTransfer(destination, confirmMode, acquireMode);
+        super.messageTransfer(destination, MessageAcceptMode.get(acceptMode),
+                              MessageAcquireMode.get(acquireMode));
        // super.header(msg.getDeliveryProperties(),msg.getMessageProperties()  );
         if( msg.getHeader() == null || msg.getDeliveryProperties().isDirty() || msg.getMessageProperties().isDirty() )
         {
@@ -118,9 +128,10 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         super.data(bytes);
     }
 
-    public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
+    public void messageStream(String destination, Message msg, short acceptMode, short acquireMode) throws IOException
     {
-        super.messageTransfer(destination, confirmMode, acquireMode);
+        super.messageTransfer(destination, MessageAcceptMode.get(acceptMode),
+                              MessageAcquireMode.get(acquireMode));
         super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
         boolean b = true;
         int count = 0;
@@ -153,11 +164,6 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         }*/
     }
 
-    public RangeSet getAccquiredMessages()
-    {
-        return _acquiredMessages;
-    }
-
     public RangeSet getRejectedMessages()
     {
         return _rejectedMessages;
@@ -175,11 +181,6 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     public void setClosedListener(ClosedListener exceptionListner)
     {
         _exceptionListner = exceptionListner;
-    }
-
-    void setAccquiredMessages(RangeSet acquiredMessages)
-    {
-        _acquiredMessages = acquiredMessages;
     }
 
     void setRejectedMessages(RangeSet rejectedMessages)

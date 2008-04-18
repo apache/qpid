@@ -102,39 +102,42 @@ struct ClientSessionFixture : public ProxySessionFixture
     }
 };
 
-BOOST_FIXTURE_TEST_CASE(testQueueQuery, ClientSessionFixture) {
-    session =connection.newSession(ASYNC);
-    session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
-    TypedResult<QueueQueryResult> result = session.queueQuery(string("my-queue"));
+QPID_AUTO_TEST_CASE(testQueueQuery) {
+    ClientSessionFixture fix;
+    fix.session = fix.connection.newSession(ASYNC);
+    fix.session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
+    TypedResult<QueueQueryResult> result = fix.session.queueQuery(string("my-queue"));
     BOOST_CHECK_EQUAL(false, result.get().getDurable());
     BOOST_CHECK_EQUAL(true, result.get().getExclusive());
     BOOST_CHECK_EQUAL(string("amq.fanout"),
                       result.get().getAlternateExchange());
 }
 
-BOOST_FIXTURE_TEST_CASE(testTransfer, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(testTransfer)
 {
-    session=connection.newSession(ASYNC);
-    declareSubscribe();
-    session.messageTransfer(content=TransferContent("my-message", "my-queue"));
+    ClientSessionFixture fix;
+    fix.session=fix.connection.newSession(ASYNC);
+    fix.declareSubscribe();
+    fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
     //get & test the message:
-    FrameSet::shared_ptr msg = session.get();
+    FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK(msg->isA<MessageTransferBody>());
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
     //confirm receipt:
-    session.getExecution().completed(msg->getId(), true, true);
+    fix.session.getExecution().completed(msg->getId(), true, true);
 }
 
-BOOST_FIXTURE_TEST_CASE(testDispatcher, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(testDispatcher)
 {
-    session =connection.newSession(ASYNC);
-    declareSubscribe();
+    ClientSessionFixture fix;
+    fix.session =fix.connection.newSession(ASYNC);
+    fix.declareSubscribe();
     size_t count = 100;
     for (size_t i = 0; i < count; ++i) 
-        session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
-    DummyListener listener(session, "my-dest", count);
+        fix.session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
+    DummyListener listener(fix.session, "my-dest", count);
     listener.run();
-    BOOST_REQUIRE_EQUAL(count, listener.messages.size());        
+    BOOST_CHECK_EQUAL(count, listener.messages.size());        
     for (size_t i = 0; i < count; ++i) 
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
@@ -158,35 +161,38 @@ BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
 }
 */
 
-BOOST_FIXTURE_TEST_CASE(_FIXTURE, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(_FIXTURE)
 {
-    session =connection.newSession(ASYNC, 0);
-    session.suspend();  // session has 0 timeout.
+    ClientSessionFixture fix;
+    fix.session =fix.connection.newSession(ASYNC, 0);
+    fix.session.suspend();  // session has 0 timeout.
     try {
-        connection.resume(session);
+        fix.connection.resume(fix.session);
         BOOST_FAIL("Expected InvalidArgumentException.");
     } catch(const InternalErrorException&) {}
 }
 
-BOOST_FIXTURE_TEST_CASE(testUseSuspendedError, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(testUseSuspendedError)
 {
-    session =connection.newSession(ASYNC, 60);
-    session.suspend();
+    ClientSessionFixture fix;
+    fix.session =fix.connection.newSession(ASYNC, 60);
+    fix.session.suspend();
     try {
-        session.exchangeQuery(name="amq.fanout");
+        fix.session.exchangeQuery(name="amq.fanout");
         BOOST_FAIL("Expected session suspended exception");
     } catch(const CommandInvalidException&) {}
 }
 
-BOOST_FIXTURE_TEST_CASE(testSuspendResume, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(testSuspendResume)
 {
-    session =connection.newSession(ASYNC, 60);
-    declareSubscribe();
-    session.suspend();
+    ClientSessionFixture fix;
+    fix.session =fix.connection.newSession(ASYNC, 60);
+    fix.declareSubscribe();
+    fix.session.suspend();
     // Make sure we are still subscribed after resume.
-    connection.resume(session);
-    session.messageTransfer(content=TransferContent("my-message", "my-queue"));
-    FrameSet::shared_ptr msg = session.get();
+    fix.connection.resume(fix.session);
+    fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
+    FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
 

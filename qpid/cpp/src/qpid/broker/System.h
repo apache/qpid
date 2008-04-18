@@ -23,6 +23,7 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/System.h"
 #include <boost/shared_ptr.hpp>
+#include <string>
 
 namespace qpid { 
 namespace broker {
@@ -37,7 +38,7 @@ class System : public management::Manageable
 
     typedef boost::shared_ptr<System> shared_ptr;
 
-    System ();
+    System (std::string _dataDir);
 
     management::ManagementObject::shared_ptr GetManagementObject (void) const
     { return mgmtObject; }

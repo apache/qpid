@@ -1,10 +1,10 @@
 broker.version=0-10
-broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --log-output ${build.data}/broker.log --load-module ${project.root}/../../cppStore/cpp/lib/.libs/libbdbstore.so --store-async yes
-broker.clean=${build.data}
+broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --load-module ${project.root}/../../cppStore/cpp/lib/.libs/libbdbstore.so --store-async yes --auth no
+broker.clean=${project.root}/clean-dir ${build.data}
 java.naming.provider.url=${project.root}/test-provider.properties
 max_prefetch=1000
 test.excludes=true
-test.excludesfile=${project.root}/010ExcludeList
+test.excludesfile=${project.root}/010ExcludeList-store
 log=info
 amqj.logging.level=$log
 root.logging.level=$log

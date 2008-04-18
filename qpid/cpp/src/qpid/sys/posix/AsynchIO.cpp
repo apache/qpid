@@ -65,7 +65,8 @@ __thread int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
 
 AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback) :
     acceptedCallback(callback),
-    handle(s, boost::bind(&AsynchAcceptor::readable, this, _1), 0, 0) {
+    handle(s, boost::bind(&AsynchAcceptor::readable, this, _1), 0, 0),
+    socket(s) {
 
     s.setNonblocking();
     ignoreSigpipe();
@@ -84,7 +85,7 @@ void AsynchAcceptor::readable(DispatchHandle& h) {
         errno = 0;
         // TODO: Currently we ignore the peers address, perhaps we should
         // log it or use it for connection acceptance.
-        s = h.getSocket().accept(0, 0);
+        s = socket.accept(0, 0);
         if (s) {
             acceptedCallback(*s);
         } else {
@@ -112,6 +113,7 @@ AsynchIO::AsynchIO(const Socket& s,
     closedCallback(cCb),
     emptyCallback(eCb),
     idleCallback(iCb),
+    socket(s),
     queuedClose(false),
     writePending(false) {
 
@@ -209,7 +211,7 @@ void AsynchIO::readable(DispatchHandle& h) {
             bufferQueue.pop_front();
             errno = 0;
             int readCount = buff->byteCount-buff->dataCount;
-            int rc = h.getSocket().read(buff->bytes + buff->dataCount, readCount);
+            int rc = socket.read(buff->bytes + buff->dataCount, readCount);
             if (rc > 0) {
                 buff->dataCount += rc;
                 threadReadTotal += rc;
@@ -276,7 +278,7 @@ void AsynchIO::writeable(DispatchHandle& h) {
             writeQueue.pop_back();
             errno = 0;
             assert(buff->dataStart+buff->dataCount <= buff->byteCount);
-            int rc = h.getSocket().write(buff->bytes+buff->dataStart, buff->dataCount);
+            int rc = socket.write(buff->bytes+buff->dataStart, buff->dataCount);
             if (rc >= 0) {
                 threadWriteTotal += rc;
                 writeTotal += rc;
@@ -356,9 +358,9 @@ void AsynchIO::disconnected(DispatchHandle& h) {
  */
 void AsynchIO::close(DispatchHandle& h) {
     h.stopWatch();
-    h.getSocket().close();
+    socket.close();
     if (closedCallback) {
-        closedCallback(*this, getSocket());
+        closedCallback(*this, socket);
     }
 }
 

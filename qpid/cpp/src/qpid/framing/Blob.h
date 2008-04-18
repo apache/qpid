@@ -122,6 +122,7 @@ class Blob
 
     void assign(const Blob& b) {
         assert(empty());
+        if (b.empty()) return;
         b.copy(this->store.address(), b.store.address());
         copy = b.copy;
         destroy = b.destroy;

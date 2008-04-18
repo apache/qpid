@@ -68,7 +68,7 @@ class Connector : public framing::OutputHandler,
         
         Writer();
         ~Writer();
-        void setAio(sys::AsynchIO*);
+        void init(std::string id, sys::AsynchIO*);
         void handle(framing::AMQFrame&);
         void write(sys::AsynchIO&);
     };

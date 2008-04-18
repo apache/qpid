@@ -28,7 +28,7 @@ using namespace qpid::framing;
 
 QPID_AUTO_TEST_SUITE(FieldTableTestSuite)
 
-BOOST_AUTO_TEST_CASE(testMe)
+QPID_AUTO_TEST_CASE(testMe)
 {
     FieldTable ft;
     ft.setString("A", "BCDE");
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(testMe)
 
 }
 
-BOOST_AUTO_TEST_CASE(testAssignment)
+QPID_AUTO_TEST_CASE(testAssignment)
 {
     FieldTable a;
     FieldTable b;

@@ -35,9 +35,17 @@ struct timespec& toTimespec(struct timespec& ts, const Duration& t);
 struct timeval& toTimeval(struct timeval& tv, const Duration& t);
 Duration toTime(const struct timespec& ts);
 
-// Private socket related implementation details
-class SocketPrivate;
-int toFd(const SocketPrivate* s);
+// Private fd related implementation details
+class IOHandlePrivate {
+public:
+    IOHandlePrivate(int f = -1) :
+            fd(f)
+    {}
+    
+    int fd;
+};
+
+int toFd(const IOHandlePrivate* h);
 
 }}
 
