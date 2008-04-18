@@ -35,7 +35,6 @@ class Poller;
 class Acceptor : public qpid::SharedObject<Acceptor>
 {
   public:
-    static Acceptor::shared_ptr create(int16_t port, int backlog);
     virtual ~Acceptor() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
