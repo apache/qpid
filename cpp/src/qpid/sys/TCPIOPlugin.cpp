@@ -20,9 +20,12 @@
  */
 
 #include "Acceptor.h"
-
 #include "AsynchIOHandler.h"
 #include "AsynchIO.h"
+
+#include "qpid/Plugin.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
 #include <memory>
@@ -47,14 +50,26 @@ class AsynchIOAcceptor : public Acceptor {
     void accepted(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*);
 };
 
-Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog)
-{
-    return Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog));
-}
+// Static instance to initialise plugin
+static class TCPIOPlugin : public Plugin {
+    void earlyInitialize(Target&) {
+    }
+    
+    void initialize(Target& target) {
+    
+        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
+        // Only provide to a Broker
+        if (broker) {
+            const broker::Broker::Options& opts = broker->getOptions();
+            Acceptor::shared_ptr acceptor(new AsynchIOAcceptor(opts.port, opts.connectionBacklog));
+            QPID_LOG(info, "Listening on TCP port " << acceptor->getPort());
+            broker->registerAccepter(acceptor);
+        }
+    }
+} acceptor;
 
 AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog) :
-    listeningPort(listener.listen(port, backlog)),
-    acceptor(0)
+    listeningPort(listener.listen(port, backlog))
 {}
 
 void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionCodec::Factory* f) {

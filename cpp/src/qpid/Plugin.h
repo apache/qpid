@@ -88,9 +88,6 @@ class Plugin : boost::noncopyable
      * Caller must not delete plugin pointers.
      */
     static const Plugins& getPlugins();
-
-  private:
-    static Plugins plugins;
 };
  
 } // namespace qpid
