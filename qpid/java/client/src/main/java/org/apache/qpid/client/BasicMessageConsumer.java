@@ -285,29 +285,11 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-        // TGM FIXME not sure messages are being dealt with right
-        switch (_session.getAcknowledgeMode())
+        if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
-            case Session.DUPS_OK_ACKNOWLEDGE:
-            case Session.CLIENT_ACKNOWLEDGE:
-                _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
-                break;
-
-            case Session.SESSION_TRANSACTED:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(jmsMsg.getDeliveryTag(), false);
-                }
-                else
-                {
-                    _logger.info("Recording tag for commit:" + jmsMsg.getDeliveryTag());
-                    _receivedDeliveryTags.add(jmsMsg.getDeliveryTag());
-                }
-
-                break;
             _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
         }
-
+        
         _session.setInRecovery(false);
     }
 
@@ -945,35 +927,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public void acknowledge() throws JMSException
-    {
-        if (isClosed())
-        {
-            throw new IllegalStateException("Consumer is closed");
-        }
-        else if (_session.hasFailedOver())
-        {
-            throw new JMSException("has failed over");
-        }
-        else
-        {
-            Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
-            while (tags.hasNext())
-            {
-                _session.acknowledgeMessage(tags.next(), false);
-                tags.remove();
-            }
-        }
-    }
-
-    /**
-     * Called on recovery to reset the list of delivery tags
-     */
-    public void clearUnackedMessages()
-    {
-        _unacknowledgedDeliveryTags.clear();
-    }
-
     public boolean isAutoClose()
     {
         return _autoClose;
@@ -1092,6 +1045,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     public void failedOver()
     {
         clearReceiveQueue();
-        clearUnackedMessages();
+        // TGM FIXME: think this should just be removed
+        // clearUnackedMessages();
     }
 }
