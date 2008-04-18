@@ -12,7 +12,7 @@ run() {
 if test -d ../../../python ;  then
     cd ../../../python
     run 0-10-errata cpp_failing_0-10.txt
-    test -z "$QPID_NO_PREVIEW" && run ../specs/amqp.0-10-preview.xml cpp_failing_0-10_preview.txt
+    if test -z "$QPID_NO_PREVIEW" ; then run ../specs/amqp.0-10-preview.xml cpp_failing_0-10_preview.txt; fi
 else
     echo Warning: python tests not found.
 fi
