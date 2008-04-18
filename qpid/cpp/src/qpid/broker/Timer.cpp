@@ -60,6 +60,7 @@ void Timer::run()
                 tasks.pop();
             } else if(t->time < AbsTime::now()) {
                 tasks.pop();
+                Monitor::ScopedUnlock u(monitor);
                 t->fire();
             } else {
                 monitor.wait(t->time);
