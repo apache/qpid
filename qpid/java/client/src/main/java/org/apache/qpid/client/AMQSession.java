@@ -2912,11 +2912,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         }
                         else
                         {
-                            synchronized (_messageDeliveryLock)
-                            {
-                                dispatchMessage(message);
-                            }
-
                             if (message.getDeliveryTag() <= _rollbackMark.get())
                             {
                                 rejectMessage(message, true);
