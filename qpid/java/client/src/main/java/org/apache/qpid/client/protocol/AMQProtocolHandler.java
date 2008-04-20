@@ -747,7 +747,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public void setStateManager(AMQStateManager stateManager)
     {
         _stateManager = stateManager;
-        _protocolSession.setStateManager(stateManager);
+        if (_protocolSession != null)
+        {
+            _protocolSession.setStateManager(stateManager);
+        }
     }
 
     public AMQProtocolSession getProtocolSession()

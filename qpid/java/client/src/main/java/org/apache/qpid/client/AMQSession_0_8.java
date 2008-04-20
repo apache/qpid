@@ -115,7 +115,7 @@ public class AMQSession_0_8 extends AMQSession
     {
         final AMQProtocolHandler handler = getProtocolHandler();
 
-        handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitOkBody().generateFrame(_channelId), TxCommitOkBody.class);
+        handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitBody().generateFrame(_channelId), TxCommitOkBody.class);
     }
 
     public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive) throws AMQException,
