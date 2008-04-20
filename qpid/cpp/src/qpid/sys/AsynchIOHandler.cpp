@@ -19,55 +19,13 @@
  *
  */
 
-#include "Acceptor.h"
-
-#include "Socket.h"
-#include "AsynchIO.h"
-#include "Mutex.h"
-#include "Thread.h"
-
-#include "qpid/sys/ConnectionOutputHandler.h"
+#include "AsynchIOHandler.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-#include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"
 
-#include <boost/bind.hpp>
-#include <boost/assert.hpp>
-#include <queue>
-#include <vector>
-#include <memory>
-#include <ostream>
-
 namespace qpid {
 namespace sys {
-
-class AsynchIOAcceptor : public Acceptor {
-    Socket listener;
-    const uint16_t listeningPort;
-    std::auto_ptr<AsynchAcceptor> acceptor;
-
-  public:
-    AsynchIOAcceptor(int16_t port, int backlog);
-    void run(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const std::string& host, int16_t port, ConnectionCodec::Factory*);
-
-    uint16_t getPort() const;
-    std::string getHost() const;
-
-  private:
-    void accepted(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*);
-};
-
-Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog)
-{
-    return Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog));
-}
-
-AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog) :
-    listeningPort(listener.listen(port, backlog)),
-    acceptor(0)
-{}
 
 // Buffer definition
 struct Buff : public AsynchIO::BufferBase {
@@ -78,110 +36,28 @@ struct Buff : public AsynchIO::BufferBase {
     { delete [] bytes;}
 };
 
-class AsynchIOHandler : public OutputControl {
-    std::string identifier;
-    AsynchIO* aio;
-    ConnectionCodec::Factory* factory;
-    ConnectionCodec* codec;
-    bool readError;
-    bool isClient;
+AsynchIOHandler::AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
+    identifier(id),
+    aio(0),
+    factory(f),
+    codec(0),
+    readError(false),
+    isClient(false)
+{}
 
-    void write(const framing::ProtocolInitiation&);
+AsynchIOHandler::~AsynchIOHandler() {
+    if (codec)
+        codec->closed();
+    delete codec;
+}
 
-  public:
-    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
-    	identifier(id),
-        aio(0),
-        factory(f),
-        codec(0),
-        readError(false),
-        isClient(false)
-    {}
-	
-    ~AsynchIOHandler() {
-        if (codec)
-            codec->closed();
-        delete codec;
-    }
-
-    void setClient() { isClient = true; }
-    
-    void init(AsynchIO* a) {
-        aio = a;
-    }
-
-    // Output side
-    void close();
-    void activateOutput();
-
-    // Input side
-    void readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff);
-    void eof(AsynchIO& aio);
-    void disconnect(AsynchIO& aio);
-	
-    // Notifications
-    void nobuffs(AsynchIO& aio);
-    void idle(AsynchIO& aio);
-    void closedSocket(AsynchIO& aio, const Socket& s);
-};
-
-void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionCodec::Factory* f) {
-    AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
-    AsynchIO* aio = new AsynchIO(s,
-                                 boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::eof, async, _1),
-                                 boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                 boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                 boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio);
+void AsynchIOHandler::init(AsynchIO* a, int numBuffs) {
+    aio = a;
 
     // Give connection some buffers to use
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < numBuffs; i++) {
         aio->queueReadBuffer(new Buff);
     }
-    aio->start(poller);
-}
-
-
-uint16_t AsynchIOAcceptor::getPort() const {
-    return listeningPort; // Immutable no need for lock.
-}
-
-std::string AsynchIOAcceptor::getHost() const {
-    return listener.getSockname();
-}
-
-void AsynchIOAcceptor::run(Poller::shared_ptr poller, ConnectionCodec::Factory* fact) {
-    acceptor.reset(
-        new AsynchAcceptor(listener,
-                           boost::bind(&AsynchIOAcceptor::accepted, this, poller, _1, fact)));
-    acceptor->start(poller);
-}
-    
-void AsynchIOAcceptor::connect(
-    Poller::shared_ptr poller,
-    const std::string& host, int16_t port,
-    ConnectionCodec::Factory* f)
-{
-    Socket* socket = new Socket();//Should be deleted by handle when socket closes
-    socket->connect(host, port);
-    AsynchIOHandler* async = new AsynchIOHandler(socket->getPeerAddress(), f);
-    async->setClient();
-    AsynchIO* aio = new AsynchIO(*socket,
-                                 boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::eof, async, _1),
-                                 boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                 boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                 boost::bind(&AsynchIOHandler::idle, async, _1));
-    async->init(aio);
-
-    // Give connection some buffers to use
-    for (int i = 0; i < 4; i++) {
-        aio->queueReadBuffer(new Buff);
-    }
-    aio->start(poller);
 }
 
 void AsynchIOHandler::write(const framing::ProtocolInitiation& data)

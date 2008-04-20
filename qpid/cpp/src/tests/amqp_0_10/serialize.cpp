@@ -348,9 +348,10 @@ QPID_AUTO_TEST_CASE(testStruct) {
     dp.exchange = "foo";
 
     Codec::encode(back_inserter(data))(dp);
-    uint16_t encodedBits=uint8_t(data[1]); // Little-endian
+    // Skip 4 bytes size, little-endian decode for pack bits.
+    uint16_t encodedBits=uint8_t(data[5]);
     encodedBits <<= 8;
-    encodedBits += uint8_t(data[0]);
+    encodedBits += uint8_t(data[4]);
     BOOST_CHECK_EQUAL(encodedBits, packBits(dp));
         
     data.clear();
