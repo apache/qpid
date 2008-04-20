@@ -28,21 +28,27 @@ namespace qpid {
 namespace client {
 
 /**
- * Provides more detailed access to the amqp 'execution layer'.
+ * Provides access to more detailed aspects of the session
+ * implementation.
  */
 class Execution 
 {
 public:
     virtual ~Execution() {}
-    virtual void sendSyncRequest() = 0;
-    virtual void sendFlushRequest() = 0;
-    virtual void completed(const framing::SequenceNumber& id, bool cumulative, bool send) = 0;
+    /**
+     * Mark the incoming command with the specified id as completed
+     */
+    virtual void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer) = 0;
+    /**
+     * Provides access to the demultiplexing function within the
+     * session implementation
+     */
     virtual Demux& getDemux() = 0;
-    virtual bool isComplete(const framing::SequenceNumber& id) = 0;
-    virtual bool isCompleteUpTo(const framing::SequenceNumber& id) = 0;
-    virtual void setCompletionListener(boost::function<void()>) = 0;
-    virtual void syncWait(const framing::SequenceNumber& id) = 0;
-    virtual framing::SequenceNumber lastSent() const = 0;
+    /**
+     * Wait until notification has been received of completion of the
+     * outgoing command with the specified id.
+     */
+    void waitForCompletion(const framing::SequenceNumber& id);
 };
 
 }}

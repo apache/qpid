@@ -77,8 +77,9 @@ class Connector : public framing::OutputHandler,
     const int receive_buffer_size;
     const int send_buffer_size;
     framing::ProtocolVersion version;
+    bool initiated;
 
-    sys::Mutex closedLock;
+    sys::Mutex closedLock;    
     bool closed;
     bool joined;
 

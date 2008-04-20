@@ -105,7 +105,6 @@ class AMQFrame : public AMQDataBlock
     void setEos(bool isEos) { eos = isEos; }
 
     static uint32_t frameOverhead();
-
   private:
     void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
 

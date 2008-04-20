@@ -8,7 +8,7 @@ class CppGen
   def session_methods
     excludes = ["channel", "connection", "session", "execution"]
     gen_methods=@amqp.methods_on(@chassis).reject { |m|
-      excludes.include? m.parent.name or m.body_name.include?("010")
+      excludes.include? m.classname or !m.parent.name.include?("010")
     }
   end
 
@@ -43,7 +43,7 @@ class AmqpMethod
   def param_names_c() fields_c.map { |f| f.cppname} end
   def signature_c()  fields_c.map { |f| f.signature }; end
   def sig_c_default()  fields_c.map { |f| f.sig_default }; end
-  def argpack_name() "#{parent.cppname}#{name.caps}Parameters"; end
+  def argpack_name() "#{classname.lcaps.cppsafe}#{name.caps}Parameters"; end
   def argpack_type()
     "boost::parameter::parameters<" +
       fields_c.map { |f| "arg::keyword_tags::"+f.cppname }.join(',') +
@@ -54,7 +54,7 @@ class AmqpMethod
     return "Response" if (not responses().empty?)
     return "Completion"
   end
-  def session_function() "#{parent.name.lcaps}#{name.caps}"; end
+  def session_function() "#{classname.lcaps}#{name.caps}"; end
 end
 
 class SessionNoKeywordGen < CppGen
@@ -75,6 +75,7 @@ class SessionNoKeywordGen < CppGen
         genl "using framing::Content;"
         genl "using framing::FieldTable;"
         genl "using framing::MethodContent;"
+        genl "using framing::SequenceSet;"
         genl "using framing::SequenceNumberSet;"
         genl "using framing::Uuid;"
         genl
@@ -86,7 +87,7 @@ class SessionNoKeywordGen < CppGen
           cpp_class(@classname, "public SessionBase") {
             public
             genl "Session_#{@amqp.version.bars}() {}"
-            genl "Session_#{@amqp.version.bars}(shared_ptr<SessionCore> core) : SessionBase(core) {}"
+            genl "Session_#{@amqp.version.bars}(shared_ptr<SessionImpl> core) : SessionBase(core) {}"
             session_methods.each { |m|
               genl
               doxygen(m)
@@ -180,7 +181,7 @@ EOS
         # Session class.
         cpp_class(@classname,"public #{@base}") {
           private
-          genl "#{@classname}(shared_ptr<SessionCore> core) : #{ @base}(core) {}"
+          genl "#{@classname}(shared_ptr<SessionImpl> core) : #{ @base}(core) {}"
           keyword_methods.each { |m| typedef m.argpack_type, m.argpack_name }
           genl "friend class Connection;"
           public

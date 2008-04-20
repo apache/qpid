@@ -24,8 +24,7 @@
 #include "SessionContext.h"
 #include "BrokerAdapter.h"
 #include "MessageDelivery.h"
-#include "qpid/framing/ExecutionCompleteBody.h"
-#include "qpid/framing/ExecutionResultBody.h"
+#include "qpid/framing/ExecutionXCompleteBody.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
 
@@ -182,7 +181,7 @@ SemanticHandler::TrackId SemanticHandler::getTrack(const AMQFrame& frame)
 
         classId = frame.castBody<AMQMethodBody>()->amqpClassId();
         switch (classId) {
-          case ExecutionCompleteBody::CLASS_ID:
+          case ExecutionXCompleteBody::CLASS_ID:
             return EXECUTION_CONTROL_TRACK;
         }
 

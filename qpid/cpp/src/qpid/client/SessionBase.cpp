@@ -19,6 +19,7 @@
  *
  */
 #include "SessionBase.h"
+#include "qpid/framing/all_method_bodies.h"
 
 namespace qpid {
 namespace client {
@@ -26,7 +27,7 @@ using namespace framing;
 
 SessionBase::SessionBase() {}
 SessionBase::~SessionBase() {}
-SessionBase::SessionBase(shared_ptr<SessionCore> core) : impl(core) {}
+SessionBase::SessionBase(shared_ptr<SessionImpl> core) : impl(core) {}
 void SessionBase::suspend() { impl->suspend(); }
 void SessionBase::close() { impl->close(); }
 
@@ -37,14 +38,30 @@ SynchronousMode SessionBase::getSynchronous() const {
     return SynchronousMode(impl->isSync());
 }
 
-Execution& SessionBase::getExecution() { return impl->getExecution(); }
+Execution& SessionBase::getExecution()
+{
+    return *impl;
+}
+
+void SessionBase::sync()
+{
+    ExecutionSyncBody b;
+    b.setSync(true);
+    impl->send(b).wait(*impl);
+}
+
 Uuid SessionBase::getId() const { return impl->getId(); }
 framing::FrameSet::shared_ptr SessionBase::get() { return impl->get(); }
 
-void SessionBase::sync() {
-    Execution& ex = getExecution();
-    ex.syncWait(ex.lastSent());
-    impl->assertOpen();
+SessionBase::ScopedSync::ScopedSync(SessionBase& s) : session(s), change(!s.isSynchronous())
+{ 
+    if (change) session.setSynchronous(true); 
 }
+
+SessionBase::ScopedSync::~ScopedSync() 
+{ 
+    if (change) session.setSynchronous(false); 
+}
+
 
 }} // namespace qpid::client

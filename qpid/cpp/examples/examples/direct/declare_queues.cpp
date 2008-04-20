@@ -66,10 +66,10 @@ int main(int argc, char** argv) {
   //--------- Main body of program --------------------------------------------
 
       // Create a queue named "message_queue", and route all messages whose
-      // routing key is "routing_key to this newly created queue.
+      // routing key is "routing_key" to this newly created queue.
 
       session.queueDeclare(arg::queue="message_queue");
-      session.queueBind(arg::exchange="amq.direct", arg::queue="message_queue", arg::routingKey="routing_key");
+      session.exchangeBind(arg::exchange="amq.direct", arg::queue="message_queue", arg::bindingKey="routing_key");
 
   //-----------------------------------------------------------------------------
 

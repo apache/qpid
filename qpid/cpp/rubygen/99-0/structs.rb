@@ -35,7 +35,7 @@ class StructGen < CppGen
 
   def is_packed(s)
     #return true
-    s.kind_of?(AmqpStruct) or s.body_name.include?("010")
+    s.kind_of?(AmqpStruct) or s.parent.name.include?("010")
   end
 
   def execution_header?(s)

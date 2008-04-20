@@ -84,7 +84,7 @@ void Dispatcher::run()
                 if (handler.get()) {
                     handler->handle(*content);
                 } else {
-                    QPID_LOG(error, "No handler found for " << *(content->getMethod()));
+                    QPID_LOG(warning, "No handler found for " << *(content->getMethod()));
                 }
             }
         }

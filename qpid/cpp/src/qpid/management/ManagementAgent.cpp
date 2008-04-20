@@ -24,6 +24,7 @@
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
+#include "qpid/framing/MessageXTransferBody.h"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -217,7 +218,7 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
         return;
 
     intrusive_ptr<Message> msg (new Message ());
-    AMQFrame method (in_place<MessageTransferBody>(
+    AMQFrame method (in_place<MessageXTransferBody>(
                          ProtocolVersion(), 0, exchange->getName (), 0, 0));
     AMQFrame header (in_place<AMQHeaderBody>());
     AMQFrame content(in_place<AMQContentBody>());
@@ -232,8 +233,8 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
     msg->getFrames().append(method);
     msg->getFrames().append(header);
 
-    MessageProperties* props =
-        msg->getFrames().getHeaders()->get<MessageProperties>(true);
+    PreviewMessageProperties* props =
+        msg->getFrames().getHeaders()->get<PreviewMessageProperties>(true);
     props->setContentLength(length);
     msg->getFrames().append(content);
 
@@ -393,8 +394,8 @@ void ManagementAgent::dispatchMethod (Message&      msg,
     uint64_t   objId = inBuffer.getLongLong ();
     string     replyToKey;
 
-    const framing::MessageProperties* p =
-        msg.getFrames().getHeaders()->get<framing::MessageProperties>();
+    const framing::PreviewMessageProperties* p =
+        msg.getFrames().getHeaders()->get<framing::PreviewMessageProperties>();
     if (p && p->hasReplyTo())
     {
         const framing::ReplyTo& rt = p->getReplyTo ();
@@ -600,8 +601,8 @@ void ManagementAgent::dispatchAgentCommand (Message& msg)
     uint32_t sequence;
     string   replyToKey;
 
-    const framing::MessageProperties* p =
-        msg.getFrames().getHeaders()->get<framing::MessageProperties>();
+    const framing::PreviewMessageProperties* p =
+        msg.getFrames().getHeaders()->get<framing::PreviewMessageProperties>();
     if (p && p->hasReplyTo())
     {
         const framing::ReplyTo& rt = p->getReplyTo ();
