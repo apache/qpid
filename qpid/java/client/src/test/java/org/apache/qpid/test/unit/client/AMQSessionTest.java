@@ -78,7 +78,7 @@ public class AMQSessionTest extends QpidTestCase
        TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
         assertEquals("Topic names should match from durable TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
 
-        subscriber = _session.createDurableSubscriber(_topic, "mysubname", "abc", false);
+        subscriber = _session.createDurableSubscriber(_topic, "mysubname2", "abc", false);
         assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
     }
 

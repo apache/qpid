@@ -196,7 +196,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     private void durabilityImplSessionPerConnection(int ackMode) throws AMQException, JMSException, URLSyntaxException
     {
         Message msg;
-
+        org.apache.log4j.BasicConfigurator.configure();
         // Create producer.
         AMQConnection con0 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         con0.start();
@@ -259,15 +259,13 @@ public class DurableSubscriptionTest extends QpidTestCase
         TopicSubscriber consumer3 = session3.createDurableSubscriber(topic, "MySubscription");
 
         _logger.info("Receive message on consumer 3 :expecting B");
-        msg = consumer3.receive(1000);
-        assertEquals("B", ((TextMessage) msg).getText());
+        msg = consumer3.receive(500);
+        assertNotNull("Consumer 3 should get message 'B'.", msg);
+        assertEquals("Incorrect Message recevied on consumer4.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
-        msg = consumer3.receive(1000);
-        assertEquals(null, msg);
-        // we need to unsubscribe as the session is NO_ACKNOWLEDGE
-        // messages for the durable subscriber are not deleted so the test cannot
-        // be run twice in a row
-        session2.unsubscribe("MySubscription");
+        msg = consumer3.receive(500);
+        assertNull("There should be no more messages for consumption on consumer3.", msg);
+
         consumer1.close();
         consumer3.close();
 
