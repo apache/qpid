@@ -164,12 +164,12 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     AbsTime start = now();
     
     for(int i = 0; i < msgs; i++){
-        session.messageTransfer(arg::content=msg, arg::destination="amq.topic");
+        session.messageTransfer(arg::content=msg, arg::destination="amq.topic", arg::acceptMode=1);
     }
     //send report request
     Message reportRequest("", controlTopic);
     reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
-    session.messageTransfer(arg::content=reportRequest, arg::destination="amq.topic");
+    session.messageTransfer(arg::content=reportRequest, arg::destination="amq.topic", arg::acceptMode=1);
     if(transactional){
         session.txCommit();
     }    
@@ -198,7 +198,7 @@ void Publisher::terminate(){
     //send termination request
     Message terminationRequest("", controlTopic);
     terminationRequest.getHeaders().setString("TYPE", "TERMINATION_REQUEST");
-    session.messageTransfer(arg::content=terminationRequest, arg::destination="amq.topic");
+    session.messageTransfer(arg::content=terminationRequest, arg::destination="amq.topic", arg::acceptMode=1);
     if(transactional){
         session.txCommit();
     }

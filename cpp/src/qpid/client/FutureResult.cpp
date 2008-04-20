@@ -21,13 +21,13 @@
 
 #include "FutureResult.h"
 
-#include "SessionCore.h"
+#include "SessionImpl.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-const std::string& FutureResult::getResult(SessionCore& session) const
+const std::string& FutureResult::getResult(SessionImpl& session) const
 {
     waitForCompletion();
     session.assertOpen();            

@@ -22,6 +22,7 @@
 #include "qpid/broker/MessageBuilder.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/framing/frame_functors.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TypeFilter.h"
 #include "qpid_test_plugin.h"
 #include <list>
@@ -101,7 +102,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string key("builder-exchange");
 
         AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, exchange, 0, 0));
+                            ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
 
         header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(0);        
@@ -124,7 +125,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string exchange("builder-exchange");
         std::string key("builder-exchange");
 
-        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
         AMQFrame content(in_place<AMQContentBody>(data));
         method.setEof(false);
@@ -158,7 +159,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string key("builder-exchange");
 
         AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, exchange, 0, 0));
+                            ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
         AMQFrame content1(in_place<AMQContentBody>(data1));
         AMQFrame content2(in_place<AMQContentBody>(data2));
@@ -194,7 +195,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string key("builder-exchange");
 
         AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, exchange, 0, 0));
+                            ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
         AMQFrame content1(in_place<AMQContentBody>(data1));
         AMQFrame content2(in_place<AMQContentBody>(data2));

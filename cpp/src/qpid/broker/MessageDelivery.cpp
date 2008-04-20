@@ -24,9 +24,10 @@
 #include "Message.h"
 #include "Queue.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/BasicDeliverBody.h"
-#include "qpid/framing/BasicGetOkBody.h"
+#include "qpid/framing/BasicXDeliverBody.h"
+#include "qpid/framing/BasicXGetOkBody.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/MessageXTransferBody.h"
 
 
 using namespace boost;
@@ -52,7 +53,7 @@ struct BasicGetToken : BaseToken
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
-        return AMQFrame(in_place<BasicGetOkBody>(
+        return AMQFrame(in_place<BasicXGetOkBody>(
             ProtocolVersion(), id.getValue(),
             msg->getRedelivered(), msg->getExchangeName(),
             msg->getRoutingKey(), queue->getMessageCount())); 
@@ -69,7 +70,7 @@ struct BasicConsumeToken : BaseToken
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
-        return AMQFrame(in_place<BasicDeliverBody>(
+        return AMQFrame(in_place<BasicXDeliverBody>(
             ProtocolVersion(), consumer, id.getValue(),
             msg->getRedelivered(), msg->getExchangeName(),
             msg->getRoutingKey()));
@@ -92,16 +93,16 @@ struct MessageDeliveryToken : BaseToken
         //may need to set the redelivered flag:
         if (isPreview) {
             if (msg->getRedelivered()){
-                msg->getProperties<DeliveryProperties>()->setRedelivered(true);
+                msg->getProperties<PreviewDeliveryProperties>()->setRedelivered(true);
             }
-            return AMQFrame(in_place<MessageTransferBody>(
+            return AMQFrame(in_place<MessageXTransferBody>(
                 ProtocolVersion(), 0, destination,
                 confirmMode, acquireMode));
         } else {
             if (msg->getRedelivered()){
-                msg->getProperties<DeliveryProperties010>()->setRedelivered(true);
+                msg->getProperties<DeliveryProperties>()->setRedelivered(true);
             }
-            return AMQFrame(in_place<Message010TransferBody>(
+            return AMQFrame(in_place<MessageTransferBody>(
                 ProtocolVersion(), destination, confirmMode, acquireMode));
         }
     }

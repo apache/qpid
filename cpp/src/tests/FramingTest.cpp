@@ -23,8 +23,6 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Connector.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-#include "qpid/framing/BasicGetOkBody.h"
-#include "qpid/framing/ConnectionRedirectBody.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/amqp_framing.h"
@@ -54,16 +52,12 @@ std::string tostring(const T& x)
 class FramingTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(FramingTest);
-    CPPUNIT_TEST(testBasicQosBody); 
+    CPPUNIT_TEST(testMessageTransferBody); 
     CPPUNIT_TEST(testConnectionSecureBody); 
     CPPUNIT_TEST(testConnectionRedirectBody);
-    CPPUNIT_TEST(testAccessRequestBody);
-    CPPUNIT_TEST(testBasicConsumeBody);
+    CPPUNIT_TEST(testQueueDeclareBody);
     CPPUNIT_TEST(testConnectionRedirectBodyFrame);
-    CPPUNIT_TEST(testBasicConsumeOkBodyFrame);
-    CPPUNIT_TEST(testInlineContent);
-    CPPUNIT_TEST(testContentReference);
-    CPPUNIT_TEST(testContentValidation);
+    CPPUNIT_TEST(testMessageCancelBodyFrame);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -74,14 +68,14 @@ class FramingTest : public CppUnit::TestCase
 
     FramingTest() : version(highestProtocolVersion) {}
 
-    void testBasicQosBody() 
+    void testMessageTransferBody() 
     {
         Buffer wbuff(buffer, sizeof(buffer));
-        BasicQosBody in(version, 0xCAFEBABE, 0xABBA, true);
+        MessageTransferBody in(version, "my-exchange", 1, 1);
         in.encode(wbuff);
 
         Buffer rbuff(buffer, sizeof(buffer));
-        BasicQosBody out(version);
+        MessageTransferBody out(version);
         out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -104,7 +98,11 @@ class FramingTest : public CppUnit::TestCase
         Buffer wbuff(buffer, sizeof(buffer));
         std::string a = "hostA";
         std::string b = "hostB";
-        ConnectionRedirectBody in(version, a, b);
+        Array hosts(0x95);
+        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
+        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
+        
+        ConnectionRedirectBody in(version, a, hosts);
         in.encode(wbuff);
         
         Buffer rbuff(buffer, sizeof(buffer));
@@ -113,41 +111,28 @@ class FramingTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
-    void testAccessRequestBody()
+    void testQueueDeclareBody()
     {
         Buffer wbuff(buffer, sizeof(buffer));
-        std::string s = "text";
-        AccessRequestBody in(version, s, true, false, true, false, true);
+        QueueDeclareBody in(version, "name", "dlq", true, false, true, false, FieldTable());
         in.encode(wbuff);
 
         Buffer rbuff(buffer, sizeof(buffer));
-        AccessRequestBody out(version);
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
-
-    void testBasicConsumeBody()
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        std::string q = "queue";
-        std::string t = "tag";
-        BasicConsumeBody in(version, 0, q, t, false, true, false, false,
-                            FieldTable());
-        in.encode(wbuff);
-
-        Buffer rbuff(buffer, sizeof(buffer));
-        BasicConsumeBody out(version);
+        QueueDeclareBody out(version);
         out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
     
-
     void testConnectionRedirectBodyFrame()
     {
         Buffer wbuff(buffer, sizeof(buffer));
         std::string a = "hostA";
         std::string b = "hostB";
-        AMQFrame in(in_place<ConnectionRedirectBody>(version, a, b));
+        Array hosts(0x95);
+        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
+        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
+        
+        AMQFrame in(in_place<ConnectionRedirectBody>(version, a, hosts));
         in.setChannel(999);
         in.encode(wbuff);
 
@@ -157,11 +142,10 @@ class FramingTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
-    void testBasicConsumeOkBodyFrame()
+    void testMessageCancelBodyFrame()
     {
         Buffer wbuff(buffer, sizeof(buffer));
-        std::string s = "hostA";
-        AMQFrame in(in_place<BasicConsumeOkBody>(version, s));
+        AMQFrame in(in_place<MessageCancelBody>(version, "tag"));
         in.setChannel(999);
         in.encode(wbuff);
 
@@ -169,56 +153,6 @@ class FramingTest : public CppUnit::TestCase
         AMQFrame out;
         out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
-
-    void testInlineContent() {        
-        Buffer wbuff(buffer, sizeof(buffer));
-        Content content(INLINE, "MyData");
-        CPPUNIT_ASSERT(content.isInline());
-        content.encode(wbuff);
-
-        Buffer rbuff(buffer, sizeof(buffer));
-        Content recovered;
-        recovered.decode(rbuff);
-        CPPUNIT_ASSERT(recovered.isInline());
-        CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
-    }
-
-    void testContentReference() {        
-        Buffer wbuff(buffer, sizeof(buffer));
-        Content content(REFERENCE, "MyRef");
-        CPPUNIT_ASSERT(content.isReference());
-        content.encode(wbuff);
-
-        Buffer rbuff(buffer, sizeof(buffer));
-        Content recovered;
-        recovered.decode(rbuff);
-        CPPUNIT_ASSERT(recovered.isReference());
-        CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
-    }
-
-    void testContentValidation() {
-        try {
-            Content content(REFERENCE, "");
-            CPPUNIT_ASSERT(false);//fail, expected exception
-        } catch (const InvalidArgumentException& e) {}
-        
-        try {
-            Content content(2, "Blah");
-            CPPUNIT_ASSERT(false);//fail, expected exception
-        } catch (const SyntaxErrorException& e) {}
-        
-        try {
-            Buffer wbuff(buffer, sizeof(buffer));
-            wbuff.putOctet(2);
-            wbuff.putLongString("blah, blah");
-            
-            Buffer rbuff(buffer, sizeof(buffer));
-            Content content;
-            content.decode(rbuff);
-            CPPUNIT_FAIL("Expected exception");
-        } catch (Exception& e) {}
-        
     }
 
  };

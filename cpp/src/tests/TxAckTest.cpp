@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "MessageUtils.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManager.h"
 #include "qpid/broker/TxAck.h"
@@ -69,14 +70,8 @@ public:
     TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
     {
         for(int i = 0; i < 10; i++){
-            intrusive_ptr<Message> msg(new Message());
-            AMQFrame method(in_place<MessageTransferBody>(
-                                ProtocolVersion(), 0, "exchange", 0, 0));
-            AMQFrame header(in_place<AMQHeaderBody>());
-            msg->getFrames().append(method);
-            msg->getFrames().append(header);
+            intrusive_ptr<Message> msg(MessageUtils::createMessage("exchange", "routing_key"));
             msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);
-            msg->getProperties<DeliveryProperties>()->setRoutingKey("routing_key");
             messages.push_back(msg);
             QueuedMessage qm(queue.get());
             qm.payload = msg;

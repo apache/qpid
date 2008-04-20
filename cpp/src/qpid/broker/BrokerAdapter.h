@@ -111,7 +111,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
                      const qpid::framing::FieldTable& arguments); 
         void delete_(uint16_t ticket,
                      const std::string& exchange, bool ifUnused); 
-        framing::ExchangeQueryResult query(u_int16_t ticket,
+        framing::ExchangeXQueryResult query(u_int16_t ticket,
                                            const std::string& name);
       private:
         void checkType(shared_ptr<Exchange> exchange, const std::string& type);
@@ -127,7 +127,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     public:
         BindingHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
 
-        framing::BindingQueryResult query(u_int16_t ticket,
+        framing::BindingXQueryResult query(u_int16_t ticket,
                                           const std::string& exchange,
                                           const std::string& queue,
                                           const std::string& routingKey,
@@ -154,7 +154,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
                     const std::string& exchange,
                     const std::string& routingKey,
                     const qpid::framing::FieldTable& arguments );
-        framing::QueueQueryResult query(const std::string& queue);
+        framing::QueueXQueryResult query(const std::string& queue);
         void purge(uint16_t ticket, const std::string& queue); 
         void delete_(uint16_t ticket, const std::string& queue,
                      bool ifUnused, bool ifEmpty);

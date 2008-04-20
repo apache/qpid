@@ -71,13 +71,15 @@ int main(int argc, char** argv) {
 
         // Unique name for private queue:
         std::string myQueue=session.getId().str();
-        // Declear my queue. 
+        // Declare my queue. 
         session.queueDeclare(arg::queue=myQueue, arg::exclusive=true,
                              arg::autoDelete=true);
-        // Bind my queue to the fanout exchange.
-        // Note no routingKey required, the fanout exchange delivers
-        // all messages to all bound queues unconditionally.
-        session.queueBind(arg::exchange="amq.fanout", arg::queue=myQueue);
+        // Bind my queue to the fanout exchange.  
+        //Note no the binding key will not affect routing (its just
+        //used to identify the binding e.g. when unbinding), the
+        //fanout exchange delivers all messages to all bound queues
+        //unconditionally.
+        session.exchangeBind(arg::exchange="amq.fanout", arg::queue=myQueue, arg::bindingKey="my-key");
 
         // Create a listener and subscribe it to my queue.
         SubscriptionManager subscriptions(session);

@@ -23,8 +23,6 @@
 #include "Connection.h"
 #include "Broker.h"
 #include "MessageDelivery.h"
-#include "qpid/framing/MessageAppendBody.h"
-#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "BrokerAdapter.h"
 

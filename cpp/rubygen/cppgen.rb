@@ -88,6 +88,12 @@ class CppType
   def passcref() @param="const #{name}&"; self; end
   def code(str) @code=str; self; end
   def defval(str) @defval=str; self; end
+  def fq(namespace) 
+    @param="const #{namespace}::#{name}&"
+    @ret="const #{namespace}::#{name}&"
+    @defval="#{namespace}::#{name}()"
+    self 
+  end
 
   def encode(value, buffer)
     @code ? "#{buffer}.put#{@code}(#{value});" : "#{value}.encode(#{buffer});"
@@ -143,7 +149,19 @@ class AmqpMethod
   def cppname() name.lcaps.cppsafe; end
   def param_names() fields.map { |f| f.cppname }; end
   def signature() fields.map { |f| f.signature }; end
-  def body_name() parent.name.caps+name.caps+"Body"; end
+  def classname()
+    #TODO: remove name mangling after preview path is dropped
+    if (parent.name.include?("010")) 
+      return parent.name.delete("010")
+    elsif (parent.name == "cluster")
+      return parent.name
+    else
+      return parent.name + "X"
+    end 
+  end
+  def body_name() 
+    classname().caps+name.caps+"Body"      
+  end
 
   def cpp_pack_type()           # preview
     CppType.new("uint16_t").code("Short").defval("0");
@@ -211,7 +229,16 @@ class AmqpDomain
     "uuid"=>CppType.new("Uuid").passcref.retcref
   }
 
-  def cppname() name.caps; end
+  def cppname()
+    #TODO: remove name mangling after preview path is dropped
+    if (name.include?("010"))
+      return name.caps.delete("010")
+    elsif (name.include?("properties"))
+      return "Preview" + name.caps
+    else 
+      return name.caps
+    end
+  end
 
   def fqtypename()
     return containing_class.nsname+"::"+name.typename if containing_class
@@ -221,7 +248,7 @@ class AmqpDomain
   def cpptype()
     d=unalias
     @cpptype ||= @@typemap[d.type_] or
-      CppType.new(d.cppname).passcref.retcref or
+      CppType.new(d.cppname).fq("qpid::framing") or
       raise "Invalid type #{self}"
   end
 
@@ -232,7 +259,7 @@ end
 
 class AmqpResult
   def cpptype()
-    @cpptype=CppType.new(parent.parent.name.caps+parent.name.caps+"Result").passcref
+    @cpptype=CppType.new(parent.classname.caps+parent.name.caps+"Result").passcref
   end
 end
 

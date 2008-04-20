@@ -96,7 +96,8 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
     ProxySessionFixture fix;
-    BOOST_CHECK_THROW(fix.subs.subscribe(fix.lq, "no such queue").sync(), NotFoundException);
+    fix.session.setSynchronous(true);
+    BOOST_CHECK_THROW(fix.subs.subscribe(fix.lq, "no such queue"), NotFoundException);
 }
 
 QPID_AUTO_TEST_SUITE_END()

@@ -69,11 +69,12 @@ class SequenceSet {
     bool empty() const;
 
     template <class T>
-    void for_each(T& t) const
+    T for_each(T& t) const
     {
         for (Ranges::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
             t(i->start, i->end);
         }
+        return t;
     }
 
     template <class S> void serialize(S& s) { s.split(*this); s(ranges.begin(), ranges.end()); }

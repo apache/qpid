@@ -107,8 +107,8 @@ void Listener::prepareQueue(std::string queue, std::string routing_key) {
      * "control" routing key, when it is finished.
      */
 
-    session.queueBind(arg::exchange="amq.topic", arg::queue=queue, arg::routingKey=routing_key);
-    session.queueBind(arg::exchange="amq.topic", arg::queue=queue, arg::routingKey="control");
+    session.exchangeBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey=routing_key);
+    session.exchangeBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey="control");
 
     /*
      * subscribe to the queue using the subscription manager.
