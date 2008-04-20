@@ -196,7 +196,6 @@ public class DurableSubscriptionTest extends QpidTestCase
     private void durabilityImplSessionPerConnection(int ackMode) throws AMQException, JMSException, URLSyntaxException
     {
         Message msg;
-        org.apache.log4j.BasicConfigurator.configure();
         // Create producer.
         AMQConnection con0 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         con0.start();
