@@ -35,15 +35,15 @@
 namespace qpid {
 namespace client {
 
-class SessionCore;
+class SessionImpl;
 
 class ConnectionImpl : public framing::FrameHandler,
                        public sys::TimeoutHandler, 
                        public sys::ShutdownHandler
 
 {
-    typedef std::map<uint16_t, boost::weak_ptr<SessionCore> > SessionMap;
-    typedef std::vector<boost::shared_ptr<SessionCore> > SessionVector;
+    typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
+    typedef std::vector<boost::shared_ptr<SessionImpl> > SessionVector;
 
     SessionMap sessions; 
     ConnectionHandler handler;
@@ -69,7 +69,7 @@ class ConnectionImpl : public framing::FrameHandler,
     ConnectionImpl(boost::shared_ptr<Connector> c);
     ~ConnectionImpl();
     
-    void addSession(const boost::shared_ptr<SessionCore>&);
+    void addSession(const boost::shared_ptr<SessionImpl>&);
         
     void open(const std::string& host, int port = 5672, 
               const std::string& uid = "guest",

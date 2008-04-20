@@ -61,16 +61,13 @@ class HeaderTest : public CppUnit::TestCase
             out.castBody<AMQHeaderBody>()->get<MessageProperties>(true);
 
         props1->setContentLength(42);
-        props1->setMessageId("messageId");
+        props1->setMessageId(Uuid(true));
         props1->setCorrelationId("correlationId");
         props1->setReplyTo(ReplyTo("ex","key"));
         props1->setContentType("contentType");
         props1->setContentEncoding("contentEncoding");
-        props1->setType("type");
         props1->setUserId("userId");
         props1->setAppId("appId");
-        props1->setTransactionId("transactionId");
-        props1->setSecurityToken("securityToken");
 
         char buff[10000];
         Buffer wbuffer(buff, 10000);
@@ -87,11 +84,8 @@ class HeaderTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(props1->getCorrelationId(), props2->getCorrelationId());
         CPPUNIT_ASSERT_EQUAL(props1->getContentType(), props2->getContentType());
         CPPUNIT_ASSERT_EQUAL(props1->getContentEncoding(), props2->getContentEncoding());
-        CPPUNIT_ASSERT_EQUAL(props1->getType(), props2->getType());
         CPPUNIT_ASSERT_EQUAL(props1->getUserId(), props2->getUserId());
         CPPUNIT_ASSERT_EQUAL(props1->getAppId(), props2->getAppId());
-        CPPUNIT_ASSERT_EQUAL(props1->getTransactionId(), props2->getTransactionId());
-        CPPUNIT_ASSERT_EQUAL(props1->getSecurityToken(), props2->getSecurityToken());
 
     }
 

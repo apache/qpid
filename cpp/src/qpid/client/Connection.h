@@ -137,7 +137,7 @@ class Connection
     Session newSession(SynchronousMode sync, uint32_t detachedLifetime=0);
 
     /**
-     * Resume a suspendded session. A session may be resumed
+     * Resume a suspended session. A session may be resumed
      * on a different connection to the one that created it.
      */
     void resume(Session& session);

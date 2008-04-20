@@ -19,27 +19,37 @@
  *
  */
 
-#include "FutureResponse.h"
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceSet.h"
+#include <map>
+#include <boost/shared_ptr.hpp>
 
-#include "SessionCore.h"
+#ifndef _Results_
+#define _Results_
 
-using namespace qpid::client;
-using namespace qpid::framing;
-using namespace qpid::sys;
+namespace qpid {
+namespace client {
 
+class FutureResult;
 
-AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
+class Results
 {
-    waitForCompletion();
-    session.assertOpen();            
-    return response.getMethod();
+public:
+    typedef boost::shared_ptr<FutureResult> FutureResultPtr;
+
+    Results();
+    void completed(const framing::SequenceSet& set);
+    void received(const framing::SequenceNumber& id, const std::string& result);
+    FutureResultPtr listenForResult(const framing::SequenceNumber& point);
+    void close();
+
+private:
+    typedef std::map<framing::SequenceNumber, FutureResultPtr> Listeners;    
+    Listeners listeners;
+};
+
+}
 }
 
-void FutureResponse::received(const AMQMethodBody* r)
-{
-    Monitor::ScopedLock l(lock);
-    response.setBody(*r);
-    complete = true;
-    lock.notifyAll();
-}
 
+#endif

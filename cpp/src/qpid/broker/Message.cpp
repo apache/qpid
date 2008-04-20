@@ -22,9 +22,9 @@
 #include "Message.h"
 #include "ExchangeRegistry.h"
 #include "qpid/framing/frame_functors.h"
-#include "qpid/framing/BasicPublishBody.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/MessageXTransferBody.h"
 #include "qpid/framing/SendContent.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/TypeFilter.h"
@@ -225,9 +225,9 @@ void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) 
 MessageAdapter& Message::getAdapter() const
 {
     if (!adapter) {
-        if(frames.isA<MessageTransferBody>()) {
+        if(frames.isA<MessageXTransferBody>()) {
             adapter = &TRANSFER_99_0;
-        } else if(frames.isA<Message010TransferBody>()) {
+        } else if(frames.isA<MessageTransferBody>()) {
             adapter = &TRANSFER;
         } else {
             const AMQMethodBody* method = frames.getMethod();

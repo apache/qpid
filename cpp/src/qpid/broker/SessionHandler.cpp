@@ -77,12 +77,6 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
 }
 
-void SessionHandler::destroy() {
-    ignoring=true;          // Ignore trailing frames sent by client.
-    session->detach();
-    session.reset();
-}
-
 void SessionHandler::handleOut(AMQFrame& f) {
     channel.handle(f);          // Send it.
     if (session->sent(f))
@@ -160,12 +154,12 @@ void SessionHandler::detached(const std::string& name, uint8_t code)
 void SessionHandler::requestTimeout(uint32_t t)
 {
     session->setTimeout(t);
-    //proxy.timeout(t);
+    peerSession.timeout(t);
 }
 
-void SessionHandler::timeout(uint32_t)
+void SessionHandler::timeout(uint32_t t)
 {
-    //not sure what we need to do on the server for this...
+    session->setTimeout(t);
 }
 
 void SessionHandler::commandPoint(const framing::SequenceNumber& id, uint64_t offset)

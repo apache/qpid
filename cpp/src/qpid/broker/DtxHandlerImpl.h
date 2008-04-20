@@ -36,27 +36,27 @@ public:
 
     // DtxCoordinationHandler:
 
-    framing::DtxCoordinationCommitResult commit(u_int16_t ticket, const std::string& xid, bool onePhase);
+    framing::DtxCoordinationXCommitResult commit(u_int16_t ticket, const std::string& xid, bool onePhase);
 
     void forget(u_int16_t ticket, const std::string& xid);
 
-    framing::DtxCoordinationGetTimeoutResult getTimeout(const std::string& xid);
+    framing::DtxCoordinationXGetTimeoutResult getTimeout(const std::string& xid);
 
-    framing::DtxCoordinationPrepareResult prepare(u_int16_t ticket, const std::string& xid);
+    framing::DtxCoordinationXPrepareResult prepare(u_int16_t ticket, const std::string& xid);
 
-    framing::DtxCoordinationRecoverResult recover(u_int16_t ticket, bool startscan, bool endscan);
+    framing::DtxCoordinationXRecoverResult recover(u_int16_t ticket, bool startscan, bool endscan);
 
-    framing::DtxCoordinationRollbackResult rollback(u_int16_t ticket, const std::string& xid);
+    framing::DtxCoordinationXRollbackResult rollback(u_int16_t ticket, const std::string& xid);
 
     void setTimeout(u_int16_t ticket, const std::string& xid, u_int32_t timeout);
 
     // DtxDemarcationHandler:
     
-    framing::DtxDemarcationEndResult end(u_int16_t ticket, const std::string& xid, bool fail, bool suspend);
+    framing::DtxDemarcationXEndResult end(u_int16_t ticket, const std::string& xid, bool fail, bool suspend);
     
     void select();
     
-    framing::DtxDemarcationStartResult start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
+    framing::DtxDemarcationXStartResult start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
 };
 
 

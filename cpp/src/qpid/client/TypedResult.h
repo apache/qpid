@@ -33,7 +33,7 @@ template <class T> class TypedResult : public Completion
     bool decoded;
 
 public:
-    TypedResult(Future f, shared_ptr<SessionCore> s) : Completion(f, s), decoded(false) {}
+    TypedResult(Future f, shared_ptr<SessionImpl> s) : Completion(f, s), decoded(false) {}
 
     T& get() 
     {

@@ -210,7 +210,8 @@ struct Setup : public Client {
     
     void queueInit(string name, bool durable=false, const framing::FieldTable& settings=framing::FieldTable()) {
         session.queueDeclare(arg::queue=name, arg::durable=durable, arg::arguments=settings);
-        session.queuePurge(arg::queue=name).sync();
+        session.queuePurge(arg::queue=name);
+        session.sync();
     }
 
     void run() {
@@ -334,7 +335,7 @@ struct Controller : public Client {
                  << endl;
         Message msg(data, queue);
         for (size_t i = 0; i < n; ++i) 
-            session.messageTransfer(arg::content=msg);
+            session.messageTransfer(arg::content=msg, arg::acceptMode=1);
     }
 
     void run() {                // Controller
@@ -421,7 +422,6 @@ struct PublishThread : public Client {
     }
     
     void run() {                // Publisher
-        Completion completion;
         try {
             string data;
             size_t offset(0);
@@ -459,19 +459,19 @@ struct PublishThread : public Client {
                     // any heap allocation.
                     const_cast<std::string&>(msg.getData()).replace(offset, sizeof(uint32_t), 
                                                                     reinterpret_cast<const char*>(&i), sizeof(uint32_t));
-                    completion = session.messageTransfer(
+                    session.messageTransfer(
                         arg::destination=destination,
                         arg::content=msg,
-                        arg::confirmMode=opts.confirm);
-		            if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
+                        arg::acceptMode=1);
+                    if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
                 }
-                if (opts.confirm) completion.sync();
+                if (opts.confirm) session.sync();
                 AbsTime end=now();
                 double time=secs(start,end);
                 
                 // Send result to controller.
                 Message report(lexical_cast<string>(opts.count/time), "pub_done");
-                session.messageTransfer(arg::content=report);
+                session.messageTransfer(arg::content=report, arg::acceptMode=1);
             }
             session.close();
         }
@@ -496,9 +496,9 @@ struct SubscribeThread : public Client {
                              arg::exclusive=true,
                              arg::autoDelete=true,
                              arg::durable=opts.durable);
-        session.queueBind(arg::queue=queue,
-                          arg::exchange=ex,
-                          arg::routingKey=key);
+        session.exchangeBind(arg::queue=queue,
+                             arg::exchange=ex,
+                             arg::bindingKey=key);
     }
 
     void verify(bool cond, const char* test, uint32_t expect, uint32_t actual) {
@@ -506,7 +506,7 @@ struct SubscribeThread : public Client {
             Message error(
                 QPID_MSG("Sequence error: expected  n" << test << expect << " but got " << actual),
                 "sub_done");
-            session.messageTransfer(arg::content=error);
+            session.messageTransfer(arg::content=error, arg::acceptMode=1);
             throw Exception(error.getData());
         }
     }
@@ -515,12 +515,12 @@ struct SubscribeThread : public Client {
         try {
             SubscriptionManager subs(session);
             LocalQueue lq(AckPolicy(opts.ack));
-            subs.setConfirmMode(opts.ack > 0);
+            subs.setAcceptMode(opts.ack > 0 ? 0 : 1);
             subs.setFlowControl(opts.subQuota, SubscriptionManager::UNLIMITED,
                                 false);
             subs.subscribe(lq, queue);
             // Notify controller we are ready.
-            session.messageTransfer(arg::content=Message("ready", "sub_ready"));
+            session.messageTransfer(arg::content=Message("ready", "sub_ready"), arg::acceptMode=1);
 
             
             for (size_t j = 0; j < opts.iterations; ++j) {
@@ -556,7 +556,7 @@ struct SubscribeThread : public Client {
                 // Report to publisher.
                 Message result(lexical_cast<string>(opts.subQuota/secs(start,end)),
                                "sub_done");
-                session.messageTransfer(arg::content=result);
+                session.messageTransfer(arg::content=result, arg::acceptMode=1);
             }
             session.close();
         }

@@ -46,6 +46,7 @@ Connector::Connector(
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
     version(ver), 
+    initiated(false),
     closed(true),
     joined(true),
     timeout(0),
@@ -240,6 +241,14 @@ void Connector::Writer::write(sys::AsynchIO&) {
 void Connector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
     framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
 
+    if (!initiated) {
+        framing::ProtocolInitiation protocolInit;
+        if (protocolInit.decode(in)) {
+            //TODO: check the version is correct
+            QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
+        }
+        initiated = true;
+    }
     AMQFrame frame;
     while(frame.decode(in)){
         QPID_LOG(trace, "RECV " << identifier << ": " << frame);
