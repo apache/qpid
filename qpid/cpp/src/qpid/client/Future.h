@@ -28,9 +28,8 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/StructHelper.h"
 #include "FutureCompletion.h"
-#include "FutureResponse.h"
 #include "FutureResult.h"
-#include "SessionCore.h"
+#include "SessionImpl.h"
 
 namespace qpid {
 namespace client {
@@ -38,7 +37,6 @@ namespace client {
 class Future : private framing::StructHelper
 {
     framing::SequenceNumber command;
-    boost::shared_ptr<FutureResponse> response;
     boost::shared_ptr<FutureResult> result;
     bool complete;
 
@@ -46,42 +44,7 @@ public:
     Future() : complete(false) {}    
     Future(const framing::SequenceNumber& id) : command(id), complete(false) {}    
 
-    void sync(SessionCore& session)
-    {
-        if (!isComplete(session)) {
-            session.getExecution().syncTo(command);
-            wait(session);
-        }
-    }
-
-    void wait(SessionCore& session)
-    {
-        if (!isComplete(session)) {
-            FutureCompletion callback;
-            session.getExecution().getCompletionTracker().listenForCompletion(
-                command,                                                     
-                boost::bind(&FutureCompletion::completed, &callback)
-            );
-            callback.waitForCompletion();
-            session.assertOpen();
-            complete = true;
-        }
-    }
-
-    framing::AMQMethodBody* getResponse(SessionCore& session) 
-    {
-        if (response) {
-            session.getExecution().getCompletionTracker().listenForCompletion(
-                command,                                                     
-                boost::bind(&FutureResponse::completed, response)
-            );            
-            return response->getResponse(session);
-        } else {
-            throw Exception("Response not expected");
-        }
-    }
-
-    template <class T> void decodeResult(T& value, SessionCore& session) 
+    template <class T> void decodeResult(T& value, SessionImpl& session) 
     {
         if (result) {
             decode(value, result->getResult(session));
@@ -90,17 +53,9 @@ public:
         }
     }
 
-    bool isComplete(SessionCore& session) {
-        return complete || session.getExecution().isComplete(command);
-    }
-
-    bool isCompleteUpTo(SessionCore& session) {
-        return complete || session.getExecution().isCompleteUpTo(command);
-    }
-
-    void setCommandId(const framing::SequenceNumber& id) { command = id; }
-    void setFutureResponse(boost::shared_ptr<FutureResponse> r) { response = r; }
-    void setFutureResult(boost::shared_ptr<FutureResult> r) { result = r; }
+    void wait(SessionImpl& session);
+    bool isComplete(SessionImpl& session);
+    void setFutureResult(boost::shared_ptr<FutureResult> r);
 };
 
 }}

@@ -341,7 +341,7 @@ class AmqpClass < AmqpElement
   end
 
   def l4?()                     # preview
-    !["connection", "session", "execution"].include?(name)
+    !["connection", "session", "execution"].include?(name) && !control?
   end
 
   def control?()

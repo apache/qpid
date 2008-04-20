@@ -106,17 +106,17 @@ void BrokerAdapter::ExchangeHandlerImpl::delete_(uint16_t /*ticket*/, const stri
     getBroker().getExchanges().destroy(name);
 } 
 
-ExchangeQueryResult BrokerAdapter::ExchangeHandlerImpl::query(u_int16_t /*ticket*/, const string& name)
+ExchangeXQueryResult BrokerAdapter::ExchangeHandlerImpl::query(u_int16_t /*ticket*/, const string& name)
 {
     try {
         Exchange::shared_ptr exchange(getBroker().getExchanges().get(name));
-        return ExchangeQueryResult(exchange->getType(), exchange->isDurable(), false, exchange->getArgs());
+        return ExchangeXQueryResult(exchange->getType(), exchange->isDurable(), false, exchange->getArgs());
     } catch (const ChannelException& e) {
-        return ExchangeQueryResult("", false, true, FieldTable());        
+        return ExchangeXQueryResult("", false, true, FieldTable());        
     }
 }
 
-BindingQueryResult BrokerAdapter::BindingHandlerImpl::query(u_int16_t /*ticket*/,
+BindingXQueryResult BrokerAdapter::BindingHandlerImpl::query(u_int16_t /*ticket*/,
                                                             const std::string& exchangeName,
                                                             const std::string& queueName,
                                                             const std::string& key,
@@ -133,27 +133,27 @@ BindingQueryResult BrokerAdapter::BindingHandlerImpl::query(u_int16_t /*ticket*/
     }
 
     if (!exchange) {
-        return BindingQueryResult(true, false, false, false, false);
+        return BindingXQueryResult(true, false, false, false, false);
     } else if (!queueName.empty() && !queue) {
-        return BindingQueryResult(false, true, false, false, false);
+        return BindingXQueryResult(false, true, false, false, false);
     } else if (exchange->isBound(queue, key.empty() ? 0 : &key, args.count() > 0 ? &args : &args)) {
-        return BindingQueryResult(false, false, false, false, false);
+        return BindingXQueryResult(false, false, false, false, false);
     } else {
         //need to test each specified option individually
         bool queueMatched = queueName.empty() || exchange->isBound(queue, 0, 0);
         bool keyMatched = key.empty() || exchange->isBound(Queue::shared_ptr(), &key, 0);
         bool argsMatched = args.count() == 0 || exchange->isBound(Queue::shared_ptr(), 0, &args);
 
-        return BindingQueryResult(false, false, !queueMatched, !keyMatched, !argsMatched);
+        return BindingXQueryResult(false, false, !queueMatched, !keyMatched, !argsMatched);
     }
 }
 
-QueueQueryResult BrokerAdapter::QueueHandlerImpl::query(const string& name)
+QueueXQueryResult BrokerAdapter::QueueHandlerImpl::query(const string& name)
 {
     Queue::shared_ptr queue = state.getQueue(name);
     Exchange::shared_ptr alternateExchange = queue->getAlternateExchange();
 
-    return QueueQueryResult(queue->getName(), 
+    return QueueXQueryResult(queue->getName(), 
                             alternateExchange ? alternateExchange->getName() : "", 
                             queue->isDurable(), 
                             queue->hasExclusiveOwner(),

@@ -22,8 +22,6 @@
 
 #include "ConnectionHandler.h"
 #include "Connection.h"
-#include "qpid/framing/ConnectionStartBody.h"
-#include "qpid/framing/Connection010StartBody.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"

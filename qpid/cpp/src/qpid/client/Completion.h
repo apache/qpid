@@ -24,7 +24,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "Future.h"
-#include "SessionCore.h"
+#include "SessionImpl.h"
 
 namespace qpid {
 namespace client {
@@ -33,17 +33,12 @@ class Completion
 {
 protected:
     Future future;
-    shared_ptr<SessionCore> session;
+    shared_ptr<SessionImpl> session;
 
 public:
     Completion() {}
 
-    Completion(Future f, shared_ptr<SessionCore> s) : future(f), session(s) {}
-
-    void sync()
-    {
-        future.sync(*session);
-    }
+    Completion(Future f, shared_ptr<SessionImpl> s) : future(f), session(s) {}
 
     void wait()
     {
@@ -52,10 +47,6 @@ public:
 
     bool isComplete() {
         return future.isComplete(*session);
-    }
-
-    bool isCompleteUpTo() {
-        return future.isCompleteUpTo(*session);
     }
 };
 

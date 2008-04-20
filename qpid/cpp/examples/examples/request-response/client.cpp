@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
         // Use the name of the response queue as the routing key
 
 	session.queueDeclare(arg::queue=response_queue.str());
-        session.queueBind(arg::exchange="amq.direct", arg::queue=response_queue.str(), arg::routingKey=response_queue.str());
+        session.exchangeBind(arg::exchange="amq.direct", arg::queue=response_queue.str(), arg::bindingKey=response_queue.str());
 
 	// Create a listener for the response queue and start listening.
 

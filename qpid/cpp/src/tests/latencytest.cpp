@@ -192,7 +192,7 @@ Receiver::Receiver(const string& q, Stats& s) : Client(q), mgr(session), count(0
         mgr.setAckPolicy(AckPolicy(opts.ack ? opts.ack : (opts.prefetch / 2)));
         mgr.setFlowControl(opts.prefetch, SubscriptionManager::UNLIMITED, true);
     } else {
-        mgr.setConfirmMode(false);
+        mgr.setAcceptMode(1/*not-required*/);
         mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
     }
     mgr.subscribe(*this, queue);    
@@ -257,14 +257,13 @@ void Sender::sendByCount()
         msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
     }
 
-    Completion c;
     for (uint i = 0; i < opts.count; i++) {
         uint64_t sentAt(current_time());
         msg.getDeliveryProperties().setTimestamp(sentAt);
         //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
-        c = session.messageTransfer(arg::content=msg);
+        session.messageTransfer(arg::content=msg, arg::acceptMode=1);
     }
-    c.sync();
+    session.sync();
 }
 
 void Sender::sendByRate()
@@ -283,7 +282,7 @@ void Sender::sendByRate()
             uint64_t sentAt(current_time());
             msg.getDeliveryProperties().setTimestamp(sentAt);
             //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
-            session.messageTransfer(arg::content=msg);
+            session.messageTransfer(arg::content=msg, arg::acceptMode=1);
         }
         uint64_t timeTaken = (current_time() - start) / TIME_USEC;
         if (timeTaken < 1000) {

@@ -30,7 +30,6 @@
 #include "qpid/broker/TopicExchange.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "qpid/framing/BasicGetBody.h"
 #include "MessageUtils.h"
 
 using boost::intrusive_ptr;

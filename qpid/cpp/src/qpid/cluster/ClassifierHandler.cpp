@@ -32,10 +32,10 @@ struct ClassifierHandler::Visitor : public FrameDefaultVisitor {
 
     void visit(const ExchangeDeclareBody&) { chosen=&classifier.wiring; }
     void visit(const ExchangeDeleteBody&) { chosen=&classifier.wiring; }
-    void visit(const QueueBindBody&) { chosen=&classifier.wiring; }
+    void visit(const ExchangeBindBody&) { chosen=&classifier.wiring; }
+    void visit(const ExchangeUnbindBody&) { chosen=&classifier.wiring; }
     void visit(const QueueDeclareBody&) { chosen=&classifier.wiring; }
     void visit(const QueueDeleteBody&) { chosen=&classifier.wiring; }
-    void visit(const QueueUnbindBody&) { chosen=&classifier.wiring; }
     void defaultVisit(const AMQBody&) { chosen=&classifier.other; }
 
     using framing::FrameDefaultVisitor::visit;

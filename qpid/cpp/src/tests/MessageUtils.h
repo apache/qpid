@@ -22,6 +22,8 @@
 #include "qpid/broker/Message.h"
 #include "qpid/broker/MessageDelivery.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/Uuid.h"
 
 using namespace qpid;
 using namespace broker;
@@ -29,12 +31,12 @@ using namespace framing;
 
 struct MessageUtils
 {
-    static boost::intrusive_ptr<Message> createMessage(const string& exchange, const string& routingKey, 
-                                             const string& messageId, uint64_t contentSize = 0)
+    static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="", 
+                                                       const Uuid& messageId=Uuid(true), uint64_t contentSize = 0)
     {
         boost::intrusive_ptr<Message> msg(new Message());
 
-        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
 
         msg->getFrames().append(method);

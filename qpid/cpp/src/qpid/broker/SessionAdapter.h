@@ -83,6 +83,8 @@ class Queue;
     Connection010Handler* getConnection010Handler() { throw framing::NotImplementedException("Class not implemented"); }
     Session010Handler* getSession010Handler() { throw framing::NotImplementedException("Class not implemented"); }
 
+    void destroyExclusiveQueues() { queueImpl.destroyExclusiveQueues(); }
+
   private:
     //common base for utility methods etc that are specific to this adapter
     struct HandlerHelper : public HandlerImpl 
@@ -105,14 +107,14 @@ class Queue;
                      bool passive, bool durable, bool autoDelete, 
                      const qpid::framing::FieldTable& arguments); 
         void delete_(const std::string& exchange, bool ifUnused); 
-        framing::Exchange010QueryResult query(const std::string& name);
+        framing::ExchangeQueryResult query(const std::string& name);
         void bind(const std::string& queue, 
                   const std::string& exchange, const std::string& routingKey,
                   const qpid::framing::FieldTable& arguments); 
         void unbind(const std::string& queue,
                     const std::string& exchange,
                     const std::string& routingKey);
-        framing::Exchange010BoundResult bound(const std::string& exchange,
+        framing::ExchangeBoundResult bound(const std::string& exchange,
                                            const std::string& queue,
                                            const std::string& routingKey,
                                            const framing::FieldTable& arguments);
@@ -141,8 +143,10 @@ class Queue;
         void delete_(const std::string& queue,
                      bool ifUnused, bool ifEmpty);
         void purge(const std::string& queue); 
-        framing::Queue010QueryResult query(const std::string& queue);
+        framing::QueueQueryResult query(const std::string& queue);
         bool isLocal(const ConnectionToken* t) const; 
+
+        void destroyExclusiveQueues();
     };
 
     class MessageHandlerImpl :
@@ -170,7 +174,7 @@ class Queue;
         void release(const framing::SequenceSet& commands,
                      bool setRedelivered);
         
-        framing::Message010AcquireResult acquire(const framing::SequenceSet&);
+        framing::MessageAcquireResult acquire(const framing::SequenceSet&);
 
         void subscribe(const string& queue,
                        const string& destination,
@@ -225,35 +229,35 @@ class Queue;
 
     class DtxHandlerImpl : public Dtx010Handler, public HandlerHelper, private framing::StructHelper
     {
-        std::string convert(const framing::Xid010& xid);
+        std::string convert(const framing::Xid& xid);
 
       public:
         DtxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 
         void select();
             
-        framing::Dtx010StartResult start(const framing::Xid010& xid,
+        framing::DtxStartResult start(const framing::Xid& xid,
                                          bool join,
                                          bool resume);
         
-        framing::Dtx010EndResult end(const framing::Xid010& xid,
+        framing::DtxEndResult end(const framing::Xid& xid,
                                      bool fail,
                                      bool suspend);
         
-        framing::Dtx010CommitResult commit(const framing::Xid010& xid,
+        framing::DtxCommitResult commit(const framing::Xid& xid,
                                            bool onePhase);
         
-        void forget(const framing::Xid010& xid);
+        void forget(const framing::Xid& xid);
         
-        framing::Dtx010GetTimeoutResult getTimeout(const framing::Xid010& xid);
+        framing::DtxGetTimeoutResult getTimeout(const framing::Xid& xid);
         
-        framing::Dtx010PrepareResult prepare(const framing::Xid010& xid);
+        framing::DtxPrepareResult prepare(const framing::Xid& xid);
         
-        framing::Dtx010RecoverResult recover();
+        framing::DtxRecoverResult recover();
         
-        framing::Dtx010RollbackResult rollback(const framing::Xid010& xid);
+        framing::DtxRollbackResult rollback(const framing::Xid& xid);
         
-        void setTimeout(const framing::Xid010& xid, uint32_t timeout);        
+        void setTimeout(const framing::Xid& xid, uint32_t timeout);        
     };
 
     ExchangeHandlerImpl exchangeImpl;

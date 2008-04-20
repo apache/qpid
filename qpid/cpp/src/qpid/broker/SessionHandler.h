@@ -70,7 +70,6 @@ class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
     void localSuspend();
     void detach() { localSuspend(); }
     void sendCompletion();
-    void destroy();
     
   protected:
     void handleIn(framing::AMQFrame&);
