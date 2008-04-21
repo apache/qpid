@@ -23,20 +23,22 @@ package org.apache.qpid.server.ack;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.queue.QueueEntry;
 
 public interface UnacknowledgedMessageMap
 {
     public interface Visitor
     {
         /**
-         * @param message the message being iterated over
-         * @return true to stop iteration, false to continue
+         * @param deliveryTag
+         *@param message the message being iterated over @return true to stop iteration, false to continue
          * @throws AMQException
          */
-        boolean callback(UnacknowledgedMessage message) throws AMQException;
+        boolean callback(final long deliveryTag, QueueEntry message) throws AMQException;
 
         void visitComplete();
     }
@@ -45,19 +47,19 @@ public interface UnacknowledgedMessageMap
 
     Object getLock();
 
-    void add(long deliveryTag, UnacknowledgedMessage message);
+    void add(long deliveryTag, QueueEntry message);
 
-    void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
+    void collect(long deliveryTag, boolean multiple, Map<Long, QueueEntry> msgs);
 
     boolean contains(long deliveryTag) throws AMQException;
 
-    void remove(List<UnacknowledgedMessage> msgs);
+    void remove(Map<Long,QueueEntry> msgs);
 
-    UnacknowledgedMessage remove(long deliveryTag);
+    QueueEntry remove(long deliveryTag);
 
-    void drainTo(Collection<UnacknowledgedMessage> destination, long deliveryTag) throws AMQException;
+    void drainTo(Collection<QueueEntry> destination, long deliveryTag) throws AMQException;
 
-    Collection<UnacknowledgedMessage> cancelAllMessages();
+    Collection<QueueEntry> cancelAllMessages();
 
     void acknowledgeMessage(long deliveryTag, boolean multiple, TransactionalContext txnContext) throws AMQException;
 
@@ -65,7 +67,7 @@ public interface UnacknowledgedMessageMap
 
     void clear();
 
-    UnacknowledgedMessage get(long deliveryTag);
+    QueueEntry get(long deliveryTag);
 
     /**
      * Get the set of delivery tags that are outstanding.

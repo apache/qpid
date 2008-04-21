@@ -48,29 +48,37 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     private final MessageStore _messageStore;
 
+    private final Long _messageId;
     private long _arrivalTime;
+    private boolean _persistent;
 
 
-    public WeakReferenceMessageHandle(MessageStore messageStore)
+    public WeakReferenceMessageHandle(final Long messageId, MessageStore messageStore)
     {
+        _messageId = messageId;
         _messageStore = messageStore;
     }
 
-    public ContentHeaderBody getContentHeaderBody(StoreContext context, Long messageId) throws AMQException
+    public ContentHeaderBody getContentHeaderBody(StoreContext context) throws AMQException
     {
         ContentHeaderBody chb = (_contentHeaderBody != null ? _contentHeaderBody.get() : null);
         if (chb == null)
         {
-            MessageMetaData mmd = loadMessageMetaData(context, messageId);
+            MessageMetaData mmd = loadMessageMetaData(context);
             chb = mmd.getContentHeaderBody();
         }
         return chb;
     }
 
-    private MessageMetaData loadMessageMetaData(StoreContext context, Long messageId)
+    public Long getMessageId()
+    {
+        return _messageId;
+    }
+
+    private MessageMetaData loadMessageMetaData(StoreContext context)
             throws AMQException
     {
-        MessageMetaData mmd = _messageStore.getMessageMetaData(context, messageId);
+        MessageMetaData mmd = _messageStore.getMessageMetaData(context, _messageId);
         populateFromMessageMetaData(mmd);
         return mmd;
     }
@@ -82,11 +90,11 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _messagePublishInfo = new WeakReference<MessagePublishInfo>(mmd.getMessagePublishInfo());
     }
 
-    public int getBodyCount(StoreContext context, Long messageId) throws AMQException
+    public int getBodyCount(StoreContext context) throws AMQException
     {
         if (_contentBodies == null)
         {
-            MessageMetaData mmd = _messageStore.getMessageMetaData(context, messageId);
+            MessageMetaData mmd = _messageStore.getMessageMetaData(context, _messageId);
             int chunkCount = mmd.getContentChunkCount();
             _contentBodies = new ArrayList<WeakReference<ContentChunk>>(chunkCount);
             for (int i = 0; i < chunkCount; i++)
@@ -97,12 +105,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return _contentBodies.size();
     }
 
-    public long getBodySize(StoreContext context, Long messageId) throws AMQException
+    public long getBodySize(StoreContext context) throws AMQException
     {
-        return getContentHeaderBody(context, messageId).bodySize;
+        return getContentHeaderBody(context).bodySize;
     }
 
-    public ContentChunk getContentChunk(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentChunk getContentChunk(StoreContext context, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -113,7 +121,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         ContentChunk cb = wr.get();
         if (cb == null)
         {
-            cb = _messageStore.getContentBodyChunk(context, messageId, index);
+            cb = _messageStore.getContentBodyChunk(context, _messageId, index);
             _contentBodies.set(index, new WeakReference<ContentChunk>(cb));
         }
         return cb;
@@ -123,12 +131,11 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * Content bodies are set <i>before</i> the publish and header frames
      *
      * @param storeContext
-     * @param messageId
      * @param contentChunk
      * @param isLastContentBody
      * @throws AMQException
      */
-    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentChunk, boolean isLastContentBody) throws AMQException
+    public void addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk, boolean isLastContentBody) throws AMQException
     {
         if (_contentBodies == null && isLastContentBody)
         {
@@ -142,16 +149,16 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
             }
         }
         _contentBodies.add(new WeakReference<ContentChunk>(contentChunk));
-        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1,
+        _messageStore.storeContentBodyChunk(storeContext, _messageId, _contentBodies.size() - 1,
                                             contentChunk, isLastContentBody);
     }
 
-    public MessagePublishInfo getMessagePublishInfo(StoreContext context, Long messageId) throws AMQException
+    public MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException
     {
         MessagePublishInfo bpb = (_messagePublishInfo != null ? _messagePublishInfo.get() : null);
         if (bpb == null)
         {
-            MessageMetaData mmd = loadMessageMetaData(context, messageId);
+            MessageMetaData mmd = loadMessageMetaData(context);
 
             bpb = mmd.getMessagePublishInfo();
         }
@@ -168,12 +175,9 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(StoreContext context, Long messageId) throws AMQException
+    public boolean isPersistent(StoreContext context) throws AMQException
     {
-        //todo remove literal values to a constant file such as AMQConstants in common
-        ContentHeaderBody chb = getContentHeaderBody(context, messageId);
-        return chb.properties instanceof BasicContentHeaderProperties &&
-               ((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2;
+        return _persistent;
     }
 
     /**
@@ -183,7 +187,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, MessagePublishInfo publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
@@ -199,24 +203,18 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
         MessageMetaData mmd = new MessageMetaData(publishBody, contentHeaderBody, _contentBodies.size(), arrivalTime);
 
-        _messageStore.storeMessageMetaData(storeContext, messageId, mmd);
+        _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
+
+
+        _persistent =  contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
+               ((BasicContentHeaderProperties) contentHeaderBody.properties).getDeliveryMode() == 2;
 
         populateFromMessageMetaData(mmd);
     }
 
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
+    public void removeMessage(StoreContext storeContext) throws AMQException
     {
-        _messageStore.removeMessage(storeContext, messageId);
-    }
-
-    public void enqueue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
-    {
-        _messageStore.enqueueMessage(storeContext, queue.getName(), messageId);
-    }
-
-    public void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
-    {
-        _messageStore.dequeueMessage(storeContext, queue.getName(), messageId);
+        _messageStore.removeMessage(storeContext, _messageId);
     }
 
     public long getArrivalTime()

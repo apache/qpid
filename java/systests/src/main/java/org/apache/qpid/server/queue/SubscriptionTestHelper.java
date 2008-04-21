@@ -21,6 +21,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +56,12 @@ public class SubscriptionTestHelper implements Subscription
         return messages;
     }
 
-    public void send(QueueEntry msg, AMQQueue queue)
+    public void setQueue(AMQQueue queue)
+    {
+        
+    }
+
+    public void send(QueueEntry msg)
     {
         messages.add(msg);
     }
@@ -84,14 +91,54 @@ public class SubscriptionTestHelper implements Subscription
         return new Object();
     }
 
+    public void resend(final QueueEntry entry)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void restoreCredit(final QueueEntry queueEntry)
+    {
+
+    }
+
+    public void setStateListener(final StateListener listener)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Object getQueueContext()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean setQueueContext(Object expected, Object newValue)
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public AMQChannel getChannel()
     {
         return null;
     }
-
+    
     public void start()
     {
         //no-op
+    }
+
+    public AMQShortString getConumerTag()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean isActive()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public AMQQueue getQueue()
+    {
+        return null;
     }
 
     public void queueDeleted(AMQQueue queue)
@@ -106,6 +153,11 @@ public class SubscriptionTestHelper implements Subscription
     public boolean hasInterest(QueueEntry msg)
     {
         return true;
+    }
+
+    public boolean isAutoClose()
+    {
+        return false;
     }
 
     public Queue<QueueEntry> getPreDeliveryQueue()

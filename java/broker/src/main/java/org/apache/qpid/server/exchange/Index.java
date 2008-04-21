@@ -32,7 +32,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * An index of queues against routing key. Allows multiple queues to be stored
- * against the same key. Used in the DestNameExchange.
+ * against the same key. Used in the DirectExchange.
  */
 class Index
 {

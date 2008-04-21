@@ -75,7 +75,9 @@ public class Client implements MessageListener
     public synchronized void onMessage(Message response)
     {
 
+
         _logger.info("Received " + (++_count) + " of " + _expected + " responses.");
+
         if (_count == _expected)
         {
 
@@ -89,10 +91,10 @@ public class Client implements MessageListener
 
         if (_count < _expected)
         {
-            wait(10000L);
+            wait(1000L);
         }
 
-        if (_count < _expected)
+        if (_count != _expected)
         {
             throw new Exception("Didn't receive all messages... got " + _count + " expected " + _expected);
         }

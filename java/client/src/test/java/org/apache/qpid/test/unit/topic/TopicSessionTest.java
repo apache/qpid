@@ -20,28 +20,33 @@
  */
 package org.apache.qpid.test.unit.topic;
 
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
+import javax.jms.*;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.jms.TemporaryTopic;
-import javax.jms.TextMessage;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
+import javax.jms.Message;
 
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.*;
+
+import java.util.UUID;
 
 
 /** @author Apache Software Foundation */
 public class TopicSessionTest extends TestCase
 {
     private static final String BROKER = "vm://:1";
+    private static final int THREADS = 20;
+    private static final int MESSAGE_COUNT = 10000;
+    private static final int MESSAGE_SIZE = 128;
 
     protected void setUp() throws Exception
     {
@@ -101,6 +106,60 @@ public class TopicSessionTest extends TestCase
     {
         subscriptionNameReuseForDifferentTopic(true);
     }
+
+    public void notestSilly() throws Exception
+    {
+
+
+                final ExceptionListener listener = new ExceptionListener()
+                {
+                    public void onException(JMSException jmsException)
+                    {
+                        //To change body of implemented methods use File | Settings | File Templates.
+                    }
+                };
+
+
+        Thread[] threads = new Thread[100];
+
+        for(int j = 0; j < 20; j++)
+        {
+        threads[j] = new Thread(new Runnable() {
+            public void run()
+            {
+                try
+                {
+                AMQConnection con = new AMQConnection("tcp://127.0.0.1:5672?retries='0'", "guest", "guest", "test", "test");
+                AMQTopic topic = new AMQTopic(con, "MyTopic1" + UUID.randomUUID());
+
+
+                TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+
+                con.setExceptionListener(listener);
+
+                TopicPublisher publisher = session1.createPublisher(topic);
+
+                con.start();
+
+                while(true)
+                {
+                    publisher.publish(session1.createTextMessage("hello"));
+                    Thread.sleep(THREADS);
+                }
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
+            threads[j].run();
+        }
+
+        threads[0].join();
+
+    }
+
 
     private void subscriptionNameReuseForDifferentTopic(boolean shutdown) throws Exception
     {
@@ -368,8 +427,160 @@ public class TopicSessionTest extends TestCase
         con2.close();
     }
 
+
+    public void noTestPublishToManyConsumers() throws Exception
+    {
+
+
+        final ExceptionListener exceptionListener = new ExceptionListener()
+        {
+            public void onException(JMSException jmsException)
+            {
+                jmsException.printStackTrace();
+            }
+        };
+
+
+
+        SubscribingThread[] threads = new SubscribingThread[100];
+
+        final String topicName = "MyTopic1" + UUID.randomUUID();
+        for(int j = 0; j < 21; j++)
+        {
+            final int threadId = j;
+            threads[threadId] = new SubscribingThread(threadId, topicName, exceptionListener);
+            threads[j].start();
+            Thread.sleep(100);
+        }
+
+
+        threads[1].join();
+
+        int totalMessages = 0;
+
+        for(int j = 1; j < 21; j++)
+        {
+
+            System.err.println("Thread " + j + ": " + threads[j].msgId);
+            totalMessages += threads[j].msgId;
+        }
+
+        System.err.println("****** Total: " + totalMessages);
+
+
+    }
+
+
+
+
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(TopicSessionTest.class);
+    }
+
+    private static class SubscribingThread extends Thread
+    {
+        private final int _threadId;
+        private final String _topicName;
+        private final ExceptionListener _exceptionListener;
+        int msgId = 0;
+
+        public SubscribingThread(final int threadId, final String topicName, final ExceptionListener exceptionListener)
+        {
+            _threadId = threadId;
+            _topicName = topicName;
+            _exceptionListener = exceptionListener;
+        }
+
+        public void run()
+        {
+            try
+            {
+                System.err.println("Thread: " + _threadId);
+
+
+                if(_threadId >0)
+                {
+
+                    AMQConnection con2 = new AMQConnection("tcp://127.0.0.1:5672?retries='0'", "guest", "guest", "test", "test");
+                    //AMQConnection con2 = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test", "test");
+                    AMQTopic topic2 = new AMQTopic(con2, _topicName);
+                    TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+                    TopicSubscriber sub = session2.createSubscriber(topic2);
+                    con2.setExceptionListener(_exceptionListener);
+
+
+
+                    final MessageListener messageListener = new MessageListener()
+                    {
+
+                        public void onMessage(Message message)
+                        {
+                            try
+                            {
+                                msgId = message.getIntProperty("MessageId");
+                                if(msgId % 1000 == 0)
+                                {
+                                    System.err.println("Thread: " + _threadId + ": " + msgId + "messages");
+                                }
+                            }
+                            catch (JMSException e)
+                            {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            }
+                        }
+                    };
+
+
+                    sub.setMessageListener(messageListener);
+                    con2.start();
+
+                    Thread.sleep(125000);
+
+
+//                    Thread.sleep(1200000);
+                }
+                else
+                {
+                    int messageId = 0;
+
+                    AMQConnection con = new AMQConnection("tcp://127.0.0.1:5672?retries='0'", "guest", "guest", "test", "test");
+                    //AMQConnection con = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test", "test");
+
+
+                    AMQTopic topic = new AMQTopic(con, _topicName);
+
+
+                    TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+
+                    con.setExceptionListener(_exceptionListener);
+
+                    TopicPublisher publisher = session1.createPublisher(topic);
+                    publisher.setDisableMessageID(true);
+                    publisher.setDisableMessageTimestamp(true);
+                    con.start();
+
+                    Thread.sleep(5000);
+
+                    publisher.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+                    while(messageId <= 240000)
+                    //while(messageId <= 10000)
+                    {
+                        final TextMessage textMessage = session1.createTextMessage("hello");
+                        textMessage.setIntProperty("MessageId", messageId++);
+
+
+                        publisher.publish(textMessage);
+
+                    }
+                }
+
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
 }

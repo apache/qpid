@@ -1,173 +1,74 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.subscription.Subscription;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicReference;
-
-
-public class QueueEntry
+/*
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+*/
+public interface QueueEntry extends Comparable<QueueEntry>
 {
+    AMQQueue getQueue();
 
-    /**
-     * Used for debugging purposes.
-     */
-    private static final Logger _log = Logger.getLogger(QueueEntry.class);
+    AMQMessage getMessage();
 
-    private final AMQQueue _queue;
-    private final AMQMessage _message;
+    long getSize();
 
-    private Set<Subscription> _rejectedBy = null;
+    boolean getDeliveredToConsumer();
 
-    private AtomicReference<Object> _owner = new AtomicReference<Object>();
+    boolean expired() throws AMQException;
 
+    boolean isAcquired();
 
-    public QueueEntry(AMQQueue queue, AMQMessage message)
-    {
-        _queue = queue;
-        _message = message;
-    }
+    boolean acquire(Subscription sub);
 
+    boolean acquiredBySubscription();
 
-    public AMQQueue getQueue()
-    {
-        return _queue;
-    }
+    void setDeliveredToSubscription();
 
-    public AMQMessage getMessage()
-    {
-        return _message;
-    }
+    void release();
 
-    public long getSize()
-    {
-        return getMessage().getSize();
-    }
+    String debugIdentity();
 
-    public boolean getDeliveredToConsumer()
-    {
-        return getMessage().getDeliveredToConsumer();
-    }
+    boolean immediateAndNotDelivered();
 
-    public boolean expired() throws AMQException
-    {
-        return getMessage().expired(_queue);
-    }
+    void setRedelivered(boolean b);
 
-    public boolean isTaken()
-    {
-        return _owner.get() != null;
-    }
+    Subscription getDeliveredSubscription();
 
-    public boolean taken(Subscription sub)
-    {
-        return !(_owner.compareAndSet(null, sub == null ? this : sub));
-    }
+    void reject();
 
-    public void setDeliveredToConsumer()
-    {
-        getMessage().setDeliveredToConsumer();
-    }
+    void reject(Subscription subscription);
 
-    public void release()
-    {
-        _owner.set(null);
-    }
+    boolean isRejectedBy(Subscription subscription);
 
-    public String debugIdentity()
-    {
-        return getMessage().debugIdentity();
-    }
+    void requeue(StoreContext storeContext) throws AMQException;
 
-    public void process(StoreContext storeContext, boolean deliverFirst) throws AMQException
-    {
-        _queue.process(storeContext, this, deliverFirst);
-    }
+    void dequeue(final StoreContext storeContext) throws FailedDequeueException;
 
-    public void checkDeliveredToConsumer() throws NoConsumersException
-    {
-        _message.checkDeliveredToConsumer();
-    }
+    void dispose(final StoreContext storeContext) throws MessageCleanupException;
 
-    public void setRedelivered(boolean b)
-    {
-        getMessage().setRedelivered(b);
-    }
+    void restoreCredit();
 
-    public Subscription getDeliveredSubscription()
-    {
-        synchronized (this)
-        {
-            Object owner = _owner.get();
-            if (owner instanceof Subscription)
-            {
-                return (Subscription) owner;
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
+    void discard(StoreContext storeContext) throws AMQException;
 
-    public void reject()
-    {
-        reject(getDeliveredSubscription());
-    }
-
-    public void reject(Subscription subscription)
-    {
-        if (subscription != null)
-        {
-            if (_rejectedBy == null)
-            {
-                _rejectedBy = new HashSet<Subscription>();
-            }
-
-            _rejectedBy.add(subscription);
-        }
-        else
-        {
-            _log.warn("Requesting rejection by null subscriber:" + debugIdentity());
-        }
-    }
-
-    public boolean isRejectedBy(Subscription subscription)
-    {
-        boolean rejected = _rejectedBy != null;
-
-        if (rejected) // We have subscriptions that rejected this message
-        {
-            return _rejectedBy.contains(subscription);
-        }
-        else // This messasge hasn't been rejected yet.
-        {
-            return rejected;
-        }
-    }
-
-
+    boolean isQueueDeleted();
 }

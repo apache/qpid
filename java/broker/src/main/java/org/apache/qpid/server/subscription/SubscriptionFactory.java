@@ -18,12 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.subscription.Subscription;
 
 /**
  * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This factory
@@ -34,10 +36,12 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
  */
 public interface SubscriptionFactory
 {
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag, boolean acks,
-                                    FieldTable filters, boolean noLocal, AMQQueue queue) throws AMQException;
+    Subscription createSubscription(int channel,
+                                    AMQProtocolSession protocolSession,
+                                    AMQShortString consumerTag,
+                                    boolean acks,
+                                    FieldTable filters,
+                                    boolean noLocal, FlowCreditManager creditManager) throws AMQException;
 
 
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag)
-            throws AMQException;
 }

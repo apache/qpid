@@ -46,6 +46,8 @@ under the License.
         <arg value="2110"/>
         <arg value="-m"/>
         <arg value="2111"/>
+        <arg value="-s"/>
+        <arg value="../spec/amqp.0-9.no-wip.xml"/>
 
         <classpath refid="maven.test.classpath"/>
 		<sysproperty key="QPID_HOME" value="${broker.dir}"/>

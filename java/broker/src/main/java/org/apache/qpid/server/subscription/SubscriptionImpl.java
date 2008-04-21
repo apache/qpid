@@ -1,0 +1,554 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.server.subscription;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.common.ClientProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
+
+/**
+ * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
+ * that was given out by the broker and the channel id. <p/>
+ */
+public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener
+{
+    private final AtomicBoolean _suspended = new AtomicBoolean(false);
+
+    private StateListener _stateListener = new StateListener()
+                                            {
+
+                                                public void stateChange(Subscription sub, State oldState, State newState)
+                                                {
+
+                                                }
+                                            };
+
+
+    private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
+    private final AtomicReference<Object> _queueContext = new AtomicReference<Object>(null);
+
+    static final class BrowserSubscription extends SubscriptionImpl
+    {
+        public BrowserSubscription(int channelId, AMQProtocolSession protocolSession,
+                                   AMQShortString consumerTag, FieldTable filters,
+                                   boolean noLocal, FlowCreditManager creditManager)
+            throws AMQException
+        {
+            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+        }
+
+        public boolean isBrowser()
+        {
+            return true;
+        }
+
+        /**
+         * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
+         * thread safe.
+         *
+         * @param msg   The message to send
+         * @throws AMQException
+         */
+        public void send(QueueEntry msg) throws AMQException
+        {
+            // We don't decrement the reference here as we don't want to consume the message
+            // but we do want to send it to the client.
+
+            synchronized (getChannel())
+            {
+                long deliveryTag = getChannel().getNextDeliveryTag();
+
+                getProtocolSession().getProtocolOutputConverter().writeDeliver(msg.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
+            }
+
+        }
+    }
+
+    static final class NoAckSubscription extends SubscriptionImpl
+    {
+        public NoAckSubscription(int channelId, AMQProtocolSession protocolSession,
+                                 AMQShortString consumerTag, FieldTable filters,
+                                 boolean noLocal, FlowCreditManager creditManager)
+            throws AMQException
+        {
+            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+        }
+
+
+        public boolean isBrowser()
+        {
+            return false;
+        }
+
+        /**
+         * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
+         * thread safe.
+         *
+         * @param entry   The message to send
+         * @throws AMQException
+         */
+        public void send(QueueEntry entry) throws AMQException
+        {
+
+            StoreContext storeContext = getChannel().getStoreContext();
+            try
+            { // if we do not need to wait for client acknowledgements
+                // we can decrement the reference count immediately.
+
+                // By doing this _before_ the send we ensure that it
+                // doesn't get sent if it can't be dequeued, preventing
+                // duplicate delivery on recovery.
+
+                // The send may of course still fail, in which case, as
+                // the message is unacked, it will be lost.
+                entry.dequeue(storeContext);
+
+
+                synchronized (getChannel())
+                {
+                    long deliveryTag = getChannel().getNextDeliveryTag();
+
+                    getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
+
+                }
+                entry.dispose(storeContext);
+            }
+            finally
+            {
+                //Only set delivered if it actually was writen successfully..
+                // using a try->finally would set it even if an error occured.
+                // Is this what we want?
+
+                entry.setDeliveredToSubscription();
+            }
+        }
+
+        public boolean wouldSuspend(QueueEntry msg)
+        {
+            return false;
+        }
+
+    }
+
+    static final class AckSubscription extends SubscriptionImpl
+    {
+        public AckSubscription(int channelId, AMQProtocolSession protocolSession,
+                               AMQShortString consumerTag, FieldTable filters,
+                               boolean noLocal, FlowCreditManager creditManager)
+            throws AMQException
+        {
+            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+        }
+
+        public boolean isBrowser()
+        {
+            return false;
+        }
+
+
+        /**
+         * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
+         * thread safe.
+         *
+         * @param entry   The message to send
+         * @throws AMQException
+         */
+        public void send(QueueEntry entry) throws AMQException
+        {
+            StoreContext storeContext = getChannel().getStoreContext();
+            try
+            { // if we do not need to wait for client acknowledgements
+                // we can decrement the reference count immediately.
+
+                // By doing this _before_ the send we ensure that it
+                // doesn't get sent if it can't be dequeued, preventing
+                // duplicate delivery on recovery.
+
+                // The send may of course still fail, in which case, as
+                // the message is unacked, it will be lost.
+
+                synchronized (getChannel())
+                {
+                    long deliveryTag = getChannel().getNextDeliveryTag();
+
+
+
+
+                    getChannel().addUnacknowledgedMessage(entry, deliveryTag, this);
+
+                    getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
+
+                }
+            }
+            finally
+            {
+                //Only set delivered if it actually was writen successfully..
+                // using a try->finally would set it even if an error occured.
+                // Is this what we want?
+
+                entry.setDeliveredToSubscription();
+            }
+        }
+
+
+
+    }
+
+
+    private static final Logger _logger = Logger.getLogger(SubscriptionImpl.class);
+
+    private final AMQChannel _channel;
+
+    private final AMQShortString _consumerTag;
+
+
+    private final boolean _noLocal;
+
+    private final FlowCreditManager _creditManager;
+
+    private FilterManager _filters;
+
+    private final Boolean _autoClose;
+
+
+    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
+
+    private AMQQueue _queue;
+    private final AtomicBoolean _sendLock = new AtomicBoolean(false);
+
+
+    
+    public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
+                            AMQShortString consumerTag, FieldTable arguments,
+                            boolean noLocal, FlowCreditManager creditManager)
+            throws AMQException
+    {
+        AMQChannel channel = protocolSession.getChannel(channelId);
+        if (channel == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session");
+        }
+
+        _channel = channel;
+        _consumerTag = consumerTag;
+
+        _creditManager = creditManager;
+        creditManager.addStateListener(this);
+
+        _noLocal = noLocal;
+
+
+        _filters = FilterManagerFactory.createManager(arguments);
+
+
+
+
+
+        if (_filters != null)
+        {
+            Object autoClose = arguments.get(AMQPFilterTypes.AUTO_CLOSE.getValue());
+            if (autoClose != null)
+            {
+                _autoClose = (Boolean) autoClose;
+            }
+            else
+            {
+                _autoClose = false;
+            }
+        }
+        else
+        {
+            _autoClose = false;
+        }
+
+
+    }
+
+
+
+    public synchronized void setQueue(AMQQueue queue)
+    {
+        if(getQueue() != null)
+        {
+            throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
+        }
+        _queue = queue;
+    }
+
+    public String toString()
+    {
+        String subscriber = "[channel=" + _channel +
+                            ", consumerTag=" + _consumerTag +
+                            ", session=" + getProtocolSession().getKey()  ;
+
+        return subscriber + "]";
+    }
+
+    /**
+     * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
+     * thread safe.
+     *
+     * @param msg   The message to send
+     * @throws AMQException
+     */
+    abstract public void send(QueueEntry msg) throws AMQException;
+
+
+    public boolean isSuspended()
+    {
+        return !isActive() || _channel.isSuspended() || _sendLock.get();
+    }
+
+    /**
+     * Callback indicating that a queue has been deleted.
+     *
+     * @param queue The queue to delete
+     */
+    public void queueDeleted(AMQQueue queue)
+    {
+        _sendLock.set(true);
+//        _channel.queueDeleted(queue);
+    }
+
+    public boolean filtersMessages()
+    {
+        return _filters != null || _noLocal;
+    }
+
+    public boolean hasInterest(QueueEntry entry)
+    {
+        //check that the message hasn't been rejected
+        if (entry.isRejectedBy(this))
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Subscription:" + debugIdentity() + " rejected message:" + entry.debugIdentity());
+            }
+//            return false;
+        }
+
+
+
+        //todo - client id should be recoreded and this test removed but handled below
+        if (_noLocal)
+        {
+            final Object publisherId = entry.getMessage().getPublisherClientInstance();
+
+            // We don't want local messages so check to see if message is one we sent
+            Object localInstance;
+
+            if (publisherId != null && (getProtocolSession().getClientProperties() != null) &&
+                (localInstance = getProtocolSession().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+            {
+                if(publisherId.equals(localInstance))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+
+                localInstance = getProtocolSession().getClientIdentifier();
+                //todo - client id should be recoreded and this test removed but handled here
+
+
+                if (localInstance != null && localInstance.equals(entry.getMessage().getPublisherIdentifier()))
+                {
+                    return false;
+                }
+            }
+
+
+        }
+
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
+        }
+        return checkFilters(entry);
+
+    }
+
+    private String id = String.valueOf(System.identityHashCode(this));
+
+    private String debugIdentity()
+    {
+        return id;
+    }
+
+    private boolean checkFilters(QueueEntry msg)
+    {
+        return (_filters == null) || _filters.allAllow(msg.getMessage());
+    }
+
+    public boolean isAutoClose()
+    {
+        return _autoClose;
+    }
+
+    public void close()
+    {
+        boolean closed = false;
+        State state = getState();
+        synchronized (_sendLock)
+        {
+            while(!closed && state != State.CLOSED)
+            {
+                closed = _state.compareAndSet(state, State.CLOSED);
+                if(!closed)
+                {
+                    state = getState();
+                }
+                else
+                {
+                    _stateListener.stateChange(this,state, State.CLOSED);
+                }
+            }
+            _creditManager.removeListener(this);
+        }
+
+        if (closed)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Called close() on a closed subscription");
+            }
+
+            return;
+        }
+
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Closing subscription (" + debugIdentity() + "):" + this);
+        }
+    }
+
+    public boolean isClosed()
+    {
+        return getState() == State.CLOSED;
+    }
+
+
+    public boolean wouldSuspend(QueueEntry msg)
+    {
+        return !_creditManager.useCreditForMessage(msg.getMessage());//_channel.wouldSuspend(msg.getMessage());
+    }
+
+    public Object getSendLock()
+    {
+        return _sendLock;
+    }
+
+    public void resend(final QueueEntry entry) throws AMQException
+    {
+        _queue.resend(entry, this);
+    }
+
+    public AMQChannel getChannel()
+    {
+        return _channel;
+    }
+
+    public AMQShortString getConumerTag()
+    {
+        return _consumerTag;
+    }
+
+    public AMQProtocolSession getProtocolSession()
+    {
+        return _channel.getProtocolSession();
+    }
+
+    public AMQQueue getQueue()
+    {
+        return _queue;        
+    }
+
+    public void restoreCredit(final QueueEntry queueEntry)
+    {
+        _creditManager.addCredit(1, queueEntry.getSize());
+    }
+
+
+    public void creditStateChanged(boolean hasCredit)
+    {
+        
+        if(hasCredit)
+        {
+            if(_state.compareAndSet(State.SUSPENDED, State.ACTIVE))
+            {
+                _stateListener.stateChange(this, State.SUSPENDED, State.ACTIVE);
+            }
+        }
+        else
+        {
+            if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
+            {
+                _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
+            }
+        }
+    }
+
+    public State getState()
+    {
+        return _state.get();
+    }
+
+
+    public void setStateListener(final StateListener listener)
+    {
+        _stateListener = listener;
+    }
+
+
+    public Object getQueueContext()
+    {
+        return _queueContext.get();
+    }
+
+    public boolean setQueueContext(Object expected, Object newvalue)
+    {
+        return _queueContext.compareAndSet(expected,newvalue);
+    }
+
+
+    public boolean isActive()
+    {
+        return getState() == State.ACTIVE;
+    }
+}

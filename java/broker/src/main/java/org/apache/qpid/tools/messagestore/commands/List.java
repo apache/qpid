@@ -22,6 +22,7 @@ package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.queue.AMQQueueImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;

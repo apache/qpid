@@ -23,7 +23,8 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.AMQMessage;
+
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -53,7 +54,7 @@ public interface Exchange
 
     void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-    void route(AMQMessage message) throws AMQException;
+    void route(IncomingMessage message) throws AMQException;
 
 
     /**

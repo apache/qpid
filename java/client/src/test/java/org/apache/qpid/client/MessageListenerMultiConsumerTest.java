@@ -128,7 +128,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
     {
         int msg = 0;
         int MAX_LOOPS = MSG_COUNT * 2;
-        for (int loops = 0; (msg < MSG_COUNT) || (loops < MAX_LOOPS); loops++)
+        for (int loops = 0; (msg < MSG_COUNT) && (loops < MAX_LOOPS); loops++)
         {
 
             if (_consumer1.receive(100) != null)
@@ -220,12 +220,18 @@ public class MessageListenerMultiConsumerTest extends TestCase
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-                assertTrue(_consumer1.receive() != null);
+
+                final Message message = _consumer1.receive(100000);
+                if(message == null)
+                {
+                    System.out.println("!!!!!!!!   " + msg);
+                }
+                assertTrue(message != null);
             }
 
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
-                assertTrue(consumer2.receive() != null);
+                assertTrue(consumer2.receive(10000) != null);
             }
         }
         else
@@ -235,12 +241,12 @@ public class MessageListenerMultiConsumerTest extends TestCase
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-                assertTrue(_consumer1.receive() != null);
+                assertTrue(_consumer1.receive(10000) != null);
             }
 
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
-                assertTrue(_consumer2.receive() != null);
+                assertTrue(_consumer2.receive(10000) != null);
             }
         }
     }

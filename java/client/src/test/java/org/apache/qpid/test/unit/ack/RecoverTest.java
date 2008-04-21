@@ -115,6 +115,7 @@ public class RecoverTest extends TestCase
         consumerSession.recover();
 
         tm = (TextMessage) consumer.receiveNoWait();
+
         assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 

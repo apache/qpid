@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.subscription.Subscription;
+
 import java.util.List;
 
 /**
@@ -30,5 +32,16 @@ public interface SubscriptionManager
 {
     public List<Subscription> getSubscriptions();
     public boolean hasActiveSubscribers();
+    public int getActiveConsumerCount();
+    public int getConsumerCount();
     public Subscription nextSubscriber(QueueEntry entry);
+    public void addSubscriber(Subscription subscription);
+    public Subscription removeSubscriber(Subscription subscription);
+    public boolean isEmpty();
+    public void queueDeleted(AMQQueue queue);
+
+
+    void setExclusive(final boolean b);
+
+    Object getChangeLock();
 }

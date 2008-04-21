@@ -28,6 +28,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -54,10 +55,12 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         // check the channel count is correct
         int channelCount = _mbean.channels().size();
         assertTrue(channelCount == 1);
-        AMQQueue queue =
-            new org.apache.qpid.server.queue.AMQQueue(new AMQShortString("testQueue_" + System.currentTimeMillis()), false,
-                new AMQShortString("test"), true, _protocolSession.getVirtualHost());
-        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue_" + System.currentTimeMillis()),
+                                                                   false,
+                                                                   new AMQShortString("test"),
+                                                                   true,
+                                                                   _protocolSession.getVirtualHost());
+        AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);
         channelCount = _mbean.channels().size();

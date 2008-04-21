@@ -91,7 +91,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
 
             MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             info.setExchange(exchange);
-            channel.setPublishFrame(info, session, e);
+            channel.setPublishFrame(info, e);
         }
     }
 

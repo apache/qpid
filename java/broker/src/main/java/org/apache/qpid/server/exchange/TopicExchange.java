@@ -27,10 +27,9 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -45,10 +44,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DestWildExchange extends AbstractExchange
+public class TopicExchange extends AbstractExchange
 {
 
-    public static final ExchangeType<DestWildExchange> TYPE = new ExchangeType<DestWildExchange>()
+    public static final ExchangeType<TopicExchange> TYPE = new ExchangeType<TopicExchange>()
     {
 
         public AMQShortString getName()
@@ -56,18 +55,18 @@ public class DestWildExchange extends AbstractExchange
             return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
         }
 
-        public Class<DestWildExchange> getExchangeClass()
+        public Class<TopicExchange> getExchangeClass()
         {
-            return DestWildExchange.class;
+            return TopicExchange.class;
         }
 
-        public DestWildExchange newInstance(VirtualHost host,
+        public TopicExchange newInstance(VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
-            DestWildExchange exch = new DestWildExchange();
+            TopicExchange exch = new TopicExchange();
             exch.initialise(host, name, durable, ticket, autoDelete);
             return exch;
         }
@@ -79,7 +78,7 @@ public class DestWildExchange extends AbstractExchange
     };
 
 
-    private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
+    private static final Logger _logger = Logger.getLogger(TopicExchange.class);
 
     private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _bindingKey2queues =
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
@@ -87,7 +86,7 @@ public class DestWildExchange extends AbstractExchange
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
     private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _wildCardBindingKey2queues =
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
-
+    // private ConcurrentHashMap<AMQShortString, AMQQueue> _routingKey2queue = new ConcurrentHashMap<AMQShortString, AMQQueue>();
     private static final byte TOPIC_SEPARATOR = (byte)'.';
     private static final AMQShortString TOPIC_SEPARATOR_AS_SHORTSTRING = new AMQShortString(".");
     private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
@@ -97,12 +96,12 @@ public class DestWildExchange extends AbstractExchange
     private static final byte HASH_BYTE = (byte)'#';
     private static final byte STAR_BYTE = (byte)'*';
 
-    /** DestWildExchangeMBean class implements the management interface for the Topic exchanges. */
+    /** TopicExchangeMBean class implements the management interface for the Topic exchanges. */
     @MBeanDescription("Management Bean for Topic Exchange")
-    private final class DestWildExchangeMBean extends ExchangeMBean
+    private final class TopicExchangeMBean extends ExchangeMBean
     {
         @MBeanConstructor("Creates an MBean for AMQ topic exchange")
-        public DestWildExchangeMBean() throws JMException
+        public TopicExchangeMBean() throws JMException
         {
             super();
             _exchangeType = "topic";
@@ -124,7 +123,7 @@ public class DestWildExchange extends AbstractExchange
                     queueList.add(q.getName().toString());
                 }
 
-                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
+                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[queueList.size()])};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -142,7 +141,7 @@ public class DestWildExchange extends AbstractExchange
 
             try
             {
-                queue.bind(new AMQShortString(binding), null, DestWildExchange.this);
+                queue.bind(TopicExchange.this, new AMQShortString(binding), null);
             }
             catch (AMQException ex)
             {
@@ -280,33 +279,30 @@ public class DestWildExchange extends AbstractExchange
 
 
         AMQShortString normalizedString = AMQShortString.join(subscriptionList, TOPIC_SEPARATOR_AS_SHORTSTRING);
+/*
+        StringBuilder sb = new StringBuilder();
+        for (AMQShortString s : subscriptionList)
+        {
+            sb.append(s);
+            sb.append(TOPIC_SEPARATOR);
+        }
+
+        sb.deleteCharAt(sb.length() - 1);
+*/
 
         return normalizedString;
     }
 
-    public void route(AMQMessage payload) throws AMQException
+    public void route(IncomingMessage payload) throws AMQException
     {
-        MessagePublishInfo info = payload.getMessagePublishInfo();
 
-        final AMQShortString routingKey = info.getRoutingKey();
+        final AMQShortString routingKey = payload.getRoutingKey();
 
         List<AMQQueue> queues = getMatchedQueues(routingKey);
-        // if we have no registered queues we have nothing to do
-        // TODO: add support for the immediate flag
-        if ((queues == null) || queues.isEmpty())
-        {
-            if (info.isMandatory() || info.isImmediate())
-            {
-                String msg = "Topic " + routingKey + " is not known to " + this;
-                throw new NoRouteException(msg, payload);
-            }
-            else
-            {
-                _logger.warn("No queues found for routing key " + routingKey);
-                _logger.warn("Routing map contains: " + _bindingKey2queues);
 
-                return;
-            }
+        if(queues == null || queues.isEmpty())
+        {
+            _logger.info("Message routing key: " + payload.getRoutingKey() + " No routes - " + _bindingKey2queues);
         }
 
         payload.enqueue(queues);
@@ -407,7 +403,7 @@ public class DestWildExchange extends AbstractExchange
     {
         try
         {
-            return new DestWildExchangeMBean();
+            return new TopicExchangeMBean();
         }
         catch (JMException ex)
         {
@@ -450,10 +446,18 @@ public class DestWildExchange extends AbstractExchange
                 {
 
                     AMQShortString next = routingTokens.nextToken();
+        /*            if (next.equals(AMQP_HASH) && routingkeyTokens.get(routingkeyTokens.size() - 1).equals(AMQP_HASH))
+                    {
+                        continue;
+                    }
+        */
 
                     routingkeyTokens[token++] = next;
                 }
             }
+
+            _logger.info("Routing key tokens: " + Arrays.asList(routingkeyTokens));
+
             for (AMQShortString bindingKey : _wildCardBindingKey2queues.keySet())
             {
 

@@ -91,7 +91,7 @@ import org.apache.mina.common.IoSession;
  * </pre>
  *
  * @author The Apache Directory Project (mina-dev@directory.apache.org)
- * @version $Rev: 598285 $, $Date: 2007-11-26 14:16:01 +0000 (Mon, 26 Nov 2007) $
+ * @version $Rev$, $Date$
  */
 public abstract class OurCumulativeProtocolDecoder extends ProtocolDecoderAdapter {
 

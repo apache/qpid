@@ -29,6 +29,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueueImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -65,7 +66,6 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         else
         {
             AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue());
-
             if (queue == null)
             {
                 _log.info("No queue for '" + body.getQueue() + "'");

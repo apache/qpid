@@ -39,11 +39,23 @@ import org.apache.qpid.server.queue.AMQMessage;
  */
 public abstract class RequiredDeliveryException extends AMQException
 {
-    private final AMQMessage _amqMessage;
+    private AMQMessage _amqMessage;
 
     public RequiredDeliveryException(String message, AMQMessage payload)
     {
         super(message);
+
+        setMessage(payload);
+    }
+
+
+    public RequiredDeliveryException(String message)
+    {
+        super(message);
+    }
+
+    public void setMessage(final AMQMessage payload)
+    {
 
         // Increment the reference as this message is in the routing phase
         // and so will have the ref decremented as routing fails.
@@ -51,7 +63,6 @@ public abstract class RequiredDeliveryException extends AMQException
         // handler. So increment here.
         _amqMessage = payload.takeReference();
 
-        // payload.incrementReference();
     }
 
     public AMQMessage getAMQMessage()

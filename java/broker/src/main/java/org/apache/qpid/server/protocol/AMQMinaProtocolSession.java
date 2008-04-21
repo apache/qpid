@@ -198,7 +198,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     private void frameReceived(AMQFrame frame) throws AMQException
-    {
+    {        
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
@@ -373,7 +373,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         AMQChannel channel = getAndAssertChannel(channelId);
 
-        channel.publishContentHeader(body, this);
+        channel.publishContentHeader(body);
 
     }
 
@@ -381,7 +381,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         AMQChannel channel = getAndAssertChannel(channelId);
 
-        channel.publishContentBody(body, this);
+        channel.publishContentBody(body);
     }
 
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body)
@@ -536,7 +536,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             try
             {
-                channel.close(this);
+                channel.close();
                 markChannelAwaitingCloseOk(channelId);
             }
             finally
@@ -602,7 +602,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         for (AMQChannel channel : _channelMap.values())
         {
-            channel.close(this);
+            channel.close();
         }
 
         _channelMap.clear();
@@ -633,7 +633,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public String toString()
     {
-        return "AMQProtocolSession(" + _minaProtocolSession.getRemoteAddress() + ")";
+        return _minaProtocolSession.getRemoteAddress() + "("+(getAuthorizedID() == null ? "?" : getAuthorizedID().getName()+")");
     }
 
     public String dump()
@@ -739,7 +739,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public Object getClientIdentifier()
     {
-        return _minaProtocolSession.getRemoteAddress();
+        return (_minaProtocolSession != null) ? _minaProtocolSession.getRemoteAddress() : null;
     }
 
     public VirtualHost getVirtualHost()

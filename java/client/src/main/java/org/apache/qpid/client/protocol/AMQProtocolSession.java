@@ -297,15 +297,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             throw new AMQException("Error: received content body without having received a ContentHeader frame first");
         }
 
-        /*try
-        {*/
+
         msg.receiveBody(contentBody);
-        /*}
-        catch (UnexpectedBodyReceivedException e)
-        {
-            _channelId2UnprocessedMsgMap.remove(channelId);
-            throw e;
-        }*/
 
         if (msg.isAllBodyDataReceived())
         {
@@ -324,9 +317,13 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      * @param channelId the channel id the message should be delivered to
      * @param msg       the message
      */
-    private void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
+    private void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg) throws AMQException
     {
         AMQSession session = getSession(channelId);
+        if(session == null)
+        {
+            throw new AMQException("Error: received message on non-existant channel:" + channelId);
+        }
         session.messageReceived(msg);
         if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {

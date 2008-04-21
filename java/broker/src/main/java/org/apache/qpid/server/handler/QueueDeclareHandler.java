@@ -34,9 +34,10 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -123,7 +124,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                        queue.bind(queueName, null, defaultExchange);
+                        queue.bind(defaultExchange, queueName, null);
                         _logger.info("Queue " + queueName + " bound to default exchange(" + defaultExchange.getName() + ")");
                     }
                 }
@@ -173,7 +174,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
         AMQShortString owner = body.getExclusive() ? session.getContextKey() : null;
-        final AMQQueue queue = new AMQQueue(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost);
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost);
 
 
         if (body.getExclusive() && !body.getDurable())

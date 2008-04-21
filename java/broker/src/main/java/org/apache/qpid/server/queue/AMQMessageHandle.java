@@ -29,23 +29,27 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 /**
  * A pluggable way of getting message data. Implementations can provide intelligent caching for example or
  * even no caching at all to minimise the broker memory footprint.
- *
- * The method all take a messageId to avoid having to store it in the instance - the AMQMessage container
- * must already keen the messageId so it is pointless storing it twice.
  */
 public interface AMQMessageHandle
 {
-    ContentHeaderBody getContentHeaderBody(StoreContext context, Long messageId) throws AMQException;
+    ContentHeaderBody getContentHeaderBody(StoreContext context) throws AMQException;
+
+    /**
+     *
+     * @return the messageId for the message associated with this handle
+     */
+    Long getMessageId();
+
 
     /**
      * @return the number of body frames associated with this message
      */
-    int getBodyCount(StoreContext context, Long messageId) throws AMQException;
+    int getBodyCount(StoreContext context) throws AMQException;
 
     /**
      * @return the size of the body
      */
-    long getBodySize(StoreContext context, Long messageId) throws AMQException;
+    long getBodySize(StoreContext context) throws AMQException;
 
     /**
      * Get a particular content body
@@ -53,27 +57,23 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentChunk getContentChunk(StoreContext context, Long messageId, int index) throws IllegalArgumentException, AMQException;
+    ContentChunk getContentChunk(StoreContext context, int index) throws IllegalArgumentException, AMQException;
 
-    void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
+    void addContentBodyFrame(StoreContext storeContext, ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
 
-    MessagePublishInfo getMessagePublishInfo(StoreContext context, Long messageId) throws AMQException;
+    MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException;
 
     boolean isRedelivered();
 
     void setRedelivered(boolean redelivered);
 
-    boolean isPersistent(StoreContext context, Long messageId) throws AMQException;
+    boolean isPersistent(StoreContext context) throws AMQException;
 
-    void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, MessagePublishInfo messagePublishInfo,
+    void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,
                                         ContentHeaderBody contentHeaderBody)
             throws AMQException;
 
-    void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
-
-    void enqueue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException;
-
-    void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException;
+    void removeMessage(StoreContext storeContext) throws AMQException;    
 
     long getArrivalTime();
 }

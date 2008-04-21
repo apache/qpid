@@ -26,6 +26,7 @@ import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.subscription.Subscription;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -48,8 +49,8 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
     private final Executor _executor = new OnCurrentThreadExecutor();
     private final List<Thread> _threads = new ArrayList<Thread>();
 
-    private final SubscriptionSet _subscriptionMgr = new SubscriptionSet();
-    private final DeliveryManager _deliveryMgr;
+    private final SubscriptionSet _subscriptionMgr;
+    private final ConcurrentSelectorDeliveryManager _deliveryMgr;
 
     private boolean isComplete;
     private boolean failed;
@@ -60,8 +61,9 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
 
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscriptionMgr, new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), false,
+        _deliveryMgr = new ConcurrentSelectorDeliveryManager( new AMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), false,
                                                                           _virtualHost));
+        _subscriptionMgr = _deliveryMgr.getSubscribers();
     }
 
     public void testConcurrent1() throws InterruptedException, AMQException

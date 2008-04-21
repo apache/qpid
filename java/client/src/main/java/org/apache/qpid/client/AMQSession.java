@@ -182,6 +182,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 _fastAccessConsumers[i] = null;
             }
         }
+
+
+
+        public String toString()
+        {
+            return "{ Fast: " + Arrays.asList(_fastAccessConsumers) + " ; Slow: " + _slowAccessConsumers + "}";
+        }
     }
 
 
@@ -298,9 +305,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * consumer.
      */
     private final IdToConsumerMap _consumers = new IdToConsumerMap();
-
-            //Map<AMQShortString, BasicMessageConsumer> _consumers =
-            //new ConcurrentHashMap<AMQShortString, BasicMessageConsumer>();
 
     /**
      * Contains a list of consumers which have been removed but which might still have
@@ -1419,7 +1423,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         if (message.isDeliverMessage())
         {
             _highestDeliveryTag.set(message.getDeliverBody().getDeliveryTag());
+
             _queue.add(message);
+
         }
         else
         {

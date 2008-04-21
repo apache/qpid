@@ -116,6 +116,7 @@ public class ResetMessageListenerTest extends TestCase
         {
             _producer.send(_producerSession.createTextMessage("Message " + msg));
         }
+//        Thread.sleep(120000);
 
     }
 
@@ -247,6 +248,14 @@ public class ResetMessageListenerTest extends TestCase
             {
                 _producer.send(_producerSession.createTextMessage("Message " + msg));
             }
+//            try
+//            {
+//                Thread.sleep(120000);
+//            }
+//            catch (InterruptedException e)
+//            {
+//                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//            }
         }
         catch (JMSException e)
         {
@@ -257,7 +266,7 @@ public class ResetMessageListenerTest extends TestCase
 
         try
         {
-            _allSecondMessagesSent.await(5000, TimeUnit.MILLISECONDS);
+            _allSecondMessagesSent.await(500000, TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e)
         {

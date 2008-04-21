@@ -22,9 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
 import junit.framework.Assert;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -33,69 +31,62 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.protocol.TestMinaProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.LinkedList;
 
 public class DestWildExchangeTest extends TestCase
 {
 
-    DestWildExchange _exchange;
+    TopicExchange _exchange;
 
     VirtualHost _vhost;
     MessageStore _store;
     StoreContext _context;
 
+    TestMinaProtocolSession _protocolSession;
+
 
     public void setUp() throws AMQException
     {
-        _exchange = new DestWildExchange();
+        _exchange = new TopicExchange();
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
         _context = new StoreContext();
+        _protocolSession = new TestMinaProtocolSession();
     }
 
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a*#b"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
         MessagePublishInfo info = new PublishInfo(new AMQShortString("a.b"));
 
-        AMQMessage message = new AMQMessage(0L, info, null);
+        IncomingMessage message = new IncomingMessage(0L, info, null, _protocolSession);
 
-        try
-        {
-            _exchange.route(message);
-            fail("Message has no route and shouldn't be routed");
-        }
-        catch (NoRouteException nre)
-        {
-            //normal   
-        }
+        _exchange.route(message);            
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("ab"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("ab"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 
-        AMQMessage message = createMessage("a.b");
+        IncomingMessage message = createMessage("a.b");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -104,7 +95,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -114,8 +105,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has no route and should fail to be routed");
         }
         catch (AMQException nre)
@@ -128,16 +118,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a*"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.*"), queue, null);
 
 
-        AMQMessage message = createMessage("a.b");
+        IncomingMessage message = createMessage("a.b");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -146,7 +135,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -156,8 +145,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -166,7 +154,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -176,8 +164,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has no route and should fail to be routed");
         }
         catch (AMQException nre)
@@ -189,16 +176,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.#"), queue, null);
 
 
-        AMQMessage message = createMessage("a.b.c");
+        IncomingMessage message = createMessage("a.b.c");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -207,7 +193,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -217,8 +203,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -227,7 +212,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -237,8 +222,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -247,7 +231,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -256,8 +240,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -266,7 +249,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -276,8 +259,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has no route and should fail to be routed");
         }
         catch (AMQException nre)
@@ -290,16 +272,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
-        AMQMessage message = createMessage("a.c.d.b");
+        IncomingMessage message = createMessage("a.c.d.b");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -308,7 +289,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -317,8 +298,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -327,7 +307,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -336,16 +316,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMatchafterHash() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.*.#.b.c"), queue, null);
 
 
-        AMQMessage message = createMessage("a.c.b.b");
+        IncomingMessage message = createMessage("a.c.b.b");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -359,8 +338,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -369,7 +347,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -378,8 +356,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has  route and should not be routed");
         }
         catch (AMQException nre)
@@ -392,8 +369,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -403,7 +379,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -413,16 +389,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.*.#.b.c.#.d"), queue, null);
 
 
-        AMQMessage message = createMessage("a.c.b.b.c");
+        IncomingMessage message = createMessage("a.c.b.b.c");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -436,8 +411,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -446,7 +420,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -455,16 +429,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.#.*.#.d"), queue, null);
 
 
-        AMQMessage message = createMessage("a.c.b.b.c");
+        IncomingMessage message = createMessage("a.c.b.b.c");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -477,8 +450,7 @@ public class DestWildExchangeTest extends TestCase
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
         }
         catch (AMQException nre)
         {
@@ -487,7 +459,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", message, queue.getMessagesOnTheQueue().get(0).getMessage());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -496,16 +468,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testSubMatchFails() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.b.c.d"), queue, null);
 
 
-        AMQMessage message = createMessage("a.b.c");
+        IncomingMessage message = createMessage("a.b.c");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -516,18 +487,25 @@ public class DestWildExchangeTest extends TestCase
 
     }
 
+    private void routeMessage(final IncomingMessage message)
+            throws AMQException
+    {
+        _exchange.route(message);
+        message.routingComplete(_store, new MessageHandleFactory());
+        message.deliverToQueues();
+    }
+
     public void testMoreRouting() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 
-        AMQMessage message = createMessage("a.b.c");
+        IncomingMessage message = createMessage("a.b.c");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -540,16 +518,15 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMoreQueue() throws AMQException
     {
-        AMQQueue queue = new AMQQueue(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 
-        AMQMessage message = createMessage("a");
+        IncomingMessage message = createMessage("a");
 
         try
         {
-            _exchange.route(message);
-            message.routingComplete(_store, _context, new MessageHandleFactory());
+            routeMessage(message);
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
@@ -560,16 +537,17 @@ public class DestWildExchangeTest extends TestCase
 
     }
 
-    private AMQMessage createMessage(String s) throws AMQException
+    private IncomingMessage createMessage(String s) throws AMQException
     {
         MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
 
         TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
-                                                                       new LinkedList<RequiredDeliveryException>(),
-                                                                       new HashSet<Long>());
+                                                                       new LinkedList<RequiredDeliveryException>()
+        );
 
-        AMQMessage message = new AMQMessage(0L, info, trancontext);
-        message.setContentHeaderBody(new ContentHeaderBody());
+        IncomingMessage message = new IncomingMessage(0L, info, trancontext,_protocolSession);
+        message.setContentHeaderBody( new ContentHeaderBody());
+
 
         return message;
     }

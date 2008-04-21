@@ -37,14 +37,16 @@ public class Service implements MessageListener
 {
     private final AMQConnection _connection;
     private final AMQSession _session;
+    private final int _id;
 
-    Service(String broker) throws Exception
+    Service(String broker, int id) throws Exception
     {
-        this(connect(broker));
+        this(connect(broker), id);
     }
 
-    Service(AMQConnection connection) throws Exception
+    Service(AMQConnection connection, int id) throws Exception
     {
+        _id = id;
         _connection = connection;
         AMQQueue queue = new SpecialQueue(connection, "ServiceQueue");
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -56,7 +58,7 @@ public class Service implements MessageListener
     {
         try
         {
-            Message response = _session.createTextMessage("Response!");
+            Message response = _session.createTextMessage("Response! " + _id);
             Destination replyTo = request.getJMSReplyTo();
             _session.createProducer(replyTo).send(response);
         }

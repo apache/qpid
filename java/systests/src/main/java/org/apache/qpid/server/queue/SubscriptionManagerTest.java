@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.subscription.Subscription;
 
 public class SubscriptionManagerTest extends TestCase
 {
@@ -47,9 +48,9 @@ public class SubscriptionManagerTest extends TestCase
         s1.setSuspended(true);
         assertFalse(mgr.hasActiveSubscribers());
 
-        mgr.removeSubscriber(new SubscriptionTestHelper("S1"));
+        mgr.removeSubscriber(s1);
         assertFalse(mgr.isEmpty());
-        mgr.removeSubscriber(new SubscriptionTestHelper("S2"));
+        mgr.removeSubscriber(s2);
         assertTrue(mgr.isEmpty());
     }
 

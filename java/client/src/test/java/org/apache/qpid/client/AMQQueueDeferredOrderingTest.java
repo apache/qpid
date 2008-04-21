@@ -126,7 +126,7 @@ public class AMQQueueDeferredOrderingTest extends TestCase
         _logger.info("Consuming messages");
         for (int i = 0; i < NUM_MESSAGES; i++)
         {
-            Message msg = consumer.receive(3000);
+            Message msg = consumer.receive(90000);
             assertNotNull("Message should not be null", msg);
             assertTrue("Message should be a text message", msg instanceof TextMessage);
             assertEquals("Message content does not match expected", Integer.toString(i), ((TextMessage) msg).getText());

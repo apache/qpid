@@ -21,8 +21,9 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
@@ -30,7 +31,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 
-import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 import java.util.ArrayList;
 
@@ -50,7 +50,7 @@ public class ExchangeMBeanTest  extends TestCase
 
     public void testDirectExchangeMBean() throws Exception
     {
-        DestNameExchange exchange = new DestNameExchange();
+        DirectExchange exchange = new DirectExchange();
         exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
@@ -77,7 +77,7 @@ public class ExchangeMBeanTest  extends TestCase
 
     public void testTopicExchangeMBean() throws Exception
     {
-        DestWildExchange exchange = new DestWildExchange();
+        TopicExchange exchange = new TopicExchange();
         exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
@@ -132,7 +132,7 @@ public class ExchangeMBeanTest  extends TestCase
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _queueRegistry = _virtualHost.getQueueRegistry();
-        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _virtualHost);
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _virtualHost);
         _queueRegistry.registerQueue(_queue);
     }
 }

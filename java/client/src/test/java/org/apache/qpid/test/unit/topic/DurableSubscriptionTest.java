@@ -88,7 +88,7 @@ public class DurableSubscriptionTest extends TestCase
 
         Message msg;
         _logger.info("Receive message on consumer 1:expecting A");
-        msg = consumer1.receive();
+        msg = consumer1.receive(1000);
         assertEquals("A", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);

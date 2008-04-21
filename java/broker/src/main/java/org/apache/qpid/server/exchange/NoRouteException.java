@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 
 /**
  * NoRouteException is a {@link RequiredDeliveryException} that represents the failure case where a manadatory message
@@ -36,9 +37,9 @@ import org.apache.qpid.server.queue.AMQMessage;
  */
 public class NoRouteException extends RequiredDeliveryException
 {
-    public NoRouteException(String msg, AMQMessage message)
+    public NoRouteException(String msg, AMQMessage amqMessage)
     {
-        super(msg, message);
+        super(msg, amqMessage);
     }
 
     public AMQConstant getReplyCode()

@@ -23,14 +23,12 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueuePurgeBody;
-import org.apache.qpid.framing.QueuePurgeOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;

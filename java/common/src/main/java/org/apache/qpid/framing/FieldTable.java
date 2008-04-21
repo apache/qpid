@@ -74,7 +74,7 @@ public class FieldTable
         buffer.skip((int) length);
     }
 
-    private AMQTypedValue getProperty(AMQShortString string)
+    public AMQTypedValue getProperty(AMQShortString string)
     {
         checkPropertyName(string);
 
@@ -891,6 +891,20 @@ public class FieldTable
         return keys;
     }
 
+    public Iterator<Map.Entry<AMQShortString, AMQTypedValue>> iterator()
+    {
+        if(_encodedForm != null)
+        {
+            return new FieldTableIterator(_encodedForm.duplicate().rewind(),(int)_encodedSize);
+        }
+        else
+        {
+            initMapIfNecessary();
+            return _properties.entrySet().iterator();
+        }
+    }
+
+
     public Object get(AMQShortString key)
     {
 
@@ -1044,6 +1058,95 @@ public class FieldTable
             _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
         }
     }
+
+    private static final class FieldTableEntry implements Map.Entry<AMQShortString, AMQTypedValue>
+    {
+        private final AMQTypedValue _value;
+        private final AMQShortString _key;
+
+        public FieldTableEntry(final AMQShortString key, final AMQTypedValue value)
+        {
+            _key = key;
+            _value = value;
+        }
+
+        public AMQShortString getKey()
+        {
+            return _key;
+        }
+
+        public AMQTypedValue getValue()
+        {
+            return _value;
+        }
+
+        public AMQTypedValue setValue(final AMQTypedValue value)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean equals(Object o)
+        {
+            if(o instanceof FieldTableEntry)
+            {
+                FieldTableEntry other = (FieldTableEntry) o;
+                return (_key == null ? other._key == null : _key.equals(other._key))
+                       && (_value == null ? other._value == null : _value.equals(other._value));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public int hashCode()
+        {
+            return (getKey()==null   ? 0 : getKey().hashCode())
+                   ^ (getValue()==null ? 0 : getValue().hashCode());
+        }
+
+    }
+
+
+    private static final class FieldTableIterator implements Iterator<Map.Entry<AMQShortString, AMQTypedValue>>
+    {
+
+        private final ByteBuffer _buffer;
+        private int _expectedRemaining;
+
+        public FieldTableIterator(ByteBuffer buffer, int length)
+        {
+            _buffer = buffer;
+            _expectedRemaining = buffer.remaining() - length;
+        }
+
+        public boolean hasNext()
+        {
+            return (_buffer.remaining() > _expectedRemaining);
+        }
+
+        public Map.Entry<AMQShortString, AMQTypedValue> next()
+        {
+            if(hasNext())
+            {
+                final AMQShortString key = EncodingUtils.readAMQShortString(_buffer);
+                AMQTypedValue value = AMQTypedValue.readFromBuffer(_buffer);
+                return new FieldTableEntry(key, value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
+
 
     public int hashCode()
     {

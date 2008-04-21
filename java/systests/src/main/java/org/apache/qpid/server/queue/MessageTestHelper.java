@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -28,7 +27,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -38,7 +36,6 @@ import org.apache.qpid.AMQException;
 import junit.framework.TestCase;
 
 import java.util.LinkedList;
-import java.util.HashSet;
 
 class MessageTestHelper extends TestCase
 {
@@ -47,20 +44,20 @@ class MessageTestHelper extends TestCase
     private final StoreContext _storeContext = new StoreContext();
 
     private final TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
-                                                                                 new LinkedList<RequiredDeliveryException>(),
-                                                                                 new HashSet<Long>());
+                                                                                 new LinkedList<RequiredDeliveryException>()
+    );
 
     MessageTestHelper() throws Exception
     {
         ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
-    QueueEntry message() throws AMQException
+    QueueEntryImpl message() throws AMQException
     {
         return message(false);
     }
 
-    QueueEntry message(final boolean immediate) throws AMQException
+    QueueEntryImpl message(final boolean immediate) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
         {
@@ -90,9 +87,16 @@ class MessageTestHelper extends TestCase
                 return null;
             }
         };
-                              
-        return new QueueEntry(null,new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
-                              new ContentHeaderBody()));
+
+        //public AMQMessage(Long messageId, AMQMessageHandle messageHandle , TransactionalContext txnConext, MessagePublishInfo info)
+        long messageId = _messageStore.getNewMessageId();
+        final AMQMessageHandle messageHandle =
+                (new MessageHandleFactory()).createMessageHandle(messageId, _messageStore, false);
+        messageHandle.setPublishAndContentHeaderBody(new StoreContext(),publish,new ContentHeaderBody());
+        AMQMessage msg = new AMQMessage(messageHandle, _txnContext.getStoreContext(), publish);
+        
+
+        return new QueueEntryImpl(null,msg, Long.MIN_VALUE);
     }
 
 }

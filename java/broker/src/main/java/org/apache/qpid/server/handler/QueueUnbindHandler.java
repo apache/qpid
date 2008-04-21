@@ -42,7 +42,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
 
         final AMQQueue queue;
-        final AMQShortString routingKey;
+        final AMQShortString routingKey;               
 
         if (body.getQueue() == null)
         {
@@ -84,7 +84,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
         try
         {
-            queue.unBind(routingKey, body.getArguments(), exch);
+            queue.unBind(exch, routingKey, body.getArguments());
         }
         catch (AMQInvalidRoutingKeyException rke)
         {

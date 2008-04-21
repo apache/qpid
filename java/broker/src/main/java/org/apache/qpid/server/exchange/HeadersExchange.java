@@ -31,7 +31,8 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueueImpl;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -240,7 +241,7 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public void route(AMQMessage payload) throws AMQException
+    public void route(IncomingMessage payload) throws AMQException
     {
         FieldTable headers = getHeaders(payload.getContentHeaderBody());
         if (_logger.isDebugEnabled())
@@ -260,21 +261,6 @@ public class HeadersExchange extends AbstractExchange
                 payload.enqueue(e.queue);
                 routed = true;
             }
-        }
-        if (!routed)
-        {
-
-            String msg = "Exchange " + getName() + ": message not routable.";
-
-            if (payload.getMessagePublishInfo().isMandatory() || payload.getMessagePublishInfo().isImmediate())
-            {
-                throw new NoRouteException(msg, payload);
-            }
-            else
-            {
-                _logger.warn(msg);
-            }
-
         }
     }
 

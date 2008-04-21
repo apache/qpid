@@ -34,17 +34,19 @@ public class ServiceCreator implements Runnable
 
     private final String broker;
     private Service service;
+    private final int id;
 
-    ServiceCreator(String broker)
+    ServiceCreator(String broker, final int id)
     {
         this.broker = broker;
+        this.id = id;
     }
 
     public void run()
     {
         try
         {
-            service = new Service(broker);
+            service = new Service(broker, id);
         }
         catch (Exception e)
         {
@@ -76,11 +78,12 @@ public class ServiceCreator implements Runnable
     {
         threads = new Thread[services];
         _services = new ServiceCreator[services];
-        ServiceCreator runner = new ServiceCreator(broker);
+        //ServiceCreator runner = new ServiceCreator(broker);
         // start services
         _logger.info("Starting " + services + " services...");
         for (int i = 0; i < services; i++)
         {
+            ServiceCreator runner = new ServiceCreator(broker,i);
             threads[i] = new Thread(runner);
             _services[i] = runner;
             threads[i].start();

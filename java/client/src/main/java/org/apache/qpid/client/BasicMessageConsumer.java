@@ -809,9 +809,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /** Acknowledge up to last message delivered (if any). Used when commiting. */
     void acknowledgeDelivered()
     {
-    	while (!_receivedDeliveryTags.isEmpty())
+        while (!_receivedDeliveryTags.isEmpty())
         {
-    		_session.acknowledgeMessage(_receivedDeliveryTags.poll(), false);
+            _session.acknowledgeMessage(_receivedDeliveryTags.poll(), false);
         }
     }
 
@@ -1017,7 +1017,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 _logger.warn("Queue was not empty after rejecting all messages Remaining:" + _synchronousQueue.size());
                 rollback();
-            }
+            }                                  
 
             clearReceiveQueue();
         }

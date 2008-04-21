@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 
 /**
  * Separated out from the ExchangeRegistry interface to allow components
@@ -36,5 +37,5 @@ public interface MessageRouter
      *
      * @throws org.apache.qpid.AMQException if something goes wrong delivering data
      */
-    void routeContent(AMQMessage message) throws AMQException;
+    void routeContent(IncomingMessage message) throws AMQException;
 }

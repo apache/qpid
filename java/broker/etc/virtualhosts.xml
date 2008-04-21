@@ -26,14 +26,16 @@
         <localhost>            
             <exchanges>
                 <exchange>
-                    <type>direct</type>
-                    <name>test.direct</name>
-                    <durable>true</durable>
+                    <name>testdirect</name>
+                    <testdirect>
+                        <durable>true</durable>
+                    </testdirect>
                 </exchange>
                 <exchange>
-                    <type>topic</type>
-                    <name>test.topic</name>
+                    <name>testtopic</name>
                 </exchange>
+
+
             </exchanges>
             <queues>
                 <exchange>amq.direct</exchange>
@@ -69,6 +71,17 @@
     <virtualhost>
         <name>development</name>
         <development>
+           <exchanges>
+                <exchange>
+                    <name>testdirect</name>
+                    <testdirect>
+                        <durable>true</durable>
+                    </testdirect>
+                </exchange>
+                <exchange>
+                    <name>testtopic</name>
+                </exchange>
+            </exchanges>
             <queues>
                 <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
                 <maximumMessageCount>5000</maximumMessageCount>
@@ -85,6 +98,7 @@
                     <name>ping</name>
                     <ping>
                         <exchange>amq.direct</exchange>
+                        <durable>true</durable>
                         <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
                         <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
                         <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
@@ -97,8 +111,6 @@
             <name>test</name>
             <test>                
                 <queues>
-                    <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-                    <maximumMessageCount>5000</maximumMessageCount>
                     <queue>
                         <name>queue</name>
                         <queue>

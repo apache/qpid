@@ -35,6 +35,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -177,7 +178,7 @@ public class VirtualHostConfiguration
                 boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
                 String owner = queueConfiguration.getString("owner", null);
 
-                queue = new AMQQueue(queueName,
+                queue = AMQQueueFactory.createAMQQueueImpl(queueName,
                         durable,
                         owner == null ? null : new AMQShortString(owner) /* These queues will have no owner */,
                         autodelete /* Therefore autodelete makes no sence */, virtualHost);
@@ -221,7 +222,7 @@ public class VirtualHostConfiguration
                     AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
                     
 
-                    queue.bind(routingKey, null, exchange);
+                    queue.bind(exchange, routingKey, null);
 
 
                     _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + exchangeName + " RK:'" + routingKey + "'");
@@ -229,7 +230,7 @@ public class VirtualHostConfiguration
 
                 if(exchange != virtualHost.getExchangeRegistry().getDefaultExchange())
                 {
-                    queue.bind(queue.getName(), null, virtualHost.getExchangeRegistry().getDefaultExchange());                    
+                    queue.bind(virtualHost.getExchangeRegistry().getDefaultExchange(), queue.getName(), null);
                 }
             }
 

@@ -23,10 +23,11 @@ package org.apache.qpid.management.ui;
 import junit.framework.TestCase;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.exchange.DestNameExchange;
+import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueMBean;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -62,7 +63,7 @@ public class ManagementConsoleTest extends TestCase
     {
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly
-        AMQQueue queue = new AMQQueue(new AMQShortString("testQueueForManagement"), false, null, false, _virtualHost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueueForManagement"), false, null, false, _virtualHost);
         AMQManagedObject mbean = new AMQQueueMBean(queue);
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();
 
@@ -82,7 +83,7 @@ public class ManagementConsoleTest extends TestCase
     {
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly 
-        DestNameExchange exchange = new DestNameExchange();
+        DirectExchange exchange = new DirectExchange();
         exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         AMQManagedObject mbean = (AMQManagedObject)exchange.getManagedObject();
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();

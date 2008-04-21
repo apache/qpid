@@ -108,11 +108,16 @@ public class DupsOkTest extends VMTestCase
                         {
                             try
                             {
+                                System.err.println("Got last message!");
                                 long remainingMessages = ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue);
-                                if(remainingMessages != 0)
+                                if(_msgCount != MSG_COUNT)
                                 {
 
-                                    assertEquals("The queue should have 0 msgs left, seen " + _msgCount + " messages.", 0, getMessageCount(_queue.getQueueName()));
+                                    assertEquals("Wrong number of messages seen.", MSG_COUNT, _msgCount);
+                                }
+                                else
+                                {
+                                    System.err.println("0 remaining on queue");
                                 }
                             }
                             catch (AMQException e)
@@ -150,6 +155,10 @@ public class DupsOkTest extends VMTestCase
         }
 
 //        consumer.close();
+
+        // wait for the ack to get back
+        Thread.sleep(1000);
+
 
         assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
         clientConnection.close();

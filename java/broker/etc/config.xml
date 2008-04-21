@@ -17,21 +17,13 @@
  - KIND, either express or implied.  See the License for the
  - specific language governing permissions and limitations
  - under the License.
- -
+ -                                                                        AMQ
  -->
 <broker>
     <prefix>${QPID_HOME}</prefix>
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
-        <!-- Uncomment out this block and edit the keystorePath and keystorePassword
-             to enable SSL support
-        <ssl>
-            <enabled>true</enabled>
-            <sslOnly>true</sslOnly>
-            <keystorePath>/path/to/keystore.ks</keystorePath>
-            <keystorePassword>keystorepass</keystorePassword>
-        </ssl>-->
         <qpidnio>false</qpidnio>
         <protectio>
             <enabled>false</enabled>
@@ -87,6 +79,7 @@
             <name>localhost</name>
             <localhost>
                 <store>
+                    <!-- <class>org.apache.qpid.server.store.MemoryMessageStore</class> -->
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
 
@@ -110,6 +103,7 @@
             <name>test</name>
             <test>
                 <store>
+                    <!-- <class>org.apache.qpid.server.store.MemoryMessageStore</class> -->
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
             </test>

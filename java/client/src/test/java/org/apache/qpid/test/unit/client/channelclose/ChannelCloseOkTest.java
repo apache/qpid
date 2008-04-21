@@ -69,6 +69,7 @@ public class ChannelCloseOkTest extends TestCase
 
     private static final Logger _log = LoggerFactory.getLogger(ChannelCloseOkTest.class);
     public String _connectionString = "vm://:1";
+    private static final int NUM_MESSAGES = 300;
 
     protected void setUp() throws Exception
     {
@@ -170,19 +171,18 @@ public class ChannelCloseOkTest extends TestCase
 
         // Ensure both sessions are still ok.
         // Send a bunch of messages as this give time for the sessions to be erroneously closed.
-        final int num = 300;
-        for (int i = 0; i < num; ++i)
+        for (int i = 0; i < NUM_MESSAGES; ++i)
         {
             send(_session1, _destination1, "" + i);
             send(_session2, _destination2, "" + i);
         }
 
-        waitFor(_received1, num + 1);
-        waitFor(_received2, num + 1);
+        waitFor(_received1, NUM_MESSAGES + 1);
+        waitFor(_received2, NUM_MESSAGES + 1);
 
         // Note that the third message is never received as it is sent to an incorrect destination.
-        assertEquals(num + 1, _received1.size());
-        assertEquals(num + 1, _received2.size());
+        assertEquals(NUM_MESSAGES + 1, _received1.size());
+        assertEquals(NUM_MESSAGES + 1, _received2.size());
     }
 
     private void sendAndWait(Session session, Destination destination, String message, List<Message> received, int count)
@@ -199,15 +199,17 @@ public class ChannelCloseOkTest extends TestCase
         producer1.send(session.createTextMessage(message));
     }
 
-    private void waitFor(List<Message> received, int count) throws InterruptedException
+    private void waitFor(List<Message> received, final int count) throws InterruptedException
     {
+        int lastSeen = -1;
         synchronized (received)
         {
-            while (received.size() < count)
+            while ((lastSeen != received.size()) && (lastSeen = received.size()) < count)
             {
+
                 try
                 {
-                    received.wait();
+                    received.wait(2000L);
                 }
                 catch (InterruptedException e)
                 {
@@ -215,6 +217,10 @@ public class ChannelCloseOkTest extends TestCase
                     throw e;
                 }
             }
+        }
+        if(received.size() < count)
+        {
+            throw new RuntimeException("Expected: " + count + " got: " + received.size());
         }
     }
 

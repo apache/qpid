@@ -24,18 +24,16 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.NoConsumersException;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
 
 /** A transactional context that only supports local transactions. */
 public class LocalTransactionalContext implements TransactionalContext
@@ -44,7 +42,7 @@ public class LocalTransactionalContext implements TransactionalContext
 
     private final TxnBuffer _txnBuffer = new TxnBuffer();
 
-    private final List<DeliveryDetails> _postCommitDeliveryList = new LinkedList<DeliveryDetails>();
+    private final List<DeliveryAction> _postCommitDeliveryList = new ArrayList<DeliveryAction>();
 
     /**
      * We keep hold of the ack operation so that we can consolidate acks, i.e. multiple acks within a txn are
@@ -52,80 +50,111 @@ public class LocalTransactionalContext implements TransactionalContext
      */
     private TxAck _ackOp;
 
-    private List<RequiredDeliveryException> _returnMessages;
-
-    private final MessageStore _messageStore;
-
-    private final StoreContext _storeContext;
-
     private boolean _inTran = false;
 
     /** Are there messages to deliver. NOT Has the message been delivered */
     private boolean _messageDelivered = false;
+    private final AMQChannel _channel;
 
-    private static class DeliveryDetails
+
+    private abstract class DeliveryAction
+    {
+
+        abstract public void process() throws AMQException;
+
+    }
+
+    private class RequeueAction extends DeliveryAction
     {
         public QueueEntry entry;
 
-        private boolean deliverFirst;
-
-        public DeliveryDetails(QueueEntry entry, boolean deliverFirst)
+        public RequeueAction(QueueEntry entry)
         {
             this.entry = entry;
-            this.deliverFirst = deliverFirst;
+        }
+
+        public void process() throws AMQException
+        {
+            entry.requeue(getStoreContext());
         }
     }
 
-    public LocalTransactionalContext(MessageStore messageStore, StoreContext storeContext,
-        List<RequiredDeliveryException> returnMessages)
+    private class PublishAction extends DeliveryAction
     {
-        _messageStore = messageStore;
-        _storeContext = storeContext;
-        _returnMessages = returnMessages;
-        // _txnBuffer.enlist(new StoreMessageOperation(messageStore));
+        private final AMQQueue _queue;
+        private final AMQMessage _message;
+
+        public PublishAction(final AMQQueue queue, final AMQMessage message)
+        {
+            _queue = queue;
+            _message = message;
+        }
+
+        public void process() throws AMQException
+        {
+
+            QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
+
+            if(entry.immediateAndNotDelivered())
+            {
+                getReturnMessages().add(new NoConsumersException(_message));
+            }
+        }
+    }
+
+    public LocalTransactionalContext(final AMQChannel channel)
+    {
+        _channel = channel;
     }
 
     public StoreContext getStoreContext()
     {
-        return _storeContext;
+        return _channel.getStoreContext();
     }
+
+    public List<RequiredDeliveryException> getReturnMessages()
+    {
+        return _channel.getReturnMessages();
+    }
+
+    public MessageStore getMessageStore()
+    {
+        return _channel.getMessageStore();
+    }
+
 
     public void rollback() throws AMQException
     {
-        _txnBuffer.rollback(_storeContext);
+        _txnBuffer.rollback(getStoreContext());
         // Hack to deal with uncommitted non-transactional writes
-        if (_messageStore.inTran(_storeContext))
+        if (getMessageStore().inTran(getStoreContext()))
         {
-            _messageStore.abortTran(_storeContext);
+            getMessageStore().abortTran(getStoreContext());
             _inTran = false;
         }
 
         _postCommitDeliveryList.clear();
     }
 
-    public void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException
+    public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
         // Following that (and ordering is important), an op will
         // be added for every queue onto which the message is
-        // enqueued. Finally a cleanup op will be added to decrement
-        // the reference associated with the routing.
-        // message.incrementReference();
-        _postCommitDeliveryList.add(new DeliveryDetails(entry, deliverFirst));
-        _messageDelivered = true;
-        _txnBuffer.enlist(new CleanupMessageOperation(entry.getMessage(), _returnMessages));
-        /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));
-        if (_log.isDebugEnabled())
-        {
-            _log.debug("Incrementing ref count on message and enlisting cleanup operation - id " +
-                       message.getMessageId());
-        }
-        message.incrementReference();
+        // enqueued.
+        _postCommitDeliveryList.add(new PublishAction(queue, message));
         _messageDelivered = true;
 
-         */
     }
+
+    public void requeue(QueueEntry entry) throws AMQException
+    {
+        _postCommitDeliveryList.add(new RequeueAction(entry));
+        _messageDelivered = true;
+
+    }
+
 
     private void checkAck(long deliveryTag, UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException
     {
@@ -184,7 +213,7 @@ public class LocalTransactionalContext implements TransactionalContext
                 _log.debug("Starting transaction on message store: " + this);
             }
 
-            _messageStore.beginTran(_storeContext);
+            getMessageStore().beginTran(getStoreContext());
             _inTran = true;
         }
     }
@@ -207,22 +236,22 @@ public class LocalTransactionalContext implements TransactionalContext
 
         if (_messageDelivered && _inTran)
         {
-            _txnBuffer.enlist(new StoreMessageOperation(_messageStore));
+            _txnBuffer.enlist(new StoreMessageOperation(getMessageStore()));
         }
         // fixme fail commit here ... QPID-440
         try
         {
-            _txnBuffer.commit(_storeContext);
+            _txnBuffer.commit(getStoreContext());
         }
         finally
         {
             _messageDelivered = false;
-            _inTran = _messageStore.inTran(_storeContext);
+            _inTran = getMessageStore().inTran(getStoreContext());
         }
 
         try
         {
-            postCommitDelivery(_returnMessages);
+            postCommitDelivery();
         }
         catch (AMQException e)
         {
@@ -231,7 +260,7 @@ public class LocalTransactionalContext implements TransactionalContext
         }
     }
 
-    private void postCommitDelivery(List<RequiredDeliveryException> returnMessages) throws AMQException
+    private void postCommitDelivery() throws AMQException
     {
         if (_log.isDebugEnabled())
         {
@@ -240,18 +269,9 @@ public class LocalTransactionalContext implements TransactionalContext
 
         try
         {
-            for (DeliveryDetails dd : _postCommitDeliveryList)
+            for (DeliveryAction dd : _postCommitDeliveryList)
             {
-                dd.entry.process(_storeContext, dd.deliverFirst);
-
-                try
-                {
-                    dd.entry.checkDeliveredToConsumer();
-                }
-                catch (NoConsumersException nce)
-                {
-                    returnMessages.add(nce);
-                }
+                dd.process();
             }
         }
         finally
