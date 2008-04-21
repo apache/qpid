@@ -58,7 +58,7 @@ using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
-using namespace qpid::ptr_map;
+using qpid::ptr_map_ptr;
 
 SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
     : session(ss),
@@ -77,7 +77,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
 SemanticState::~SemanticState() {
     //cancel all consumers
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        cancel(*get_pointer(i));
+        cancel(*ptr_map_ptr(i));
     }
 
     if (dtxBuffer.get()) {
@@ -105,7 +105,7 @@ void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut,
 void SemanticState::cancel(const string& tag){
     ConsumerImplMap::iterator i = consumers.find(tag);
     if (i != consumers.end()) {
-        cancel(*get_pointer(i));
+        cancel(*ptr_map_ptr(i));
         consumers.erase(i); 
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
@@ -429,7 +429,7 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 void SemanticState::requestDispatch()
 {    
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        requestDispatch(*get_pointer(i));
+        requestDispatch(*ptr_map_ptr(i));
     }
 }
 
@@ -445,7 +445,7 @@ void SemanticState::complete(DeliveryRecord& delivery)
     delivery.subtractFrom(outstanding);
     ConsumerImplMap::iterator i = consumers.find(delivery.getTag());
     if (i != consumers.end()) {
-        get_pointer(i)->complete(delivery);
+        ptr_map_ptr(i)->complete(delivery);
     }
 }
 
@@ -514,7 +514,7 @@ SemanticState::ConsumerImpl& SemanticState::find(const std::string& destination)
     if (i == consumers.end()) {
         throw NotFoundException(QPID_MSG("Unknown destination " << destination));
     } else {
-        return *get_pointer(i);
+        return *ptr_map_ptr(i);
     }
 }
 
