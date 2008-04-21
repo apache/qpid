@@ -93,39 +93,39 @@ libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 # New 0-10 codec, to be integrated in future.
-# Currently built for tests only.
-# libqpidamqp_0_10_la_SOURCES= \
-#   $(rgen_amqp_0_10_srcs) \
-#   qpid/amqp_0_10/apply.h \
-#   qpid/amqp_0_10/built_in_types.h \
-#   qpid/amqp_0_10/complex_types.cpp \
-#   qpid/amqp_0_10/Array.h \
-#   qpid/amqp_0_10/Array.cpp \
-#   qpid/amqp_0_10/Body.h \
-#   qpid/amqp_0_10/Command.h \
-#   qpid/amqp_0_10/CommmandPacker.h \
-#   qpid/amqp_0_10/Control.h \
-#   qpid/amqp_0_10/Header.h \
-#   qpid/amqp_0_10/Header.cpp \
-#   qpid/amqp_0_10/FrameHeader.h \
-#   qpid/amqp_0_10/FrameHeader.cpp \
-#   qpid/amqp_0_10/Holder.h \
-#   qpid/amqp_0_10/Codec.h \
-#   qpid/amqp_0_10/Packer.h \
-#   qpid/amqp_0_10/Decimal.h \
-#   qpid/amqp_0_10/SerializableString.h \
-#   qpid/amqp_0_10/Map.h \
-#   qpid/amqp_0_10/Map.cpp \
-#   qpid/amqp_0_10/Struct.h \
-#   qpid/amqp_0_10/Struct32.h \
-#   qpid/amqp_0_10/Struct32.cpp \
-#   qpid/amqp_0_10/Unit.h \
-#   qpid/amqp_0_10/Unit.cpp \
-#   qpid/amqp_0_10/UnitHandler.h \
-#   qpid/amqp_0_10/UnknownType.h \
-#   qpid/amqp_0_10/UnknownType.cpp \
-#   qpid/amqp_0_10/UnknownStruct.h \
-#   qpid/amqp_0_10/UnknownStruct.cpp 
+# libqpidamqp_0_10_la_SOURCES= 
+EXTRA_DIST+=\
+  $(rgen_amqp_0_10_srcs) \
+  qpid/amqp_0_10/apply.h \
+  qpid/amqp_0_10/built_in_types.h \
+  qpid/amqp_0_10/complex_types.cpp \
+  qpid/amqp_0_10/Array.h \
+  qpid/amqp_0_10/Array.cpp \
+  qpid/amqp_0_10/Body.h \
+  qpid/amqp_0_10/Command.h \
+  qpid/amqp_0_10/CommmandPacker.h \
+  qpid/amqp_0_10/Control.h \
+  qpid/amqp_0_10/Header.h \
+  qpid/amqp_0_10/Header.cpp \
+  qpid/amqp_0_10/FrameHeader.h \
+  qpid/amqp_0_10/FrameHeader.cpp \
+  qpid/amqp_0_10/Holder.h \
+  qpid/amqp_0_10/Codec.h \
+  qpid/amqp_0_10/Packer.h \
+  qpid/amqp_0_10/Decimal.h \
+  qpid/amqp_0_10/SerializableString.h \
+  qpid/amqp_0_10/Map.h \
+  qpid/amqp_0_10/Map.cpp \
+  qpid/amqp_0_10/Struct.h \
+  qpid/amqp_0_10/Struct32.h \
+  qpid/amqp_0_10/Struct32.cpp \
+  qpid/amqp_0_10/Unit.h \
+  qpid/amqp_0_10/Unit.cpp \
+  qpid/amqp_0_10/UnitHandler.h \
+  qpid/amqp_0_10/UnknownType.h \
+  qpid/amqp_0_10/UnknownType.cpp \
+  qpid/amqp_0_10/UnknownStruct.h \
+  qpid/amqp_0_10/UnknownStruct.cpp 
 
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \
