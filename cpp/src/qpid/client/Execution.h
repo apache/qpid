@@ -36,10 +36,6 @@ class Execution
 public:
     virtual ~Execution() {}
     /**
-     * Mark the incoming command with the specified id as completed
-     */
-    virtual void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer) = 0;
-    /**
      * Provides access to the demultiplexing function within the
      * session implementation
      */
