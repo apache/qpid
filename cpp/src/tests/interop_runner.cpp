@@ -203,7 +203,7 @@ void Listener::shutdown()
 bool Listener::invite(const string& name)
 {
     TestMap::iterator i = tests.find(name);
-    test = (i != tests.end()) ? qpid::ptr_map::get_pointer(i) : 0;
+    test = (i != tests.end()) ? qpid::ptr_map_ptr(i) : 0;
     return test;
 }
 
