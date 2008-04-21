@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "BrokerFixture.h"
+#include "qpid/client/AckPolicy.h"
 #include "qpid/client/Dispatcher.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
@@ -124,7 +125,8 @@ QPID_AUTO_TEST_CASE(testTransfer)
     BOOST_CHECK(msg->isA<MessageTransferBody>());
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
     //confirm receipt:
-    fix.session.getExecution().markCompleted(msg->getId(), true, true);
+    AckPolicy autoAck;
+    autoAck.ack(Message(*msg), fix.session);
 }
 
 QPID_AUTO_TEST_CASE(testDispatcher)

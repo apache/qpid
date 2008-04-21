@@ -124,10 +124,11 @@ int main(int argc, char** argv)
 	if (opts.trace) std::cout << "Subscribed to queue." << std::endl;
         FrameSet::shared_ptr incoming = session.get();
         if (incoming->isA<MessageTransferBody>()) {
-            Message msgIn(*incoming, session);
+            Message msgIn(*incoming);
             if (msgIn.getData() == msgOut.getData()) {
                 if (opts.trace) std::cout << "Received the exepected message." << std::endl;
-                msgIn.acknowledge();
+                session.messageAccept(SequenceSet(msgIn.getId()));
+                session.markCompleted(msgIn.getId(), true, true);
             } else {
                 print("Received an unexepected message: ", msgIn);
             }

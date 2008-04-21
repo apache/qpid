@@ -87,6 +87,8 @@ void SubscriptionManager::setAcquireMode(bool a) { acquireMode=a; }
 
 void SubscriptionManager::setAckPolicy(const AckPolicy& a) { autoAck=a; }
 
+AckPolicy& SubscriptionManager::getAckPolicy() { return autoAck; } 
+
 void SubscriptionManager::cancel(const std::string dest)
 {
     dispatcher.cancel(dest);

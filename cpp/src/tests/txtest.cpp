@@ -144,7 +144,7 @@ struct Transfer : public Client, public Runnable
                     out.getDeliveryProperties().setDeliveryMode(in.getDeliveryProperties().getDeliveryMode());
                     session.messageTransfer(arg::content=out, arg::acceptMode=1);
                 }
-                in.acknowledge();
+                lq.getAckPolicy().ackOutstanding(session);
                 session.txCommit();
             }
         } catch(const std::exception& e) {

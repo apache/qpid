@@ -518,6 +518,12 @@ void SessionImpl::flush(bool expected, bool confirmed, bool completed)
 
 void SessionImpl::sendCompletion()
 {
+    Lock l(state);
+    sendCompletionImpl();
+}
+
+void SessionImpl::sendCompletionImpl()
+{
     proxy.completed(completedIn, true);
 }
 

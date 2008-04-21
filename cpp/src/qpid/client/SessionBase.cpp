@@ -50,6 +50,16 @@ void SessionBase::sync()
     impl->send(b).wait(*impl);
 }
 
+void SessionBase::markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer)
+{
+    impl->markCompleted(id, cumulative, notifyPeer);
+}
+
+void SessionBase::sendCompletion()
+{
+    impl->sendCompletion();
+}
+
 Uuid SessionBase::getId() const { return impl->getId(); }
 framing::FrameSet::shared_ptr SessionBase::get() { return impl->get(); }
 
