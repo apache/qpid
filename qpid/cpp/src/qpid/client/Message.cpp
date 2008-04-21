@@ -48,11 +48,6 @@ namespace client {
         return getMessageProperties().getApplicationHeaders(); 
     }
 
-    void Message::acknowledge(bool cumulative, bool notifyPeer) const
-    {
-        const_cast<Session&>(session).getExecution().markCompleted(id, cumulative, notifyPeer);
-    }
-
     const framing::MessageTransferBody& Message::getMethod() const
     {
         return method;
@@ -64,13 +59,10 @@ namespace client {
     }
 
     /**@internal for incoming messages */
-    Message::Message(const framing::FrameSet& frameset, Session s) :
-        method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId()), session(s)
+    Message::Message(const framing::FrameSet& frameset) :
+        method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
     {
         populate(frameset);
     }
-
-    /**@internal use for incoming messages. */
-    void Message::setSession(Session s) { session=s; }
 
 }}

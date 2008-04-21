@@ -131,6 +131,8 @@ class SessionBase
     
     Execution& getExecution();
     void sync();
+    void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
+    void sendCompletion();
     
     typedef framing::TransferContent DefaultContent;
 

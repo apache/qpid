@@ -533,9 +533,9 @@ struct SubscribeThread : public Client {
                 size_t expect=0;
                 for (size_t i = 0; i < opts.subQuota; ++i) {
                     msg=lq.pop();
-		            if (opts.intervalSub) ::usleep(opts.intervalSub*1000);
+                    if (opts.intervalSub) ::usleep(opts.intervalSub*1000);
                     // TODO aconway 2007-11-23: check message order for. 
-                    // multiple publishers. Need an acorray of counters,
+                    // multiple publishers. Need an array of counters,
                     // one per publisher and a publisher ID in the
                     // message. Careful not to introduce a lot of overhead
                     // here, e.g. no std::map, std::string etc.
@@ -550,7 +550,7 @@ struct SubscribeThread : public Client {
                     }
                 }
                 if (opts.ack !=0)
-                    msg.acknowledge(); // Cumulative ack for final batch.
+                    subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
                 AbsTime end=now();
 
                 // Report to publisher.

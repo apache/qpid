@@ -133,6 +133,10 @@ class SubscriptionManager : public sys::Runnable
      * Default is to acknowledge every message automatically.
      */
     void setAckPolicy(const AckPolicy& autoAck);
+    /**
+     *
+     */
+     AckPolicy& getAckPolicy();
 };
 
 

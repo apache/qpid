@@ -23,6 +23,7 @@
 #include <sstream>
 #include "Channel.h"
 #include "qpid/sys/Monitor.h"
+#include "AckPolicy.h"
 #include "Message.h"
 #include "Connection.h"
 #include "Demux.h"
@@ -202,8 +203,10 @@ bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     if (incoming->tryPop(p)) {
         msg.populate(*p);
         if (ackMode == AUTO_ACK) {
-            msg.setSession(session);
-            msg.acknowledge(false, true);
+            AckPolicy acker;
+            acker.ack(msg, session);
+        } else {
+            session.markCompleted(msg.getId(), false, false);
         }
         return true;
     }
@@ -260,7 +263,7 @@ void Channel::dispatch(FrameSet& content, const std::string& destination)
             bool send = i->second.ackMode == AUTO_ACK
                 || (prefetch &&  ++(i->second.count) > (prefetch / 2));
             if (send) i->second.count = 0;
-            session.getExecution().markCompleted(content.getId(), true, send);
+            session.markCompleted(content.getId(), true, send);
         }
     } else {
         QPID_LOG(warning, "Dropping message for unrecognised consumer: " << destination);                        
