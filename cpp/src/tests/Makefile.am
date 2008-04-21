@@ -36,6 +36,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
+	InlineAllocator.cpp \
 	InlineVector.cpp \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
@@ -45,7 +46,9 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	amqp_0_10/apply.cpp \
 	IncompleteMessageList.cpp \
 	amqp_0_10/Map.cpp \
-	amqp_0_10/handlers.cpp
+	amqp_0_10/handlers.cpp \
+	RangeSet.cpp
+
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
