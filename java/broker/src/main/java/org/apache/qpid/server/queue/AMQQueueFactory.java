@@ -34,7 +34,7 @@ public class AMQQueueFactory
                                                   VirtualHost virtualHost)
             throws AMQException
     {
-        return new AMQQueueImpl(name, durable, owner, autoDelete, virtualHost);
-        //return new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
+        //return new AMQQueueImpl(name, durable, owner, autoDelete, virtualHost);
+        return new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
     }
 }

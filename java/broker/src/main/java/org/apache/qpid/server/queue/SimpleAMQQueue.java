@@ -382,13 +382,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 Subscription sub = nextNode.getSubscription();
                 synchronized(sub.getSendLock())
                 {
-                    if(subscriptionReady(sub, entry)
+                    if(subscriptionReadyAndHasInterest(sub, entry)
                        && !sub.isSuspended()
                        && sub.isActive())
                     {
 
-                        if( sub.hasInterest(entry) )
-                        {
                             if( !sub.wouldSuspend(entry))
                             {
                                 if(!sub.isBrowser() && entry.acquire(sub))
@@ -406,15 +404,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                                 }
                             }
-                        }
-                        else
-                        {
-                            QueueEntryList.QueueEntryNode queueEntryNode = (QueueEntryList.QueueEntryNode) sub.getQueueContext();
-                            if(queueEntryNode.getNext() == entry)
-                            {
-                                sub.setQueueContext(queueEntryNode,entry);
-                            }
-                        }
+                        
+
                     }
                 }
             }
@@ -456,7 +447,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
-    private boolean subscriptionReady(final Subscription sub, final QueueEntry entry)
+    private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry)
     {
 
         QueueEntryList.QueueEntryNode node = (QueueEntryList.QueueEntryNode) sub.getQueueContext();
@@ -471,6 +462,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
             else
             {
+                node = null;
                 break;
             }
 
