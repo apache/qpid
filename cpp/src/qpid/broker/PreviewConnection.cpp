@@ -40,7 +40,7 @@ using namespace boost;
 using namespace qpid::sys;
 using namespace qpid::framing;
 using namespace qpid::sys;
-using namespace qpid::ptr_map;
+using qpid::ptr_map_ptr;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -139,7 +139,7 @@ void PreviewConnection::idleIn(){}
 void PreviewConnection::closed(){ // Physically closed, suspend open sessions.
     try {
 	for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
-	    get_pointer(i)->localSuspend();
+	    ptr_map_ptr(i)->localSuspend();
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();
@@ -183,7 +183,7 @@ PreviewSessionHandler& PreviewConnection::getChannel(ChannelId id) {
     if (i == channels.end()) {
         i = channels.insert(id, new PreviewSessionHandler(*this, id)).first;
     }
-    return *get_pointer(i);
+    return *ptr_map_ptr(i);
 }
 
 ManagementObject::shared_ptr PreviewConnection::GetManagementObject (void) const
