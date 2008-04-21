@@ -159,7 +159,7 @@ void Listener::received(Message& message){
     if(!!type && StringValue("TERMINATION_REQUEST") == *type){
         shutdown();
     }else if(!!type && StringValue("REPORT_REQUEST") == *type){
-        message.acknowledge();//acknowledge everything upto this point
+        mgr.getAckPolicy().ackOutstanding(session);//acknowledge everything upto this point
         cout <<"Batch ended, sending report." << endl;
         //send a report:
         report();

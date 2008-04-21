@@ -47,9 +47,10 @@ class LocalQueue
     bool empty() const;
     size_t size() const;
     void setAckPolicy(AckPolicy);
+    AckPolicy& getAckPolicy();
 
   private:
-  friend class SubscriptionManager;
+    friend class SubscriptionManager;
     Session session;
     Demux::QueuePtr queue;
     AckPolicy autoAck;

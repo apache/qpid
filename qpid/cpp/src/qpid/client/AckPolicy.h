@@ -21,6 +21,8 @@
  *
  */
 
+#include "qpid/framing/SequenceSet.h"
+
 namespace qpid {
 namespace client {
 
@@ -31,21 +33,36 @@ namespace client {
  */
 class AckPolicy
 {
+    framing::SequenceSet accepted;
     size_t interval;
     size_t count;
 
   public:
     /**
      *@param n: acknowledge every n messages.
-     *n==0 means no automatick acknowledgement.
+     *n==0 means no automatic acknowledgement.
      */
     AckPolicy(size_t n=1) : interval(n), count(n) {}
 
-    void ack(const Message& msg) {
+    void ack(const Message& msg, Session& session) {
+        accepted.add(msg.getId());
         if (!interval) return;
-        bool send=(--count==0);
-        msg.acknowledge(true, send);
-        if (send) count = interval;
+        if (--count==0) {
+            session.markCompleted(msg.getId(), false, true);        
+            session.messageAccept(accepted);
+            accepted.clear();
+            count = interval;
+        } else {
+            session.markCompleted(msg.getId(), false, false);        
+        }
+    }
+
+    void ackOutstanding(Session& session) {
+        if (!accepted.empty()) {
+            session.messageAccept(accepted);
+            accepted.clear();
+            session.sendCompletion();
+        }
     }
 };
 

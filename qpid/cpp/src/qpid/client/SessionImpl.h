@@ -87,6 +87,7 @@ public:
     bool isComplete(const framing::SequenceNumber& id);
     bool isCompleteUpTo(const framing::SequenceNumber& id);
     void waitForCompletion(const framing::SequenceNumber& id);
+    void sendCompletion();
 
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
@@ -122,7 +123,7 @@ private:
     void sendContent(const framing::MethodContent&);
     void waitForCompletionImpl(const framing::SequenceNumber& id);
 
-    void sendCompletion();
+    void sendCompletionImpl();
 
     // Note: Following methods are called by network thread in
     // response to session controls from the broker

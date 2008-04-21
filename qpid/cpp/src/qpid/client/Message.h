@@ -45,19 +45,15 @@ public:
     bool isRedelivered() const;
     void setRedelivered(bool redelivered);
     framing::FieldTable& getHeaders();
-    void acknowledge(bool cumulative = true, bool notifyPeer = true) const;
     const framing::MessageTransferBody& getMethod() const;
     const framing::SequenceNumber& getId() const;
 
     /**@internal for incoming messages */
-    Message(const framing::FrameSet& frameset, Session s);
-    /**@internal use for incoming messages. */
-    void setSession(Session s);
+    Message(const framing::FrameSet& frameset);
 private:
     //method and id are only set for received messages:
     framing::MessageTransferBody method;
     framing::SequenceNumber id;
-    Session session;
 };
 
 }}
