@@ -66,24 +66,54 @@ QPID_AUTO_TEST_CASE(testCtor) {
 }
 
 QPID_AUTO_TEST_CASE(testInsert) {
-    Vec v;
-    v.push_back(1);
-    BOOST_CHECK_EQUAL(v.size(), 1u);
-    BOOST_CHECK_EQUAL(v.back(), 1);
-    BOOST_CHECK(isInline(v));
+    {
+        Vec v;
+        v.push_back(1);
+        BOOST_CHECK_EQUAL(v.size(), 1u);
+        BOOST_CHECK_EQUAL(v.back(), 1);
+        BOOST_CHECK(isInline(v));
 
-    v.insert(v.begin(), 2);
-    BOOST_CHECK_EQUAL(v.size(), 2u);
-    BOOST_CHECK_EQUAL(v.back(), 1);
-    BOOST_CHECK(isInline(v));
+        v.insert(v.begin(), 2);
+        BOOST_CHECK_EQUAL(v.size(), 2u);
+        BOOST_CHECK_EQUAL(v.back(), 1);
+        BOOST_CHECK(isInline(v));
 
-    v.push_back(3);
-    BOOST_CHECK(isInline(v));
+        v.push_back(3);
+        BOOST_CHECK(isInline(v));
 
-    v.push_back(4);
-    BOOST_CHECK_EQUAL(v.size(), 4u);
+        v.push_back(4);
+
+        BOOST_CHECK(!isInline(v));
+    }
+    {
+        Vec v(3,42);
+        v.insert(v.begin(), 9);
+        BOOST_CHECK_EQUAL(v.size(), 4u);
+        BOOST_CHECK(!isInline(v));
+    }
+    {
+        Vec v(3,42);
+        v.insert(v.begin()+1, 9);
+        BOOST_CHECK(!isInline(v));
+        BOOST_CHECK_EQUAL(v.size(), 4u);
+    }
+}
+
+QPID_AUTO_TEST_CASE(testAssign) {
+    Vec v(3,42);
+    Vec u;
+    u = v;
+    BOOST_CHECK(isInline(u));
+    u.push_back(4);
+    BOOST_CHECK(!isInline(u));
+    v = u;
     BOOST_CHECK(!isInline(v));
 }
 
+QPID_AUTO_TEST_CASE(testResize) {
+    Vec v;
+    v.resize(5);
+    BOOST_CHECK(!isInline(v));    
+}
 
 QPID_AUTO_TEST_SUITE_END()

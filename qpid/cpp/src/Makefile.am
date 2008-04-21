@@ -297,6 +297,7 @@ nobase_include_HEADERS = \
   qpid/Options.h \
   qpid/Plugin.h \
   qpid/ptr_map.h \
+  qpid/RangeSet.h \
   qpid/RefCounted.h \
   qpid/SharedObject.h \
   qpid/Url.h \
