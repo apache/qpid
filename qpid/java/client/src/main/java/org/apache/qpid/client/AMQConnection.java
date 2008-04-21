@@ -913,31 +913,31 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         synchronized(_sessionCreationLock)
         {
-            synchronized (getFailoverMutex())
+            if(!sessions.isEmpty())
+            {
+                AMQSession session = sessions.remove(0);
+                synchronized(session.getMessageDeliveryLock())
+                {
+                    close(sessions, timeout);
+                }
+            }
+            else
             {
                 if (!_closed.getAndSet(true))
                 {
-                    if(!sessions.isEmpty())
-                    {
-                        AMQSession session = sessions.remove(0);
-                        synchronized(session.getMessageDeliveryLock())
-                        {
-                            close(sessions, timeout);
-                        }
-                    }
-                    else
+                    synchronized (getFailoverMutex())
                     {
                         try
                         {
                             long startCloseTime = System.currentTimeMillis();
 
-                            closeAllSessions(null, timeout, startCloseTime);
+                        closeAllSessions(null, timeout, startCloseTime);
 
-                            //This MUST occur after we have successfully closed all Channels/Sessions
-                            _taskPool.shutdown();
+                        //This MUST occur after we have successfully closed all Channels/Sessions
+                        _taskPool.shutdown();
 
-                            if (!_taskPool.isTerminated())
-                            {
+                        if (!_taskPool.isTerminated())
+                        {
                                 try
                                 {
                                     // adjust timeout
