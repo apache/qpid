@@ -26,8 +26,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.lang.ref.WeakReference;
 
 /**
@@ -38,6 +37,62 @@ import java.lang.ref.WeakReference;
  */
 public final class AMQShortString implements CharSequence, Comparable<AMQShortString>
 {
+    private static final byte MINUS = (byte)'-';
+    private static final byte ZERO = (byte) '0';
+
+
+
+    private final class TokenizerImpl implements AMQShortStringTokenizer
+    {
+        private final byte _delim;
+        private int _count = -1;
+        private int _pos = 0;
+
+        public TokenizerImpl(final byte delim)
+        {
+            _delim = delim;
+        }
+
+        public int countTokens()
+        {
+            if(_count == -1)
+            {
+                _count = 1 + AMQShortString.this.occurences(_delim);
+            }
+            return _count;
+        }
+
+        public AMQShortString nextToken()
+        {
+            if(_pos <= AMQShortString.this.length())
+            {
+                int nextDelim = AMQShortString.this.indexOf(_delim, _pos);
+                if(nextDelim == -1)
+                {
+                    nextDelim = AMQShortString.this.length();
+                }
+
+                AMQShortString nextToken = AMQShortString.this.substring(_pos, nextDelim++);
+                _pos = nextDelim;
+                return nextToken;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public boolean hasMoreTokens()
+        {
+            return _pos <= AMQShortString.this.length();
+        }
+    }
+
+    private AMQShortString substring(final int from, final int to)
+    {
+        return new AMQShortString(_data, from, to);
+    }
+
 
     private static final ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>> _localInternMap =
             new ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>>()
@@ -53,7 +108,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);
 
-    private final ByteBuffer _data;
+    private final byte[] _data;
+    private final int _offset;
     private int _hashCode;
     private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
@@ -63,17 +119,25 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public AMQShortString(byte[] data)
     {
 
-        _data = ByteBuffer.wrap(data);
+        _data = data.clone();
         _length = data.length;
+        _offset = 0;
+    }
+
+    public AMQShortString(byte[] data, int pos)
+    {
+        final int size = data[pos++];
+        final byte[] dataCopy = new byte[size];
+        System.arraycopy(data,pos,dataCopy,0,size);
+        _length = size;
+        _data = dataCopy;
+        _offset = 0;
     }
 
     public AMQShortString(String data)
     {
         this((data == null) ? EMPTY_CHAR_ARRAY : data.toCharArray());
-        if (data != null)
-        {
-            _hashCode = data.hashCode();
-        }
+
     }
 
     public AMQShortString(char[] data)
@@ -85,14 +149,17 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         final int length = data.length;
         final byte[] stringBytes = new byte[length];
+        int hash = 0;
         for (int i = 0; i < length; i++)
         {
             stringBytes[i] = (byte) (0xFF & data[i]);
+            hash = (31 * hash) + stringBytes[i];
         }
+        _hashCode = hash;
+        _data = stringBytes;
 
-        _data = ByteBuffer.wrap(stringBytes);
-        _data.rewind();
         _length = length;
+        _offset = 0;
 
     }
 
@@ -108,19 +175,30 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         }
 
-        _data = ByteBuffer.wrap(stringBytes);
-        _data.rewind();
+        _data = stringBytes;
         _hashCode = hash;
         _length = length;
+        _offset = 0;
 
     }
 
-    private AMQShortString(ByteBuffer data)
+    private AMQShortString(ByteBuffer data, final int length)
     {
-        _data = data;
-        _length = data.limit();
+        byte[] dataBytes = new byte[length];
+        data.get(dataBytes);
+        _data = dataBytes;
+        _length = length;
+        _offset = 0;
 
     }
+
+    private AMQShortString(final byte[] data, final int from, final int to)
+    {
+        _offset = from;
+        _length = to - from;
+        _data = data;
+    }
+
 
     /**
      * Get the length of the short string
@@ -134,7 +212,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public char charAt(int index)
     {
 
-        return (char) _data.get(index);
+        return (char) _data[_offset + index];
 
     }
 
@@ -146,27 +224,24 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public int writeToByteArray(byte[] encoding, int pos)
     {
         final int size = length();
-        encoding[pos++] = (byte) length();
-        for (int i = 0; i < size; i++)
-        {
-            encoding[pos++] = _data.get(i);
-        }
-
-        return pos;
+        encoding[pos++] = (byte) size;
+        System.arraycopy(_data,_offset,encoding,pos,size);
+        return pos+size;
     }
 
     public static AMQShortString readFromByteArray(byte[] byteEncodedDestination, int pos)
     {
 
-        final byte len = byteEncodedDestination[pos];
-        if (len == 0)
+
+        final AMQShortString shortString = new AMQShortString(byteEncodedDestination, pos);
+        if(shortString.length() == 0)
         {
             return null;
         }
-
-        ByteBuffer data = ByteBuffer.wrap(byteEncodedDestination, pos + 1, len).slice();
-
-        return new AMQShortString(data);
+        else
+        {
+            return shortString;
+        }
     }
 
     public static AMQShortString readFromBuffer(ByteBuffer buffer)
@@ -178,90 +253,131 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         }
         else
         {
-            ByteBuffer data = buffer.slice();
-            data.limit(length);
-            data.rewind();
-            buffer.skip(length);
 
-            return new AMQShortString(data);
+            return new AMQShortString(buffer, length);
         }
     }
 
     public byte[] getBytes()
     {
-
-        if (_data.buf().hasArray() && (_data.arrayOffset() == 0))
+        if(_offset == 0 && _length == _data.length)
         {
-            return _data.array();
+            return _data.clone();
         }
         else
         {
-            final int size = length();
-            byte[] b = new byte[size];
-            ByteBuffer buf = _data.duplicate();
-            buf.rewind();
-            buf.get(b);
-
-            return b;
+            byte[] data = new byte[_length];
+            System.arraycopy(_data,_offset,data,0,_length);
+            return data;
         }
-
     }
 
     public void writeToBuffer(ByteBuffer buffer)
     {
 
         final int size = length();
-        if (size != 0)
-        {
-
-            buffer.setAutoExpand(true);
-            buffer.put((byte) size);
-            if (_data.buf().hasArray())
-            {
-                buffer.put(_data.array(), _data.arrayOffset(), length());
-            }
-            else
-            {
-
-                for (int i = 0; i < size; i++)
-                {
-
-                    buffer.put(_data.get(i));
-                }
-            }
-        }
-        else
-        {
-            // really writing out unsigned byte
-            buffer.put((byte) 0);
-        }
+        //buffer.setAutoExpand(true);
+        buffer.put((byte) size);
+        buffer.put(_data, _offset, size);
 
     }
 
+    public boolean endsWith(String s)
+    {
+        return endsWith(new AMQShortString(s));
+    }
+
+
+    public boolean endsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+
+        int thisLength = length();
+        int otherLength = otherString.length();
+
+        for (int i = 1; i <= otherLength; i++)
+        {
+            if (charAt(thisLength - i) != otherString.charAt(otherLength - i))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean startsWith(String s)
+    {
+        return startsWith(new AMQShortString(s));
+    }
+
+    public boolean startsWith(AMQShortString otherString)
+    {
+
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (charAt(i) != otherString.charAt(i))
+            {
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    public boolean startsWith(CharSequence otherString)
+    {
+        if (otherString.length() > length())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < otherString.length(); i++)
+        {
+            if (charAt(i) != otherString.charAt(i))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     private final class CharSubSequence implements CharSequence
     {
-        private final int _offset;
+        private final int _sequenceOffset;
         private final int _end;
 
         public CharSubSequence(final int offset, final int end)
         {
-            _offset = offset;
+            _sequenceOffset = offset;
             _end = end;
         }
 
         public int length()
         {
-            return _end - _offset;
+            return _end - _sequenceOffset;
         }
 
         public char charAt(int index)
         {
-            return AMQShortString.this.charAt(index + _offset);
+            return AMQShortString.this.charAt(index + _sequenceOffset);
         }
 
         public CharSequence subSequence(int start, int end)
         {
-            return new CharSubSequence(start + _offset, end + _offset);
+            return new CharSubSequence(start + _sequenceOffset, end + _sequenceOffset);
         }
     }
 
@@ -272,7 +388,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         for (int i = 0; i < size; i++)
         {
-            chars[i] = (char) _data.get(i);
+            chars[i] = (char) _data[i + _offset];
         }
 
         return chars;
@@ -285,6 +401,17 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public boolean equals(Object o)
     {
+
+
+        if(o instanceof AMQShortString)
+        {
+            return equals((AMQShortString)o);
+        }
+        if(o instanceof CharSequence)
+        {
+            return equals((CharSequence)o);
+        }
+
         if (o == null)
         {
             return false;
@@ -295,26 +422,40 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             return true;
         }
 
-        if (o instanceof AMQShortString)
+
+        return false;
+
+    }
+
+    public boolean equals(final AMQShortString otherString)
+    {
+        if (otherString == this)
         {
-
-            final AMQShortString otherString = (AMQShortString) o;
-
-            if ((_hashCode != 0) && (otherString._hashCode != 0) && (_hashCode != otherString._hashCode))
-            {
-                return false;
-            }
-
-            return _data.equals(otherString._data);
-
+            return true;
         }
 
-        return (o instanceof CharSequence) && equals((CharSequence) o);
+        if (otherString == null)
+        {
+            return false;
+        }
+
+        if ((_hashCode != 0) && (otherString._hashCode != 0) && (_hashCode != otherString._hashCode))
+        {
+            return false;
+        }
+
+        return (_offset == 0 && otherString._offset == 0 && _length == _data.length && otherString._length == otherString._data.length && Arrays.equals(_data,otherString._data))
+                || Arrays.equals(getBytes(),otherString.getBytes());
 
     }
 
     public boolean equals(CharSequence s)
     {
+        if(s instanceof AMQShortString)
+        {
+            return equals((AMQShortString)s);
+        }
+
         if (s == null)
         {
             return false;
@@ -345,7 +486,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
             for (int i = 0; i < size; i++)
             {
-                hash = (31 * hash) + _data.get(i);
+                hash = (31 * hash) + _data[i+_offset];
             }
 
             _hashCode = hash;
@@ -380,8 +521,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
             for (int i = 0; i < length(); i++)
             {
-                final byte d = _data.get(i);
-                final byte n = name._data.get(i);
+                final byte d = _data[i+_offset];
+                final byte n = name._data[i+name._offset];
                 if (d < n)
                 {
                     return -1;
@@ -395,6 +536,12 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
             return (length() == name.length()) ? 0 : -1;
         }
+    }
+
+
+    public AMQShortStringTokenizer tokenize(byte delim)
+    {
+        return new TokenizerImpl(delim);
     }
 
 
@@ -435,4 +582,111 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return internString;
 
     }
+
+    private int occurences(final byte delim)
+    {
+        int count = 0;
+        final int end = _offset + _length;
+        for(int i = _offset ; i < end ; i++ )
+        {
+            if(_data[i] == delim)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int indexOf(final byte val, final int pos)
+    {
+
+        for(int i = pos; i < length(); i++)
+        {
+            if(_data[_offset+i] == val)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+    public static AMQShortString join(final Collection<AMQShortString> terms,
+                                       final AMQShortString delim)
+    {
+        if(terms.size() == 0)
+        {
+            return EMPTY_STRING;
+        }
+
+        int size = delim.length() * (terms.size() - 1);
+        for(AMQShortString term : terms)
+        {
+            size += term.length();
+        }
+
+        byte[] data = new byte[size];
+        int pos = 0;
+        final byte[] delimData = delim._data;
+        final int delimOffset = delim._offset;
+        final int delimLength = delim._length;
+
+
+        for(AMQShortString term : terms)
+        {
+
+            if(pos!=0)
+            {
+                System.arraycopy(delimData, delimOffset,data,pos, delimLength);
+                pos+=delimLength;
+            }
+            System.arraycopy(term._data,term._offset,data,pos,term._length);
+            pos+=term._length;
+        }
+
+
+
+        return new AMQShortString(data,0,size);
+    }
+
+    public int toIntValue()
+    {
+        int pos = 0;
+        int val = 0;
+
+
+        boolean isNegative = (_data[pos] == MINUS);
+        if(isNegative)
+        {
+            pos++;
+        }
+        while(pos < _length)
+        {
+            int digit = (int) (_data[pos++] - ZERO);
+            if((digit < 0) || (digit > 9))
+            {
+                throw new NumberFormatException("\""+toString()+"\" is not a valid number");
+            }
+            val = val * 10;
+            val += digit;
+        }
+        if(isNegative)
+        {
+            val = val * -1;
+        }
+        return val;
+    }
+
+    public boolean contains(final byte b)
+    {
+        for(int i = 0; i < _length; i++)
+        {
+            if(_data[i] == b)
+            {
+                return true;
+            }
+        }
+        return false;  //To change body of created methods use File | Settings | File Templates.
+    }
+
 }

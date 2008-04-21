@@ -32,8 +32,10 @@
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
-        <qpidnio>true</qpidnio>
-        <protectio>true</protectio>
+        <qpidnio>false</qpidnio>
+        <protectio>
+            <enabled>false</enabled>
+        </protectio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
@@ -51,37 +53,26 @@
         <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
-        <enableJMSXUserID>true</enableJMSXUserID>
+        <enableJMSXUserID>false</enableJMSXUserID>
     </advanced>
 
     <security>
         <principal-databases>
+            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed -->
             <principal-database>
                 <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
                         <name>passwordFile</name>
-                        <value>${conf}/passwdVhost</value>
+                        <value>${conf}/passwd</value>
                     </attribute>
                 </attributes>
             </principal-database>
-
-            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed
-            <principal-database>
-                <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase</class>
-                <attributes>
-                    <attribute>
-                        <name>passwordFile</name>
-                        <value>${conf}/qpid.passwd</value>
-                    </attribute>
-                </attributes>
-            </principal-database-->
         </principal-databases>
 
         <access>
-            <class>org.apache.qpid.server.security.access.AllowAll</class>
+            <class>org.apache.qpid.server.security.access.plugins.AllowAll</class>
         </access>
         <jmx>
             <access>${conf}/jmxremote.access</access>
@@ -90,37 +81,19 @@
     </security>
 
     <virtualhosts>
+        <directory>${conf}/virtualhosts</directory>
+
         <virtualhost>
             <name>localhost</name>
             <localhost>
                 <store>
-                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                    <environment-path>${work}/localhost-store</environment-path> -->
-
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
 
-                <security>
-                    <!-- Need protocol changes to allow this-->
-                    <authentication>
-                        <name>passwordfile</name>
-                        <!-- Currently this can't be used as Vhost isn't specified at connection start only connection open -->
-                        <mechanism>PLAIN</mechanism>
-                    </authentication>
-                    <access>
-                        <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
-                        <attributes>
-                            <attribute>
-                                <name>principalDatabase</name>
-                                <value>passwordfile</value>
-                            </attribute>
-                            <attribute>
-                                <name>defaultAccessManager</name>
-                                <value>DenyAll</value>
-                            </attribute>
-                        </attributes>
-                    </access>
-                </security>
+                <housekeeping>
+                    <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
+                </housekeeping>
+
             </localhost>
         </virtualhost>
 
@@ -130,11 +103,6 @@
                 <store>
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
-                <security>
-                    <name>passwordfile-notusedyet</name>
-                    <mechanism>PLAIN</mechanism>
-                    <mechanism>CRAM-MD5</mechanism>
-                </security>
             </development>
         </virtualhost>
 
@@ -144,21 +112,6 @@
                 <store>
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
-                <security>
-                    <name>passwordfile-notusedyet</name>
-                    <mechanism>PLAIN</mechanism>
-                    <mechanism>CRAM-MD5</mechanism>
-                </security>
-                <access>
-                    <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
-                    <attributes>
-                        <attribute>
-                            <name>principalDatabase</name>
-                            <value>rubbish-to-cause-default</value>
-                        </attribute>
-                    </attributes>
-                </access>
-
             </test>
         </virtualhost>
 
@@ -173,6 +126,5 @@
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
-
 
 

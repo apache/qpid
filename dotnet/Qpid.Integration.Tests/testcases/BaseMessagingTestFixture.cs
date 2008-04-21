@@ -44,10 +44,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private const long RECEIVE_WAIT = 500;
 
         /// <summary> The default AMQ connection URL to use for tests. </summary>
-        const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
+        public const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
 
         /// <summary> The default AMQ connection URL parsed as a connection info. </summary>
-        protected IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);
+        protected IConnectionInfo connectionInfo;
 
         /// <summary> Holds an array of connections for building mutiple test end-points. </summary>
         protected IConnection[] testConnection = new IConnection[10];
@@ -102,9 +102,17 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted,
                                   string exchangeName, bool declareBind, bool durable, string subscriptionName)
         {
+            // Allow client id to be fixed, or undefined.
+            {
+                // Use unique id for end point.
+                connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);
+
+                connectionInfo.ClientName = "test" + n;
+            }
+
             testConnection[n] = new AMQConnection(connectionInfo);            
             testConnection[n].Start();
-            testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode, 1);
+            testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode);
             
             if (producer)
             {

@@ -22,8 +22,8 @@ package org.apache.qpid.test.framework.clocksynch;
 
 import org.apache.log4j.Logger;
 
-import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
-import uk.co.thebadgerset.junit.extensions.Throttle;
+import org.apache.qpid.junit.extensions.ShutdownHookable;
+import org.apache.qpid.junit.extensions.Throttle;
 
 /**
  * ClockSynchThread is a convenient utility for running a thread that periodically synchronizes the clock against

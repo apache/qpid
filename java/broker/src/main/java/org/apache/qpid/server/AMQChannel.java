@@ -33,8 +33,9 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.exchange.MessageRouter;
+import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.NoRouteException;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.MessageStore;
@@ -42,17 +43,15 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.configuration.Configurator;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQChannel
 {
@@ -74,7 +73,7 @@ public class AMQChannel
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
      * value of this represents the <b>last</b> tag sent out
      */
-    private AtomicLong _deliveryTag = new AtomicLong(0);
+    private long _deliveryTag = 0;
 
     /** A channel has a default queue (the last declared) that is used when no queue name is explictily set */
     private AMQQueue _defaultQueue;
@@ -90,15 +89,13 @@ public class AMQChannel
     private AMQMessage _currentMessage;
 
     /** Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue. */
-    private final Map<AMQShortString, AMQQueue> _consumerTag2QueueMap = new HashMap<AMQShortString, AMQQueue>();
+    private final Map<AMQShortString, AMQQueue> _consumerTag2QueueMap = new ConcurrentHashMap<AMQShortString, AMQQueue>();
 
     private final MessageStore _messageStore;
 
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
-
-    private final MessageRouter _exchanges;
 
     private TransactionalContext _txnContext, _nonTransactedContext;
 
@@ -119,11 +116,11 @@ public class AMQChannel
     private boolean _closing;
 
     @Configured(path = "advanced.enableJMSXUserID",
-                defaultValue = "true")
+                defaultValue = "false")
     public boolean ENABLE_JMSXUserID;
 
 
-    public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
+    public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
     {
         //Set values from configuration
@@ -135,7 +132,7 @@ public class AMQChannel
         _prefetch_HighWaterMark = DEFAULT_PREFETCH;
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
-        _exchanges = exchanges;
+
         // by default the session is non-transactional
         _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
     }
@@ -199,11 +196,12 @@ public class AMQChannel
         _prefetch_HighWaterMark = prefetchCount;
     }
 
-    public void setPublishFrame(MessagePublishInfo info, AMQProtocolSession publisher) throws AMQException
+    public void setPublishFrame(MessagePublishInfo info, AMQProtocolSession publisher, final Exchange e) throws AMQException
     {
 
         _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), info, _txnContext);
         _currentMessage.setPublisher(publisher);
+        _currentMessage.setExchange(e);
     }
 
     public void publishContentHeader(ContentHeaderBody contentHeaderBody, AMQProtocolSession protocolSession)
@@ -215,9 +213,9 @@ public class AMQChannel
         }
         else
         {
-            if (_log.isTraceEnabled())
+            if (_log.isDebugEnabled())
             {
-                _log.trace(debugIdentity() + "Content header received on channel " + _channelId);
+                _log.debug(debugIdentity() + "Content header received on channel " + _channelId);
             }
 
             if (ENABLE_JMSXUserID)
@@ -252,9 +250,9 @@ public class AMQChannel
             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
         }
 
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace(debugIdentity() + "Content body received on channel " + _channelId);
+            _log.debug(debugIdentity() + "Content body received on channel " + _channelId);
         }
 
         try
@@ -285,7 +283,7 @@ public class AMQChannel
     {
         try
         {
-            _exchanges.routeContent(_currentMessage);
+            _currentMessage.route();            
         }
         catch (NoRouteException e)
         {
@@ -295,7 +293,7 @@ public class AMQChannel
 
     public long getNextDeliveryTag()
     {
-        return _deliveryTag.incrementAndGet();
+        return ++_deliveryTag;
     }
 
     public int getNextConsumerTag()
@@ -333,13 +331,32 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
+        // We add before we register as the Async Delivery process may AutoClose the subscriber
+        // so calling _cT2QM.remove before we have done put which was after the register succeeded.
+        // So to keep things straight we put before the call and catch all exceptions from the register and tidy up.
         _consumerTag2QueueMap.put(tag, queue);
+
+        try
+        {
+            queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
+        }
+        catch (AMQException e)
+        {
+            _consumerTag2QueueMap.remove(tag);
+            throw e;
+        }
 
         return tag;
     }
 
-    public void unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
+    /**
+     * Unsubscribe a consumer from a queue.
+     * @param session
+     * @param consumerTag
+     * @return true if the consumerTag had a mapped queue that could be unregistered.
+     * @throws AMQException
+     */
+    public boolean unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
     {
         if (_log.isDebugEnabled())
         {
@@ -364,7 +381,9 @@ public class AMQChannel
         if (q != null)
         {
             q.unregisterProtocolSession(session, _channelId, consumerTag);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -822,7 +841,7 @@ public class AMQChannel
                     {
                         message.discard(_storeContext);
                         message.setQueueDeleted(true);
-                        
+
                     }
                     catch (AMQException e)
                     {
@@ -967,16 +986,19 @@ public class AMQChannel
 
     public void processReturns(AMQProtocolSession session) throws AMQException
     {
-        for (RequiredDeliveryException bouncedMessage : _returnMessages)
+        if (!_returnMessages.isEmpty())
         {
-            AMQMessage message = bouncedMessage.getAMQMessage();
-            session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
-                                                             new AMQShortString(bouncedMessage.getMessage()));
+            for (RequiredDeliveryException bouncedMessage : _returnMessages)
+            {
+                AMQMessage message = bouncedMessage.getAMQMessage();
+                session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
+                                                                 new AMQShortString(bouncedMessage.getMessage()));
 
-            message.decrementReference(_storeContext);
+                message.decrementReference(_storeContext);
+            }
+
+            _returnMessages.clear();
         }
-
-        _returnMessages.clear();
     }
 
     public boolean wouldSuspend(AMQMessage msg)

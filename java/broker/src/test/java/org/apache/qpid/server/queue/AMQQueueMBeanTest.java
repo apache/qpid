@@ -123,7 +123,7 @@ public class AMQQueueMBeanTest extends TestCase
 
 
         TestMinaProtocolSession protocolSession = new TestMinaProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore, null);
+        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
         protocolSession.addChannel(channel);
 
         _queue.registerProtocolSession(protocolSession, 1, new AMQShortString("test"), false, null, false, false);
@@ -232,6 +232,11 @@ public class AMQQueueMBeanTest extends TestCase
             public AMQShortString getExchange()
             {
                 return null;
+            }
+
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public boolean isImmediate()

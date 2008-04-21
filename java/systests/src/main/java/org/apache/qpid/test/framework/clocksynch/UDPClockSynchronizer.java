@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.test.framework.clocksynch;
 
-import org.apache.log4j.Logger;
-
-import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.CommandLineParser;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import java.io.IOException;
 import java.net.*;

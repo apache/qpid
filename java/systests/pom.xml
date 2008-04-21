@@ -6,9 +6,9 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License. You may obtain a copy of the License at
-    
+
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -57,16 +57,16 @@
         </dependency>
 
         <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
         </dependency>
 
         <!-- Test Dependencies -->
-        <dependency>  
-            <groupId>org.slf4j</groupId> 
-            <artifactId>slf4j-log4j12</artifactId>  
-            <version>1.4.0</version>  
-            <scope>test</scope> 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.4.0</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -82,18 +82,26 @@
                     <includes>
                         <include>**/*Test.class</include>
                     </includes>
-                    
+
                     <systemProperties>
                         <property>
                             <name>example.plugin.target</name>
                             <value>${basedir}/${topDirectoryLocation}/plugins/target</value>
                         </property>
+                        <property>
+                            <name>QPID_EXAMPLE_HOME</name>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
+                        </property>
+                        <property>
+                            <name>QPID_HOME</name>
+                            <value>${basedir}/${topDirectoryLocation}/broker</value>
+                        </property>                        
                     </systemProperties>
-                    
+
                     <excludes>
                         <exclude>**/testcases/ImmediateMessageTest.class</exclude>
                         <exclude>**/testcases/MandatoryMessageTest.class</exclude>
-                        <exclude>**/testcases/RollbackTest.class</exclude>                        
+                        <exclude>**/testcases/RollbackTest.class</exclude>
                         <exclude>**/testcases/TTLTest.class</exclude>
                         <exclude>**/testcases/FailoverTest.class</exclude>
                     </excludes>
@@ -102,7 +110,7 @@
 
             <!-- Runs the framework based tests against an in-vm broker. -->
             <plugin>
-                <groupId>uk.co.thebadgerset</groupId>
+                <groupId>org.apache.qpid</groupId>
                 <artifactId>junit-toolkit-maven-plugin</artifactId>
 
                 <configuration>
@@ -112,23 +120,23 @@
                             <value>${log4j.configuration}</value>
                         </property>
                     </systemproperties>
-                    
-                    <testrunner>uk.co.thebadgerset.junit.extensions.TKTestRunner</testrunner>
-                    
+
+                    <testrunner>org.apache.qpid.junit.extensions.TKTestRunner</testrunner>
+
                     <testrunneroptions>
                         <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
                         <!--<option>-d30S</option>-->
                         <option>-o ${basedir}/target/surefire-reports</option>
                         <option>--xml</option>
                     </testrunneroptions>
-                    
+
                     <testrunnerproperties>
                         <property>
                             <name>notApplicableAssertion</name>
                             <value>warn</value>
                         </property>
                     </testrunnerproperties>
-                    
+
                     <commands>
                         <AMQBrokerManagerMBeanTest>-n AMQBrokerManagerMBeanTest org.apache.qpid.server.AMQBrokerManagerMBeanTest </AMQBrokerManagerMBeanTest>
                         <TxAckTest>-n TxAckTest org.apache.qpid.server.ack.TxAckTest </TxAckTest>
@@ -147,22 +155,22 @@
                         <TimeToLiveTest>-n TimeToLiveTest org.apache.qpid.server.queue.TimeToLiveTest </TimeToLiveTest>
                         <TxnBufferTest>-n TxnBufferTest org.apache.qpid.server.txn.TxnBufferTest </TxnBufferTest>
                         <!--<TxnTest>-n TxnTest org.apache.qpid.server.txn.TxnTest </TxnTest>-->
-                        <QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest>
+                        <!--QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest-->
 
                         <!--<Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>-->
                         <!--<Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>-->
                         <!--<Rollback-Test>-n Rollback-Test -s[1] org.apache.qpid.test.testcases.RollbackTest</Rollback-Test>-->
                     </commands>
-                    
+
                 </configuration>
 
-                <executions>                    
+                <executions>
                     <execution>
                         <id>framework_tests</id>
-                        <phase>test</phase>                       
+                        <phase>test</phase>
                         <goals>
                             <goal>tktest</goal>
-                        </goals>                        
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

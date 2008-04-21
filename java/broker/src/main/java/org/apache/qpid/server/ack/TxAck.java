@@ -100,10 +100,9 @@ public class TxAck implements TxnOp
         //make persistent changes, i.e. dequeue and decrementReference
         for (UnacknowledgedMessage msg : _unacked)
         {
-            //msg.restoreTransientMessageData();
-
             //Message has been ack so discard it. This will dequeue and decrement the reference.
             msg.discard(storeContext);
+
         }
     }
 
@@ -115,7 +114,6 @@ public class TxAck implements TxnOp
         //in memory (persistent changes will be rolled back by store)
         for (UnacknowledgedMessage msg : _unacked)
         {
-            msg.clearTransientMessageData();
             msg.getMessage().takeReference();
         }
     }
@@ -124,11 +122,6 @@ public class TxAck implements TxnOp
     {
         //remove the unacked messages from the channels map
         _map.remove(_unacked);
-        for (UnacknowledgedMessage msg : _unacked)
-        {
-            msg.clearTransientMessageData();
-        }
-
     }
 
     public void rollback(StoreContext storeContext)

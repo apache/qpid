@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.server.security.access.UserManagement;
+import org.apache.qpid.server.security.access.management.UserManagement;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;

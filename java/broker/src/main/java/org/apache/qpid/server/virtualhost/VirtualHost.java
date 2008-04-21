@@ -23,10 +23,11 @@ package org.apache.qpid.server.virtualhost;
 import javax.management.NotCompliantMBeanException;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.security.access.AccessManager;
-import org.apache.qpid.server.security.access.AccessManagerImpl;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -39,8 +40,13 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.AMQException;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class VirtualHost implements Accessable
 {
@@ -63,9 +69,12 @@ public class VirtualHost implements Accessable
 
     private AuthenticationManager _authenticationManager;
 
-    private AccessManager _accessManager;
+    private ACLPlugin _accessManager;
 
-
+    private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
+     
+    private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
+    
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -115,7 +124,7 @@ public class VirtualHost implements Accessable
      */
     public VirtualHost(String name, MessageStore store) throws Exception
     {
-        this(name, null, store);
+        this(name, new PropertiesConfiguration(), store);
     }
 
     /**
@@ -129,7 +138,7 @@ public class VirtualHost implements Accessable
         this(name, hostConfig, null);
     }
 
-    private VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
+    public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
         _name = name;
 
@@ -159,12 +168,47 @@ public class VirtualHost implements Accessable
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
 
-        _accessManager = new AccessManagerImpl(name, hostConfig);
+        _accessManager = ACLManager.loadACLManager(name, hostConfig);
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
+        initialiseHouseKeeping(hostConfig);
     }
 
+    private void initialiseHouseKeeping(final Configuration hostConfig)
+    {
+     
+    	long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+    
+    	/* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
+    	if(period != 0L)
+    	{
+    		class RemoveExpiredMessagesTask extends TimerTask
+    		{
+    			public void run()
+    			{
+    				for(AMQQueue q : _queueRegistry.getQueues())
+    				{
+
+    					try
+    					{
+    						q.removeExpiredIfNoSubscribers();
+    					}
+    					catch (AMQException e)
+    					{
+    						_logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
+    						throw new RuntimeException(e);
+    					}
+    				}
+    			}
+    		}
+    		
+    		_houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
+    				period/2,
+    				period);
+    	}
+    }
+    
     private void initialiseMessageStore(Configuration config) throws Exception
     {
         String messageStoreClass = config.getString("store.class");
@@ -235,13 +279,17 @@ public class VirtualHost implements Accessable
         return _authenticationManager;
     }
 
-    public AccessManager getAccessManager()
+    public ACLPlugin getAccessManager()
     {
         return _accessManager;
     }
 
     public void close() throws Exception
     {
+        if (_houseKeepingTimer != null)
+        {
+            _houseKeepingTimer.cancel();
+        }
         if (_messageStore != null)
         {
             _messageStore.close();

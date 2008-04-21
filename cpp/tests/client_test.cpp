@@ -35,6 +35,7 @@
 #include <MessageListener.h>
 #include <sys/Monitor.h>
 #include <FieldTable.h>
+#include <cstdlib>
 
 using namespace qpid::client;
 using namespace qpid::sys;
@@ -52,12 +53,28 @@ public:
     inline SimpleListener(Monitor* _monitor) : monitor(_monitor){}
 
     inline virtual void received(Message& msg){
-	std::cout << "Received message " << msg.getData()  << std::endl;
+	std::cout << "Received message " << msg.getData().substr(0, 5) << "..." << std::endl;
 	monitor->notify();
     }
 };
 
-int main(int argc, char**)
+const std::string chars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+std::string generateData(uint size)
+{
+    if (size < chars.length()) {
+        return chars.substr(0, size);
+    }   
+    std::string data;
+    for (uint i = 0; i < (size / chars.length()); i++) {
+        data += chars;
+    }
+    data += chars.substr(0, size % chars.length());
+    return data;
+}
+
+
+int main(int argc, char** argv)
 {
     try{               
         //Use a custom exchange
@@ -109,10 +126,17 @@ int main(int argc, char**)
         //Now we create and publish a message to our exchange with a
         //routing key that will cause it to be routed to our queue
 	Message msg;
-	string data("MyMessage");
-	msg.setData(data);
+        uint size = 0;
+        if (argc > 1) {
+            size = atoi(argv[1]);
+        }
+        if (size) {
+            msg.setData(generateData(size));
+        } else {
+            msg.setData("MyMessage");
+        }
 	channel.publish(msg, exchange, "MyTopic");
-	std::cout << "Published message: " << data << std::endl;
+	std::cout << "Published message: " << msg.getData().substr(0, 5) << "..." << std::endl;
 
 	{
             Monitor::ScopedLock l(monitor);

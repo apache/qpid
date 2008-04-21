@@ -29,9 +29,8 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.codec.QpidProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.SessionUtil;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
@@ -57,6 +56,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     private final IApplicationRegistry _applicationRegistry;
 
+    private static String DEFAULT_BUFFER_READ_LIMIT_SIZE = "262144";
+    private static String DEFAULT_BUFFER_WRITE_LIMIT_SIZE = "262144";
+
+    private final int BUFFER_READ_LIMIT_SIZE;
+    private final int BUFFER_WRITE_LIMIT_SIZE;
 
     public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
     {
@@ -66,6 +70,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
     public AMQPFastProtocolHandler(IApplicationRegistry applicationRegistry)
     {
         _applicationRegistry = applicationRegistry;
+
+        // Read the configuration from the application registry
+        BUFFER_READ_LIMIT_SIZE = Integer.parseInt(_applicationRegistry.getConfiguration().getString("broker.connector.protectio.readBufferLimitSize", DEFAULT_BUFFER_READ_LIMIT_SIZE));
+        BUFFER_WRITE_LIMIT_SIZE = Integer.parseInt(_applicationRegistry.getConfiguration().getString("broker.connector.protectio.writeBufferLimitSize", DEFAULT_BUFFER_WRITE_LIMIT_SIZE));
+
         _logger.debug("AMQPFastProtocolHandler created");
     }
 
@@ -82,7 +91,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         createSession(protocolSession, _applicationRegistry, codecFactory);
         _logger.info("Protocol session created for:" + protocolSession.getRemoteAddress());
 
-        final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
+        final QpidProtocolCodecFilter pcf = new QpidProtocolCodecFilter(codecFactory);
 
         ConnectorConfiguration connectorConfig = ApplicationRegistry.getInstance().
                 getConfiguredObject(ConnectorConfiguration.class);
@@ -114,27 +123,22 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
         }
 
-        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("broker.connector.protectio", false))
+        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("broker.connector.protectio.enabled", false))
         {
             try
             {
 //        //Add IO Protection Filters
                 IoFilterChain chain = protocolSession.getFilterChain();
 
-                int buf_size = 32768;
-                if (protocolSession.getConfig() instanceof SocketSessionConfig)
-                {
-                    buf_size = ((SocketSessionConfig) protocolSession.getConfig()).getReceiveBufferSize();
-                }
 
                 protocolSession.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
 
                 ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.setMaximumConnectionBufferSize(BUFFER_READ_LIMIT_SIZE);
                 readfilter.attach(chain);
 
                 WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.setMaximumConnectionBufferSize(BUFFER_WRITE_LIMIT_SIZE);
                 writefilter.attach(chain);
 
                 protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");

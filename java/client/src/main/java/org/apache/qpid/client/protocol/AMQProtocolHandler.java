@@ -30,7 +30,6 @@ import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -55,6 +54,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -153,8 +153,18 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     /** Used to provide a condition to wait upon for operations that are required to wait for failover to complete. */
     private CountDownLatch _failoverLatch;
 
+
+    /** The last failover exception that occured */
+    private FailoverException _lastFailoverException;
+
     /** Defines the default timeout to use for synchronous protocol commands. */
     private final long DEFAULT_SYNC_TIMEOUT = 1000 * 30;
+
+    /** Default buffer size for pending messages reads */
+    private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
+
+    /** Default buffer size for pending messages writes */
+    private static final String DEFAULT_WRITE_BUFFER_LIMIT = "262144";
 
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
@@ -209,29 +219,24 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
         catch (RuntimeException e)
         {
-            e.printStackTrace();
+            _logger.error(e.getMessage(), e);
         }
 
-        if (!System.getProperties().containsKey("protectio") || Boolean.getBoolean("protectio"))
+        if (Boolean.getBoolean("protectio"))
         {
             try
             {
                 //Add IO Protection Filters
                 IoFilterChain chain = session.getFilterChain();
 
-                int buf_size = 32768;
-                if (session.getConfig() instanceof SocketSessionConfig)
-                {
-                    buf_size = ((SocketSessionConfig) session.getConfig()).getReceiveBufferSize();
-                }
                 session.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
 
                 ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.read.buffer.limit", DEFAULT_READ_BUFFER_LIMIT)));
                 readfilter.attach(chain);
 
                 WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.write.buffer.limit", DEFAULT_WRITE_BUFFER_LIMIT)));
                 writefilter.attach(chain);
                 session.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
 
@@ -355,7 +360,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         if (_failoverState == FailoverState.NOT_STARTED)
         {
             // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
-            if (cause instanceof AMQConnectionClosedException)
+            if ((cause instanceof AMQConnectionClosedException) || cause instanceof IOException)
             {
                 _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
                 // this will attemp failover
@@ -372,8 +377,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
                     AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
                     propagateExceptionToWaiters(amqe);
-                    _connection.exceptionReceived(cause);
                 }
+                _connection.exceptionReceived(cause);
 
             }
 
@@ -406,7 +411,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void propagateExceptionToWaiters(Exception e)
     {
-        getStateManager().error(e);
+        
         if (!_frameListeners.isEmpty())
         {
             final Iterator it = _frameListeners.iterator();
@@ -416,6 +421,24 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 ml.error(e);
             }
         }
+    }
+
+    public void notifyFailoverStarting()
+    {
+        // Set the last exception in the sync block to ensure the ordering with add.
+        // either this gets done and the add does the ml.error
+        // or the add completes first and the iterator below will do ml.error
+        synchronized (_frameListeners)
+        {
+            _lastFailoverException = new FailoverException("Failing over about to start");
+        }
+
+        propagateExceptionToWaiters(_lastFailoverException);
+    }
+
+    public void failoverInProgress()
+    {
+        _lastFailoverException = null;
     }
 
     private static int _messageReceivedCount;
@@ -438,78 +461,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
             HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
 
-            switch (bodyFrame.getFrameType())
-            {
-                case AMQMethodBody.TYPE:
+            bodyFrame.handle(frame.getChannel(),_protocolSession);
 
-                    if (debug)
-                    {
-                        _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
-                    }
-
-                    final AMQMethodEvent<AMQMethodBody> evt =
-                            new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
-
-                    try
-                    {
-
-                        boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                        if (!_frameListeners.isEmpty())
-                        {
-                            Iterator it = _frameListeners.iterator();
-                            while (it.hasNext())
-                            {
-                                final AMQMethodListener listener = (AMQMethodListener) it.next();
-                                wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
-                            }
-                        }
-
-                        if (!wasAnyoneInterested)
-                        {
-                            throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
-                                                   + _frameListeners);
-                        }
-                    }
-                    catch (AMQException e)
-                    {
-                        getStateManager().error(e);
-                        if (!_frameListeners.isEmpty())
-                        {
-                            Iterator it = _frameListeners.iterator();
-                            while (it.hasNext())
-                            {
-                                final AMQMethodListener listener = (AMQMethodListener) it.next();
-                                listener.error(e);
-                            }
-                        }
-
-                        exceptionCaught(session, e);
-                    }
-
-                    break;
-
-                case ContentHeaderBody.TYPE:
-
-                    _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
-                    break;
-
-                case ContentBody.TYPE:
-
-                    _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
-                    break;
-
-                case HeartbeatBody.TYPE:
-
-                    if (debug)
-                    {
-                        _logger.debug("Received heartbeat");
-                    }
-
-                    break;
-
-                default:
-
-            }
 
             _connection.bytesReceived(_protocolSession.getIoSession().getReadBytes());
         }
@@ -525,6 +478,57 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             // get round a bug in old versions of qpid whereby the connection is not closed
             _stateManager.changeState(AMQState.CONNECTION_CLOSED);
         }
+    }
+
+    public void methodBodyReceived(final int channelId, final AMQBody bodyFrame, IoSession session)//, final IoSession session)
+            throws AMQException
+    {
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + bodyFrame);
+        }
+
+        final AMQMethodEvent<AMQMethodBody> evt =
+                new AMQMethodEvent<AMQMethodBody>(channelId, (AMQMethodBody) bodyFrame);
+
+        try
+        {
+
+            boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
+            if (!_frameListeners.isEmpty())
+            {
+                //This iterator is safe from the error state as the frame listeners always add before they send so their
+                // will be ready and waiting for this response.
+                Iterator it = _frameListeners.iterator();
+                while (it.hasNext())
+                {
+                    final AMQMethodListener listener = (AMQMethodListener) it.next();
+                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                }
+            }
+
+            if (!wasAnyoneInterested)
+            {
+                throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
+                                       + _frameListeners);
+            }
+        }
+        catch (AMQException e)
+        {            
+            if (!_frameListeners.isEmpty())
+            {
+                Iterator it = _frameListeners.iterator();
+                while (it.hasNext())
+                {
+                    final AMQMethodListener listener = (AMQMethodListener) it.next();
+                    listener.error(e);
+                }
+            }
+
+            exceptionCaught(session, e);
+        }
+
     }
 
     private static int _messagesOut;
@@ -612,7 +616,15 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         try
         {
-            _frameListeners.add(listener);
+            synchronized (_frameListeners)
+            {
+                if (_lastFailoverException != null)
+                {
+                    throw _lastFailoverException;
+                }
+                
+                _frameListeners.add(listener);
+            }
             _protocolSession.writeFrame(frame);
 
             AMQMethodEvent e = listener.blockForFrame(timeout);
@@ -620,10 +632,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             return e;
             // When control resumes before this line, a reply will have been received
             // that matches the criteria defined in the blocking listener
-        }
-        catch (AMQException e)
-        {
-            throw e;
         }
         finally
         {

@@ -61,6 +61,8 @@ namespace qpid {
             u_int32_t decodeHead(Buffer& buffer); 
             void decodeBody(Buffer& buffer, uint32_t size); 
 
+            void print(std::ostream& out) const;
+
             friend std::ostream& operator<<(std::ostream& out, const AMQFrame& body);
         };
 

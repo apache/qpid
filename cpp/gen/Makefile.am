@@ -32,15 +32,18 @@ DISTCLEANFILES = $(BUILT_SOURCES) timestamp gen-src.mk
 #
 if CAN_GENERATE_CODE
 
+
 gentools_dir = $(srcdir)/../../gentools
 spec_dir = $(srcdir)/../../specs
-spec = $(spec_dir)/amqp.0-8.xml
+spec = $(spec_dir)/amqp.0-9.no-wip.xml
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
+gentools_libs = $(gentools_dir)/lib/velocity-1.4.jar:$(gentools_dir)/lib/velocity-dep-1.4.jar
 
 $(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
 	rm -f $(generated_sources)
-	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
-	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
+	cd $(gentools_srcdir) && rm -f *.class
+	$(JAVAC) -cp $(gentools_libs) -sourcepath $(gentools_srcdir) -d $(gentools_dir)/src $(gentools_srcdir)/*.java
+	$(JAVA) -cp $(gentools_dir)/src:$(gentools_libs) org.apache.qpid.gentools.Main \
 	        -c -o . -t $(gentools_dir)/templ.cpp $(spec)
 	touch timestamp
 

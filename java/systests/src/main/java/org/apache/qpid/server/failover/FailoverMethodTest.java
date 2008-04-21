@@ -1,19 +1,4 @@
-package org.apache.qpid.server.failover;
-
-import junit.framework.TestCase;
-import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import java.util.concurrent.CountDownLatch;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -33,26 +18,51 @@ import java.util.concurrent.CountDownLatch;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.failover;
+
+import junit.framework.TestCase;
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import java.util.concurrent.CountDownLatch;
 
 public class FailoverMethodTest extends TestCase implements ExceptionListener
 {
-    private static final Logger _logger = LoggerFactory.getLogger(FailoverMethodTest.class);
     private CountDownLatch _failoverComplete = new CountDownLatch(1);
 
     public void setUp() throws AMQVMBrokerCreationException
     {
+        TransportConnection.createVMBroker(1);
     }
 
     public void tearDown() throws AMQVMBrokerCreationException
     {
+        TransportConnection.killAllVMBrokers();
     }
 
-    public void testFailoverRoundRobinDelay() throws URLSyntaxException, AMQVMBrokerCreationException, InterruptedException, JMSException
+    /**
+     * Test that the round robin method has the correct delays.
+     * The first connection to vm://:1 will work but the localhost connection should fail but the duration it takes
+     * to report the failure is what is being tested.
+     *
+     * @throws URLSyntaxException
+     * @throws InterruptedException
+     * @throws JMSException
+     */
+    public void testFailoverRoundRobinDelay() throws URLSyntaxException, InterruptedException, JMSException
     {
         String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1;tcp://localhost:5670?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
-        TransportConnection.createVMBroker(1);
 
         try
         {
@@ -64,9 +74,15 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             TransportConnection.killAllVMBrokers();
 
             _failoverComplete.await();
+
             long end = System.currentTimeMillis();
 
-            assertTrue("Failover took at over 10seconds", (end - start) > 6000);
+            //Failover should take less that 10 seconds.
+            // This is calculated by vm://:1 two retries left after initial connection
+            // localhost get three retries so (6s) so 10s in total for connection dropping
+            assertTrue("Failover took less than 6 seconds:"+(end - start), (end - start) > 6000);
+            // The sleep method is not 100% accurate under windows so with 5 sleeps and a 10ms accuracy then there is
+            // the potential for the tests to finish in 500ms sooner than the predicted 10s.
 
         }
         catch (AMQException e)
@@ -80,7 +96,6 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
         String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
-        TransportConnection.createVMBroker(1);
 
         try
         {
@@ -92,9 +107,16 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             TransportConnection.killAllVMBrokers();
 
             _failoverComplete.await();
+
             long end = System.currentTimeMillis();
 
-            assertTrue("Failover took at over 10seconds", (end - start) > 6000);
+            //Failover should take less that 10 seconds.
+            // This is calculated by vm://:1 two retries left after initial connection
+            // so 4s in total for connection dropping
+
+            assertTrue("Failover took less than 3.7 seconds", (end - start) > 3700);
+            // The sleep method is not 100% accurate under windows so with 3 sleeps and a 10ms accuracy then there is
+            // the potential for the tests to finish in 300ms sooner than the predicted 4s.
 
         }
         catch (AMQException e)

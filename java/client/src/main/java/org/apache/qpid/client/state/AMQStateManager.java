@@ -37,7 +37,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
  * there is a separate state manager.
  */
-public class AMQStateManager implements AMQMethodListener
+public class AMQStateManager 
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQStateManager.class);
 
@@ -52,9 +52,9 @@ public class AMQStateManager implements AMQMethodListener
      * AMQFrame.
      */
 
-    private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
+
     private final Object _stateLock = new Object();
-    private static final long MAXIMUM_STATE_WAIT_TIME = 30000L;
+    private static final long MAXIMUM_STATE_WAIT_TIME = Long.parseLong(System.getProperty("amqj.MaximumStateWait", "30000"));
 
     public AMQStateManager()
     {
@@ -91,19 +91,6 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public void error(Exception e)
-    {
-        _logger.debug("State manager receive error notification: " + e);
-        synchronized (_stateListeners)
-        {
-            final Iterator it = _stateListeners.iterator();
-            while (it.hasNext())
-            {
-                final StateListener l = (StateListener) it.next();
-                l.error(e);
-            }
-        }
-    }
 
     public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
     {

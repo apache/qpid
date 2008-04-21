@@ -26,11 +26,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -58,7 +58,12 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
-        
+
+        if (!body.getPassive())
+        {
+            //Perform ACL if request is not passive
+            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+        }
 
         if (_logger.isDebugEnabled())
         {

@@ -120,13 +120,17 @@ public class FailoverHandler implements Runnable
         // We wake up listeners. If they can handle failover, they will extend the
         // FailoverRetrySupport class and will in turn block on the latch until failover
         // has completed before retrying the operation.
-        _amqProtocolHandler.propagateExceptionToWaiters(new FailoverException("Failing over about to start"));
+        _amqProtocolHandler.notifyFailoverStarting();
 
         // Since failover impacts several structures we protect them all with a single mutex. These structures
         // are also in child objects of the connection. This allows us to manipulate them without affecting
         // client code which runs in a separate thread.
         synchronized (_amqProtocolHandler.getConnection().getFailoverMutex())
         {
+            //Clear the exception now that we have the failover mutex there can be no one else waiting for a frame so
+            // we can clear the exception.
+            _amqProtocolHandler.failoverInProgress();
+
             // We switch in a new state manager temporarily so that the interaction to get to the "connection open"
             // state works, without us having to terminate any existing "state waiters". We could theoretically
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
@@ -138,6 +142,9 @@ public class FailoverHandler implements Runnable
                 _logger.info("Failover process veto-ed by client");
 
                 _amqProtocolHandler.setStateManager(existingStateManager);
+
+                //todo: ritchiem these exceptions are useless... Would be better to attempt to propogate exception that
+                // prompted the failover event.
                 if (_host != null)
                 {
                     _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException(

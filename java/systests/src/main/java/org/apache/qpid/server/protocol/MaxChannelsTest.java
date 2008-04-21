@@ -21,22 +21,12 @@
 package org.apache.qpid.server.protocol;
 
 import junit.framework.TestCase;
-import org.apache.mina.common.IoSession;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.AMQShortString;
-
-import javax.management.JMException;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
@@ -65,7 +55,7 @@ public class MaxChannelsTest extends TestCase
         {
             for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
             {
-                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null));
+                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null));
             }
         }
         catch (AMQException e)

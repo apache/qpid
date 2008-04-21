@@ -81,6 +81,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             try
             {
+                // Close all end points for producer and consumers. 
+                // Producer is on 0, and consumers on 1 .. n, so loop is from 0 to n inclusive.
                 for (int i = 0; i <= CONSUMER_COUNT; i++)
                 {
                     CloseEndPoint(i);
@@ -101,7 +103,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             {
                 SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
                               true, false, null);
-                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
+                testConsumer[i].OnMessage += new MessageReceivedDelegate(OnMessage);
             }
 
             // Create an end-point to publish to the test topic.
@@ -130,7 +132,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             {
                 SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.DIRECT,
                               true, false, null);
-                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
+                testConsumer[i].OnMessage += new MessageReceivedDelegate(OnMessage);
             }
 
             // Create an end-point to publish to the test topic.
@@ -155,7 +157,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             int newCount = Interlocked.Increment(ref _messageReceivedCount);
 
-            if (newCount > expectedMessageCount)
+            if (newCount >= expectedMessageCount)
             {
                 allReceived = true;
                 _finishedEvent.Set();

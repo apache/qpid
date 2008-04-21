@@ -23,7 +23,7 @@ package org.apache.qpid.test.framework.distributedcircuit;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Publisher;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * DistributedPublisherImpl represents the status of the publishing side of a test circuit. Its main purpose is to

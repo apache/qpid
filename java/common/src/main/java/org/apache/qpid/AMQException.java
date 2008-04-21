@@ -98,4 +98,9 @@ public class AMQException extends Exception
     {
         return _errorCode;
     }
+
+    public boolean isHardError()
+    {
+        return true;
+    }
 }

@@ -85,7 +85,7 @@ namespace client {
 	virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);
 	virtual void setShutdownHandler(qpid::sys::ShutdownHandler* handler);
 	virtual qpid::framing::OutputHandler* getOutputHandler();
-	virtual void send(qpid::framing::AMQFrame* frame);
+	virtual void send(qpid::framing::AMQDataBlock* frame);
         virtual void setReadTimeout(u_int16_t timeout);
         virtual void setWriteTimeout(u_int16_t timeout);
     };

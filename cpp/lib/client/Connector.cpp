@@ -78,7 +78,7 @@ OutputHandler* Connector::getOutputHandler(){
     return this; 
 }
 
-void Connector::send(AMQFrame* frame){
+void Connector::send(AMQDataBlock* frame){
     writeBlock(frame);    
     if(debug) std::cout << "SENT: " << *frame << std::endl; 
     delete frame;

@@ -24,7 +24,6 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -37,7 +36,6 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 
 import java.util.LinkedList;
@@ -77,7 +75,7 @@ public class AckTest extends TestCase
         super.setUp();
         _messageStore = new TestableMemoryMessageStore();
         _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession,5, _messageStore, null/*dont need exchange registry*/);
+        _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
@@ -105,6 +103,11 @@ public class AckTest extends TestCase
                 public AMQShortString getExchange()
                 {
                     return new AMQShortString("someExchange");
+                }
+
+                public void setExchange(AMQShortString exchange)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public boolean isImmediate()

@@ -457,7 +457,7 @@ namespace Apache.Qpid.Client
                 foreach (BasicMessageConsumer consumer  in _consumers.Values)
                 {
                     // Sends acknowledgement to server.
-                    consumer.AcknowledgeLastDelivered();
+                    consumer.AcknowledgeDelivered();
                 }
 
                 // Commits outstanding messages sent and outstanding acknowledgements.
@@ -485,13 +485,16 @@ namespace Apache.Qpid.Client
                     {
                         Suspend(true);
                     }
-                 
-                    // todo: rollback dispatcher when TX support is added
-                    //if ( _dispatcher != null )
-                    //   _dispatcher.Rollback();
 
-                    _connection.ConvenientProtocolWriter.SyncWrite(
-                                                                   TxRollbackBody.CreateAMQFrame(_channelId), typeof(TxRollbackOkBody));
+                    // Reject up to message last delivered (if any) for each consumer.
+                    // Need to send reject for messages delivered to consumers so far.
+                    foreach (BasicMessageConsumer consumer  in _consumers.Values)
+                    {
+                        // Sends acknowledgement to server.
+                        consumer.RejectUnacked();
+                    }
+
+                    _connection.ConvenientProtocolWriter.SyncWrite(TxRollbackBody.CreateAMQFrame(_channelId), typeof(TxRollbackOkBody));
 
                     if ( !suspended )
                     {
@@ -1012,6 +1015,15 @@ namespace Apache.Qpid.Client
             _connection.ProtocolWriter.Write(ackFrame);
         }
 
+        public void RejectMessage(ulong deliveryTag, bool requeue)
+        {
+            if ((_acknowledgeMode == AcknowledgeMode.ClientAcknowledge) || (_acknowledgeMode == AcknowledgeMode.SessionTransacted))
+            {
+                AMQFrame rejectFrame = BasicRejectBody.CreateAMQFrame(_channelId, deliveryTag, requeue);
+                _connection.ProtocolWriter.Write(rejectFrame);
+            }
+        }
+        
         /// <summary>
         /// Handle a message that bounced from the server, creating
         /// the corresponding exception and notifying the connection about it
@@ -1104,8 +1116,8 @@ namespace Apache.Qpid.Client
         /// Placing stop check after consume may also be wrong as it may cause a message to be thrown away. Seems more correct to use interupt on 
         /// the block thread to cause it to prematurely return from its wait, whereupon it can be made to re-check the stop flag.</remarks>
         ///
-        /// <remarks>Exception swalled, if there is an exception whilst notifying the connection on bounced messages. Unhandled excetpion should
-        /// fall through and termiante the loop, as it is a bug if it occurrs.</remarks>
+        /// <remarks>Exception swallowed, if there is an exception whilst notifying the connection on bounced messages. Unhandled excetpion should
+        /// fall through and terminate the loop, as it is a bug if it occurrs.</remarks>
         private class Dispatcher
         {            
             /// <summary> Flag used to indicate when this dispatcher is to be stopped (0=go, 1=stop). </summary>

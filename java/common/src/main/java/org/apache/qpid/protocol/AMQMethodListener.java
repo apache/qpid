@@ -21,6 +21,7 @@
 package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.AMQException;
 
 /**
  * AMQMethodListener is a listener that receives notifications of AMQP methods. The methods are packaged as events in
@@ -57,7 +58,7 @@ public interface AMQMethodListener
      *
      * @todo Consider narrowing the exception.
      */
-    <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws Exception;
+    <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException;
 
     /**
      * Notifies the listener of an error on the event context to which it is listening. The listener should perform

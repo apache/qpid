@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,8 +39,8 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.access.AccessManager;
-import org.apache.qpid.server.security.access.AccessManagerImpl;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.AMQException;
@@ -52,14 +52,11 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     private AuthenticationManager _authenticationManager;
 
-    private AccessManager _accessManager;
+    private ACLPlugin _accessManager;
 
     private PrincipalDatabaseManager _databaseManager;
 
     private VirtualHostRegistry _virtualHostRegistry;
-
-
-    private final Map<String, VirtualHost> _virtualHosts = new ConcurrentHashMap<String, VirtualHost>();
 
     private PluginManager _pluginManager;
 
@@ -110,9 +107,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _virtualHostRegistry = new VirtualHostRegistry();
 
-        _accessManager = new AccessManagerImpl("default", _configuration);
+        _accessManager = ACLManager.loadACLManager("default", _configuration);
 
-        _databaseManager = new ConfigurationFilePrincipalDatabaseManager();
+        _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
@@ -121,7 +118,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         _managedObjectRegistry.start();
 
         _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
-        
+
         initialiseVirtualHosts();
 
     }
@@ -154,7 +151,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public AccessManager getAccessManager()
+    public ACLPlugin getAccessManager()
     {
         return _accessManager;
     }
@@ -178,7 +175,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         return getConfiguration().getList("virtualhosts.virtualhost.name");
     }
-    
+
     public PluginManager getPluginManager()
     {
         return _pluginManager;

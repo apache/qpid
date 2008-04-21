@@ -1,21 +1,21 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.framing;
@@ -437,6 +437,60 @@ public class PropertyFieldTableTest extends TestCase
         table1.setObject("value", "Hello");
         // Check that it was set correctly
         Assert.assertEquals("Hello", table1.getString("value"));
+    }
+
+    /** Check that a nested field table parameter correctly encodes and decodes to a byte buffer. */
+    public void testNestedFieldTable()
+    {
+        byte[] testBytes = new byte[] { 0, 1, 2, 3, 4, 5 };
+
+        FieldTable outerTable = new FieldTable();
+        FieldTable innerTable = new FieldTable();
+
+        // Put some stuff in the inner table.
+        innerTable.setBoolean("bool", true);
+        innerTable.setByte("byte", Byte.MAX_VALUE);
+        innerTable.setBytes("bytes", testBytes);
+        innerTable.setChar("char", 'c');
+        innerTable.setDouble("double", Double.MAX_VALUE);
+        innerTable.setFloat("float", Float.MAX_VALUE);
+        innerTable.setInteger("int", Integer.MAX_VALUE);
+        innerTable.setLong("long", Long.MAX_VALUE);
+        innerTable.setShort("short", Short.MAX_VALUE);
+        innerTable.setString("string", "hello");
+        innerTable.setString("null-string", null);
+
+        // Put the inner table in the outer one.
+        outerTable.setFieldTable("innerTable", innerTable);
+
+        // Write the outer table into the buffer.
+        final ByteBuffer buffer = ByteBuffer.allocate((int) outerTable.getEncodedSize() + 4);
+        outerTable.writeToBuffer(buffer);
+        buffer.flip();
+
+        // Extract the table back from the buffer again.
+        try
+        {
+            FieldTable extractedOuterTable = EncodingUtils.readFieldTable(buffer);
+
+            FieldTable extractedTable = extractedOuterTable.getFieldTable("innerTable");
+
+            Assert.assertEquals((Boolean) true, extractedTable.getBoolean("bool"));
+            Assert.assertEquals((Byte) Byte.MAX_VALUE, extractedTable.getByte("byte"));
+            assertBytesEqual(testBytes, extractedTable.getBytes("bytes"));
+            Assert.assertEquals((Character) 'c', extractedTable.getCharacter("char"));
+            Assert.assertEquals(Double.MAX_VALUE, extractedTable.getDouble("double"));
+            Assert.assertEquals(Float.MAX_VALUE, extractedTable.getFloat("float"));
+            Assert.assertEquals((Integer) Integer.MAX_VALUE, extractedTable.getInteger("int"));
+            Assert.assertEquals((Long) Long.MAX_VALUE, extractedTable.getLong("long"));
+            Assert.assertEquals((Short) Short.MAX_VALUE, extractedTable.getShort("short"));
+            Assert.assertEquals("hello", extractedTable.getString("string"));
+            Assert.assertEquals(null, extractedTable.getString("null-string"));
+        }
+        catch (AMQFrameDecodingException e)
+        {
+            fail("Failed to decode field table with nested inner table.");
+        }
     }
 
     public void testValues()

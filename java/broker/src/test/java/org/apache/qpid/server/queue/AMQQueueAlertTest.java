@@ -173,7 +173,7 @@ public class AMQQueueAlertTest extends TestCase
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
         protocolSession = new TestMinaProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 2, _messageStore, null);
+        AMQChannel channel = new AMQChannel(protocolSession, 2, _messageStore);
         protocolSession.addChannel(channel);
 
         // Create queue
@@ -240,6 +240,11 @@ public class AMQQueueAlertTest extends TestCase
             public AMQShortString getExchange()
             {
                 return null;
+            }
+
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public boolean isImmediate()

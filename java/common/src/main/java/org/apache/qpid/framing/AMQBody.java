@@ -21,6 +21,8 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
 public interface AMQBody
 {
@@ -34,6 +36,5 @@ public interface AMQBody
     
     public void writePayload(ByteBuffer buffer);
     
-    //public void populateFromBuffer(ByteBuffer buffer, long size)
-    //    throws AMQFrameDecodingException, AMQProtocolVersionException;        
+    void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession) throws AMQException;
 }

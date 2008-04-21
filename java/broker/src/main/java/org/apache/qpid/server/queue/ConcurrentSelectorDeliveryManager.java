@@ -212,6 +212,30 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
+    /**
+     *  NOTE : This method should only be called when there are no active subscribers
+     */
+    public void removeExpired() throws AMQException
+    {
+        _lock.lock();
+
+
+	    for(Iterator<QueueEntry> iter = _messages.iterator(); iter.hasNext();)
+        {
+            QueueEntry entry = iter.next();
+            if(entry.expired())
+            {
+                // fixme: Currently we have to update the total byte size here for the data in the queue  
+                _totalMessageSize.addAndGet(-entry.getSize());
+                _queue.dequeue(_reapingStoreContext,entry);
+                iter.remove();
+            }
+	    }
+
+
+        _lock.unlock();
+    }
+
     /** @return the state of the async processor. */
     public boolean isProcessingAsync()
     {
@@ -278,9 +302,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void populatePreDeliveryQueue(Subscription subscription)
     {
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace("Populating PreDeliveryQueue for Subscription(" + System.identityHashCode(subscription) + ")");
+            _log.debug("Populating PreDeliveryQueue for Subscription(" + System.identityHashCode(subscription) + ")");
         }
 
         Iterator<QueueEntry> currentQueue = _messages.iterator();
@@ -289,13 +313,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             QueueEntry entry = currentQueue.next();
 
-            if (!entry.getDeliveredToConsumer())
+            if (subscription.hasInterest(entry))
             {
-                if (subscription.hasInterest(entry))
-                {
-                    subscription.enqueueForPreDelivery(entry, false);
-                }
+                subscription.enqueueForPreDelivery(entry, false);
             }
+
         }
     }
 
@@ -339,8 +361,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                     protocolSession.getProtocolOutputConverter().writeGetOk(entry.getMessage(), channel.getChannelId(),
                                                                             deliveryTag, _queue.getMessageCount());
-                    _totalMessageSize.addAndGet(-entry.getSize());
+
                 }
+                _totalMessageSize.addAndGet(-entry.getSize());
 
                 if (!acks)
                 {
@@ -484,9 +507,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         while (purgeMessage(entry, sub, purgeOnly))
         {
             AMQMessage message = entry.getMessage();
-            // if we are purging then ensure we mark this message taken for the current subscriber
-            // the current subscriber may be null in the case of a get or a purge but this is ok.
-//            boolean alreadyTaken = message.taken(_queue, sub);
 
             //remove the already taken message or expired
             QueueEntry removed = messages.poll();
@@ -494,7 +514,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             assert removed == entry;
 
             // if the message expired then the _totalMessageSize needs adjusting
-            if (message.expired(_queue) && !entry.getDeliveredToConsumer())
+            if (message.expired(_queue) && !entry.taken(sub))
             {
                 _totalMessageSize.addAndGet(-entry.getSize());
 
@@ -512,9 +532,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             //else the clean up is not required as the message has already been taken for this queue therefore
             // it was the responsibility of the code that took the message to ensure the _totalMessageSize was updated.
 
-            if (_log.isTraceEnabled())
+            if (_log.isDebugEnabled())
             {
-                _log.trace("Removed taken message:" + message.debugIdentity());
+                _log.debug("Removed taken message:" + message.debugIdentity());
             }
 
             // try the next message
@@ -610,9 +630,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         Queue<QueueEntry> messageQueue = sub.getNextQueue(_messages);
 
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace(debugIdentity() + "Async sendNextMessage for sub (" + System.identityHashCode(sub) +
+            _log.debug(debugIdentity() + "Async sendNextMessage for sub (" + System.identityHashCode(sub) +
                        ") from queue (" + System.identityHashCode(messageQueue) +
                        ") AMQQueue (" + System.identityHashCode(queue) + ")");
         }
@@ -638,9 +658,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 // message will be null if we have no messages in the messageQueue.
                 if (entry == null)
                 {
-                    if (_log.isTraceEnabled())
+                    if (_log.isDebugEnabled())
                     {
-                        _log.trace(debugIdentity() + "No messages for Subscriber(" + System.identityHashCode(sub) + ") from queue; (" + System.identityHashCode(messageQueue) + ")");
+                        _log.debug(debugIdentity() + "No messages for Subscriber(" + System.identityHashCode(sub) + ") from queue; (" + System.identityHashCode(messageQueue) + ")");
                     }
                     return;
                 }
@@ -680,9 +700,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (messageQueue == sub.getResendQueue())
             {
-                if (_log.isTraceEnabled())
+                if (_log.isDebugEnabled())
                 {
-                    _log.trace(debugIdentity() + "All messages sent from resendQueue for " + sub);
+                    _log.debug(debugIdentity() + "All messages sent from resendQueue for " + sub);
                 }
                 if (messageQueue.isEmpty())
                 {
@@ -842,17 +862,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     for (Subscription sub : _subscriptions.getSubscriptions())
                     {
 
-                        // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
-                        if (_queue.isShared() && entry.getDeliveredToConsumer())
-                        {
-                            if (debugEnabled)
-                            {
-                                _log.debug(debugIdentity() + "Stopping PreDelivery as message(" + System.identityHashCode(entry) +
-                                           ") is already delivered.");
-                            }
-                            continue;
-                        }
-
                         // Only give the message to those that want them.
                         if (sub.hasInterest(entry))
                         {
@@ -894,9 +903,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     if (!s.isSuspended())
                     {
-                        if (_log.isTraceEnabled())
+                        if (debugEnabled)
                         {
-                            _log.trace(debugIdentity() + "Delivering Message:" + entry.getMessage().debugIdentity() + " to(" +
+                            _log.debug(debugIdentity() + "Delivering Message:" + entry.getMessage().debugIdentity() + " to(" +
                                        System.identityHashCode(s) + ") :" + s);
                         }
 

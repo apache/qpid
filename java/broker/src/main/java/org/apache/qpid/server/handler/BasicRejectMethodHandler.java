@@ -100,9 +100,9 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             }
 
 
-            if (_logger.isTraceEnabled())
+            if (_logger.isDebugEnabled())
             {
-                _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.getMessage().debugIdentity() +
+                _logger.debug("Rejecting: DT:" + deliveryTag + "-" + message.getMessage().debugIdentity() +
                               ": Requeue:" + body.getRequeue() +
                               //": Resend:" + evt.getMethod().resend +
                               " on channel:" + channel.debugIdentity());

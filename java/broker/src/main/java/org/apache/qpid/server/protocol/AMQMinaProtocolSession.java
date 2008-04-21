@@ -109,7 +109,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
-    private List<Integer> _closingChannelsList = new ArrayList<Integer>();
+    private List<Integer> _closingChannelsList = new CopyOnWriteArrayList<Integer>();
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
@@ -138,11 +138,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         catch (RuntimeException e)
         {
             e.printStackTrace();
-            // throw e;
+            throw e;
 
         }
-
-        // this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
@@ -209,26 +207,39 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             _logger.debug("Frame Received: " + frame);
         }
 
-        if (body instanceof AMQMethodBody)
+        // Check that this channel is not closing
+        if (channelAwaitingClosure(channelId))
         {
-            methodFrameReceived(channelId, (AMQMethodBody) body);
+            if ((frame.getBodyFrame() instanceof ChannelCloseOkBody))
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
+                }
+            }
+            else
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
+                }
+
+                return;
+            }
         }
-        else if (body instanceof ContentHeaderBody)
+
+
+
+        try
         {
-            contentHeaderReceived(channelId, (ContentHeaderBody) body);
+            body.handle(channelId, this);
         }
-        else if (body instanceof ContentBody)
+        catch (AMQException e)
         {
-            contentBodyReceived(channelId, (ContentBody) body);
+            closeChannel(channelId);
+            throw e;
         }
-        else if (body instanceof HeartbeatBody)
-        {
-            // NO OP
-        }
-        else
-        {
-            _logger.warn("Unrecognised frame " + frame.getClass().getName());
-        }
+
     }
 
     private void protocolInitiationReceived(ProtocolInitiation pi)
@@ -271,31 +282,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    private void methodFrameReceived(int channelId, AMQMethodBody methodBody)
+    public void methodFrameReceived(int channelId, AMQMethodBody methodBody)
     {
 
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(channelId, methodBody);
-
-        // Check that this channel is not closing
-        if (channelAwaitingClosure(channelId))
-        {
-            if ((evt.getMethod() instanceof ChannelCloseOkBody))
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
-                }
-            }
-            else
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
-                }
-
-                return;
-            }
-        }
 
         try
         {
@@ -358,6 +348,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                     _logger.info("Closing connection due to: " + e.getMessage());
                 }
 
+                markChannelAwaitingCloseOk(channelId);
                 closeSession();
                 _stateManager.changeState(AMQState.CONNECTION_CLOSING);
                 writeFrame(e.getCloseFrame(channelId));
@@ -365,17 +356,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
         catch (Exception e)
         {
-            _stateManager.error(e);
+
             for (AMQMethodListener listener : _frameListeners)
             {
                 listener.error(e);
             }
 
+            _logger.error("Unexpected exception while processing frame.  Closing connection.", e);
+
             _minaProtocolSession.close();
         }
     }
 
-    private void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
+    public void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
     {
 
         AMQChannel channel = getAndAssertChannel(channelId);
@@ -384,11 +377,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     }
 
-    private void contentBodyReceived(int channelId, ContentBody body) throws AMQException
+    public void contentBodyReceived(int channelId, ContentBody body) throws AMQException
     {
         AMQChannel channel = getAndAssertChannel(channelId);
 
         channel.publishContentBody(body, this);
+    }
+
+    public void heartbeatBodyReceived(int channelId, HeartbeatBody body)
+    {
+        // NO - OP
     }
 
     /**
@@ -539,7 +537,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             try
             {
                 channel.close(this);
-                markChannelawaitingCloseOk(channelId);
+                markChannelAwaitingCloseOk(channelId);
             }
             finally
             {
@@ -550,11 +548,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public void closeChannelOk(int channelId)
     {
-        removeChannel(channelId);
+        // todo QPID-847 - This is called from two lcoations ChannelCloseHandler and ChannelCloseOkHandler.
+        // When it is the CC_OK_Handler then it makes sence to remove the channel else we will leak memory.
+        // We do it from the Close Handler as we are sending the OK back to the client.
+        // While this is AMQP spec compliant. The Java client in the event of an IllegalArgumentException
+        // will send a close-ok.. Where we should call removeChannel.
+        // However, due to the poor exception handling on the client. The client-user will be notified of the
+        // InvalidArgument and if they then decide to close the session/connection then the there will be time
+        // for that to occur i.e. a new close method be sent before the exeption handling can mark the session closed.
+        //removeChannel(channelId);
         _closingChannelsList.remove(new Integer(channelId));
     }
 
-    private void markChannelawaitingCloseOk(int channelId)
+    private void markChannelAwaitingCloseOk(int channelId)
     {
         _closingChannelsList.add(channelId);
     }

@@ -49,6 +49,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary>Defines the maximum time in milliseconds, to wait for redelivery to occurr.</summary>
         public const int TIMEOUT = 1000;
 
+        /// <summary>Defines the name of the routing key to use with the tests.</summary>
+        public const string TEST_ROUTING_KEY = "unboundkey";
+
         /// <summary>Condition used to coordinate receipt of redelivery exception to the sending thread.</summary>
         private ManualResetEvent errorEvent;
 
@@ -66,29 +69,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             base.Init();
 
-            _connection = new AMQConnection(connectionInfo);
-            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
-
             errorEvent = new ManualResetEvent(false);
             lastErrorException = null;
-            _connection.ExceptionListener = new ExceptionListenerDelegate(OnException);
-
-            _connection.Start();
         }
 
         [TearDown]
         public override void Shutdown()
         {
-            try
-            {
-              _connection.Stop();
-              _connection.Close();
-              _connection.Dispose();
-            } 
-            finally 
-            {
-                base.Shutdown();
-            }
+            base.Shutdown();
         }
         
         /// <summary>
@@ -100,12 +88,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             lastErrorException = e;
             errorEvent.Set();
-        }
-        
-        [Test]
-        public void SendUndeliverableMessageOnDefaultExchange()
-        {
-            SendOne(null);
         }
         
         [Test]
@@ -135,19 +117,21 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private void SendOne(string exchangeName)
         {
             log.Debug("private void SendOne(string exchangeName = " + exchangeName + "): called");
-            
+
             // Send a test message to a unbound key on the specified exchange.
-            MessagePublisherBuilder builder = _channel.CreatePublisherBuilder()
-                .WithRoutingKey("unboundkey")
-                .WithMandatory(true);
+            SetUpEndPoint(0, false, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, exchangeName,
+                          true, false, null);            
+            testProducer[0] = testChannel[0].CreatePublisherBuilder()
+                .WithRoutingKey(TEST_ROUTING_KEY + testId)
+                .WithMandatory(true)
+                .WithExchangeName(exchangeName)
+                .Create();
 
-            if ( exchangeName != null )
-            {
-                builder.WithExchangeName(exchangeName);
-            }
+            // Set up the exception listener on the connection.
+            testConnection[0].ExceptionListener = new ExceptionListenerDelegate(OnException);
 
-            IMessagePublisher publisher = builder.Create();
-            publisher.Send(_channel.CreateTextMessage("Test Message"));
+            // Send message that should fail.
+            testProducer[0].Send(testChannel[0].CreateTextMessage("Test Message"));
             
             // Wait for up to the timeout for a redelivery exception to be returned.
             errorEvent.WaitOne(TIMEOUT, true);
@@ -158,6 +142,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             Assert.IsNotNull(ex, "No exception was thrown by the test. Expected " + expectedException);
             Assert.IsInstanceOfType(expectedException, ex.InnerException);
+
+            CloseEndPoint(0);
         }
     }
 }

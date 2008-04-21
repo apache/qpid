@@ -32,11 +32,11 @@ import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
-import uk.co.thebadgerset.junit.extensions.TestThreadAware;
-import uk.co.thebadgerset.junit.extensions.TimingController;
-import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.TestThreadAware;
+import org.apache.qpid.junit.extensions.TimingController;
+import org.apache.qpid.junit.extensions.TimingControllerAware;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import java.util.LinkedList;
 
@@ -107,7 +107,7 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     }
 
     /**
-     * Used by test runners that can supply a {@link uk.co.thebadgerset.junit.extensions.TimingController} to set the
+     * Used by test runners that can supply a {@link org.apache.qpid.junit.extensions.TimingController} to set the
      * controller on an aware test.
      *
      * @param controller The timing controller.

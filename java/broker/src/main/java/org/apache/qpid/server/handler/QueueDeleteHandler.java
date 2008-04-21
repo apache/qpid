@@ -34,6 +34,7 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.security.access.Permission;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -103,6 +104,10 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             }
             else
             {
+
+                //Perform ACLs
+                virtualHost.getAccessManager().authorise(session, Permission.DELETE, body, queue);
+
                 int purged = queue.delete(body.getIfUnused(), body.getIfEmpty());
 
                 if (queue.isDurable())

@@ -7,6 +7,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.log4j.Logger;
 
 import javax.jms.Connection;
@@ -49,7 +50,6 @@ public class FailoverTest extends TestCase implements ConnectionListener
 
             TransportConnection.createVMBroker(usedBrokers);
         }
-        //undo last addition
 
         conFactory = new AMQConnectionFactory(String.format(BROKER, usedBrokers - 1, usedBrokers));
         _logger.info("Connecting on:" + conFactory.getConnectionURL());
@@ -195,6 +195,20 @@ public class FailoverTest extends TestCase implements ConnectionListener
             failure = e;
         }
         assertNotNull("Exception should be thrown", failure);
+    }
+
+    // This test disabled so that it doesn't add 4 minnutes to the length of time it takes to run, which would be lame
+    public void txest4MinuteFailover() throws Exception
+    {
+        conFactory = new AMQConnectionFactory("amqp://guest:guest@/test?brokerlist='vm://:"+(usedBrokers-1)+"?connectdelay='60000'&retries='2''");
+        _logger.info("Connecting on:" + conFactory.getConnectionURL());
+        con = conFactory.createConnection();
+        ((AMQConnection) con).setConnectionListener(this);
+        con.start();
+
+        long failTime = System.currentTimeMillis() + 60000;
+        causeFailure();
+        assertTrue("Failover did not take long enough", System.currentTimeMillis() > failTime);
     }
 
     public void bytesSent(long count)

@@ -29,9 +29,9 @@ public enum NotificationCheck
     {
         boolean notifyIfNecessary(AMQMessage msg, AMQQueue queue, QueueNotificationListener listener)
         {
-            int msgCount = queue.getMessageCount();
+            int msgCount;
             final long maximumMessageCount = queue.getMaximumMessageCount();
-            if (maximumMessageCount!= 0 && msgCount >= maximumMessageCount)
+            if (maximumMessageCount!= 0 && (msgCount =  queue.getMessageCount()) >= maximumMessageCount)
             {
                 listener.notifyClients(this, queue, msgCount + ": Maximum count on queue threshold ("+ maximumMessageCount +") breached.");
                 return true;

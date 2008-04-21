@@ -26,6 +26,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortStringTokenizer;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -40,11 +41,7 @@ import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -84,12 +81,21 @@ public class DestWildExchange extends AbstractExchange
 
     private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
 
-    private ConcurrentHashMap<AMQShortString, List<AMQQueue>> _routingKey2queues =
+    private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _bindingKey2queues =
             new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
-    // private ConcurrentHashMap<AMQShortString, AMQQueue> _routingKey2queue = new ConcurrentHashMap<AMQShortString, AMQQueue>();
-    private static final String TOPIC_SEPARATOR = ".";
-    private static final String AMQP_STAR = "*";
-    private static final String AMQP_HASH = "#";
+    private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _simpleBindingKey2queues =
+            new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
+    private final ConcurrentHashMap<AMQShortString, List<AMQQueue>> _wildCardBindingKey2queues =
+            new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
+
+    private static final byte TOPIC_SEPARATOR = (byte)'.';
+    private static final AMQShortString TOPIC_SEPARATOR_AS_SHORTSTRING = new AMQShortString(".");
+    private static final AMQShortString AMQP_STAR_TOKEN = new AMQShortString("*");
+    private static final AMQShortString AMQP_HASH_TOKEN = new AMQShortString("#");
+    private ConcurrentHashMap<AMQShortString, AMQShortString[]> _bindingKey2Tokenized =
+            new ConcurrentHashMap<AMQShortString, AMQShortString[]>();
+    private static final byte HASH_BYTE = (byte)'#';
+    private static final byte STAR_BYTE = (byte)'*';
 
     /** DestWildExchangeMBean class implements the management interface for the Topic exchanges. */
     @MBeanDescription("Management Bean for Topic Exchange")
@@ -107,7 +113,7 @@ public class DestWildExchange extends AbstractExchange
         public TabularData bindings() throws OpenDataException
         {
             _bindingList = new TabularDataSupport(_bindinglistDataType);
-            for (Map.Entry<AMQShortString, List<AMQQueue>> entry : _routingKey2queues.entrySet())
+            for (Map.Entry<AMQShortString, List<AMQQueue>> entry : _bindingKey2queues.entrySet())
             {
                 AMQShortString key = entry.getKey();
                 List<String> queueList = new ArrayList<String>();
@@ -156,26 +162,74 @@ public class DestWildExchange extends AbstractExchange
         assert queue != null;
         assert rKey != null;
 
-        AMQShortString routingKey = normalize(rKey);
+        _logger.debug("Registering queue " + queue.getName() + " with routing key " + rKey);
 
-        _logger.debug("Registering queue " + queue.getName() + " with routing key " + routingKey);
         // we need to use putIfAbsent, which is an atomic operation, to avoid a race condition
-        List<AMQQueue> queueList = _routingKey2queues.putIfAbsent(routingKey, new CopyOnWriteArrayList<AMQQueue>());
+        List<AMQQueue> queueList = _bindingKey2queues.putIfAbsent(rKey, new CopyOnWriteArrayList<AMQQueue>());
+
+
+
+
+
+
+
         // if we got null back, no previous value was associated with the specified routing key hence
         // we need to read back the new value just put into the map
         if (queueList == null)
         {
-            queueList = _routingKey2queues.get(routingKey);
+            queueList = _bindingKey2queues.get(rKey);
         }
+
+
 
         if (!queueList.contains(queue))
         {
             queueList.add(queue);
+
+
+            if(rKey.contains(HASH_BYTE) || rKey.contains(STAR_BYTE))
+            {
+                AMQShortString routingKey = normalize(rKey);
+                List<AMQQueue> queueList2 = _wildCardBindingKey2queues.putIfAbsent(routingKey, new CopyOnWriteArrayList<AMQQueue>());
+
+                if(queueList2 == null)
+                {
+                    queueList2 = _wildCardBindingKey2queues.get(routingKey);
+                    AMQShortStringTokenizer keyTok = routingKey.tokenize(TOPIC_SEPARATOR);
+
+                    ArrayList<AMQShortString> keyTokList = new ArrayList<AMQShortString>(keyTok.countTokens());
+
+                    while (keyTok.hasMoreTokens())
+                    {
+                        keyTokList.add(keyTok.nextToken());
+                    }
+
+                    _bindingKey2Tokenized.put(routingKey, keyTokList.toArray(new AMQShortString[keyTokList.size()]));
+                }
+                queueList2.add(queue);
+
+            }
+            else
+            {
+                List<AMQQueue> queueList2 = _simpleBindingKey2queues.putIfAbsent(rKey, new CopyOnWriteArrayList<AMQQueue>());
+                if(queueList2 == null)
+                {
+                    queueList2 = _simpleBindingKey2queues.get(rKey);
+                }
+                queueList2.add(queue);
+
+            }
+
+
+
+
         }
         else if (_logger.isDebugEnabled())
         {
-            _logger.debug("Queue " + queue + " is already registered with routing key " + routingKey);
+            _logger.debug("Queue " + queue + " is already registered with routing key " + rKey);
         }
+
+
 
     }
 
@@ -186,60 +240,55 @@ public class DestWildExchange extends AbstractExchange
             routingKey = AMQShortString.EMPTY_STRING;
         }
         
-        StringTokenizer routingTokens = new StringTokenizer(routingKey.toString(), TOPIC_SEPARATOR);
-        List<String> _subscription = new ArrayList<String>();
+        AMQShortStringTokenizer routingTokens = routingKey.tokenize(TOPIC_SEPARATOR);
+
+        List<AMQShortString> subscriptionList = new ArrayList<AMQShortString>();
 
         while (routingTokens.hasMoreTokens())
         {
-            _subscription.add(routingTokens.nextToken());
+            subscriptionList.add(routingTokens.nextToken());
         }
 
-        int size = _subscription.size();
+        int size = subscriptionList.size();
 
         for (int index = 0; index < size; index++)
         {
             // if there are more levels
             if ((index + 1) < size)
             {
-                if (_subscription.get(index).equals(AMQP_HASH))
+                if (subscriptionList.get(index).equals(AMQP_HASH_TOKEN))
                 {
-                    if (_subscription.get(index + 1).equals(AMQP_HASH))
+                    if (subscriptionList.get(index + 1).equals(AMQP_HASH_TOKEN))
                     {
                         // we don't need #.# delete this one
-                        _subscription.remove(index);
+                        subscriptionList.remove(index);
                         size--;
                         // redo this normalisation
                         index--;
                     }
 
-                    if (_subscription.get(index + 1).equals(AMQP_STAR))
+                    if (subscriptionList.get(index + 1).equals(AMQP_STAR_TOKEN))
                     {
                         // we don't want #.* swap to *.#
                         // remove it and put it in at index + 1
-                        _subscription.add(index + 1, _subscription.remove(index));
+                        subscriptionList.add(index + 1, subscriptionList.remove(index));
                     }
                 }
             } // if we have more levels
         }
 
-        StringBuilder sb = new StringBuilder();
 
-        for (String s : _subscription)
-        {
-            sb.append(s);
-            sb.append(TOPIC_SEPARATOR);
-        }
 
-        sb.deleteCharAt(sb.length() - 1);
+        AMQShortString normalizedString = AMQShortString.join(subscriptionList, TOPIC_SEPARATOR_AS_SHORTSTRING);
 
-        return new AMQShortString(sb.toString());
+        return normalizedString;
     }
 
     public void route(AMQMessage payload) throws AMQException
     {
         MessagePublishInfo info = payload.getMessagePublishInfo();
 
-        final AMQShortString routingKey = normalize(info.getRoutingKey());
+        final AMQShortString routingKey = info.getRoutingKey();
 
         List<AMQQueue> queues = getMatchedQueues(routingKey);
         // if we have no registered queues we have nothing to do
@@ -254,19 +303,14 @@ public class DestWildExchange extends AbstractExchange
             else
             {
                 _logger.warn("No queues found for routing key " + routingKey);
-                _logger.warn("Routing map contains: " + _routingKey2queues);
+                _logger.warn("Routing map contains: " + _bindingKey2queues);
 
                 return;
             }
         }
 
-        for (AMQQueue q : queues)
-        {
-            // TODO: modify code generator to add clone() method then clone the deliver body
-            // without this addition we have a race condition - we will be modifying the body
-            // before the encoder has encoded the body for delivery
-            payload.enqueue(q);
-        }
+        payload.enqueue(queues);
+
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
@@ -276,21 +320,21 @@ public class DestWildExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        List<AMQQueue> queues = _routingKey2queues.get(normalize(routingKey));
+        List<AMQQueue> queues = _bindingKey2queues.get(normalize(routingKey));
 
         return (queues != null) && queues.contains(queue);
     }
 
     public boolean isBound(AMQShortString routingKey)
     {
-        List<AMQQueue> queues = _routingKey2queues.get(normalize(routingKey));
+        List<AMQQueue> queues = _bindingKey2queues.get(normalize(routingKey));
 
         return (queues != null) && !queues.isEmpty();
     }
 
     public boolean isBound(AMQQueue queue)
     {
-        for (List<AMQQueue> queues : _routingKey2queues.values())
+        for (List<AMQQueue> queues : _bindingKey2queues.values())
         {
             if (queues.contains(queue))
             {
@@ -303,7 +347,7 @@ public class DestWildExchange extends AbstractExchange
 
     public boolean hasBindings()
     {
-        return !_routingKey2queues.isEmpty();
+        return !_bindingKey2queues.isEmpty();
     }
 
     public synchronized void deregisterQueue(AMQShortString rKey, AMQQueue queue, FieldTable args) throws AMQException
@@ -311,13 +355,11 @@ public class DestWildExchange extends AbstractExchange
         assert queue != null;
         assert rKey != null;
 
-        AMQShortString routingKey = normalize(rKey);
-
-        List<AMQQueue> queues = _routingKey2queues.get(routingKey);
+        List<AMQQueue> queues = _bindingKey2queues.get(rKey);
         if (queues == null)
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
-                                   + " with routing key " + routingKey + ". No queue was registered with that _routing key");
+                                   + " with routing key " + rKey + ". No queue was registered with that _routing key");
 
         }
 
@@ -325,12 +367,39 @@ public class DestWildExchange extends AbstractExchange
         if (!removedQ)
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
-                                   + " with routing key " + routingKey);
+                                   + " with routing key " + rKey);
         }
+
+
+        if(rKey.contains(HASH_BYTE) || rKey.contains(STAR_BYTE))
+        {
+            AMQShortString bindingKey = normalize(rKey);
+            List<AMQQueue> queues2 = _wildCardBindingKey2queues.get(bindingKey);
+            queues2.remove(queue);
+            if(queues2.isEmpty())
+            {
+                _wildCardBindingKey2queues.remove(bindingKey);
+                _bindingKey2Tokenized.remove(bindingKey);
+            }
+
+        }
+        else
+        {
+            List<AMQQueue> queues2 = _simpleBindingKey2queues.get(rKey);
+            queues2.remove(queue);
+            if(queues2.isEmpty())
+            {
+                _simpleBindingKey2queues.remove(rKey);
+            }
+
+        }
+
+
+
 
         if (queues.isEmpty())
         {
-            _routingKey2queues.remove(routingKey);
+            _bindingKey2queues.remove(rKey);
         }
     }
 
@@ -349,117 +418,162 @@ public class DestWildExchange extends AbstractExchange
 
     public Map<AMQShortString, List<AMQQueue>> getBindings()
     {
-        return _routingKey2queues;
+        return _bindingKey2queues;
     }
 
     private List<AMQQueue> getMatchedQueues(AMQShortString routingKey)
     {
-        List<AMQQueue> list = new LinkedList<AMQQueue>();
-        StringTokenizer routingTokens = new StringTokenizer(routingKey.toString(), TOPIC_SEPARATOR);
 
-        ArrayList<String> routingkeyList = new ArrayList<String>();
+        List<AMQQueue> list = null;
 
-        while (routingTokens.hasMoreTokens())
+        if(!_wildCardBindingKey2queues.isEmpty())
         {
-            String next = routingTokens.nextToken();
-            if (next.equals(AMQP_HASH) && routingkeyList.get(routingkeyList.size() - 1).equals(AMQP_HASH))
+
+
+            AMQShortStringTokenizer routingTokens = routingKey.tokenize(TOPIC_SEPARATOR);
+
+            final int routingTokensCount = routingTokens.countTokens();
+
+
+            AMQShortString[] routingkeyTokens = new AMQShortString[routingTokensCount];
+
+            if(routingTokensCount == 1)
             {
-                continue;
+                routingkeyTokens[0] =routingKey;
             }
-
-            routingkeyList.add(next);
-        }
-
-        for (AMQShortString queue : _routingKey2queues.keySet())
-        {
-            StringTokenizer queTok = new StringTokenizer(queue.toString(), TOPIC_SEPARATOR);
-
-            ArrayList<String> queueList = new ArrayList<String>();
-
-            while (queTok.hasMoreTokens())
+            else
             {
-                queueList.add(queTok.nextToken());
-            }
 
-            int depth = 0;
-            boolean matching = true;
-            boolean done = false;
-            int routingskip = 0;
-            int queueskip = 0;
 
-            while (matching && !done)
-            {
-                if ((queueList.size() == (depth + queueskip)) || (routingkeyList.size() == (depth + routingskip)))
+                int token = 0;
+                while (routingTokens.hasMoreTokens())
                 {
-                    done = true;
 
-                    // if it was the routing key that ran out of digits
-                    if (routingkeyList.size() == (depth + routingskip))
-                    {
-                        if (queueList.size() > (depth + queueskip))
-                        { // a hash and it is the last entry
-                            matching =
-                                    queueList.get(depth + queueskip).equals(AMQP_HASH)
-                                    && (queueList.size() == (depth + queueskip + 1));
-                        }
-                    }
-                    else if (routingkeyList.size() > (depth + routingskip))
-                    {
-                        // There is still more routing key to check
-                        matching = false;
-                    }
+                    AMQShortString next = routingTokens.nextToken();
 
-                    continue;
+                    routingkeyTokens[token++] = next;
                 }
+            }
+            for (AMQShortString bindingKey : _wildCardBindingKey2queues.keySet())
+            {
 
-                // if the values on the two topics don't match
-                if (!queueList.get(depth + queueskip).equals(routingkeyList.get(depth + routingskip)))
+                AMQShortString[] bindingKeyTokens = _bindingKey2Tokenized.get(bindingKey);
+
+
+                boolean matching = true;
+                boolean done = false;
+
+                int depthPlusRoutingSkip = 0;
+                int depthPlusQueueSkip = 0;
+
+                final int bindingKeyTokensCount = bindingKeyTokens.length;
+
+                while (matching && !done)
                 {
-                    if (queueList.get(depth + queueskip).equals(AMQP_STAR))
+
+                    if ((bindingKeyTokensCount == depthPlusQueueSkip) || (routingTokensCount == depthPlusRoutingSkip))
                     {
-                        depth++;
+                        done = true;
+
+                        // if it was the routing key that ran out of digits
+                        if (routingTokensCount == depthPlusRoutingSkip)
+                        {
+                            if (bindingKeyTokensCount > depthPlusQueueSkip)
+                            { // a hash and it is the last entry
+                                matching =
+                                        bindingKeyTokens[depthPlusQueueSkip].equals(AMQP_HASH_TOKEN)
+                                        && (bindingKeyTokensCount == (depthPlusQueueSkip + 1));
+                            }
+                        }
+                        else if (routingTokensCount > depthPlusRoutingSkip)
+                        {
+                            // There is still more routing key to check
+                            matching = false;
+                        }
 
                         continue;
                     }
-                    else if (queueList.get(depth + queueskip).equals(AMQP_HASH))
+
+                    // if the values on the two topics don't match
+                    if (!bindingKeyTokens[depthPlusQueueSkip].equals(routingkeyTokens[depthPlusRoutingSkip]))
                     {
-                        // Is this a # at the end
-                        if (queueList.size() == (depth + queueskip + 1))
+                        if (bindingKeyTokens[depthPlusQueueSkip].equals(AMQP_STAR_TOKEN))
                         {
-                            done = true;
+                            depthPlusQueueSkip++;
+                            depthPlusRoutingSkip++;
+
+                            continue;
+                        }
+                        else if (bindingKeyTokens[depthPlusQueueSkip].equals(AMQP_HASH_TOKEN))
+                        {
+                            // Is this a # at the end
+                            if (bindingKeyTokensCount == (depthPlusQueueSkip + 1))
+                            {
+                                done = true;
+
+                                continue;
+                            }
+
+                            // otherwise # in the middle
+                            while (routingTokensCount > depthPlusRoutingSkip)
+                            {
+                                if (routingkeyTokens[depthPlusRoutingSkip].equals(bindingKeyTokens[depthPlusQueueSkip + 1]))
+                                {
+                                    depthPlusQueueSkip += 2;
+                                    depthPlusRoutingSkip++;
+
+                                    break;
+                                }
+
+                                depthPlusRoutingSkip++;
+                            }
 
                             continue;
                         }
 
-                        // otherwise # in the middle
-                        while (routingkeyList.size() > (depth + routingskip))
-                        {
-                            if (routingkeyList.get(depth + routingskip).equals(queueList.get(depth + queueskip + 1)))
-                            {
-                                queueskip++;
-                                depth++;
-
-                                break;
-                            }
-
-                            routingskip++;
-                        }
-
-                        continue;
+                        matching = false;
                     }
 
-                    matching = false;
+                    depthPlusQueueSkip++;
+                    depthPlusRoutingSkip++;
                 }
 
-                depth++;
+                if (matching)
+                {
+                    if(list == null)
+                    {
+                        list = new ArrayList<AMQQueue>(_wildCardBindingKey2queues.get(bindingKey));
+                    }
+                    else
+                    {
+                        list.addAll(_wildCardBindingKey2queues.get(bindingKey));
+                    }
+                }
             }
 
-            if (matching)
+        }
+        if(!_simpleBindingKey2queues.isEmpty())
+        {
+            List<AMQQueue> queues = _simpleBindingKey2queues.get(routingKey);
+            if(list == null)
             {
-                list.addAll(_routingKey2queues.get(queue));
+                if(queues == null)
+                {
+                    list =  Collections.EMPTY_LIST;
+                }
+                else
+                {
+                    list = new ArrayList<AMQQueue>(queues);
+                }
             }
+            else if(queues != null)
+            {
+                list.addAll(queues);
+            }
+
         }
 
         return list;
+
     }
 }

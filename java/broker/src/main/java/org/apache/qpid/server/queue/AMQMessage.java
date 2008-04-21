@@ -35,6 +35,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.exchange.Exchange;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,12 +83,16 @@ public class AMQMessage
     private long _expiration;
 
 
-    private final int hashcode = System.identityHashCode(this);
+
+
+    private Exchange _exchange;
+    private static final boolean SYNCED_CLOCKS =
+            ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false);
 
 
     public String debugIdentity()
     {
-        return "(HC:" + hashcode + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
+        return "(HC:" + System.identityHashCode(this) + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
     }
 
     public void setExpiration()
@@ -97,7 +102,7 @@ public class AMQMessage
         long timestamp =
                 ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
 
-        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
+        if (SYNCED_CLOCKS)
         {
             _expiration = expiration;
         }
@@ -124,6 +129,21 @@ public class AMQMessage
     public boolean isReferenced()
     {
         return _referenceCount.get() > 0;
+    }
+
+    public void setExchange(final Exchange exchange)
+    {
+        _exchange = exchange;
+    }
+
+    public void route() throws AMQException
+    {
+        _exchange.route(this);
+    }
+
+    public void enqueue(final List<AMQQueue> queues)
+    {
+        _transientMessageData.setDestinationQueues(queues);
     }
 
     /**
@@ -637,8 +657,6 @@ public class AMQMessage
             // now that it has all been received, before we attempt delivery
             _txnContext.messageFullyReceived(isPersistent());
 
-            _transientMessageData = null;
-
             for (AMQQueue q : destinationQueues)
             {
                 // Increment the references to this message for each queue delivery.
@@ -649,7 +667,7 @@ public class AMQMessage
         }
         finally
         {
-            destinationQueues.clear();
+
             // Remove refence for routing process . Reference count should now == delivered queue count
             decrementReference(storeContext);
         }
@@ -687,10 +705,6 @@ public class AMQMessage
         _transientMessageData = transientMessageData;
     }
 
-    public void clearTransientMessageData()
-    {
-        _transientMessageData = null;
-    }
 
     public String toString()
     {

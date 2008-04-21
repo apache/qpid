@@ -23,6 +23,7 @@ package org.apache.qpid.client.transport;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
 import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
@@ -36,6 +37,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.net.Socket;
+
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up the underlying
@@ -54,12 +58,25 @@ public class TransportConnection
 
     private static final int TCP = 0;
     private static final int VM = 1;
+    private static final int SOCKET = 2;
 
     private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
 
-    public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
+    private static Map<String, Socket> _openSocketRegister = new ConcurrentHashMap<String, Socket>();
+
+    public static void registerOpenSocket(String socketID, Socket openSocket)
+    {
+        _openSocketRegister.put(socketID, openSocket);
+    }
+
+    public static Socket removeOpenSocket(String socketID)
+    {
+        return _openSocketRegister.remove(socketID);
+    }
+
+    public static synchronized ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
     {
         int transport = getTransport(details.getTransport());
 
@@ -68,7 +85,7 @@ public class TransportConnection
             throw new AMQNoTransportForProtocolException(details);
         }
 
-        if (transport == _currentInstance)
+       /* if (transport == _currentInstance)
         {
             if (transport == VM)
             {
@@ -83,19 +100,29 @@ public class TransportConnection
             }
         }
 
-        _currentInstance = transport;
+        _currentInstance = transport;*/
 
+        ITransportConnection instance;
         switch (transport)
         {
-
+            case SOCKET:
+                instance =
+                        new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                        {
+                            public IoConnector newSocketConnector()
+                            {
+                                return new ExistingSocketConnector();
+                            }
+                        });
+                break;
             case TCP:
-                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                 {
                     public IoConnector newSocketConnector()
                     {
                         SocketConnector result;
                         // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
+                        if (Boolean.getBoolean("qpidnio"))
                         {
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
                                                                  ? "Qpid NIO is new default"
@@ -117,16 +144,23 @@ public class TransportConnection
                 break;
             case VM:
             {
-                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
+                instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
                 break;
             }
+            default:
+                throw new AMQNoTransportForProtocolException(details);
         }
 
-        return _instance;
+        return instance;
     }
 
     private static int getTransport(String transport)
     {
+        if (transport.equals(BrokerDetails.SOCKET))
+        {
+            return SOCKET;
+        }
+
         if (transport.equals(BrokerDetails.TCP))
         {
             return TCP;
@@ -283,11 +317,14 @@ public class TransportConnection
     public static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
-        _acceptor.unbindAll();
+        if (_acceptor != null)
+        {
+        	_acceptor.unbindAll();
+        }
         synchronized (_inVmPipeAddress)
         {
             _inVmPipeAddress.clear();
-        }        
+        }
         _acceptor = null;
         _currentInstance = -1;
         _currentVMPort = -1;
@@ -302,6 +339,8 @@ public class TransportConnection
             {
                 _logger.info("Killing VM Broker:" + port);
                 _inVmPipeAddress.remove(port);
+                // This does need to be sychronized as otherwise mina can hang
+                // if a new connection is made
                 _acceptor.unbind(pipe);
             }
         }

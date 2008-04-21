@@ -96,7 +96,7 @@ void LFSessionContext::write(){
             if(!framesToWrite.empty()){
                 out.clear();
                 bool encoded(false);
-                AMQFrame* frame = framesToWrite.front();
+                AMQDataBlock* frame = framesToWrite.front();
                 while(frame && out.available() >= frame->size()){
                     encoded = true;
                     frame->encode(out);
@@ -120,7 +120,7 @@ void LFSessionContext::write(){
     }
 }
 
-void LFSessionContext::send(AMQFrame* frame){
+void LFSessionContext::send(AMQDataBlock* frame){
     Mutex::ScopedLock l(writeLock);
     if(!closing){
         framesToWrite.push(frame);
@@ -173,9 +173,9 @@ void LFSessionContext::init(SessionHandler* _handler){
     processor->add(&fd);
 }
 
-void LFSessionContext::log(const std::string& desc, AMQFrame* const frame){
+void LFSessionContext::log(const std::string& desc, AMQDataBlock* const block){
     Mutex::ScopedLock l(logLock);
-    std::cout << desc << " [" << &socket << "]: " << *frame << std::endl;
+    std::cout << desc << " [" << &socket << "]: " << *block << std::endl;
 }
 
 Mutex LFSessionContext::logLock;

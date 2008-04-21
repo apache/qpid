@@ -55,7 +55,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     JMSMapMessage(ByteBuffer data) throws JMSException
     {
         super(data); // this instantiates a content header
-        populateMapFromData();
+        if(data != null)
+        {
+            populateMapFromData();
+        }
+
     }
 
     JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange, AMQShortString routingKey,
@@ -76,7 +80,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public String toBodyString() throws JMSException
     {
-        return _map.toString();
+        return _map == null ? "" : _map.toString();
     }
 
     public AMQShortString getMimeTypeAsShortString()

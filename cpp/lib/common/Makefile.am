@@ -76,6 +76,7 @@ libqpidcommon_la_SOURCES =			\
   $(platform_src)				\
   $(framing)/AMQBody.cpp			\
   $(framing)/AMQContentBody.cpp			\
+  $(framing)/AMQDataBlock.cpp			\
   $(framing)/AMQFrame.cpp			\
   $(framing)/AMQHeaderBody.cpp			\
   $(framing)/AMQHeartbeatBody.cpp		\
@@ -84,6 +85,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/BodyHandler.cpp			\
   $(framing)/Buffer.cpp				\
   $(framing)/FieldTable.cpp			\
+  $(framing)/FrameList.cpp			\
   $(framing)/FramingContent.cpp			\
   $(framing)/InitiationHandler.cpp		\
   $(framing)/ProtocolInitiation.cpp		\
@@ -114,6 +116,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/BodyHandler.h			\
   $(framing)/Buffer.h				\
   $(framing)/FieldTable.h			\
+  $(framing)/FrameList.h			\
   $(framing)/FramingContent.h			\
   $(framing)/HeaderProperties.h			\
   $(framing)/InitiationHandler.h		\

@@ -45,8 +45,6 @@ public interface Subscription
 
     void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst);
 
-    boolean isAutoClose();
-
     void close();
 
     boolean isClosed();
@@ -60,4 +58,6 @@ public interface Subscription
     Object getSendLock();
 
     AMQChannel getChannel();
+
+    void start();
 }

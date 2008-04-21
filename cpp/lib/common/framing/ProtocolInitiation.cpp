@@ -19,6 +19,7 @@
  *
  */
 #include <ProtocolInitiation.h>
+#include <iostream>
 
 qpid::framing::ProtocolInitiation::ProtocolInitiation(){}
 
@@ -53,6 +54,11 @@ bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
     }else{
 	return false;
     }
+}
+
+void qpid::framing::ProtocolInitiation::print(std::ostream& out) const
+{
+    out << "AMQP(" << getMajor() << "-" << getMinor() << ")";
 }
 
 //TODO: this should prbably be generated from the spec at some point to keep the version numbers up to date

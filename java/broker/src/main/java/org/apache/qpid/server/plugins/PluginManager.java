@@ -21,7 +21,6 @@ package org.apache.qpid.server.plugins;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,6 @@ import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.cache.BundleCache;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.StringMap;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
@@ -72,7 +70,7 @@ public class PluginManager
                 "org.apache.qpid.server.queue; version=0.2.1," +
                 "javax.management.openmbean; version=1.0.0,"+
                 "javax.management; version=1.0.0,"+
-                "uk.co.thebadgerset.junit.extensions.util; version=0.6.1,"                
+                "org.apache.qpid.junit.extensions.util; version=0.6.1,"
                 );
         
         if (plugindir == null)

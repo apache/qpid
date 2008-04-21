@@ -172,6 +172,7 @@ TOKEN [IGNORE_CASE] :
 TOKEN [IGNORE_CASE] :
 {
     < ID : ["a"-"z", "_", "$"] (["a"-"z","0"-"9","_", "$"])* >
+    | < QUOTED_ID : "\"" ( ("\"\"") | ~["\""] )*  "\""  >
 }
 
 // ----------------------------------------------------------------------------
@@ -589,6 +590,7 @@ String stringLitteral() :
 PropertyExpression variable() :
 {
     Token t;
+    StringBuffer rc = new StringBuffer();
     PropertyExpression left=null;
 }
 {
@@ -597,6 +599,21 @@ PropertyExpression variable() :
         {
             left = new PropertyExpression(t.image);
         }
+        |
+        t = <QUOTED_ID>
+        {
+            // Decode the sting value.
+            String image = t.image;
+            for( int i=1; i < image.length()-1; i++ ) {
+                char c = image.charAt(i);
+                if( c == '"' )
+                    i++;
+                rc.append(c);
+            }
+            return new PropertyExpression(rc.toString());
+        }
+
+
     )
     {
         return left;

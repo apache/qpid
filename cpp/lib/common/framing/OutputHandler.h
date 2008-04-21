@@ -22,6 +22,7 @@
  *
  */
 #include <boost/noncopyable.hpp>
+#include <AMQDataBlock.h>
 #include <AMQFrame.h>
 
 namespace qpid {
@@ -30,7 +31,7 @@ namespace framing {
 class OutputHandler : private boost::noncopyable {
   public:
     virtual ~OutputHandler() {}
-    virtual void send(AMQFrame* frame) = 0;
+    virtual void send(AMQDataBlock* frame) = 0;
 };
 
 }}

@@ -21,6 +21,8 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
 public class HeartbeatBody implements AMQBody
 {
@@ -53,6 +55,12 @@ public class HeartbeatBody implements AMQBody
 
     public void writePayload(ByteBuffer buffer)
     {
+    }
+
+    public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
+            throws AMQException
+    {
+        session.heartbeatBodyReceived(channelId, this);
     }
 
     protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException

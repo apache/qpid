@@ -33,10 +33,12 @@ public:
     virtual void encode(Buffer& buffer) = 0; 
     virtual bool decode(Buffer& buffer) = 0; 
     virtual u_int32_t size() const = 0;
+    virtual void print(std::ostream& out) const = 0;
+
+    friend std::ostream& operator<<(std::ostream& out, const AMQDataBlock& block);
 };
 
 }
 }
-
 
 #endif

@@ -35,6 +35,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.SimpleByteBufferAllocator;
+import org.apache.mina.common.FixedSizeByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQException;
@@ -275,7 +276,7 @@ public class Main
         // once more testing of the performance of the simple allocator has been done
         if (!connectorConfig.enablePooledAllocator)
         {
-            ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
+            ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
         }
 
         int port = connectorConfig.port;

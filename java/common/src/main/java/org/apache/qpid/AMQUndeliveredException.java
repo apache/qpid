@@ -45,4 +45,10 @@ public class AMQUndeliveredException extends AMQException
     {
         return _bounced;
     }
+
+    public boolean isHardError()
+    {
+        return false;
+    }
+    
 }

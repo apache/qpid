@@ -28,10 +28,10 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
 
-import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
-import uk.co.thebadgerset.junit.extensions.TestThreadAware;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.junit.extensions.AsymptoticTestCase;
+import org.apache.qpid.junit.extensions.TestThreadAware;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import javax.jms.*;
 

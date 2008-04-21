@@ -45,6 +45,7 @@ public:
     inline u_int8_t getMajor() const { return version.getMajor(); }
     inline u_int8_t getMinor() const { return version.getMinor(); }
     inline const ProtocolVersion& getVersion() const { return version; }
+    void print(std::ostream& out) const;
 };
 
 }

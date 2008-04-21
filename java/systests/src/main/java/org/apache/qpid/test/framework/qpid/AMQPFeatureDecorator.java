@@ -26,7 +26,7 @@ import junit.framework.TestResult;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.LocalAMQPCircuitFactory;
 
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 /**
  * AMQPFeatureDecorator applies decorations to {@link FrameworkBaseCase} tests, so that they may use Qpid/AMQP specific

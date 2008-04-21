@@ -67,10 +67,10 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
         final AMQShortString exchange = publishBody.getExchange();
         final AMQShortString routingKey = publishBody.getRoutingKey();
 
-        return new MethodConverter_0_9.MessagePublishInfoImpl(exchange == null ? null : exchange.intern(),
+        return new MethodConverter_0_9.MessagePublishInfoImpl(exchange,
                                           publishBody.getImmediate(),
                                           publishBody.getMandatory(),
-                                          routingKey == null ? null : routingKey.intern());
+                                          routingKey);
 
     }
 
@@ -87,7 +87,7 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
 
     private static class MessagePublishInfoImpl implements MessagePublishInfo
     {
-        private final AMQShortString _exchange;
+        private AMQShortString _exchange;
         private final boolean _immediate;
         private final boolean _mandatory;
         private final AMQShortString _routingKey;
@@ -106,6 +106,11 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
         public AMQShortString getExchange()
         {
             return _exchange;
+        }
+
+        public void setExchange(AMQShortString exchange)
+        {
+            _exchange = exchange;
         }
 
         public boolean isImmediate()

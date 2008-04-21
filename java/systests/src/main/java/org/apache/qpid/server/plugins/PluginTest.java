@@ -1,9 +1,7 @@
 package org.apache.qpid.server.plugins;
 
-import java.util.Collection;
 import java.util.Map;
 
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
 
 import junit.framework.TestCase;

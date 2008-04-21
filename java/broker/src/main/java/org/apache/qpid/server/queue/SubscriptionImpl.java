@@ -292,14 +292,17 @@ public class SubscriptionImpl implements Subscription
                 queue.dequeue(storeContext, entry);
             }
 
+/*
+            if (_sendLock.get())
+            {
+                _logger.error("Sending " + entry + " when subscriber(" + this + ") is closed!");
+            }
+*/
+
             synchronized (channel)
             {
                 long deliveryTag = channel.getNextDeliveryTag();
 
-                if (_sendLock.get())
-                {
-                    _logger.error("Sending " + entry + " when subscriber(" + this + ") is closed!");
-                }
 
                 if (_acks)
                 {
@@ -308,10 +311,11 @@ public class SubscriptionImpl implements Subscription
 
                 protocolSession.getProtocolOutputConverter().writeDeliver(entry.getMessage(), channel.getChannelId(), deliveryTag, consumerTag);
 
-                if (!_acks)
-                {
-                    entry.getMessage().decrementReference(storeContext);
-                }
+
+            }
+            if (!_acks)
+            {
+                entry.getMessage().decrementReference(storeContext);
             }
         }
         finally
@@ -367,59 +371,60 @@ public class SubscriptionImpl implements Subscription
 //            return false;
         }
 
-        final AMQProtocolSession publisher = entry.getMessage().getPublisher();
+
 
         //todo - client id should be recoreded and this test removed but handled below
-        if (_noLocal && publisher != null)
+        if (_noLocal)
         {
-            // We don't want local messages so check to see if message is one we sent
-            Object localInstance;
-            Object msgInstance;
 
-            if ((protocolSession.getClientProperties() != null) &&
-                (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+            final AMQProtocolSession publisher = entry.getMessage().getPublisher();
+            if(publisher != null)
+
             {
+                // We don't want local messages so check to see if message is one we sent
+                Object localInstance;
+                Object msgInstance;
 
-                if ((publisher.getClientProperties() != null) &&
-                    (msgInstance = publisher.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+                if ((protocolSession.getClientProperties() != null) &&
+                    (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                 {
-                    if (localInstance == msgInstance || localInstance.equals(msgInstance))
+
+                    if ((publisher.getClientProperties() != null) &&
+                        (msgInstance = publisher.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                     {
-//                        if (_logger.isTraceEnabled())
-//                        {
-//                            _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
-//                                          msg.debugIdentity() + ")");
-//                        }
+                        if (localInstance == msgInstance || localInstance.equals(msgInstance))
+                        {
+    //                        if (_logger.isTraceEnabled())
+    //                        {
+    //                            _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+    //                                          msg.debugIdentity() + ")");
+    //                        }
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+
+                    localInstance = protocolSession.getClientIdentifier();
+                    //todo - client id should be recoreded and this test removed but handled here
+
+                    msgInstance = publisher.getClientIdentifier();
+                    if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
+                    {
+    //                    if (_logger.isTraceEnabled())
+    //                    {
+    //                        _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+    //                                      msg.debugIdentity() + ")");
+    //                    }
                         return false;
                     }
                 }
+
             }
-            else
-            {
-
-                localInstance = protocolSession.getClientIdentifier();
-                //todo - client id should be recoreded and this test removed but handled here
-
-                msgInstance = publisher.getClientIdentifier();
-                if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
-                {
-//                    if (_logger.isTraceEnabled())
-//                    {
-//                        _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
-//                                      msg.debugIdentity() + ")");
-//                    }
-                    return false;
-                }
-            }
-
-
         }
 
 
-        if (_logger.isTraceEnabled())
-        {
-            _logger.trace("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
-        }
         return checkFilters(entry);
 
     }
@@ -433,23 +438,7 @@ public class SubscriptionImpl implements Subscription
 
     private boolean checkFilters(QueueEntry msg)
     {
-        if (_filters != null)
-        {
-//            if (_logger.isTraceEnabled())
-//            {
-//                _logger.trace("(" + debugIdentity() + ") has filters.");
-//            }
-            return _filters.allAllow(msg.getMessage());
-        }
-        else
-        {
-//            if (_logger.isTraceEnabled())
-//            {
-//                _logger.trace("(" + debugIdentity() + ") has no filters");
-//            }
-
-            return true;
-        }
+        return (_filters == null) || _filters.allAllow(msg.getMessage());
     }
 
     public Queue<QueueEntry> getPreDeliveryQueue()
@@ -472,7 +461,7 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    public boolean isAutoClose()
+    private boolean isAutoClose()
     {
         return _autoClose;
     }
@@ -534,19 +523,24 @@ public class SubscriptionImpl implements Subscription
         {
             _logger.info("Closing autoclose subscription (" + debugIdentity() + "):" + this);
 
-            ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
-            converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
-            _sentClose = true;
-
-            //fixme JIRA do this better
+            boolean unregisteredOK = false;
             try
             {
-                channel.unsubscribeConsumer(protocolSession, consumerTag);
+                unregisteredOK = channel.unsubscribeConsumer(protocolSession, consumerTag);
             }
             catch (AMQException e)
             {
                 // Occurs if we cannot find the subscriber in the channel with protocolSession and consumerTag.
+                _logger.info("Unable to UnsubscribeConsumer :" + consumerTag +" so not going to send CancelOK.");
             }
+
+            if (unregisteredOK)
+            {
+                ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
+                converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
+                _sentClose = true;
+            }
+
         }
     }
 
@@ -563,9 +557,9 @@ public class SubscriptionImpl implements Subscription
             {
                 QueueEntry resent = _resendQueue.poll();
 
-                if (_logger.isTraceEnabled())
+                if (_logger.isDebugEnabled())
                 {
-                    _logger.trace("Removed for resending:" + resent.debugIdentity());
+                    _logger.debug("Removed for resending:" + resent.debugIdentity());
                 }
 
                 resent.release();
@@ -613,7 +607,7 @@ public class SubscriptionImpl implements Subscription
 
     public boolean wouldSuspend(QueueEntry msg)
     {
-        return channel.wouldSuspend(msg.getMessage());
+        return _acks && channel.wouldSuspend(msg.getMessage());
     }
 
     public Queue<QueueEntry> getResendQueue()
@@ -675,6 +669,21 @@ public class SubscriptionImpl implements Subscription
     public AMQChannel getChannel()
     {
         return channel;
+    }
+
+    public void start()
+    {
+        //Check to see if we need to autoclose
+        if (filtersMessages())
+        {
+            if (isAutoClose())
+            {
+                if (_messages.isEmpty())
+                {
+                    autoclose();
+                }
+            }
+        }
     }
 
 }

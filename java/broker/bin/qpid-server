@@ -25,7 +25,7 @@ QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar:$QPID_HOME/lib/bdbstore-launch.jar
 export JAVA=java \
        JAVA_VM=-server \
        JAVA_MEM=-Xmx1024m \
-       JAVA_GC="-XX:-UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
+       JAVA_GC="-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
        QPID_CLASSPATH=$QPID_LIBS
 
 . qpid-run org.apache.qpid.server.Main "$@"
