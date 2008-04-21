@@ -275,11 +275,7 @@ void SessionState::handle(AMQFrame& frame)
         } else {
             getProxy().getExecution010().exception(e.code, commandId, 0, 0, 0, e.what(), FieldTable());
         }
-        timeout = 0;
-        //The python client doesn't currently detach on receiving an exception
-        //so the session state isn't destroyed. This is a temporary workaround
-        //until that is addressed
-        adapter.destroyExclusiveQueues();
+        throw e;
     }
 }
 
