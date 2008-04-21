@@ -139,7 +139,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         }
         props.setExpiration(devprop.getExpiration());
         UUID mid = mprop.getMessageId();
-        props.setMessageId(mid == null ? null : mid.toString());
+        props.setMessageId(mid == null ? null : "ID:" + mid.toString());
         if (devprop.hasPriority())
         {
             props.setPriority((byte) devprop.getPriority().getValue());
