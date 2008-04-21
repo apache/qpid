@@ -100,12 +100,15 @@ class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
     void assertActive(const char* method) const;
     void assertClosed(const char* method) const;
 
+    bool isValid(framing::AMQMethodBody*);
+
     Connection& connection;
     framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
     framing::AMQP_ClientProxy::Session010 peerSession;
     bool ignoring;
     std::auto_ptr<SessionState> session;
+    std::string name;//TODO: this should be part of the session state and replace the id
 };
 
 }} // namespace qpid::broker

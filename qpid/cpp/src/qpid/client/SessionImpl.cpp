@@ -426,9 +426,12 @@ void SessionImpl::attached(const std::string& _name)
     setState(ATTACHED);
 }
 
-void SessionImpl::detach(const std::string& /*name*/)
+void SessionImpl::detach(const std::string& _name)
 {
-    throw NotImplementedException("Client does not support detach");
+    Lock l(state);
+    if (name != _name) throw InternalErrorException("Incorrect session name");
+    setState(DETACHED);
+    QPID_LOG(info, "Session detached by peer: " << name);
 }
 
 void SessionImpl::detached(const std::string& _name, uint8_t _code)
@@ -561,7 +564,6 @@ void SessionImpl::exception(uint16_t errorCode,
         //should we wait for the timeout response?
         detachedLifetime = 0;
     }
-    detach();
 }
 
 
