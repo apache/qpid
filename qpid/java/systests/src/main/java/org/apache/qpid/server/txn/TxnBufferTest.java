@@ -27,6 +27,7 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 public class TxnBufferTest extends TestCase
 {
@@ -78,7 +79,15 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(new FailedPrepare());
         buffer.enlist(new MockOp());
 
-        buffer.commit(null);
+        try
+        {
+            buffer.commit(null);
+        }
+        catch (NoSuchElementException e)
+        {
+        
+        }
+    
         validateOps();
         store.validate();
     }
