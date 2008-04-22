@@ -50,7 +50,7 @@
 namespace qpid { 
 
 namespace sys {
-    class Acceptor;
+    class ProtocolFactory;
     class Poller;
 }
 
@@ -124,8 +124,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
     
-    /** Add to the broker's acceptors */
-    void registerAccepter(boost::shared_ptr<sys::Acceptor>);
+    /** Add to the broker's protocolFactorys */
+    void registerProtocolFactory(boost::shared_ptr<sys::ProtocolFactory>);
 
     /** Accept connections */
     void accept();
@@ -139,7 +139,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
   private:
     boost::shared_ptr<sys::Poller> poller;
     Options config;
-    std::vector< boost::shared_ptr<sys::Acceptor> > acceptors;
+    std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
     MessageStore* store;
     DataDir dataDir;
 
@@ -154,9 +154,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Vhost::shared_ptr              vhostObject;
     System::shared_ptr             systemObject;
 
-    // TODO: There is no longer a single acceptor so the use of the following needs to be fixed
-    // For the present just return the first acceptor registered.
-    boost::shared_ptr<sys::Acceptor> getAcceptor() const;
+    // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
+    // For the present just return the first ProtocolFactory registered.
+    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 };
