@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import os
+import os, uuid
 import getopt
 import sys
 import socket
@@ -27,10 +27,11 @@ import qpid
 from threading       import Condition
 from qpid.management import managementClient
 from qpid.peer       import Closed
-from qpid.client     import Client
+from qpid.connection import Connection
+from qpid.util       import connect
 from time            import sleep
 
-_defspecpath  = "/usr/share/amqp/amqp.0-10-preview.xml"
+_defspecpath  = "/usr/share/amqp/amqp.0-10.xml"
 _specpath     = _defspecpath
 _recursive    = False
 _host         = "localhost"
@@ -95,13 +96,11 @@ class BrokerManager:
 
     def ConnectToBroker (self):
         try:
-            self.spec     = qpid.spec.load (_specpath)
-            self.client   = Client (self.broker.host, self.broker.port, self.spec)
-            self.client.start (response='\x00' + "guest" + '\x00' + "guest",
-                               mechanism="PLAIN")
-            self.channel  = self.client.channel (1)
+            self.spec = qpid.spec.load (_specpath)
+            self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec)
+            self.conn.start ()
             self.mclient  = managementClient (self.spec)
-            self.mchannel = self.mclient.addChannel (self.channel)
+            self.mchannel = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
         except socket.error, e:
             print "Socket Error:", e
             sys.exit (1)
