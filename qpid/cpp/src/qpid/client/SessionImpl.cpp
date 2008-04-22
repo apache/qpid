@@ -525,6 +525,12 @@ void SessionImpl::sendCompletion()
     sendCompletionImpl();
 }
 
+void SessionImpl::sendFlush()
+{
+    Lock l(state);
+    proxy.flush(false, false, true);
+}
+
 void SessionImpl::sendCompletionImpl()
 {
     proxy.completed(completedIn, true);
