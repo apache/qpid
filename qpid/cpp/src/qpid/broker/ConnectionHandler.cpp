@@ -20,6 +20,8 @@
  *
  */
 
+#include "config.h"
+
 #include "ConnectionHandler.h"
 #include "Connection.h"
 #include "qpid/framing/ClientInvoker.h"
@@ -63,42 +65,41 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {
+ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {}
+
+ConnectionHandler::Handler::Handler(Connection& c) :
+    client(c.getOutput()), server(c.getOutput()), 
+    connection(c), serverMode(false)
+{
     FieldTable properties;
     Array mechanisms(0x95);
-    boost::shared_ptr<FieldValue> m(new Str16Value(PLAIN));
-    mechanisms.add(m);
+
+    authenticator = SaslAuthenticator::createAuthenticator(c);
+    authenticator->getMechanisms(mechanisms);
+
     Array locales(0x95);
     boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
     locales.add(l);
-    handler->serverMode = true;
-    handler->client.start(properties, mechanisms, locales);
+    serverMode = true;
+    client.start(properties, mechanisms, locales);
 }
 
 
+ConnectionHandler::Handler::~Handler() {}
 
-ConnectionHandler::Handler:: Handler(Connection& c) : client(c.getOutput()), server(c.getOutput()), 
-                                                      connection(c), serverMode(false) {}
 
 void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProperties*/,
-    const string& mechanism, 
-    const string& response, const string& /*locale*/)
+                                         const string& mechanism, 
+                                         const string& response,
+                                         const string& /*locale*/)
 {
-    //TODO: handle SASL mechanisms more cleverly
-    if (mechanism == PLAIN) {
-        if (response.size() > 0 && response[0] == (char) 0) {
-            string temp = response.substr(1);
-            string::size_type i = temp.find((char)0);
-            string uid = temp.substr(0, i);
-            string pwd = temp.substr(i + 1);
-            //TODO: authentication
-            connection.setUserId(uid);
-        }
-    }
-    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+    authenticator->start(mechanism, response);
 }
         
-void ConnectionHandler::Handler::secureOk(const string& /*response*/){}
+void ConnectionHandler::Handler::secureOk(const string& response)
+{
+    authenticator->step(response);
+}
         
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     uint16_t framemax, uint16_t heartbeat)

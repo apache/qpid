@@ -21,7 +21,6 @@
 
 #include "config.h"
 #include "Broker.h"
-#include "Connection.h"
 #include "DirectExchange.h"
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"

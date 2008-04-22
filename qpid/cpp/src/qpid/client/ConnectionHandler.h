@@ -70,7 +70,9 @@ class ConnectionHandler : private StateManager,
     }; 
 
     Adapter outHandler;
-    framing::AMQP_ServerProxy::Connection010 proxy;    
+    framing::AMQP_ServerProxy::Connection010 proxy;
+    uint16_t errorCode;
+    std::string errorText;
 
     void checkState(STATES s, const std::string& msg);
 
