@@ -92,6 +92,34 @@ class MessageTests(TestBase010):
         #check queue is empty
         self.assertEqual(0, session.queue_query(queue="test-queue").message_count)
 
+    def test_no_local_exclusive_subscribe(self):
+        """
+        Test that the no_local flag is honoured in the consume method
+        """
+        session = self.session
+
+        #setup, declare two queues one of which excludes delivery of
+        #locally sent messages but is not declared as exclusive
+        session.queue_declare(queue="test-queue-1a", exclusive=True, auto_delete=True)
+        session.queue_declare(queue="test-queue-1b", auto_delete=True, arguments={'no-local':'true'})
+        #establish two consumers 
+        self.subscribe(destination="local_included", queue="test-queue-1a")
+        self.subscribe(destination="local_excluded", queue="test-queue-1b", exclusive=True)
+
+        #send a message
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1a"), "deliver-me"))
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me"))
+
+        #check the queues of the two consumers
+        excluded = session.incoming("local_excluded")
+        included = session.incoming("local_included")
+        msg = included.get(timeout=1)
+        self.assertEqual("deliver-me", msg.body)
+        try:
+            excluded.get(timeout=1)
+            self.fail("Received locally published message though no_local=true")
+        except Empty: None
+
 
     def test_consume_exclusive(self):
         """

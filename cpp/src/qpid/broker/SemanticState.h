@@ -80,6 +80,7 @@ class SemanticState : public framing::FrameHandler::Chains,
                      const string& name, Queue::shared_ptr queue,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
+        OwnershipToken* getSession();
         bool deliver(QueuedMessage& msg);            
         bool filter(boost::intrusive_ptr<Message> msg);            
         bool accept(boost::intrusive_ptr<Message> msg);            
@@ -93,7 +94,7 @@ class SemanticState : public framing::FrameHandler::Chains,
         void stop();
         void complete(DeliveryRecord&);    
         Queue::shared_ptr getQueue() { return queue; }
-        bool isBlocked() const { return blocked; }
+        bool isBlocked() const { return blocked; }        
 
         bool doOutput();
     };
