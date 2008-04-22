@@ -43,6 +43,11 @@ Execution& SessionBase::getExecution()
     return *impl;
 }
 
+void SessionBase::flush()
+{
+    impl->sendFlush();
+}
+
 void SessionBase::sync()
 {
     ExecutionSyncBody b;
