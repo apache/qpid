@@ -83,7 +83,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
 }
 
 bool SessionHandler::isValid(AMQMethodBody* m) {
-    return session.get() || m->isA<SessionAttachBody>();
+    return session.get() || m->isA<SessionAttachBody>() || m->isA<SessionAttachedBody>();
 }
 
 void SessionHandler::handleOut(AMQFrame& f) {
@@ -134,10 +134,13 @@ void SessionHandler::attach(const std::string& _name, bool /*force*/)
     peerSession.commandPoint(session->nextOut, 0);
 }
 
-void SessionHandler::attached(const std::string& /*name*/)
+void SessionHandler::attached(const std::string& _name)
 {
+    name = _name;//TODO: this should be used in conjunction with
+                 //userid for connection as sessions identity
     std::auto_ptr<SessionState> state(connection.broker.getSessionManager().open(*this, 0));
     session.reset(state.release());
+    peerSession.commandPoint(session->nextOut, 0);
 }
 
 void SessionHandler::detach(const std::string& name)

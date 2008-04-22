@@ -85,9 +85,9 @@ public:
 };
 
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink) :
     ConnectionState(out_, broker_),
-    adapter(*this),
+    adapter(*this, isLink),
     mgmtClosing(false),
     mgmtId(mgmtId_)
 {
