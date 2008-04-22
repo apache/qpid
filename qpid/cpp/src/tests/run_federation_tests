@@ -19,6 +19,6 @@ if test -d ../../../python ;  then
     start_brokers
     echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
     export PYTHONPATH=../../../python
-    ./federation.py -v -s ../../../specs/amqp.0-10-preview.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT  || { echo "FAIL federation tests"; exit 1; }
+    ./federation.py -v -s ../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT  || { echo "FAIL federation tests"; exit 1; }
 fi
 

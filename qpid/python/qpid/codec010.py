@@ -221,11 +221,17 @@ class Codec(Packer):
       attr = "write_uint%d" % (width*8)
       getattr(self, attr)(n)
 
+  def read_uuid(self):
+    return self.unpack("16s")
+
   def write_uuid(self, s):
     self.pack("16s", s)
 
-  def read_uuid(self):
+  def read_bin128(self):
     return self.unpack("16s")
+
+  def write_bin128(self, b):
+    self.pack("16s", b)
 
 
 

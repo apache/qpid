@@ -17,7 +17,7 @@
 # under the License.
 #
 
-from threading import Condition, RLock, currentThread
+from threading import Condition, RLock, Lock, currentThread
 from invoker import Invoker
 from datatypes import RangedSet, Struct, Future
 from codec010 import StringCodec
@@ -29,16 +29,17 @@ from exceptions import *
 from logging import getLogger
 
 log = getLogger("qpid.io.cmd")
+msg = getLogger("qpid.io.msg")
 
-class SessionDetached(Exception): pass
+class SessionException(Exception): pass
+class SessionClosed(SessionException): pass
+class SessionDetached(SessionException): pass
 
 def client(*args):
   return Client(*args)
 
 def server(*args):
   return Server(*args)
-
-class SessionException(Exception): pass
 
 INCOMPLETE = object()
 
@@ -50,6 +51,8 @@ class Session(Invoker):
     self.auto_sync = auto_sync
     self.timeout = timeout
     self.channel = None
+    self.invoke_lock = Lock()
+    self.closed = False
 
     self.condition = Condition()
 
@@ -97,7 +100,12 @@ class Session(Invoker):
       raise SessionException(self.error())
 
   def close(self, timeout=None):
-    self.channel.session_detach(self.name)
+    self.invoke_lock.acquire()
+    try:
+      self.closed = True
+      self.channel.session_detach(self.name)
+    finally:
+      self.invoke_lock.release()
     if not wait(self.condition, lambda: self.channel is None, timeout):
       raise Timeout()
 
@@ -118,6 +126,16 @@ class Session(Invoker):
     # XXX
     if not hasattr(type, "track"):
       return type.new(args, kwargs)
+
+    self.invoke_lock.acquire()
+    try:
+      return self.do_invoke(type, args, kwargs)
+    finally:
+      self.invoke_lock.release()
+
+  def do_invoke(self, type, args, kwargs):
+    if self.closed:
+      raise SessionClosed()
 
     if self.channel == None:
       raise SessionDetached()
@@ -160,6 +178,7 @@ class Session(Invoker):
         seg = Segment(False, True, self.spec["segment_type.body"].value,
                       type.track, self.channel.id, message.body)
         self.send(seg)
+      msg.debug("SENT %s", message)
 
     if type.result:
       if self.auto_sync:
@@ -303,8 +322,6 @@ class Delegate:
       notify(self.session.condition)
     finally:
       self.session.lock.release()
-
-msg = getLogger("qpid.io.msg")
 
 class Client(Delegate):
 

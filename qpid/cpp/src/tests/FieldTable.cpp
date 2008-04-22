@@ -32,7 +32,7 @@ QPID_AUTO_TEST_CASE(testMe)
 {
     FieldTable ft;
     ft.setString("A", "BCDE");
-    BOOST_CHECK(StringValue("BCDE") == *ft.get("A"));
+    BOOST_CHECK(string("BCDE") == ft.getString("A"));
 
     char buff[100];
     Buffer wbuffer(buff, 100);
@@ -41,7 +41,7 @@ QPID_AUTO_TEST_CASE(testMe)
     Buffer rbuffer(buff, 100);
     FieldTable ft2;
     rbuffer.get(ft2);
-    BOOST_CHECK(StringValue("BCDE") == *ft2.get("A"));
+    BOOST_CHECK(string("BCDE") == ft2.getString("A"));
 
 }
 
@@ -55,8 +55,8 @@ QPID_AUTO_TEST_CASE(testAssignment)
     b = a;
     a.setString("A", "CCCC");
     
-    BOOST_CHECK(StringValue("CCCC") == *a.get("A"));
-    BOOST_CHECK(StringValue("BBBB") == *b.get("A"));
+    BOOST_CHECK(string("CCCC") == a.getString("A"));
+    BOOST_CHECK(string("BBBB") == b.getString("A"));
     BOOST_CHECK_EQUAL(1234, a.getInt("B"));
     BOOST_CHECK_EQUAL(1234, b.getInt("B"));
     BOOST_CHECK(IntegerValue(1234) == *a.get("B"));
@@ -74,10 +74,10 @@ QPID_AUTO_TEST_CASE(testAssignment)
         Buffer rbuffer(buff, c.size());
         rbuffer.get(d);
         BOOST_CHECK_EQUAL(c, d);
-        BOOST_CHECK(StringValue("CCCC") == *c.get("A"));
+        BOOST_CHECK(string("CCCC") == c.getString("A"));
         BOOST_CHECK(IntegerValue(1234) == *c.get("B"));
     }
-    BOOST_CHECK(StringValue("CCCC") == *d.get("A"));
+    BOOST_CHECK(string("CCCC") == d.getString("A"));
     BOOST_CHECK(IntegerValue(1234) == *d.get("B"));
 }
 

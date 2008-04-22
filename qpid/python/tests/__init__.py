@@ -25,6 +25,6 @@ from spec import *
 from framer import *
 from assembler import *
 from datatypes import *
-from connection010 import *
+from connection import *
 from spec010 import *
 from codec010 import *

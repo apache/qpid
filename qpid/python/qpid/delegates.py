@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, connection010, session
+import os, connection, session
 from util import notify
 from datatypes import RangedSet
 from logging import getLogger
@@ -35,7 +35,7 @@ class Delegate:
   def received(self, seg):
     ssn = self.connection.attached.get(seg.channel)
     if ssn is None:
-      ch = connection010.Channel(self.connection, seg.channel)
+      ch = connection.Channel(self.connection, seg.channel)
     else:
       ch = ssn.channel
 
@@ -61,9 +61,9 @@ class Delegate:
     try:
       self.connection.attach(a.name, ch, self.delegate, a.force)
       ch.session_attached(a.name)
-    except connection010.ChannelBusy:
+    except connection.ChannelBusy:
       ch.session_detached(a.name)
-    except connection010.SessionBusy:
+    except connection.SessionBusy:
       ch.session_detached(a.name)
 
   def session_attached(self, ch, a):
@@ -105,7 +105,7 @@ class Server(Delegate):
   def start(self):
     self.connection.read_header()
     self.connection.write_header(self.spec.major, self.spec.minor)
-    connection010.Channel(self.connection, 0).connection_start()
+    connection.Channel(self.connection, 0).connection_start()
 
   def connection_start_ok(self, ch, start_ok):
     ch.connection_tune()
