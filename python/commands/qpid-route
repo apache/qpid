@@ -23,9 +23,11 @@ import getopt
 import sys
 import socket
 import qpid
+import uuid
 from qpid.management import managementClient
 from qpid.peer       import Closed
-from qpid.client     import Client
+from qpid.connection import Connection
+from qpid.util       import connect
 
 def Usage ():
     print "Usage:  qpid-route [OPTIONS] add   <dest-broker> <src-broker> <exchange> <routing-key>"
@@ -35,7 +37,7 @@ def Usage ():
     print "        qpid-route [OPTIONS] flush <dest-broker>"
     print
     print "Options:"
-    print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10-preview.xml)"
+    print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10.xml)"
     print "    -v [ --verbose ]              Verbose output"
     print "    -q [ --quiet ]                Quiet output, don't print duplicate warnings"
     print
@@ -49,7 +51,7 @@ def Usage ():
     #print
     sys.exit (1)
 
-_specpath = "/usr/share/amqp/amqp.0-10-preview.xml"
+_specpath = "/usr/share/amqp/amqp.0-10.xml"
 _verbose  = False
 _quiet    = False
 
@@ -78,12 +80,10 @@ class RouteManager:
             print "Connecting to broker: %s:%d" % (broker.host, broker.port)
         try:
             self.spec    = qpid.spec.load (_specpath)
-            self.client  = Client (broker.host, broker.port, self.spec)
-            self.client.start (response='\x00' + "guest" + '\x00' + "guest",
-                               mechanism="PLAIN")
-            self.channel = self.client.channel (1)
+            self.conn    = Connection (connect (broker.host, broker.port), self.spec)
+            self.conn.start ()
             self.mclient = managementClient (self.spec)
-            self.mch     = self.mclient.addChannel (self.channel)
+            self.mch     = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
             self.mclient.syncWaitForStable (self.mch)
         except socket.error, e:
             print "Connect Error:", e

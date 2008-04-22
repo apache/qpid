@@ -127,7 +127,7 @@ def Usage ():
   print "Usage:", sys.argv[0], "[OPTIONS] [<target-host[:<tcp-port>]]"
   print
   print "Options:"
-  print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10-preview.xml)"
+  print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10.xml)"
   print
   sys.exit (1)
 
@@ -143,7 +143,7 @@ except:
   Usage ()
   sys.exit (1)
 
-_specpath = "/usr/share/amqp/amqp.0-10-preview.xml"
+_specpath = "/usr/share/amqp/amqp.0-10.xml"
 _host     = "localhost"
 
 for opt in optlist:
