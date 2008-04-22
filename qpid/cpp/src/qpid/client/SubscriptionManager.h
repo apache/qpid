@@ -53,7 +53,7 @@ class SubscriptionManager : public sys::Runnable
     uint32_t bytes;
     bool window;
     AckPolicy autoAck;
-    bool confirmMode;
+    bool acceptMode;
     bool acquireMode;
     bool autoStop;
     
@@ -116,16 +116,16 @@ class SubscriptionManager : public sys::Runnable
      */
     void setFlowControl(uint32_t messages,  uint32_t bytes, bool window=true);
 
-    /** Set the confirm-mode for new subscriptions. Defaults to true.
-     *@param confirm: if true messages must be confirmed by calling
+    /** Set the accept-mode for new subscriptions. Defaults to true.
+     *@param required: if true messages must be confirmed by calling
      *Message::acknowledge() or automatically, see setAckPolicy()
      */
-    void setConfirmMode(bool confirm);
+    void setAcceptMode(bool required);
 
     /** Set the acquire-mode for new subscriptions. Defaults to false.
      *@param acquire: if false messages pre-acquired, if true
      * messages are dequed on acknowledgement or on transfer 
-	 * depending on confirmMode.
+	 * depending on acceptMode.
      */
     void setAcquireMode(bool acquire);
 
@@ -133,6 +133,10 @@ class SubscriptionManager : public sys::Runnable
      * Default is to acknowledge every message automatically.
      */
     void setAckPolicy(const AckPolicy& autoAck);
+    /**
+     *
+     */
+     AckPolicy& getAckPolicy();
 };
 
 

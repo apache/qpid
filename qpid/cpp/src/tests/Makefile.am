@@ -6,7 +6,7 @@ extra_libs = $(CPPUNIT_LIBS)
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
-lib_amqp_0_10 = $(abs_builddir)/../libqpidamqp_0_10.la
+# lib_amqp_0_10 = $(abs_builddir)/../libqpidamqp_0_10.la
 
 #
 # Initialize variables that are incremented with +=
@@ -28,7 +28,7 @@ CLEANFILES=
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
-	$(lib_client) $(lib_broker) $(lib_amqp_0_10)
+	$(lib_client) $(lib_broker) # $(lib_amqp_0_10)
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \
@@ -36,16 +36,21 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
+	InlineAllocator.cpp \
 	InlineVector.cpp \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
 	SequenceSet.cpp \
-	amqp_0_10/serialize.cpp allSegmentTypes.h \
-	amqp_0_10/ProxyTemplate.cpp \
-	amqp_0_10/apply.cpp \
 	IncompleteMessageList.cpp \
-	amqp_0_10/Map.cpp \
-	amqp_0_10/handlers.cpp
+	RangeSet.cpp
+
+# Disabled till we move to amqp_0_10 codec.
+# 	amqp_0_10/serialize.cpp allSegmentTypes.h \
+# 	amqp_0_10/ProxyTemplate.cpp \
+# 	amqp_0_10/apply.cpp \
+# 	amqp_0_10/Map.cpp \
+# 	amqp_0_10/handlers.cpp 
+
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)

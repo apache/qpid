@@ -223,7 +223,7 @@ class QueueTests(TestBase010):
         session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me"), "b"))
         session.message_transfer(message=Message(session.delivery_properties(routing_key="delete-me"), "c"))
         session.queue_delete(queue="delete-me")
-        #check that it has gone be declaring passively
+        #check that it has gone by declaring passively
         try:
             session.queue_declare(queue="delete-me", passive=True)
             self.fail("Queue has not been deleted")

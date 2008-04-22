@@ -33,12 +33,11 @@
 #include "qpid/client/Message.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/FrameSet.h"
-#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/all_method_bodies.h"
 
 using namespace qpid;
 using namespace qpid::client;
-using qpid::framing::FrameSet;
-using qpid::framing::MessageTransferBody;
+using namespace qpid::framing;
 using std::string;
 
 struct Args : public qpid::TestOptions {
@@ -104,14 +103,14 @@ int main(int argc, char** argv)
 	if (opts.trace) std::cout << "Declared queue." << std::endl;
 
         //now bind the queue to the exchange
-	session.queueBind(arg::exchange="MyExchange", arg::queue="MyQueue", arg::routingKey="MyKey");
+	session.exchangeBind(arg::exchange="MyExchange", arg::queue="MyQueue", arg::bindingKey="MyKey");
 	if (opts.trace) std::cout << "Bound queue to exchange." << std::endl;
 
         //create and send a message to the exchange using the routing
         //key we bound our queue with:
 	Message msgOut(generateData(opts.msgSize));
         msgOut.getDeliveryProperties().setRoutingKey("MyKey");
-        session.messageTransfer(arg::destination="MyExchange", arg::content=msgOut);
+        session.messageTransfer(arg::destination="MyExchange", arg::content=msgOut, arg::acceptMode=1);
 	if (opts.trace) print("Published message: ", msgOut);
 
         //subscribe to the queue, add sufficient credit and then get
@@ -125,13 +124,16 @@ int main(int argc, char** argv)
 	if (opts.trace) std::cout << "Subscribed to queue." << std::endl;
         FrameSet::shared_ptr incoming = session.get();
         if (incoming->isA<MessageTransferBody>()) {
-            Message msgIn(*incoming, session);
+            Message msgIn(*incoming);
             if (msgIn.getData() == msgOut.getData()) {
                 if (opts.trace) std::cout << "Received the exepected message." << std::endl;
-                msgIn.acknowledge();
+                session.messageAccept(SequenceSet(msgIn.getId()));
+                session.markCompleted(msgIn.getId(), true, true);
             } else {
                 print("Received an unexepected message: ", msgIn);
             }
+        } else {
+            throw Exception("Unexpected command received");
         }
         
         //close the session & connection

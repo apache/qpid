@@ -43,7 +43,7 @@ void Subscriber::received(Message& msg)
 {
     if (listener) {
         listener->received(msg);
-        autoAck.ack(msg);
+        autoAck.ack(msg, session);
     }
 }
 
@@ -72,7 +72,7 @@ void Dispatcher::run()
             Mutex::ScopedUnlock u(lock);
             FrameSet::shared_ptr content = queue->pop();
             if (content->isA<MessageTransferBody>()) {
-                Message msg(*content, session);
+                Message msg(*content);
                 Subscriber::shared_ptr listener = find(msg.getDestination());
                 if (!listener) {
                     QPID_LOG(error, "No listener found for destination " << msg.getDestination());
@@ -84,7 +84,7 @@ void Dispatcher::run()
                 if (handler.get()) {
                     handler->handle(*content);
                 } else {
-                    QPID_LOG(error, "No handler found for " << *(content->getMethod()));
+                    QPID_LOG(warning, "No handler found for " << *(content->getMethod()));
                 }
             }
         }

@@ -23,6 +23,7 @@
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "boost/format.hpp"
@@ -48,6 +49,7 @@ public:
         return true;
     };
     void notify() {}
+    OwnershipToken* getSession() { return 0; }
 };
 
 class FailOnDeliver : public Deliverable
@@ -75,7 +77,7 @@ class QueueTest : public CppUnit::TestCase
     intrusive_ptr<Message> message(std::string exchange, std::string routingKey) {
         intrusive_ptr<Message> msg(new Message());
         AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, exchange, 0, 0));
+                            ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
         msg->getFrames().append(method);
         msg->getFrames().append(header);

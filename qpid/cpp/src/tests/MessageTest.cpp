@@ -21,7 +21,9 @@
 #include "qpid/broker/Message.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
+#include "qpid/framing/Uuid.h"
 
 #include "qpid_test_plugin.h"
 
@@ -44,14 +46,14 @@ class MessageTest : public CppUnit::TestCase
     {
         string exchange = "MyExchange";
         string routingKey = "MyRoutingKey";
-        string messageId = "MyMessage";
+        Uuid messageId(true);
         string data1("abcdefg");
         string data2("hijklmn");
 
         intrusive_ptr<Message> msg(new Message());
 
         AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), 0, exchange, 0, 0));
+                            ProtocolVersion(), exchange, 0, 0));
         AMQFrame header(in_place<AMQHeaderBody>());
         AMQFrame content1(in_place<AMQContentBody>(data1));
         AMQFrame content2(in_place<AMQContentBody>(data2));

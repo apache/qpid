@@ -22,6 +22,7 @@
 #define _ConnectionAdapter_
 
 #include <memory>
+#include "SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_ClientOperations.h"
@@ -47,8 +48,10 @@ class ConnectionHandler : public framing::FrameHandler
         framing::AMQP_ServerProxy::Connection010 server;
         Connection& connection;
         bool serverMode;
+        std::auto_ptr<SaslAuthenticator> authenticator;
     
         Handler(Connection& connection);
+        ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale); 

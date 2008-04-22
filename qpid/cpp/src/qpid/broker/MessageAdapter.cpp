@@ -21,6 +21,11 @@
 
 #include "MessageAdapter.h"
 
+#include "qpid/framing/DeliveryProperties.h"
+#include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/MessageXTransferBody.h"
+
 namespace {
     const std::string empty;
 }
@@ -30,13 +35,13 @@ namespace broker{
 
     std::string TransferAdapter::getRoutingKey(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties010* p = f.getHeaders()->get<framing::DeliveryProperties010>();
+        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
         return p ? p->getRoutingKey() : empty;
     }
 
     std::string TransferAdapter::getExchange(const framing::FrameSet& f)
     {
-        return f.as<framing::Message010TransferBody>()->getDestination();
+        return f.as<framing::MessageTransferBody>()->getDestination();
     }
 
     bool TransferAdapter::isImmediate(const framing::FrameSet&)
@@ -47,42 +52,42 @@ namespace broker{
 
     const framing::FieldTable* TransferAdapter::getApplicationHeaders(const framing::FrameSet& f)
     {
-        const framing::MessageProperties010* p = f.getHeaders()->get<framing::MessageProperties010>();
+        const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
         return p ? &(p->getApplicationHeaders()) : 0;
     }
 
     bool TransferAdapter::isPersistent(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties010* p = f.getHeaders()->get<framing::DeliveryProperties010>();
+        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
         return p && p->getDeliveryMode() == 2;
     }
 
     bool TransferAdapter::requiresAccept(const framing::FrameSet& f)
     {
-        const framing::Message010TransferBody* b = f.as<framing::Message010TransferBody>();
+        const framing::MessageTransferBody* b = f.as<framing::MessageTransferBody>();
         return b && b->getAcceptMode() == 0/*EXPLICIT == 0*/;
     }
 
     std::string PreviewAdapter::getExchange(const framing::FrameSet& f)
     {
-        return f.as<framing::MessageTransferBody>()->getDestination();
+        return f.as<framing::MessageXTransferBody>()->getDestination();
     }
 
     std::string PreviewAdapter::getRoutingKey(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        const framing::PreviewDeliveryProperties* p = f.getHeaders()->get<framing::PreviewDeliveryProperties>();
         return p ? p->getRoutingKey() : empty;
     }
 
     const framing::FieldTable* PreviewAdapter::getApplicationHeaders(const framing::FrameSet& f)
     {
-        const framing::MessageProperties* p = f.getHeaders()->get<framing::MessageProperties>();
+        const framing::PreviewMessageProperties* p = f.getHeaders()->get<framing::PreviewMessageProperties>();
         return p ? &(p->getApplicationHeaders()) : 0;
     }
 
     bool PreviewAdapter::isPersistent(const framing::FrameSet& f)
     {
-        const framing::DeliveryProperties* p = f.getHeaders()->get<framing::DeliveryProperties>();
+        const framing::PreviewDeliveryProperties* p = f.getHeaders()->get<framing::PreviewDeliveryProperties>();
         return p && p->getDeliveryMode() == 2;
     }
 

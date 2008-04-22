@@ -256,7 +256,7 @@ class Channel : private sys::Runnable
     void consume(
         Queue& queue, const std::string& tag, MessageListener* listener, 
         AckMode ackMode = NO_ACK, bool noLocal = false, bool synch = true,
-        const framing::FieldTable* fields = 0);
+        framing::FieldTable* fields = 0);
         
     /**
      * Cancels a subscription previously set up through a call to consume().

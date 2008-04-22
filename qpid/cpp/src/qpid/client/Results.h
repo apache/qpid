@@ -19,30 +19,33 @@
  *
  */
 
-#include <memory>
-#include <queue>
-#include <set>
-#include <boost/function.hpp>
-#include "qpid/framing/AMQMethodBody.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceSet.h"
+#include <map>
+#include <boost/shared_ptr.hpp>
 
-#ifndef _Correlator_
-#define _Correlator_
+#ifndef _Results_
+#define _Results_
 
 namespace qpid {
 namespace client {
 
+class FutureResult;
 
-class Correlator
+class Results
 {
 public:
-    typedef boost::function<void(const framing::AMQMethodBody*)> Listener;
+    typedef boost::shared_ptr<FutureResult> FutureResultPtr;
 
-    bool receive(const framing::AMQMethodBody*);
-    void listen(Listener l);
+    Results();
+    void completed(const framing::SequenceSet& set);
+    void received(const framing::SequenceNumber& id, const std::string& result);
+    FutureResultPtr listenForResult(const framing::SequenceNumber& point);
+    void close();
 
 private:
-    std::queue<Listener> listeners;
+    typedef std::map<framing::SequenceNumber, FutureResultPtr> Listeners;    
+    Listeners listeners;
 };
 
 }

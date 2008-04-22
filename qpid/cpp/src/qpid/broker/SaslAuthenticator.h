@@ -18,28 +18,30 @@
  * under the License.
  *
  */
+#ifndef _SaslAuthenticator_
+#define _SaslAuthenticator_
 
-#include "FutureResponse.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/Exception.h"
+#include <memory>
 
-#include "SessionCore.h"
+namespace qpid {
+namespace broker {
 
-using namespace qpid::client;
-using namespace qpid::framing;
-using namespace qpid::sys;
+class Connection;
 
-
-AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
+class SaslAuthenticator
 {
-    waitForCompletion();
-    session.assertOpen();            
-    return response.getMethod();
-}
+public:
+    virtual ~SaslAuthenticator() {}
+    virtual void getMechanisms(framing::Array& mechanisms) = 0;
+    virtual void start(const std::string& mechanism, const std::string& response) = 0;
+    virtual void step(const std::string& response) = 0;
 
-void FutureResponse::received(const AMQMethodBody* r)
-{
-    Monitor::ScopedLock l(lock);
-    response.setBody(*r);
-    complete = true;
-    lock.notifyAll();
-}
+    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
+};
 
+}}
+
+#endif
