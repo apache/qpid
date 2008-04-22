@@ -238,6 +238,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
+  qpid/broker/SaslAuthenticator.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SessionState.h \
@@ -372,6 +373,7 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SemanticHandler.h \
+  qpid/broker/SaslAuthenticator.h \
   qpid/broker/SessionManager.h \
   qpid/broker/System.h \
   qpid/broker/Timer.h \
