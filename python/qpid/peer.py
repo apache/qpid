@@ -25,7 +25,7 @@ incoming method frames to a delegate.
 """
 
 import thread, threading, traceback, socket, sys, logging
-from connection import EOF, Method, Header, Body, Request, Response
+from connection08 import EOF, Method, Header, Body, Request, Response
 from message import Message
 from queue import Queue, Closed as QueueClosed
 from content import Content

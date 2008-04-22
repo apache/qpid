@@ -26,7 +26,7 @@ fields.
 The unit test for this module is located in tests/codec.py
 """
 
-import re, qpid, spec
+import re, qpid, spec08
 from cStringIO import StringIO
 from struct import *
 from reference import ReferenceId
@@ -156,7 +156,7 @@ class Codec:
     """
     calls the appropriate encode function e.g. encode_octet, encode_short etc.
     """
-    if isinstance(type, spec.Struct):
+    if isinstance(type, spec08.Struct):
       self.encode_struct(type, value)
     else:
       getattr(self, "encode_" + type)(value)
@@ -165,7 +165,7 @@ class Codec:
     """
     calls the appropriate decode function e.g. decode_octet, decode_short etc.
     """
-    if isinstance(type, spec.Struct):
+    if isinstance(type, spec08.Struct):
       return self.decode_struct(type)
     else:
       return getattr(self, "decode_" + type)()
