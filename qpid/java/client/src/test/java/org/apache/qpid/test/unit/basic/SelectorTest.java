@@ -55,7 +55,7 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init((AMQConnection) getConnection("guest", "guest"));
+        init((AMQConnection) getConnection("", "guest"));
     }
 
     protected void tearDown() throws Exception
@@ -83,12 +83,12 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
         _session.createConsumer(destination, selector).setMessageListener(this);
     }
 
-    public synchronized void test() throws JMSException, InterruptedException, URLSyntaxException, AMQException
+    public synchronized void test() throws Exception
     {
         try
         {
 
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+            init((AMQConnection) getConnection("guest", "guest", randomize("Client")));
 
             Message msg = _session.createTextMessage("Message");
             msg.setJMSPriority(1);
@@ -154,13 +154,13 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
     }
 
 
-    public void testInvalidSelectors()
+    public void testInvalidSelectors() throws Exception
     {
         Connection connection = null;
 
         try
         {
-            connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test");
+            connection = getConnection("guest", "guest", randomize("Client"));
             _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         }
         catch (JMSException e)
