@@ -30,7 +30,7 @@ from qpid.content import Content
 from qpid.message import Message
 
 #0-10 support
-from qpid.connection010 import Connection
+from qpid.connection import Connection
 from qpid.spec010 import load
 from qpid.util import connect
 
@@ -357,9 +357,9 @@ class TestBase010(unittest.TestCase):
         self.conn.start(timeout=10)        
         self.session = self.conn.session("test-session", timeout=10)
 
-    def connect(self):
+    def connect(self, host=None, port=None):
         spec = testrunner.spec
-        conn = Connection(connect(testrunner.host, testrunner.port), spec)
+        conn = Connection(connect(host or testrunner.host, port or testrunner.port), spec)
         conn.start(timeout=10)
         return conn
 

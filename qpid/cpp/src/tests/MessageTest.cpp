@@ -87,7 +87,7 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
         CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
         CPPUNIT_ASSERT_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
-        CPPUNIT_ASSERT(StringValue("xyz") == *msg->getProperties<MessageProperties>()->getApplicationHeaders().get("abc"));
+        CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
         CPPUNIT_ASSERT_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
         CPPUNIT_ASSERT(msg->isPersistent());
     }

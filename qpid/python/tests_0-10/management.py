@@ -18,10 +18,10 @@
 #
 
 from qpid.datatypes import Message, RangedSet
-from qpid.testlib import TestBase
+from qpid.testlib import TestBase010
 from qpid.management import managementChannel, managementClient
 
-class ManagementTest (TestBase):
+class ManagementTest (TestBase010):
     """
     Tests for the management hooks
     """
@@ -30,10 +30,10 @@ class ManagementTest (TestBase):
         """
         Call the "echo" method on the broker to verify it is alive and talking.
         """
-        channel = self.client.channel(2)
+        session = self.session
  
-        mc  = managementClient (channel.spec)
-        mch = mc.addChannel (channel)
+        mc  = managementClient (session.spec)
+        mch = mc.addChannel (session)
 
         mc.syncWaitForStable (mch)
         brokers = mc.syncGetObjects (mch, "broker")
@@ -52,20 +52,20 @@ class ManagementTest (TestBase):
             self.assertEqual (res.body,       body)
 
     def test_system_object (self):
-        channel = self.client.channel(2)
+        session = self.session
  
-        mc  = managementClient (channel.spec)
-        mch = mc.addChannel (channel)
+        mc  = managementClient (session.spec)
+        mch = mc.addChannel (session)
 
         mc.syncWaitForStable (mch)
         systems = mc.syncGetObjects (mch, "system")
         self.assertEqual (len (systems), 1)
 
     def test_standard_exchanges (self):
-        channel = self.client.channel(2)
+        session = self.session
  
-        mc  = managementClient (channel.spec)
-        mch = mc.addChannel (channel)
+        mc  = managementClient (session.spec)
+        mch = mc.addChannel (session)
 
         mc.syncWaitForStable (mch)
         exchanges = mc.syncGetObjects (mch, "exchange")

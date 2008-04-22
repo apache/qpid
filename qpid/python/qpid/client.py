@@ -25,7 +25,7 @@ interacting with the server.
 import os, threading
 from peer import Peer, Channel, Closed
 from delegate import Delegate
-from connection import Connection, Frame, connect
+from connection08 import Connection, Frame, connect
 from spec import load
 from queue import Queue
 from reference import ReferenceId, References

@@ -19,6 +19,7 @@
 
 import struct, socket
 from packer import Packer
+from threading import Lock
 from logging import getLogger
 
 raw = getLogger("qpid.io.raw")
@@ -75,6 +76,7 @@ class Framer(Packer):
 
   def __init__(self, sock):
     self.sock = sock
+    self.sock_lock = Lock()
 
   def aborted(self):
     return False
@@ -116,16 +118,24 @@ class Framer(Packer):
     return self.unpack(Framer.HEADER)
 
   def write_header(self, major, minor):
-    self.pack(Framer.HEADER, "AMQP", 1, 1, major, minor)
+    self.sock_lock.acquire()
+    try:
+      self.pack(Framer.HEADER, "AMQP", 1, 1, major, minor)
+    finally:
+      self.sock_lock.release()
 
   def write_frame(self, frame):
-    size = len(frame.payload) + struct.calcsize(Frame.HEADER)
-    track = frame.track & 0x0F
-    self.pack(Frame.HEADER, frame.flags, frame.type, size, track, frame.channel)
-    self.write(frame.payload)
-    # XXX: NOT 0-10 FINAL, TEMPORARY WORKAROUND for C++
-    self.write("\xCE")
-    frm.debug("SENT %s", frame)
+    self.sock_lock.acquire()
+    try:
+      size = len(frame.payload) + struct.calcsize(Frame.HEADER)
+      track = frame.track & 0x0F
+      self.pack(Frame.HEADER, frame.flags, frame.type, size, track, frame.channel)
+      self.write(frame.payload)
+      # XXX: NOT 0-10 FINAL, TEMPORARY WORKAROUND for C++
+      self.write("\xCE")
+      frm.debug("SENT %s", frame)
+    finally:
+      self.sock_lock.release()
 
   def read_frame(self):
     flags, type, size, track, channel = self.unpack(Frame.HEADER)

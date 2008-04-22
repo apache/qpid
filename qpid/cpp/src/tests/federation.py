@@ -19,10 +19,10 @@
 #
 
 import sys
-from qpid.testlib import TestBase, testrunner
+from qpid.testlib import TestBase010, testrunner
 from qpid.management import managementChannel, managementClient
+from qpid.datatypes import Message
 from qpid.queue import Empty
-from qpid.content import Content
 
 
 def scan_args(name, default=None, args=sys.argv[1:]):
@@ -51,9 +51,9 @@ def remote_port():
 class Helper:
     def __init__(self, parent):
         self.parent = parent
-        self.channel = parent.client.channel(2)
-        self.mc  = managementClient(self.channel.spec)
-        self.mch = self.mc.addChannel(self.channel)
+        self.session = parent.conn.session("2")
+        self.mc  = managementClient(self.session.spec)
+        self.mch = self.mc.addChannel(self.session)
         self.mc.syncWaitForStable(self.mch)
 
     def get_objects(self, type):
@@ -75,7 +75,7 @@ class Helper:
     def assertEqual(self, a, b):
         self.parent.assertEqual(a, b)
 
-class FederationTests(TestBase):
+class FederationTests(TestBase010):
 
     def test_bridge_create_and_close(self):
         mgmt = Helper(self)
@@ -94,8 +94,8 @@ class FederationTests(TestBase):
             mgmt.call_method(link, "close")
             self.assertEqual(len(mgmt.get_objects("link")), 0)
 
-    def test_pull_from_exchange(self):
-        channel = self.channel
+    def DISABLED_test_pull_from_exchange(self):
+        session = self.session
         
         mgmt = Helper(self)
         broker = mgmt.get_object("broker")
@@ -107,18 +107,18 @@ class FederationTests(TestBase):
         bridge = mgmt.get_object("bridge")
 
         #setup queue to receive messages from local broker
-        channel.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
-        channel.queue_bind(queue="fed1", exchange="amq.fanout")
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="amq.fanout")
         self.subscribe(queue="fed1", destination="f1")
-        queue = self.client.queue("f1")
+        queue = session.incoming("f1")
 
         #send messages to remote broker and confirm it is routed to local broker
         r_conn = self.connect(host=remote_host(), port=remote_port())
-        r_channel = r_conn.channel(1)
-        r_channel.session_open()
+        r_session = r_conn.session("1")
 
         for i in range(1, 11):
-            r_channel.message_transfer(destination="amq.direct", content=Content(properties={'routing_key' : "my-key"}, body="Message %d" % i))
+            dp = r_session.delivery_properties(routing_key="my-key")
+            r_session.message_transfer(destination="amq.direct", message=Message(dp, "Message %d" % i))
 
         for i in range(1, 11):
             msg = queue.get(timeout=5)
@@ -135,22 +135,22 @@ class FederationTests(TestBase):
         mgmt.call_method(link, "close")
         self.assertEqual(len(mgmt.get_objects("link")), 0)
 
-    def test_pull_from_queue(self):
-        channel = self.channel
+    def DISABLED_test_pull_from_queue(self):
+        session = self.session
 
         #setup queue on remote broker and add some messages
         r_conn = self.connect(host=remote_host(), port=remote_port())
-        r_channel = r_conn.channel(1)
-        r_channel.session_open()
-        r_channel.queue_declare(queue="my-bridge-queue", exclusive=True, auto_delete=True)
+        r_session = r_conn.session("1")
+        r_session.queue_declare(queue="my-bridge-queue", exclusive=True, auto_delete=True)
         for i in range(1, 6):
-            r_channel.message_transfer(content=Content(properties={'routing_key' : "my-bridge-queue"}, body="Message %d" % i))
+            dp = r_session.delivery_properties(routing_key="my-bridge-queue")
+            r_session.message_transfer(message=Message(dp, "Message %d" % i))
 
         #setup queue to receive messages from local broker
-        channel.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
-        channel.queue_bind(queue="fed1", exchange="amq.fanout")
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="amq.fanout")
         self.subscribe(queue="fed1", destination="f1")
-        queue = self.client.queue("f1")
+        queue = session.incoming("f1")
 
         mgmt = Helper(self)
         broker = mgmt.get_object("broker")
@@ -163,7 +163,8 @@ class FederationTests(TestBase):
 
         #add some more messages (i.e. after bridge was created)
         for i in range(6, 11):
-            r_channel.message_transfer(content=Content(properties={'routing_key' : "my-bridge-queue"}, body="Message %d" % i))
+            dp = r_session.delivery_properties(routing_key="my-bridge-queue")
+            r_session.message_transfer(message=Message(dp, "Message %d" % i))
 
         for i in range(1, 11):
             msg = queue.get(timeout=5)

@@ -20,7 +20,7 @@
 from threading import *
 from unittest import TestCase
 from qpid.util import connect, listen
-from qpid.connection010 import *
+from qpid.connection import *
 from qpid.datatypes import Message
 from qpid.testlib import testrunner
 from qpid.delegates import Server
