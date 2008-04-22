@@ -34,7 +34,7 @@
 #include "TxPublish.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/MessageTransferBody.h"
-#include "qpid/framing/Message010TransferBody.h"
+#include "qpid/framing/MessageXTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
 
@@ -58,7 +58,7 @@ using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
-using namespace qpid::ptr_map;
+using qpid::ptr_map_ptr;
 
 SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
     : session(ss),
@@ -77,7 +77,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
 SemanticState::~SemanticState() {
     //cancel all consumers
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        cancel(*get_pointer(i));
+        cancel(*ptr_map_ptr(i));
     }
 
     if (dtxBuffer.get()) {
@@ -105,7 +105,7 @@ void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut,
 void SemanticState::cancel(const string& tag){
     ConsumerImplMap::iterator i = consumers.find(tag);
     if (i != consumers.end()) {
-        cancel(*get_pointer(i));
+        cancel(*ptr_map_ptr(i));
         consumers.erase(i); 
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
@@ -267,6 +267,11 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     msgCredit(0), 
     byteCredit(0) {}
 
+OwnershipToken* SemanticState::ConsumerImpl::getSession()
+{
+    return &(parent->session);
+}
+
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
     allocateCredit(msg.payload);
@@ -351,10 +356,11 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
 
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
-    if (msg->isA<MessageTransferBody>()) {
+    //TODO: the following should be hidden behind message (using MessageAdapter or similar)
+    if (msg->isA<MessageXTransferBody>()) {
+        msg->getProperties<PreviewDeliveryProperties>()->setExchange(exchangeName);
+    } else if (msg->isA<MessageTransferBody>()) {
         msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
-    } else if (msg->isA<Message010TransferBody>()) {
-        msg->getProperties<DeliveryProperties010>()->setExchange(exchangeName);
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
@@ -428,7 +434,7 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 void SemanticState::requestDispatch()
 {    
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        requestDispatch(*get_pointer(i));
+        requestDispatch(*ptr_map_ptr(i));
     }
 }
 
@@ -444,7 +450,7 @@ void SemanticState::complete(DeliveryRecord& delivery)
     delivery.subtractFrom(outstanding);
     ConsumerImplMap::iterator i = consumers.find(delivery.getTag());
     if (i != consumers.end()) {
-        get_pointer(i)->complete(delivery);
+        ptr_map_ptr(i)->complete(delivery);
     }
 }
 
@@ -513,7 +519,7 @@ SemanticState::ConsumerImpl& SemanticState::find(const std::string& destination)
     if (i == consumers.end()) {
         throw NotFoundException(QPID_MSG("Unknown destination " << destination));
     } else {
-        return *get_pointer(i);
+        return *ptr_map_ptr(i);
     }
 }
 

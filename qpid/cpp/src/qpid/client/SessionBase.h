@@ -29,8 +29,8 @@
 #include "qpid/framing/TransferContent.h"
 #include "qpid/client/Completion.h"
 #include "qpid/client/ConnectionImpl.h"
-#include "qpid/client/Response.h"
-#include "qpid/client/SessionCore.h"
+#include "qpid/client/Execution.h"
+#include "qpid/client/SessionImpl.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
 #include <string>
@@ -61,8 +61,11 @@ using framing::Uuid;
  * <em>later</em> function call. 
  *
  * If you need to notify some extenal agent that some actions have
- * been taken (e.g. binding queues to exchanages), you must call
- * Session::sync() first, to ensure that all the commands are complete.
+ * been taken (e.g. binding queues to exchanges), you must ensure that
+ * the broker has completed the command. In synchronous mode this is
+ * when the session method for the command returns. In asynchronous
+ * mode you can call Session::sync(), to ensure that all the commands
+ * are complete.
  *
  * You can freely switch between modes by calling Session::setSynchronous()
  * 
@@ -77,6 +80,21 @@ enum SynchronousMode { SYNC=true, ASYNC=false };
 class SessionBase
 {
   public:
+    /**
+     * Instances of this class turn synchronous mode on for the
+     * duration of their scope (and revert back to async if required
+     * afterwards).
+     */
+    class ScopedSync
+    {
+        SessionBase& session;
+        const bool change; 
+    public:
+        ScopedSync(SessionBase& s);
+        ~ScopedSync();
+    };
+
+
     SessionBase();
     ~SessionBase();
 
@@ -110,23 +128,19 @@ class SessionBase
     
     /** Close the session */
     void close();
-
-    /**
-     * Synchronize with the broker. Wait for all commands issued so far in
-     * the session to complete.
-     * @see SynchronousMode
-     */
-    void sync();
     
     Execution& getExecution();
+    void sync();
+    void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
+    void sendCompletion();
     
     typedef framing::TransferContent DefaultContent;
 
   protected:
-    shared_ptr<SessionCore> impl;
+    shared_ptr<SessionImpl> impl;
     framing::ProtocolVersion version;
     friend class Connection;
-    SessionBase(shared_ptr<SessionCore>);
+    SessionBase(shared_ptr<SessionImpl>);
 };
 
 }} // namespace qpid::client

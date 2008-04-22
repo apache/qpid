@@ -29,13 +29,13 @@
 namespace qpid {
 namespace client {
 
-class SessionCore;
+class SessionImpl;
 
 class FutureResult : public FutureCompletion 
 {
     std::string result;
 public:
-    const std::string& getResult(SessionCore& session) const;
+    const std::string& getResult(SessionImpl& session) const;
     void received(const std::string& result);
 };
 

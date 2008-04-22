@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "BrokerFixture.h"
+#include "qpid/client/AckPolicy.h"
 #include "qpid/client/Dispatcher.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
@@ -118,13 +119,14 @@ QPID_AUTO_TEST_CASE(testTransfer)
     ClientSessionFixture fix;
     fix.session=fix.connection.newSession(ASYNC);
     fix.declareSubscribe();
-    fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
+    fix.session.messageTransfer(acceptMode=1, content=TransferContent("my-message", "my-queue"));
     //get & test the message:
     FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK(msg->isA<MessageTransferBody>());
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
     //confirm receipt:
-    fix.session.getExecution().completed(msg->getId(), true, true);
+    AckPolicy autoAck;
+    autoAck.ack(Message(*msg), fix.session);
 }
 
 QPID_AUTO_TEST_CASE(testDispatcher)
@@ -161,6 +163,8 @@ BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
 }
 */
 
+/*
+ * GS (18-APR-2008): disabled resume tests until resumption for 0-10 final spec is implemented
 QPID_AUTO_TEST_CASE(_FIXTURE)
 {
     ClientSessionFixture fix;
@@ -195,7 +199,7 @@ QPID_AUTO_TEST_CASE(testSuspendResume)
     FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
-
+*/
 /**
  * Currently broken due to a deadlock in SessionCore
  *

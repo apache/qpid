@@ -88,13 +88,13 @@ include cluster.mk
 # unused parameters in boost::date_time headers. So we build it
 # in a convenience library to link into libqpid_common.
 # 
-noinst_LTLIBRARIES=libLogger.la libqpidamqp_0_10.la
+noinst_LTLIBRARIES=libLogger.la # libqpidamqp_0_10.la
 libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 # New 0-10 codec, to be integrated in future.
-# Currently built for tests only.
-libqpidamqp_0_10_la_SOURCES= \
+# libqpidamqp_0_10_la_SOURCES= 
+EXTRA_DIST+=\
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
@@ -238,6 +238,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
+  qpid/broker/SaslAuthenticator.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SessionState.h \
@@ -265,26 +266,24 @@ libqpidbroker_la_SOURCES = \
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
-  qpid/client/SessionBase.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\
   qpid/client/Exchange.cpp			\
-  qpid/broker/PersistableMessage.cpp		\
   qpid/client/Queue.cpp				\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
   qpid/client/LocalQueue.cpp			\
+  qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
-  qpid/client/Correlator.cpp			\
-  qpid/client/CompletionTracker.cpp		\
   qpid/client/ConnectionHandler.cpp		\
-  qpid/client/ExecutionHandler.cpp		\
+  qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
-  qpid/client/FutureResponse.cpp		\
   qpid/client/FutureResult.cpp			\
-  qpid/client/SessionCore.cpp			\
+  qpid/client/Results.cpp			\
+  qpid/client/SessionBase.cpp			\
+  qpid/client/SessionImpl.cpp			\
   qpid/client/StateManager.cpp			\
   qpid/client/SubscriptionManager.cpp
 
@@ -299,6 +298,7 @@ nobase_include_HEADERS = \
   qpid/Options.h \
   qpid/Plugin.h \
   qpid/ptr_map.h \
+  qpid/RangeSet.h \
   qpid/RefCounted.h \
   qpid/SharedObject.h \
   qpid/Url.h \
@@ -373,6 +373,7 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SemanticHandler.h \
+  qpid/broker/SaslAuthenticator.h \
   qpid/broker/SessionManager.h \
   qpid/broker/System.h \
   qpid/broker/Timer.h \
@@ -392,27 +393,23 @@ nobase_include_HEADERS = \
   qpid/client/Queue.h \
   qpid/client/AckPolicy.h			\
   qpid/client/Completion.h \
-  qpid/client/CompletionTracker.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
   qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
-  qpid/client/Correlator.h \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/LocalQueue.h \
   qpid/client/Execution.h \
-  qpid/client/ExecutionHandler.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
-  qpid/client/FutureResponse.h \
   qpid/client/FutureResult.h \
   qpid/client/MessageListener.h \
   qpid/client/MessageQueue.h \
-  qpid/client/Response.h \
+  qpid/client/Results.h \
   qpid/client/SessionBase.h \
   qpid/client/Session.h \
-  qpid/client/SessionCore.h \
+  qpid/client/SessionImpl.h \
   qpid/client/StateManager.h \
   qpid/client/SubscriptionManager.h \
   qpid/client/TypedResult.h \

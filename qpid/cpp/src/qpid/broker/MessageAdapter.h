@@ -23,13 +23,8 @@
  */
 
 #include <string>
-#include "qpid/framing/BasicPublishBody.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FrameSet.h"
-#include "qpid/framing/DeliveryProperties.h"
-#include "qpid/framing/MessageProperties.h"
-#include "qpid/framing/MessageTransferBody.h"
-#include "qpid/framing/Message010TransferBody.h"
 
 namespace qpid {	
 namespace broker {

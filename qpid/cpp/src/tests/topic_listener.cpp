@@ -114,7 +114,7 @@ int main(int argc, char** argv){
             } else {
                 session.queueDeclare(arg::queue=control, arg::exclusive=true, arg::autoDelete=true);
             }
-            session.queueBind(arg::exchange="amq.topic", arg::queue=control, arg::routingKey="topic_control");
+            session.exchangeBind(arg::exchange="amq.topic", arg::queue=control, arg::bindingKey="topic_control");
 
             //set up listener
             SubscriptionManager mgr(session);
@@ -123,7 +123,7 @@ int main(int argc, char** argv){
                 mgr.setAckPolicy(AckPolicy(args.ack ? args.ack : (args.prefetch / 2)));
                 mgr.setFlowControl(args.prefetch, SubscriptionManager::UNLIMITED, true);
             } else {
-                mgr.setConfirmMode(false);
+                mgr.setAcceptMode(1/*-not-required*/);
                 mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
             }
             mgr.subscribe(listener, control);
@@ -159,7 +159,7 @@ void Listener::received(Message& message){
     if(!!type && StringValue("TERMINATION_REQUEST") == *type){
         shutdown();
     }else if(!!type && StringValue("REPORT_REQUEST") == *type){
-        message.acknowledge();//acknowledge everything upto this point
+        mgr.getAckPolicy().ackOutstanding(session);//acknowledge everything upto this point
         cout <<"Batch ended, sending report." << endl;
         //send a report:
         report();
@@ -181,7 +181,7 @@ void Listener::report(){
               << time/TIME_MSEC << " ms.";
     Message msg(reportstr.str(), responseQueue);
     msg.getHeaders().setString("TYPE", "REPORT");
-    session.messageTransfer(arg::content=msg);
+    session.messageTransfer(arg::content=msg, arg::acceptMode=1);
     if(transactional){
         session.txCommit();
     }

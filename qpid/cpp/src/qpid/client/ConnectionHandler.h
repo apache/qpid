@@ -21,12 +21,16 @@
 #ifndef _ConnectionHandler_
 #define _ConnectionHandler_
 
+#include "ChainableFrameHandler.h"
 #include "Connector.h"
 #include "StateManager.h"
-#include "ChainableFrameHandler.h"
-#include "qpid/framing/InputHandler.h"
-#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQP_ClientOperations.h"
+#include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/InputHandler.h"
 
 namespace qpid {
 namespace client {
@@ -39,7 +43,7 @@ struct ConnectionProperties
     framing::FieldTable properties;
     std::string mechanism;
     std::string locale;
-    std::string capabilities;
+    framing::Array capabilities;
     uint16_t heartbeat;
     uint16_t maxChannels;
     uint64_t maxFrameSize;
@@ -48,17 +52,44 @@ struct ConnectionProperties
 };
 
 class ConnectionHandler : private StateManager, 
-     public ConnectionProperties, 
-     public ChainableFrameHandler, 
-     public framing::InputHandler
+    public ConnectionProperties, 
+    public ChainableFrameHandler,
+    public framing::InputHandler,
+    private framing::AMQP_ClientOperations::Connection010Handler
 {
+    typedef framing::AMQP_ClientOperations::Connection010Handler ConnectionOperations;
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
     std::set<int> ESTABLISHED;
 
-    void handle(framing::AMQMethodBody* method);
-    void send(const framing::AMQBody& body);
-    void error(uint16_t code, const std::string& message, uint16_t classId = 0, uint16_t methodId = 0);
-    void error(uint16_t code, const std::string& message, framing::AMQBody* body);
+    class Adapter : public framing::FrameHandler
+    {
+        ConnectionHandler& handler;
+    public:
+        Adapter(ConnectionHandler& h) : handler(h) {}
+        void handle(framing::AMQFrame& f) { handler.out(f); }
+    }; 
+
+    Adapter outHandler;
+    framing::AMQP_ServerProxy::Connection010 proxy;
+    uint16_t errorCode;
+    std::string errorText;
+
+    void checkState(STATES s, const std::string& msg);
+
+    //methods corresponding to connection controls:
+    void start(const framing::FieldTable& serverProperties,
+               const framing::Array& mechanisms,
+               const framing::Array& locales);    
+    void secure(const std::string& challenge);    
+    void tune(uint16_t channelMax,
+              uint16_t frameMax,
+              uint16_t heartbeatMin,
+              uint16_t heartbeatMax);    
+    void openOk(const framing::Array& knownHosts);    
+    void redirect(const std::string& host,
+                  const framing::Array& knownHosts);    
+    void close(uint16_t replyCode, const std::string& replyText);    
+    void closeOk();
 
 public:
     using InputHandler::handle;

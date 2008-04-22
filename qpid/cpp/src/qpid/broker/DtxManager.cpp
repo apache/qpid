@@ -29,7 +29,7 @@
 
 using boost::intrusive_ptr;
 using qpid::sys::Mutex;
-using namespace qpid::ptr_map;
+using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
@@ -95,7 +95,7 @@ DtxWorkRecord* DtxManager::getWork(const std::string& xid)
     if (i == work.end()) {
         throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
     }
-    return get_pointer(i);
+    return ptr_map_ptr(i);
 }
 
 void DtxManager::remove(const std::string& xid)
@@ -116,7 +116,7 @@ DtxWorkRecord* DtxManager::createWork(std::string xid)
     if (i != work.end()) {
         throw CommandInvalidException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
     } else {
-      return get_pointer(work.insert(xid, new DtxWorkRecord(xid, store)).first);
+      return ptr_map_ptr(work.insert(xid, new DtxWorkRecord(xid, store)).first);
     }
 }
 
@@ -147,7 +147,7 @@ void DtxManager::timedout(const std::string& xid)
     if (i == work.end()) {
         QPID_LOG(warning, "Transaction timeout failed: no record for xid");
     } else {
-        get_pointer(i)->timedout();
+        ptr_map_ptr(i)->timedout();
         //TODO: do we want to have a timed task to cleanup, or can we rely on an explicit completion?
         //timer.add(intrusive_ptr<TimerTask>(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
     }

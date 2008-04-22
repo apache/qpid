@@ -25,7 +25,7 @@
 #include "Connection.h"
 #include "Channel.h"
 #include "Message.h"
-#include "SessionCore.h"
+#include "SessionImpl.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
@@ -76,8 +76,8 @@ void Connection::openChannel(Channel& channel) {
 Session Connection::newSession(SynchronousMode sync,
                                     uint32_t detachedLifetime)
 {
-    shared_ptr<SessionCore> core(
-        new SessionCore(impl, ++channelIdCounter, max_frame_size));
+    shared_ptr<SessionImpl> core(
+        new SessionImpl(impl, ++channelIdCounter, max_frame_size));
     core->setSync(sync);
     impl->addSession(core);
     core->open(detachedLifetime);

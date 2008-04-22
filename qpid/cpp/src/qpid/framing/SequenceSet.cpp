@@ -143,20 +143,24 @@ void SequenceSet::remove(const SequenceNumber& start, const SequenceNumber& end)
 
 void SequenceSet::remove(const SequenceNumber& s)
 {
-    for (Ranges::iterator i = ranges.begin(); i != ranges.end() && s >= i->start; i++) {        
-        if (i->start == s) {
+    for (Ranges::iterator i = ranges.begin(); i != ranges.end() && s >= i->start; i++) {
+        if (i->contains(s)) {
             if (i->start == i->end) {
-                ranges.erase(i);
-            } else {
+                //range is just a single number, so we can delete the whole range
+                i = ranges.erase(i);
+            } else if (i->start == s) {
+                //move the start forward to exclude s
                 ++(i->start);
+            } else if (i->end == s) {
+                //move the end backward to exclude s
+                --(i->end);
+            } else {
+                //need to split range pointed to by i
+                Range r(i->start, (uint32_t)s - 1);
+                i->start = s + 1;
+                i = ranges.insert(i, r);
             }
-        } else if (i->end == s) {
-            --(i->end);
-        } else if (i->contains(s)) {
-            //need to split range pointed to by i
-            Range r(i->start, (uint32_t)s - 1);
-            i->start = s + 1;
-            ranges.insert(i, r);
+            break;
         }
     }    
 }

@@ -35,7 +35,7 @@ namespace client {
 SubscriptionManager::SubscriptionManager(Session& s)
     : dispatcher(s), session(s),
       messages(UNLIMITED), bytes(UNLIMITED), window(true),
-      confirmMode(true), acquireMode(false),
+      acceptMode(0), acquireMode(0),
       autoStop(true)
 {}
 
@@ -43,7 +43,7 @@ Completion SubscriptionManager::subscribeInternal(
     const std::string& q, const std::string& dest)
 {
     Completion c = session.messageSubscribe(arg::queue=q, arg::destination=dest,
-                             arg::confirmMode=confirmMode, arg::acquireMode=acquireMode);
+                             arg::acceptMode=acceptMode, arg::acquireMode=acquireMode);
     setFlowControl(dest, messages, bytes, window);
     return c;
 }
@@ -68,7 +68,7 @@ Completion SubscriptionManager::subscribe(
 void SubscriptionManager::setFlowControl(
     const std::string& dest, uint32_t messages,  uint32_t bytes, bool window)
 {
-    session.messageFlowMode(dest, window); 
+    session.messageSetFlowMode(dest, window); 
     session.messageFlow(dest, 0, messages); 
     session.messageFlow(dest, 1, bytes);
 }
@@ -81,11 +81,13 @@ void SubscriptionManager::setFlowControl(
     window=window_;
 }
 
-void SubscriptionManager::setConfirmMode(bool c) { confirmMode=c; }
+void SubscriptionManager::setAcceptMode(bool c) { acceptMode=c; }
 
 void SubscriptionManager::setAcquireMode(bool a) { acquireMode=a; }
 
 void SubscriptionManager::setAckPolicy(const AckPolicy& a) { autoAck=a; }
+
+AckPolicy& SubscriptionManager::getAckPolicy() { return autoAck; } 
 
 void SubscriptionManager::cancel(const std::string dest)
 {

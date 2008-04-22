@@ -23,6 +23,7 @@
  */
 
 #include <memory>
+#include <assert.h>
 
 namespace qpid {
 
@@ -49,7 +50,10 @@ class InlineAllocator : public BaseAllocator {
     }
 
     void deallocate(pointer p, size_type n) {
-        if (p == store) allocated=false;
+        if (p == store) {
+            assert(allocated);
+            allocated=false;
+        }
         else BaseAllocator::deallocate(p, n);
     }
 

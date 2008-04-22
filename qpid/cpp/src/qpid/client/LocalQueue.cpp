@@ -36,8 +36,8 @@ Message LocalQueue::pop() {
         throw ClosedException();
     FrameSet::shared_ptr content = queue->pop();
     if (content->isA<MessageTransferBody>()) {
-        Message m(*content, session);
-        autoAck.ack(m);
+        Message m(*content);
+        autoAck.ack(m, session);
         return m;
     }
     else
@@ -46,6 +46,7 @@ Message LocalQueue::pop() {
 }
 
 void LocalQueue::setAckPolicy(AckPolicy a) { autoAck=a; }
+AckPolicy& LocalQueue::getAckPolicy() { return autoAck; }
 
 bool LocalQueue::empty() const
 { 

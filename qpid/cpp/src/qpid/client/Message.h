@@ -30,7 +30,7 @@ namespace qpid {
 namespace client {
 
 /**
- * A representation of messages for sent or recived through the
+ * A representation of messages for sent or received through the
  * client api.
  *
  * \ingroup clientapi
@@ -38,65 +38,22 @@ namespace client {
 class Message : public framing::TransferContent 
 {
 public:
-    Message(const std::string& data_=std::string(),
+    Message(const std::string& data=std::string(),
             const std::string& routingKey=std::string(),
-            const std::string& exchange=std::string()
-    ) : TransferContent(data_, routingKey, exchange) {}
-
-    std::string getDestination() const 
-    { 
-        return method.getDestination(); 
-    }
-
-    bool isRedelivered() const 
-    { 
-        return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
-    }
-
-    void setRedelivered(bool redelivered) 
-    { 
-        getDeliveryProperties().setRedelivered(redelivered); 
-    }
-
-    framing::FieldTable& getHeaders() 
-    { 
-        return getMessageProperties().getApplicationHeaders(); 
-    }
-
-    void acknowledge(Session& session, bool cumulative = true, bool send = true) const
-    {
-        session.getExecution().completed(id, cumulative, send);
-    }
-
-    void acknowledge(bool cumulative = true, bool send = true) const
-    {
-        const_cast<Session&>(session).getExecution().completed(id, cumulative, send);
-    }
+            const std::string& exchange=std::string());
+    std::string getDestination() const;
+    bool isRedelivered() const;
+    void setRedelivered(bool redelivered);
+    framing::FieldTable& getHeaders();
+    const framing::MessageTransferBody& getMethod() const;
+    const framing::SequenceNumber& getId() const;
 
     /**@internal for incoming messages */
-    Message(const framing::FrameSet& frameset, Session s) :
-        method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId()), session(s)
-    {
-        populate(frameset);
-    }
-
-    const framing::MessageTransferBody& getMethod() const
-    {
-        return method;
-    }
-
-    const framing::SequenceNumber& getId() const
-    {
-        return id;
-    }
-
-    /**@internal use for incoming messages. */
-    void setSession(Session s) { session=s; }
+    Message(const framing::FrameSet& frameset);
 private:
     //method and id are only set for received messages:
     framing::MessageTransferBody method;
     framing::SequenceNumber id;
-    Session session;
 };
 
 }}

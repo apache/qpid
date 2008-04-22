@@ -142,9 +142,9 @@ struct Transfer : public Client, public Runnable
                     out.setData(in.getData());
                     out.getMessageProperties().setCorrelationId(in.getMessageProperties().getCorrelationId());
                     out.getDeliveryProperties().setDeliveryMode(in.getDeliveryProperties().getDeliveryMode());
-                    session.messageTransfer(arg::content=out);
+                    session.messageTransfer(arg::content=out, arg::acceptMode=1);
                 }
-                in.acknowledge();
+                lq.getAckPolicy().ackOutstanding(session);
                 session.txCommit();
             }
         } catch(const std::exception& e) {
@@ -168,7 +168,8 @@ struct Controller : public Client
     {
         //declare queues
         for (StringSet::iterator i = queues.begin(); i != queues.end(); i++) {
-            session.queueDeclare(arg::queue=*i, arg::durable=opts.durable).sync();
+            session.queueDeclare(arg::queue=*i, arg::durable=opts.durable);
+            session.sync();
         }
 
         Message msg(generateData(opts.size), *queues.begin());
@@ -179,7 +180,7 @@ struct Controller : public Client
         //publish messages
         for (StringSet::iterator i = ids.begin(); i != ids.end(); i++) {
             msg.getMessageProperties().setCorrelationId(*i);
-            session.messageTransfer(arg::content=msg);
+            session.messageTransfer(arg::content=msg, arg::acceptMode=1);
         }
     }
 
@@ -205,7 +206,7 @@ struct Controller : public Client
     {
         SubscriptionManager subs(session);
         subs.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
-        subs.setConfirmMode(false);
+        subs.setAcceptMode(1/*not-required*/);
 
         StringSet drained;
         //drain each queue and verify the correct set of messages are available
@@ -213,7 +214,8 @@ struct Controller : public Client
             //subscribe, allocate credit and flush
             LocalQueue lq(AckPolicy(0));//manual acking
             subs.subscribe(lq, *i, *i);
-            session.messageFlush(arg::destination=*i).sync();
+            session.messageFlush(arg::destination=*i);
+            session.sync();
 
             uint count(0);
             while (!lq.empty()) {

@@ -23,7 +23,7 @@
 #include "qpid/framing/reply_exceptions.h"
 
 #include "ConnectionImpl.h"
-#include "SessionCore.h"
+#include "SessionImpl.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -31,6 +31,7 @@
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
+
 
 ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
     : connector(c), isClosed(false), isClosing(false)
@@ -52,10 +53,10 @@ ConnectionImpl::~ConnectionImpl() {
     connector->close(); 
 }
 
-void ConnectionImpl::addSession(const boost::shared_ptr<SessionCore>& session)
+void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session)
 {
     Mutex::ScopedLock l(lock);
-    boost::weak_ptr<SessionCore>& s = sessions[session->getChannel()];
+    boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
     if (s.lock()) throw ChannelBusyException();
     s = session;
 }
@@ -67,7 +68,7 @@ void ConnectionImpl::handle(framing::AMQFrame& frame)
 
 void ConnectionImpl::incoming(framing::AMQFrame& frame)
 {
-    boost::shared_ptr<SessionCore> s;
+    boost::shared_ptr<SessionImpl> s;
     {
         Mutex::ScopedLock l(lock);
         s = sessions[frame.getChannel()].lock();
@@ -122,7 +123,7 @@ ConnectionImpl::SessionVector ConnectionImpl::closeInternal(const Mutex::ScopedL
     connector->close();
     SessionVector save;
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
-        boost::shared_ptr<SessionCore> s = i->second.lock();
+        boost::shared_ptr<SessionImpl> s = i->second.lock();
         if (s) save.push_back(s);
     }
     sessions.clear();
@@ -135,7 +136,7 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text)
     if (isClosed) return;
     SessionVector save(closeInternal(l));
     Mutex::ScopedUnlock u(lock);
-    std::for_each(save.begin(), save.end(), boost::bind(&SessionCore::connectionClosed, _1, code, text));
+    std::for_each(save.begin(), save.end(), boost::bind(&SessionImpl::connectionClosed, _1, code, text));
 }
 
 static const std::string CONN_CLOSED("Connection closed by broker");
@@ -148,7 +149,7 @@ void ConnectionImpl::shutdown()
     handler.fail(CONN_CLOSED);
     Mutex::ScopedUnlock u(lock);
     std::for_each(save.begin(), save.end(),
-                  boost::bind(&SessionCore::connectionBroke, _1, INTERNAL_ERROR, CONN_CLOSED));
+                  boost::bind(&SessionImpl::connectionBroke, _1, INTERNAL_ERROR, CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

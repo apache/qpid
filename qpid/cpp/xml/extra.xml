@@ -623,7 +623,7 @@
 
 <class name="message010" index="4">
     <doc>blah, blah</doc>
-    <method name = "transfer" index="1">
+    <method name = "transfer" content="1" index="1">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
         <chassis name="client" implement="MUST" />
@@ -818,7 +818,7 @@
     <method name = "declare" index="1">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="exchange" domain="shortstr"/>
         <field name="type" domain="shortstr"/>
         <field name="alternate-exchange" domain="shortstr"/>
         <field name="passive" domain="bit"/>
@@ -829,7 +829,7 @@
     <method name = "delete" index="2">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="exchange" domain="shortstr"/>
         <field name="if-unused" domain="bit"/>
     </method>
     <method name = "query" index="3">
@@ -863,8 +863,8 @@
     <method name = "bound" index="6">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="queue" domain="shortstr"/>
         <field name="exchange" domain="shortstr"/>
+        <field name="queue" domain="shortstr"/>
         <field name="binding-key" domain="shortstr"/>
         <field name="arguments" domain="table"/>
         <result>
@@ -884,7 +884,7 @@
     <method name = "declare" index="1">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="queue" domain="shortstr"/>
         <field name="alternate-exchange" domain="shortstr"/>
         <field name="passive" domain="bit"/>
         <field name="durable" domain="bit"/>
@@ -895,25 +895,25 @@
     <method name = "delete" index="2">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="queue" domain="shortstr"/>
         <field name="if-unused" domain="bit"/>
         <field name="if-empty" domain="bit"/>
     </method>
     <method name = "purge" index="3">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="queue" domain="shortstr"/>
     </method>
     <method name = "query" index="4">
         <doc>blah, blah</doc>
         <chassis name="server" implement="MUST" />
-        <field name="name" domain="shortstr"/>
+        <field name="queue" domain="shortstr"/>
         <result>
             <struct size="long" type="1">
                 <field name="name" domain="shortstr"/>
                 <field name="alternate-exchange" domain="shortstr"/>
-                <field name="passive" domain="bit"/>
                 <field name="durable" domain="bit"/>
+                <field name="exclusive" domain="bit"/>
                 <field name="auto-delete" domain="bit"/>
                 <field name="arguments" domain="table"/>
                 <field name="message-count" domain="long"/>
