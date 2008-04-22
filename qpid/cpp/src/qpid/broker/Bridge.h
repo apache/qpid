@@ -56,6 +56,7 @@ private:
     management::Bridge::shared_ptr mgmtObject;
     ConnectionState& connection;
     CancellationListener listener;
+    std::string name;
 };
 
 

@@ -50,7 +50,7 @@ class ConnectionHandler : public framing::FrameHandler
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
     
-        Handler(Connection& connection);
+        Handler(Connection& connection, bool isClient);
         ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
@@ -81,7 +81,7 @@ class ConnectionHandler : public framing::FrameHandler
     };
     std::auto_ptr<Handler> handler;
   public:
-    ConnectionHandler(Connection& connection);
+    ConnectionHandler(Connection& connection, bool isClient);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
 };

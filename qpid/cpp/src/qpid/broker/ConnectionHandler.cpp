@@ -65,23 +65,24 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
-ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Handler(connection)) {}
+ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : handler(new Handler(connection, isClient)) {}
 
-ConnectionHandler::Handler::Handler(Connection& c) :
+ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
     client(c.getOutput()), server(c.getOutput()), 
-    connection(c), serverMode(false)
+    connection(c), serverMode(!isClient)
 {
-    FieldTable properties;
-    Array mechanisms(0x95);
-
-    authenticator = SaslAuthenticator::createAuthenticator(c);
-    authenticator->getMechanisms(mechanisms);
-
-    Array locales(0x95);
-    boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
-    locales.add(l);
-    serverMode = true;
-    client.start(properties, mechanisms, locales);
+    if (serverMode) {
+        FieldTable properties;
+        Array mechanisms(0x95);
+        
+        authenticator = SaslAuthenticator::createAuthenticator(c);
+        authenticator->getMechanisms(mechanisms);
+        
+        Array locales(0x95);
+        boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
+        locales.add(l);
+        client.start(properties, mechanisms, locales);
+    }
 }
 
 

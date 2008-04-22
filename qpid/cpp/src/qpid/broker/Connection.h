@@ -54,7 +54,7 @@ class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState
 {
   public:
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */

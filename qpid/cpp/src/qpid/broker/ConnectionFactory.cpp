@@ -43,11 +43,8 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
 
 sys::ConnectionCodec*
 ConnectionFactory::create(sys::OutputControl& out, const std::string& id) {
-    // FIXME aconway 2008-03-18: 
-
-    // gsim 2008-03-26 this seems only to be used when creating
-    // connections from one broker to another
-    return new PreviewConnectionCodec(out, broker, id, true);
+    // used to create connections from one broker to another
+    return new amqp_0_10::Connection(out, broker, id, true);
 }
 
 }} // namespace qpid::broker
