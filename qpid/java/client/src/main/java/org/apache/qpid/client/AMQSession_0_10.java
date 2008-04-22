@@ -746,4 +746,10 @@ public class AMQSession_0_10 extends AMQSession
 
         return subscriber;
     }
+
+    Long requestQueueDepth(AMQDestination amqd)
+    {
+        return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
+    }
+
 }
