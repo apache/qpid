@@ -121,24 +121,24 @@ public class DurableSubscriptionTest extends QpidTestCase
         con.close();
     }
 
-    public void testDurabilityAUTOACK() throws AMQException, JMSException, URLSyntaxException
+    public void testDurabilityAUTOACK() throws Exception
     {
         durabilityImpl(Session.AUTO_ACKNOWLEDGE);
     }
 
-    public void testDurabilityNOACKSessionPerConnection() throws AMQException, JMSException, URLSyntaxException
+    public void testDurabilityNOACKSessionPerConnection() throws Exception
     {
         durabilityImplSessionPerConnection(AMQSession.NO_ACKNOWLEDGE);
     }
 
-    public void testDurabilityAUTOACKSessionPerConnection() throws AMQException, JMSException, URLSyntaxException
+    public void testDurabilityAUTOACKSessionPerConnection() throws Exception
     {
         durabilityImplSessionPerConnection(Session.AUTO_ACKNOWLEDGE);
     }
 
-    private void durabilityImpl(int ackMode) throws AMQException, JMSException, URLSyntaxException
+    private void durabilityImpl(int ackMode) throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic");
         Session session1 = con.createSession(false, ackMode);
         MessageConsumer consumer1 = session1.createConsumer(topic);
@@ -193,11 +193,11 @@ public class DurableSubscriptionTest extends QpidTestCase
         con.close();
     }
 
-    private void durabilityImplSessionPerConnection(int ackMode) throws AMQException, JMSException, URLSyntaxException
+    private void durabilityImplSessionPerConnection(int ackMode) throws Exception
     {
         Message msg;
         // Create producer.
-        AMQConnection con0 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con0 = (AMQConnection) getConnection("guest", "guest");
         con0.start();
         Session session0 = con0.createSession(false, ackMode);
 
@@ -207,14 +207,14 @@ public class DurableSubscriptionTest extends QpidTestCase
         MessageProducer producer = sessionProd.createProducer(topic);
 
         // Create consumer 1.
-        AMQConnection con1 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con1 = (AMQConnection) getConnection("guest", "guest");
         con1.start();
         Session session1 = con1.createSession(false, ackMode);
 
         MessageConsumer consumer1 = session0.createConsumer(topic);
 
         // Create consumer 2.
-        AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         con2.start();
         Session session2 = con2.createSession(false, ackMode);
 
@@ -251,7 +251,7 @@ public class DurableSubscriptionTest extends QpidTestCase
         assertEquals(null, msg);
 
         // Re-attach a new consumer to the durable subscription, and check that it gets the message that it missed.
-        AMQConnection con3 = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con3 = (AMQConnection) getConnection("guest", "guest");
         con3.start();
         Session session3 = con3.createSession(false, ackMode);
 
