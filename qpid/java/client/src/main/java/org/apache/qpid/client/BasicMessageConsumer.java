@@ -546,18 +546,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 // The Synchronized block only needs to protect network traffic.
                 synchronized (_connection.getFailoverMutex())
                 {
-                    BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(_consumerTag, false);
-
-                    final AMQFrame cancelFrame = body.generateFrame(_channelId);
-
                     try
                     {
-                        _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
-
-                        if (_logger.isDebugEnabled())
-                        {
-                            _logger.debug("CancelOk'd for consumer:" + debugIdentity());
-                        }
+                        sendCancel();
                     }
                     catch (AMQException e)
                     {
@@ -592,7 +583,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public abstract void sendCancel() throws JMSAMQException;
+    abstract void sendCancel() throws AMQException, FailoverException;
 
     /**
      * Called when you need to invalidate a consumer. Used for example when failover has occurred and the client has
