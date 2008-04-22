@@ -18,11 +18,21 @@
  - under the License.
  -
  -->
-<project name="Integration Tests" default="build">
+<project name="AMQ Broker" default="build">
 
-    <property name="module.depends" value="systests client common junit-toolkit"/>
-    <property name="module.dist" value="false"/>
+  <property name="module.depends" value="common"/>
+  <property name="module.main" value="org.apache.qpid.server.Main"/>
+  <property name="module.vm.version" value="1.5"/>
 
-    <import file="../module.xml"/>
+  <import file="../module.xml"/>
+
+  <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
+
+  <target name="precompile">
+    <mkdir dir="${output.dir}"/>
+    <exec executable="javacc">
+      <arg line="-OUTPUT_DIRECTORY=${output.dir} src/main/grammar/SelectorParser.jj"/>
+    </exec>
+  </target>
 
 </project>

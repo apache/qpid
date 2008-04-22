@@ -20,7 +20,7 @@
  -->
 <project name="Performance Tests" default="build">
 
-    <property name="module.depends" value="systests client broker common"/>
+    <property name="module.depends" value="systests client broker common junit-toolkit"/>
     <property name="module.dist" value="false"/>
 
     <import file="../module.xml"/>
