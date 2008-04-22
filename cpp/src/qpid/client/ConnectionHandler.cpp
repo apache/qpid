@@ -42,7 +42,7 @@ const std::string INVALID_STATE_CLOSE_OK("close-ok received in invalid state");
 }
 
 ConnectionHandler::ConnectionHandler() 
-    : StateManager(NOT_STARTED), outHandler(*this), proxy(outHandler) 
+    : StateManager(NOT_STARTED), outHandler(*this), proxy(outHandler), errorCode(200)
 {
 
     mechanism = PLAIN;
@@ -54,6 +54,7 @@ ConnectionHandler::ConnectionHandler()
     version = framing::highestProtocolVersion;
 
     ESTABLISHED.insert(FAILED);
+    ESTABLISHED.insert(CLOSED);
     ESTABLISHED.insert(OPEN);
 } 
 
@@ -98,8 +99,8 @@ void ConnectionHandler::outgoing(AMQFrame& frame)
 void ConnectionHandler::waitForOpen()
 {
     waitFor(ESTABLISHED);
-    if (getState() == FAILED) {
-        throw Exception("Failed to establish connection.");
+    if (getState() == FAILED || getState() == CLOSED) {
+        throw ConnectionException(errorCode, errorText);
     }
 }
 
@@ -108,7 +109,7 @@ void ConnectionHandler::close()
     switch (getState()) {
       case NEGOTIATING:
       case OPENING:
-        setState(FAILED);
+        fail("Connection closed before it was established");
         break;
       case OPEN:
         setState(CLOSING);
@@ -128,6 +129,8 @@ void ConnectionHandler::checkState(STATES s, const std::string& msg)
 
 void ConnectionHandler::fail(const std::string& message)
 {
+    errorCode = 502;
+    errorText = message;
     QPID_LOG(warning, message);
     setState(FAILED);
 }
@@ -172,6 +175,8 @@ void ConnectionHandler::close(uint16_t replyCode, const std::string& replyText)
 {
     proxy.closeOk();
     setState(CLOSED);
+    errorCode = replyCode;
+    errorText = replyText;
     QPID_LOG(warning, "Broker closed connection: " << replyCode << ", " << replyText);
     if (onError) {
         onError(replyCode, replyText);
