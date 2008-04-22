@@ -22,11 +22,13 @@
 import qpid
 import socket
 import struct
+import uuid
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
 from shlex           import split
-from qpid.client     import Client
+from qpid.connection import Connection
+from qpid.util       import connect
 
 class Broker:
   def __init__ (self, text):
@@ -159,7 +161,7 @@ class ManagementData:
       self.schema[className] = (configs, insts, methods, events)
 
   def __init__ (self, disp, host, username="guest", password="guest",
-                specfile="../../specs/amqp.0-10-preview.xml"):
+                specfile="../../specs/amqp.0-10.xml"):
     self.spec           = qpid.spec.load (specfile)
     self.lock           = Lock ()
     self.tables         = {}
@@ -171,15 +173,13 @@ class ManagementData:
     self.methodsPending = {}
 
     self.broker = Broker (host)
-    self.client = Client (self.broker.host, self.broker.port, self.spec)
-    self.client.start (response='\x00' + username + '\x00' + password,
-                       mechanism="PLAIN")
-    self.channel = self.client.channel (1)
+    self.conn   = Connection (connect (self.broker.host, self.broker.port), self.spec)
+    self.conn.start ()
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply)
     self.mclient.schemaListener (self.schemaHandler)
-    self.mch = self.mclient.addChannel (self.channel)
+    self.mch = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
 
   def close (self):
     self.mclient.removeChannel (self.mch)
