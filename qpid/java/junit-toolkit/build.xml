@@ -18,11 +18,10 @@
  - under the License.
  -
  -->
-<project name="Integration Tests" default="build">
+<project name="Junit Toolkit" default="build">
 
-    <property name="module.depends" value="systests client common junit-toolkit"/>
-    <property name="module.dist" value="false"/>
+  <property name="module.src" value="src/main"/>
 
-    <import file="../module.xml"/>
+  <import file="../module.xml"/>
 
 </project>

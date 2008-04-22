@@ -83,7 +83,7 @@ public class ManagementConsoleTest extends TestCase
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly 
         DestNameExchange exchange = new DestNameExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, true);
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         AMQManagedObject mbean = (AMQManagedObject)exchange.getManagedObject();
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();
 
