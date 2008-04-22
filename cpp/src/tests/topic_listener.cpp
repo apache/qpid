@@ -154,11 +154,11 @@ void Listener::received(Message& message){
         init = true;
         cout << "Batch started." << endl;
     }
-    FieldTable::ValuePtr type(message.getHeaders().get("TYPE"));
+    string type = message.getHeaders().getString("TYPE");
 
-    if(!!type && StringValue("TERMINATION_REQUEST") == *type){
+    if(string("TERMINATION_REQUEST") == type){
         shutdown();
-    }else if(!!type && StringValue("REPORT_REQUEST") == *type){
+    }else if(string("REPORT_REQUEST") == type){
         mgr.getAckPolicy().ackOutstanding(session);//acknowledge everything upto this point
         cout <<"Batch ended, sending report." << endl;
         //send a report:

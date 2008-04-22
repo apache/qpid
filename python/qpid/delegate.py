@@ -22,7 +22,7 @@ Delegate implementation intended for use with the peer module.
 """
 
 import threading, inspect, traceback, sys
-from connection import Method, Request, Response
+from connection08 import Method, Request, Response
 
 def _handler_name(method):
   return "%s_%s" % (method.klass.name, method.name)

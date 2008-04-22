@@ -66,7 +66,7 @@ void FieldTable::set(const std::string& name, const ValuePtr& value){
 }
 
 void FieldTable::setString(const std::string& name, const std::string& value){
-    values[name] = ValuePtr(new StringValue(value));
+    values[name] = ValuePtr(new Str16Value(value));
 }
 
 void FieldTable::setInt(const std::string& name, int value){

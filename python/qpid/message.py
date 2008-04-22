@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-from connection import Method, Request
+from connection08 import Method, Request
 from sets import Set
 
 class Message:
