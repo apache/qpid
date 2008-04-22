@@ -267,6 +267,11 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     msgCredit(0), 
     byteCredit(0) {}
 
+OwnershipToken* SemanticState::ConsumerImpl::getSession()
+{
+    return &(parent->session);
+}
+
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
     allocateCredit(msg.payload);

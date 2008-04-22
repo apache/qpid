@@ -49,6 +49,7 @@ public:
         return true;
     };
     void notify() {}
+    OwnershipToken* getSession() { return 0; }
 };
 
 class FailOnDeliver : public Deliverable

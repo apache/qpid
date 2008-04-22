@@ -27,6 +27,7 @@ namespace qpid {
 }}
 
 #include "Message.h"
+#include "OwnershipToken.h"
 
 namespace qpid {
     namespace broker {
@@ -56,6 +57,7 @@ namespace qpid {
             virtual void notify() = 0;
             virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
             virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
+            virtual OwnershipToken* getSession() = 0;
             virtual ~Consumer(){}
         };
     }
