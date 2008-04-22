@@ -88,6 +88,7 @@ public:
     bool isCompleteUpTo(const framing::SequenceNumber& id);
     void waitForCompletion(const framing::SequenceNumber& id);
     void sendCompletion();
+    void sendFlush();
 
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
