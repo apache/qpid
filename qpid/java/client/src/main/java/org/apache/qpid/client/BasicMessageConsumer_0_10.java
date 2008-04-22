@@ -211,20 +211,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * This method is invoked when this consumer is stopped.
      * It tells the broker to stop delivering messages to this consumer.
      */
-    public void sendCancel() throws JMSAMQException
+    void sendCancel() throws AMQException
     {
         ((AMQSession_0_10) getSession()).getQpidSession().messageCancel(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
         // confirm cancel
         getSession().confirmConsumerCancelled(getConsumerTag());
-        try
-        {
-            ((AMQSession_0_10) getSession()).getCurrentException();
-        }
-        catch (AMQException e)
-        {
-            throw new JMSAMQException("Problem when stopping consumer", e);
-        }
+        ((AMQSession_0_10) getSession()).getCurrentException();
     }
 
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)

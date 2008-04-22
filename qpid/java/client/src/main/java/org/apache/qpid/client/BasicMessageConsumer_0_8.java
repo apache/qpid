@@ -51,30 +51,17 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
               acknowledgeMode, noConsume, autoClose);
     }
 
-    public void sendCancel() throws JMSAMQException
+    void sendCancel() throws AMQException, FailoverException
     {
-        final AMQFrame cancelFrame = _connection.getProtocolHandler().getMethodRegistry().
-                                        createBasicCancelBody(_consumerTag, // consumerTag
-                                                              false). // nowait
-                                        generateFrame(_channelId);
+        BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(_consumerTag, false);
 
-        try
-        {
-            _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
+        final AMQFrame cancelFrame = body.generateFrame(_channelId);
 
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("CancelOk'd for consumer:" + debugIdentity());
-            }
+        _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
 
-        }
-        catch (AMQException e)
+        if (_logger.isDebugEnabled())
         {
-            throw new JMSAMQException("Error closing consumer: " + e, e);
-        }
-        catch (FailoverException e)
-        {
-            throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
+            _logger.debug("CancelOk'd for consumer:" + debugIdentity());
         }
     }
 
@@ -86,5 +73,5 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
 
     }
-     
+
 }
