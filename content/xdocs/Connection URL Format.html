@@ -1,0 +1,167 @@
+<html>
+    <head>
+        <title>Apache Qpid : Connection URL Format</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Connection URL Format
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 02, 2008 by <font color="#0050B2">asimon</font>.
+				    </div>
+
+				    <div class="preformatted"><div class="preformattedContent">
+<pre>amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]&lt;virtualhost&gt;[?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
+</pre>
+</div></div>
+
+<p>The connection url defines the values that are common across the cluster of brokers. The virtual host is second in the list as the AMQP specification demands that it start with a '/' otherwise it be more readable to be swapped with clientid. There is currently only one required option and that is the <b>brokerlist</b> option. In addition the following options are recognised.</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Option</th>
+<th class='confluenceTh'>Default</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>ssl</td>
+<td class='confluenceTd'>false</td>
+<td class='confluenceTd'>Set the default for all connections. This can be overridden by the individual broker url.</td>
+</tr>
+<tr>
+<td class='confluenceTd'>brokerlist</td>
+<td class='confluenceTd'>see below</td>
+<td class='confluenceTd'>The list of brokers to use for this connection</td>
+</tr>
+<tr>
+<td class='confluenceTd'>failover</td>
+<td class='confluenceTd'>see below</td>
+<td class='confluenceTd'>The type of failover method to use with the broker list.</td>
+</tr>
+<tr>
+<td class='confluenceTd'>cyclecount</td>
+<td class='confluenceTd'>0</td>
+<td class='confluenceTd'> The number of times to loop through the list of available brokers before failure.</td>
+</tr>
+</tbody></table>
+
+<h4><a name="ConnectionURLFormat-Brokerlistoption"></a>Brokerlist option </h4>
+<div class="preformatted"><div class="preformattedContent">
+<pre>brokerlist='&lt;broker url&gt;[;&lt;broker url&gt;]'
+</pre>
+</div></div>
+
+<p>The broker list defines the various brokers that can be used for this connection. A minimum of one broker url is required additional URLs are semi-colon(';') delimited.</p>
+
+<h4><a name="ConnectionURLFormat-BrokerURLformat"></a>Broker URL format </h4>
+<div class="preformatted"><div class="preformattedContent">
+<pre>&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;][?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
+</pre>
+</div></div>
+
+<p>There are currently quite a few default values that can be assumed. This was done so that the current client examples would not have to be re-written. The result is if there is no transport, 'tcp' is assumed and the default AMQP port of 5672 is used if no port is specified.</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Transport</th>
+</tr>
+<tr>
+<td class='confluenceTd'>tcp</td>
+</tr>
+<tr>
+<td class='confluenceTd'>vm</td>
+</tr>
+</tbody></table>
+
+<p>Currently only 'tcp' and 'vm' transports are supported. Each broker can take have additional options that are specific to that broker. The following are currently implemented options. To add support for further transports the ''client.transportTransportConnection'' class needs updating along with the parsing to handle the transport.</p>
+
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Option</th>
+<th class='confluenceTh'>Default</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>retries</td>
+<td class='confluenceTd'>1</td>
+<td class='confluenceTd'> The number of times to retry connection to this Broker</td>
+</tr>
+<tr>
+<td class='confluenceTd'>ssl</td>
+<td class='confluenceTd'>false</td>
+<td class='confluenceTd'>Use ssl on the connection</td>
+</tr>
+<tr>
+<td class='confluenceTd'>connecttimeout</td>
+<td class='confluenceTd'>30000</td>
+<td class='confluenceTd'>How long in (milliseconds) to wait for the connection to succeed</td>
+</tr>
+<tr>
+<td class='confluenceTd'>connectdelay</td>
+<td class='confluenceTd'>none</td>
+<td class='confluenceTd'>How long in (milliseconds) to wait before attempting to reconnect</td>
+</tr>
+</tbody></table>
+
+
+<h4><a name="ConnectionURLFormat-Brokerlistfailoveroption"></a>Brokerlist failover option </h4>
+<div class="preformatted"><div class="preformattedContent">
+<pre>failover='&lt;method&gt;[?&lt;options&gt;]'
+</pre>
+</div></div>
+
+<p>This option controls how failover occurs when presented with a list of brokers. There are only two methods currently implemented but interface <tt>qpid.jms.failover.FailoverMethod</tt> can be used for defining further methods.</p>
+
+<p>Currently implemented failover methods.</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Method</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>singlebroker</td>
+<td class='confluenceTd'>This will only use the first broker in the list.</td>
+</tr>
+<tr>
+<td class='confluenceTd'>roundrobin</td>
+<td class='confluenceTd'>This method tries each broker in turn.</td>
+</tr>
+</tbody></table>
+
+<p>The current defaults are naturally to use the 'singlebroker' when only one broker is present and the 'roundrobin' method with multiple brokers. The '''method''' value in the URL may also be any valid class on the classpath that implements the <tt>FailoverMethod</tt> interface.</p>
+
+<h3><a name="ConnectionURLFormat-SampleURLs"></a>Sample URLs </h3>
+<div class="preformatted"><div class="preformattedContent">
+<pre>amqp:///test?brokerlist='localhost'
+amqp:///test?brokerlist='tcp://anotherhost:5684?retries='10''
+amqp://guest:guest@/test?brokerlist='vm://:1;vm://:2'&amp;failover='roundrobin'
+amqp://guest:guest@/test?brokerlist='vm://:1;vm://:2'&amp;cyclecount='20'
+amqp://guest:guest@client/test?ssl='true'&amp;brokerlist='tcp://localhost;tcp://redundant-server:5673?ssl='false''&amp;failover='roundrobin'
+</pre>
+</div></div>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

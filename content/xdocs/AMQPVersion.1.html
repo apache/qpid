@@ -1,0 +1,176 @@
+<html>
+    <head>
+        <title>Apache Qpid : AMQPVersion.1</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : AMQPVersion.1
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Oct 20, 2006 by <font color="#0050B2">kpvdr</font>.
+				    </div>
+
+				    <p>Back to <a href="Multiple AMQP Version Support.html" title="Multiple AMQP Version Support">Multiple AMQP Version Support</a></p>
+
+<h1><a name="AMQPVersion.1-ApproachtoaddingsupportformultipleAMQPversionsintothebroker"></a>Approach to adding support for multiple AMQP versions into the broker </h1>
+<p>I had intended to follow approach 2 below, however after some brainstorming, a better and more efficient approach has been proposed. The following is a summary of the possible courses of action.</p>
+
+<p>Kim van der Riet</p>
+<hr />
+<h2><a name="AMQPVersion.1-1.Presentstatus%3ANoAMQPversiondiscrimination."></a>1. Present status: No AMQP version discrimination. </h2>
+<h3><a name="AMQPVersion.1-ADVANTAGES%3A"></a>ADVANTAGES: </h3>
+<p>  a. Nothing changes in the code, and everyone keeps doing what they are already doing... <img class="emoticon" src="./icons/emoticons/wink.gif" height="20" width="20" align="absmiddle" alt="" border="0"/></p>
+<h3><a name="AMQPVersion.1-DISADVANTAGES%3A"></a>DISADVANTAGES: </h3>
+<p>  a. There is no easy way of hosting more than one version of AMQP at the same time in the broker.<br/>
+  b. The code that touches the version-specific generated method body classes is scattered all over the place. This makes it difficult to maintain the code if there <em><b>is</b></em> a change to the AMQP protocol. In order to help conceive the scope of possible protocol changes (outside of any policy the AMQP WG may have in this regard) consider the following possible change types/scopes:</p>
+<ol>
+	<li>A method call (class, method, fields, types) does not change, but the use or purpose of a field changes;</li>
+	<li>A method call changes the type of one or more fields;</li>
+	<li>A method call changes the number of fields (including by removing a field from one version to the next);</li>
+	<li>A method call changes the order of the fields;</li>
+	<li>A totally new method call is added;</li>
+	<li>A method call is removed;</li>
+	<li>A class is added;</li>
+	<li>A class is removed;</li>
+	<li>Any of 5-9 above in such a way as to alter the class/method numbers of unchanged elements (e.g. a class is removed, so class Basic changes from 60 to 50)</li>
+</ol>
+
+
+<h2><a name="AMQPVersion.1-2.Initialapproachtosolvingproblem%3ANamespacediscrimination."></a>2. Initial approach to solving problem: Namespace discrimination. </h2>
+<p>  a. In this approach, each version of the protocol is generated as before, but into a namespace unique to that version.<br/>
+  b. The <tt>ProtocolSession</tt> objects are made version-aware, and carry the major and minor version numbers of the current session from the <tt>ProtocolInitiation</tt> objects used to start the session.<br/>
+  c. The points in the code where version-specific method body objects and/or calls are made are moved into a single layer - the method handlers. Static function calls are added where necessary to instantiate and/or process these objects. Since the method handlers are version-aware, they would contain the logic to select the correct namespace.<br/>
+  d. The generated code would contain additional methods which allow the fields within any method body to be accessed or set using a parametrized function call. This would aid the coding of the version-sensitive logic used in the method handlers.</p>
+<div class="preformatted"><div class="preformattedContent">
+<pre>      
+    +--------+       +---------+       +------------+       +---------+
+    | Broker |       |  Method |       | Generated  |       | Encoder |
+    | code   | &lt;---&gt; | Handler | &lt;---&gt; | MethodBody | &lt;---&gt; | Decoder |
+    |        |       | classes |       |  classes   |       | classes |
+    +--------+       +---------+       +------------+       +---------+
+       1                1 set         n sets, 1/version    1 or possibly more
+</pre>
+</div></div>
+<h3><a name="AMQPVersion.1-ADVANTAGES%3A"></a>ADVANTAGES: </h3>
+<p>  a. Allows multiple AMQP versions to be used simultaneously in the broker.<br/>
+  b. Isolates the scope of version-specific code to the method handlers, where hand-coded logic specific to the needs of individual AMQP versions may reside. This aids maintainability in the event of additional versions being added/versions being changed.<br/>
+  c. Forces the code to choose a specific AMQP version to use the <tt>MethodBody</tt> classes.<br/>
+  d. Works using existing code-generation system (XSLT).</p>
+<h3><a name="AMQPVersion.1-DISADVANTAGES"></a>DISADVANTAGES </h3>
+<p>  a. Code duplication: Since in most AMQP version changes, 90+% of the specification remains unchanged, the generated classes will contain mostly exact duplicates from version to version.<br/>
+  b. The ideal system of version fallback (in which default behavior is to use the latest class and to hand-code logic only where differences exist) does not operate. Each version must be handled separately whether identical or not.<br/>
+  c. The code using the parametrized function calls is more complex and not as easy to understand as direct calls.</p>
+
+<h2><a name="AMQPVersion.1-3.Revisedapproach%3AIntelligentgeneration"></a>3. Revised approach: Intelligent generation </h2>
+<p>  a. In this approach, the limitations of the existing XSLT code generation are removed. We assume that we can compare one version of the AMQP specification to another, and generate code for the latest version and code to handle only the differences between the latest and each earlier version. To achieve this, we conceptually refactor the XML specification file so that the version information is contained inside the elements instead of outside them. Then each version of the spec is added cumulatively to create a complete map of the specification. For example, assume the following simple example: <div class="preformatted"><div class="preformattedContent">
+<pre>AMQP 1.0:
+Basic.Consume(Ticket ticket, Queue queue, ConsumerTag consumer_tag, NoLocal no_local, NoAck no_ack, bool exclusive, bool nowait);
+AMQP 1.2:
+Basic.Consume(Ticket ticket, Queue queue, ConsumerTag consumer_tag, int no_ack, bool exclusive, bool nowait, NoLocal no_local, int priority);
+</pre>
+</div></div><br/>
+  would be refactored to something like (abbreviated):<div class="code"><div class="codeContent">
+<pre class="code-xml"><span class="code-tag">&lt;AMQP&gt;</span>
+  <span class="code-tag">&lt;class name="Basic&gt;</span>
+    <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"60"</span>/&gt;</span>
+    <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"50"</span>/&gt;</span>
+    <span class="code-tag">&lt;method name=<span class="code-quote">"Consume"</span>&gt;</span>
+      <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"20"</span>/&gt;</span>
+      <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"20"</span>/&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"ticket"</span> type=<span class="code-quote">"Ticket"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"0"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"0"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"queue"</span> type=<span class="code-quote">"Queue"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"1"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"1"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"consumer_tag"</span> type=<span class="code-quote">"ConsumerTag"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"2"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"2"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"no_local"</span> type=<span class="code-quote">"NoLocal"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"3"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"6"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"no_ack"</span> type=<span class="code-quote">"NoAck"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"4"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"no_ack"</span> type=<span class="code-quote">"int"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"3"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"exclusive"</span> type=<span class="code-quote">"bool"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"5"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"4"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"nowait"</span> type=<span class="code-quote">"bool"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"0"</span> num=<span class="code-quote">"6"</span>/&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"5"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+      <span class="code-tag">&lt;field name=<span class="code-quote">"priority"</span> type=<span class="code-quote">"int"</span>&gt;</span>
+        <span class="code-tag">&lt;version major=<span class="code-quote">"1"</span> minor=<span class="code-quote">"2"</span> num=<span class="code-quote">"7"</span>/&gt;</span>
+      <span class="code-tag">&lt;/field&gt;</span>
+    <span class="code-tag">&lt;/method&gt;</span>
+  <span class="code-tag">&lt;/class&gt;</span>
+<span class="code-tag">&lt;/AMQP&gt;</span></pre>
+</div></div><br/>
+  This would result in the generation of only a single <tt>MethodBody</tt> class, and since all instances of this class are version-aware, each knows how to handle calls for a given version (pseudo-java):</p>
+<div class="code"><div class="codeContent">
+<pre class="code-java">class BasicConsumeBody <span class="code-keyword">extends</span> AMQPMethodBody
+{
+    <span class="code-keyword">public</span> <span class="code-object">int</span> _major, _minor;
+    <span class="code-keyword">public</span> BasicConsumeBody(<span class="code-object">int</span> major, <span class="code-object">int</span> minor) {_major = major; _minor = minor;}
+    <span class="code-keyword">public</span> <span class="code-object">int</span> getAMQPClass(){<span class="code-keyword">if</span> (major == 1 &amp;&amp; minor == 0) <span class="code-keyword">return</span> 60; <span class="code-keyword">else</span> <span class="code-keyword">return</span> 50;} <span class="code-comment">// the class number has changed!
+</span>    <span class="code-keyword">public</span> <span class="code-object">int</span> getAMQPMethod(){<span class="code-keyword">return</span> 20;}
+
+    <span class="code-keyword">public</span> Ticket getTicket() {...}
+    <span class="code-keyword">public</span> Queue getQueue() {...}
+    <span class="code-keyword">public</span> ConsumerTag getConsumerTag() {...}
+    <span class="code-keyword">public</span> NoLocal getNoLocal() {....}
+    <span class="code-keyword">public</span> T getNoAck(<span class="code-object">Class</span>&lt;T&gt;) {<span class="code-keyword">if</span> (major == 1 &amp;&amp; minor == 0)...} <span class="code-comment">// NoAck changes type
+</span>    <span class="code-keyword">public</span> <span class="code-object">boolean</span> getExclusive() {...}
+    <span class="code-keyword">public</span> <span class="code-object">boolean</span> getNoWait() {...}
+    <span class="code-keyword">public</span> <span class="code-object">int</span> getPriority() <span class="code-keyword">throws</span> Exception {<span class="code-keyword">if</span> (major != 1 || minor != 2) <span class="code-keyword">throw</span>...} <span class="code-comment">// Priority field is in 1.2 only
+</span>    <span class="code-comment">// also <span class="code-keyword">for</span> setXXX() methods...
+</span>}</pre>
+</div></div>
+<p>  Static functions would require major and minor to be passed to be able to operate.<br/>
+  a.#2 As before, the <tt>ProtocolSession</tt> objects are made version-aware, and carry the major and minor version numbers of the current session from the <tt>ProtocolInitiation</tt> objects used to start the session.<br/>
+  b. As before, the points in the code where version-specific method body objects and/or calls are made are moved into a single layer - the method handlers.<br/>
+  c. If different versions of a particular method have additional and/or different parameters, the generated class may be thought of as a cumulative collection of all these parameters/types. Since the object is AMQP version-aware, it is possible for the handlers to know which fields to use and/or how to initialize/handle the unused fields for any call which addresses less than all the available fields. Possible courses of action include ignoring the unused field, or initializing it with a meaningful default. Making the field members of the class public would afford this flexibility, and the get/set methods could simply be viewed as convenience methods. Where the type of a field changes, the different fields would require some kind of name-mangling to indicate their type.</p>
+
+<h3><a name="AMQPVersion.1-ADVANTAGES"></a>ADVANTAGES </h3>
+<p>  a. Only a single class for each method body<br/>
+  b. Single get/set method for each field<br/>
+  c. Common code is simple and remains unchanged from version to version<br/>
+  d. Where a field type changes, a <tt>Class&lt;T&gt;</tt> type method is used; this will break all areas in the code which used to use this method, and conveniently indicate where hand-coded logic is required.<br/>
+  e. Where there is a  field that is unique to a subset of versions, auto-generated code will throw an exception if it is invoked from a session of the wrong version. The addition of the exception will break the compilation (i.e. must be caught), and will indicate places in the code where hand-coded logic will be required.<br/>
+  f. The existing handler code can remain substantially unchanged.</p>
+
+<h3><a name="AMQPVersion.1-DISADVANTAGES"></a>DISADVANTAGES </h3>
+<p>  a. Complexity...<br/>
+  b. This generation is beyond the capabilities of XSLT (or would be inordinately difficult), and we would need to switch to either Python (or Jython) or a purpose-written Java generator to do the job.<br/>
+  c. It is not clear from the interface what field is valid in what version. There has been some discussion on name-mangling to solve this, but the general dislike for name-mangling in general and the complexities it brings seem to outweigh any advantages... </p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

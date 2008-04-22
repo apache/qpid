@@ -1,0 +1,111 @@
+<html>
+    <head>
+        <title>Apache Qpid : Qpid Java Meeting Minutes 28-03-2008</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Qpid Java Meeting Minutes 28-03-2008
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Mar 28, 2008 by <font color="#0050B2">godfrer</font>.
+				    </div>
+
+				    <h2><a name="QpidJavaMeetingMinutes28-03-2008-Attendees"></a>Attendees</h2>
+
+<p>Rob Godfrey<br/>
+Arnaud Simon<br/>
+Aidan Skinner<br/>
+Marnie McCormack<br/>
+Rafi Schloming</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-UpdateonM2.1releaseprocess"></a>Update on M2.1 release process</h2>
+
+<p>Tagged RC1 yesterday<br/>
+Going to run RAT, push out over the weekend<br/>
+Need to schedule updates to documentation</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-UpdateonGSoCprojects"></a>Update on GSoC projects</h2>
+
+<p>Had a large number of students, need to get mentors<br/>
+Need to distribute the load</p>
+
+<p>Also have interest from external parties helping with management bridge</p>
+
+<p>Need to follow the timeline; process</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-ApacheConnEurope"></a>Apache Conn Europe</h2>
+
+<p>Qpid has a 15 min slot Amsterdam, Wednesday 9th April.  Any volunteers?</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-Reviewofthepreviousweek%27scommits"></a>Review of the previous week's commits</h2>
+<p> <a href="http://markmail.org/search/?q=type%3Acheckins+list%3Aorg.apache.incubator.qpid-commits+order%3Adate-forward+date%3A200803+#query:type%3Acheckins%20list%3Aorg.apache.incubator.qpid-commits%20order%3Adate-forward%20date%3A200803%20+page:13+mid:ewgbylgldnbmmqgw+state:results" title="Visit page outside Confluence">http://markmail.org/search/?q=type%3Acheckins+list%3Aorg.apache.incubator.qpid-commits+order%3Adate-forward+date%3A200803+#query:type%3Acheckins%20list%3Aorg.apache.incubator.qpid-commits%20order%3Adate-forward%20date%3A200803%20+page:13+mid:ewgbylgldnbmmqgw+state:results</a></p>
+
+<p>r639619 : Rafi comments that there is a base class on trunk which should close all connections<br/>
+r640117 : We should standardize the comments on checkin to have QPID-xxx first, ensure case is correct<br/>
+r640422 : Should make timeouts a configuration parameter rather than picking arbitrary values; also allow non-timeout path coverage;<br/>
+r640434 : Need to look at logging levels for M3<br/>
+r640503 : no JIRA number associated with the checkin!<br/>
+r641212 : no need to be so generic, only need 32 bit serial numbers<br/>
+r641232 : incorrect capitalization</p>
+
+
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-ReviewnewlyraisedJIRAs"></a>Review newly raised JIRAs</h2>
+
+<p><a href="https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&amp;&amp;type=-2&amp;pid=12310520&amp;created%3Aprevious=-1w+3d&amp;sorter/field=issuekey&amp;sorter/order=DESC" title="Visit page outside Confluence">https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&amp;&amp;type=-2&amp;pid=12310520&amp;created%3Aprevious=-1w+3d&amp;sorter/field=issuekey&amp;sorter/order=DESC</a></p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-Updateonwhatpeoplearecurrentlyworkingon"></a>Update on what people are currently working on</h2>
+
+<p>MM: Looking at priorities for M3</p>
+
+<p>AS: M2.1 and Merge</p>
+
+<p>RG: Broker Refactoring<br/>
+    Headers/Exchange</p>
+
+<p>ASimon: Adding DTX tests<br/>
+        See QPID-884<br/>
+        Fix the URL for backwards compatability - check version in protocol initiation<br/>
+        Configuration for prefetch in 0-10</p>
+
+<p>RS: Updating 0-10 client to use correct 0-10 spec<br/>
+    large commit next week</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-UpdateonthemergefromM2.1totrunk%28Aidan%29"></a>Update on the merge from M2.1 to trunk (Aidan)</h2>
+
+<p>Will resynch broker / client after M2.1 finalised</p>
+
+<h2><a name="QpidJavaMeetingMinutes28-03-2008-Testing"></a>Testing</h2>
+
+<p>Marnie will put up test spec<br/>
+Need to review to make sure all use cases covered.<br/>
+Need stress tests and soak tests<br/>
+Arnaud - should look at the Sonic test suite</p>
+
+
+<p>Meeting closed 15:30 UK</p>
+
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

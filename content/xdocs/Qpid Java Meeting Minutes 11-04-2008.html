@@ -1,0 +1,513 @@
+<html>
+    <head>
+        <title>Apache Qpid : Qpid Java Meeting Minutes 11-04-2008</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Qpid Java Meeting Minutes 11-04-2008
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 11, 2008 by <font color="#0050B2">ritchiem</font>.
+				    </div>
+
+				    <h2><a name="QpidJavaMeetingMinutes11-04-2008-Agenda"></a>Agenda</h2>
+
+<ul>
+	<li>Update on M2.1 release process</li>
+	<li>Review of code commits</li>
+	<li>Review of new JIRAs</li>
+	<li>Update on GSoC projects</li>
+</ul>
+
+
+<h2><a name="QpidJavaMeetingMinutes11-04-2008-Attendees"></a>Attendees</h2>
+
+<p>Rob Godfrey<br/>
+Aidan Skinner<br/>
+Marnie McCormack<br/>
+Martin Ritchie<br/>
+Carl Trieloff<br/>
+Rajith Attapatu<br/>
+Rafael Schloming<br/>
+Gordon Sim</p>
+
+<h2><a name="QpidJavaMeetingMinutes11-04-2008-UpdateonM2.1releaseprocess"></a>Update on M2.1 release process</h2>
+
+<p>RC3 is out, release instructions need to be updated.<br/>
+C+&#43; documentation should exist</p>
+
+<h2><a name="QpidJavaMeetingMinutes11-04-2008-Reviewofcodecommits"></a>Review of code commits</h2>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'> revision </th>
+<th class='confluenceTh'> committer </th>
+<th class='confluenceTh'> date </th>
+<th class='confluenceTh'> comment </th>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644689" title="Visit page outside Confluence">r644689 </a> </td>
+<td class='confluenceTd'> arnaudsimon </td>
+<td class='confluenceTd'> 2008-04-04 13:11:38 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> QPID-798 Added boolean property fully_sync when true a sync is sent after a persistent message is transfered. . </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644727" title="Visit page outside Confluence">r644727 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-04 15:42:36 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> src/qpid/amqp_0_10/Assembly.cpp,.h: </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644732" title="Visit page outside Confluence">r644732 </a> </td>
+<td class='confluenceTd'> nsantos </td>
+<td class='confluenceTd'> 2008-04-04 15:58:01 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> QPID-898: move bz2 generation from the release target to a new release-all target </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644806" title="Visit page outside Confluence">r644806 </a> </td>
+<td class='confluenceTd'> kpvdr </td>
+<td class='confluenceTd'> 2008-04-04 19:14:42 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> Patch from Ted Ross (see QPID-902): This patch contains the following improvements for management:\n1) Schema display cleaned up in the python mgmt-cli\n2) Locking added automatically to management object accessors (manual<br clear="all" />
+ locking removed from broker/Queue.cpp)\n3) Schemas are now pre-registered with the management agent using a package initializer. This allows management consoles to get schema information for a class even if no instances of the class exist. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644812" title="Visit page outside Confluence">r644812 </a> </td>
+<td class='confluenceTd'> kpvdr </td>
+<td class='confluenceTd'> 2008-04-04 19:25:08 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> Additional files for Ted Ross's checkin </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644845" title="Visit page outside Confluence">r644845 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-04 20:35:14 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> Minor cleanup of base Exception and python_tests script. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=644917" title="Visit page outside Confluence">r644917 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-04 22:00:40 &#43;0100 (Fri, 04 Apr 2008) </td>
+<td class='confluenceTd'> src/qpid/amqp_0_10/Exception.h </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645470" title="Visit page outside Confluence">r645470 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-07 12:51:07 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> AsynchIoAcceptor.cpp: Limit output from codec to one buffer per 'idle' call. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645593" title="Visit page outside Confluence">r645593 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-07 17:27:20 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> Add toplevel NOTICE and LICENSE files, add Felix to java/resources/NOTICE, make sure all spec files are included in java source distribution </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645663" title="Visit page outside Confluence">r645663 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-07 21:12:31 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> Encoding/decoding for packed structs and optional members. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645664" title="Visit page outside Confluence">r645664 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-07 21:13:59 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> Missing from last commit. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645670" title="Visit page outside Confluence">r645670 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-07 21:42:28 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> Fix rhel5 build errors. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645685" title="Visit page outside Confluence">r645685 </a> </td>
+<td class='confluenceTd'> astitcher </td>
+<td class='confluenceTd'> 2008-04-07 21:59:02 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> Fixed time classes for some changes that misunderstood how they are supposed </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645699" title="Visit page outside Confluence">r645699 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-07 22:16:48 &#43;0100 (Mon, 07 Apr 2008) </td>
+<td class='confluenceTd'> rubygen/0-10/specification.rb </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645731" title="Visit page outside Confluence">r645731 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-08 00:05:28 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Update release notes </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645732" title="Visit page outside Confluence">r645732 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-08 00:07:50 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Tag M2.1 RC3 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645733" title="Visit page outside Confluence">r645733 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-08 00:22:36 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> src/qpid/amqp_0_10/Body.h, Header.h: placeholders. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645804" title="Visit page outside Confluence">r645804 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-08 10:18:10 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Fixed compilation error from ignored qualifier on function return type. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645826" title="Visit page outside Confluence">r645826 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-08 11:16:32 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Removed out-of-date and misleading comment. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=645951" title="Visit page outside Confluence">r645951 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-08 15:48:25 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> QPID-903: changed read-write lock to mutex (currently recursive) to avoid deadlocking when adding bridge. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646045" title="Visit page outside Confluence">r646045 </a> </td>
+<td class='confluenceTd'> kpvdr </td>
+<td class='confluenceTd'> 2008-04-08 20:29:08 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Patch from Ted Ross: QPID-907: Management Improvements for C+&#43; Broker and Store </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646054" title="Visit page outside Confluence">r646054 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-08 20:53:07 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Summary: added 0-10 Array encoding and decoding. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646071" title="Visit page outside Confluence">r646071 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-08 22:02:14 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Touched existing template so new template allSegmentTypes.rb will be noticed. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646093" title="Visit page outside Confluence">r646093 </a> </td>
+<td class='confluenceTd'> cctrieloff </td>
+<td class='confluenceTd'> 2008-04-08 22:51:17 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> QPID-908 from tross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646099" title="Visit page outside Confluence">r646099 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-08 23:11:40 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Fix packaing problem with generated file allSegmentTypes.h </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646113" title="Visit page outside Confluence">r646113 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-08 23:46:06 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Nuke </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646114" title="Visit page outside Confluence">r646114 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-08 23:46:10 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> use svnexe for uploading, generate source jars </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646115" title="Visit page outside Confluence">r646115 </a> </td>
+<td class='confluenceTd'> aidan </td>
+<td class='confluenceTd'> 2008-04-08 23:46:26 &#43;0100 (Tue, 08 Apr 2008) </td>
+<td class='confluenceTd'> Tag M2.1 RC3 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646376" title="Visit page outside Confluence">r646376 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-09 15:25:09 &#43;0100 (Wed, 09 Apr 2008) </td>
+<td class='confluenceTd'> Improved diagnostics in allSegmentTypes test. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646452" title="Visit page outside Confluence">r646452 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-09 18:59:38 &#43;0100 (Wed, 09 Apr 2008) </td>
+<td class='confluenceTd'> Handle the set-redelivered flag on the final version of the message.release command. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646505" title="Visit page outside Confluence">r646505 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-09 20:52:44 &#43;0100 (Wed, 09 Apr 2008) </td>
+<td class='confluenceTd'> Fixes and automated tests for federation function. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646519" title="Visit page outside Confluence">r646519 </a> </td>
+<td class='confluenceTd'> rajith </td>
+<td class='confluenceTd'> 2008-04-09 21:31:28 &#43;0100 (Wed, 09 Apr 2008) </td>
+<td class='confluenceTd'> This is a fix for QPID-911.  When the message id is set, &#95;hasBeenUpdated  will be set to true. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646778" title="Visit page outside Confluence">r646778 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-10 13:36:58 &#43;0100 (Thu, 10 Apr 2008) </td>
+<td class='confluenceTd'> Invocation handlers, see src/tests/amqp_0_10/handlers.cpp for example. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646783" title="Visit page outside Confluence">r646783 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-10 14:00:04 &#43;0100 (Thu, 10 Apr 2008) </td>
+<td class='confluenceTd'> Use "Exception" instead of typeid.name() as default exception name.  Mangled type names are too confusing. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646791" title="Visit page outside Confluence">r646791 </a> </td>
+<td class='confluenceTd'> kpvdr </td>
+<td class='confluenceTd'> 2008-04-10 14:17:44 &#43;0100 (Thu, 10 Apr 2008) </td>
+<td class='confluenceTd'> Minor change to format of log message when exception is thrown </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=646943" title="Visit page outside Confluence">r646943 </a> </td>
+<td class='confluenceTd'> aconway </td>
+<td class='confluenceTd'> 2008-04-10 21:15:08 &#43;0100 (Thu, 10 Apr 2008) </td>
+<td class='confluenceTd'> amqp_0_10: Encoding for packed structs. </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=647099" title="Visit page outside Confluence">r647099 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-11 11:02:49 &#43;0100 (Fri, 11 Apr 2008) </td>
+<td class='confluenceTd'> QPID-913: committed patch from tross@redhat.com </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="http://svn.apache.org/viewvc/?view=rev&amp;revision=647123" title="Visit page outside Confluence">r647123 </a> </td>
+<td class='confluenceTd'> gsim </td>
+<td class='confluenceTd'> 2008-04-11 12:44:12 &#43;0100 (Fri, 11 Apr 2008) </td>
+<td class='confluenceTd'> Set executable property for commands </td>
+</tr>
+</tbody></table>
+<ul>
+	<li>Attempt to achieve consensus on qpid-dev that all (C++) commits have a JIRA at the start</li>
+	<li>AS to fix release notes, again</li>
+	<li>r646519 should use updated(), check if QPID-911 affects M2.1, audit class for other usages of hasUpdated directly</li>
+</ul>
+
+
+<h2><a name="QpidJavaMeetingMinutes11-04-2008-ReviewofnewJIRAs"></a>Review of new JIRAs</h2>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'> Key </th>
+<th class='confluenceTh'> Component/s </th>
+<th class='confluenceTh'> Affects Version/s </th>
+<th class='confluenceTh'> Summary </th>
+<th class='confluenceTh'> Status </th>
+<th class='confluenceTh'> Assignee </th>
+<th class='confluenceTh'> Reporter </th>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-913" title="Visit page outside Confluence">QPID-913</a> </td>
+<td class='confluenceTd'> Python Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Reorganization of python utilities + a bug fix </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Ted Ross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-912" title="Visit page outside Confluence">QPID-912</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'> M2,M2.1 </td>
+<td class='confluenceTd'> AMQSession.getQueueDepth should better describe its failure conditions. </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Martin Ritchie </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-911" title="Visit page outside Confluence">QPID-911</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'> M3 </td>
+<td class='confluenceTd'> MessageID is not set for outgoing messages if that is the only property set </td>
+<td class='confluenceTd'> Resolved </td>
+<td class='confluenceTd'> Rajith Attapattu </td>
+<td class='confluenceTd'> Rajith Attapattu </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-910" title="Visit page outside Confluence">QPID-910</a> </td>
+<td class='confluenceTd'> Java Broker,Java Client </td>
+<td class='confluenceTd'> M2.1 </td>
+<td class='confluenceTd'> Some poms reference inappropriate mvn repos </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Aidan Skinner </td>
+<td class='confluenceTd'> Aidan Skinner </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-909" title="Visit page outside Confluence">QPID-909</a> </td>
+<td class='confluenceTd'> Java Tests </td>
+<td class='confluenceTd'> M2.1 </td>
+<td class='confluenceTd'> DurationTestDecorator doesn't work in conjunction with the ScaledTestDecorator </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Martin Ritchie </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-908" title="Visit page outside Confluence">QPID-908</a> </td>
+<td class='confluenceTd'> Python Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Python command utility for federation routes </td>
+<td class='confluenceTd'> Closed </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Ted Ross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-907" title="Visit page outside Confluence">QPID-907</a> </td>
+<td class='confluenceTd'> C+&#43; Broker,Python Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Management Improvements for C+&#43; Broker and Store </td>
+<td class='confluenceTd'> Closed </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Ted Ross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-906" title="Visit page outside Confluence">QPID-906</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'> M2.1 </td>
+<td class='confluenceTd'> java.lang.NumberFormatException silently ignored in MessageListener.onMessage(Message message) </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Alasdair MacLeod </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-905" title="Visit page outside Confluence">QPID-905</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> org.apache.qpid.client.ClientProperties dies ungracefully when max_prefetch is not set to a valid number </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Rafael H. Schloming </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-904" title="Visit page outside Confluence">QPID-904</a> </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> broker.clean is not set properly in any of the test profiles </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Rafael H. Schloming </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-903" title="Visit page outside Confluence">QPID-903</a> </td>
+<td class='confluenceTd'> C+&#43; Broker </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Federation (inter-broker) links cause C+&#43; broker to hang </td>
+<td class='confluenceTd'> Closed </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Ted Ross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-902" title="Visit page outside Confluence">QPID-902</a> </td>
+<td class='confluenceTd'> C+&#43; Broker,Python Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Management Improvements for C+&#43; Broker </td>
+<td class='confluenceTd'> Closed </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Ted Ross </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-901" title="Visit page outside Confluence">QPID-901</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> update the java client to the 0-10 final spec </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Rafael H. Schloming </td>
+<td class='confluenceTd'> Rafael H. Schloming </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-900" title="Visit page outside Confluence">QPID-900</a> </td>
+<td class='confluenceTd'> Java Common </td>
+<td class='confluenceTd'> M2.1 </td>
+<td class='confluenceTd'> Java Common AMQShortString should not create new byte[] backing when based off a heap buffer </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Rob Godfrey </td>
+<td class='confluenceTd'> Rob Godfrey </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-899" title="Visit page outside Confluence">QPID-899</a> </td>
+<td class='confluenceTd'> Java Common </td>
+<td class='confluenceTd'> M2.1 </td>
+<td class='confluenceTd'> Java Common Bug in AMQShortString on tokenized substrings </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Rob Godfrey </td>
+<td class='confluenceTd'> Rob Godfrey </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-898" title="Visit page outside Confluence">QPID-898</a> </td>
+<td class='confluenceTd'> Ant Build System </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> remove .tar.bz2 from release target </td>
+<td class='confluenceTd'> Resolved </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Nuno Santos </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-897" title="Visit page outside Confluence">QPID-897</a> </td>
+<td class='confluenceTd'> Java Tests </td>
+<td class='confluenceTd'> M3 </td>
+<td class='confluenceTd'> Configurable receive timeout </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Arnaud Simon </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-896" title="Visit page outside Confluence">QPID-896</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> Provide Simple Pub/Sub examples that do not use extends </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Martin Ritchie </td>
+<td class='confluenceTd'> Martin Ritchie </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-895" title="Visit page outside Confluence">QPID-895</a> </td>
+<td class='confluenceTd'> Java Client </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> FailoverSingleServer delays on first connection. </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Unassigned </td>
+<td class='confluenceTd'> Martin Ritchie </td>
+</tr>
+<tr>
+<td class='confluenceTd'> <a href="https://issues.apache.org/jira/browse/QPID-894" title="Visit page outside Confluence">QPID-894</a> </td>
+<td class='confluenceTd'> Java Common </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> "Dependency on commons-lang: real need for 2.2, or can use 2.1?" </td>
+<td class='confluenceTd'> Open </td>
+<td class='confluenceTd'> Rafael H. Schloming </td>
+<td class='confluenceTd'> Nuno Santos </td>
+</tr>
+</tbody></table>
+
+
+<ul>
+	<li>RS - new JIRA to moving try catch to just around onMessage()</li>
+	<li>RS - Take QPID-906 and check that it is JMS Spec compliant</li>
+	<li>CT - find cruise control files</li>
+	<li>CT - JIRA time tracking is broken, normalises 1d is 24h should be 8h</li>
+</ul>
+
+
+<h2><a name="QpidJavaMeetingMinutes11-04-2008-UpdateonGSoCprojects"></a>Update on GSoC projects</h2>
+
+<p>We discusssed our project proposals</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

@@ -1,0 +1,318 @@
+<html>
+    <head>
+        <title>Apache Qpid : Qpid Java Build How To</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Qpid Java Build How To
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Oct 25, 2007 by <font color="#0050B2">rgreig</font>.
+				    </div>
+
+				    <h1><a name="QpidJavaBuildHowTo-BuildInstructionsGeneral"></a>Build Instructions - General</h1>
+
+<h2><a name="QpidJavaBuildHowTo-Checkoutthesource"></a>Check out the source</h2>
+
+<p>Firstly, check the source for Qpid java out of our subversion repository:</p>
+
+<p><a href="https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/java" title="Visit page outside Confluence">https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/java</a></p>
+
+<p>You will also need to checkout the gentools directory at the same level:</p>
+
+<p><a href="https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/gentools" title="Visit page outside Confluence">https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/gentools</a></p>
+
+<p>and python:</p>
+
+<p><a href="https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/python" title="Visit page outside Confluence">https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/python</a></p>
+
+<p>and finally the protocol specification:</p>
+
+<p><a href="https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/specs" title="Visit page outside Confluence">https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/specs</a></p>
+
+<h2><a name="QpidJavaBuildHowTo-Prerequisites"></a>Prerequisites</h2>
+
+<p>For the broker code you need JDK 1.5 or later. You should set JAVA_HOME and include the bin directory in your PATH.</p>
+
+<p>Check it's ok by executing java -v !</p>
+
+<p>If you are wanting to run the python tests against the broker you will of course need a version of python.</p>
+
+
+<h1><a name="QpidJavaBuildHowTo-BuildInstructionsTrunk%28M2%29"></a>Build Instructions - Trunk (M2+)</h1>
+
+<h2><a name="QpidJavaBuildHowTo-MavenBuildSystem"></a>Maven Build System</h2>
+
+<h3><a name="QpidJavaBuildHowTo-UsefulMavenlinks"></a>Useful Maven links </h3>
+
+
+<head>
+<style type="text/css">
+.delicious-posts 
+</style>
+</head>
+
+<script type="text/javascript" src="http://del.icio.us/feeds/js/rupertlssmith/maven?tags;extended;count=200;sort=alpha;title=Maven%20Links;bullet=%C2%BB;icon"></script>
+<noscript><a href="http://del.icio.us/rupertlssmith/maven">Maven Links</a></noscript>
+
+
+
+<h3><a name="QpidJavaBuildHowTo-InstallMaven2"></a>Install Maven 2</h3>
+<p>Firstly, you need to install Maven 2 from <a href="http://maven.apache.org/download.html" title="Visit page outside Confluence">here</a>).</p>
+
+<p>You can find out how to set Maven up by following their <a href="http://maven.apache.org/guides/getting-started/maven-in-five-minutes.html" title="Visit page outside Confluence">quick guide</a>.</p>
+
+<p>Some of the relevant Maven targets (in Maven speak 'lifecycle phases') are as follows:</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Phase</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>compile</td>
+<td class='confluenceTd'>compile the source code of the project</td>
+</tr>
+<tr>
+<td class='confluenceTd'>test</td>
+<td class='confluenceTd'>test the compiled source code using a suitable unit testing framework</td>
+</tr>
+<tr>
+<td class='confluenceTd'>install</td>
+<td class='confluenceTd'>compiles &amp; installs the package into the local repository &amp; generates JAR files</td>
+</tr>
+<tr>
+<td class='confluenceTd'>clean</td>
+<td class='confluenceTd'>cleans up artifacts created by prior builds</td>
+</tr>
+</tbody></table>
+
+<p>You can run the install phase but skip the tests by running:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Pfastinstall
+</pre>
+</div></div>
+
+<p>to specify the fastinstall profile.</p>
+
+<p>You can just skip the python broker tests by adding this -D option. This is done when using the fastinstall profile above.</p>
+<div class="preformatted"><div class="preformattedContent">
+<pre>-Dskip.python.tests
+</pre>
+</div></div>
+
+
+<p><b>NOTE</b> When running under cygwin on windows the version of python that runs can give the following error "c:\windows\system32\ntvdm.exe Error while setting up environment for the application. Chose 'close' to terminate the application."<br/>
+This is due to the windows python being picked up rather than the cygwin version. When run from a cmd.exe window everything should work. If you wish to run it from a cygwin window the following option should be added to your mvn command line.</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>-Dcommand="bash -c 'python run-tests -v -I java_failing.txt'"
+</pre>
+</div></div>
+
+<p>You can now also run the install phase with retrotranslator (for building the Java client in JDK 1.4) running:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Pretrotranslator
+</pre>
+</div></div>
+
+<h3><a name="QpidJavaBuildHowTo-BuildQpidJava"></a>Build Qpid Java</h3>
+
+<p>To compile &amp; install Qpid, cd into the java directory of your checkout and then:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn clean
+mvn install
+</pre>
+</div></div>
+
+<p>If you wish to build an archive of Qpid for installing somewhere then:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>cd distribution
+mvn
+</pre>
+</div></div>
+
+<p><b>NB:</b> executing Maven in the distribution directory does NOT force a clean build or a re-JAR, but uses the jars from your repository. You must be sure to execute a clean install in the java directory first (up one level from the distribution directory) to get a clean distribution. Best to check that the jars in your repository are current before building a dist!</p>
+
+<h3><a name="QpidJavaBuildHowTo-Build%2FDebugCycle"></a>Build/Debug Cycle</h3>
+
+<p>If you're changing code as part of a debugging effort and want to quickly rebuild and then run the broker for manual testing, you can use the following commands, starting in the top-level <tt>java</tt> directory:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Pfastinstall
+cd distribution
+mvn assembly:directory
+</pre>
+</div></div>
+
+<p>The first command above builds everything but skips the tests. The last command above builds the normal distribution but also creates a directory holding the contents of the Java bin assembly. You can run the broker directly from that directory by setting <tt>QPID_HOME</tt> to point to it. For example, for the Qpid incubating 1.0 M2 snapshot version, the assembly directory resulting from running the final command above is:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>target/qpid-1.0-incubating-M2-SNAPSHOT-java-bin
+</pre>
+</div></div>
+
+<p>If you set the <tt>QPID_HOME</tt> environment variable to the directory contained within the directory named above, i.e.:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>target/qpid-1.0-incubating-M2-SNAPSHOT-java-bin/qpid-1.0-incubating-M2-SNAPSHOT
+</pre>
+</div></div>
+
+<p>and add <tt>$QPID_HOME/bin</tt> (UNIX) or <tt>%QPID_HOME%\bin</tt> (Windows) to your <tt>PATH</tt>, you can then run the broker by executing the <tt>qpid-server</tt> script.</p>
+
+<p>You can also control where the assembly directory is built via the <tt>qpid.targetDir</tt> property, like this:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Dqpid.targetDir=/tmp/xyz assembly:directory
+</pre>
+</div></div>
+
+<p>This will create the assembly directory and the various tar and zip files in directory <tt>/tmp/xyz</tt>.</p>
+
+<p>In summary, with <tt>QPID_HOME</tt> set as described above, the edit/build/debug cycle becomes a matter of first rebuilding the appropriate artifacts, either from the top level or within the specific subdirectory for a single modified artifact, changing to the <tt>distribution</tt> directory, and creating the assembly directory as described above. You can then run the broker via <tt>qpid-server</tt> and perform your debugging, testing, etc.</p>
+
+<h3><a name="QpidJavaBuildHowTo-BuildingProjectFiles"></a>Building Project Files</h3>
+
+<p>You can build project files for IntelliJ IDEA and Eclipse IDEs by executing the appropriate command in the java directory:</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Command</th>
+<th class='confluenceTh'>Result</th>
+</tr>
+<tr>
+<td class='confluenceTd'>mvn idea:idea</td>
+<td class='confluenceTd'>Builds .ipr and .iml files with appropriate project settings for classpath etc</td>
+</tr>
+<tr>
+<td class='confluenceTd'>mvn eclipse:eclipse</td>
+<td class='confluenceTd'>Builds Eclipse project files with settings</td>
+</tr>
+</tbody></table>
+
+<p>To get started with Eclipse, use the <tt>setup.eclipse</tt> profile:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Psetup.eclipse
+</pre>
+</div></div>
+
+<p>The <tt>setup.eclipse</tt> profile will by default create an Eclipse workspace in the <tt>../workspace</tt> directory. You then go into Eclipse, switch to the new workspace, and then import the Qpid projects by selecting File -&gt; Import -&gt; Existing projects into workspace.</p>
+
+<p>If you want to set up a workspace other than <tt>../workspace</tt>, you can specify it on the command line via the <tt>eclipse.workspace.dir</tt> property:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>mvn -Declipse.workspace.dir=/path/to/workspace -Psetup.eclipse
+</pre>
+</div></div>
+
+<h1><a name="QpidJavaBuildHowTo-BuildInstructionsM1branch"></a>Build Instructions - M1 branch</h1>
+
+<h2><a name="QpidJavaBuildHowTo-AntBuildScripts"></a>Ant Build Scripts</h2>
+
+<p>Currently the Qpid java project builds using ant.</p>
+
+<p>The ant build system is set up in a modular way, with a top level build script and template for module builds and then a module level build script which inherits from the template.</p>
+
+<p>So, at the top level there are:</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>File</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>build.xml</td>
+<td class='confluenceTd'>Top level build file for the project which defines all the build targets</td>
+</tr>
+<tr>
+<td class='confluenceTd'>common.xml</td>
+<td class='confluenceTd'>Common properties used throughout the build system</td>
+</tr>
+<tr>
+<td class='confluenceTd'>module.xml</td>
+<td class='confluenceTd'>Template used by all modules which sets up properties for module builds</td>
+</tr>
+</tbody></table>
+
+<p>Then, in each module subdirectory there is:</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>File</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>build-module.xml</td>
+<td class='confluenceTd'>Defines all the module values for template properties</td>
+</tr>
+</tbody></table>
+
+<h2><a name="QpidJavaBuildHowTo-Buildtargets"></a>Build targets</h2>
+
+<p>The main build targets you are probably interested in are:</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Target</th>
+<th class='confluenceTh'>Description</th>
+</tr>
+<tr>
+<td class='confluenceTd'>build</td>
+<td class='confluenceTd'>Builds all source code for Qpid java</td>
+</tr>
+<tr>
+<td class='confluenceTd'>archive</td>
+<td class='confluenceTd'>Generates all distribution archives for Qpid java</td>
+</tr>
+</tbody></table>
+
+<p>So, if you just want to compile everything you should run the build target in the top level build.xml file.</p>
+
+<p>If you want to build an installable version of Qpid java, run the archive task from the top level build.xml file.</p>
+
+<p>If you want to compile an individual module, simply run the build target from the appropriate build-module.xml e.g. to compile the broker source, simply run the build target in the java/broker/build-module.xml file.</p>
+
+<h2><a name="QpidJavaBuildHowTo-Whatnext%3F"></a>What next ?</h2>
+
+<p>If you want to run your built Qpid package, see our <a href="Getting Started Guide.html" title="Getting Started Guide">Getting Started Guide</a> for details of how to do that.</p>
+
+<p>If you want to run our tests, you can use the ant test or testreport (produces a useful report) targets.</p>
+
+				    					    <br/>
+                        <div class="tabletitle">
+                            <a name="attachments">Attachments:</a>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="Qpid Java Build How To_attachments/mavenlinks.html">mavenlinks.html</a> (text/html)
+                                <br/>
+                                                    </div>
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

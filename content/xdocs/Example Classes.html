@@ -1,0 +1,119 @@
+<html>
+    <head>
+        <title>Apache Qpid : Example Classes</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Example Classes
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 06, 2007 by <font color="#0050B2">mmccorma</font>.
+				    </div>
+
+				    <h2><a name="ExampleClasses-Overview"></a>Overview</h2>
+
+<p>Some example client code is provided to help you get started, using JNDI and JMS.</p>
+
+<h2><a name="ExampleClasses-Downloadingthesource"></a>Downloading the source</h2>
+
+<p>The source code for the example client classes being provided is contained in the example package which can be found in:</p>
+
+<p><a href="https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/java/client/example/" title="Visit page outside Confluence">https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/java/client/example/</a></p>
+
+<h2><a name="ExampleClasses-BuildingtheExamplesource"></a>Building the Example source</h2>
+
+<p>You can build the example source using Maven by simply typing 'mvn' in the example directory.</p>
+
+<h2><a name="ExampleClasses-Notesonthesourcepackage"></a>Notes on the source package</h2>
+
+<p>Note that if you wish to build the example client code from within your IDE you will need to add the following jars contained in the Qpid binary release into your classpath:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>qpid-client-&lt;RELEASE&gt;-incubating-&lt;MILESTONE&gt;.jar
+qpid-common-&lt;RELEASE&gt;-incubating-&lt;MILESTONE&gt;.jar
+geronimo-jms_1.1_spec-1.0.jar
+</pre>
+</div></div>
+
+<p>At the time of writing, RELEASE is '1.0' and MILESTONE is 'M2-SNAPSHOT'.</p>
+
+<p><b>NB: At runtime, you'll need to put all the jars in the client/lib dir into your classpath along with these jars.</b></p>
+
+<p>The example packages classes currently use log4j for logging. You may instead wish to amend the logging and exception handling in line with your project standards.</p>
+
+<h2><a name="ExampleClasses-ClassOverview"></a>Class Overview</h2>
+
+<p>Essentially we have provided example client classes to act as a publisher and a subscriber for handling messages using AMQ, as far as possible via JMS.</p>
+
+<p>Contributions to the example classes are most welcome. Please send your classes to our qpid-dev mailing list.</p>
+
+<h3><a name="ExampleClasses-BasicClasses"></a>Basic Classes</h3>
+
+<p>This section outlines the classes that you're likely to find most useful.</p>
+
+<p><b>Publisher</b></p>
+
+<p>This class contains the methods for publishing messages to a queue, using the example.properties file to populate the initial context and provide an example queue and topic.</p>
+
+<p><b>FileMessageDispatcher</b></p>
+
+<p>This class provides a simple wrapper around the publisher for dispathcing messages from file input, providing a really easy way to get started publishing messages. So, first create some files you'd like to use as payload for your test messages.</p>
+
+<p>Then, you simply pass one argument to the FileMessageDispatcher class which is the path to your test message files. The dispatcher will then create a message from each file in the directory. You can opt to use the path to a single file as an alternative, in the same way.</p>
+
+<p><b>Subscriber</b></p>
+
+<p>This class acts as a consumer of messages sent to a queue.</p>
+
+<h3><a name="ExampleClasses-HelperClasses%2FExceptions"></a>Helper Classes/Exceptions</h3>
+
+<p>This section gives some additional information about helper classes in the example packages.</p>
+
+<p><b>MessageFactory</b></p>
+
+<p>This class constructs a message with payload from an input file provided and sets a property on the message using the filename.</p>
+
+<p><b>MessageFactoryException</b></p>
+
+<p>Exception thrown if a message cannot be created in the factory class.</p>
+
+<h3><a name="ExampleClasses-ExamplesUsingAMQPImmediateDeliveryFeature"></a>Examples Using AMQP Immediate Delivery Feature</h3>
+
+<p><b>MonitorMessageDispatcher</b></p>
+
+<p>This is an additional wrapper class to be run independently as the monitor which allows you to provide a heartbeat (set to 20 seconds intervals but can be changed at will) being consumed by the example subscriber. When we detect that the subscriber has stopped, you can opt to make a call to an application specific 'recovery process' by amending the exception handling in the main method when a UndeliveredMessageException is caught (marked by a TODO), or simply exit gracefully if appropriate.</p>
+
+<p><b>UndeliveredMessageException</b></p>
+
+<p>Thrown when the subscriber is not there to read the monitor traffic which has been marked as for immediate delivery.</p>
+
+
+
+<p><b>MonitoredSubscriber</b></p>
+
+<p>Subclass of the Subscriber which also reads messages from the monitor queue to let us know that it's consuming ok.</p>
+
+<p>The <b>shared</b> package contains utility classes for file manipulation etc and constants for general use (to reduce the maintenance overhead) which could perhaps be replaced with config properties as appropriate.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

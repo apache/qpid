@@ -1,0 +1,268 @@
+<schema version="0.1" date="10/22/2007">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+  <!-- Type information:
+
+       Numeric types with "_wm" suffix are watermarked numbers.  These are compound
+       values containing a current value, and a low and high water mark for the reporting
+       interval.  The low and high water marks are set to the current value at the
+       beginning of each interval and track the minimum and maximum values of the statistic
+       over the interval respectively.
+
+       Access rights for configuration elements:
+
+           RO => Read Only
+	   RC => Read/Create, can be set at create time only, read-only thereafter
+	   RW => Read/Write
+
+	   If access rights are omitted for a configElement, they are assumed to be RO.
+
+  -->
+
+  <!-- Questions:  Does C++ broker round-robin dests on queues? -->
+
+  <!--
+  ===============================================================
+  System
+  ===============================================================
+  -->
+  <object name="system" schemaId="1">
+    <configElement name="sysId" type="string"/>
+
+    <!-- RT config/instrumentation TBD -->
+
+  </object>
+
+  <!--
+  ===============================================================
+  Broker
+  ===============================================================
+  -->
+  <object name="broker" schemaId="2">
+    <configElement name="sysId"                type="string" access="RO" index="y" desc="System ID"/>
+    <configElement name="port"                 type="uint16" access="RO" desc="TCP Port for AMQP Service"/>
+    <configElement name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
+    <configElement name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
+    <configElement name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
+    <configElement name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <configElement name="storeLib"             type="string" access="RO" desc="Name of persistent storage library"/>
+    <configElement name="asyncStore"           type="bool"   access="RO" desc="Use async persistent store"/>
+    <configElement name="mgmtPubInterval"      type="uint16" min="1" access="RW" unit="second" desc="Interval for management broadcasts"/>
+    <configElement name="initialDiskPageSize"  type="uint32" access="RO" desc="Number of disk pages allocated for storage"/>
+    <configElement name="initialPagesPerQueue" type="uint32" access="RO" desc="Number of disk pages allocated per queue"/>
+    <configElement name="clusterName"          type="string" access="RO"
+                   desc="Name of cluster this server is a member of, zero-length for standalone server"/>
+    <configElement name="version"              type="string" access="RO" desc="Running software version"/>
+
+    <method name="joinCluster">
+      <arg name="clusterName" type="string"/>
+    </method>
+
+    <method name="leaveCluster"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Virtual Host
+  ===============================================================
+  -->
+  <object name="vhost" schemaId="3">
+    <configElement name="name" type="string" access="RC" index="y"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Queue
+  ===============================================================
+  -->
+  <object name="queue" schemaId="4">
+    <configElement name="vhostRef"        type="string" access="RC" index="y"/>
+    <configElement name="name"            type="string" access="RC" index="y"/>
+
+    <configElement name="durable"         type="bool"   access="RC"/>
+    <configElement name="autoDelete"      type="bool"   access="RC"/>
+    <configElement name="exclusive"       type="bool"   access="RC"/>
+    <configElement name="pageMemoryLimit" type="uint32" access="RO"/>
+
+    <instElement name="diskPageSize"        type="uint32"/>
+    <instElement name="diskPages"           type="uint32"/>
+    <instElement name="diskAvailableSize"   type="uint32"/>
+
+    <instElement name="msgTotalEnqueues"    type="uint64"    unit="message"     desc="Total messages enqueued"/>
+    <instElement name="msgTotalDequeues"    type="uint64"    unit="message"     desc="Total messages dequeued"/>
+    <instElement name="msgTxnEnqueues"      type="uint64"    unit="message"     desc="Transactional messages enqueued"/>
+    <instElement name="msgTxnDequeues"      type="uint64"    unit="message"     desc="Transactional messages dequeued"/>
+    <instElement name="msgPersistEnqueues"  type="uint64"    unit="message"     desc="Persistent messages enqueued"/>
+    <instElement name="msgPersistDequeues"  type="uint64"    unit="message"     desc="Persistent messages dequeued"/>
+    <instElement name="msgDepth"            type="uint32_wm" unit="message"     desc="Current size of queue in messages"/>
+    <instElement name="byteTotalEnqueues"   type="uint64"    unit="octet"       desc="Total messages enqueued"/>
+    <instElement name="byteTotalDequeues"   type="uint64"    unit="octet"       desc="Total messages dequeued"/>
+    <instElement name="byteTxnEnqueues"     type="uint64"    unit="octet"       desc="Transactional messages enqueued"/>
+    <instElement name="byteTxnDequeues"     type="uint64"    unit="octet"       desc="Transactional messages dequeued"/>
+    <instElement name="bytePersistEnqueues" type="uint64"    unit="octet"       desc="Persistent messages enqueued"/>
+    <instElement name="bytePersistDequeues" type="uint64"    unit="octet"       desc="Persistent messages dequeued"/>
+    <instElement name="byteDepth"           type="uint32_wm" unit="octet"       desc="Current size of queue in bytes"/>
+    <instElement name="enqueueTxnStarts"    type="uint64"    unit="transaction" desc="Total enqueue transactions started "/>
+    <instElement name="enqueueTxnCommits"   type="uint64"    unit="transaction" desc="Total enqueue transactions committed"/>
+    <instElement name="enqueueTxnRejects"   type="uint64"    unit="transaction" desc="Total enqueue transactions rejected"/>
+    <instElement name="enqueueTxnCount"     type="uint32_wm" unit="transaction" desc="Current pending enqueue transactions"/>
+    <instElement name="dequeueTxnStarts"    type="uint64"    unit="transaction" desc="Total dequeue transactions started"/>
+    <instElement name="dequeueTxnCommits"   type="uint64"    unit="transaction" desc="Total dequeue transactions committed"/>
+    <instElement name="dequeueTxnRejects"   type="uint64"    unit="transaction" desc="Total dequeue transactions rejected"/>
+    <instElement name="dequeueTxnCount"     type="uint32_wm" unit="transaction" desc="Current pending dequeue transactions"/>
+    <instElement name="consumers"           type="uint32_wm" unit="consumer"    desc="Current consumers on queue"/>
+    <instElement name="bindings"            type="uint32_wm" unit="binding"     desc="Current bindings"/>
+    <instElement name="unackedMessages"     type="uint32_wm" unit="message"     desc="Messages consumed but not yet acked"/>
+
+    <method name="purge"            desc="Discard all messages on queue"/>
+    <method name="increaseDiskSize" desc="Increase number of disk pages allocated for this queue">
+      <arg name="pages" type="uint32" desc="New total page allocation"/>
+    </method>
+  </object>
+
+  <!--
+  ===============================================================
+  Exchange
+  ===============================================================
+  -->
+  <object name="exchange" schemaId="5">
+    <configElement name="vhostRef"   type="string" access="RC" index="y"/>
+    <configElement name="name"       type="string" access="RC" index="y"/>
+    <configElement name="type"       type="string" access="RC"/>
+
+    <instElement name="producers"    type="uint32_wm" desc="Current producers on exchange"/>
+    <instElement name="bindings"     type="uint32_wm" desc="Current bindings"/>
+    <instElement name="msgReceives"  type="uint64"    desc="Total messages received"/>
+    <instElement name="msgDrops"     type="uint64"    desc="Total messages dropped (no matching key)"/>
+    <instElement name="msgRoutes"    type="uint64"    desc="Total routed messages"/>
+    <instElement name="byteReceives" type="uint64"    desc="Total bytes received"/>
+    <instElement name="byteDrops"    type="uint64"    desc="Total bytes dropped (no matching key)"/>
+    <instElement name="byteRoutes"   type="uint64"    desc="Total routed bytes"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Binding
+  ===============================================================
+  -->
+  <object name="binding" schemaId="6">
+    <configElement name="queueRef"    type="string"     access="RC" index="y"/>
+    <configElement name="exchangeRef" type="string"     access="RC" index="y"/>
+    <configElement name="bindingKey"  type="string"     access="RC"/>
+    <configElement name="arguments"   type="fieldTable" access="RC"/>
+
+    <instElement name="msgMatched" type="uint64"/>
+  </object>
+  
+  <!--
+  ===============================================================
+  Client
+  ===============================================================
+  -->
+  <object name="client" schemaId="7">
+    <configElement name="vhostRef" type="string"    index="y"/>
+    <configElement name="ipAddr"   type="ipAddress" index="y"/>
+    <configElement name="port"     type="uint16"    index="y"/>
+
+    <instElement name="authIdentity"  type="string"/>
+    <instElement name="msgsProduced"  type="uint64"/>
+    <instElement name="msgsConsumed"  type="uint64"/>
+    <instElement name="bytesProduced" type="uint64"/>
+    <instElement name="bytesConsumed" type="uint64"/>
+
+    <method name="close"/> 
+    <method name="detach"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Session
+  ===============================================================
+  -->
+  <object name="session" schemaId="8">
+    <configElement name="vhostRef"         type="string" index="y"/>
+    <configElement name="name"             type="string" index="y"/>
+    <configElement name="clientRef"        type="string" access="RO"/>
+    <configElement name="detachedLifespan" type="uint32" access="RO"/>
+
+    <instElement name="attached"          type="bool"/>
+    <instElement name="remainingLifespan" type="uint32"/>
+    <instElement name="framesOutstanding" type="uint32"/>
+
+    <method name="solicitAck"/>
+    <method name="detach"/>
+    <method name="resetLifespan"/>
+    <method name="close"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Destination
+  ===============================================================
+  -->
+  <object name="destination" schemaId="9">
+    <configElement name="sessionRef" type="string" index="y"/>
+    <configElement name="name"       type="string" index="y"/>
+
+    <instElement name="flowMode"        type="enum(credit,window)"/>
+    <instElement name="maxMsgCredits"   type="uint32"/>
+    <instElement name="maxByteCredits"  type="uint32"/>
+
+    <instElement name="msgCredits"  type="uint32"/>
+    <instElement name="byteCredits" type="uint32"/>
+
+    <method name="throttle" desc="Apply extra rate limiting to destination: 0 = Normal, 10 = Maximum">
+      <arg name="strength" type="uint8" min="0" max="10"/> 
+    </method>
+    <method name="stop"/>
+    <method name="start"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Producer
+  ===============================================================
+  -->
+  <object name="producer" schemaId="10">
+    <configElement name="destinationRef" type="string" index="y"/>
+    <configElement name="exchangeRef"    type="string" index="y"/>
+
+    <instElement name="msgsProduced"  type="uint64"/>
+    <instElement name="bytesProduced" type="uint64"/>
+  </object>
+
+  <!--
+  ===============================================================
+  Consumer
+  ===============================================================
+  -->
+  <object name="consumer" schemaId="11">
+    <configElement name="destinationRef"  type="string" index="y"/>
+    <configElement name="queueRef"      type="string" index="y"/>
+
+    <instElement name="msgsConsumed"    type="uint64"/>
+    <instElement name="bytesConsumed"   type="uint64"/>
+    <instElement name="unackedMessages" type="uint32_wm" desc="Messages consumed but not yet acked"/>
+
+    <method name="close"/>
+  </object>
+</schema>
+

@@ -1,0 +1,379 @@
+<html>
+    <head>
+        <title>Apache Qpid : Distributed Testing</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Distributed Testing
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 15, 2007 by <font color="#0050B2">rupertlssmith</font>.
+				    </div>
+
+				    <h1><a name="DistributedTesting-TestingProposal."></a>Testing Proposal.</h1>
+
+<h2><a name="DistributedTesting-UseCases."></a>Use Cases.</h2>
+
+<p>The following usage scenarios are covered by this test framework design proposal:</p>
+
+<h3><a name="DistributedTesting-PerformanceTesting."></a>Performance Testing.</h3>
+
+<ul>
+	<li>Distributed testing.</li>
+</ul>
+
+
+<p> Want to be able to distribute performance tests accross many machines in parallel, in order to more accurately simulate real usage scenarios and to be able to fully stress test the broker under load.<br/>
+ Want to be able to run performance tests, with the test parameters configurable, so that any reasonable toplogy can be simulated and performance estimated.</p>
+
+<p> For example:</p>
+
+<ol>
+	<li>P2P test. On 10 machines, simulating load of 1000 clients. Each machine will run 100 test circuits on 100 connections. Both ends of the test circuit will reside on the same machine, with each client consuming its own messages. Results over all machines to be collated to arrive at total throughput figures.</li>
+	<li>Pub/Sub test. On 10 machines, simulating load of 1000 subscribers, 1 publisher. One machine acts as the sending half of the test circuit. The 1000 subscriber nodes, the receiving end of the circuit, are distributed as evenly as possible accross the other 9 machines. The publisher sends messages and collates throughput or latency measurements on the test circuit.</li>
+</ol>
+
+
+<h3><a name="DistributedTesting-SystemTesting."></a>System Testing.</h3>
+
+<ul>
+	<li>Thorough testing.</li>
+	<li>Functional testing at the product surface; behavioural tests to carry forward as the system evolves.</li>
+</ul>
+
+
+<p> Configurable framework, capable of exercising every imaginable combination of options, both in-vm broker and standalone, accross one client/test circuit up to many clients/test circuits in parallel.<br/>
+ Want to be able to exercise as many different combinations of test configuration parameters in possible in order to generate to the most comprehensive testing of the broker and protocol as possible. Exhaustive testing of every combination will discover bugs.<br/>
+ Want to test the system behaviour at its surface. That is, through the JMS API or through a more direct AMQ API where necessary. The test framework will ideally, abstract out the exact details of the API used, in order to allow forward evolution of the AMQ API. <br/>
+ Want to be able to set up each producer or consumer in a test circuit identically by default. More specific tests to be able to produce variations on this theme to test specific scenarios. For example test circuits the send both persistent and transient messages etc.</p>
+
+<h2><a name="DistributedTesting-Buildtestsoutofastandardizedconstructionblock."></a>Build tests out of a standardized construction block.</h2>
+
+<ul>
+	<li>Diagram: The test circuit.</li>
+</ul>
+
+
+<p>Publisher/Receiver pair.<br/>
+Each end of which is a Producer/Consumer unit.<br/>
+ M producers, N consumers, talking over Z destinations.</p>
+
+<p> The standard consruction block for a test, is a test circuit. This consists of a publisher, and a receiver. The publisher and receiver may reside on the same machine, or may be distributed. Will use a standard set of properties to define the desired circuit topology.</p>
+
+<p> Tests are always to be controlled from the publishing side only. The receiving end of the circuit is to be exposed to the test code through an interface, that abstracts as much as possible the receiving end of the test. The interface exposes a set of 'assertions' that may be applied to the receiving end of the test circuit.</p>
+
+<p> In the case where the receiving end of the circuit resides on the same JVM, the assertions will call the receivers code locally. Where the receiving end is distributed accross one or more machines, the assertions will be applied to a test report gethered from all of the receivers. Test code will be written to the assertions making as few assumptions as possible about the exact test topology.</p>
+
+<p> A test circuit defines a test topology, M producers, N consumers, Z outgoing routes between them.<br/>
+ The publishing end of each test circuit always resides on a single JVM, even if M &gt; 1. If publishers are to be distributed accross many machines, the test framework itself provides the scaling by running the same test circuit many times in parallel. This means that it is possible to have an arbitrary number of message publishers accross one or many machines, determined by the test setup.<br/>
+ The receiving half of the circuit may be local, in which case all messages come back to the same machine, or distributed in which case they may be received by many machines.<br/>
+ There are therefore two ways in which tests may be distributed accross multiple nodes in a network; many test circuits may be distributed and run in parallel and/or the receiving ends of those circuits may be distributed or local.<br/>
+ Each node in the network can play up to 2 roles in any given test; publisher or receiver. It is possible to play both roles at once, but would like to have a 'single_role' flag, that can be set to ensure that test nodes taking one role, will not participate in the other for the duration of a test. For example, in the pub/sub test want one publisher and the remaining nodes to distribute the receiver role amongst themselves.</p>
+
+<h2><a name="DistributedTesting-Probingfortheavailabletesttopology."></a>Probing for the available test topology.</h2>
+
+<ul>
+	<li>Diagram: The available topology.</li>
+</ul>
+
+
+<p> When the test distribution framework starts up, it should broadcast an 'enlist' request on a known topic. All available nodes in the network to reply in order to make it known that they are available to carry out tests. For the requested test case, C test circuits are to be run in parallel. Each test defines its desired M by N topology for each circuit. The entire network may be available to run both roles, or the test case may have specified a limit on the number of publishing nodes and set the 'single_role' flag. If the number of publishing nodes exhausts the available network and the single role flag is on, then there are no nodes available to run the receiver roles, the test will fail with an error at this point. Suppose there are P nodes available to run the publisher roles, and R nodes available to run the receiver roles. The C test circuits will be divided up as evenly as possible amongst the P nodes. The C * N receivers will be divided up as evenly as possible amongst the R nodes.</p>
+
+<p> A more concrete example. There are 10 test machines available. Want to run a pub/sub test with 2 publishers, publishing to 50 topics, with 250 subscribers, measuring total throughput. The distribution framework probes to find the ten machines. The test parameters specify a concurrency level of 2 circuits, limited to 2 nodes, with the single role flag set, which leaves 8 nodes to play the receiver role. The test parameters specify each circuit as having 25 topics, unique to the circuit, and 125 receivers. The total of 250 receivers are distributed amongst the 8 available nodes, 31 each, except for two of them which get 32. The test specifies a duration of 10 minutes, sending messages 500 bytes in size using test batches of 10000 messages, as fast as possible. The distribution framework sends a start signal to each of the publishers. The publishers run for 10000 messages. The publishers request a report from each receiver on their cicruit. The receivers send back to the publishers a report on the number of messages received in the batch. The publishers assert that the correct number for the batch were indeed received, and log a time sample for the batch. This continues for 10 minutes. At the end of the 10 minutes, the publishers collate all of their timings, failures, errors into a log message. The distribution framework requests the test report from each publishing nodes, and these logs are combined together to produce a single log for the entire run. Some stats, such as total time taken, total messages through the system, total throughput are calculated and added as a summary to the log, along with a record of the requested and actual topology used to run the test.</p>
+
+<ul>
+	<li>Diagram: The requested test applied onto the available topology.</li>
+</ul>
+
+
+<h2><a name="DistributedTesting-TestProcedures."></a>Test Procedures.</h2>
+
+<p>A variety of different tests can be written against a standard test circuit, many of these will follow a common pattern. One of the aims of using a common test circuit configured by a number of test parameters, is to be able to automate the generation of all possible test cases that can be produced from the circuit combined with the common testing pattern, and an outline of a procedure for doing this is described here. The typical test sequence is described below:</p>
+
+<h3><a name="DistributedTesting-Atypicaltestsequence."></a>A typical test sequence.</h3>
+
+<ol>
+	<li>Initialize the test circuit from the default parameters, plus specific settings for the test.</li>
+	<li>Create the test circuit. The requested test parameters are applied to the available topology to produce a live circuit.</li>
+	<li>Send messages.</li>
+	<li>Request a status report.</li>
+	<li>Assert conditions on the publishing end of the circuit.</li>
+	<li>Assert conditions on the receiving end of the circuit.</li>
+	<li>Pass or fail the test.</li>
+</ol>
+
+
+<h3><a name="DistributedTesting-Thethoroughtestprocedure."></a>The thorough test procedure.</h3>
+
+<p>The thorough test procedure uses the typical test sequence described above, but generates all of combinations of test parameters and corresponding assertions against the results.</p>
+
+<p>The all_combinations function produces all combinations of test parameters described in Appendix A.</p>
+
+<p>all_combinations : List&lt;Properties&gt;</p>
+
+<p>The expected_results function, produces a list of assertions, given a set of test parameters. For example, mandatory &amp;&amp; no_route -&gt; assertions.add(producer.assertMessageReturned), assertions.add(receiver.assertMessageNotReceived).</p>
+
+<p>expected_results: Properties -&gt; List&lt;Assertions&gt;</p>
+
+<p>For parameters : all_combinations<br/>
+ test_circuit = new TestCircuit(parameters).<br/>
+ test_circuit.start.</p>
+
+<p> Send mesages.<br/>
+ Request status.</p>
+
+<p> For assertion : exected_results(parameters)<br/>
+  Assert(assertion).</p>
+
+<h2><a name="DistributedTesting-AppendixATestParameters."></a>Appendix A - Test Parameters.</h2>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>&nbsp;</th>
+<td class='confluenceTd'> Possible Values </td>
+<td class='confluenceTd'> Default Value </td>
+</tr>
+<tr>
+<th class='confluenceTh'> Connection properties. </th>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> broker                 </td>
+<td class='confluenceTd'> tcp, vm         </td>
+<td class='confluenceTd'> tcp://localhost </td>
+</tr>
+<tr>
+<td class='confluenceTd'> vhost                  </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> &lt;empty&gt;         </td>
+</tr>
+<tr>
+<td class='confluenceTd'> username               </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> guest           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> password               </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> guest           </td>
+</tr>
+<tr>
+<th class='confluenceTh'> Topology properties.   </th>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> max_publishing_node    </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 1               </td>
+</tr>
+<tr>
+<td class='confluenceTd'> single_role            </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> true            </td>
+</tr>
+<tr>
+<th class='confluenceTh'> Circuit properties.    </th>
+<td class='confluenceTd'> Total: 2^2 = 4 combinations. </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> num_publishers         </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 1               </td>
+</tr>
+<tr>
+<td class='confluenceTd'> num_consumers          </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 1               </td>
+</tr>
+<tr>
+<td class='confluenceTd'> num_destinations       </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 1               </td>
+</tr>
+<tr>
+<td class='confluenceTd'> base_out_route_name    </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> ping            </td>
+</tr>
+<tr>
+<td class='confluenceTd'> base_in_route_name     </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> pong            </td>
+</tr>
+<tr>
+<td class='confluenceTd'> bind_out_route         </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> true            </td>
+</tr>
+<tr>
+<td class='confluenceTd'> bind_in_route          </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> consumer_out_active    </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> true            </td>
+</tr>
+<tr>
+<td class='confluenceTd'> consumer_in_active     </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<th class='confluenceTh'> JMS flags and options. </th>
+<td class='confluenceTd'> Total: 2 * 2 * 2 * 6 = 48 combinations. </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> transactional          </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> persistent             </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> no_local               </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> ack_mode               </td>
+<td class='confluenceTd'> tx, auto, client, dups_ok, no_ack, pre_ack </td>
+<td class='confluenceTd'> auto </td>
+</tr>
+<tr>
+<th class='confluenceTh'> AMQP/Qpid flags and options. </th>
+<td class='confluenceTd'> Total: 2^4 = 16 combinations. </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> exclusive              </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> immediate              </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> mandatory              </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> durable                </td>
+<td class='confluenceTd'> true, false     </td>
+<td class='confluenceTd'> false           </td>
+</tr>
+<tr>
+<td class='confluenceTd'> prefetch_size          </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> header_fields          </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<th class='confluenceTh'> Standard test parameters. </th>
+<td class='confluenceTd'> Total: 3 combinations. </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> message_size           </td>
+<td class='confluenceTd'> no_body, one_body, multi_body </td>
+<td class='confluenceTd'> one_body </td>
+</tr>
+<tr>
+<td class='confluenceTd'> num_messages           </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 100             </td>
+</tr>
+<tr>
+<td class='confluenceTd'> outgoing_rate          </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> inbound_rate           </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> timeout                </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 30 seconds      </td>
+</tr>
+<tr>
+<td class='confluenceTd'> tx_batch_size          </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 100             </td>
+</tr>
+<tr>
+<td class='confluenceTd'> max_pending_data       </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+</tbody></table>
+
+<p>Total combinations over all test parameters: 4 * 48 * 16 * 3 = 9216 combinations.</p>
+
+<p>Defaults give an in-VM broker, 1:1 P2P topology, no tx, auto ack, no flags, publisher -&gt; receiver route configured, no return route.</p>
+
+<h2><a name="DistributedTesting-AppendixBClockSynchronizationAlgorithm."></a>Appendix B - Clock Synchronization Algorithm.</h2>
+
+<p>On connection/initialization of the framework, synch clocks between all nodes in the available toplogy. For in vm tests, the clock delta and error will automatically be zero. For throughput measurements, the overall test times will be long enough that the error does not need to be particularly small. For latency measurements, want to get accurate clock synchronization. This should not be too hard to achieve over a quiet local network.</p>
+
+<p>After determining the list of clients available to conduct tests against, the Coordinator synchronizes the clocks of each in turn. The synchronization is done against one client at a time, at a fairly low messaging rate over the Qpid broker. If needed, a more accurate mechanism, using something like NTP over UDP could be used. Ensure the clock synchronization is captured by an interface, to allow better solutions to be added at a later date. Here is a simple algorithm to get started with:</p>
+
+<ol>
+	<li>Coordinator tells client to synchronize its clock with the coordinators time.</li>
+	<li>Client stamps current local time on a "time request" message and sends to Coordinator.</li>
+	<li>Upon receipt by Coordinator, Coordinator stamps Coordinator-time and returns.</li>
+	<li>Upon receipt by Client, Client subtracts current time from sent time and divides by two to compute latency. It subtracts current time from Coordinator time to determine Client-Coordinator time delta and adds in the half-latency to get the correct clock delta.</li>
+	<li>The first result should immediately be used to update the clock since it will get the local clock into at least the right ballpark.</li>
+	<li>The Client repeats steps 1 through 3, 25 or more times, pausing a few tens of milliseconds each time.</li>
+	<li>The results of the packet receipts are accumulated and sorted in lowest-latency to highest-latency order. The median latency is determined by picking the mid-point sample from this ordered list.</li>
+	<li>All samples above approximately 1 standard-deviation from the median are discarded and the remaining samples are averaged using an arithmetic mean.</li>
+</ol>
+
+
+<p>The above algorithm includes broker latency, two network hops each way, plus possible effects of buffering/resends on the TCP protocol. A fairly easy improvement on it might be:</p>
+
+<ol>
+	<li>Coordinator tells client to synchronize its clock with the coordinators time, provides a port/address to synchronize against.</li>
+	<li>Clients sends UDP packets to the Coordinators address and performs the same procedure as outlined above.</li>
+</ol>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

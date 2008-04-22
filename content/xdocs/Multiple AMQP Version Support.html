@@ -1,0 +1,192 @@
+<html>
+    <head>
+        <title>Apache Qpid : Multiple AMQP Version Support</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Multiple AMQP Version Support
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Oct 30, 2006 by <font color="#0050B2">kpvdr</font>.
+				    </div>
+
+				    <style type='text/css'>/*<![CDATA[*/
+div.rbtoc1208857652225 {margin-left: 1.5em;padding: 0px;}
+div.rbtoc1208857652225 ul {margin-left: 0px;padding-left: 20px;}
+div.rbtoc1208857652225 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='rbtoc1208857652225'>
+<ul>
+  <li><a href='#MultipleAMQPVersionSupport-MultipleAMQPVersionSupportinQpid'>Multiple-AMQP Version Support in Qpid </a>
+<ul>
+  <li><a href='#MultipleAMQPVersionSupport-1.CurrentGeneratorStatus'>1. Current Generator Status </a></li>
+  <li><a href='#MultipleAMQPVersionSupport-2.GeneratorDescription'>2. Generator Description </a>
+<ul>
+  <li><a href='#MultipleAMQPVersionSupport-2.1.Overview'>2.1. Overview </a></li>
+  <li><a href='#MultipleAMQPVersionSupport-2.2.AMQPverionmodel'>2.2. AMQP verion model </a></li>
+</ul></li>
+  <li><a href='#MultipleAMQPVersionSupport-3.CodeGeneration'>3. Code Generation </a>
+<ul>
+  <li><a href='#MultipleAMQPVersionSupport-3.1.DifferenceModes'>3.1. Difference Modes </a></li>
+  <li><a href='#MultipleAMQPVersionSupport-3.2JavaGeneration'>3.2 Java Generation</a></li>
+  <li><a href='#MultipleAMQPVersionSupport-3.3.CGeneration'>3.3. C++ Generation</a></li>
+</ul></li>
+</ul></li>
+</ul></div>
+<h1><a name="MultipleAMQPVersionSupport-MultipleAMQPVersionSupportinQpid"></a>Multiple-AMQP Version Support in Qpid </h1>
+<p>This page describes an effort to allow multiple AMQP versions to be supported in the broker. This implies:</p>
+<ul>
+	<li>that a broker will be able to accept a connection from clients requesting a variety of versions of the AMQ protocol;</li>
+	<li>The versions to be supported in this manner are determined at compile time;</li>
+	<li>A code generator generates the framing classes directly from the XML specification file(s), allowing generated classes to support any of the supported versions.</li>
+	<li>Each of these classes need only the major and minor version numbers at instantiation to represent a frame from that protocol version.</li>
+</ul>
+
+
+<p>The thinking behind the following generator description is described in <a href="AMQPVersion.1.html" title="AMQPVersion.1">AMQPVersion.1</a>.  Option 3 (Intelligent Generation) was selected for this implementation.</p>
+
+<h2><a name="MultipleAMQPVersionSupport-1.CurrentGeneratorStatus"></a>1. Current Generator Status </h2>
+<p>The Java generator is more-or-less complete and has been checked into subversion under the gentools directory for initial review. It has <b>not</b> been integrated into the Qpid project as yet; I would like to complete the C++ generation first. However, while the C++ work is in progress, the Java generator is available for review and comment. For instructions on installing and running, see the README file in the gentools directory.</p>
+
+<h2><a name="MultipleAMQPVersionSupport-2.GeneratorDescription"></a>2. Generator Description </h2>
+<h3><a name="MultipleAMQPVersionSupport-2.1.Overview"></a>2.1. Overview </h3>
+<p>The generator first reads in all the listed specification files and constructs from them a memory model (structure) of the specifications "superimposed" on top of each other so that the differences between them are easy to determine. A domain map (which maps all domain names to their simple domain types) is also constructed.</p>
+
+<p>The generator then uses the model to perform code generation. This is achieved by using templates which contain the static parts of the code (which are simply reproduced) and in which are embedded tokens. These tokens, when encounted in the template, are passed on to the generator class, which then uses the context and model to generate specific the version-dependent sections of the code.</p>
+
+<p>Both of these are discussed in more detail below.</p>
+
+<h3><a name="MultipleAMQPVersionSupport-2.2.AMQPverionmodel"></a>2.2. AMQP verion model </h3>
+<p>The memory model has two parts - the <b>domain map</b> and the <b>model</b> (specification structure) itself.</p>
+
+<p><ins><b>Domain Map</b></ins></p>
+
+<p>The domain map is a two-level map. The lowest level maps the simple domain types to the AMQP versions in which they are defined. The upper level maps the domain names to the simple domain type.</p>
+
+<p>In the following hypothetical example, the <em><b>class-id</b></em> domain is changed from <em>short</em> in v.0.8 to <em>long</em> in v.0.9, then back to <em>short</em> in v.0.10. The <em><b>queue-type</b></em> domain was introduced in v.0.10, while the <em><b>redirected</b></em> was removed in v0.9.</p>
+<div class="preformatted" style="border-style: solid; "><div class="preformattedContent">
+<pre>access-ticket --- shortstr --- V[0.8, 0.9, 0.10]
+
+class-id -+------ short ------ V[0.8, 0.10]
+          +------ long ------- V[0.9]
+
+queue-type ------ shortstr --- V[0.10]
+
+redirected ------ bit -------- V[0.8]
+</pre>
+</div></div>
+
+<p>A simplified version of the object model is as follows:</p>
+<div class="panel" style="border-style: solid; "><div class="panelHeader" style="border-bottom-style: solid; background-color: #FFEFEF; "><b>Domain Map class diagram</b></div><div class="panelContent" style="background-color: #FFFFEF; ">
+<p> <img src="Multiple AMQP Version Support_attachments/AmqpDomainMap.png" align="absmiddle" border="0" /> </p>
+</div></div>
+
+<p><ins><b>Specification Model</b></ins></p>
+
+<p>The specification model consists of a series of embedded maps in the same logical structure as the XML specification elements themsleves: the model contains a map of class maps; class maps contain field and method maps; method maps contain field maps. At the lowest level, there is a map to a set of AMQP versions.</p>
+
+<p>The following illustrates a small portion of a model.<br/>
+The <em><b>Access</b></em> class has an index of <em>30</em> for versions 0.8 - 0.10. The <em><b>request</b></em> method has index <em>10</em> in v.0.8 and 0.9, but was changed to <em>20</em> in v.0.10. This method has a <em><b>active</b></em> field in ordinal <em>1</em> and a <em><b>realm</b></em> field in ordinal <em>0</em> for all versions. The <em>realm</em> field is of domain <em><b>path</b></em> for version 0.8, but was changed to <em>domain</em> shortstr in versions 0.9 ans 0.10. <b>NOTE:</b> The domains in this model are the domain names, not the domain types. The Domain Map above is used to look up the domain type.</p>
+<div class="preformatted" style="border-style: solid; "><div class="preformattedContent">
+<pre>C Access -+---- I 30 ---------- V[0.8, 0.9, 0.10]
+          +---- M request -+-+- I 10 -------- V[0.8, 0.9]
+                           | +- I 20 -------- V[0.10]
+                           +-+- F active --+- O 1 ---------- V[0.8, 0.9, 0.10]
+                             |             +- D bit -------- V[0.8, 0.9, 0.10]
+                             +- F realm -+--- O 0 ---------- V[0.8, 0.9, 0.10]
+                                         +-+- D path ------- V[0.8]
+                                           +- D shortstr --- V[0.9, 0.10]
+
+C = class; M = method; F = field; D = domain name; I = index; O = ordinal; V = version(s)
+</pre>
+</div></div>
+
+<p>An <em><b>ordinal</b></em> is the index number of a field implied by its relative position in the XML specification file. The first field in a class or method has ordinal 0, the second ordinal 1, etc.</p>
+
+<p>A simplified version of the object model is as follows:</p>
+<div class="panel" style="border-style: solid; "><div class="panelHeader" style="border-bottom-style: solid; background-color: #FFEFEF; "><b>Model class diagram</b></div><div class="panelContent" style="background-color: #FFFFEF; ">
+<p> <img src="Multiple AMQP Version Support_attachments/AmqpModel.png" align="absmiddle" border="0" /> </p>
+</div></div>
+
+<p><ins><b>Generation</b></ins></p>
+
+<p>The Generator itself consists of a template passer and large number of code-generating methods for handling the various tokens that are embedded in the templates.</p>
+
+<p>Templates contain three types of tokens:</p>
+<ol>
+	<li>Filename tokens, which determine the name of the file to be generated;</li>
+	<li>Simple Class/Method/Field replacement tokens in which the name of these elements are used to replace the token (e.g. "${CLASS}${METHOD}Body" becomes "BasicConsumeBody");</li>
+	<li>List tokens, in which a code snippet is generated once for each item in the list. A second token on the same line determines the code snippet that will be generated. The list tokens cannot be combined or embedded within each other. There are four list tokens:
+	<ol>
+		<li>%{VLIST} which generates once per version;</li>
+		<li>%{CLIST} which generates once per class;</li>
+		<li>%{MLIST} which generates once per method;</li>
+		<li>%{FLIST} which generates once per field.</li>
+	</ol>
+	</li>
+</ol>
+
+
+<h2><a name="MultipleAMQPVersionSupport-3.CodeGeneration"></a>3. Code Generation </h2>
+<h3><a name="MultipleAMQPVersionSupport-3.1.DifferenceModes"></a>3.1. Difference Modes </h3>
+<p>The following changes may take place between one version and the next:</p>
+<ul>
+	<li>Addition of classes, methods, fields or domains;</li>
+	<li>Deletion of classes, methods, fields or domains;</li>
+	<li>Modification of field domains or domain types;</li>
+	<li>Modification of the ordinal position of fields;</li>
+	<li>Modification of the index of classes or methods;</li>
+</ul>
+
+
+<h3><a name="MultipleAMQPVersionSupport-3.2JavaGeneration"></a>3.2 Java Generation</h3>
+<h4><a name="MultipleAMQPVersionSupport-3.2.1.MethodBodyclasses"></a>3.2.1. MethodBody classes </h4>
+<p>MethodBody classes here.</p>
+
+<h4><a name="MultipleAMQPVersionSupport-3.2.2.PropertyContentHeaderclasses"></a>3.2.2. PropertyContentHeader classes </h4>
+<p>PropertyContentHeader classes here.</p>
+
+<h4><a name="MultipleAMQPVersionSupport-3.2.3.Registryclasses"></a>3.2.3. Registry classes </h4>
+<p>Registry classes here.</p>
+
+<h3><a name="MultipleAMQPVersionSupport-3.3.CGeneration"></a>3.3. C++ Generation</h3>
+<p>Watch this space...</p>
+
+				    					    <br/>
+                        <div class="tabletitle">
+                            <a name="attachments">Attachments:</a>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="Multiple AMQP Version Support_attachments/AmqpDomainMap.png">AmqpDomainMap.png</a> (image/png)
+                                <br/>
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="Multiple AMQP Version Support_attachments/AmqpDomainMap.png">AmqpDomainMap.png</a> (image/png)
+                                <br/>
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="Multiple AMQP Version Support_attachments/AmqpModel.png">AmqpModel.png</a> (image/png)
+                                <br/>
+                                                    </div>
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

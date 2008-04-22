@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>Apache Qpid : The AMQP Distributed Transaction Classes</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : The AMQP Distributed Transaction Classes
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on May 31, 2007 by <font color="#0050B2">cctrieloff</font>.
+				    </div>
+
+				    <p>The distributed transaction classes provide support for the X-Open XA architecture. The dtx-demarcation class is used to demarcate transaction boundaries on a given channel that is subsequently used to perform AMQP native transactional work (produce publish messages). Transaction coordination and recovery operations are provided by the dtx-coordination class.</p>
+
+<p>A Transaction Manager uses RM Client XA interface to demarcate transaction boundaries and coordinate transaction outcomes. RM Clients use the dtx-demarcation class to associate transactional work with a transactional channel. The transactional channel is exposed to the application driving the transaction. The application can then use the transactional channel to transactionally produce and consume messages. RM clients use dtx-coordination to propagate transaction outcomes and recovery operations to the AMQP broker. A second coordination channel can be used for that purpose.</p>
+
+<p>More details about can be found at:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://wiki.108.redhat.com/wiki/index.php/AMQP:Transaction_SIG_dtx_XML" title="Visit page outside Confluence">https://wiki.108.redhat.com/wiki/index.php/AMQP:Transaction_SIG_dtx_XML</a></li>
+	<li><a href="http://cwiki.apache.org/confluence/download/attachments/55787/dtx-classes-specification-document-v1.2.pdf" title="Visit page outside Confluence">http://cwiki.apache.org/confluence/download/attachments/55787/dtx-classes-specification-document-v1.2.pdf</a></li>
+	<li><a href="http://cwiki.apache.org/confluence/download/attachments/55787/dtx-classes-presentation-v0.10-PMC-03142007.pdf" title="Visit page outside Confluence">http://cwiki.apache.org/confluence/download/attachments/55787/dtx-classes-presentation-v0.10-PMC-03142007.pdf</a></li>
+</ul>
+
+
+<h2><a name="TheAMQPDistributedTransactionClasses-TheQpidImplementation"></a>The Qpid Implementation </h2>
+<p>As shown on the following class diagram, there are two protocol specific dtx classes, that is to say DtxDemarcation and DtxCoordination that are highlighted in yellow.</p>
+
+<p><img src="The AMQP Distributed Transaction Classes_attachments/12358547_thumb_dtx.gif" align="absmiddle" border="0" /></p>
+
+
+<h3><a name="TheAMQPDistributedTransactionClasses-DtxDemarcation"></a>DtxDemarcation</h3>
+<p>DtxDemarcation interacts with the corresponding AMQChannel. The operation select creates the corresponding TransactionalContext (a channel has by default a non-transactional context). The operations start and end associate and disassociate a provided xid with the current TransactionalContext that percolates the call to the TransactionManager (operations begin and end respectively). Note that the operation end is responsible for acknowledging the messages against the context i.e. those messages are seen as being consumed under the currently associated xid.</p>
+
+<h3><a name="TheAMQPDistributedTransactionClasses-DtxCoordination"></a>DtxCoordination</h3>
+<p>DtxCoordination directly interacts with the TransactionManager. Note that it is a requirement that the operation end is called on all involved channels (i.e. all the acknowledged messages have been specifically consumed under the provided xid).</p>
+
+<h3><a name="TheAMQPDistributedTransactionClasses-TransactionalContext"></a>TransactionalContext</h3>
+<p>There are three flavours of TransactionalContext: the non transactional one, the local and distributed ones. The distributed and local contexts are very similar and both extend the abstract context. Note that the distributed context does not implement commit and rollback as this is DtxCoordination that is responsible for deciding of a transaction outcome.</p>
+
+<h3><a name="TheAMQPDistributedTransactionClasses-TransactionManagerandMessageStore"></a>TransactionManager and MessageStore</h3>
+<p>Transaction manager and message store are linked as the message store may need to add transaction records to the transaction identified by a given xid. Moreover, the transaction manager may need to use the transactional facilities of the underlying store. This is the case of the JDBCStore and JDBCTransactionManager. The JDBCTransactionManager uses the transaction facilities of the JDBCStore for performing ACID operations during prepare and commit.</p>
+
+<p>This is the responsibility of the MessageStore to recover queues and exchanges and messages. Note that the JDBCTransactionManager delegates the responsibility of getting the list of in-doubt transactions to the JDBCStore but another implementation of TransactionManager may handle that directly.<br/>
+The MessageStore implementation should not load the messages in memory during recovery but only set the messageID. The message header, publish info and payload are lazily loaded. Note that the message payloads are currently loaded in memory. We can however easily implement a direct streaming of message payload on the wire (The MessageStore interface can be extended for supporting that).</p>
+
+				    					    <br/>
+                        <div class="tabletitle">
+                            <a name="attachments">Attachments:</a>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="The AMQP Distributed Transaction Classes_attachments/dtx-classes-presentation-v0.10-PMC-03142007.pdf">dtx-classes-presentation-v0.10-PMC-03142007.pdf</a> (application/pdf)
+                                <br/>
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="The AMQP Distributed Transaction Classes_attachments/dtx-classes-specification-document-v1.2.pdf">dtx-classes-specification-document-v1.2.pdf</a> (application/pdf)
+                                <br/>
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="The AMQP Distributed Transaction Classes_attachments/12358547_thumb_dtx.gif">12358547_thumb_dtx.gif</a> (image/gif)
+                                <br/>
+                                                    </div>
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
