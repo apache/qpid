@@ -1,5 +1,5 @@
-#ifndef _sys_Acceptor_h
-#define _sys_Acceptor_h
+#ifndef _sys_ProtocolFactory_h
+#define _sys_ProtocolFactory_h
 
 /*
  *
@@ -32,23 +32,23 @@ namespace sys {
 
 class Poller;
 
-class Acceptor : public qpid::SharedObject<Acceptor>
+class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
 {
   public:
-    virtual ~Acceptor() = 0;
+    virtual ~ProtocolFactory() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
-    virtual void run(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
+    virtual void accept(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
     virtual void connect(
         boost::shared_ptr<Poller>,
         const std::string& host, int16_t port,
         ConnectionCodec::Factory* codec) = 0;
 };
 
-inline Acceptor::~Acceptor() {}
+inline ProtocolFactory::~ProtocolFactory() {}
 
 }}
 
 
     
-#endif  /*!_sys_Acceptor_h*/
+#endif  //!_sys_ProtocolFactory_h

@@ -35,7 +35,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/sys/Acceptor.h"
+#include "qpid/sys/ProtocolFactory.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Thread.h"
@@ -54,7 +54,7 @@
 #include <sasl/sasl.h>
 #endif
 
-using qpid::sys::Acceptor;
+using qpid::sys::ProtocolFactory;
 using qpid::sys::Poller;
 using qpid::sys::Dispatcher;
 using qpid::sys::Thread;
@@ -334,41 +334,33 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-boost::shared_ptr<Acceptor> Broker::getAcceptor() const {
-    assert(acceptors.size() > 0);
-#if 0
-    if (!acceptor) {
-        const_cast<Acceptor::shared_ptr&>(acceptor) =
-            Acceptor::create(config.port,
-                             config.connectionBacklog);
-        QPID_LOG(info, "Listening on port " << getPort());
-    }
-#endif
-    return acceptors[0];
+boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory() const {
+    assert(protocolFactories.size() > 0);
+    return protocolFactories[0];
 }
 
-void Broker::registerAccepter(Acceptor::shared_ptr acceptor) {
-    acceptors.push_back(acceptor);
+void Broker::registerProtocolFactory(ProtocolFactory::shared_ptr protocolFactory) {
+    protocolFactories.push_back(protocolFactory);
 }
 
-// TODO: This can only work if there is only one acceptor
+// TODO: This can only work if there is only one protocolFactory
 uint16_t Broker::getPort() const  {
-    return getAcceptor()->getPort();
+    return getProtocolFactory()->getPort();
 }
 
-// TODO: This should iterate over all acceptors
+// TODO: This should iterate over all protocolFactories
 void Broker::accept() {
-    for (unsigned int i = 0; i < acceptors.size(); ++i)
-        acceptors[i]->run(poller, &factory);
+    for (unsigned int i = 0; i < protocolFactories.size(); ++i)
+        protocolFactories[i]->accept(poller, &factory);
 }
 
 
-// TODO: How to chose the acceptor to use for the connection
+// TODO: How to chose the protocolFactory to use for the connection
 void Broker::connect(
     const std::string& host, uint16_t port,
     sys::ConnectionCodec::Factory* f)
 {
-    getAcceptor()->connect(poller, host, port, f ? f : &factory);
+    getProtocolFactory()->connect(poller, host, port, f ? f : &factory);
 }
 
 void Broker::connect(

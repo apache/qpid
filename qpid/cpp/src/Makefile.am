@@ -473,7 +473,6 @@ nobase_include_HEADERS = \
   qpid/management/ManagementAgent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
-  qpid/sys/Acceptor.h \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AsynchIOHandler.h \
@@ -493,6 +492,7 @@ nobase_include_HEADERS = \
   qpid/sys/OutputControl.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
+  qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
