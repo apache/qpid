@@ -70,7 +70,7 @@ namespace qpid {
             MessageStore* store;
             const OwnershipToken* owner;
             uint32_t consumerCount;
-            bool exclusive;
+            OwnershipToken* exclusive;
             bool noLocal;
             Listeners listeners;
             Messages messages;
