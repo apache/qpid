@@ -94,7 +94,7 @@ class FederationTests(TestBase010):
             mgmt.call_method(link, "close")
             self.assertEqual(len(mgmt.get_objects("link")), 0)
 
-    def DISABLED_test_pull_from_exchange(self):
+    def test_pull_from_exchange(self):
         session = self.session
         
         mgmt = Helper(self)
@@ -122,10 +122,10 @@ class FederationTests(TestBase010):
 
         for i in range(1, 11):
             msg = queue.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
         try:
             extra = queue.get(timeout=1)
-            self.fail("Got unexpected message in queue: " + extra.content.body)
+            self.fail("Got unexpected message in queue: " + extra.body)
         except Empty: None
 
 
@@ -135,7 +135,7 @@ class FederationTests(TestBase010):
         mgmt.call_method(link, "close")
         self.assertEqual(len(mgmt.get_objects("link")), 0)
 
-    def DISABLED_test_pull_from_queue(self):
+    def test_pull_from_queue(self):
         session = self.session
 
         #setup queue on remote broker and add some messages
@@ -168,10 +168,10 @@ class FederationTests(TestBase010):
 
         for i in range(1, 11):
             msg = queue.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.content.body)
+            self.assertEqual("Message %d" % i, msg.body)
         try:
             extra = queue.get(timeout=1)
-            self.fail("Got unexpected message in queue: " + extra.content.body)
+            self.fail("Got unexpected message in queue: " + extra.body)
         except Empty: None
 
 

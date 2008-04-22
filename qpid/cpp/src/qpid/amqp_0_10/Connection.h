@@ -43,9 +43,10 @@ class Connection  : public sys::ConnectionCodec,
     broker::Connection connection; // FIXME aconway 2008-03-18: 
     std::string identifier;
     bool initialized;
+    bool isClient;
     
   public:
-    Connection(sys::OutputControl&, broker::Broker&, const std::string& id);
+    Connection(sys::OutputControl&, broker::Broker&, const std::string& id, bool isClient = false);
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool isClosed() const;
