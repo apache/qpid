@@ -27,6 +27,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/OutputControl.h"
 #include "ConnectionState.h"
+#include "OwnershipToken.h"
 
 
 #include <boost/noncopyable.hpp>
@@ -34,7 +35,7 @@
 namespace qpid {
 namespace broker {
 
-class SessionContext : public sys::OutputControl
+class SessionContext : public OwnershipToken, public sys::OutputControl
 {
   public:
     virtual ~SessionContext(){}
