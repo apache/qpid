@@ -1,2 +1,0 @@
-java -Xms256m -Xmx1024m -Ddestinations="test" -Dduration=15M -DlogFrequency=1000 -DlogFilePath="/home/rajith/qpid" -Dmessage_size_before_sync=25000 -Dmessage_size_before_flush=10000 -Djava.naming.provider.url="/home/rajith/tests.properties" -Djava.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory -cp qpid-perftests-1.0-incubating-M2-SNAPSHOT.jar org.apache.qpid.client.perf.MessageProducerTest
-
