@@ -1,5 +1,7 @@
 #!/bin/sh
 # Run the federation tests.
+MY_DIR=$(dirname $(which $0))
+PYTHON_DIR=${MY_DIR}/../../../python
 
 trap stop_brokers EXIT
 
@@ -15,10 +17,10 @@ stop_brokers() {
         ../qpidd -q --port $REMOTE_PORT
 }
 
-if test -d ../../../python ;  then
+if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    export PYTHONPATH=../../../python
-    ./federation.py -v -s ../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT  || { echo "FAIL federation tests"; exit 1; }
+    export PYTHONPATH=${PYTHON_DIR}
+    ${MY_DIR}/federation.py -v -s ${MY_DIR}/../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT  || { echo "FAIL federation tests"; exit 1; }
 fi
 
