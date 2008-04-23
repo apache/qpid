@@ -144,7 +144,8 @@ QPID_AUTO_TEST_CASE(testDispatcher)
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-/* FIXME aconway 2008-01-28: hangs
+// FIXME aconway 2008-04-23: hangs
+#if 0
 BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
 {
     session =connection.newSession(ASYNC);
@@ -161,11 +162,10 @@ BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
     for (size_t i = 0; i < count; ++i) 
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
-*/
+#endif
 
-/*
- * GS (18-APR-2008): disabled resume tests until resumption for 0-10 final spec is implemented
-QPID_AUTO_TEST_CASE(_FIXTURE)
+
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
 {
     ClientSessionFixture fix;
     fix.session =fix.connection.newSession(ASYNC, 0);
@@ -176,7 +176,7 @@ QPID_AUTO_TEST_CASE(_FIXTURE)
     } catch(const InternalErrorException&) {}
 }
 
-QPID_AUTO_TEST_CASE(testUseSuspendedError)
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUseSuspendedError, 1)
 {
     ClientSessionFixture fix;
     fix.session =fix.connection.newSession(ASYNC, 60);
@@ -187,7 +187,7 @@ QPID_AUTO_TEST_CASE(testUseSuspendedError)
     } catch(const CommandInvalidException&) {}
 }
 
-QPID_AUTO_TEST_CASE(testSuspendResume)
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
 {
     ClientSessionFixture fix;
     fix.session =fix.connection.newSession(ASYNC, 60);
@@ -199,10 +199,9 @@ QPID_AUTO_TEST_CASE(testSuspendResume)
     FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
-*/
-/**
- * Currently broken due to a deadlock in SessionCore
- *
+
+// FIXME aconway 2008-04-23: broken due to a deadlock in SessionCore
+#if 0
 BOOST_FIXTURE_TEST_CASE(testSendToSelf, SessionFixture) {
     // Deadlock if SubscriptionManager  run() concurrent with session ack.
     SimpleListener mylistener;
@@ -224,7 +223,7 @@ BOOST_FIXTURE_TEST_CASE(testSendToSelf, SessionFixture) {
         BOOST_CHECK_EQUAL(mylistener.messages[j].getData(), data);
     }
 }
-*/
+#endif
 
 QPID_AUTO_TEST_SUITE_END()
 

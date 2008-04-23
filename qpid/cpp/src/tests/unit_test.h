@@ -28,9 +28,17 @@
 #include <boost/version.hpp>
 #include <limits.h> // Must be inclued beofre boost/test headers.
 
-#if (BOOST_VERSION < 103300)
-
+// #include the correct header file.
+// 
+#if (BOOST_VERSION < 103400)
 # include <boost/test/auto_unit_test.hpp>
+#else
+# include <boost/test/unit_test.hpp>
+#endif  // BOOST_VERSION
+
+// Workarounds for BOOST_AUTO_TEST_CASE|SUITE|SUITE_END
+// 
+#if (BOOST_VERSION < 103300)
 
 # define QPID_AUTO_TEST_SUITE(name)
 # define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_UNIT_TEST(name)
@@ -38,19 +46,47 @@
 
 #elif (BOOST_VERSION < 103400)
 
-# include <boost/test/auto_unit_test.hpp>
-
 # define QPID_AUTO_TEST_SUITE(name) BOOST_AUTO_TEST_SUITE(name);
-# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
 # define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END();
 
-#else
+#elif (BOOST_VERSION < 103400)
 
 # define QPID_AUTO_TEST_SUITE(name) BOOST_AUTO_TEST_SUITE(name)
-# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
 # define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END()
 
-# include <boost/test/unit_test.hpp>
+#endif  // Workarounds for BOOST_AUTO_TEST_CASE|SUITE|SUITE_END
+
+
+// Workaround for BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES
+// 
+#if (BOOST_VERSION < 103500)
+
+// Keep the test function for compilation but do not not register it.
+// TODO aconway 2008-04-23: better workaround for expected failures.
+# define QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(test_name,n)             \
+    namespace { struct test_name { void test_method(); };  }            \
+    void test_name::test_method()
+
+#endif  // Workaround for BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES
+
+//
+// Default definitions for latest version of boost.
+//
+
+#ifndef QPID_AUTO_TEST_SUITE
+# define QPID_AUTO_TEST_SUITE(name) BOOST_AUTO_TEST_SUITE(name)
 #endif
 
-#endif  /*!QPIPD_TEST_UNIT_TEST_H_*/
+#ifndef QPID_AUTO_TEST_CASE
+# define QPID_AUTO_TEST_CASE(name)  BOOST_AUTO_TEST_CASE(name)
+#endif
+
+#ifndef QPID_AUTO_TEST_CASE_EXPECTED_FAILURES
+# define QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(name,n)  BOOST_AUTO_TEST_SUITE_EXPECTED_FAILURES(name,n)
+#endif
+
+#ifndef QPID_AUTO_TEST_SUITE_END
+# define QPID_AUTO_TEST_SUITE_END() BOOST_AUTO_TEST_SUITE_END()
+#endif
+
+#endif  // !QPIPD_TEST_UNIT_TEST_H_
