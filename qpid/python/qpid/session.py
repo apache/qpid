@@ -152,6 +152,7 @@ class Session(Invoker):
     cmd = type.new(args, kwargs)
     sc = StringCodec(self.spec)
     hdr = Struct(self.spec["session.header"])
+    hdr.sync = self.auto_sync
     sc.write_command(hdr, cmd)
 
     seg = Segment(True, (message == None or
