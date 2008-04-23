@@ -277,7 +277,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 {
                     _messageListener.set(messageListener);
                     _session.setHasMessageListeners();
-                    _session.startDistpatcherIfNecessary();
+                    _session.startDispatcherIfNecessary();
                 }
             }
         }
@@ -393,7 +393,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
         }
 
-        _session.startDistpatcherIfNecessary();
+        _session.startDispatcherIfNecessary();
 
         try
         {
@@ -460,7 +460,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             return null;
         }
 
-        _session.startDistpatcherIfNecessary();
+        _session.startDispatcherIfNecessary();
 
         try
         {

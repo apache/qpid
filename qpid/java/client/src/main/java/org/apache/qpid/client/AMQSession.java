@@ -516,6 +516,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         if (isClosed())
         {
             throw new IllegalStateException("Session is already closed");
+        } 
+        else if (hasFailedOver())
+        {
+            throw new IllegalStateException("has failed over");
         }
 
         while (true)
@@ -771,7 +775,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 else
                 {
                     _logger.info("Dispatcher is null so created stopped dispatcher");
-                    startDistpatcherIfNecessary(true);
+                    startDispatcherIfNecessary(true);
                 }
 
                 _dispatcher.rejectPending(consumer);
@@ -1800,11 +1804,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         // If the event dispatcher is not running then start it too.
         if (hasMessageListeners())
         {
-            startDistpatcherIfNecessary();
+            startDispatcherIfNecessary();
         }
     }
 
-    void startDistpatcherIfNecessary()
+    void startDispatcherIfNecessary()
     {
         //If we are the dispatcher then we don't need to check we are started
         if (Thread.currentThread() == _dispatcher)
@@ -1830,10 +1834,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
         }
 
-        startDistpatcherIfNecessary(false);
+        startDispatcherIfNecessary(false);
     }
 
-    synchronized void startDistpatcherIfNecessary(boolean initiallyStopped)
+    synchronized void startDispatcherIfNecessary(boolean initiallyStopped)
     {
         if (_dispatcher == null)
         {
