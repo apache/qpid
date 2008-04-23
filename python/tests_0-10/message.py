@@ -30,7 +30,9 @@ class MessageTests(TestBase010):
 
     def test_no_local(self):
         """
-        Test that the no_local flag is honoured in the consume method
+        NOTE: this is a test of a QPID specific feature
+        
+        Test that the qpid specific no_local arg is honoured.
         """
         session = self.session
         #setup, declare two queues one of which excludes delivery of locally sent messages
@@ -44,11 +46,27 @@ class MessageTests(TestBase010):
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1a"), "deliver-me"))
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me"))
 
+        #send a message from another session on the same connection to each queue
+        session2 = self.conn.session("my-local-session")
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue-1a"), "deliver-me-as-well"))
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me-either"))
+
+        #send a message from a session on another connection to each queue
+        for q in ["test-queue-1a", "test-queue-1b"]:
+            session.exchange_bind(queue=q, exchange="amq.fanout", binding_key="my-key")
+        other = self.connect()
+        session3 = other.session("my-other-session")
+        session3.message_transfer(destination="amq.fanout", message=Message("i-am-not-local"))
+        other.close()
+
         #check the queues of the two consumers
         excluded = session.incoming("local_excluded")
         included = session.incoming("local_included")
-        msg = included.get(timeout=1)
-        self.assertEqual("deliver-me", msg.body)
+        for b in ["deliver-me", "deliver-me-as-well", "i-am-not-local"]:
+            msg = included.get(timeout=1)
+            self.assertEqual(b, msg.body)
+        msg = excluded.get(timeout=1)
+        self.assertEqual("i-am-not-local", msg.body)
         try:
             excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
@@ -57,12 +75,10 @@ class MessageTests(TestBase010):
     def test_no_local_awkward(self):
 
         """
-        If an exclusive queue gets a no-local delivered to it, that
-        message could 'block' delivery of subsequent messages or it
-        could be left on the queue, possibly never being consumed
-        (this is the case for example in the qpid JMS mapping of
-        topics). This test excercises a Qpid C++ broker hack that
-        deletes such messages.
+        NOTE: this is a test of a QPID specific feature
+        
+        Check that messages which will be excluded through no-local
+        processing will not block subsequent deliveries
         """
 
         session = self.session
@@ -94,7 +110,10 @@ class MessageTests(TestBase010):
 
     def test_no_local_exclusive_subscribe(self):
         """
-        Test that the no_local flag is honoured in the consume method
+        NOTE: this is a test of a QPID specific feature
+
+        Test that the no_local processing works on queues not declared
+        as exclusive, but with an exclusive subscription
         """
         session = self.session
 
@@ -106,15 +125,31 @@ class MessageTests(TestBase010):
         self.subscribe(destination="local_included", queue="test-queue-1a")
         self.subscribe(destination="local_excluded", queue="test-queue-1b", exclusive=True)
 
-        #send a message
+        #send a message from the same session to each queue
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1a"), "deliver-me"))
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me"))
+
+        #send a message from another session on the same connection to each queue
+        session2 = self.conn.session("my-session")
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue-1a"), "deliver-me-as-well"))
+        session2.message_transfer(message=Message(session2.delivery_properties(routing_key="test-queue-1b"), "dont-deliver-me-either"))
+
+        #send a message from a session on another connection to each queue
+        for q in ["test-queue-1a", "test-queue-1b"]:
+            session.exchange_bind(queue=q, exchange="amq.fanout", binding_key="my-key")
+        other = self.connect()
+        session3 = other.session("my-other-session")
+        session3.message_transfer(destination="amq.fanout", message=Message("i-am-not-local"))
+        other.close()
 
         #check the queues of the two consumers
         excluded = session.incoming("local_excluded")
         included = session.incoming("local_included")
-        msg = included.get(timeout=1)
-        self.assertEqual("deliver-me", msg.body)
+        for b in ["deliver-me", "deliver-me-as-well", "i-am-not-local"]:
+            msg = included.get(timeout=1)
+            self.assertEqual(b, msg.body)
+        msg = excluded.get(timeout=1)
+        self.assertEqual("i-am-not-local", msg.body)
         try:
             excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
