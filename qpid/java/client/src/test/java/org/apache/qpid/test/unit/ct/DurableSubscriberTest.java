@@ -25,7 +25,7 @@ import org.apache.qpid.testutil.QpidTestCase;
  *   Crash Recovery tests for durable subscription
  *
  */
-public class DurableSubscriberTests extends QpidTestCase
+public class DurableSubscriberTest extends QpidTestCase
 {
     private final String _topicName = "durableSubscriberTopic";
 
