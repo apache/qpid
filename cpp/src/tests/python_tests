@@ -2,6 +2,8 @@
 # Run the python tests.
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
+MY_DIR=$(dirname $(which $0))
+PYTHON_DIR=${MY_DIR}/../../../python
 
 run() {
     SPEC=$1
@@ -9,8 +11,8 @@ run() {
     ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
 }
 
-if test -d ../../../python ;  then
-    cd ../../../python
+if test -d ${PYTHON_DIR} ;  then
+    cd ${PYTHON_DIR}
     run 0-10-errata cpp_failing_0-10.txt
     if test -z "$QPID_NO_PREVIEW" ; then run ../specs/amqp.0-10-preview.xml cpp_failing_0-10_preview.txt; fi
 else
