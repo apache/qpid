@@ -179,7 +179,14 @@ class Codec(Packer):
   def write_array(self, a):
     pass
   def read_array(self):
-    pass
+    sc = StringCodec(self.spec, self.read_vbin32())
+    type = self.spec.types[sc.read_uint8()]
+    count = sc.read_uint32()
+    result = []
+    while count:
+      result.append(type.decode(sc))
+      count = count - 1
+    return result
 
   def read_struct32(self):
     size = self.read_uint32()
