@@ -30,7 +30,7 @@
 #include "qpid/framing/Array.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "qpid/framing/SequenceSet.h"
+
 
 #include <boost/noncopyable.hpp>
 

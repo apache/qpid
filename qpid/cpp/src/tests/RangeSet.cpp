@@ -63,6 +63,22 @@ QPID_AUTO_TEST_CASE(testRangeSetAddRange) {
     BOOST_CHECK(r.back() == 6);
 }
 
+QPID_AUTO_TEST_CASE(testRangeSetAddSet) {
+    TestRangeSet r;
+    TestRangeSet s = TestRangeSet(0,3)+TestRange(5,10);
+    r += s;
+    BOOST_CHECK_EQUAL(r,s);
+    r += TestRangeSet(3,5) + TestRange(7,12) + 15;
+    BOOST_CHECK_EQUAL(r, TestRangeSet(0,12) + 15);
+
+    r.clear();
+    BOOST_CHECK(r.empty());
+    r += TestRange::makeClosed(6,10);
+    BOOST_CHECK_EQUAL(r, TestRangeSet(6,11));
+    r += TestRangeSet(2,6)+8;
+    BOOST_CHECK_EQUAL(r, TestRangeSet(2,11));
+}
+
 QPID_AUTO_TEST_CASE(testRangeSetIterate) {
     TestRangeSet r;
     (((r += 1) += 10) += TestRange(4,7)) += 2;
@@ -74,12 +90,14 @@ QPID_AUTO_TEST_CASE(testRangeSetIterate) {
 }
 
 QPID_AUTO_TEST_CASE(testRangeSetRemove) {
+    // points
     BOOST_CHECK_EQUAL(TestRangeSet(0,5)-3, TestRangeSet(0,3)+TestRange(4,5));
     BOOST_CHECK_EQUAL(TestRangeSet(1,5)-5, TestRangeSet(1,5));
     BOOST_CHECK_EQUAL(TestRangeSet(1,5)-0, TestRangeSet(1,5));
 
     TestRangeSet r(TestRangeSet(0,5)+TestRange(10,15)+TestRange(20,25));
 
+    // TestRanges
     BOOST_CHECK_EQUAL(r-TestRange(0,5), TestRangeSet(10,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(10,15), TestRangeSet(0,5)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(20,25), TestRangeSet(0,5)+TestRange(10,15));
@@ -89,16 +107,22 @@ QPID_AUTO_TEST_CASE(testRangeSetRemove) {
     BOOST_CHECK_EQUAL(r-TestRange(-5, 7), TestRangeSet(10,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(8,19), TestRangeSet(0,5)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(17,30), TestRangeSet(0,5)+TestRange(10,15));
+    BOOST_CHECK_EQUAL(r-TestRange(17,30), TestRangeSet(0,5)+TestRange(10,15));
 
     BOOST_CHECK_EQUAL(r-TestRange(-5, 5), TestRangeSet(10,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(10,19), TestRangeSet(0,5)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(18,25), TestRangeSet(0,5)+TestRange(10,15));
+    BOOST_CHECK_EQUAL(r-TestRange(23,25), TestRangeSet(0,5)+TestRange(10,15)+TestRange(20,23));
 
     BOOST_CHECK_EQUAL(r-TestRange(-3, 3), TestRangeSet(3,5)+TestRange(10,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(3, 7), TestRangeSet(0,2)+TestRange(10,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(3, 12), TestRangeSet(0,3)+TestRange(12,15)+TestRange(20,25));
     BOOST_CHECK_EQUAL(r-TestRange(3, 22), TestRangeSet(12,15)+TestRange(22,25));
     BOOST_CHECK_EQUAL(r-TestRange(12, 22), TestRangeSet(0,5)+TestRange(10,11)+TestRange(22,25));
+
+    // Sets
+    BOOST_CHECK_EQUAL(r-(TestRangeSet(-1,6)+TestRange(11,14)+TestRange(23,25)),
+                      TestRangeSet(10,11)+TestRange(14,15)+TestRange(20,23));
 }
 
 QPID_AUTO_TEST_CASE(testRangeContaining) {

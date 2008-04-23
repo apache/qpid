@@ -26,7 +26,6 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/StructHelper.h"
 
 #include <vector>
