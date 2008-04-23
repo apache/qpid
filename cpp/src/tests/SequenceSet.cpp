@@ -80,7 +80,7 @@ QPID_AUTO_TEST_CASE(testAdd) {
         BOOST_CHECK(!t.contains(i));
 
     for (uint32_t i = 2; i <= 10; i++)
-        BOOST_CHECK(t.contains(i));
+        BOOST_CHECK_MESSAGE(t.contains(i), t << " contains " << i);
 
     RangeExpectations().expect(2, 10).check(t);
 }

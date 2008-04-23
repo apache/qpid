@@ -20,7 +20,6 @@
  */
 
 #include "qpid/framing/SequenceNumber.h"
-#include "qpid/framing/SequenceSet.h"
 #include <map>
 #include <boost/shared_ptr.hpp>
 

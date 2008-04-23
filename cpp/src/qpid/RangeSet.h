@@ -30,16 +30,26 @@
 
 namespace qpid {
 
-/** A range of values, used in RangeSet */
+/** A range of values, used in RangeSet.
+ * Range(begin, end) includes begin but excludes end.
+ * Range::makeClosed(first,last) includes both first and last.
+ */
 template <class T>
 class Range {
   public:
+    static Range makeClosed(const T& first, T last) { return Range(first, ++last); }
+    
     Range() : begin_(), end_() {}
     explicit Range(const T& t) : begin_(t), end_(t) { ++end_; }
     Range(const T& b, const T& e) : begin_(b), end_(e) { assert(b <= e); }
 
     T begin() const { return begin_; }
+    /** End of _open_ range, i.e. !contains(end()) */
     T end() const { return end_; }
+
+    T first() const { assert(!empty()); return begin_; }
+    /** Last in closed range, i.e. contains(end()) */
+    T last() const { assert(!empty()); T ret=end_; return --ret; }
 
     void begin(const T& t) { begin_ = t; }
     void end(const T& t) { end_ = t; }
@@ -48,6 +58,7 @@ class Range {
 
     bool contains(const T& x) const { return begin_ <= x && x < end_; }
     bool contains(const Range& r) const { return begin_ <= r.begin_ && r.end_ <= end_; }
+    bool strictContains(const Range& r) const { return begin_ < r.begin_ && r.end_ < end_; }
 
     bool operator==(const Range& x) { return begin_ == x.begin_ && end_== x.end_; }
 
@@ -66,6 +77,8 @@ class Range {
     }
 
     operator bool() const { return !empty(); }
+
+    template <class S> void serialize(S& s) { s(begin_)(end_); }
         
   private:
     T begin_, end_;
@@ -83,7 +96,10 @@ class RangeSet
                        boost::additive2<RangeSet<T>, Range<T>,
                                         boost::additive2<RangeSet<T>, T> > >
 {
+  public:
     typedef qpid::Range<T> Range;
+
+  private:
     typedef InlineVector<Range, 3> Ranges; // TODO aconway 2008-04-21: what's the optimial inlined value?
 
   public:
@@ -116,8 +132,8 @@ class RangeSet
     typedef iterator const_iterator;
     
     RangeSet() {}
-    explicit RangeSet(const Range& r) { ranges.push_back(r); }
-    RangeSet(const T& a, const T& b) { ranges.push_back(Range(a,b)); }
+    explicit RangeSet(const Range& r) { *this += r; }
+    RangeSet(const T& a, const T& b) { *this += Range(a,b); }
     
     bool contiguous() const { return ranges.size() <= 1; }
 
@@ -129,12 +145,15 @@ class RangeSet
 
     bool operator==(const RangeSet<T>&) const;
 
+    void addRange (const Range&);
+    void addSet (const RangeSet&);
+
+    RangeSet& operator+=(const T& t) { return *this += Range(t); }
+    RangeSet& operator+=(const Range& r) { addRange(r); return *this; }
+    RangeSet& operator+=(const RangeSet& s) { addSet(s); return *this; }
+
     void removeRange (const Range&);
     void removeSet (const RangeSet&);
-    
-    RangeSet& operator+=(const T& t) { return *this += Range(t); }
-    RangeSet& operator+=(const Range&);
-    RangeSet& operator+=(const RangeSet&) { return *this; };
 
     RangeSet& operator-=(const T& t)  { return *this -= Range(t); }
     RangeSet& operator-=(const Range& r) { removeRange(r); return *this; }
@@ -143,16 +162,28 @@ class RangeSet
     T front() const { return ranges.front().begin(); }
     T back() const { return ranges.back().end(); }
 
+    // Iterate over elements in the set.
     iterator begin() const;
     iterator end() const;
-    
-    bool empty() const { return ranges.empty(); }
 
+    // Iterate over ranges in the set.
+    typedef typename Ranges::const_iterator RangeIterator;
+    RangeIterator rangesBegin() const { return ranges.begin(); }
+    RangeIterator rangesEnd() const { return ranges.end(); }
+    size_t rangesSize() const { return ranges.size(); }
+
+    bool empty() const { return ranges.empty(); }
+    void clear() { ranges.clear(); }
+    
     /** Return the largest contiguous range containing x.
      * Returns the empty range [x,x) if x is not in the set.
      */
     Range rangeContaining(const T&) const;
 
+    template <class S> void serialize(S& s) { s.split(*this); s(ranges.begin(), ranges.end()); }
+    template <class S> void encode(S& s) const { s(uint16_t(ranges.size()*sizeof(Range))); }
+    template <class S> void decode(S& s) { uint16_t sz; s(sz); ranges.resize(sz/sizeof(Range)); }
+    
  private:
     Ranges ranges;
 
@@ -188,10 +219,13 @@ bool RangeSet<T>::contains(const Range& r) const {
     return i != ranges.end() && i->contains(r);
 }
 
-template <class T> RangeSet<T>& RangeSet<T>::operator+=(const Range& r) {
+template <class T> void RangeSet<T>::addRange(const Range& r) {
+    if (r.empty()) return;
     typename Ranges::iterator i =
         std::lower_bound(ranges.begin(), ranges.end(), r.begin());
-    if (i != ranges.end() && i->touching(r)) {
+    if (i == ranges.end() || !i->touching(r)) 
+        ranges.insert(i, r);
+    else {
         i->merge(r);
         typename Ranges::iterator j = i;
         if (++j != ranges.end() && i->touching(*j)) {
@@ -199,19 +233,23 @@ template <class T> RangeSet<T>& RangeSet<T>::operator+=(const Range& r) {
             ranges.erase(j);
         }
     }
-    else
-        ranges.insert(i, r);
-    return *this;
+}
+
+
+template <class T> void RangeSet<T>::addSet(const RangeSet<T>& s) {
+    std::for_each(s.ranges.begin(), s.ranges.end(), 
+                  boost::bind((RangeSet<T>& (RangeSet<T>::*)(const Range&))&RangeSet<T>::operator+=, this, _1));
 }
 
 template <class T> void RangeSet<T>::removeRange(const Range& r) {
+    if (r.empty()) return;
     typename Ranges::iterator i,j;
     i = std::lower_bound(ranges.begin(), ranges.end(), r.begin());
     if (i == ranges.end() || i->begin() >= r.end())
         return;                 // Outside of set
     if (*i == r)                // Erase i
         ranges.erase(i);
-    else if (i->contains(r)) {  // Split i
+    else if (i->strictContains(r)) {  // Split i
         Range i1(i->begin(), r.begin());
         Range i2(r.end(), i->end());
         *i = i2;
@@ -272,6 +310,7 @@ template <class T> Range<T> RangeSet<T>::rangeContaining(const T& t) const {
         std::lower_bound(ranges.begin(), ranges.end(), t);
     return (i != ranges.end() && i->contains(t)) ? *i : Range(t,t);
 }
+
 
 } // namespace qpid
 
