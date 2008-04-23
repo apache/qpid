@@ -57,26 +57,26 @@ struct EnvOptMapper {
             if (i != opts.options().end())
                 return (*i)->long_name();
 #else
-            /*===================================================================
-              For Boost version 103200 and below.
+            /*
+             *  For Boost version 103200 and below.
+             *
+             *  In Boost version 103200, the options_description::options member,
+             *  used above, is private.  So what I will do here is use the 
+             *  count() funtion, which returns a 1 or 0 indicating presence or
+             *  absence of the environment variable.  
+             * 
+             * If it is present, I will return its name.  Env vars do not have
+             *  short and long forms, so the name is synonymous with the long 
+             *  name.  (This would not work for command line args.)
+             *  And if it's absent -- an empty string.
+             */
 
-              In Boost version 103200, the options_description::options member,
-              used above, is private.  So what I will do here is use the 
-              count() funtion, which returns a 1 or 0 indicating presence or
-              absence of the environment variable.  
-              
-              If it is present, I will return its name.  Env vars do not have
-              short and long forms, so the name is synonymous with the long 
-              name.  (This would not work for command line args.)
-              And if it's absent -- an empty string.
-            =====================================================================*/
 
-
-            /*------------------------------------------------------------
-              The env vars come in unaltered, i.e. QPID_FOO, but the 
-              options are stored normalized as "qpid-foo".  Change the
-              local variable "env" so it can be found by "opts".
-            ------------------------------------------------------------*/
+            /*
+             * The env vars come in unaltered, i.e. QPID_FOO, but the 
+             * options are stored normalized as "qpid-foo".  Change the
+             * local variable "env" so it can be found by "opts".
+             */ 
             for (std::string::iterator i = env.begin(); i != env.end(); ++i) 
             {
                 *i = (*i == '_') 
