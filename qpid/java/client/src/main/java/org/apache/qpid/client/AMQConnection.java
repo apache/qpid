@@ -227,7 +227,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for message
      * publication.
      */
-    protected boolean _started;
+    protected volatile boolean _started;
 
     /** Policy dictating how to failover */
     protected FailoverPolicy _failoverPolicy;
@@ -862,6 +862,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         checkNotClosed();
         if (!_started)
         {
+            _started = true;
             final Iterator it = _sessions.values().iterator();
             while (it.hasNext())
             {
@@ -876,7 +877,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-            _started = true;
+
         }
     }
 
