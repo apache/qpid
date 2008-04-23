@@ -25,6 +25,7 @@
 #include "qpid/framing/constants.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
+#include "qpid/framing/SequenceSet.h"
 #include <boost/format.hpp>
 #include <boost/cast.hpp>
 #include <boost/bind.hpp>

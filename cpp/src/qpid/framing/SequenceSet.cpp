@@ -20,10 +20,15 @@
  */
 
 #include "SequenceSet.h"
+#include "Buffer.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;
 using std::max;
 using std::min;
+
+namespace qpid {
+namespace framing {
 
 namespace {
 //each range contains 2 numbers, 4 bytes each
@@ -32,9 +37,10 @@ uint16_t RANGE_SIZE = 2 * 4;
 
 void SequenceSet::encode(Buffer& buffer) const
 {
-    buffer.putShort(ranges.size() * RANGE_SIZE);
-    for (Ranges::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
-        i->encode(buffer);
+    buffer.putShort(rangesSize() * RANGE_SIZE);
+    for (RangeIterator i = rangesBegin(); i != rangesEnd(); i++) {
+        buffer.putLong(i->first().getValue());
+        buffer.putLong(i->last().getValue());
     }
 }
 
@@ -42,189 +48,53 @@ void SequenceSet::decode(Buffer& buffer)
 {
     uint16_t size = buffer.getShort();
     uint16_t count = size / RANGE_SIZE;//number of ranges
-    if (size % RANGE_SIZE) throw FrameErrorException(QPID_MSG("Invalid size for sequence set: " << size)); 
+    if (size % RANGE_SIZE)
+        throw FrameErrorException(QPID_MSG("Invalid size for sequence set: " << size)); 
 
     for (uint16_t i = 0; i < count; i++) {
         add(SequenceNumber(buffer.getLong()), SequenceNumber(buffer.getLong()));
     }
 }
 
-uint32_t SequenceSet::size() const
-{
-    return 2 /*size field*/ + (ranges.size() * RANGE_SIZE);
+uint32_t SequenceSet::size() const {
+    return 2 /*size field*/ + (rangesSize() * RANGE_SIZE);
 }
 
-bool SequenceSet::contains(const SequenceNumber& point) const
-{
-    for (Ranges::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
-        if (i->contains(point)) return true;
+bool SequenceSet::contains(const SequenceNumber& s) const {
+    return RangeSet<SequenceNumber>::contains(s);
+}
+
+void SequenceSet::add(const SequenceNumber& s) { *this += s; }
+
+void SequenceSet::add(const SequenceNumber& start, const SequenceNumber& finish) {
+    *this += Range::makeClosed(std::min(start,finish), std::max(start, finish));
+}
+
+void SequenceSet::add(const SequenceSet& set) { *this += set; }
+
+void SequenceSet::remove(const SequenceSet& set) { *this -= set; }
+
+void SequenceSet::remove(const SequenceNumber& start, const SequenceNumber& finish) {
+    *this -= Range::makeClosed(std::min(start,finish), std::max(start, finish));
+}
+
+void SequenceSet::remove(const SequenceNumber& s) { *this -= s; }
+
+
+struct RangePrinter {
+    std::ostream& out;
+    RangePrinter(std::ostream& o) : out(o) {}
+    void operator()(SequenceNumber i, SequenceNumber j) {
+        out << "[" << i.getValue() << "," << j.getValue() << "] ";
     }
-    return false;
+};
+
+std::ostream& operator<<(std::ostream& o, const SequenceSet& s) {
+    RangePrinter print(o);
+    o << "{ ";
+    s.for_each(print);
+    return o << "}";
 }
 
-void SequenceSet::add(const SequenceNumber& s)
-{
-    add(s, s);
-}
+}} // namespace qpid::framing
 
-void SequenceSet::add(const SequenceNumber& start, const SequenceNumber& end)
-{
-    if (start > end) {
-        add(end, start);
-    } else {
-        Range r(start, end);
-        Ranges::iterator merged = ranges.end();
-        Ranges::iterator i = ranges.begin();
-        while (i != ranges.end() && merged == ranges.end() && i->start < start) {
-            if (i->merge(r)) merged = i;            
-            i++;
-        }
-        if (merged == ranges.end()) {
-            i = merged = ranges.insert(i, r);
-            i++;
-        }
-        while (i != ranges.end() && merged->merge(*i)) {
-            i = ranges.erase(i);
-        }
-    }
-}
-
-void SequenceSet::add(const SequenceSet& set)
-{
-    for (Ranges::const_iterator i = set.ranges.begin(); i != set.ranges.end(); i++) {
-        add(i->start, i->end);
-    }
-}
-
-void SequenceSet::remove(const SequenceSet& set)
-{
-    for (Ranges::const_iterator i = set.ranges.begin(); i != set.ranges.end(); i++) {
-        remove(i->start, i->end);
-    }    
-}
-
-void SequenceSet::remove(const SequenceNumber& start, const SequenceNumber& end)
-{
-    if (start > end) {
-        remove(end, start);
-    } else {
-        Ranges::iterator i = ranges.begin(); 
-        while (i != ranges.end() && i->start < start) {
-            if (start <= i->end) {
-                if (end > i->end) {
-                    //i.e. start is within the range pointed to by i, but end is not
-                    i->end = (uint32_t)start - 1;
-                } else {
-                    //whole of range to be deleted is contained within that pointed to be i
-                    if (end == i->end) {
-                        //just shrink range pointed to by i
-                        i->end = (uint32_t)start - 1;
-                    } else {
-                        //need to split the range pointed to by i
-                        Range r(i->start, (uint32_t)start - 1);
-                        i->start = end + 1;
-                        ranges.insert(i, r);
-                    }
-                    return;//no need to go any further
-                }
-            }
-            i++;
-        }
-        Ranges::iterator j = i;
-        while (j != ranges.end() && j->end < end) {            
-            j++;
-        }
-        if (j->start <= end){
-            j->start = end + 1;
-        }
-        ranges.erase(i, j);        
-    }
-}
-
-void SequenceSet::remove(const SequenceNumber& s)
-{
-    for (Ranges::iterator i = ranges.begin(); i != ranges.end() && s >= i->start; i++) {
-        if (i->contains(s)) {
-            if (i->start == i->end) {
-                //range is just a single number, so we can delete the whole range
-                i = ranges.erase(i);
-            } else if (i->start == s) {
-                //move the start forward to exclude s
-                ++(i->start);
-            } else if (i->end == s) {
-                //move the end backward to exclude s
-                --(i->end);
-            } else {
-                //need to split range pointed to by i
-                Range r(i->start, (uint32_t)s - 1);
-                i->start = s + 1;
-                i = ranges.insert(i, r);
-            }
-            break;
-        }
-    }    
-}
-
-bool SequenceSet::empty() const
-{
-    return ranges.empty();
-}
-
-void SequenceSet::clear()
-{
-    return ranges.clear();
-}
-
-bool SequenceSet::Range::contains(SequenceNumber i) const 
-{ 
-    return i >= start && i <= end; 
-}
-
-bool SequenceSet::Range::intersects(const Range& r) const 
-{ 
-    return r.contains(start) || r.contains(end) || contains(r.start) || contains(r.end); 
-}
-
-bool SequenceSet::Range::merge(const Range& r) 
-{ 
-    if (intersects(r) || mergeable(r.end) || r.mergeable(end)) {
-        start = min(start, r.start); 
-        end = max(end, r.end); 
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool SequenceSet::Range::mergeable(const SequenceNumber& s) const
-{ 
-    if (contains(s) || start - s == 1 || s - end == 1) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void SequenceSet::Range::encode(Buffer& buffer) const
-{
-    buffer.putLong(start);
-    buffer.putLong(end);
-}
-
-SequenceSet::Range::Range(SequenceNumber s, SequenceNumber e) : start(s), end(e) {}
-
-namespace qpid{
-namespace framing{
-
-std::ostream& operator<<(std::ostream& out, const SequenceSet& set) {
-    out << "{";
-    for (SequenceSet::Ranges::const_iterator i = set.ranges.begin(); i != set.ranges.end(); i++) {
-        if (i != set.ranges.begin()) out << ", "; 
-        out << i->start.getValue() << "-" << i->end.getValue();
-    }
-    out << "}";
-    return out;
-}
-
-}
-}

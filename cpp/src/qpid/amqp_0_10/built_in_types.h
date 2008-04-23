@@ -22,8 +22,6 @@
  */
 
 #include "qpid/Serializer.h"
-#include "qpid/framing/SequenceNumber.h"
-#include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Time.h"
 #include "Decimal.h"
@@ -38,6 +36,12 @@
 /**@file Mapping from built-in AMQP types to C++ types */
 
 namespace qpid {
+
+namespace framing {
+class SequenceNumber;
+class SequenceSet;
+}
+
 namespace amqp_0_10 {
 
 /** Wrapper that behaves like type T but is a distinct type for
@@ -143,6 +147,7 @@ class Map;
 class Struct32;
 class List;
 class UnknownType;
+
 template <class T> struct  ArrayDomain;
 typedef ArrayDomain<UnknownType> Array;
 
