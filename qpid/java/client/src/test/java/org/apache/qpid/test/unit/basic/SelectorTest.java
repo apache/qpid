@@ -55,7 +55,7 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init((AMQConnection) getConnection("", "guest"));
+        init((AMQConnection) getConnection("guest", "guest"));
     }
 
     protected void tearDown() throws Exception
