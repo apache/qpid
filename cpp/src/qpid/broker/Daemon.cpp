@@ -41,10 +41,10 @@ void throwIf(bool condition, const string& msg, int errNo=errno) {
 }
 
 
-/*--------------------------------------------------
-  Rewritten using low-level IO, for compatibility 
-  with earlier Boost versions, i.e. 103200.
---------------------------------------------------*/
+/*
+ * Rewritten using low-level IO, for compatibility 
+ * with earlier Boost versions, i.e. 103200.
+ */
 struct LockFile {
 
     LockFile(const std::string& path_, bool create)
@@ -86,10 +86,10 @@ string Daemon::pidFile(uint16_t port) {
     return path.str();
 }
 
-/*--------------------------------------------------
-  Rewritten using low-level IO, for compatibility 
-  with earlier Boost versions, i.e. 103200.
---------------------------------------------------*/
+/*
+ * Rewritten using low-level IO, for compatibility 
+ * with earlier Boost versions, i.e. 103200.
+ */
 void Daemon::fork()
 {
     throwIf(::pipe(pipeFds) < 0, "Can't create pipe");  
@@ -143,10 +143,10 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
 
-    /*--------------------------------------------------
-      Rewritten using low-level IO, for compatibility 
-      with earlier Boost versions, i.e. 103200.
-    --------------------------------------------------*/
+    /*
+     * Rewritten using low-level IO, for compatibility 
+     * with earlier Boost versions, i.e. 103200.
+     */
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(pipeFds[0], &fds);
@@ -198,10 +198,10 @@ void Daemon::ready(uint16_t port) { // child
     lockFile = pidFile(port);
     LockFile lf(lockFile, true);
 
-    /*---------------------------------------------------
-      Rewritten using low-level IO, for compatibility 
-      with earlier Boost versions, i.e. 103200.
-    ---------------------------------------------------*/
+    /*
+     * Rewritten using low-level IO, for compatibility 
+     * with earlier Boost versions, i.e. 103200.
+     */
     /*
      * Write the PID to the lockfile.
      */
@@ -230,10 +230,11 @@ pid_t Daemon::getPid(uint16_t port) {
     string name = pidFile(port);
     LockFile lf(name, false);
     pid_t pid;
-    /*---------------------------------------------------
-      Rewritten using low-level IO, for compatibility 
-      with earlier Boost versions, i.e. 103200.
-    ---------------------------------------------------*/
+
+    /*
+     * Rewritten using low-level IO, for compatibility 
+     * with earlier Boost versions, i.e. 103200.
+     */
     int desired_read = sizeof(pid_t);
     if ( desired_read > ::read(lf.fd, & pid, desired_read) ) {
       throw Exception("Cannot read lock file " + name);
