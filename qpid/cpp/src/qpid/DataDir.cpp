@@ -54,10 +54,8 @@ DataDir::DataDir (std::string path) :
             throw Exception ("Data directory is locked by another process");
         if (errno == EACCES)
             throw Exception ("Insufficient privileges for data directory");
-
-        std::ostringstream oss;
-        oss << "Error locking data directory: errno=" << errno;
-        throw Exception (oss.str ());
+        throw Exception(
+            QPID_MSG("Error locking " << lockFile << ": " << strError(errno)));
     }
 
     QPID_LOG (info, "Locked data directory: " << dirPath);
