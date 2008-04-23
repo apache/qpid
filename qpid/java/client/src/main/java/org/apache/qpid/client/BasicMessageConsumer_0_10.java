@@ -117,7 +117,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * @param jmsMessage this message has already been processed so can't redo preDeliver
      * @param channelId
      */
-    public void notifyMessage(AbstractJMSMessage jmsMessage, int channelId)
+    public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
         boolean messageOk = false;
         try
