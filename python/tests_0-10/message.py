@@ -167,7 +167,7 @@ class MessageTests(TestBase010):
             session.message_subscribe(destination="second", queue="test-queue-2")
             self.fail("Expected consume request to fail due to previous exclusive consumer")
         except SessionException, e:
-            self.assertEquals(403, e.args[0].error_code)
+            self.assertEquals(405, e.args[0].error_code)
 
     def test_consume_exclusive2(self):
         """
@@ -180,7 +180,7 @@ class MessageTests(TestBase010):
             session.message_subscribe(destination="second", queue="test-queue-2", exclusive=True)
             self.fail("Expected exclusive consume request to fail due to previous consumer")
         except SessionException, e:
-            self.assertEquals(403, e.args[0].error_code)
+            self.assertEquals(405, e.args[0].error_code)
 
     def test_consume_queue_not_found(self):
         """
