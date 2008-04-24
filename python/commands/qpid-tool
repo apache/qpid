@@ -111,9 +111,17 @@ class Mcli (Cmd):
 
   def do_EOF (self, data):
     print "quit"
+    try:
+      self.dataObject.do_exit ()
+    except:
+      pass
     return True
 
   def do_quit (self, data):
+    try:
+      self.dataObject.do_exit ()
+    except:
+      pass
     return True
 
   def postcmd (self, stop, line):
