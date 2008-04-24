@@ -136,7 +136,6 @@ public:
     mutable MessageAdapter* adapter;
 
     static TransferAdapter TRANSFER;
-    static PreviewAdapter TRANSFER_99_0;
 
     MessageAdapter& getAdapter() const;
 };

@@ -49,7 +49,7 @@ void SequenceSet::decode(Buffer& buffer)
     uint16_t size = buffer.getShort();
     uint16_t count = size / RANGE_SIZE;//number of ranges
     if (size % RANGE_SIZE)
-        throw FrameErrorException(QPID_MSG("Invalid size for sequence set: " << size)); 
+        throw IllegalArgumentException(QPID_MSG("Invalid size for sequence set: " << size)); 
 
     for (uint16_t i = 0; i < count; i++) {
         add(SequenceNumber(buffer.getLong()), SequenceNumber(buffer.getLong()));

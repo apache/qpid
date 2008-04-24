@@ -32,6 +32,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include "qpid/framing/all_method_bodies.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace std;
 using namespace boost;
@@ -75,7 +76,7 @@ void Channel::open(const Session& s)
 {
     Mutex::ScopedLock l(stopLock);
     if (isOpen())
-        throw ChannelBusyException();
+        throw SessionBusyException();
     active = true;
     session = s;
     if(isTransactional()) {
@@ -146,7 +147,7 @@ void Channel::consume(
         Mutex::ScopedLock l(lock);
         ConsumerMap::iterator i = consumers.find(tag);
         if (i != consumers.end())
-            throw NotAllowedException(QPID_MSG("Consumer already exists with tag " << tag ));
+            throw PreconditionFailedException(QPID_MSG("Consumer already exists with tag " << tag ));
         Consumer& c = consumers[tag];
         c.listener = listener;
         c.ackMode = ackMode;

@@ -19,22 +19,19 @@
  *
  */
 
-#include "SessionContext.h"
-#include "BrokerAdapter.h"
-#include "Queue.h"
+#include "SessionState.h"
 #include "Connection.h"
 #include "DeliverableMessage.h"
 #include "DtxAck.h"
 #include "DtxTimeout.h"
 #include "Message.h"
-#include "SemanticHandler.h"
-#include "SessionHandler.h"
+#include "Queue.h"
+#include "SessionContext.h"
 #include "TxAccept.h"
 #include "TxAck.h"
 #include "TxPublish.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/MessageTransferBody.h"
-#include "qpid/framing/MessageXTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
 
@@ -357,9 +354,7 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     //TODO: the following should be hidden behind message (using MessageAdapter or similar)
-    if (msg->isA<MessageXTransferBody>()) {
-        msg->getProperties<PreviewDeliveryProperties>()->setExchange(exchangeName);
-    } else if (msg->isA<MessageTransferBody>()) {
+    if (msg->isA<MessageTransferBody>()) {
         msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){

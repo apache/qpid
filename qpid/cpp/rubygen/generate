@@ -33,17 +33,23 @@ def parse_specs(files)
   return specs
 end
 
+gendir=File.dirname(__FILE__)
+
 # Run selected templates
 if ARGV.any? { |arg| arg=="all" }
-  templates=Dir["#{File.dirname __FILE__}/*/*.rb"]
+  templates=Dir["#{gendir}/*/*.rb"]
 else
   templates=ARGV.grep(/\.rb$/)
+  ARGV.each { |arg|
+    d=File.join gendir,arg
+    templates += Dir["#{d}/*.rb"] if File.directory? d
+  }
 end
 
 $outdir=ARGV[0]
 $models=parse_specs(ARGV.grep(/\.xml$/))
 templates.each { |t|
-  ver=Pathname.new(t).dirname.basename.to_s
+  ver=Pathname.new(t).dirname.basename.to_s.split('.')[-1]
   $amqp=$models[ver]
   if $amqp
     load t

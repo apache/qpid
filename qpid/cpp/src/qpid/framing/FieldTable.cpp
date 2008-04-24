@@ -133,7 +133,7 @@ void FieldTable::decode(Buffer& buffer){
     uint32_t len = buffer.getLong();
     uint32_t available = buffer.available();
     if (available < len)
-        throw SyntaxErrorException(QPID_MSG("Not enough data for  field table."));
+        throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
     uint32_t leftover = available - len;
     while(buffer.available() > leftover){
         std::string name;

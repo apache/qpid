@@ -20,8 +20,10 @@
  */
 
 #include "SequenceNumber.h"
+#include "Buffer.h"
 
 using qpid::framing::SequenceNumber;
+using qpid::framing::Buffer;
 
 SequenceNumber::SequenceNumber() : value(0 - 1) {}
 
@@ -75,6 +77,20 @@ bool SequenceNumber::operator<=(const SequenceNumber& other) const
 bool SequenceNumber::operator>=(const SequenceNumber& other) const
 {
     return *this == other || *this > other; 
+}
+
+void SequenceNumber::encode(Buffer& buffer) const
+{
+    buffer.putLong(value);
+}
+
+void SequenceNumber::decode(Buffer& buffer)
+{
+    value = buffer.getLong();
+}
+
+uint32_t SequenceNumber::size() const {
+    return 4;
 }
 
 namespace qpid {

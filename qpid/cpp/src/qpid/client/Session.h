@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/client/Session_99_0.h"
+#include "qpid/client/Session_0_10.h"
 
 namespace qpid {
 namespace client {
@@ -31,7 +31,7 @@ namespace client {
  *
  * \ingroup clientapi
  */
-typedef Session_99_0 Session;
+typedef Session_0_10 Session;
 
 }} // namespace qpid::client
 

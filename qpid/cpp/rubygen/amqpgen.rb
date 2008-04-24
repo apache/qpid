@@ -26,7 +26,7 @@ class String
   def bars() tr('- .','_'); end
 
   # Convert to ALL_UPPERCASE_FORM
-  def shout() bars.upcase!;  end
+  def shout() bars.upcase;  end
 
   # Convert to lowerCaseCapitalizedForm
   def lcaps() gsub( /\W(\w)/ ) { |m| $1.upcase } end
@@ -89,7 +89,6 @@ class Module
   end
 end
 
-
 # An AmqpElement contains an XML element and provides a convenient
 # API to access AMQP data.
 # 
@@ -109,6 +108,7 @@ class AmqpElement
     @xml, @parent=xml, parent
     @children=xml.elements.map { |e| wrap e }.compact
     @cache_child={}
+    @cache_child_named={}
     @cache_children={}
     @cache_children[nil]=@children
   end
@@ -142,14 +142,15 @@ class AmqpElement
     @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
   end
 
+  # Look up any child with name
+  def child_named(name)
+    @cache_child_named[name] ||= @children.find { |c| c.name==name }
+  end
+  
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
-  # Are we in preview or final 0-10
-  # preview - used to make some classes behave differently for preview vs. final
-  def final?() root().version == "0-10"; end 
-
-  def to_s() "#<#{self.class}(#{name})>"; end
+ def to_s() "#<#{self.class}(#{fqname})>"; end
   def inspect() to_s; end
 
   # Text of doc child if there is one.
@@ -207,14 +208,6 @@ class AmqpDomain < AmqpElement
   amqp_single_child_reader :enum
 
   def uses() type_=="array" ? ArrayTypes[name] : type_; end
-
-  def unalias()
-    d=self
-    while (d.type_ != d.name and root.domain(d.type_))
-      d=root.domain(d.type_)
-    end
-    return d
-  end
 end
 
 class AmqpException < AmqpElement
@@ -227,8 +220,6 @@ class AmqpField < AmqpElement
     super;
     root.used_by[type_].push(parent.fqname) if  type_ and type_.index('.')
   end
-  
-  def domain() root.domain(xml.attributes["domain"]); end
   amqp_single_child_reader :struct # preview
   amqp_child_reader :exception
   amqp_attr_reader :type, :default, :code, :required
@@ -278,9 +269,6 @@ class AmqpStruct < AmqpElement
   amqp_attr_reader :size, :code, :pack 
   amqp_child_reader :field
 
-  # preview - preview code needs default "short" for pack.
-  alias :raw_pack :pack
-  def pack() raw_pack or (not parent.final? and "short"); end 
   def result?() parent.xml.name == "result"; end
   def domain?() parent.xml.name == "domain"; end
 end
@@ -295,6 +283,24 @@ class AmqpMethod < AmqpElement
   def on_chassis?(chassis) child("chassis", chassis); end
   def on_client?() on_chassis? "client"; end
   def on_server?() on_chassis? "server"; end
+end
+
+# preview: Map command/control to preview method.
+class AmqpFakeMethod < AmqpMethod
+  def initialize(action)
+    super(action.xml, action.parent);
+    @action=action
+  end
+
+  def content() return "1" if @action.is_a? AmqpCommand and @action.segments end
+  def index() @action.code end
+  def code() @action.code end
+  def synchronous() end         # FIXME aconway 2008-04-10: ???
+  def on_chassis?(chassis)
+    @action.received_by?(chassis)
+  end
+  def pack() "2" end              # Encode  pack=2, size=4 struct
+  def size() "4" end
 end
 
 class AmqpImplement < AmqpElement
@@ -312,6 +318,11 @@ class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
+  def implement?(role) xml.elements["./implement[@role='#{role}']"] end
+  def received_by?(client_or_server)
+    return (implement?(client_or_server) or implement?("sender") or implement?("receiver"))
+  end
+  def pack() "2" end
   def size() "4" end              # Encoded as a size 4 Struct
 end
 
@@ -329,10 +340,21 @@ class AmqpClass < AmqpElement
   def initialize(xml,amqp) super; end
 
   amqp_attr_reader :index       # preview
-  amqp_child_reader :method     # preview
   
-  amqp_child_reader :struct, :domain, :control, :command, :role
+  amqp_child_reader :struct, :domain, :control, :command, :role, :method
   amqp_attr_reader :code
+
+  def actions() controls+commands;   end
+
+  # preview - command/control as methods
+  def methods_()
+    return (controls + commands).map { |a| AmqpFakeMethod.new(a) }
+  end
+
+  def method(name)
+    a = (command(name) or control(name))
+    return AmqpFakeMethod.new(a) 
+  end
 
   # chassis should be "client" or "server"
   def methods_on(chassis)       # preview
@@ -340,15 +362,15 @@ class AmqpClass < AmqpElement
     @methods_on[chassis] ||= methods_.select { |m| m.on_chassis? chassis }
   end
 
+  # FIXME aconway 2008-04-11: 
   def l4?()                     # preview
     !["connection", "session", "execution"].include?(name) && !control?
   end
 
+  # FIXME aconway 2008-04-11: 
   def control?()
-    ["connection010", "session010"].include?(name)
+    ["connection", "session"].include?(name)
   end
-
-  def actions() controls+commands;   end
 end
 
 class AmqpType < AmqpElement
@@ -388,13 +410,6 @@ class AmqpRoot < AmqpElement
   
   def version() major + "-" + minor; end
 
-  # preview - only struct child reader remains for new mapping
-  def domain_structs() domains.map{ |d| d.struct }.compact; end
-  def result_structs()
-    methods_.map { |m| m.result and m.result.struct }.compact
-  end
-  def structs() result_structs+domain_structs;  end
-  
   def methods_() classes.map { |c| c.methods_ }.flatten; end
 
   #preview

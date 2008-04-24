@@ -31,9 +31,7 @@
 
 #include "amqp_types.h"
 #include "Array.h"
-#include "FramingContent.h"
 #include "FieldTable.h"
-#include "SequenceNumberSet.h"
 #include "SequenceSet.h"
 #include "Uuid.h"
 

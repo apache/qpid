@@ -48,7 +48,7 @@ void BodyHandler::handleBody(AMQBody* body) {
 	handleHeartbeat(polymorphic_downcast<AMQHeartbeatBody*>(body));
 	break;
       default:
-	throw SyntaxErrorException(
+          throw FramingErrorException(
             QPID_MSG("Invalid frame type " << body->type()));
     }
 }

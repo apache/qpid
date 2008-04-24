@@ -54,35 +54,19 @@ class Queue;
   public:
     SessionAdapter(SemanticState& session);
 
-
     framing::ProtocolVersion getVersion() const { return session.getConnection().getVersion();}
 
-    Message010Handler* getMessage010Handler(){ return &messageImpl;  }
-    Exchange010Handler* getExchange010Handler(){ return &exchangeImpl; }
-    Queue010Handler* getQueue010Handler(){ return &queueImpl;  }
-    Execution010Handler* getExecution010Handler(){ return &executionImpl; }
-    Tx010Handler* getTx010Handler(){ return &txImpl; }
-    Dtx010Handler* getDtx010Handler(){ return &dtxImpl; }
+    MessageHandler* getMessageHandler(){ return &messageImpl;  }
+    ExchangeHandler* getExchangeHandler(){ return &exchangeImpl; }
+    QueueHandler* getQueueHandler(){ return &queueImpl;  }
+    ExecutionHandler* getExecutionHandler(){ return &executionImpl; }
+    TxHandler* getTxHandler(){ return &txImpl; }
+    DtxHandler* getDtxHandler(){ return &dtxImpl; }
 
-    BasicHandler* getBasicHandler() { throw framing::NotImplementedException("Class not implemented");  }
-    ExchangeHandler* getExchangeHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    BindingHandler* getBindingHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    QueueHandler* getQueueHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    TxHandler* getTxHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    MessageHandler* getMessageHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    DtxCoordinationHandler* getDtxCoordinationHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    DtxDemarcationHandler* getDtxDemarcationHandler(){ throw framing::NotImplementedException("Class not implemented");  }
-    AccessHandler* getAccessHandler() { throw framing::NotImplementedException("Class not implemented");  }
-    FileHandler* getFileHandler() { throw framing::NotImplementedException("Class not implemented");  }
-    StreamHandler* getStreamHandler() { throw framing::NotImplementedException("Class not implemented");  }
-    TunnelHandler* getTunnelHandler() { throw framing::NotImplementedException("Class not implemented"); }
-    ExecutionHandler* getExecutionHandler() { throw framing::NotImplementedException("Class not implemented"); }
     ConnectionHandler* getConnectionHandler() { throw framing::NotImplementedException("Class not implemented"); }
     SessionHandler* getSessionHandler() { throw framing::NotImplementedException("Class not implemented"); }
-    Connection010Handler* getConnection010Handler() { throw framing::NotImplementedException("Class not implemented"); }
-    Session010Handler* getSession010Handler() { throw framing::NotImplementedException("Class not implemented"); }
-
-    void destroyExclusiveQueues() { queueImpl.destroyExclusiveQueues(); }
+    FileHandler* getFileHandler() { throw framing::NotImplementedException("Class not implemented"); }
+    StreamHandler* getStreamHandler() { throw framing::NotImplementedException("Class not implemented"); }
 
   private:
     //common base for utility methods etc that are specific to this adapter
@@ -95,7 +79,7 @@ class Queue;
 
 
     class ExchangeHandlerImpl :
-        public Exchange010Handler,
+        public ExchangeHandler,
         public HandlerHelper
     {
       public:
@@ -124,7 +108,7 @@ class Queue;
                             shared_ptr<Exchange> alternate);
     };
 
-    class QueueHandlerImpl : public Queue010Handler,
+    class QueueHandlerImpl : public QueueHandler,
             public HandlerHelper, public OwnershipToken
     {
         Broker& broker;
@@ -149,7 +133,7 @@ class Queue;
     };
 
     class MessageHandlerImpl :
-        public Message010Handler,
+        public MessageHandler,
         public HandlerHelper
     {
         typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
@@ -196,18 +180,21 @@ class Queue;
         void flush(const string& destination);
         
         void stop(const string& destination);
+
+        framing::MessageResumeResult resume(const std::string& destination,
+                                            const std::string& resumeId);
     
     };
 
-    class ExecutionHandlerImpl : public Execution010Handler, public HandlerHelper
+    class ExecutionHandlerImpl : public ExecutionHandler, public HandlerHelper
     {
     public:
         ExecutionHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 
         void sync();            
-        void result(uint32_t commandId, const string& value);        
+        void result(const framing::SequenceNumber& commandId, const string& value);        
         void exception(uint16_t errorCode,
-                       uint32_t commandId,
+                       const framing::SequenceNumber& commandId,
                        uint8_t classCode,
                        uint8_t commandCode,
                        uint8_t fieldIndex,
@@ -216,7 +203,7 @@ class Queue;
 
     };
 
-    class TxHandlerImpl : public Tx010Handler, public HandlerHelper
+    class TxHandlerImpl : public TxHandler, public HandlerHelper
     {
       public:
         TxHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
@@ -226,7 +213,7 @@ class Queue;
         void rollback();
     };
 
-    class DtxHandlerImpl : public Dtx010Handler, public HandlerHelper, private framing::StructHelper
+    class DtxHandlerImpl : public DtxHandler, public HandlerHelper, private framing::StructHelper
     {
         std::string convert(const framing::Xid& xid);
 
@@ -235,26 +222,26 @@ class Queue;
 
         void select();
             
-        framing::DtxStartResult start(const framing::Xid& xid,
+        framing::XaResult start(const framing::Xid& xid,
                                          bool join,
                                          bool resume);
         
-        framing::DtxEndResult end(const framing::Xid& xid,
+        framing::XaResult end(const framing::Xid& xid,
                                      bool fail,
                                      bool suspend);
         
-        framing::DtxCommitResult commit(const framing::Xid& xid,
+        framing::XaResult commit(const framing::Xid& xid,
                                            bool onePhase);
         
         void forget(const framing::Xid& xid);
         
         framing::DtxGetTimeoutResult getTimeout(const framing::Xid& xid);
         
-        framing::DtxPrepareResult prepare(const framing::Xid& xid);
+        framing::XaResult prepare(const framing::Xid& xid);
         
         framing::DtxRecoverResult recover();
         
-        framing::DtxRollbackResult rollback(const framing::Xid& xid);
+        framing::XaResult rollback(const framing::Xid& xid);
         
         void setTimeout(const framing::Xid& xid, uint32_t timeout);        
     };

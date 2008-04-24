@@ -41,11 +41,11 @@ class Connection;
 
 class ConnectionHandler : public framing::FrameHandler
 {
-    struct Handler : public framing::AMQP_ServerOperations::Connection010Handler, 
-        public framing::AMQP_ClientOperations::Connection010Handler
+    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
+        public framing::AMQP_ClientOperations::ConnectionHandler
     {
-        framing::AMQP_ClientProxy::Connection010 client;
-        framing::AMQP_ServerProxy::Connection010 server;
+        framing::AMQP_ClientProxy::Connection client;
+        framing::AMQP_ServerProxy::Connection server;
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
