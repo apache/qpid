@@ -33,9 +33,10 @@ client.libs=${common.libs}  ${geronimo-jms}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs}
 
+
 junit-toolkit.libs=${log4j} ${junit}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
-systests.libs=${client.libs} ${test.libs}
+systests.libs=${client.libs} ${test.libs} ${broker.libs}
 perftests.libs=${systests.libs}
 integrationtests.libs=${systests.libs}
 
