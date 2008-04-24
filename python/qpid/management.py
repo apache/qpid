@@ -85,6 +85,8 @@ class managementChannel:
     """ Given a channel on an established AMQP broker connection, this method
     opens a session and performs all of the declarations and bindings needed
     to participate in the management protocol. """
+    self.enabled     = True
+    self.ssn         = ssn
     self.sessionId   = ssn.name
     self.topicName   = "mgmt-%s" % self.sessionId
     self.replyName   = "repl-%s" % self.sessionId
@@ -115,16 +117,24 @@ class managementChannel:
     ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFF)
     ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFF)
 
+  def shutdown (self):
+    self.enabled = False
+    self.ssn.message_cancel (destination="tdest")
+    self.ssn.message_cancel (destination="rdest")
+
   def topicCb (self, msg):
     """ Receive messages via the topic queue on this channel. """
-    self.tcb (self, msg)
+    if self.enabled:
+      self.tcb (self, msg)
 
   def replyCb (self, msg):
     """ Receive messages via the reply queue on this channel. """
-    self.rcb (self, msg)
+    if self.enabled:
+      self.rcb (self, msg)
 
   def send (self, exchange, msg):
-    self.qpidChannel.message_transfer (destination=exchange, message=msg)
+    if self.enabled:
+      self.qpidChannel.message_transfer (destination=exchange, message=msg)
 
   def accept (self, msg):
     self.qpidChannel.message_accept(RangedSet(msg.id))
@@ -193,6 +203,7 @@ class managementClient:
 
   def removeChannel (self, mch):
     """ Remove a previously added channel from management. """
+    mch.shutdown ()
     self.channels.remove (mch)
 
   def callMethod (self, channel, userSequence, objId, className, methodName, args=None):
