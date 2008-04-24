@@ -69,18 +69,8 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.mina</groupId>
-            <artifactId>mina-filter-ssl</artifactId>
-        </dependency>
 
         <!-- Test Dependencies -->
-        <dependency>  
-            <groupId>org.slf4j</groupId> 
-            <artifactId>slf4j-log4j12</artifactId>  
-            <version>1.4.0</version>  
-            <scope>test</scope> 
-        </dependency>
 
         <dependency> <!-- for inVm Broker -->
             <groupId>org.apache.qpid</groupId>
@@ -89,19 +79,7 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymockclassextension</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
+            <groupId>org.apache.qpid</groupId>
             <artifactId>junit-toolkit</artifactId>
             <scope>test</scope>
         </dependency>

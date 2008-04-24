@@ -20,23 +20,20 @@
  */
 package org.apache.qpid.test.framework;
 
-import junit.framework.TestCase;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
+import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.AsymptoticTestCase;
+import org.apache.qpid.junit.extensions.SetupTaskAware;
+import org.apache.qpid.junit.extensions.SetupTaskHandler;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * FrameworkBaseCase provides a starting point for writing test cases against the test framework. Its main purpose is
@@ -50,13 +47,26 @@ import java.util.Properties;
  * <tr><td> Convert failed assertions to error messages.
  * </table>
  */
-public class FrameworkBaseCase extends AsymptoticTestCase
+public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTestContext, SetupTaskAware,
+    BrokerLifecycleAware
 {
     /** Used for debugging purposes. */
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
 
     /** Holds the test sequencer to create and run test circuits with. */
-    protected CircuitFactory circuitFactory = new DefaultCircuitFactory();
+    protected CircuitFactory circuitFactory = new LocalCircuitFactory();
+
+    /** Used to read the tests configurable properties through. */
+    protected ParsedProperties testProps;
+
+    /** A default setup task processor to delegate setup tasks to. */
+    protected SetupTaskHandler taskHandler = new SetupTaskHandler();
+
+    /** Flag used to track whether the test is in-vm or not. */
+    protected boolean isUsingInVM;
+
+    /** Holds the failure mechanism. */
+    protected CauseFailure failureMechanism = new CauseFailureUserPrompt();
 
     /**
      * Creates a new test case with the specified name.
@@ -92,6 +102,26 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     }
 
     /**
+     * Reports the current test case name.
+     *
+     * @return The current test case name.
+     */
+    public TestCaseVector getTestCaseVector()
+    {
+        return new TestCaseVector(this.getName(), 0);
+    }
+
+    /**
+     * Reports the current test case parameters.
+     *
+     * @return The current test case parameters.
+     */
+    public MessagingTestConfigProperties getTestParameters()
+    {
+        return new MessagingTestConfigProperties(testProps);
+    }
+
+    /**
      * Creates a list of assertions.
      *
      * @param asserts The assertions to compile in a list.
@@ -116,7 +146,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      *
      * @param asserts The list of failed assertions.
      */
-    protected void assertNoFailures(List<Assertion> asserts)
+    protected static void assertNoFailures(List<Assertion> asserts)
     {
         log.debug("protected void assertNoFailures(List<Assertion> asserts = " + asserts + "): called");
 
@@ -140,7 +170,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      *
      * @return The error message.
      */
-    protected String assertionsToString(List<Assertion> asserts)
+    protected static String assertionsToString(List<Assertion> asserts)
     {
         String errorMessage = "";
 
@@ -161,8 +191,10 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     {
         NDC.push(getName());
 
-        // Ensure that the in-vm broker is created.
-        TransportConnection.createVMBroker(1);
+        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+
+        // Process all optional setup tasks. This may include in-vm broker creation, if a decorator has added it.
+        taskHandler.runSetupTasks();
     }
 
     /**
@@ -170,16 +202,30 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      */
     protected void tearDown()
     {
-        try
-        {
-            // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
-            TransportConnection.killVMBroker(1);
-            ApplicationRegistry.remove(1);
-        }
-        finally
-        {
-            NDC.pop();
-        }
+        NDC.pop();
+
+        // Process all optional tear down tasks. This may include in-vm broker clean up, if a decorator has added it.
+        taskHandler.runTearDownTasks();
+    }
+
+    /**
+     * Adds the specified task to the tests setup.
+     *
+     * @param task The task to add to the tests setup.
+     */
+    public void chainSetupTask(Runnable task)
+    {
+        taskHandler.chainSetupTask(task);
+    }
+
+    /**
+     * Adds the specified task to the tests tear down.
+     *
+     * @param task The task to add to the tests tear down.
+     */
+    public void chainTearDownTask(Runnable task)
+    {
+        taskHandler.chainTearDownTask(task);
     }
 
     /**
@@ -197,84 +243,46 @@ public class FrameworkBaseCase extends AsymptoticTestCase
         return methodName;
     }
 
-    /**
-     * DefaultCircuitFactory is a test sequencer that creates test circuits with publishing and receiving ends rooted
-     * on the same JVM.
-     */
-    public class DefaultCircuitFactory implements CircuitFactory
+    public void setInVmBrokers()
     {
-        /**
-         * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
-         * begining the test and gathering the test reports from the participants.
-         *
-         * @param testCircuit    The test circuit.
-         * @param assertions     The list of assertions to apply to the test circuit.
-         * @param testProperties The test case definition.
-         */
-        public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties)
-        {
-            assertNoFailures(testCircuit.test(1, assertions));
-        }
+        isUsingInVM = true;
+    }
 
-        /**
-         * Creates a test circuit for the test, configered by the test parameters specified.
-         *
-         * @param testProperties The test parameters.
-         * @return A test circuit.
-         */
-        public Circuit createCircuit(ParsedProperties testProperties)
-        {
-            return LocalCircuitImpl.createCircuit(testProperties);
-        }
+    /**
+     * Indicates whether or not a test case is using in-vm brokers.
+     *
+     * @return <tt>true</tt> if the test is using in-vm brokers, <tt>false</tt> otherwise.
+     */
+    public boolean usingInVmBroker()
+    {
+        return isUsingInVM;
+    }
 
-        /**
-         * Sets the sender test client to coordinate the test with.
-         *
-         * @param sender The contact details of the sending client in the test.
-         */
-        public void setSender(TestClientDetails sender)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
+    /**
+     * Sets the currently live in-vm broker.
+     *
+     * @param i The currently live in-vm broker.
+     */
+    public void setLiveBroker(int i)
+    { }
 
-        /**
-         * Sets the receiving test client to coordinate the test with.
-         *
-         * @param receiver The contact details of the sending client in the test.
-         */
-        public void setReceiver(TestClientDetails receiver)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
+    /**
+     * Reports the currently live in-vm broker.
+     *
+     * @return The currently live in-vm broker.
+     */
+    public int getLiveBroker()
+    {
+        return 0;
+    }
 
-        /**
-         * Supplies the sending test client.
-         *
-         * @return The sending test client.
-         */
-        public TestClientDetails getSender()
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Supplies the receiving test client.
-         *
-         * @return The receiving test client.
-         */
-        public List<TestClientDetails> getReceivers()
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Accepts the conversation factory over which to hold the test coordinating conversation.
-         *
-         * @param conversationFactory The conversation factory to coordinate the test over.
-         */
-        public void setConversationFactory(ConversationFactory conversationFactory)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
+    /**
+     * Accepts a failure mechanism.
+     *
+     * @param failureMechanism The failure mechanism.
+     */
+    public void setFailureMechanism(CauseFailure failureMechanism)
+    {
+        this.failureMechanism = failureMechanism;
     }
 }

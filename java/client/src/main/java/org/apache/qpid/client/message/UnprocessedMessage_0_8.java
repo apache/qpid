@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicDeliverBody;
+import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
@@ -46,9 +47,20 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ContentBody> _bodies;
 
-    public UnprocessedMessage_0_8(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage_0_8(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
         super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
+    }
+
+    public UnprocessedMessage_0_8(int channelId, BasicReturnBody body)
+    {
+        //FIXME: TGM, SRSLY 4RL
+        super(channelId, 0, null, body.getExchange(), body.getRoutingKey(), false);
+    }
+
+    public UnprocessedMessage_0_8(int channelId, BasicDeliverBody body)
+    {
+        super(channelId, body.getDeliveryTag(), body.getConsumerTag(), body.getExchange(), body.getRoutingKey(), false);
     }
 
     public void receiveBody(ContentBody body)
@@ -119,8 +131,8 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
         }
         if(_deliverBody != null)
         {
-            buf.append("Delivery tag " + _deliverBody.deliveryTag);
-            buf.append("Consumer tag " + _deliverBody.consumerTag);
+            buf.append("Delivery tag " + _deliverBody.getDeliveryTag());
+            buf.append("Consumer tag " + _deliverBody.getConsumerTag());
             buf.append("Deliver Body " + _deliverBody);
         }
 

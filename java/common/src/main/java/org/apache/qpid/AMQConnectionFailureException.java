@@ -21,6 +21,8 @@
 
 package org.apache.qpid;
 
+import org.apache.qpid.protocol.AMQConstant;
+
 /**
  * AMQConnectionFailureException indicates that a connection to a broker could not be formed.
  *
@@ -33,8 +35,13 @@ package org.apache.qpid;
  */
 public class AMQConnectionFailureException extends AMQException
 {
-    public AMQConnectionFailureException(String message, Throwable cause)
+	public AMQConnectionFailureException(String message, Throwable cause)
+	{
+		super(null, message, cause);
+	}
+
+    public AMQConnectionFailureException(AMQConstant errorCode, String message, Throwable cause)
     {
-        super(null, message, cause);
+        super(errorCode, message, cause);
     }
 }

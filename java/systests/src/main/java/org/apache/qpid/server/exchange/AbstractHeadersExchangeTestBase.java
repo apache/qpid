@@ -27,6 +27,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
@@ -250,9 +251,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * @param deliverFirst
          * @throws AMQException
          */
-        public void process(StoreContext context, AMQMessage msg, boolean deliverFirst) throws AMQException
+        public void process(StoreContext context, QueueEntry msg, boolean deliverFirst) throws AMQException
         {
-            messages.add(new HeadersExchangeTest.Message(msg));
+            messages.add(new HeadersExchangeTest.Message(msg.getMessage()));
         }
     }
 
@@ -267,8 +268,8 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext,
                                                                                       null,
-                                                                         new LinkedList<RequiredDeliveryException>(),
-                                                                         new HashSet<Long>());
+                                                                         new LinkedList<RequiredDeliveryException>()
+        );
 
         Message(String id, String... headers) throws AMQException
         {

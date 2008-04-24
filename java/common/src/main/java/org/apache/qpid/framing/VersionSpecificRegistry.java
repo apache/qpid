@@ -182,7 +182,7 @@ public class VersionSpecificRegistry
                 + " method " + methodID + ".", null);
         }
 
-        return bodyFactory.newInstance(_protocolMajorVersion, _protocolMinorVersion, classID, methodID, in, size);
+        return bodyFactory.newInstance( in, size);
 
     }
 

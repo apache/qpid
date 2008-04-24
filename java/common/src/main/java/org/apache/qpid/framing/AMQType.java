@@ -23,19 +23,30 @@ package org.apache.qpid.framing;
 import org.apache.mina.common.ByteBuffer;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 
+/**
+ * AMQType is a type that represents the different possible AMQP field table types. It provides operations for each
+ * of the types to perform tasks such as calculating the size of an instance of the type, converting types between AMQP
+ * and Java native types, and reading and writing instances of AMQP types in binary formats to and from byte buffers.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Get the equivalent one byte identifier for a type.
+ * <tr><td> Calculate the size of an instance of an AMQP parameter type. <td> {@link EncodingUtils}
+ * <tr><td> Convert an instance of an AMQP parameter into a compatable Java object tagged with its AMQP type.
+ *     <td> {@link AMQTypedValue}
+ * <tr><td> Write an instance of an AMQP parameter type to a byte buffer. <td> {@link EncodingUtils}
+ * <tr><td> Read an instance of an AMQP parameter from a byte buffer. <td> {@link EncodingUtils}
+ * </table>
+ */
 public enum AMQType
 {
-    //AMQP FieldTable Wire Types
-
     LONG_STRING('S')
     {
         public int getEncodingSize(Object value)
         {
             return EncodingUtils.encodedLongStringLength((String) value);
         }
-
 
         public String toNativeValue(Object value)
         {
@@ -58,12 +69,10 @@ public enum AMQType
         {
             return EncodingUtils.readLongString(buffer);
         }
-
     },
 
     INTEGER('i')
     {
-
         public int getEncodingSize(Object value)
         {
             return EncodingUtils.unsignedIntegerLength();
@@ -89,12 +98,11 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Long.valueOf((String)value);
+                return Long.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to int.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName() + ") to int.");
             }
         }
 
@@ -111,22 +119,21 @@ public enum AMQType
 
     DECIMAL('D')
     {
-
         public int getEncodingSize(Object value)
         {
-            return EncodingUtils.encodedByteLength()+ EncodingUtils.encodedIntegerLength();
+            return EncodingUtils.encodedByteLength() + EncodingUtils.encodedIntegerLength();
         }
 
         public Object toNativeValue(Object value)
         {
-            if(value instanceof BigDecimal)
+            if (value instanceof BigDecimal)
             {
                 return (BigDecimal) value;
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to BigDecimal.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to BigDecimal.");
             }
         }
 
@@ -150,7 +157,8 @@ public enum AMQType
             int unscaled = EncodingUtils.readInteger(buffer);
 
             BigDecimal bd = new BigDecimal(unscaled);
-            return bd.setScale(places);            
+
+            return bd.setScale(places);
         }
     },
 
@@ -163,14 +171,14 @@ public enum AMQType
 
         public Object toNativeValue(Object value)
         {
-            if(value instanceof Long)
+            if (value instanceof Long)
             {
                 return (Long) value;
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to timestamp.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to timestamp.");
             }
         }
 
@@ -179,37 +187,97 @@ public enum AMQType
             EncodingUtils.writeLong(buffer, (Long) value);
         }
 
-
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
             return EncodingUtils.readLong(buffer);
         }
     },
 
+    /**
+     * Implements the field table type. The native value of a field table type will be an instance of
+     * {@link FieldTable}, which itself may contain name/value pairs encoded as {@link AMQTypedValue}s.
+     */
     FIELD_TABLE('F')
     {
+        /**
+         * Calculates the size of an instance of the type in bytes.
+         *
+         * @param value An instance of the type.
+         *
+         * @return The size of the instance of the type in bytes.
+         */
         public int getEncodingSize(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            // Ensure that the value is a FieldTable.
+            if (!(value instanceof FieldTable))
+            {
+                throw new IllegalArgumentException("Value is not a FieldTable.");
+            }
+
+            FieldTable ftValue = (FieldTable) value;
+
+            // Loop over all name/value pairs adding up size of each. FieldTable itself keeps track of its encoded
+            // size as entries are added, so no need to loop over all explicitly.
+            // EncodingUtils calculation of the encoded field table lenth, will include 4 bytes for its 'size' field.
+            return EncodingUtils.encodedFieldTableLength(ftValue);
         }
 
+        /**
+         * Converts an instance of the type to an equivalent Java native representation.
+         *
+         * @param value An instance of the type.
+         *
+         * @return An equivalent Java native representation.
+         */
         public Object toNativeValue(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            // Ensure that the value is a FieldTable.
+            if (!(value instanceof FieldTable))
+            {
+                throw new IllegalArgumentException("Value is not a FieldTable.");
+            }
+
+            return (FieldTable) value;
         }
 
+        /**
+         * Writes an instance of the type to a specified byte buffer.
+         *
+         * @param value  An instance of the type.
+         * @param buffer The byte buffer to write it to.
+         */
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            // Ensure that the value is a FieldTable.
+            if (!(value instanceof FieldTable))
+            {
+                throw new IllegalArgumentException("Value is not a FieldTable.");
+            }
+
+            FieldTable ftValue = (FieldTable) value;
+
+            // Loop over all name/values writing out into buffer.
+            ftValue.writeToBuffer(buffer);
         }
 
+        /**
+         * Reads an instance of the type from a specified byte buffer.
+         *
+         * @param buffer The byte buffer to write it to.
+         *
+         * @return An instance of the type.
+         */
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            try
+            {
+                // Read size of field table then all name/value pairs.
+                return EncodingUtils.readFieldTable(buffer);
+            }
+            catch (AMQFrameDecodingException e)
+            {
+                throw new IllegalArgumentException("Unable to read field table from buffer.", e);
+            }
         }
     },
 
@@ -220,7 +288,6 @@ public enum AMQType
             return 0;
         }
 
-
         public Object toNativeValue(Object value)
         {
             if (value == null)
@@ -229,22 +296,19 @@ public enum AMQType
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to null String.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to null String.");
             }
         }
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-        }
+        { }
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
             return null;
         }
     },
-
-    // Extended types
 
     BINARY('x')
     {
@@ -253,20 +317,18 @@ public enum AMQType
             return EncodingUtils.encodedLongstrLength((byte[]) value);
         }
 
-
         public Object toNativeValue(Object value)
         {
-            if((value instanceof byte[]) || (value == null))
+            if ((value instanceof byte[]) || (value == null))
             {
                 return value;
             }
             else
             {
-                throw new IllegalArgumentException("Value: " + value + " (" + value.getClass().getName() +
-                                                    ") cannot be converted to byte[]");
+                throw new IllegalArgumentException("Value: " + value + " (" + value.getClass().getName()
+                    + ") cannot be converted to byte[]");
             }
         }
-
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
@@ -277,7 +339,6 @@ public enum AMQType
         {
             return EncodingUtils.readLongstr(buffer);
         }
-
     },
 
     ASCII_STRING('c')
@@ -286,7 +347,6 @@ public enum AMQType
         {
             return EncodingUtils.encodedLongStringLength((String) value);
         }
-
 
         public String toNativeValue(Object value)
         {
@@ -309,7 +369,6 @@ public enum AMQType
         {
             return EncodingUtils.readLongString(buffer);
         }
-
     },
 
     WIDE_STRING('C')
@@ -319,7 +378,6 @@ public enum AMQType
             // FIXME: use proper charset encoder
             return EncodingUtils.encodedLongStringLength((String) value);
         }
-
 
         public String toNativeValue(Object value)
         {
@@ -351,7 +409,6 @@ public enum AMQType
             return EncodingUtils.encodedBooleanLength();
         }
 
-
         public Object toNativeValue(Object value)
         {
             if (value instanceof Boolean)
@@ -360,12 +417,12 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Boolean.valueOf((String)value);
+                return Boolean.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to boolean.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to boolean.");
             }
         }
 
@@ -373,7 +430,6 @@ public enum AMQType
         {
             EncodingUtils.writeBoolean(buffer, (Boolean) value);
         }
-
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
@@ -388,7 +444,6 @@ public enum AMQType
             return EncodingUtils.encodedCharLength();
         }
 
-
         public Character toNativeValue(Object value)
         {
             if (value instanceof Character)
@@ -401,8 +456,8 @@ public enum AMQType
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to char.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to char.");
             }
         }
 
@@ -415,7 +470,6 @@ public enum AMQType
         {
             return EncodingUtils.readChar(buffer);
         }
-
     },
 
     BYTE('b')
@@ -425,7 +479,6 @@ public enum AMQType
             return EncodingUtils.encodedByteLength();
         }
 
-
         public Byte toNativeValue(Object value)
         {
             if (value instanceof Byte)
@@ -434,12 +487,12 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Byte.valueOf((String)value);
+                return Byte.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to byte.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to byte.");
             }
         }
 
@@ -456,12 +509,10 @@ public enum AMQType
 
     SHORT('s')
     {
-
         public int getEncodingSize(Object value)
         {
             return EncodingUtils.encodedShortLength();
         }
-
 
         public Short toNativeValue(Object value)
         {
@@ -475,16 +526,13 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Short.valueOf((String)value);
+                return Short.valueOf((String) value);
             }
-
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to short.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to short.");
             }
-
-
         }
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
@@ -521,12 +569,11 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Integer.valueOf((String)value);
+                return Integer.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to int.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName() + ") to int.");
             }
         }
 
@@ -543,7 +590,6 @@ public enum AMQType
 
     LONG('l')
     {
-
         public int getEncodingSize(Object value)
         {
             return EncodingUtils.encodedLongLength();
@@ -551,7 +597,7 @@ public enum AMQType
 
         public Object toNativeValue(Object value)
         {
-            if(value instanceof Long)
+            if (value instanceof Long)
             {
                 return (Long) value;
             }
@@ -569,12 +615,12 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Long.valueOf((String)value);
+                return Long.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to long.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to long.");
             }
         }
 
@@ -582,7 +628,6 @@ public enum AMQType
         {
             EncodingUtils.writeLong(buffer, (Long) value);
         }
-
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
@@ -597,7 +642,6 @@ public enum AMQType
             return EncodingUtils.encodedFloatLength();
         }
 
-
         public Float toNativeValue(Object value)
         {
             if (value instanceof Float)
@@ -606,12 +650,12 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Float.valueOf((String)value);
+                return Float.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to float.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to float.");
             }
         }
 
@@ -628,12 +672,10 @@ public enum AMQType
 
     DOUBLE('d')
     {
-
         public int getEncodingSize(Object value)
         {
             return EncodingUtils.encodedDoubleLength();
         }
-
 
         public Double toNativeValue(Object value)
         {
@@ -647,12 +689,12 @@ public enum AMQType
             }
             else if ((value instanceof String) || (value == null))
             {
-                return Double.valueOf((String)value);
+                return Double.valueOf((String) value);
             }
             else
             {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to double.");
+                throw new NumberFormatException("Cannot convert: " + value + "(" + value.getClass().getName()
+                    + ") to double.");
             }
         }
 
@@ -667,35 +709,87 @@ public enum AMQType
         }
     };
 
+    /** Holds the defined one byte identifier for the type. */
     private final byte _identifier;
 
+    /**
+     * Creates an instance of an AMQP type from its defined one byte identifier.
+     *
+     * @param identifier The one byte identifier for the type.
+     */
     AMQType(char identifier)
     {
         _identifier = (byte) identifier;
     }
 
+    /**
+     * Extracts the byte identifier for the typ.
+     *
+     * @return The byte identifier for the typ.
+     */
     public final byte identifier()
     {
         return _identifier;
     }
 
-
+    /**
+     * Calculates the size of an instance of the type in bytes.
+     *
+     * @param value An instance of the type.
+     *
+     * @return The size of the instance of the type in bytes.
+     */
     public abstract int getEncodingSize(Object value);
 
+    /**
+     * Converts an instance of the type to an equivalent Java native representation.
+     *
+     * @param value An instance of the type.
+     *
+     * @return An equivalent Java native representation.
+     */
     public abstract Object toNativeValue(Object value);
 
+    /**
+     * Converts an instance of the type to an equivalent Java native representation, packaged as an
+     * {@link AMQTypedValue} tagged with its AMQP type.
+     *
+     * @param value An instance of the type.
+     *
+     * @return An equivalent Java native representation, tagged with its AMQP type.
+     */
     public AMQTypedValue asTypedValue(Object value)
     {
         return new AMQTypedValue(this, toNativeValue(value));
     }
 
+    /**
+     * Writes an instance of the type to a specified byte buffer, preceded by its one byte identifier. As the type and
+     * value are both written, this provides a fully encoded description of a parameters type and value.
+     *
+     * @param value  An instance of the type.
+     * @param buffer The byte buffer to write it to.
+     */
     public void writeToBuffer(Object value, ByteBuffer buffer)
     {
-        buffer.put((byte)identifier());
+        buffer.put(identifier());
         writeValueImpl(value, buffer);
     }
 
+    /**
+     * Writes an instance of the type to a specified byte buffer.
+     *
+     * @param value  An instance of the type.
+     * @param buffer The byte buffer to write it to.
+     */
     abstract void writeValueImpl(Object value, ByteBuffer buffer);
 
+    /**
+     * Reads an instance of the type from a specified byte buffer.
+     *
+     * @param buffer The byte buffer to write it to.
+     *
+     * @return An instance of the type.
+     */
     abstract Object readValueFromBuffer(ByteBuffer buffer);
 }

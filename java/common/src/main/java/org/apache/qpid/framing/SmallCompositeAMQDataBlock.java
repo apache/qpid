@@ -25,7 +25,7 @@ import org.apache.mina.common.ByteBuffer;
 
 public class SmallCompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    private ByteBuffer _encodedBlock;
+    private AMQDataBlock _firstFrame;
 
     private AMQDataBlock _block;
 
@@ -40,10 +40,10 @@ public class SmallCompositeAMQDataBlock extends AMQDataBlock implements Encodabl
      * @param encodedBlock already-encoded data
      * @param block a block to be encoded.
      */
-    public SmallCompositeAMQDataBlock(ByteBuffer encodedBlock, AMQDataBlock block)
+    public SmallCompositeAMQDataBlock(AMQDataBlock encodedBlock, AMQDataBlock block)
     {
         this(block);
-        _encodedBlock = encodedBlock;
+        _firstFrame = encodedBlock;
     }
 
     public AMQDataBlock getBlock()
@@ -51,28 +51,28 @@ public class SmallCompositeAMQDataBlock extends AMQDataBlock implements Encodabl
         return _block;
     }
 
-    public ByteBuffer getEncodedBlock()
+    public AMQDataBlock getFirstFrame()
     {
-        return _encodedBlock;
+        return _firstFrame;
     }
 
     public long getSize()
     {
         long frameSize = _block.getSize();
 
-        if (_encodedBlock != null)
+        if (_firstFrame != null)
         {
-            _encodedBlock.rewind();
-            frameSize += _encodedBlock.remaining();
+
+            frameSize += _firstFrame.getSize();
         }
         return frameSize;
     }
 
     public void writePayload(ByteBuffer buffer)
     {
-        if (_encodedBlock != null)
+        if (_firstFrame != null)
         {
-            buffer.put(_encodedBlock);
+            _firstFrame.writePayload(buffer);
         }
         _block.writePayload(buffer);
 
@@ -87,7 +87,7 @@ public class SmallCompositeAMQDataBlock extends AMQDataBlock implements Encodabl
         else
         {
             StringBuilder buf = new StringBuilder(this.getClass().getName());
-            buf.append("{encodedBlock=").append(_encodedBlock);
+            buf.append("{encodedBlock=").append(_firstFrame);
 
             buf.append(" _block=[").append(_block.toString()).append("]");
 

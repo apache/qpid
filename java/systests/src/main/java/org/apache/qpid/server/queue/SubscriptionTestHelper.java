@@ -28,13 +28,13 @@ import java.util.Queue;
 
 public class SubscriptionTestHelper implements Subscription
 {
-    private final List<AMQMessage> messages;
+    private final List<QueueEntry> messages;
     private final Object key;
     private boolean isSuspended;
 
     public SubscriptionTestHelper(Object key)
     {
-        this(key, new ArrayList<AMQMessage>());
+        this(key, new ArrayList<QueueEntry>());
     }
 
     public SubscriptionTestHelper(final Object key, final boolean isSuspended)
@@ -43,18 +43,18 @@ public class SubscriptionTestHelper implements Subscription
         setSuspended(isSuspended);
     }
 
-    SubscriptionTestHelper(Object key, List<AMQMessage> messages)
+    SubscriptionTestHelper(Object key, List<QueueEntry> messages)
     {
         this.key = key;
         this.messages = messages;
     }
 
-    List<AMQMessage> getMessages()
+    List<QueueEntry> getMessages()
     {
         return messages;
     }
 
-    public void send(AMQMessage msg, AMQQueue queue)
+    public void send(QueueEntry msg, AMQQueue queue)
     {
         messages.add(msg);
     }
@@ -69,12 +69,12 @@ public class SubscriptionTestHelper implements Subscription
         return isSuspended;
     }
 
-    public boolean wouldSuspend(AMQMessage msg)
+    public boolean wouldSuspend(QueueEntry msg)
     {
         return isSuspended;
     }
 
-    public void addToResendQueue(AMQMessage msg)
+    public void addToResendQueue(QueueEntry msg)
     {
         //no-op
     }
@@ -88,6 +88,11 @@ public class SubscriptionTestHelper implements Subscription
     {
         return null;
     }
+    
+    public void start()
+    {
+        //no-op
+    }
 
     public void queueDeleted(AMQQueue queue)
     {
@@ -98,34 +103,29 @@ public class SubscriptionTestHelper implements Subscription
         return false;
     }
 
-    public boolean hasInterest(AMQMessage msg)
+    public boolean hasInterest(QueueEntry msg)
     {
         return true;
     }
 
-    public Queue<AMQMessage> getPreDeliveryQueue()
+    public Queue<QueueEntry> getPreDeliveryQueue()
     {
         return null;
     }
 
-    public Queue<AMQMessage> getResendQueue()
+    public Queue<QueueEntry> getResendQueue()
     {
         return null;
     }
 
-    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    public Queue<QueueEntry> getNextQueue(Queue<QueueEntry> messages)
     {
         return messages;
     }
 
-    public void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst)
+    public void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst)
     {
         //no-op
-    }
-
-    public boolean isAutoClose()
-    {
-        return false;
     }
 
     public void close()
@@ -157,4 +157,5 @@ public class SubscriptionTestHelper implements Subscription
     {
         return key.toString();
     }
+    
 }

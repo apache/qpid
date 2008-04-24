@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
@@ -360,6 +359,41 @@ public class FieldTable
         }
     }
 
+    /**
+     * Extracts a value from the field table that is itself a FieldTable associated with the specified parameter name.
+     *
+     * @param string The name of the parameter to get the associated FieldTable value for.
+     *
+     * @return The associated FieldTable value, or <tt>null</tt> if the associated value is not of FieldTable type or
+     *         not present in the field table at all.
+     */
+    public FieldTable getFieldTable(String string)
+    {
+        return getFieldTable(new AMQShortString(string));
+    }
+
+    /**
+     * Extracts a value from the field table that is itself a FieldTable associated with the specified parameter name.
+     *
+     * @param string The name of the parameter to get the associated FieldTable value for.
+     *
+     * @return The associated FieldTable value, or <tt>null</tt> if the associated value is not of FieldTable type or
+     *         not present in the field table at all.
+     */
+    public FieldTable getFieldTable(AMQShortString string)
+    {
+        AMQTypedValue value = getProperty(string);
+
+        if ((value != null) && (value.getType() == AMQType.FIELD_TABLE))
+        {
+            return (FieldTable) value.getValue();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     public Object getObject(String string)
     {
         return getObject(new AMQShortString(string));
@@ -568,6 +602,32 @@ public class FieldTable
         return setProperty(string, AMQType.VOID.asTypedValue(null));
     }
 
+    /**
+     * Associates a nested field table with the specified parameter name.
+     *
+     * @param string  The name of the parameter to store in the table.
+     * @param ftValue The field table value to associate with the parameter name.
+     *
+     * @return The stored value.
+     */
+    public Object setFieldTable(String string, FieldTable ftValue)
+    {
+        return setFieldTable(new AMQShortString(string), ftValue);
+    }
+
+    /**
+     * Associates a nested field table with the specified parameter name.
+     *
+     * @param string  The name of the parameter to store in the table.
+     * @param ftValue The field table value to associate with the parameter name.
+     *
+     * @return The stored value.
+     */
+    public Object setFieldTable(AMQShortString string, FieldTable ftValue)
+    {
+        return setProperty(string, AMQType.FIELD_TABLE.asTypedValue(ftValue));
+    }
+
     public Object setObject(AMQShortString string, Object object)
     {
         if (object instanceof Boolean)
@@ -706,12 +766,15 @@ public class FieldTable
 
     public void writeToBuffer(ByteBuffer buffer)
     {
-        final boolean trace = _logger.isTraceEnabled();
+        final boolean trace = _logger.isDebugEnabled();
 
         if (trace)
         {
-            _logger.trace("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
-            _logger.trace(_properties.toString());
+            _logger.debug("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
+            if (_properties != null)
+            {
+                _logger.debug(_properties.toString());
+            }
         }
 
         EncodingUtils.writeUnsignedInteger(buffer, getEncodedSize());
@@ -894,14 +957,21 @@ public class FieldTable
 
         if (_encodedForm != null)
         {
-
-            if (_encodedForm.position() != 0)
+            if(buffer.isDirect() || buffer.isReadOnly())
             {
-                _encodedForm.flip();
-            }
-            // _encodedForm.limit((int)getEncodedSize());
+                ByteBuffer encodedForm = _encodedForm.duplicate();
 
-            buffer.put(_encodedForm);
+                if (encodedForm.position() != 0)
+                {
+                    encodedForm.flip();
+                }
+
+                buffer.put(encodedForm);
+            }
+            else
+            {
+                buffer.put(_encodedForm.array(),_encodedForm.arrayOffset(),(int)_encodedSize);
+            }
         }
         else if (_properties != null)
         {
@@ -915,11 +985,11 @@ public class FieldTable
                 final Map.Entry<AMQShortString, AMQTypedValue> me = it.next();
                 try
                 {
-                    if (_logger.isTraceEnabled())
+                    if (_logger.isDebugEnabled())
                     {
-                        _logger.trace("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
                             + me.getValue().getValue());
-                        _logger.trace("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
                     }
 
                     // Write the actual parameter name
@@ -928,12 +998,12 @@ public class FieldTable
                 }
                 catch (Exception e)
                 {
-                    if (_logger.isTraceEnabled())
+                    if (_logger.isDebugEnabled())
                     {
-                        _logger.trace("Exception thrown:" + e);
-                        _logger.trace("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                        _logger.debug("Exception thrown:" + e);
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
                             + me.getValue().getValue());
-                        _logger.trace("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
                     }
 
                     throw new RuntimeException(e);
@@ -945,7 +1015,7 @@ public class FieldTable
     private void setFromBuffer(ByteBuffer buffer, long length) throws AMQFrameDecodingException
     {
 
-        final boolean trace = _logger.isTraceEnabled();
+        final boolean trace = _logger.isDebugEnabled();
         if (length > 0)
         {
 
@@ -961,7 +1031,7 @@ public class FieldTable
 
                 if (trace)
                 {
-                    _logger.trace("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + value.getType()
+                    _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + value.getType()
                         + "', key '" + key + "', value '" + value.getValue() + "'");
                 }
 
@@ -976,7 +1046,7 @@ public class FieldTable
 
         if (trace)
         {
-            _logger.trace("FieldTable::FieldTable(buffer," + length + "): Done.");
+            _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
         }
     }
 

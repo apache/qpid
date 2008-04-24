@@ -36,7 +36,6 @@ import org.apache.qpid.AMQException;
 import junit.framework.TestCase;
 
 import java.util.LinkedList;
-import java.util.HashSet;
 
 class MessageTestHelper extends TestCase
 {
@@ -45,20 +44,20 @@ class MessageTestHelper extends TestCase
     private final StoreContext _storeContext = new StoreContext();
 
     private final TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
-                                                                                 new LinkedList<RequiredDeliveryException>(),
-                                                                                 new HashSet<Long>());
+                                                                                 new LinkedList<RequiredDeliveryException>()
+    );
 
     MessageTestHelper() throws Exception
     {
         ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
-    AMQMessage message() throws AMQException
+    QueueEntry message() throws AMQException
     {
         return message(false);
     }
 
-    AMQMessage message(final boolean immediate) throws AMQException
+    QueueEntry message(final boolean immediate) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
         {
@@ -66,6 +65,11 @@ class MessageTestHelper extends TestCase
             public AMQShortString getExchange()
             {
                 return null;
+            }
+
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public boolean isImmediate()
@@ -84,8 +88,8 @@ class MessageTestHelper extends TestCase
             }
         };
                               
-        return new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
-                              new ContentHeaderBody());
+        return new QueueEntry(null,new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
+                              new ContentHeaderBody()));
     }
 
 }

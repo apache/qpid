@@ -92,7 +92,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><th> Associate messages to an ongoing conversation using correlation ids.
+ * <tr><td> Associate messages to an ongoing conversation using correlation ids.
  * <tr><td> Auto manage sessions for conversations.
  * <tr><td> Store messages not in a conversation in dead letter box.
  * </table>

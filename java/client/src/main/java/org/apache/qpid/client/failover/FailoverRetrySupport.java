@@ -122,6 +122,13 @@ public class FailoverRetrySupport<T, E extends Exception> implements FailoverSup
                 {
                     _log.debug("Failover exception caught during operation: " + e, e);
                 }
+                catch (IllegalStateException e)
+                {
+                    if (!(e.getMessage().startsWith("Fail-over interupted no-op failover support")))
+                    {
+                        throw e;
+                    }
+                }
             }
         }
     }

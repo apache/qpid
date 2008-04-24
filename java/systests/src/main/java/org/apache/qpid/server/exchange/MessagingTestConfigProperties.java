@@ -21,8 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.jms.Session;
-
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 /**
  * MessagingTestConfigProperties defines a set of property names and default values for specifying a messaging topology,

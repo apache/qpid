@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.test.framework;
 
-import org.apache.qpid.jms.Session;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import javax.jms.Session;
 
 import java.util.Properties;
 
@@ -181,10 +181,16 @@ public class MessagingTestConfigProperties extends ParsedProperties
     public static final boolean PERSISTENT_MODE_DEFAULT = false;
 
     /** Holds the name of the property to get the test transactional mode from. */
-    public static final String TRANSACTED_PROPNAME = "transacted";
+    public static final String TRANSACTED_PUBLISHER_PROPNAME = "transactedPublisher";
 
     /** Holds the transactional mode to use for the test. */
-    public static final boolean TRANSACTED_DEFAULT = false;
+    public static final boolean TRANSACTED_PUBLISHER_DEFAULT = false;
+
+    /** Holds the name of the property to get the test transactional mode from. */
+    public static final String TRANSACTED_RECEIVER_PROPNAME = "transactedReceiver";
+
+    /** Holds the transactional mode to use for the test. */
+    public static final boolean TRANSACTED_RECEIVER_DEFAULT = false;
 
     /** Holds the name of the property to set the no local flag from. */
     public static final String NO_LOCAL_PROPNAME = "noLocal";
@@ -204,7 +210,7 @@ public class MessagingTestConfigProperties extends ParsedProperties
     /** Defines the default value of the durable subscriptions flag. */
     public static final boolean DURABLE_SUBSCRIPTION_DEFAULT = false;
 
-    // ======================  Qpid Options and Flags ================================
+    // ======================  Qpid/AMQP Options and Flags ================================
 
     /** Holds the name of the property to set the exclusive flag from. */
     public static final String EXCLUSIVE_PROPNAME = "exclusive";
@@ -230,7 +236,7 @@ public class MessagingTestConfigProperties extends ParsedProperties
     /** Default value for the durable destinations flag. */
     public static final boolean DURABLE_DESTS_DEFAULT = false;
 
-    /** Holds the name of the proeprty to set the prefetch size from. */
+    /** Holds the name of the property to set the prefetch size from. */
     public static final String PREFETCH_PROPNAME = "prefetch";
 
     /** Defines the default prefetch size to use when consuming messages. */
@@ -274,6 +280,26 @@ public class MessagingTestConfigProperties extends ParsedProperties
     /** Defines the default maximum quantity of pending message data to allow producers to hold. */
     public static final int MAX_PENDING_DEFAULT = 0;
 
+    /** Holds the name of the property to get the publisher rollback flag from. */
+    public static final String ROLLBACK_PUBLISHER_PROPNAME = "rollbackPublisher";
+
+    /** Holds the default publisher roll back setting. */
+    public static final boolean ROLLBACK_PUBLISHER_DEFAULT = false;
+
+    /** Holds the name of the property to get the publisher rollback flag from. */
+    public static final String ROLLBACK_RECEIVER_PROPNAME = "rollbackReceiver";
+
+    /** Holds the default publisher roll back setting. */
+    public static final boolean ROLLBACK_RECEIVER_DEFAULT = false;
+
+    // ====================== Options that control the bahviour of the test framework. =========================
+
+    /** Holds the name of the property to get the behavioural mode of not applicable assertions. */
+    public static final String NOT_APPLICABLE_ASSERTION_PROPNAME = "notApplicableAssertion";
+
+    /** Holds the default behavioral mode of not applicable assertions, which is logging them as a warning. */
+    public static final String NOT_APPLICABLE_ASSERTION_DEFAULT = "warn";
+
     /** Holds the name of the property to get the verbose mode proeprty from. */
     public static final String VERBOSE_PROPNAME = "verbose";
 
@@ -286,8 +312,11 @@ public class MessagingTestConfigProperties extends ParsedProperties
     static
     {
         defaults.setPropertyIfNull(INITIAL_CONTEXT_FACTORY_PROPNAME, INITIAL_CONTEXT_FACTORY_DEFAULT);
-        // defaults.setPropertyIfNull(CONNECTION_PROPNAME, CONNECTION_DEFAULT);
-        defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
+        defaults.setPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
+        defaults.setPropertyIfNull(VIRTUAL_HOST_PROPNAME, VIRTUAL_HOST_DEFAULT);
+        defaults.setPropertyIfNull(USERNAME_PROPNAME, USERNAME_DEFAULT);
+        defaults.setPropertyIfNull(PASSWORD_PROPNAME, PASSWORD_DEFAULT);
+
         defaults.setPropertyIfNull(PUBLISHER_PRODUCER_BIND_PROPNAME, PUBLISHER_PRODUCER_BIND_DEFAULT);
         defaults.setPropertyIfNull(PUBLISHER_CONSUMER_BIND_PROPNAME, PUBLISHER_CONSUMER_BIND_DEFAULT);
         defaults.setPropertyIfNull(RECEIVER_PRODUCER_BIND_PROPNAME, RECEIVER_PRODUCER_BIND_DEFAULT);
@@ -296,28 +325,33 @@ public class MessagingTestConfigProperties extends ParsedProperties
         defaults.setPropertyIfNull(RECEIVER_CONSUMER_ACTIVE_PROPNAME, RECEIVER_CONSUMER_ACTIVE_DEFAULT);
         defaults.setPropertyIfNull(SEND_DESTINATION_NAME_ROOT_PROPNAME, SEND_DESTINATION_NAME_ROOT_DEFAULT);
         defaults.setPropertyIfNull(RECEIVE_DESTINATION_NAME_ROOT_PROPNAME, RECEIVE_DESTINATION_NAME_ROOT_DEFAULT);
-        defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
-        defaults.setPropertyIfNull(TRANSACTED_PROPNAME, TRANSACTED_DEFAULT);
-        defaults.setPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
-        defaults.setPropertyIfNull(VIRTUAL_HOST_PROPNAME, VIRTUAL_HOST_DEFAULT);
-        defaults.setPropertyIfNull(RATE_PROPNAME, RATE_DEFAULT);
-        defaults.setPropertyIfNull(VERBOSE_PROPNAME, VERBOSE_DEFAULT);
-        defaults.setPropertyIfNull(PUBSUB_PROPNAME, PUBSUB_DEFAULT);
-        defaults.setPropertyIfNull(USERNAME_PROPNAME, USERNAME_DEFAULT);
-        defaults.setPropertyIfNull(PASSWORD_PROPNAME, PASSWORD_DEFAULT);
-        defaults.setPropertyIfNull(SELECTOR_PROPNAME, SELECTOR_DEFAULT);
         defaults.setPropertyIfNull(DESTINATION_COUNT_PROPNAME, DESTINATION_COUNT_DEFAULT);
-        defaults.setPropertyIfNull(TIMEOUT_PROPNAME, TIMEOUT_DEFAULT);
-        defaults.setPropertyIfNull(TX_BATCH_SIZE_PROPNAME, TX_BATCH_SIZE_DEFAULT);
-        defaults.setPropertyIfNull(DURABLE_DESTS_PROPNAME, DURABLE_DESTS_DEFAULT);
+        defaults.setPropertyIfNull(PUBSUB_PROPNAME, PUBSUB_DEFAULT);
+
+        defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
+        defaults.setPropertyIfNull(TRANSACTED_PUBLISHER_PROPNAME, TRANSACTED_PUBLISHER_DEFAULT);
+        defaults.setPropertyIfNull(TRANSACTED_RECEIVER_PROPNAME, TRANSACTED_RECEIVER_DEFAULT);
+        defaults.setPropertyIfNull(NO_LOCAL_PROPNAME, NO_LOCAL_DEFAULT);
         defaults.setPropertyIfNull(ACK_MODE_PROPNAME, ACK_MODE_DEFAULT);
         defaults.setPropertyIfNull(DURABLE_SUBSCRIPTION_PROPNAME, DURABLE_SUBSCRIPTION_DEFAULT);
-        defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
-        defaults.setPropertyIfNull(PREFETCH_PROPNAME, PREFETCH_DEFAULT);
-        defaults.setPropertyIfNull(NO_LOCAL_PROPNAME, NO_LOCAL_DEFAULT);
+
         defaults.setPropertyIfNull(EXCLUSIVE_PROPNAME, EXCLUSIVE_DEFAULT);
         defaults.setPropertyIfNull(IMMEDIATE_PROPNAME, IMMEDIATE_DEFAULT);
         defaults.setPropertyIfNull(MANDATORY_PROPNAME, MANDATORY_DEFAULT);
+        defaults.setPropertyIfNull(DURABLE_DESTS_PROPNAME, DURABLE_DESTS_DEFAULT);
+        defaults.setPropertyIfNull(PREFETCH_PROPNAME, PREFETCH_DEFAULT);
+
+        defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
+        defaults.setPropertyIfNull(RATE_PROPNAME, RATE_DEFAULT);
+        defaults.setPropertyIfNull(SELECTOR_PROPNAME, SELECTOR_DEFAULT);
+        defaults.setPropertyIfNull(TIMEOUT_PROPNAME, TIMEOUT_DEFAULT);
+        defaults.setPropertyIfNull(TX_BATCH_SIZE_PROPNAME, TX_BATCH_SIZE_DEFAULT);
+        defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
+        defaults.setPropertyIfNull(ROLLBACK_PUBLISHER_PROPNAME, ROLLBACK_PUBLISHER_DEFAULT);
+        defaults.setPropertyIfNull(ROLLBACK_RECEIVER_PROPNAME, ROLLBACK_RECEIVER_DEFAULT);
+
+        defaults.setPropertyIfNull(NOT_APPLICABLE_ASSERTION_PROPNAME, NOT_APPLICABLE_ASSERTION_DEFAULT);
+        defaults.setPropertyIfNull(VERBOSE_PROPNAME, VERBOSE_DEFAULT);
     }
 
     /**
@@ -338,148 +372,314 @@ public class MessagingTestConfigProperties extends ParsedProperties
         super(properties);
     }
 
+    /**
+     * The size of test messages to send.
+     *
+     * @return The size of test messages to send.
+     */
     public int getMessageSize()
     {
         return getPropertyAsInteger(MESSAGE_SIZE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the publishing producer should be set up to publish to a destination.
+     *
+     * @return Flag to indicate that the publishing producer should be set up to publish to a destination.
+     */
     public boolean getPublisherProducerBind()
     {
         return getPropertyAsBoolean(PUBLISHER_PRODUCER_BIND_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the publishing consumer should be set up to receive from a destination.
+     *
+     * @return Flag to indicate that the publishing consumer should be set up to receive from a destination.
+     */
     public boolean getPublisherConsumerBind()
     {
         return getPropertyAsBoolean(PUBLISHER_CONSUMER_BIND_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the receiving producer should be set up to publish to a destination.
+     *
+     * @return Flag to indicate that the receiving producer should be set up to publish to a destination.
+     */
     public boolean getReceiverProducerBind()
     {
         return getPropertyAsBoolean(RECEIVER_PRODUCER_BIND_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the receiving consumer should be set up to receive from a destination.
+     *
+     * @return Flag to indicate that the receiving consumer should be set up to receive from a destination.
+     */
     public boolean getReceiverConsumerBind()
     {
         return getPropertyAsBoolean(RECEIVER_CONSUMER_BIND_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the publishing consumer should be created and actively listening.
+     *
+     * @return Flag to indicate that the publishing consumer should be created.
+     */
     public boolean getPublisherConsumerActive()
     {
         return getPropertyAsBoolean(PUBLISHER_CONSUMER_ACTIVE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that the receiving consumers should be created and actively listening.
+     *
+     * @return Flag to indicate that the receiving consumers should be created and actively listening.
+     */
     public boolean getReceiverConsumerActive()
     {
         return getPropertyAsBoolean(RECEIVER_CONSUMER_ACTIVE_PROPNAME);
     }
 
+    /**
+     * A root to create all test destination names from.
+     *
+     * @return A root to create all test destination names from.
+     */
     public String getSendDestinationNameRoot()
     {
         return getProperty(SEND_DESTINATION_NAME_ROOT_PROPNAME);
     }
 
+    /**
+     * A root to create all receiving destination names from.
+     *
+     * @return A root to create all receiving destination names from.
+     */
     public String getReceiveDestinationNameRoot()
     {
         return getProperty(RECEIVE_DESTINATION_NAME_ROOT_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that persistent messages should be used.
+     *
+     * @return Flag to indicate that persistent messages should be used.
+     */
     public boolean getPersistentMode()
     {
         return getPropertyAsBoolean(PERSISTENT_MODE_PROPNAME);
     }
 
-    public boolean getTransacted()
+    /**
+     * Flag to indicate that transactional messages should be sent by the publisher.
+     *
+     * @return Flag to indicate that transactional messages should be sent by the publisher.
+     */
+    public boolean getPublisherTransacted()
     {
-        return getPropertyAsBoolean(TRANSACTED_PROPNAME);
+        return getPropertyAsBoolean(TRANSACTED_PUBLISHER_PROPNAME);
     }
 
-    public String getBroker()
+    /**
+     * Flag to indicate that transactional receives should be used by the receiver.
+     *
+     * @return Flag to indicate that transactional receives should be used by the receiver.
+     */
+    public boolean getReceiverTransacted()
     {
-        return getProperty(BROKER_PROPNAME);
+        return getPropertyAsBoolean(TRANSACTED_PUBLISHER_PROPNAME);
     }
 
+    /**
+     * The name of the virtual host to run all tests over.
+     *
+     * @return The name of the virtual host to run all tests over.
+     */
     public String getVirtualHost()
     {
         return getProperty(VIRTUAL_HOST_PROPNAME);
     }
 
+    /**
+     * Limiting rate for each sender in messages per second, or zero for unlimited.
+     *
+     * @return Limiting rate for each sender in messages per second, or zero for unlimited.
+     */
     public String getRate()
     {
         return getProperty(RATE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that test messages should be received publish/subscribe style by all receivers.
+     *
+     * @return Flag to indicate that test messages should be received publish/subscribe style by all receivers.
+     */
     public boolean getPubsub()
     {
         return getPropertyAsBoolean(PUBSUB_PROPNAME);
     }
 
+    /**
+     * The username credentials to run tests with.
+     *
+     * @return The username credentials to run tests with.
+     */
     public String getUsername()
     {
         return getProperty(USERNAME_PROPNAME);
     }
 
+    /**
+     * The password credentials to run tests with.
+     *
+     * @return The password credentials to run tests with.
+     */
     public String getPassword()
     {
         return getProperty(PASSWORD_PROPNAME);
     }
 
-    public int getDestinationCount()
-    {
-        return getPropertyAsInteger(DESTINATION_COUNT_PROPNAME);
-    }
-
+    /**
+     * The timeout duration to fail tests on, should they receive no messages within it.
+     *
+     * @return The timeout duration to fail tests on, should they receive no messages within it.
+     */
     public long getTimeout()
     {
         return getPropertyAsLong(TIMEOUT_PROPNAME);
     }
 
+    /**
+     * The number of messages to batch into each transaction in transational tests.
+     *
+     * @return The number of messages to batch into each transaction in transational tests.
+     */
     public int getTxBatchSize()
     {
         return getPropertyAsInteger(TX_BATCH_SIZE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that tests should use durable destinations.
+     *
+     * @return Flag to indicate that tests should use durable destinations.
+     */
     public boolean getDurableDests()
     {
         return getPropertyAsBoolean(DURABLE_DESTS_PROPNAME);
     }
 
+    /**
+     * The ack mode for message receivers to use.
+     *
+     * @return The ack mode for message receivers to use.
+     */
     public int getAckMode()
     {
         return getPropertyAsInteger(ACK_MODE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that tests should use durable subscriptions.
+     *
+     * @return Flag to indicate that tests should use durable subscriptions.
+     */
     public boolean getDurableSubscription()
     {
         return getPropertyAsBoolean(DURABLE_SUBSCRIPTION_PROPNAME);
     }
 
+    /**
+     * The maximum amount of in-flight data, in bytes, that tests should send at any time.
+     *
+     * @return The maximum amount of in-flight data, in bytes, that tests should send at any time.
+     */
     public int getMaxPending()
     {
         return getPropertyAsInteger(MAX_PENDING_PROPNAME);
     }
 
-    public int getPrefecth()
+    /**
+     * The size of the prefetch queue to use.
+     *
+     * @return The size of the prefetch queue to use.
+     */
+    public int getPrefetch()
     {
         return getPropertyAsInteger(PREFETCH_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that subscriptions should be no-local.
+     *
+     * @return Flag to indicate that subscriptions should be no-local.
+     */
     public boolean getNoLocal()
     {
         return getPropertyAsBoolean(NO_LOCAL_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that subscriptions should be exclusive.
+     *
+     * @return Flag to indicate that subscriptions should be exclusive.
+     */
     public boolean getExclusive()
     {
         return getPropertyAsBoolean(EXCLUSIVE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that messages must be delivered immediately.
+     *
+     * @return Flag to indicate that messages must be delivered immediately.
+     */
     public boolean getImmediate()
     {
         return getPropertyAsBoolean(IMMEDIATE_PROPNAME);
     }
 
+    /**
+     * Flag to indicate that messages must be routable.
+     *
+     * @return Flag to indicate that messages must be routable.
+     */
     public boolean getMandatory()
     {
         return getPropertyAsBoolean(MANDATORY_PROPNAME);
+    }
+
+    /**
+     * Gets the value of a flag to indicate that the publisher should rollback all messages sent.
+     *
+     * @return A flag to indicate that the publisher should rollback all messages sent.
+     */
+    public boolean getRollbackPublisher()
+    {
+        return getPropertyAsBoolean(ROLLBACK_PUBLISHER_PROPNAME);
+    }
+
+    /**
+     * Gets the value of a flag to indicate that the receiver should rollback all messages received, then receive them
+     * again.
+     *
+     * @return A flag to indicate that the publisher should rollback all messages received.
+     */
+    public boolean getRollbackReceiver()
+    {
+        return getPropertyAsBoolean(ROLLBACK_RECEIVER_PROPNAME);
+    }
+
+    /**
+     * Gets the behavioural mode of not applicable assertions. Should be one of 'quiet', 'warn' or 'fail'.
+     *
+     * @return The behavioural mode of not applicable assertions.
+     */
+    public String getNotApplicableAssertionMode()
+    {
+        return getProperty(NOT_APPLICABLE_ASSERTION_PROPNAME);
     }
 }

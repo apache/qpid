@@ -38,7 +38,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelCloseMethodHandler implements StateAwareMethodListener
+public class ChannelCloseMethodHandler implements StateAwareMethodListener<ChannelCloseBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseMethodHandler.class);
 
@@ -49,22 +49,26 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+    public void methodReceived(AMQStateManager stateManager, ChannelCloseBody method, int channelId)
         throws AMQException
     {
         _logger.debug("ChannelClose method received");
-        ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), method.getMajor(), method.getMinor());
-        protocolSession.writeFrame(frame);
+
+
+        ChannelCloseOkBody body = session.getMethodRegistry().createChannelCloseOkBody();
+        AMQFrame frame = body.generateFrame(channelId);
+        session.writeFrame(frame);
+
         if (errorCode != AMQConstant.REPLY_SUCCESS)
         {
             if (_logger.isDebugEnabled())
@@ -100,6 +104,11 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         }
         // fixme why is this only done when the close is expected...
         // should the above forced closes not also cause a close?
-        protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
+        // ----------
+        // Closing the session only when it is expected allows the errors to be processed
+        // Calling this here will prevent failover. So we should do this for all exceptions
+        // that should never cause failover. Such as authentication errors.
+
+        session.channelClosed(channelId, errorCode, String.valueOf(reason));
     }
 }

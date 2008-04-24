@@ -178,31 +178,25 @@ public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException, FailoverException
     {
-
+        ChannelOpenBody channelOpenBody = _conn.getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
         // TODO: Be aware of possible changes to parameter order as versions change.
-
-        _conn._protocolHandler.syncWrite(ChannelOpenBody.createAMQFrame(channelId, _conn._protocolHandler.getProtocolMajorVersion(),
-                _conn._protocolHandler.getProtocolMinorVersion(), null), // outOfBand
-                                                                                                                     ChannelOpenOkBody.class);
+        _conn._protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
-        _conn._protocolHandler.syncWrite(BasicQosBody.createAMQFrame(channelId, _conn._protocolHandler.getProtocolMajorVersion(),
-                _conn._protocolHandler.getProtocolMinorVersion(), false, // global
-                                                               prefetchHigh, // prefetchCount
-                                                               0), // prefetchSize
-                                                                   BasicQosOkBody.class);
-
+        BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
+        _conn._protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
+        
         if (transacted)
         {
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
-
+            TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
+            
             // TODO: Be aware of possible changes to parameter order as versions change.
-            _conn._protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId, _conn._protocolHandler.getProtocolMajorVersion(),
-                    _conn._protocolHandler.getProtocolMinorVersion()), TxSelectOkBody.class);
+            _conn._protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
     }
 
@@ -212,7 +206,7 @@ public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
      */
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
-        ArrayList sessions = new ArrayList(_conn._sessions.values());
+        ArrayList sessions = new ArrayList(_conn.getSessions().values());
         _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: removeKey?
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {

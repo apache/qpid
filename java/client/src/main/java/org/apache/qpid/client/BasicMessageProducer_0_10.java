@@ -55,7 +55,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
               mandatory, waitUntilSent);
     }
 
-    public void declareDestination(AMQDestination destination)
+    void declareDestination(AMQDestination destination)
     {
         ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare(destination.getExchangeName().toString(),
                                                                           destination.getExchangeClass().toString(),
@@ -67,9 +67,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     /**
      * Sends a message to a given destination
      */
-    public void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
-                            int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate,
-                            boolean wait) throws JMSException
+    void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
+                     int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate,
+                     boolean wait) throws JMSException
     {
         message.prepareForSending();
         if (message.get010Message() == null)

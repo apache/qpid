@@ -27,18 +27,23 @@
   <property name="generated.dir" location="${generated.path}/${generated.package}" />
   <property name="generated.timestamp" location="${generated.dir}/timestamp" />
   <property name="xml.spec.dir" location="${topDirectoryLocation}/../specs" />
-  <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml" />
-  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/cluster.0-8.xml" />
+  <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml" />
+  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml" />
+  <property name="template.dir" value="${topDirectoryLocation}/common/templates" />
+
   	
-  <target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">
+  <!--<target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">-->
+  <target name="generate" depends="compile_generator" unless="generation.notRequired">
     <mkdir dir="${generated.dir}"/>
     <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src" failonerror="true">
-    	<arg line="-j -o ${generated.dir} -t ${topDirectoryLocation}/common/templates ${xml.spec.list}" />
+    	<arg line="-j -o ${generated.dir} -t ${template.dir} ${xml.spec.list}" />
         <classpath>
           <pathelement path="${gentools.home}/src" />
-			    <fileset dir="${gentools.home}/lib">
-					<include name="**/*.jar"/>
-				</fileset>
+	  <fileset dir="${gentools.home}/lib">
+	     <include name="**/*.jar"/>
+          </fileset>
+          <pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+          <pathelement path="${gentools.home}/lib/velocity-dep-1.4.jar" />
         </classpath>
     </java>
     <touch file="${generated.timestamp}" />
@@ -47,7 +52,8 @@
   <target name="check_generate_deps">
 	<uptodate property="generation.notRequired" targetfile="${generated.timestamp}">
   	  <srcfiles dir="${xml.spec.dir}" includes="${xml.spec.deps}" />
-	</uptodate>
+      <srcfiles dir="${template.dir}" includes="**/*.vm **/*.tmpl" />
+    </uptodate>
   </target>
   
   <target name="compile_generator">
