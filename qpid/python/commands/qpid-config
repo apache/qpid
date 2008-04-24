@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import os, uuid
+import os
 import getopt
 import sys
 import socket
@@ -97,16 +97,20 @@ class BrokerManager:
     def ConnectToBroker (self):
         try:
             self.spec = qpid.spec.load (_specpath)
+            self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
             self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec)
             self.conn.start ()
             self.mclient  = managementClient (self.spec)
-            self.mchannel = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
+            self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
         except socket.error, e:
             print "Socket Error:", e
             sys.exit (1)
         except Closed, e:
             print "Connect Failed:", e
             sys.exit (1)
+
+    def Disconnect (self):
+        self.mclient.removeChannel (self.mchannel)
 
     def Overview (self):
         self.ConnectToBroker ()
@@ -374,4 +378,4 @@ else:
         bm.Unbind (cargs[1:])
     else:
         Usage ()
-
+bm.Disconnect()
