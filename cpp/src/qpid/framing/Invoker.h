@@ -58,7 +58,7 @@ class Invoker: public MethodBodyDefaultVisitor, protected StructHelper
 };
 
 /**
- * Invoke on an invocable object.
+ * Invoke an invocable object.
  * Invocable classes must provide a nested type Invoker.
  */
 template <class Invocable>
@@ -69,7 +69,7 @@ Invoker::Result invoke(Invocable& target, const AMQMethodBody& body) {
 }
 
 /**
- * Invoke on an invocable object.
+ * Invoke an invocable object.
  * Invocable classes must provide a nested type Invoker.
  */
 template <class Invocable>

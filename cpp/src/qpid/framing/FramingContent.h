@@ -31,7 +31,7 @@ class Buffer;
 enum discriminator_types { INLINE = 0, REFERENCE = 1 };
 
 /**
- * A representation of the AMQP 'content' data type (used for message
+ * A representation of the AMQP Content data type (used for message
  * bodies) which can hold inline data or a reference.
  */
 class Content

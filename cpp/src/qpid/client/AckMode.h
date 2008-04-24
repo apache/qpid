@@ -29,7 +29,7 @@ namespace client {
 /**
  * DEPRECATED
  * 
- * The available acknowledgements modes for Channel (now also deprecated).
+ * The available acknowledgement modes for Channel (now also deprecated).
  */
 enum AckMode {
     /** No acknowledgement will be sent, broker can
@@ -38,7 +38,7 @@ enum AckMode {
     NO_ACK     = 0,  
     /** Each message will be automatically
         acknowledged as soon as it is delivered to the
-        application **/  
+        application. **/  
     AUTO_ACK   = 1,  
     /** Acknowledgements will be sent automatically,
         but not for each message. **/

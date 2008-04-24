@@ -54,20 +54,17 @@ using framing::Uuid;
  * functions return immediately.
  *
  * ASYNC mode gives better performance for high-volume traffic, but
- * requires some additional caution:
+ * requires some additional caution.
  * 
  * Session functions return immediately. If the command causes an
  * exception on the broker, the exception will be thrown on a
  * <em>later</em> function call. 
  *
  * If you need to notify some extenal agent that some actions have
- * been taken (e.g. binding queues to exchanges), you must ensure that
- * the broker has completed the command. In synchronous mode this is
- * when the session method for the command returns. In asynchronous
- * mode you can call Session::sync(), to ensure that all the commands
- * are complete.
+ * been taken (e.g. binding queues to exchanges), you must call
+ * Session::sync() first to ensure that all the commands are complete.
  *
- * You can freely switch between modes by calling Session::setSynchronous()
+ * You can freely switch between modes by calling Session::setSynchronous().
  * 
  * @see Session::sync(), Session::setSynchronous()
  */
@@ -106,12 +103,12 @@ class SessionBase
 
     /**
      * In synchronous mode, wait for the broker's response before
-     * returning. Note this gives lower throughput than asynchronous
+     * returning. This gives lower throughput than asynchronous
      * mode.
      *
      * In asynchronous mode commands are sent without waiting
-     * for a respose (you can use the returned Completion object
-     * to wait for completion.)
+     * for a response (you can use the returned Completion object
+     * to wait for completion).
      * 
      * @see SynchronousMode
      */
@@ -121,7 +118,7 @@ class SessionBase
     SynchronousMode getSynchronous() const;
 
     /**
-     * Suspend the session, can be resumed on a different connection.
+     * Suspend the session, which can be resumed on a different connection.
      * @see Connection::resume()
      */
     void suspend();

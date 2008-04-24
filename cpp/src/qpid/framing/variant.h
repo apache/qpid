@@ -21,7 +21,7 @@
  *
  */
 
-/**@file Tools for using boost::variant */
+/**@file Tools for using boost::variant. */
 
 
 #include <boost/variant.hpp>
@@ -30,8 +30,8 @@ namespace qpid {
 namespace framing {
 class Buffer;
 
-/** boost::static_visitor that throws exception if variant contains blank.
- * Sublclasses need to have a using() declaration, can be generated
+/** boost::static_visitor that throws an exception if variant contains a blank.
+ * Subclasses need to have a using() declaration, which can be generated
  * with QPID_USING_NOBLANK(R)
  */
 template <class R=void>
@@ -48,7 +48,7 @@ struct NoBlankVisitor : public boost::static_visitor<R> {
 }} // qpid::framing
 
 
-/** Generate using statement needed in visitors inheriting NoBlankVisitor
+/** Generate a using statement, needed in visitors inheriting NoBlankVisitor
  *  @param R return type.
  */
 #define QPID_USING_NOBLANK(R) using ::qpid::framing::NoBlankVisitor<R>::operator()
@@ -62,13 +62,13 @@ template <class R> struct ConvertVisitor : public NoBlankVisitor<R> {
     template <class T> R operator()(T& t) const { return t; }
 };
 
-/** Convert address of variant value to type R. */
+/** Convert the address of variant value to type R. */
 template <class R> struct AddressVisitor : public NoBlankVisitor<R> {
     QPID_USING_NOBLANK(R);
     template <class T> R operator()(T& t) const { return &t; }
 };
 
-/** Apply a visitor to the nested variant in a variant of variants */
+/** Apply a visitor to the nested variant.*/
 template<class V>
 struct ApplyVisitor : public NoBlankVisitor<typename V::result_type> {
     QPID_USING_NOBLANK(typename V::result_type);

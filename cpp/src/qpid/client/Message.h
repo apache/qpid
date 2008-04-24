@@ -30,7 +30,7 @@ namespace qpid {
 namespace client {
 
 /**
- * A representation of messages for sent or received through the
+ * A representation of messages sent or received through the
  * client api.
  *
  * \ingroup clientapi
