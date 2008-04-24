@@ -638,8 +638,9 @@ public class DerbyMessageStore implements MessageStore
                     blobArgs.setBytes(0, args.getDataAsBytes());
                     stmt.setBlob(4, blobArgs);
                     */
-                    ByteArrayInputStream bis = new ByteArrayInputStream(args.getDataAsBytes());
-                    stmt.setBinaryStream(4, bis);
+                    byte[] bytes = args.getDataAsBytes();
+                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                    stmt.setBinaryStream(4, bis, bytes.length);
                 }
                 else
                 {
@@ -1043,7 +1044,7 @@ public class DerbyMessageStore implements MessageStore
             stmt.setBlob(3, dataAsBlob);
             */
             ByteArrayInputStream bis = new ByteArrayInputStream(chunkData);
-            stmt.setBinaryStream(3, bis);
+            stmt.setBinaryStream(3, bis, chunkData.length);
             stmt.executeUpdate();
             connWrapper.requiresCommit();
 
@@ -1093,7 +1094,7 @@ public class DerbyMessageStore implements MessageStore
             stmt.setBlob(6, dataAsBlob);
 */
             ByteArrayInputStream bis = new ByteArrayInputStream(underlying);
-            stmt.setBinaryStream(6,bis);
+            stmt.setBinaryStream(6,bis,underlying.length);
 
             stmt.setInt(7, mmd.getContentChunkCount());
 
