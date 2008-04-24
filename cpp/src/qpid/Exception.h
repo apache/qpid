@@ -23,6 +23,7 @@
  */
 
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/constants.h"
 #include "qpid/Msg.h"
 
 #include <memory>
@@ -51,29 +52,22 @@ class Exception : public std::exception
     mutable std::string whatStr;
 };
 
-/**
- * I have made SessionException a common base for Channel- and
- * Connection- Exceptions. This is not strictly correct but allows all
- * model layer exceptions to be handled as SessionExceptions which is
- * how they are classified in the final 0-10 specification. I.e. this
- * is a temporary hack to allow the preview and final codepaths to
- * co-exist with minimal changes.
- */
-
 struct SessionException : public Exception {
     const framing::ReplyCode code;
     SessionException(framing::ReplyCode code_, const std::string& message)
         : Exception(message), code(code_) {}
 };
 
-struct ChannelException : public SessionException {
-    ChannelException(framing::ReplyCode code, const std::string& message)
-        : SessionException(code, message) {}
+struct ChannelException : public Exception {
+    const framing::ReplyCode code;
+    ChannelException(framing::ReplyCode _code, const std::string& message)
+        : Exception(message), code(_code) {}
 };
 
-struct ConnectionException : public SessionException {
-    ConnectionException(framing::ReplyCode code, const std::string& message)
-        : SessionException(code, message) {}
+struct ConnectionException : public Exception {
+    const framing::ReplyCode code;
+    ConnectionException(framing::ReplyCode _code, const std::string& message)
+        : Exception(message), code(_code) {}
 };
 
 struct ClosedException : public Exception {

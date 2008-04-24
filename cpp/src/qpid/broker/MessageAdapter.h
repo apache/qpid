@@ -52,14 +52,6 @@ struct TransferAdapter : MessageAdapter
     bool requiresAccept(const framing::FrameSet& f);    
 };
 
-struct PreviewAdapter : TransferAdapter
-{
-    std::string getExchange(const framing::FrameSet& f);
-    std::string getRoutingKey(const framing::FrameSet& f);
-    const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
-    bool isPersistent(const framing::FrameSet& f);
-};
-
 }}
 
 

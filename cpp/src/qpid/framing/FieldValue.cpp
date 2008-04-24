@@ -79,7 +79,7 @@ void FieldValue::setType(uint8_t type)
         data.reset(new FixedWidthValue<0>());
         break;
       default:
-        throw SyntaxErrorException(QPID_MSG("Unknown field table value type: " << (int)typeOctet));
+        throw IllegalArgumentException(QPID_MSG("Unknown field table value type: " << (int)typeOctet));
     }
 }
 

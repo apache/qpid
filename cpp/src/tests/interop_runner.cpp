@@ -158,7 +158,7 @@ void Listener::sendResponse(Message& response, Message& request)
 
 void Listener::sendResponse(Message& response, ReplyTo replyTo)
 {
-    string exchange = replyTo.getExchangeName();
+    string exchange = replyTo.getExchange();
     string routingKey = replyTo.getRoutingKey();
     channel.publish(response, exchange, routingKey);
 }

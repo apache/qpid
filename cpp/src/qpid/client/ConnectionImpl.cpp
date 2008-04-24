@@ -32,6 +32,7 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
+using namespace qpid::framing::connection;//for connection error codes
 
 ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
     : connector(c), isClosed(false), isClosing(false)
@@ -39,7 +40,7 @@ ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, connector, _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
-                                  REPLY_SUCCESS, std::string());
+                                  NORMAL, std::string());
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
     connector->setInputHandler(&handler);
     connector->setTimeoutHandler(this);
@@ -57,7 +58,7 @@ void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session)
 {
     Mutex::ScopedLock l(lock);
     boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
-    if (s.lock()) throw ChannelBusyException();
+    if (s.lock()) throw SessionBusyException();
     s = session;
 }
 
@@ -74,7 +75,7 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
         s = sessions[frame.getChannel()].lock();
     }
     if (!s)
-        throw ChannelErrorException(QPID_MSG("Invalid channel: " << frame.getChannel()));
+        throw NotAttachedException(QPID_MSG("Invalid channel: " << frame.getChannel()));
     s->in(frame);
 }
 
@@ -113,7 +114,7 @@ void ConnectionImpl::close()
         Mutex::ScopedUnlock u(lock);
         handler.close();
     }
-    closed(REPLY_SUCCESS, "Closed by client");
+    closed(NORMAL, "Closed by client");
 }
 
 // Set closed flags and erase the sessions map, but keep the contents
@@ -149,7 +150,7 @@ void ConnectionImpl::shutdown()
     handler.fail(CONN_CLOSED);
     Mutex::ScopedUnlock u(lock);
     std::for_each(save.begin(), save.end(),
-                  boost::bind(&SessionImpl::connectionBroke, _1, INTERNAL_ERROR, CONN_CLOSED));
+                  boost::bind(&SessionImpl::connectionBroke, _1, CONNECTION_FORCED, CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

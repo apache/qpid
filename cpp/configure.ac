@@ -122,9 +122,7 @@ test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 specdir=`pwd`/$srcdir/../specs  
-AMQP_PREVIEW_XML=$specdir/amqp.0-10-preview.xml
-AMQP_FINAL_XML=$specdir/amqp.0-10.xml
-AC_SUBST(AMQP_PREVIEW_XML)
+AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [ls $AMQP_FINAL_XML >/dev/null])
 
@@ -154,8 +152,8 @@ AC_ARG_WITH([cpg],
     ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
-   [ # not specified - enable if libs/headers available.
-    with_CPG=yes
+   [ # not specified - GS 24-APR-2008 temporarily disabled - (enable if libs/headers available).
+    with_CPG=no
     AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
     AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
    ]

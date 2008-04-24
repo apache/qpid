@@ -23,6 +23,7 @@
 
 #include "Connection.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 
 #if HAVE_SASL
 #include <sasl/sasl.h>
@@ -37,7 +38,7 @@ namespace broker {
 class NullAuthenticator : public SaslAuthenticator
 {
     Connection& connection;
-    framing::AMQP_ClientProxy::Connection010 client;
+    framing::AMQP_ClientProxy::Connection client;
 public:
     NullAuthenticator(Connection& connection);
     ~NullAuthenticator();
@@ -52,7 +53,7 @@ class CyrusAuthenticator : public SaslAuthenticator
 {
     sasl_conn_t *sasl_conn;
     Connection& connection;
-    framing::AMQP_ClientProxy::Connection010 client;
+    framing::AMQP_ClientProxy::Connection client;
 
     void processAuthenticationStep(int code, const char *challenge, unsigned int challenge_len);
 
@@ -117,7 +118,7 @@ void CyrusAuthenticator::init()
         
         // TODO: Change this to an exception signaling
         // server error, when one is available
-        throw CommandInvalidException("Unable to perform authentication");
+        throw ConnectionForcedException("Unable to perform authentication");
     }
 }
 
@@ -146,7 +147,7 @@ void CyrusAuthenticator::getMechanisms(Array& mechanisms)
         
         // TODO: Change this to an exception signaling
         // server error, when one is available
-        throw CommandInvalidException("Mechanism listing failed");
+        throw ConnectionForcedException("Mechanism listing failed");
     } else {
         string mechanism;
         unsigned int start;

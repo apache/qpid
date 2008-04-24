@@ -71,9 +71,9 @@ class String
   def varname() lcaps.cppsafe; end
 end
 
-# Hold information about a C++ type.
+# preview: Hold information about a C++ type.
 # 
-# preview - new mapping does not use CppType,
+# new mapping does not use CppType,
 # Each amqp type corresponds exactly by dotted name
 # to a type, domain or struct, which in turns
 # corresponds by name to a C++ type or typedef.
@@ -88,12 +88,8 @@ class CppType
   def passcref() @param="const #{name}&"; self; end
   def code(str) @code=str; self; end
   def defval(str) @defval=str; self; end
-  def fq(namespace) 
-    @param="const #{namespace}::#{name}&"
-    @ret="const #{namespace}::#{name}&"
-    @defval="#{namespace}::#{name}()"
-    self 
-  end
+  def encoded() @code end
+  def ret_by_val() @name; end
 
   def encode(value, buffer)
     @code ? "#{buffer}.put#{@code}(#{value});" : "#{value}.encode(#{buffer});"
@@ -118,19 +114,86 @@ class CppType
   def to_s() name; end;
 end
 
+class AmqpRoot
+  # preview; map 0-10 types to preview code generator types
+  @@typemap = {
+    "bit"=> CppType.new("bool").code("Octet").defval("false"),
+    "uint8"=>CppType.new("uint8_t").code("Octet").defval("0"), 
+    "uint16"=>CppType.new("uint16_t").code("Short").defval("0"),
+    "uint32"=>CppType.new("uint32_t").code("Long").defval("0"),
+    "uint64"=>CppType.new("uint64_t").code("LongLong").defval("0"),
+    "datetime"=>CppType.new("uint64_t").code("LongLong").defval("0"),
+    "str8"=>CppType.new("string").passcref.retcref.code("ShortString"),
+    "str16"=>CppType.new("string").passcref.retcref.code("MediumString"),
+    "str32"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "vbin8"=>CppType.new("string").passcref.retcref.code("ShortString"),
+    "vbin16"=>CppType.new("string").passcref.retcref.code("MediumString"),
+    "vbin32"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "map"=>CppType.new("FieldTable").passcref.retcref,
+    "array"=>CppType.new("Array").passcref.retcref,
+    "sequence-no"=>CppType.new("SequenceNumber").passcref,
+    "sequence-set"=>CppType.new("SequenceSet").passcref.retcref,
+    "struct32"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "uuid"=>CppType.new("Uuid").passcref.retcref,
+    "byte-ranges"=>CppType.new("ByteRanges").passcref.retcref
+  }
+
+  # preview: map amqp types to preview cpp types.
+  def lookup_cpptype(t) t = @@typemap[t] and return t end
+end
+
+
 class AmqpElement
   # convert my amqp type_ attribute to a C++ type.
   def amqp2cpp()
     return "ArrayDomain<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
     return type_.amqp2cpp
   end
+
+  # Does this object have a type-like child named name?
+  def typechild(name)
+    child = domain(name) if respond_to? :domain
+    child = struct(name) if not child and respond_to? :struct
+    child = type_(name) if not child and respond_to? :type_
+    child
+  end
+
+  # dotted name to a type object
+  def dotted_typechild(name)
+    names=name.split('.')
+    context = self
+    while context and names.size > 1
+      context = context.child_named(names.shift) 
+    end
+    return context.typechild(names[0]) if context
+  end
+  
+  # preview mapping - type_ attribute to C++ type
+  def lookup_cpptype(name)
+    if t = root.lookup_cpptype(name) then return t 
+    elsif c = containing_class.typechild(name) then return c.cpptype
+    elsif c= root.dotted_typechild(name) then return c.cpptype
+    else raise "Cannot resolve type-name #{name} from #{self}" 
+    end
+  end
+  
+  def containing_class()
+    return self if is_a? AmqpClass
+    return parent && parent.containing_class
+  end
 end
 
+
 class AmqpField
+  def struct?() 
+    c=containing_class
+    c.struct(type_)
+  end
+  def cpptype() lookup_cpptype(type_)  or raise "no cpptype #{self}" end
   def cppname() name.lcaps.cppsafe; end
-  def cpptype() domain.cpptype;  end
-  def bit?() domain.type_ == "bit"; end
+  def bit?() type_ == "bit"; end
   def signature() cpptype.param+" "+cppname; end
+
   def fqtypename()
     unless type_.index(".") 
       c=containing_class
@@ -149,26 +212,11 @@ class AmqpMethod
   def cppname() name.lcaps.cppsafe; end
   def param_names() fields.map { |f| f.cppname }; end
   def signature() fields.map { |f| f.signature }; end
-  def classname()
-    #TODO: remove name mangling after preview path is dropped
-    if (parent.name.include?("010")) 
-      return parent.name.delete("010")
-    elsif (parent.name == "cluster")
-      return parent.name
-    else
-      return parent.name + "X"
-    end 
-  end
+  def classname() parent.name; end
   def body_name() 
     classname().caps+name.caps+"Body"      
   end
-
-  def cpp_pack_type()           # preview
-    CppType.new("uint16_t").code("Short").defval("0");
-  end 
-  def pack()           # preview
-    "short"
-  end 
+  def cpp_pack_type() root.lookup_cpptype("uint16") end
 end
 
 module AmqpHasFields
@@ -192,7 +240,8 @@ class AmqpAction
 end
 
 class AmqpType
-  def typename() name.typename; end
+  def cpptype() root.lookup_cpptype(name) end # preview
+  def typename() name.typename; end      # new mapping
   def fixed?() fixed_width; end
 end
 
@@ -210,67 +259,42 @@ class AmqpClass
 end
 
 class AmqpDomain
-  @@typemap = {
-    "bit"=> CppType.new("bool").code("Octet").defval("false"),
-    "octet"=>CppType.new("uint8_t").code("Octet").defval("0"), 
-    "short"=>CppType.new("uint16_t").code("Short").defval("0"),
-    "long"=>CppType.new("uint32_t").code("Long").defval("0"),
-    "longlong"=>CppType.new("uint64_t").code("LongLong").defval("0"),
-    "timestamp"=>CppType.new("uint64_t").code("LongLong").defval("0"),
-    "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
-    "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
-    "mediumstr"=>CppType.new("string").passcref.retcref.code("MediumString"),
-    "table"=>CppType.new("FieldTable").passcref.retcref,
-    "array"=>CppType.new("Array").passcref.retcref,
-    "content"=>CppType.new("Content").passcref.retcref,
-    "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
-    "sequence-set"=>CppType.new("SequenceSet").passcref.retcref,
-    "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
-    "uuid"=>CppType.new("Uuid").passcref.retcref
-  }
+  # preview
+  def cpptype() lookup_cpptype(type_) end
+  def cppname() name.caps; end
 
-  def cppname()
-    #TODO: remove name mangling after preview path is dropped
-    if (name.include?("010"))
-      return name.caps.delete("010")
-    elsif (name.include?("properties"))
-      return "Preview" + name.caps
-    else 
-      return name.caps
-    end
-  end
-
+  # new mapping
   def fqtypename()
     return containing_class.nsname+"::"+name.typename if containing_class
     name.typename
   end
-  
-  def cpptype()
-    d=unalias
-    @cpptype ||= @@typemap[d.type_] or
-      CppType.new(d.cppname).fq("qpid::framing") or
-      raise "Invalid type #{self}"
-  end
-
-  def AmqpDomain.lookup_type(t)
-    @@typemap[t]
-  end
 end
 
 class AmqpResult
+  # preview
   def cpptype()
-    @cpptype=CppType.new(parent.classname.caps+parent.name.caps+"Result").passcref
+    if type_ then lookup_cpptype(type_)
+    else CppType.new(parent.parent.name.caps+parent.name.caps+"Result").passcref
+    end
   end
 end
 
 class AmqpStruct
   include AmqpHasFields
 
+  @@pack_types={ "1"=>"uint8", "2"=>"uint16", "4"=>"uint32"}
   def cpp_pack_type()           # preview
-    AmqpDomain.lookup_type(pack()) or CppType.new("uint16_t");
+    root.lookup_cpptype(@@pack_types[pack])
   end 
-  def cpptype() parent.cpptype; end # preview
-  def cppname() cpptype.name;  end # preview
+  def cpptype() CppType.new(cppname).passcref.retcref end
+  #def cppname() containing_class.cppname+name.caps;  end
+  def cppname()
+    if parent.kind_of? AmqpResult
+      parent.parent.parent.name.caps+parent.parent.name.caps+"Result"
+    else
+      name.caps  
+    end
+  end
   def fqclassname() containing_class.nsname+"::"+name.typename;  end
   def classname() name.typename; end
   def full_code() (containing_class.code.hex << 8)+code.hex; end

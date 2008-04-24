@@ -54,8 +54,8 @@ class ConnectionImpl;
 
 class SessionImpl : public framing::FrameHandler::InOutHandler,
                     public Execution,
-                    private framing::AMQP_ClientOperations::Session010Handler,
-                    private framing::AMQP_ClientOperations::Execution010Handler
+                    private framing::AMQP_ClientOperations::SessionHandler,
+                    private framing::AMQP_ClientOperations::ExecutionHandler
 {
 public:
     SessionImpl(shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
@@ -95,6 +95,12 @@ public:
     void connectionBroke(uint16_t code, const std::string& text);
 
 private:
+    enum ErrorType {
+        OK,
+        CONNECTION_CLOSE,
+        SESSION_DETACH,
+        EXCEPTION
+    };
     enum State {
         INACTIVE,
         ATTACHING,
@@ -102,8 +108,8 @@ private:
         DETACHING,
         DETACHED
     };
-    typedef framing::AMQP_ClientOperations::Session010Handler SessionHandler;
-    typedef framing::AMQP_ClientOperations::Execution010Handler ExecutionHandler;
+    typedef framing::AMQP_ClientOperations::SessionHandler SessionHandler;
+    typedef framing::AMQP_ClientOperations::ExecutionHandler ExecutionHandler;
     typedef sys::StateMonitor<State, DETACHED> StateMonitor;
     typedef StateMonitor::Set States;
 
@@ -145,19 +151,16 @@ private:
     // Note: Following methods are called by network thread in
     // response to execution commands from the broker
     void sync();    
-    void result(uint32_t commandId, const std::string& value);    
+    void result(const framing::SequenceNumber& commandId, const std::string& value);    
     void exception(uint16_t errorCode,
-                   uint32_t commandId,
+                   const framing::SequenceNumber& commandId,
                    uint8_t classCode,
                    uint8_t commandCode,
                    uint8_t fieldIndex,
                    const std::string& description,
                    const framing::FieldTable& errorInfo);
 
-
-    //hack for old generator:
-    void commandPoint(uint32_t id, uint64_t offset) { commandPoint(framing::SequenceNumber(id), offset); }
-
+    ErrorType error;
     int code;                   // Error code
     std::string text;           // Error text
     mutable StateMonitor state;
@@ -170,7 +173,7 @@ private:
 
     shared_ptr<ConnectionImpl> connection;
     framing::ChannelHandler channel;
-    framing::AMQP_ServerProxy::Session010 proxy;
+    framing::AMQP_ServerProxy::Session proxy;
 
     Results results;
     Demux demux;

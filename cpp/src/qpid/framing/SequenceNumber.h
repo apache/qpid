@@ -26,6 +26,8 @@
 namespace qpid {
 namespace framing {
 
+class Buffer;
+
 /**
  * 4-byte sequence number that 'wraps around'.
  */
@@ -50,6 +52,10 @@ class SequenceNumber
     operator uint32_t() const { return (uint32_t) value; }
 
     friend int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
+
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer);
+    uint32_t size() const;   
 
     template <class S> void serialize(S& s) { s(value); }
 };    

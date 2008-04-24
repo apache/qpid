@@ -55,9 +55,9 @@ class ConnectionHandler : private StateManager,
     public ConnectionProperties, 
     public ChainableFrameHandler,
     public framing::InputHandler,
-    private framing::AMQP_ClientOperations::Connection010Handler
+    private framing::AMQP_ClientOperations::ConnectionHandler
 {
-    typedef framing::AMQP_ClientOperations::Connection010Handler ConnectionOperations;
+    typedef framing::AMQP_ClientOperations::ConnectionHandler ConnectionOperations;
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
     std::set<int> ESTABLISHED;
 
@@ -70,7 +70,7 @@ class ConnectionHandler : private StateManager,
     }; 
 
     Adapter outHandler;
-    framing::AMQP_ServerProxy::Connection010 proxy;
+    framing::AMQP_ServerProxy::Connection proxy;
     uint16_t errorCode;
     std::string errorText;
 
