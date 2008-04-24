@@ -20,8 +20,10 @@
  */
 #include "QueueBindings.h"
 #include "ExchangeRegistry.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using qpid::framing::FieldTable;
+using qpid::framing::NotFoundException;
 using std::string;
 using namespace qpid::broker;
 
@@ -35,7 +37,7 @@ void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); i++) {
         try {
             exchanges.get(i->exchange)->unbind(queue, i->key, &(i->args));
-        } catch (ChannelException&) {
+        } catch (const NotFoundException&) {
         }
     }
 }

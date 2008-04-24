@@ -34,15 +34,12 @@ class Message;
 class Queue;
 
 /**
+ * TODO: clean this up; we don't need it anymore in its current form
+ * 
  * Encapsulates the different options for message delivery currently supported.
  */
 class MessageDelivery {
 public:
-    static boost::shared_ptr<DeliveryToken> getBasicGetToken(boost::shared_ptr<Queue> queue);
-    static boost::shared_ptr<DeliveryToken> getBasicConsumeToken(const std::string& consumer);
-    static boost::shared_ptr<DeliveryToken> getPreviewMessageDeliveryToken(const std::string& destination, 
-                                                                           u_int8_t confirmMode, 
-                                                                           u_int8_t acquireMode);
     static boost::shared_ptr<DeliveryToken> getMessageDeliveryToken(const std::string& destination, 
                                                                     u_int8_t confirmMode, 
                                                                     u_int8_t acquireMode);

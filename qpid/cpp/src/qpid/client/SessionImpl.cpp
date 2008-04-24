@@ -30,16 +30,18 @@
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
 
-namespace { const std::string OK="ok"; }
+namespace { const std::string EMPTY; }
 
 namespace qpid {
 namespace client {
 
 using namespace qpid::framing;
+using namespace qpid::framing::session;//for detach codes
 
 typedef sys::Monitor::ScopedLock  Lock;
 typedef sys::Monitor::ScopedUnlock  UnLock;
@@ -47,8 +49,9 @@ typedef sys::Monitor::ScopedUnlock  UnLock;
 
 SessionImpl::SessionImpl(shared_ptr<ConnectionImpl> conn,
                          uint16_t ch, uint64_t _maxFrameSize)
-    : code(REPLY_SUCCESS),
-      text(OK),
+    : error(OK),
+      code(NORMAL),
+      text(EMPTY),
       state(INACTIVE),
       syncMode(false),
       detachedLifetime(0),
@@ -250,6 +253,7 @@ void SessionImpl::markCompleted(const SequenceNumber& id, bool cumulative, bool 
 void SessionImpl::connectionClosed(uint16_t _code, const std::string& _text) 
 {
     Lock l(state);
+    error = CONNECTION_CLOSE;
     code = _code;
     text = _text;
     setState(DETACHED);
@@ -379,6 +383,7 @@ void SessionImpl::handleIn(AMQFrame& frame) // network thread
         //TODO: proper 0-10 exception handling
         QPID_LOG(error, "Session exception:" << e.what());
         Lock l(state);
+        error = EXCEPTION;
         code = e.code;
         text = e.what();
     }
@@ -443,6 +448,7 @@ void SessionImpl::detached(const std::string& _name, uint8_t _code)
         //TODO: make sure this works with execution.exception - don't
         //want to overwrite the code from that
         QPID_LOG(error, "Session detached by peer: " << name << " " << code);
+        error = SESSION_DETACH;
         code = _code;
         text = "Session detached by peer";
     }
@@ -545,14 +551,14 @@ void SessionImpl::gap(const framing::SequenceSet& /*commands*/)
 
 void SessionImpl::sync() {}
 
-void SessionImpl::result(uint32_t commandId, const std::string& value)
+void SessionImpl::result(const framing::SequenceNumber& commandId, const std::string& value)
 {
     Lock l(state);
     results.received(commandId, value);
 }
 
 void SessionImpl::exception(uint16_t errorCode,
-                            uint32_t commandId,
+                            const framing::SequenceNumber& commandId,
                             uint8_t classCode,
                             uint8_t commandCode,
                             uint8_t /*fieldIndex*/,
@@ -563,6 +569,7 @@ void SessionImpl::exception(uint16_t errorCode,
              << " [caused by " << commandId << " " << classCode << ":" << commandCode << "]");
 
     Lock l(state);
+    error = EXCEPTION;
     code = errorCode;
     text = description;
     if (detachedLifetime) {
@@ -589,8 +596,11 @@ inline void SessionImpl::waitFor(State s) //call with lock held
 
 void SessionImpl::check() const  //call with lock held.
 {
-    if (code != REPLY_SUCCESS) {
-        throwReplyException(code, text);
+    switch (error) {
+    case OK: break;
+    case CONNECTION_CLOSE: throw ConnectionException(code, text);
+    case SESSION_DETACH: throw ChannelException(code, text);
+    case EXCEPTION: throwExecutionException(code, text);
     }
 }
 
@@ -598,7 +608,7 @@ void SessionImpl::checkOpen() const  //call with lock held.
 {
     check();
     if (state != ATTACHED) {
-        throwReplyException(0, "Session isn't attached");
+        throw NotAttachedException("Session isn't attached");
     }
 }
 

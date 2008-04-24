@@ -19,7 +19,6 @@
  *
  */
 #include "Buffer.h"
-#include "FramingContent.h" 
 #include "FieldTable.h" 
 #include <string.h>
 #include <boost/format.hpp>

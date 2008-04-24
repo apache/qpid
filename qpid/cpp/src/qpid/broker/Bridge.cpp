@@ -46,24 +46,24 @@ Bridge::~Bridge()
 
 void Bridge::create()
 {
-    framing::AMQP_ServerProxy::Session010 session(channel);
+    framing::AMQP_ServerProxy::Session session(channel);
     session.attach(name, false);
 
     if (args.i_src_is_local) {
         //TODO: handle 'push' here... simplest way is to create frames and pass them to Connection::received()
     } else {
         if (args.i_src_is_queue) {
-            peer.getMessage010().subscribe(args.i_src, args.i_dest, 0, 0, false, "", 0, FieldTable());
-            peer.getMessage010().flow(args.i_dest, 0, 0xFFFFFFFF);
-            peer.getMessage010().flow(args.i_dest, 1, 0xFFFFFFFF);
+            peer.getMessage().subscribe(args.i_src, args.i_dest, 0, 0, false, "", 0, FieldTable());
+            peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+            peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         } else {
             string queue = "bridge_queue_";
             queue += Uuid(true).str();
-            peer.getQueue010().declare(queue, "", false, false, true, true, FieldTable());
-            peer.getExchange010().bind(queue, args.i_src, args.i_key, FieldTable());
-            peer.getMessage010().subscribe(queue, args.i_dest, 0, 0, false, "", 0, FieldTable());
-            peer.getMessage010().flow(args.i_dest, 0, 0xFFFFFFFF);
-            peer.getMessage010().flow(args.i_dest, 1, 0xFFFFFFFF);
+            peer.getQueue().declare(queue, "", false, false, true, true, FieldTable());
+            peer.getExchange().bind(queue, args.i_src, args.i_key, FieldTable());
+            peer.getMessage().subscribe(queue, args.i_dest, 0, 0, false, "", 0, FieldTable());
+            peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+            peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         }
     }
 
@@ -71,8 +71,8 @@ void Bridge::create()
 
 void Bridge::cancel()
 {
-    peer.getMessage010().cancel(args.i_dest);    
-    peer.getSession010().detach(name);
+    peer.getMessage().cancel(args.i_dest);    
+    peer.getSession().detach(name);
 }
 
 management::ManagementObject::shared_ptr Bridge::GetManagementObject (void) const

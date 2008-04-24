@@ -130,6 +130,7 @@ class SessionState : public framing::SessionState,
     Broker& broker;
     framing::ProtocolVersion version;
     sys::Mutex lock;
+    bool ignoring;
 
     SemanticState semanticState;
     SessionAdapter adapter;

@@ -22,7 +22,7 @@
  *
  */
 #include "AMQMethodBody.h"
-#include "qpid/framing/ExecutionHeader.h"
+#include "qpid/framing/Header.h"
 
 namespace qpid {
 namespace framing {
@@ -30,7 +30,7 @@ namespace framing {
 
 class ModelMethod : public AMQMethodBody 
 {
-    mutable ExecutionHeader header;
+    mutable Header header;
 public:    
     virtual ~ModelMethod() {}
     virtual void encodeHeader(Buffer& buffer) const { header.encode(buffer); }
@@ -38,8 +38,8 @@ public:
     virtual uint32_t headerSize() const { return header.size(); } 
     virtual bool isSync() const { return header.getSync(); }
     virtual void setSync(bool on) const { header.setSync(on); }
-    ExecutionHeader& getHeader() { return header; } 
-    const ExecutionHeader& getHeader()  const { return header; } 
+    Header& getHeader() { return header; } 
+    const Header& getHeader()  const { return header; } 
 };
 
 

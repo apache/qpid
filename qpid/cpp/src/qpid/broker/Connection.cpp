@@ -20,9 +20,7 @@
  */
 #include "Connection.h"
 #include "SessionState.h"
-#include "BrokerAdapter.h"
 #include "Bridge.h"
-#include "SemanticHandler.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -143,7 +141,7 @@ void Connection::idleIn(){}
 void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
 	for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
-	    ptr_map_ptr(i)->localSuspend();
+	    ptr_map_ptr(i)->handleDetach();
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();

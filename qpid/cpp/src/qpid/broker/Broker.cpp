@@ -131,8 +131,7 @@ Broker::Broker(const Broker::Options& conf) :
     store(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     factory(*this),
-    sessionManager(conf.ack),
-    previewSessionManager(conf.ack)
+    sessionManager(conf.ack)
 {
     if(conf.enableMgmt){
         QPID_LOG(info, "Management enabled");

@@ -17,7 +17,7 @@
  */
 
 #include "Cluster.h"
-#include "qpid/broker/PreviewSessionState.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ClusterNotifyBody.h"
 #include "qpid/log/Statement.h"
@@ -32,18 +32,18 @@ namespace cluster {
 using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace std;
-using broker::PreviewSessionState;
+using broker::SessionState;
 
 namespace {
 
 // Beginning of inbound chain: send to cluster.
 struct ClusterSendHandler : public FrameHandler {
-    PreviewSessionState& session;
+    SessionState& session;
     Cluster& cluster;
     bool busy;
     Monitor lock;
     
-    ClusterSendHandler(PreviewSessionState& s, Cluster& c) : session(s), cluster(c), busy(false) {}
+    ClusterSendHandler(SessionState& s, Cluster& c) : session(s), cluster(c), busy(false) {}
 
     void handle(AMQFrame& f) {
         Mutex::ScopedLock l(lock);
@@ -83,11 +83,11 @@ void insert(FrameHandler::Chain& c, FrameHandler* h) {
     c.next = h;
 }
 
-struct SessionObserver : public broker::PreviewSessionManager::Observer {
+struct SessionObserver : public broker::SessionManager::Observer {
     Cluster& cluster;
     SessionObserver(Cluster& c) : cluster(c) {}
     
-    void opened(PreviewSessionState& s) {
+    void opened(SessionState& s) {
         // FIXME aconway 2008-01-29: IList for memory management.
         ClusterSendHandler* sender=new ClusterSendHandler(s, cluster);
         ClusterDeliverHandler* deliverer=new ClusterDeliverHandler(*sender, cluster);

@@ -91,7 +91,7 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
     Thread t(fix.subs);
     fix.connection.proxy.close();
     t.join();
-    BOOST_CHECK_THROW(fix.session.close(), InternalErrorException);    
+    BOOST_CHECK_THROW(fix.session.close(), ConnectionException);    
 }
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {

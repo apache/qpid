@@ -50,9 +50,9 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     try{
         bool handled = false;
         if (handler->serverMode) {
-            handled = invoke(static_cast<AMQP_ServerOperations::Connection010Handler&>(*handler.get()), *method);
+            handled = invoke(static_cast<AMQP_ServerOperations::ConnectionHandler&>(*handler.get()), *method);
         } else {
-            handled = invoke(static_cast<AMQP_ClientOperations::Connection010Handler&>(*handler.get()), *method);
+            handled = invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method);
         }
         if (!handled) {
             handler->connection.getChannel(frame.getChannel()).in(frame);

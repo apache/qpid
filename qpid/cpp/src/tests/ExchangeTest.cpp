@@ -28,6 +28,7 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "MessageUtils.h"
@@ -166,7 +167,7 @@ class ExchangeTest : public CppUnit::TestCase
         exchanges.destroy("my-exchange");
         try {
             exchanges.get("my-exchange");
-        } catch (const ChannelException&) {}
+        } catch (const NotFoundException&) {}
         std::pair<Exchange::shared_ptr, bool> response = exchanges.declare("my-exchange", "direct", false, FieldTable());
         CPPUNIT_ASSERT_EQUAL(string("direct"), response.first->getType());
   
