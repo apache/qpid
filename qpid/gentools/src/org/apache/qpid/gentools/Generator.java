@@ -266,9 +266,14 @@ public abstract class Generator implements LanguageConverter
             File templateDirectory = new File(getTemplateDirectory() + Utils.FILE_SEPARATOR + type.getName());
             File versionTemplateDirectory = new File(getTemplateDirectory() + Utils.FILE_SEPARATOR + type.getName() + Utils.FILE_SEPARATOR + "version");
 
+            System.out.println("Looking for template files in directory: " + templateDirectory.getAbsoluteFile());
+
             File[] templateFiles = templateDirectory.listFiles(_tmplFileFilter);
 
             File[] versionTemplateFiles = new File[0];
+
+            System.out.println("Looking for version specific template files in directory: " + versionTemplateDirectory.getAbsoluteFile());
+
             if (versionTemplateDirectory.exists())
             {
                 versionTemplateFiles = versionTemplateDirectory.listFiles(_tmplFileFilter);
@@ -474,7 +479,11 @@ public abstract class Generator implements LanguageConverter
             Template velocityTemplate = Velocity.getTemplate(template.getName());
             velocityTemplate.merge(context, sw);
             String filename = String.valueOf(context.get("filename"));
-            FileWriter outputFileWriter = new FileWriter(getOutputDirectory() + Utils.FILE_SEPARATOR + filename);
+
+            File outputFile = new File(getOutputDirectory() + Utils.FILE_SEPARATOR + filename);
+            outputFile.getParentFile().mkdirs();
+            FileWriter outputFileWriter = new FileWriter(outputFile);
+
             outputFileWriter.append(sw.toString());
             outputFileWriter.close();
 

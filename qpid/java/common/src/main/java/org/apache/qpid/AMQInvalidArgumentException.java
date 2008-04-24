@@ -36,4 +36,10 @@ public class AMQInvalidArgumentException extends AMQException
     {
         super(AMQConstant.INVALID_ARGUMENT, message, cause);
     }
+
+    public boolean isHardError()
+    {
+        return false;
+    }
+
 }

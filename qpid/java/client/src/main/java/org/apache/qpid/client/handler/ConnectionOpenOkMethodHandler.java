@@ -21,13 +21,14 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
+public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener<ConnectionOpenOkBody>
 {
     private static final ConnectionOpenOkMethodHandler _instance = new ConnectionOpenOkMethodHandler();
 
@@ -40,9 +41,11 @@ public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionOpenOkBody body, int channelId)
+                throws AMQException            
     {
         stateManager.changeState(AMQState.CONNECTION_OPEN);
     }
+
 
 }

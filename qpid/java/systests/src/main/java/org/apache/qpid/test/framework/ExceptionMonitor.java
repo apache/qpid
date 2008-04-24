@@ -12,6 +12,20 @@
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
@@ -36,7 +50,7 @@ import java.util.List;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Record all exceptions received. <td> {@link ExceptionListener}
+ * <tr><td> Record all exceptions received.
  * </table>
  */
 public class ExceptionMonitor implements ExceptionListener
@@ -45,14 +59,14 @@ public class ExceptionMonitor implements ExceptionListener
     private final Logger log = Logger.getLogger(ExceptionMonitor.class);
 
     /** Holds the received exceptions. */
-    List<JMSException> exceptions = new ArrayList<JMSException>();
+    List<Exception> exceptions = new ArrayList<Exception>();
 
     /**
      * Receives incoming exceptions.
      *
      * @param e The exception to record.
      */
-    public void onException(JMSException e)
+    public synchronized void onException(JMSException e)
     {
         log.debug("public void onException(JMSException e): called", e);
 
@@ -64,7 +78,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return <tt>true</tt> if no exceptions have been received, <tt>false</tt> otherwise.
      */
-    public boolean assertNoExceptions()
+    public synchronized boolean assertNoExceptions()
     {
         return exceptions.isEmpty();
     }
@@ -74,7 +88,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return <tt>true</tt> if exactly one exception been received, <tt>false</tt> otherwise.
      */
-    public boolean assertOneJMSException()
+    public synchronized boolean assertOneJMSException()
     {
         return exceptions.size() == 1;
     }
@@ -82,20 +96,27 @@ public class ExceptionMonitor implements ExceptionListener
     /**
      * Checks that exactly one exception, with a linked cause of the specified type, has been received.
      *
+     * @param aClass The type of the linked cause.
+     *
      * @return <tt>true</tt> if exactly one exception, with a linked cause of the specified type, been received,
      *         <tt>false</tt> otherwise.
      */
-    public boolean assertOneJMSExceptionWithLinkedCause(Class aClass)
+    public synchronized boolean assertOneJMSExceptionWithLinkedCause(Class aClass)
     {
         if (exceptions.size() == 1)
         {
-            JMSException e = exceptions.get(0);
+            Exception e = exceptions.get(0);
 
-            Exception linkedCause = e.getLinkedException();
-
-            if ((linkedCause != null) && aClass.isInstance(linkedCause))
+            if (e instanceof JMSException)
             {
-                return true;
+                JMSException jmse = (JMSException) e;
+
+                Exception linkedCause = jmse.getLinkedException();
+
+                if ((linkedCause != null) && aClass.isInstance(linkedCause))
+                {
+                    return true;
+                }
             }
         }
 
@@ -103,11 +124,37 @@ public class ExceptionMonitor implements ExceptionListener
     }
 
     /**
+     * Checks that at least one exception of the the specified type, has been received.
+     *
+     * @param exceptionClass The type of the exception.
+     *
+     * @return <tt>true</tt> if at least one exception of the specified type has been received, <tt>false</tt> otherwise.
+     */
+    public synchronized boolean assertExceptionOfType(Class exceptionClass)
+    {
+        // Start by assuming that the exception has no been received.
+        boolean passed = false;
+
+        // Scan all the exceptions for a match.
+        for (Exception e : exceptions)
+        {
+            if (exceptionClass.isInstance(e))
+            {
+                passed = true;
+
+                break;
+            }
+        }
+
+        return passed;
+    }
+
+    /**
      * Reports the number of exceptions held by this monitor.
      *
      * @return The number of exceptions held by this monitor.
      */
-    public int size()
+    public synchronized int size()
     {
         return exceptions.size();
     }
@@ -115,9 +162,9 @@ public class ExceptionMonitor implements ExceptionListener
     /**
      * Clears the record of received exceptions.
      */
-    public void reset()
+    public synchronized void reset()
     {
-        exceptions = new ArrayList();
+        exceptions = new ArrayList<Exception>();
     }
 
     /**
@@ -126,11 +173,11 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return A string containing a dump of the stack traces of all exceptions.
      */
-    public String toString()
+    public synchronized String toString()
     {
         String result = "ExceptionMonitor: holds " + exceptions.size() + " exceptions.\n\n";
 
-        for (JMSException ex : exceptions)
+        for (Exception ex : exceptions)
         {
             result += getStackTrace(ex) + "\n";
         }

@@ -25,7 +25,11 @@ import junit.framework.TestCase;
 import junit.framework.Assert;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
@@ -38,6 +42,7 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.naming.spi.InitialContextFactory;
 import javax.naming.Context;
+import javax.naming.NamingException;
 import java.util.Hashtable;
 
 
@@ -53,21 +58,37 @@ public class TimeToLiveTest extends TestCase
 
     private final long TIME_TO_LIVE = 1000L;
 
-    Context _context;
-
-    private Connection _clientConnection, _producerConnection;
-
-    private MessageConsumer _consumer;
-    MessageProducer _producer;
-    Session _clientSession, _producerSession;
     private static final int MSG_COUNT = 50;
+    private static final long SERVER_TTL_TIMEOUT = 60000L;
 
     protected void setUp() throws Exception
     {
-        if (BROKER.startsWith("vm://"))
+        super.setUp();
+
+        if (usingInVMBroker())
         {
             TransportConnection.createVMBroker(1);
         }
+
+
+    }
+
+    private boolean usingInVMBroker()
+    {
+        return BROKER.startsWith("vm://");
+    }
+
+    protected void tearDown() throws Exception
+    {
+        if (usingInVMBroker())
+        {
+            TransportConnection.killAllVMBrokers();
+        }
+        super.tearDown();
+    }
+
+    public void testPassiveTTL() throws JMSException, NamingException
+    {
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
@@ -75,56 +96,40 @@ public class TimeToLiveTest extends TestCase
         env.put("connectionfactory.connection", "amqp://guest:guest@TTL_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
         env.put("queue.queue", QUEUE);
 
-        _context = factory.getInitialContext(env);
+        Context context = factory.getInitialContext(env);
 
-        Queue queue = (Queue) _context.lookup("queue");
+        Queue queue = (Queue) context.lookup("queue");
 
         //Create Client 1
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection clientConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
 
-        _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _consumer = _clientSession.createConsumer(queue);
+        MessageConsumer consumer = clientSession.createConsumer(queue);
 
         //Create Producer
-        _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
 
-        _producerConnection.start();
+        producerConnection.start();
 
-        _producerSession = _producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _producer = _producerSession.createProducer(queue);
-    }
+        MessageProducer producer = producerSession.createProducer(queue);
 
-    protected void tearDown() throws Exception
-    {
-        _clientConnection.close();
-
-        _producerConnection.close();
-        super.tearDown();
-        
-        if (BROKER.startsWith("vm://"))
-        {
-            TransportConnection.killAllVMBrokers();
-        }
-    }
-
-    public void test() throws JMSException
-    {
         //Set TTL
         int msg = 0;
-        _producer.send(nextMessage(String.valueOf(msg), true));
+        producer.send(nextMessage(String.valueOf(msg), true, producerSession, producer));
 
-        _producer.setTimeToLive(TIME_TO_LIVE);
+        producer.setTimeToLive(TIME_TO_LIVE);
 
         for (; msg < MSG_COUNT - 2; msg++)
         {
-            _producer.send(nextMessage(String.valueOf(msg), false));
+            producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
         }
 
         //Reset TTL
-        _producer.setTimeToLive(0L);
-        _producer.send(nextMessage(String.valueOf(msg), false));
+        producer.setTimeToLive(0L);
+        producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
 
          try
         {
@@ -136,31 +141,71 @@ public class TimeToLiveTest extends TestCase
 
         }
 
-        _clientConnection.start();
+        clientConnection.start();
 
         //Receive Message 0
-        Message received = _consumer.receive(100);
+        Message received = consumer.receive(1000);
         Assert.assertNotNull("First message not received", received);
         Assert.assertTrue("First message doesn't have first set.", received.getBooleanProperty("first"));
         Assert.assertEquals("First message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
 
 
-        received = _consumer.receive(100);
+        received = consumer.receive(1000);
         Assert.assertNotNull("Final message not received", received);
         Assert.assertFalse("Final message has first set.", received.getBooleanProperty("first"));
         Assert.assertEquals("Final message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
 
-        received = _consumer.receive(100);
+        received = consumer.receive(1000);
         Assert.assertNull("More messages received", received);
+
+        clientConnection.close();
+
+        producerConnection.close();
     }
 
-    private Message nextMessage(String msg, boolean first) throws JMSException
+    private Message nextMessage(String msg, boolean first, Session producerSession, MessageProducer producer) throws JMSException
     {
-        Message send = _producerSession.createTextMessage("Message " + msg);
+        Message send = producerSession.createTextMessage("Message " + msg);
         send.setBooleanProperty("first", first);
-        send.setLongProperty("TTL", _producer.getTimeToLive());
+        send.setLongProperty("TTL", producer.getTimeToLive());
         return send;
     }
 
+
+    /**
+     * Tests the expired messages get actively deleted even on queues which have no consumers
+     */
+    public void testActiveTTL() throws URLSyntaxException, AMQException, JMSException, InterruptedException
+    {
+        Connection producerConnection = new AMQConnection(BROKER,"guest","guest","activeTTLtest","test");
+        AMQSession producerSession = (AMQSession) producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = producerSession.createTemporaryQueue();
+        producerSession.declareAndBind((AMQDestination) queue);
+        MessageProducer producer = producerSession.createProducer(queue);
+        producer.setTimeToLive(1000L);
+
+        // send Messages
+        for(int i = 0; i < MSG_COUNT; i++)
+        {
+            producer.send(producerSession.createTextMessage("Message: "+i));
+        }
+        long failureTime = System.currentTimeMillis() + 2*SERVER_TTL_TIMEOUT;
+
+        // check Queue depth for up to TIMEOUT seconds
+        long messageCount;
+
+        do
+        {
+            Thread.sleep(100);
+            messageCount = producerSession.getQueueDepth((AMQDestination) queue);
+        }
+        while(messageCount > 0L && System.currentTimeMillis() < failureTime);
+
+        assertEquals("Messages not automatically expired: ", 0L, messageCount);
+
+        producer.close();
+        producerSession.close();
+        producerConnection.close();
+    }
 
 }

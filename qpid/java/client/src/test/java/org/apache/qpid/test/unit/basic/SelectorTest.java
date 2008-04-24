@@ -21,7 +21,7 @@
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.TestCase;
-
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -29,11 +29,14 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -47,11 +50,12 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
     private AMQSession _session;
     private int count;
     public String _connectionString = "vm://:1";
+    private static final String INVALID_SELECTOR = "Cost LIKE 5";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-         init((AMQConnection) getConnection("guest", "guest"));
+        init((AMQConnection) getConnection("guest", "guest"));
     }
 
     protected void tearDown() throws Exception
@@ -59,19 +63,19 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
         super.tearDown();
     }
 
-    private void init(AMQConnection connection) throws Exception
+    private void init(AMQConnection connection) throws JMSException
     {
         init(connection, new AMQQueue(connection, randomize("SessionStartTest"), true));
     }
 
-    private void init(AMQConnection connection, AMQDestination destination) throws Exception
+    private void init(AMQConnection connection, AMQDestination destination) throws JMSException
     {
         _connection = connection;
         _destination = destination;
         connection.start();
 
         String selector = null;
-        // selector = "Cost = 2 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
+        selector = "Cost = 2 AND \"property-with-hyphen\" = 'wibble'";
         // selector = "JMSType = Special AND Cost = 2 AND AMQMessageID > 0 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
 
         _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -79,13 +83,17 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
         _session.createConsumer(destination, selector).setMessageListener(this);
     }
 
-    public synchronized void test() throws JMSException, InterruptedException
+    public synchronized void test() throws Exception
     {
         try
         {
+
+            init((AMQConnection) getConnection("guest", "guest", randomize("Client")));
+
             Message msg = _session.createTextMessage("Message");
             msg.setJMSPriority(1);
             msg.setIntProperty("Cost", 2);
+            msg.setStringProperty("property-with-hyphen", "wibble");
             msg.setJMSType("Special");
 
             _logger.info("Sending Message:" + msg);
@@ -105,10 +113,147 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
                 // throw new RuntimeException("Did not get message!");
             }
         }
+        catch (JMSException e)
+        {
+            _logger.debug("JMS:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            if (!(e instanceof InvalidSelectorException))
+            {
+                fail("Wrong exception:" + e.getMessage());
+            }
+            else
+            {
+                System.out.println("SUCCESS!!");
+            }
+        }
+        catch (InterruptedException e)
+        {
+            _logger.debug("IE :" + e.getClass().getSimpleName() + ":" + e.getMessage());
+        }
+        catch (URLSyntaxException e)
+        {
+            _logger.debug("URL:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            fail("Wrong exception");
+        }
+        catch (AMQException e)
+        {
+            _logger.debug("AMQ:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            fail("Wrong exception");
+        }
+
         finally
         {
-            _session.close();
-            _connection.close();
+            if (_session != null)
+            {
+                _session.close();
+            }
+            if (_connection != null)
+            {
+                _connection.close();
+            }
+        }
+    }
+
+
+    public void testInvalidSelectors() throws Exception
+    {
+        Connection connection = null;
+
+        try
+        {
+            connection = getConnection("guest", "guest", randomize("Client"));
+            _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        }
+        catch (JMSException e)
+        {
+            fail(e.getMessage());
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+        catch (URLSyntaxException e)
+        {
+            fail("Error:" + e.getMessage());
+        }
+
+        //Try Creating a Browser
+        try
+        {
+            _session.createBrowser(_session.createQueue("Ping"), INVALID_SELECTOR);
+        }
+        catch (JMSException e)
+        {
+            _logger.debug("JMS:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            if (!(e instanceof InvalidSelectorException))
+            {
+                fail("Wrong exception:" + e.getMessage());
+            }
+            else
+            {
+                _logger.debug("SUCCESS!!");
+            }
+        }
+
+        //Try Creating a Consumer
+        try
+        {
+            _session.createConsumer(_session.createQueue("Ping"), INVALID_SELECTOR);
+        }
+        catch (JMSException e)
+        {
+            _logger.debug("JMS:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            if (!(e instanceof InvalidSelectorException))
+            {
+                fail("Wrong exception:" + e.getMessage());
+            }
+            else
+            {
+                _logger.debug("SUCCESS!!");
+            }
+        }
+
+        //Try Creating a Receiever
+        try
+        {
+            _session.createReceiver(_session.createQueue("Ping"), INVALID_SELECTOR);
+        }
+        catch (JMSException e)
+        {
+            _logger.debug("JMS:" + e.getClass().getSimpleName() + ":" + e.getMessage());
+            if (!(e instanceof InvalidSelectorException))
+            {
+                fail("Wrong exception:" + e.getMessage());
+            }
+            else
+            {
+                _logger.debug("SUCCESS!!");
+            }
+        }
+
+        finally
+        {
+            if (_session != null)
+            {
+                try
+                {
+                    _session.close();
+                }
+                catch (JMSException e)
+                {
+                    fail("Error cleaning up:" + e.getMessage());
+                }
+            }
+            if (_connection != null)
+            {
+                try
+                {
+                    _connection.close();
+                }
+                catch (JMSException e)
+                {
+                    fail("Error cleaning up:" + e.getMessage());
+                }
+            }
         }
     }
 
@@ -127,9 +272,29 @@ public class SelectorTest extends QpidTestCase  implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         SelectorTest test = new SelectorTest();
-        test._connectionString = (argv.length == 0) ? "localhost:5672" : argv[0];
-        test.setUp();
-        test.test();
+        test._connectionString = (argv.length == 0) ? "localhost:3000" : argv[0];
+
+        try
+        {
+            while (true)
+            {
+                if (test._connectionString.contains("vm://:1"))
+                {
+                    test.setUp();
+                }
+                test.test();
+
+                if (test._connectionString.contains("vm://:1"))
+                {
+                    test.tearDown();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public static junit.framework.Test suite()

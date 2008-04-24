@@ -31,7 +31,7 @@ import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.framework.sequencers.InteropCircuitFactory;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 import javax.jms.Connection;
 
@@ -50,7 +50,7 @@ import java.util.*;
  * <tr><td> Broadcast test invitations and collect enlists. <td> {@link org.apache.qpid.util.ConversationFactory}.
  * <tr><td> Output test failures for clients unwilling to run the test case. <td> {@link Coordinator}
  * <tr><td> Execute distributed test cases. <td> {@link FrameworkBaseCase}
- * <tr><td> Fail non participating pairings. <td> {@link OptOutTestCase}
+ * <tr><td> Fail non-participating pairings. <td> {@link OptOutTestCase}
  * </table>
  */
 public class InteropTestDecorator extends DistributedTestDecorator
@@ -206,3 +206,4 @@ public class InteropTestDecorator extends DistributedTestDecorator
         }
     }
 }
+

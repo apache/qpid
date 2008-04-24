@@ -19,7 +19,7 @@
  -
  -->
 <project name="System Tests" default="build">
-    <property name="module.depends" value="client broker common"/>
+    <property name="module.depends" value="client broker common junit-toolkit"/>
     <property name="module.dist" value="false"/>
 
     <import file="../module.xml"/>

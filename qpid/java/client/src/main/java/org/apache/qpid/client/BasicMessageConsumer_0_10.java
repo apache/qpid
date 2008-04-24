@@ -117,7 +117,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * @param jmsMessage this message has already been processed so can't redo preDeliver
      * @param channelId
      */
-    public void notifyMessage(AbstractJMSMessage jmsMessage, int channelId)
+    public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
         boolean messageOk = false;
         try
@@ -147,7 +147,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                                                           MessageCreditUnit.MESSAGE, 1);
             }
             _logger.debug("messageOk, trying to notify");
-            super.notifyMessage(jmsMessage, channelId);
+            super.notifyMessage(jmsMessage);
         }
     }
 
@@ -162,7 +162,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
-        String consumerTag = getConsumerTag().toString();
+        AMQShortString consumerTag = getConsumerTag();
         AMQShortString exchange;
         AMQShortString routingKey;
         boolean redelivered = false;
@@ -211,20 +211,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * This method is invoked when this consumer is stopped.
      * It tells the broker to stop delivering messages to this consumer.
      */
-    public void sendCancel() throws JMSAMQException
+    void sendCancel() throws AMQException
     {
         ((AMQSession_0_10) getSession()).getQpidSession().messageCancel(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
         // confirm cancel
         getSession().confirmConsumerCancelled(getConsumerTag());
-        try
-        {
-            ((AMQSession_0_10) getSession()).getCurrentException();
-        }
-        catch (AMQException e)
-        {
-            throw new JMSAMQException("Problem when stopping consumer", e);
-        }
+        ((AMQSession_0_10) getSession()).getCurrentException();
     }
 
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
@@ -261,7 +254,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             ((UnprocessedMessage_0_10) messageFrame).setReplyToURL(replyToUrl);
         }
-        super.notifyMessage(messageFrame, channelId);
+        super.notifyMessage(messageFrame);
     }
 
     protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
@@ -486,5 +479,4 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         return o;
     }
-
 }

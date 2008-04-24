@@ -27,6 +27,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 {
@@ -38,6 +39,8 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
     private final AmqpFlagMap _serverMethodFlagMap = new AmqpFlagMap(); // Method called on server (<chassis name="client"> in XML)
 
     private final Map<AmqpVersion, AmqpFieldMap> _versionToFieldsMap = new HashMap<AmqpVersion, AmqpFieldMap>();
+
+    private final Map<AmqpVersion, AtomicInteger> _versionToFieldCount = new HashMap<AmqpVersion, AtomicInteger>();
 
     private final String _name;
     private final Generator _generator;
@@ -68,7 +71,12 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
             _indexMap.put(index, indexVersionSet);
         }
         NodeList nList = methodNode.getChildNodes();
-        int fieldCntr = _fieldMap.size();
+        AtomicInteger fieldCntr = _versionToFieldCount.get(version);
+        if(fieldCntr == null)
+        {
+            fieldCntr = new AtomicInteger(0);
+            _versionToFieldCount.put(version, fieldCntr);
+        }
         for (int i = 0; i < nList.getLength(); i++)
         {
             Node child = nList.item(i);
@@ -94,9 +102,9 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
                 AmqpField versionSpecificField = new AmqpField(fieldName, _generator);
                 versionSpecificFieldMap.add(fieldName, versionSpecificField);
 
-                versionSpecificField.addFromNode(child, fieldCntr, version);
+                versionSpecificField.addFromNode(child, fieldCntr.intValue(), version);
 
-                if (!thisField.addFromNode(child, fieldCntr++, version))
+                if (!thisField.addFromNode(child, fieldCntr.getAndIncrement(), version))
                 {
                     String className = _generator.prepareClassName(Utils.getNamedAttribute(methodNode.getParentNode(),
                                                                                            Utils.ATTRIBUTE_NAME));
@@ -216,9 +224,14 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
         return parameterVersionMap;
     }
 
-    public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+    public boolean isVersionInterfaceConsistent()
     {
-        if (!_versionSet.equals(globalVersionSet))
+        return isVersionInterfaceConsistent(_generator.getVersionSet());
+    }
+
+    public boolean isVersionInterfaceConsistent(AmqpVersionSet globalVersionSet)
+    {
+         if (!_versionSet.equals(globalVersionSet))
         {
             return false;
         }
@@ -230,15 +243,24 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
         {
             return false;
         }
-        if (!_indexMap.isVersionConsistent(globalVersionSet))
-        {
-            return false;
-        }
-        if (!_fieldMap.isVersionConsistent(globalVersionSet))
+        if (!_fieldMap.isVersionInterfaceConsistent(globalVersionSet))
         {
             return false;
         }
         return true;
+    }
+
+    public boolean isVersionConsistent()
+    {
+        return isVersionConsistent(_generator.getVersionSet());
+    }
+
+
+    public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+    {
+        return isVersionInterfaceConsistent(globalVersionSet)
+               && _indexMap.isVersionConsistent(globalVersionSet)
+               && _fieldMap.isVersionConsistent(globalVersionSet);
     }
 
     public AmqpVersionSet getVersionSet()
@@ -294,5 +316,36 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
     public boolean isCommon(AmqpField field)
     {
         return field.getVersionSet().equals(getVersionSet()) && field.isTypeAndNameConsistent(_generator);
+    }
+
+    public boolean isConsistentServerMethod()
+    {
+        AmqpVersionSet serverVersions = _serverMethodFlagMap.get(true);
+        return (serverVersions != null) && serverVersions.containsAll(_generator.getVersionSet());
+    }
+
+
+    public boolean isConsistentClientMethod()
+    {
+        AmqpVersionSet clientVersions = _clientMethodFlagMap.get(true);
+        return (clientVersions != null) && clientVersions.containsAll(_generator.getVersionSet());
+    }
+
+    public boolean isServerMethod(AmqpVersion version)
+    {
+        AmqpVersionSet serverVersions = _serverMethodFlagMap.get(true);
+        return (serverVersions != null) && serverVersions.contains(version);
+    }
+
+
+    public boolean isClientMethod(AmqpVersion version)
+    {
+        AmqpVersionSet clientVersions = _clientMethodFlagMap.get(true);
+        return (clientVersions != null) && clientVersions.contains(version);
+    }
+
+    public boolean inAllVersions()
+    {
+        return _versionSet.containsAll(_generator.getVersionSet());
     }
 }

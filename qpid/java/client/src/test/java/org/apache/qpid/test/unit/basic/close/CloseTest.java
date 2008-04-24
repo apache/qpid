@@ -35,9 +35,9 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-public class CloseTests extends QpidTestCase
+public class CloseTest extends QpidTestCase
 {
-    private static final Logger _logger = LoggerFactory.getLogger(CloseTests.class);
+    private static final Logger _logger = LoggerFactory.getLogger(CloseTest.class);
 
     private static final String BROKER = "vm://:1";
 

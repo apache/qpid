@@ -21,6 +21,7 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
@@ -29,7 +30,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
+public class ChannelCloseOkMethodHandler implements StateAwareMethodListener<ChannelCloseOkBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseOkMethodHandler.class);
 
@@ -40,11 +41,12 @@ public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+    public void methodReceived(AMQStateManager stateManager,  ChannelCloseOkBody method, int channelId)
         throws AMQException
     {
-        _logger.info("Received channel-close-ok for channel-id " + evt.getChannelId());
+        _logger.info("Received channel-close-ok for channel-id " + channelId);
 
+        final AMQProtocolSession session = stateManager.getProtocolSession();
         // todo this should do the local closure
     }
 }

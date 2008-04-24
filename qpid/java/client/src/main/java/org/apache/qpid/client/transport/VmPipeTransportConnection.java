@@ -22,15 +22,12 @@ package org.apache.qpid.client.transport;
 
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.vmpipe.QpidVmPipeConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
-
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.pool.PoolingFilter;
-import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.pool.ReadWriteThreadModel;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +46,10 @@ public class VmPipeTransportConnection implements ITransportConnection
 
     public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail) throws IOException
     {
-        final VmPipeConnector ioConnector = new VmPipeConnector();
+        final VmPipeConnector ioConnector = new QpidVmPipeConnector();
         final IoServiceConfig cfg = ioConnector.getDefaultConfig();
 
-        cfg.setThreadModel(ReadWriteThreadModel.getInstance());             
+        cfg.setThreadModel(ReadWriteThreadModel.getInstance());
 
         final VmPipeAddress address = new VmPipeAddress(_port);
         _logger.info("Attempting connection to " + address);

@@ -29,7 +29,7 @@ import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 import javax.jms.Connection;
 import javax.jms.Destination;

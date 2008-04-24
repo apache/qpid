@@ -26,17 +26,13 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionOpenBody;
-import org.apache.qpid.framing.ConnectionTuneBody;
-import org.apache.qpid.framing.ConnectionTuneOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConnectionTuneMethodHandler implements StateAwareMethodListener
+public class ConnectionTuneMethodHandler implements StateAwareMethodListener<ConnectionTuneBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ConnectionTuneMethodHandler.class);
 
@@ -50,48 +46,41 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
     protected ConnectionTuneMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionTuneBody frame, int channelId)
+                throws AMQException
     {
         _logger.debug("ConnectionTune frame received");
-        ConnectionTuneBody frame = (ConnectionTuneBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
+        final MethodRegistry methodRegistry = session.getMethodRegistry();
 
-        ConnectionTuneParameters params = protocolSession.getConnectionTuneParameters();
+
+        ConnectionTuneParameters params = session.getConnectionTuneParameters();
         if (params == null)
         {
             params = new ConnectionTuneParameters();
         }
 
-        params.setFrameMax(frame.frameMax);
-        params.setChannelMax(frame.channelMax);
-        params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.heartbeat));
-        protocolSession.setConnectionTuneParameters(params);
+        params.setFrameMax(frame.getFrameMax());
+        params.setChannelMax(frame.getChannelMax());
+        params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.getHeartbeat()));
+        session.setConnectionTuneParameters(params);
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        protocolSession.writeFrame(createTuneOkFrame(evt.getChannelId(), params, frame.getMajor(), frame.getMinor()));
 
-        String host = protocolSession.getAMQConnection().getVirtualHost();
+        ConnectionTuneOkBody tuneOkBody = methodRegistry.createConnectionTuneOkBody(params.getChannelMax(),
+                                                                                    params.getFrameMax(),
+                                                                                    params.getHeartbeat());
+        // Be aware of possible changes to parameter order as versions change.
+        session.writeFrame(tuneOkBody.generateFrame(channelId));
+
+        String host = session.getAMQConnection().getVirtualHost();
         AMQShortString virtualHost = new AMQShortString("/" + host);
 
-        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), virtualHost, null, true, frame.getMajor(),
-                frame.getMinor()));
+        ConnectionOpenBody openBody = methodRegistry.createConnectionOpenBody(virtualHost,null,true);
+
+        // Be aware of possible changes to parameter order as versions change.
+        session.writeFrame(openBody.generateFrame(channelId));
     }
 
-    protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities,
-        boolean insist, byte major, byte minor)
-    {
-        // Be aware of possible changes to parameter order as versions change.
-        return ConnectionOpenBody.createAMQFrame(channel, major, minor, // AMQP version (major, minor)
-                capabilities, // capabilities
-                insist, // insist
-                path); // virtualHost
-    }
 
-    protected AMQFrame createTuneOkFrame(int channel, ConnectionTuneParameters params, byte major, byte minor)
-    {
-        // Be aware of possible changes to parameter order as versions change.
-        return ConnectionTuneOkBody.createAMQFrame(channel, major, minor, params.getChannelMax(), // channelMax
-                params.getFrameMax(), // frameMax
-                params.getHeartbeat()); // heartbeat
-    }
 }

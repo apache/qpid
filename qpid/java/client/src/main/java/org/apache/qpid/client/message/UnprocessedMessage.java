@@ -23,6 +23,20 @@ package org.apache.qpid.client.message;
 import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.BasicMessageConsumer;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicDeliverBody;
+import org.apache.qpid.framing.BasicReturnBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 
 /**
@@ -36,12 +50,12 @@ public abstract class UnprocessedMessage<H,B>
 {
     private final int _channelId;
     private final long _deliveryId;
-    private final String _consumerTag;
+    private final AMQShortString _consumerTag;
     protected AMQShortString _exchange;
     protected AMQShortString _routingKey;
     protected boolean _redelivered;
 
-    public UnprocessedMessage(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
         _channelId = channelId;
         _deliveryId = deliveryId;
@@ -65,7 +79,7 @@ public abstract class UnprocessedMessage<H,B>
         return _deliveryId;
     }
 
-    public String getConsumerTag()
+    public AMQShortString getConsumerTag()
     {
         return _consumerTag;
     }
@@ -84,14 +98,13 @@ public abstract class UnprocessedMessage<H,B>
     {
         return _redelivered;
     }
-
     public abstract List<B> getBodies();
-
+  
     public abstract H getContentHeader();
-
+ 
     // specific to 0_10
     public String getReplyToURL()
     {
         return "";
-    }
+    }    
 }

@@ -67,7 +67,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         if (exchType == null)
         {
 
-            throw new AMQUnknownExchangeType("Unknown exchange type: " + type);
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type, null);
         }
         Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
         return e;

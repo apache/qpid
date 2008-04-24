@@ -24,7 +24,6 @@ import org.apache.mina.common.ByteBuffer;
 
 public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    private ByteBuffer _encodedBlock;
 
     private AMQDataBlock[] _blocks;
 
@@ -33,27 +32,12 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         _blocks = blocks;
     }
 
-    /**
-     * The encoded block will be logically first before the AMQDataBlocks which are encoded
-     * into the buffer afterwards.
-     * @param encodedBlock already-encoded data
-     * @param blocks some blocks to be encoded.
-     */
-    public CompositeAMQDataBlock(ByteBuffer encodedBlock, AMQDataBlock[] blocks)
-    {
-        this(blocks);
-        _encodedBlock = encodedBlock;
-    }
 
     public AMQDataBlock[] getBlocks()
     {
         return _blocks;
     }
 
-    public ByteBuffer getEncodedBlock()
-    {
-        return _encodedBlock;
-    }
 
     public long getSize()
     {
@@ -62,20 +46,11 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         {
             frameSize += _blocks[i].getSize();
         }
-        if (_encodedBlock != null)
-        {
-            _encodedBlock.rewind();
-            frameSize += _encodedBlock.remaining();
-        }
         return frameSize;
     }
 
     public void writePayload(ByteBuffer buffer)
     {
-        if (_encodedBlock != null)
-        {
-            buffer.put(_encodedBlock);
-        }
         for (int i = 0; i < _blocks.length; i++)
         {
             _blocks[i].writePayload(buffer);
@@ -91,7 +66,7 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         else
         {
             StringBuilder buf = new StringBuilder(this.getClass().getName());
-            buf.append("{encodedBlock=").append(_encodedBlock);
+            buf.append("{");
             for (int i = 0 ; i < _blocks.length; i++)
             {
                 buf.append(" ").append(i).append("=[").append(_blocks[i].toString()).append("]");

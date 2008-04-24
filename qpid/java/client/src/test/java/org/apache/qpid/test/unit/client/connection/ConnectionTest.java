@@ -33,6 +33,7 @@ import org.apache.qpid.jms.Session;
 import junit.framework.TestCase;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
 
@@ -55,25 +56,30 @@ public class ConnectionTest extends TestCase
         TransportConnection.killVMBroker(1);
     }
 
-    public void testSimpleConnection()
+    public void testSimpleConnection() throws Exception
     {
+        AMQConnection conn = null;
         try
         {
-            AMQConnection conn = new AMQConnection(_broker, "guest", "guest", "fred", "test");
-            conn.close();
+            conn = new AMQConnection(_broker, "guest", "guest", "fred", "test");
         }
         catch (Exception e)
         {
             fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
+        finally
+        {
+            conn.close();
+        }
     }
 
 
-    public void testDefaultExchanges()
+    public void testDefaultExchanges() throws Exception
     {
+        AMQConnection conn = null;
         try
         {
-            AMQConnection conn = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='"
+            conn = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='"
                                                    + _broker
                                                    + "?retries='1''&defaultQueueExchange='test.direct'"
                                                    + "&defaultTopicExchange='test.topic'"
@@ -106,37 +112,53 @@ public class ConnectionTest extends TestCase
 
             topicSession.close();
 
-
-            conn.close();
         }
         catch (Exception e)
         {
             fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
+        finally
+        {
+            conn.close();
+        }
     }
 
-     //fixme AMQAuthenticationException is not propogaged
-    public void PasswordFailureConnection() throws Exception
+    //See QPID-771
+    public void testPasswordFailureConnection() throws Exception
     {
+        AMQConnection conn = null;
         try
         {
-            new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + _broker + "?retries='1''");
+            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + _broker + "?retries='1''");
             fail("Connection should not be established password is wrong.");
         }
         catch (AMQException amqe)
         {
-            if (!(amqe instanceof AMQAuthenticationException))
+            if (amqe.getCause().getClass() == Exception.class)
             {
-                fail("Correct exception not thrown. Excpected 'AMQAuthenticationException' got: " + amqe);
+                System.err.println("QPID-594 : WARNING RACE CONDITION. Unable to determine cause of Connection Failure.");
+                return;
+            }
+
+            assertEquals("Exception was wrong type", JMSException.class, amqe.getCause().getClass());
+            Exception linked = ((JMSException) amqe.getCause()).getLinkedException();
+            assertEquals("Exception was wrong type", AMQAuthenticationException.class, linked.getClass());
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
             }
         }
     }
 
     public void testConnectionFailure() throws Exception
     {
+        AMQConnection conn = null;
         try
         {
-            new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_NotRunning + "?retries='0''");
+            conn = new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_NotRunning + "?retries='0''");
             fail("Connection should not be established");
         }
         catch (AMQException amqe)
@@ -146,14 +168,22 @@ public class ConnectionTest extends TestCase
                 fail("Correct exception not thrown. Excpected 'AMQConnectionException' got: " + amqe);
             }
         }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
+            }
+        }
 
     }
 
     public void testUnresolvedHostFailure() throws Exception
     {
+        AMQConnection conn = null;
         try
         {
-            new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_BadDNS + "?retries='0''");
+            conn = new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_BadDNS + "?retries='0''");
             fail("Connection should not be established");
         }
         catch (AMQException amqe)
@@ -161,6 +191,38 @@ public class ConnectionTest extends TestCase
             if (!(amqe instanceof AMQUnresolvedAddressException))
             {
                 fail("Correct exception not thrown. Excpected 'AMQUnresolvedAddressException' got: " + amqe);
+            }
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
+            }
+        }
+
+    }
+
+    public void testUnresolvedVirtualHostFailure() throws Exception
+    {
+        AMQConnection conn = null;
+        try
+        {
+            conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + _broker + "?retries='0''");
+            fail("Connection should not be established");
+        }
+        catch (AMQException amqe)
+        {
+            if (!(amqe instanceof AMQConnectionFailureException))
+            {
+                fail("Correct exception not thrown. Excpected 'AMQConnectionFailureException' got: " + amqe);
+            }
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
             }
         }
     }
@@ -180,7 +242,10 @@ public class ConnectionTest extends TestCase
         }
         finally
         {
-            connection.close();
+            if (connection != null)
+            {
+                connection.close();
+            }
         }
     }
 
@@ -188,7 +253,14 @@ public class ConnectionTest extends TestCase
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
                                                   null, "test");
-        assertNotNull(connection.getClientID());
+        try
+        {
+            assertNotNull(connection.getClientID());
+        }
+        finally
+        {
+            connection.close();
+        }
         connection.close();
     }
 

@@ -19,24 +19,28 @@
  */
 package org.apache.qpid.test;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
 import junit.framework.TestCase;
-
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.AMQException;
 
-import javax.naming.Context;
-import javax.naming.spi.InitialContextFactory;
-import javax.jms.Queue;
-import javax.jms.ConnectionFactory;
-import javax.jms.Session;
 import javax.jms.Connection;
-import javax.jms.MessageProducer;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.spi.InitialContextFactory;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -85,22 +89,22 @@ public class VMTestCase extends TestCase
             _brokerlist = "vm://:1";
         }
 
-        env.put("connectionfactory.connection", "amqp://guest:guest@" +
-                                                _clientID + _virtualhost + "?brokerlist='" + _brokerlist + "'");
+        env.put("connectionfactory.connection", "amqp://guest:guest@" + _clientID + _virtualhost + "?brokerlist='"
+                                                + _brokerlist + "'");
 
         for (Map.Entry<String, String> c : _connections.entrySet())
         {
             env.put("connectionfactory." + c.getKey(), c.getValue());
         }
 
-        env.put("queue.queue", "queue");
+        _queues.put("queue", "queue");
 
         for (Map.Entry<String, String> q : _queues.entrySet())
         {
             env.put("queue." + q.getKey(), q.getValue());
         }
 
-        env.put("topic.topic", "topic");
+        _topics.put("topic", "topic");
 
         for (Map.Entry<String, String> t : _topics.entrySet())
         {
@@ -112,14 +116,50 @@ public class VMTestCase extends TestCase
 
     protected void tearDown() throws Exception
     {
+        //Disabled
+//        checkQueuesClean();
+
         TransportConnection.killVMBroker(1);
         ApplicationRegistry.remove(1);
         
         super.tearDown();
     }
 
-    public void testDummyinVMTestCase()
+    private void checkQueuesClean() throws NamingException, JMSException
     {
-        // keep maven happy
+        Connection connection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        connection.start();
+
+        Iterator<String> queueNames = new HashSet<String>(_queues.values()).iterator();
+
+        assertTrue("QueueNames doesn't have next", queueNames.hasNext());
+
+        while (queueNames.hasNext())
+        {
+            Queue queue = session.createQueue(queueNames.next());
+
+            //Validate that the queue are  reporting empty.
+            long queueDepth = 0;
+            try
+            {
+                queueDepth = ((AMQSession) session).getQueueDepth((AMQDestination) queue);
+            }
+            catch (AMQException e)
+            {
+                //ignore
+            }
+
+            assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
+        }
+
+        connection.close();
+    }
+
+    public int getMessageCount(String queueName)
+    {
+        return ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(_virtualhost.substring(1))
+                .getQueueRegistry().getQueue(new AMQShortString(queueName)).getMessageCount();
     }
 }

@@ -20,33 +20,31 @@
  */
 package org.apache.qpid.test.framework.distributedtesting;
 
+import java.net.InetAddress;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import javax.jms.*;
+
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
 import org.apache.qpid.util.ConversationFactory;
-import org.apache.qpid.util.PrettyPrintingUtils;
 
-import uk.co.thebadgerset.junit.extensions.TKTestRunner;
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
-import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
-import uk.co.thebadgerset.junit.extensions.util.MathUtils;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
-
-import javax.jms.*;
-
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.qpid.junit.extensions.TKTestRunner;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.util.CommandLineParser;
+import org.apache.qpid.junit.extensions.util.MathUtils;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 
 /**
  * <p/>Implements the coordinator client described in the interop testing specification
@@ -56,7 +54,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Find out what test clients are available. <td> {@link ConversationFactory}
- * <tr><td> Decorate available tests to run all available clients. <td> {@link DistributedTestDecorator}
+ * <tr><td> Decorate available tests to run on all available clients. <td> {@link DistributedTestDecorator}
  * <tr><td> Attach XML test result logger.
  * <tr><td> Terminate the interop testing framework.
  * </table>
@@ -64,8 +62,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @todo Should accumulate failures over all tests, and return with success or fail code based on all results. May need
  *       to write a special TestResult to do this properly. At the moment only the last one used will be tested for
  *       errors, as the start method creates a fresh one for each test case run.
- *
- * @todo Remove hard coding of test cases and put on command line instead.
  */
 public class Coordinator extends TKTestRunner
 {
@@ -119,27 +115,28 @@ public class Coordinator extends TKTestRunner
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
      *
-     * @param repetitions   The number of times to repeat the test, or test batch size.
-     * @param duration      The length of time to run the tests for. -1 means no duration has been set.
-     * @param threads       The concurrency levels to ramp up to.
-     * @param delay         A delay in milliseconds between test runs.
-     * @param params        The sets of 'size' parameters to pass to test.
-     * @param testCaseName  The name of the test case to run.
-     * @param reportDir     The directory to output the test results to.
-     * @param runName       The name of the test run; used to name the output file.
-     * @param verbose       Whether to print comments during test run.
-     * @param brokerUrl     The URL of the broker to connect to.
-     * @param virtualHost   The virtual host to run all tests on. Optional, may be <tt>null</tt>.
-     * @param engine        The distributed test engine type to run the tests with.
-     * @param terminate     <tt>true</tt> if test client nodes should be terminated at the end of the tests.
-     * @param csv           <tt>true</tt> if the CSV results listener should be attached.
-     * @param xml           <tt>true</tt> if the XML results listener should be attached.
+     * @param repetitions        The number of times to repeat the test, or test batch size.
+     * @param duration           The length of time to run the tests for. -1 means no duration has been set.
+     * @param threads            The concurrency levels to ramp up to.
+     * @param delay              A delay in milliseconds between test runs.
+     * @param params             The sets of 'size' parameters to pass to test.
+     * @param testCaseName       The name of the test case to run.
+     * @param reportDir          The directory to output the test results to.
+     * @param runName            The name of the test run; used to name the output file.
+     * @param verbose            Whether to print comments during test run.
+     * @param brokerUrl          The URL of the broker to connect to.
+     * @param virtualHost        The virtual host to run all tests on. Optional, may be <tt>null</tt>.
+     * @param engine             The distributed test engine type to run the tests with.
+     * @param terminate          <tt>true</tt> if test client nodes should be terminated at the end of the tests.
+     * @param csv                <tt>true</tt> if the CSV results listener should be attached.
+     * @param xml                <tt>true</tt> if the XML results listener should be attached.
+     * @param decoratorFactories List of factories for user specified decorators.
      */
     public Coordinator(Integer repetitions, Long duration, int[] threads, int delay, int[] params, String testCaseName,
         String reportDir, String runName, boolean verbose, String brokerUrl, String virtualHost, TestEngine engine,
-        boolean terminate, boolean csv, boolean xml)
+        boolean terminate, boolean csv, boolean xml, List<TestDecoratorFactory> decoratorFactories)
     {
-        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, verbose);
+        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, decoratorFactories);
 
         log.debug("public Coordinator(Integer repetitions = " + repetitions + " , Long duration = " + duration
             + ", int[] threads = " + Arrays.toString(threads) + ", int delay = " + delay + ", int[] params = "
@@ -221,7 +218,11 @@ public class Coordinator extends TKTestRunner
                                 },
                                 { "s", "The size parameter to run tests with.", "size", "false", MathUtils.SEQUENCE_REGEXP },
                                 { "v", "Verbose mode.", null, "false" },
-                                { "n", "A name for this test run, used to name the output file.", "name", "true" }
+                                { "n", "A name for this test run, used to name the output file.", "name", "true" },
+                                {
+                                    "X:decorators", "A list of additional test decorators to wrap the tests in.",
+                                    "\"class.name[:class.name]*\"", "false"
+                                }
                             }), testContextProperties));
 
             // Extract the command line options.
@@ -234,13 +235,13 @@ public class Coordinator extends TKTestRunner
             boolean terminate = options.getPropertyAsBoolean("t");
             boolean csvResults = options.getPropertyAsBoolean("-csv");
             boolean xmlResults = options.getPropertyAsBoolean("-xml");
-
             String threadsString = options.getProperty("c");
             Integer repetitions = options.getPropertyAsInteger("r");
             String durationString = options.getProperty("d");
             String paramsString = options.getProperty("s");
             boolean verbose = options.getPropertyAsBoolean("v");
             String testRunName = options.getProperty("n");
+            String decorators = options.getProperty("X:decorators");
 
             int[] threads = (threadsString == null) ? null : MathUtils.parseSequence(threadsString);
             int[] params = (paramsString == null) ? null : MathUtils.parseSequence(paramsString);
@@ -252,6 +253,9 @@ public class Coordinator extends TKTestRunner
             // Collection all of the test cases to be run.
             Collection<Class<? extends FrameworkBaseCase>> testCaseClasses =
                 new ArrayList<Class<? extends FrameworkBaseCase>>();
+
+            // Create a list of test decorator factories for use specified decorators to be applied.
+            List<TestDecoratorFactory> decoratorFactories = parseDecorators(decorators);
 
             // Scan for available test cases using a classpath scanner.
             // ClasspathScanner.getMatches(DistributedTestCase.class, "^Test.*", true);
@@ -306,7 +310,7 @@ public class Coordinator extends TKTestRunner
             // Create a coordinator and begin its test procedure.
             Coordinator coordinator =
                 new Coordinator(repetitions, duration, threads, 0, params, null, reportDir, testRunName, verbose, brokerUrl,
-                    virtualHost, engine, terminate, csvResults, xmlResults);
+                    virtualHost, engine, terminate, csvResults, xmlResults, decoratorFactories);
 
             TestResult testResult = coordinator.start(testClassNames);
 
@@ -324,6 +328,7 @@ public class Coordinator extends TKTestRunner
         {
             log.debug("Top level handler caught execption.", e);
             console.info(e.getMessage());
+            e.printStackTrace();
             System.exit(EXCEPTION_EXIT);
         }
     }
@@ -339,8 +344,7 @@ public class Coordinator extends TKTestRunner
      */
     public TestResult start(String[] testClassNames) throws Exception
     {
-        log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
-            + ": called");
+        log.debug("public TestResult start(String[] testClassNames = " + Arrays.toString(testClassNames) + ": called");
 
         // Connect to the broker.
         connection = TestUtils.createConnection(TestContextProperties.getInstance());
@@ -474,7 +478,7 @@ public class Coordinator extends TKTestRunner
         {
             log.debug("targetTest is a TestSuite");
 
-            TestSuite suite = (TestSuite) test;
+            TestSuite suite = (TestSuite)test;
 
             int numTests = suite.countTestCases();
             log.debug("There are " + numTests + " in the suite.");
@@ -493,6 +497,9 @@ public class Coordinator extends TKTestRunner
             targetTest = new WrappedSuiteTestDecorator(suite);
             log.debug("Wrapped with a WrappedSuiteTestDecorator.");
         }
+
+        // Apply any optional user specified decorators.
+        targetTest = applyOptionalUserDecorators(targetTest);
 
         // Wrap the tests in a suitable distributed test decorator, to perform the invite/test cycle.
         targetTest = newTestDecorator(targetTest, enlistedClients, conversationFactory, connection);

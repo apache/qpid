@@ -23,7 +23,6 @@ package org.apache.qpid.server.store;
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -61,6 +60,11 @@ public class TestReferenceCounting extends TestCase
                 return null;
             }
 
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
             public boolean isImmediate()
             {
                 return false;
@@ -78,7 +82,7 @@ public class TestReferenceCounting extends TestCase
         };
 
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), info,
-                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
+                                            new NonTransactionalContext(_store, _storeContext, null, null),
                                             createPersistentContentHeader());
         message = message.takeReference();
 
@@ -109,6 +113,11 @@ public class TestReferenceCounting extends TestCase
                 return null;
             }
 
+            public void setExchange(AMQShortString exchange)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
             public boolean isImmediate()
             {
                 return false;
@@ -127,7 +136,7 @@ public class TestReferenceCounting extends TestCase
 
         AMQMessage message = new AMQMessage(_store.getNewMessageId(),
                                             info,
-                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
+                                            new NonTransactionalContext(_store, _storeContext, null, null),
                                             createPersistentContentHeader());
         
         message = message.takeReference();

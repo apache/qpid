@@ -26,17 +26,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ChannelOpenOkBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeclareOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
@@ -53,6 +49,9 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 public class ChannelCloseTest extends QpidTestCase implements ExceptionListener, ConnectionListener
 {
@@ -140,8 +139,11 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
 
     /*
     close channel and send guff then send ok no errors
+    REMOVE TEST - The behaviour after server has sent close is undefined.
+    the server should be free to fail as it may wish to reclaim its resources
+    immediately after close.
      */
-    public void testSendingMethodsAfterClose() throws Exception
+    /*public void testSendingMethodsAfterClose() throws Exception
     {
         // this is testing an 0.8 connection
         if(isBroker08())
@@ -167,7 +169,19 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
                 // Set StateManager to manager that ignores Close-oks
                 AMQProtocolSession protocolSession=
                         ((AMQConnection) _connection).getProtocolHandler().getProtocolSession();
-                AMQStateManager newStateManager=new NoCloseOKStateManager(protocolSession);
+                
+                MethodDispatcher d = protocolSession.getMethodDispatcher();
+
+                MethodDispatcher wrappedDispatcher = (MethodDispatcher)
+                        Proxy.newProxyInstance(d.getClass().getClassLoader(),
+                                               d.getClass().getInterfaces(),
+                                               new MethodDispatcherProxyHandler(
+                                                     (ClientMethodDispatcherImpl) d));
+
+                protocolSession.setMethodDispatcher(wrappedDispatcher);
+
+
+		AMQStateManager newStateManager=new NoCloseOKStateManager(protocolSession);
                 newStateManager.changeState(oldStateManager.getCurrentState());
 
                 ((AMQConnection) _connection).getProtocolHandler().setStateManager(newStateManager);
@@ -257,7 +271,7 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
             }
         }
     }
-
+*/
     private void createChannelAndTest(int channel) throws FailoverException
     {
         // Create A channel
@@ -284,10 +298,9 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
 
     private void sendClose(int channel)
     {
-        AMQFrame frame =
-            ChannelCloseOkBody.createAMQFrame(channel,
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion());
+        ChannelCloseOkBody body =
+                ((AMQConnection) _connection).getProtocolHandler().getMethodRegistry().createChannelCloseOkBody();
+        AMQFrame frame = body.generateFrame(channel);
 
         ((AMQConnection) _connection).getProtocolHandler().writeFrame(frame);
     }
@@ -345,35 +358,43 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
     private void declareExchange(int channelId, String _type, String _name, boolean nowait)
         throws AMQException, FailoverException
     {
-        AMQFrame exchangeDeclare =
-            ExchangeDeclareBody.createAMQFrame(channelId,
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(), null, // arguments
-                false, // autoDelete
-                false, // durable
-                new AMQShortString(_name), // exchange
-                false, // internal
-                nowait, // nowait
-                true, // passive
-                0, // ticket
-                new AMQShortString(_type)); // type
+        ExchangeDeclareBody body =
+                ((AMQConnection) _connection).getProtocolHandler()
+                        .getMethodRegistry()
+                        .createExchangeDeclareBody(0,
+                                                   new AMQShortString(_name),
+                                                   new AMQShortString(_type),
+                                                   true,
+                                                   false,
+                                                   false,
+                                                   false,
+                                                   nowait,
+                                                   null);
+                AMQFrame exchangeDeclare = body.generateFrame(channelId);
+                AMQProtocolHandler protocolHandler = ((AMQConnection) _connection).getProtocolHandler();
 
-        if (nowait)
-        {
-            ((AMQConnection) _connection).getProtocolHandler().writeFrame(exchangeDeclare);
-        }
-        else
-        {
-            ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class,
-                SYNC_TIMEOUT);
-        }
+
+                if (nowait)
+                {
+                    protocolHandler.writeFrame(exchangeDeclare);
+                }
+                else
+                {
+                    protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class, SYNC_TIMEOUT);
+                }
+
+//                return null;
+//            }
+//        }, (AMQConnection)_connection).execute();
+
     }
 
     private void createChannel(int channelId) throws AMQException, FailoverException
     {
-        ((AMQConnection) _connection).getProtocolHandler().syncWrite(ChannelOpenBody.createAMQFrame(channelId,
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(), null), // outOfBand
+        ChannelOpenBody body =
+                ((AMQConnection) _connection).getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
+
+        ((AMQConnection) _connection).getProtocolHandler().syncWrite(body.generateFrame(channelId), // outOfBand
             ChannelOpenOkBody.class);
 
     }
@@ -402,4 +423,28 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
 
     public void failoverComplete()
     { }
+
+    private static final class MethodDispatcherProxyHandler implements InvocationHandler
+    {
+        private final ClientMethodDispatcherImpl _underlyingDispatcher;
+        private final ChannelCloseMethodHandlerNoCloseOk _handler = ChannelCloseMethodHandlerNoCloseOk.getInstance();
+
+
+        public MethodDispatcherProxyHandler(ClientMethodDispatcherImpl dispatcher)
+        {
+            _underlyingDispatcher = dispatcher;
+        }
+
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+        {
+            if(method.getName().equals("dispatchChannelClose"))
+            {
+                _handler.methodReceived(_underlyingDispatcher.getStateManager(),
+                                        (ChannelCloseBody) args[0], (Integer)args[1]);
+            }
+            Method dispatcherMethod = _underlyingDispatcher.getClass().getMethod(method.getName(), method.getParameterTypes());
+            return dispatcherMethod.invoke(_underlyingDispatcher, args);
+
+        }
+    }
 }

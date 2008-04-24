@@ -21,16 +21,16 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BasicDeliverMethodHandler implements StateAwareMethodListener
+public class BasicDeliverMethodHandler implements StateAwareMethodListener<BasicDeliverBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicDeliverMethodHandler.class);
 
@@ -41,18 +41,18 @@ public class BasicDeliverMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+    public void methodReceived(AMQStateManager stateManager, BasicDeliverBody body, int channelId)
         throws AMQException
     {
-        BasicDeliverBody deliveryBody = (BasicDeliverBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
         final UnprocessedMessage_0_8 msg = new UnprocessedMessage_0_8(
-                           evt.getChannelId(),
-                           deliveryBody.deliveryTag,
-                           deliveryBody.consumerTag.asString(),
-                           deliveryBody.getExchange(),
-                           deliveryBody.getRoutingKey(),
-                           deliveryBody.getRedelivered());
+                channelId,
+                body.getDeliveryTag(),
+                body.getConsumerTag(),
+                body.getExchange(),
+                body.getRoutingKey(),
+                body.getRedelivered());
         _logger.debug("New JmsDeliver method received");
-        protocolSession.unprocessedMessageReceived(msg);
+        session.unprocessedMessageReceived(msg);
     }
 }
