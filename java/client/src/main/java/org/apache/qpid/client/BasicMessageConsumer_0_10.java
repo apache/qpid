@@ -117,7 +117,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * @param jmsMessage this message has already been processed so can't redo preDeliver
      * @param channelId
      */
-    public void notifyMessage(AbstractJMSMessage jmsMessage)
+    @Override public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
         boolean messageOk = false;
         try
@@ -195,9 +195,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
             // the exchnage class will be set later from within the sesion thread
-            String replyToUrl =  message.getMessageProperties().getReplyTo()
-                    .getExchange() + "/" + message.getMessageProperties().getReplyTo()
-                    .getRoutingKey() + "/" + message.getMessageProperties().getReplyTo().getRoutingKey();
+            String replyToUrl =  replyTo.getExchange() + "/" + replyTo.getRoutingKey() + "/" + replyTo.getRoutingKey();
             newMessage.setReplyToURL(replyToUrl);
         }
         newMessage.setContentHeader(headers);
@@ -211,7 +209,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * This method is invoked when this consumer is stopped.
      * It tells the broker to stop delivering messages to this consumer.
      */
-    void sendCancel() throws AMQException
+    @Override void sendCancel() throws AMQException
     {
         ((AMQSession_0_10) getSession()).getQpidSession().messageCancel(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
@@ -220,7 +218,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         ((AMQSession_0_10) getSession()).getCurrentException();
     }
 
-    void notifyMessage(UnprocessedMessage messageFrame, int channelId)
+    @Override void notifyMessage(UnprocessedMessage messageFrame)
     {
         // if there is a replyto destination then we need to request the exchange info
         String replyToURL = messageFrame.getReplyToURL();
@@ -257,13 +255,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         super.notifyMessage(messageFrame);
     }
 
-    protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    @Override protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
         _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
         _session.setInRecovery(false);
     }
 
-    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(
+    @Override public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(
             UnprocessedMessage<Struct[], ByteBuffer> messageFrame) throws Exception
     {
         return _messageFactory.createMessage(messageFrame.getDeliveryTag(), messageFrame.isRedelivered(),
@@ -378,11 +376,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             _0_10session.getQpidSession().messageRelease(ranges);
             _0_10session.getCurrentException();
         }
-    }
-
-    protected void rollbackReceivedMessages()
-    {
-        // do nothing as the rollback operation will do the job.
     }
 
     /**
