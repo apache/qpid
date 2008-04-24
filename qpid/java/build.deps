@@ -10,26 +10,31 @@ commons-logging=lib/commons-logging-1.0.4.jar
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
 junit=lib/junit-3.8.1.jar
-junit-toolkit=lib/junit-toolkit-0.6-SNAPSHOT.jar
 
 log4j=lib/log4j-1.2.12.jar
 
-mina-core=lib/mina-core-1.0.0.jar
-mina-filter-ssl=lib/mina-filter-ssl-1.0.0.jar
+mina-core=lib/mina-core-1.0.1.jar
+mina-filter-ssl=lib/mina-filter-ssl-1.0.1.jar
 
 slf4j-api=lib/slf4j-api-1.4.0.jar
 slf4j-log4j=lib/slf4j-log4j12-1.4.0.jar
 
 xalan=lib/xalan-2.7.0.jar
 
-test.libs=${log4j} ${slf4j-log4j} ${junit} ${junit-toolkit}
+osgi-core=lib/org.osgi.core-1.0.0.jar
+felix-framework=lib/org.apache.felix.framework-1.0.0.jar
+
+felix.libs=${osgi-core} ${felix-framework}
 
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
     ${mina-filter-ssl} ${commons-codec} ${commons-lang} ${commons-collections} \
     ${commons-configuration}
 client.libs=${common.libs}  ${geronimo-jms}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
-    ${slf4j-log4j} ${xalan}
+    ${slf4j-log4j} ${xalan} ${felix.libs}
+
+junit-toolkit.libs=${log4j} ${junit}
+test.libs=${slf4j-log4j} ${junit-toolkit.libs}
 systests.libs=${client.libs} ${test.libs}
 perftests.libs=${systests.libs}
 integrationtests.libs=${systests.libs}
