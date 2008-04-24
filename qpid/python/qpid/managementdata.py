@@ -22,7 +22,7 @@
 import qpid
 import socket
 import struct
-import uuid
+import os
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
@@ -171,6 +171,7 @@ class ManagementData:
     self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
+    self.sessionId      = "%s.%d" % (os.uname()[1], os.getpid())
 
     self.broker = Broker (host)
     self.conn   = Connection (connect (self.broker.host, self.broker.port), self.spec)
@@ -179,10 +180,10 @@ class ManagementData:
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply)
     self.mclient.schemaListener (self.schemaHandler)
-    self.mch = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
+    self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))
 
   def close (self):
-    self.mclient.removeChannel (self.mch)
+    pass
 
   def refName (self, oid):
     if oid == 0:
@@ -626,3 +627,6 @@ class ManagementData:
     methodName = tokens[1]
     args       = tokens[2:]
     self.callMethod (userOid, methodName, args)
+
+  def do_exit (self):
+    self.mclient.removeChannel (self.mch)

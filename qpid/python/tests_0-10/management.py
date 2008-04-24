@@ -50,6 +50,7 @@ class ManagementTest (TestBase010):
             self.assertEqual (res.statusText, "OK")
             self.assertEqual (res.sequence,   seq)
             self.assertEqual (res.body,       body)
+        mc.removeChannel (mch)
 
     def test_system_object (self):
         session = self.session
@@ -60,6 +61,7 @@ class ManagementTest (TestBase010):
         mc.syncWaitForStable (mch)
         systems = mc.syncGetObjects (mch, "system")
         self.assertEqual (len (systems), 1)
+        mc.removeChannel (mch)
 
     def test_standard_exchanges (self):
         session = self.session
@@ -81,6 +83,7 @@ class ManagementTest (TestBase010):
         self.assertEqual (exchange.type, "headers")
         exchange = self.findExchange (exchanges, "qpid.management")
         self.assertEqual (exchange.type, "topic")
+        mc.removeChannel (mch)
 
     def findExchange (self, exchanges, name):
         for exchange in exchanges:

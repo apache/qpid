@@ -24,7 +24,6 @@ import getopt
 import sys
 import socket
 import qpid
-import uuid
 from threading       import Condition
 from qpid.management import managementClient
 from qpid.peer       import Closed
@@ -86,13 +85,17 @@ class BrokerManager:
     def ConnectToBroker (self):
         try:
             self.spec     = qpid.spec.load (specpath)
+            self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
             self.conn     = Connection (connect (self.broker.host, self.broker.port), self.spec)
             self.conn.start ()
             self.mclient  = managementClient (self.spec, None, self.configCb, self.instCb)
-            self.mchannel = self.mclient.addChannel (self.conn.session(str(uuid.uuid4())))
+            self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
         except socket.error, e:
             print "Connect Error:", e
             exit (1)
+
+    def Disconnect (self):
+        self.mclient.removeChannel (self.mchannel)
 
     def configCb (self, context, classKey, row, timestamps):
         className = classKey[1]
@@ -131,12 +134,16 @@ class BrokerManager:
             (name, deltaTime / 1000000000, obj.msgDepthLow, obj.msgDepthHigh, enqueueRate, dequeueRate)
 
 
-    def Overview (self):
+    def Display (self):
         self.ConnectToBroker ()
         print "Queue Name                                     Sec       Depth Range          Enq Rate     Deq Rate"
         print "==================================================================================================="
-        while True:
-            sleep (1)
+        try:
+            while True:
+                sleep (1)
+        except KeyboardInterrupt:
+            pass
+        self.Disconnect ()
 
 ##
 ## Main Program
@@ -156,4 +163,4 @@ for opt in optlist:
 nargs = len (cargs)
 bm  = BrokerManager ()
 bm.SetBroker (Broker (host))
-bm.Overview ()
+bm.Display ()
