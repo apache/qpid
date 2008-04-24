@@ -43,17 +43,17 @@ namespace qpid {
             bool mergeable(const SequenceNumber& r) const;
         };
         /**
-         * Keeps an accumulated record of acked messages (by delivery
+         * Keeps an accumulated record of acknowledged messages (by delivery
          * tag).
          */
         class AccumulatedAck {
 	public:
             /**
-             * Everything up to this value has been acked.
+             * Everything up to this value has been acknowledged.
              */
             SequenceNumber mark;
             /**
-             * List of individually acked messages greater than the
+             * List of individually acknowledged messages greater than the
              * 'mark'.
              */
             std::list<Range> ranges;

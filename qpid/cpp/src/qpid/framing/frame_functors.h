@@ -75,7 +75,7 @@ public:
 };
 
 /**
- * Sends a copy of the frame its applied to to the specified handler
+ * Sends to the specified handler a copy of the frame it is applied to.
  */
 class Relay
 {

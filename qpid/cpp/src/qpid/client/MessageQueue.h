@@ -29,7 +29,7 @@ namespace qpid {
 namespace client {
 
 /**
- * A MessageListener implementation that simply queues up
+ * A MessageListener implementation that queues up
  * messages.
  *
  * \ingroup clientapi

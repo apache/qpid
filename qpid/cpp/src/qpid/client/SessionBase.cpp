@@ -48,6 +48,8 @@ void SessionBase::flush()
     impl->sendFlush();
 }
 
+// FIXME aconway 2008-04-24: do we need to provide a non-synchronous version
+// of sync() or bool paramter to allow setting a sync point for a later wait?
 void SessionBase::sync()
 {
     ExecutionSyncBody b;

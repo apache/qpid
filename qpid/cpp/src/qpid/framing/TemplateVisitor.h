@@ -27,7 +27,7 @@ namespace qpid {
 namespace framing {
 
 /**
- * Metafunction to generate a visitor class derived from Base with a
+ * Metafunction to generate a visitor class derived from Base, with a
  * visit for each type in TypeList calling functor F. TypeList may be
  * any boost::mpl type collection e.g. mpl::list. 
  *

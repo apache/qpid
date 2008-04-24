@@ -77,16 +77,16 @@ template <> struct BlobHelper<void> {
 };
 
 /**
- * A "blob" is a chunk of memory which can contain a single object at
- * a time arbitrary type, provided sizeof(T)<=blob.size(). Blob
+ * A Blob is a chunk of memory which can contain a single object at
+ * a time-arbitrary type, provided sizeof(T)<=blob.size(). Using Blobs
  * ensures proper construction and destruction of its contents,
  * and proper copying between Blobs, but nothing else.
  * 
- * In particular the user must ensure the blob is big enough for its
- * contents and must know the type of object in the blob to cast get().
+ * In particular you must ensure that the Blob is big enough for its
+ * contents and must know the type of object in the Blob to cast get().
  *
- * If BaseType is specified then only object that can be
- * safely static_cast to BaseType may be stored in the Blob.
+ * If BaseType is specified then only an object that can be
+ * static_cast to BaseType may be stored in the Blob.
  */
 template <size_t Size, class BaseType=void>
 class Blob
@@ -131,19 +131,19 @@ class Blob
     }
 
   public:
-    /** Construct an empty blob. */
+    /** Construct an empty Blob. */
     Blob() { initialize(); }
 
-    /** Copy a blob. */
+    /** Copy a Blob. */
     Blob(const Blob& b) { initialize(); assign(b); }
 
-    /** Construct from in_place constructor */
+    /** Construct from in_place constructor. */
     template<class InPlace>
     Blob(const InPlace & expr, typename EnableInPlace<InPlace>::type* =0) {
         initialize(); apply(expr);
     }
 
-    /** Construct by copying an objecct constructor */
+    /** Construct by copying an object constructor. */
     template<class T>
     Blob(const T & t, typename DisableInPlace<T>::type* =0) {
         initialize(); apply(in_place<T>(t));
@@ -151,7 +151,7 @@ class Blob
 
     ~Blob() { clear(); }
 
-    /** Assign from another blob. */
+    /** Assign from another Blob. */
     Blob& operator=(const Blob& b) {
         clear();
         assign(b);
@@ -170,13 +170,13 @@ class Blob
         clear(); apply(in_place<T>(x)); return *this;
     }
 
-    /** Get pointer to blob contents, returns 0 if empty. */
+    /** Get pointer to Blob contents, returns 0 if empty. */
     BaseType* get() { return  basePtr; }
 
-    /** Get pointer to blob contents, returns 0 if empty. */
+    /** Get pointer to Blob contents, returns 0 if empty. */
     const BaseType* get() const { return basePtr; }
 
-    /** Destroy the object in the blob making it empty. */
+    /** Destroy the object in the Blob making it empty. */
     void clear() {
         void (*oldDestroy)(void*) = destroy; 
         initialize();

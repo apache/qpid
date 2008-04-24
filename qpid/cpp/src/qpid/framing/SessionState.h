@@ -36,7 +36,7 @@ namespace framing {
 
 /**
  * Session state common to client and broker.
- * Stores replay frames, implements session ack/resume protcools.
+ * Stores replay frames, implements session ack/resume protocols.
  *
  * A SessionState is always associated with an _open_ session (attached or
  * suspended) it is destroyed when the session is closed.
@@ -50,16 +50,16 @@ class SessionState
     /** States of a session. */
     enum State {
         SUSPENDED, ///< Suspended, detached from any channel.
-        RESUMING, ///< Resuming: waiting for initial ack from peer.
+        RESUMING, ///< Resuming, waiting for an initial ack from a peer.
         ATTACHED ///< Attached to channel and operating normally.
     };
 
     /**
      *Create a newly opened active session.
-     *@param ackInterval send/solicit an ack whenever N unacked frames
+     *@param ackInterval send/solicit an ack whenever N unacknowledged frames
      * have been received/sent.
      * 
-     * N=0 disables voluntary send/solict ack.
+     * N=0 disables voluntary send/solicit ack.
      */
     SessionState(uint32_t ackInterval, bool enableReplay = true, const framing::Uuid& id=framing::Uuid(true));
 
@@ -75,7 +75,7 @@ class SessionState
     /** Received incoming L3 frame.
      * @return SequenceNumber if an ack should be sent, empty otherwise.
      * SessionState assumes that acks are sent whenever it returns
-     * a seq. number.
+     * a sequence number.
      */
     boost::optional<SequenceNumber> received(const AMQFrame&);
 
@@ -100,9 +100,9 @@ class SessionState
      *@returns sequence number to ack immediately.  */
     SequenceNumber resuming();
 
-    /** About to send an unscheduled ack, e.g. to respond to a solicit-ack.
+    /** About to send an unscheduled ack, for example, responding to a solicit-ack.
      * 
-     * Note: when received() returns a sequence number this function
+     * Note: when received() returns a sequence number, this function
      * should not be called. SessionState assumes that the ack is sent
      * every time received() returns a sequence number.
      */
