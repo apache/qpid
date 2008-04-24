@@ -22,6 +22,8 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.qpid.test.framework.*;
 
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -46,11 +48,14 @@ public class LocalReceiverImpl extends CircuitEndBase implements Receiver
     private LocalCircuitImpl circuit;
 
     /**
-     * Creates a circuit end point on the specified producer, consumer and controlSession.
+     * Creates a circuit end point on the specified producer, consumer and controlSession. Monitors are also configured
+     * for messages and exceptions received by the circuit end.
      *
      * @param producer The message producer for the circuit end point.
      * @param consumer The message consumer for the circuit end point.
      * @param session  The controlSession for the circuit end point.
+     * @param messageMonitor   The monitor to notify of all messages received by the circuit end.
+     * @param exceptionMonitor The monitor to notify of all exceptions received by the circuit end.
      */
     public LocalReceiverImpl(MessageProducer producer, MessageConsumer consumer, Session session,
         MessageMonitor messageMonitor, ExceptionMonitor exceptionMonitor)
@@ -71,21 +76,60 @@ public class LocalReceiverImpl extends CircuitEndBase implements Receiver
     /**
      * Provides an assertion that the receivers encountered no exceptions.
      *
+     * @param testProps The test configuration properties.
+     *
      * @return An assertion that the receivers encountered no exceptions.
      */
-    public Assertion noExceptionsAssertion()
+    public Assertion noExceptionsAssertion(ParsedProperties testProps)
     {
-        return null;
+        return new NotApplicableAssertion(testProps);
+    }
+
+    /**
+     * Provides an assertion that the AMQP channel was forcibly closed by an error condition.
+     *
+     * @param testProps The test configuration properties.
+     *
+     * @return An assertion that the AMQP channel was forcibly closed by an error condition.
+     */
+    public Assertion channelClosedAssertion(ParsedProperties testProps)
+    {
+        return new NotApplicableAssertion(testProps);
     }
 
     /**
      * Provides an assertion that the receivers got all messages that were sent to it.
      *
+     * @param testProps The test configuration properties.
+     *
      * @return An assertion that the receivers got all messages that were sent to it.
      */
-    public Assertion allMessagesAssertion()
+    public Assertion allMessagesReceivedAssertion(ParsedProperties testProps)
     {
-        return null;
+        return new NotApplicableAssertion(testProps);
+    }
+
+    /**
+     * Provides an assertion that the receivers got none of the messages that were sent to it.
+     *
+     * @param testProps The test configuration properties.
+     *
+     * @return An assertion that the receivers got none of the messages that were sent to it.
+     */
+    public Assertion noMessagesReceivedAssertion(ParsedProperties testProps)
+    {
+        return new NotApplicableAssertion(testProps);
+    }
+
+    /**
+     * Provides an assertion that the receiver got a given exception during the test.
+     *
+     * @param testProps The test configuration properties.
+     * @param exceptionClass The exception class to check for. @return An assertion that the receiver got a given exception during the test.
+     */
+    public Assertion exceptionAssertion(ParsedProperties testProps, Class<? extends Exception> exceptionClass)
+    {
+        return new NotApplicableAssertion(testProps);
     }
 
     /**

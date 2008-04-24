@@ -21,19 +21,20 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
-public abstract class AMQBody
+public interface AMQBody
 {
-    public abstract byte getFrameType();
+    public  byte getFrameType();
     
     /** 
      * Get the size of the body
      * @return unsigned short
      */
-    protected abstract int getSize();
+    public abstract int getSize();
     
-    protected abstract void writePayload(ByteBuffer buffer);
+    public void writePayload(ByteBuffer buffer);
     
-    protected abstract void populateFromBuffer(ByteBuffer buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException;        
+    void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession) throws AMQException;
 }

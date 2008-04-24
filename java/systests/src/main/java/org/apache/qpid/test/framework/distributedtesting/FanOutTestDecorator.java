@@ -32,14 +32,13 @@ import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.framework.sequencers.FanOutCircuitFactory;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 

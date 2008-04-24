@@ -26,8 +26,8 @@
   <property name="generated.package" value="org/apache/qpid/framing" />
   <property name="generated.dir" location="${module.precompiled}/${generated.package}" />
   <property name="xml.spec.dir" location="${project.root}/../specs" />
-  <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml" />
-  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/cluster.0-8.xml" />
+  <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml" />
+  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml" />
   <property name="mllib.dir" value="${project.root}/../python" />
   <property name="gentools.timestamp" location="${generated.dir}/gentools.timestamp" />
   <property name="jython.timestamp" location="${generated.dir}/jython.timestamp" />
@@ -72,6 +72,8 @@
         <fileset dir="${gentools.home}/lib">
           <include name="**/*.jar"/>
         </fileset>
+	<pathelement path="${gentools.home}/lib/velocity-1.4.jar" />
+        <pathelement path="${gentools.home}/lib/velocity-dep-1.4.jar" />
       </classpath>
     </java>
     <touch file="${gentools.timestamp}" />

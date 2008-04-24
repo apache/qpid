@@ -140,5 +140,15 @@ public class SingleVersionMethod
     }
 
 
+    public boolean isServerMethod()
+    {
+        return _amqpMethod.isServerMethod(_amqpVersion);
+    }
+
+
+    public boolean isClientMethod()
+    {
+        return _amqpMethod.isClientMethod(_amqpVersion);        
+    }
 
 }

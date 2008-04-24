@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Apache Software Foundation
  */
-public class QueueDeleteOkMethodHandler implements StateAwareMethodListener
+public class QueueDeleteOkMethodHandler implements StateAwareMethodListener<QueueDeleteOkBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(QueueDeleteOkMethodHandler.class);
     private static final QueueDeleteOkMethodHandler _instance = new QueueDeleteOkMethodHandler();
@@ -46,13 +46,14 @@ public class QueueDeleteOkMethodHandler implements StateAwareMethodListener
     private QueueDeleteOkMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
-    {
+    public void methodReceived(AMQStateManager stateManager, QueueDeleteOkBody body, int channelId)
+            throws AMQException
+    {        
         if (_logger.isDebugEnabled())
         {
-            QueueDeleteOkBody body = (QueueDeleteOkBody) evt.getMethod();
-            _logger.debug("Received Queue.Delete-Ok message, message count: " + body.messageCount);
+            _logger.debug("Received Queue.Delete-Ok message, message count: " + body.getMessageCount());
         }
     }
+
+
 }

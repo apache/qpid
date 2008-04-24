@@ -22,11 +22,9 @@
 package org.apache.qpid.client;
 
 import javax.jms.Destination;
-import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
 
@@ -200,19 +198,19 @@ public class QueueSenderAdapter implements QueueSender
         }
 
         AMQDestination destination = (AMQDestination) queue;
-        if (!destination.isValidated() && checkQueueBeforePublish())
+        if (!destination.isCheckedForQueueBinding() && checkQueueBeforePublish())
         {
 
             if (_delegate.getSession().isStrictAMQP())
             {
                 _delegate._logger.warn("AMQP does not support destination validation before publish, ");
-                destination.setValidated(true);
+                destination.setCheckedForQueueBinding(true);
             }
             else
             {
                 if (_delegate.isBound(destination))
                 {
-                    destination.setValidated(true);
+                    destination.setCheckedForQueueBinding(true);
                 }
                 else
                 {

@@ -43,7 +43,7 @@ public class UnprocessedMessage_0_10 extends UnprocessedMessage<Struct[],ByteBuf
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ByteBuffer> _bodies = new ArrayList<ByteBuffer>();
 
-    public UnprocessedMessage_0_10(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage_0_10(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
         super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
     }

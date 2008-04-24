@@ -395,16 +395,16 @@ public class AMQSession_0_10 extends AMQSession
         try
         {
             preAcquire = ( ! consumer.isNoConsume()  && consumer.getMessageSelector() == null) || !(consumer.getDestination() instanceof AMQQueue);
+            getQpidSession().messageSubscribe(queueName.toString(), tag.toString(),
+                                              getAcknowledgeMode() == NO_ACKNOWLEDGE ? Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED:Session.TRANSFER_CONFIRM_MODE_REQUIRED,
+                                              preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
+                                              new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
+                                              consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
         }
         catch (JMSException e)
         {
             throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
         }
-        getQpidSession().messageSubscribe(queueName.toString(), tag.toString(),
-                                          (Boolean.getBoolean("noAck") ?Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED:Session.TRANSFER_CONFIRM_MODE_REQUIRED),
-                                          preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
-                                          new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
-                                          consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
 
         if (! prefetch())
         {
@@ -746,4 +746,10 @@ public class AMQSession_0_10 extends AMQSession
 
         return subscriber;
     }
+
+    Long requestQueueDepth(AMQDestination amqd)
+    {
+        return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
+    }
+
 }

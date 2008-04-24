@@ -30,7 +30,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
+public class ConnectionRedirectMethodHandler implements StateAwareMethodListener<ConnectionRedirectBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ConnectionRedirectMethodHandler.class);
 
@@ -46,13 +46,13 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
     private ConnectionRedirectMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionRedirectBody method, int channelId)
+            throws AMQException
     {
         _logger.info("ConnectionRedirect frame received");
-        ConnectionRedirectBody method = (ConnectionRedirectBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();         
 
-        String host = method.host.toString();
+        String host = method.getHost().toString();
         // the host is in the form hostname:port with the port being optional
         int portIndex = host.indexOf(':');
 
@@ -68,6 +68,7 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
 
         }
 
-        protocolSession.failover(host, port);
+        session.failover(host, port);
     }
+
 }

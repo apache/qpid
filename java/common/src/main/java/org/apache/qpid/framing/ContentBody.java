@@ -21,8 +21,10 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
-public class ContentBody extends AMQBody
+public class ContentBody implements AMQBody
 {
     public static final byte TYPE = 3;
 
@@ -63,9 +65,22 @@ public class ContentBody extends AMQBody
     {
         if (payload != null)
         {
-            ByteBuffer copy = payload.duplicate();
-            buffer.put(copy.rewind());
+            if(payload.isDirect() || payload.isReadOnly())
+            {            
+                ByteBuffer copy = payload.duplicate();
+                buffer.put(copy.rewind());
+            }
+            else
+            {
+                buffer.put(payload.array(),payload.arrayOffset(),payload.limit());
+            }
         }
+    }
+
+    public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
+            throws AMQException
+    {
+        session.contentBodyReceived(channelId, this);
     }
 
     protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException

@@ -21,8 +21,8 @@
 package org.apache.qpid.test.framework.clocksynch;
 
 /**
- * ClockSynchFailureException represents failure of a {@link ClockSynchronizer} to achieve synchronization. This could
- * be because a reference signal is not available, or because a desired accurracy cannot be attained, for example.
+ * ClockSynchFailureException represents failure of a {@link ClockSynchronizer} to achieve synchronization. For example,
+ * this could be because a reference signal is not available, or because a desired accurracy cannot be attained.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations

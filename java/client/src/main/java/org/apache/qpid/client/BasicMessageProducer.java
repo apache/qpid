@@ -36,11 +36,18 @@ import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +58,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private AMQConnection _connection;
 
     /**
-     * If true, messages will not get a timestamp.
+     * If true, messages will not get a timestamp. 
      */
     protected boolean _disableTimestamps;
 
@@ -103,7 +110,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private long _producerId;
 
     /**
-     * The session used to create this producer
+     * The session used to create this producer 
      */
     protected AMQSession _session;
 
@@ -118,8 +125,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-        AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
-        boolean waitUntilSent)
+                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
+                                   boolean waitUntilSent)
     {
         _connection = connection;
         _destination = destination;
@@ -146,7 +153,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    public abstract void declareDestination(AMQDestination destination);
+    abstract void declareDestination(AMQDestination destination);
 
     public void setDisableMessageID(boolean b) throws JMSException
     {
@@ -181,7 +188,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         if ((i != DeliveryMode.NON_PERSISTENT) && (i != DeliveryMode.PERSISTENT))
         {
             throw new JMSException("DeliveryMode must be either NON_PERSISTENT or PERSISTENT. Value of " + i
-                + " is illegal");
+                                   + " is illegal");
         }
 
         _deliveryMode = i;
@@ -293,7 +300,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         {
             validateDestination(destination);
             sendImpl((AMQDestination) destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory,
-                _immediate);
+                     _immediate);
         }
     }
 
@@ -310,7 +317,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-        boolean mandatory) throws JMSException
+                     boolean mandatory) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -322,7 +329,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-        boolean mandatory, boolean immediate) throws JMSException
+                     boolean mandatory, boolean immediate) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -334,7 +341,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-        boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
+                     boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -342,7 +349,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         {
             validateDestination(destination);
             sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate,
-                waitUntilSent);
+                     waitUntilSent);
         }
     }
 
@@ -388,7 +395,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             else
             {
                 throw new JMSException("Unable to send message, due to class conversion error: "
-                    + message.getClass().getName());
+                                       + message.getClass().getName());
             }
         }
     }
@@ -398,14 +405,19 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         if (!(destination instanceof AMQDestination))
         {
             throw new JMSException("Unsupported destination class: "
-                + ((destination != null) ? destination.getClass() : null));
+                                   + ((destination != null) ? destination.getClass() : null));
         }
 
-        declareDestination((AMQDestination) destination);
+        AMQDestination amqDestination = (AMQDestination) destination;
+        if(!amqDestination.isExchangeExistsChecked())
+        {
+            declareDestination(amqDestination);
+            amqDestination.setExchangeExistsChecked(true);
+        }
     }
 
     protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,
-        boolean mandatory, boolean immediate) throws JMSException
+                            boolean mandatory, boolean immediate) throws JMSException
     {
         sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
     }
@@ -420,15 +432,26 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
      * @param timeToLive
      * @param mandatory
      * @param immediate
+     *
      * @throws JMSException
      */
     protected void sendImpl(AMQDestination destination, Message origMessage, int deliveryMode, int priority, long timeToLive,
-        boolean mandatory, boolean immediate, boolean wait) throws JMSException
+                            boolean mandatory, boolean immediate, boolean wait) throws JMSException
     {
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
+
+        if (_transacted)
+        {
+            if (_session.hasFailedOver() && _session.isDirty())
+            {
+                throw new JMSAMQException("Failover has occurred and session is dirty so unable to send.",
+                                          new AMQSessionDirtyException("Failover has occurred and session is dirty " +
+                                                                       "so unable to send."));
+            }
+        }
 
         if (_disableMessageId)
         {
@@ -456,14 +479,27 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             type = AMQDestination.UNKNOWN_TYPE;
         }
 
-      //  message.getJmsHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(), type);
+        sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
 
-        sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive,
-                 mandatory, immediate, wait);
+        if (message != origMessage)
+        {
+            _logger.debug("Updating original message");
+            origMessage.setJMSPriority(message.getJMSPriority());
+            origMessage.setJMSTimestamp(message.getJMSTimestamp());
+            _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
+            origMessage.setJMSExpiration(message.getJMSExpiration());
+            origMessage.setJMSMessageID(message.getJMSMessageID());
+        }
+
+        if (_transacted)
+        {
+            _session.markDirty();
+        }
     }
 
-    public abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message, int deliveryMode,
-            int priority, long timeToLive, boolean mandatory, boolean immediate, boolean wait)throws JMSException;
+    abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
+                              int deliveryMode, int priority, long timeToLive, boolean mandatory,
+                              boolean immediate, boolean wait)throws JMSException;
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {
@@ -520,7 +556,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         if ((_destination != null) && (suppliedDestination != null))
         {
             throw new UnsupportedOperationException(
-                "This message producer was created with a Destination, therefore you cannot use an unidentified Destination");
+                    "This message producer was created with a Destination, therefore you cannot use an unidentified Destination");
         }
 
         if (suppliedDestination == null)

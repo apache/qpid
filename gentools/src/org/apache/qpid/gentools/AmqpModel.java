@@ -26,6 +26,7 @@ import org.w3c.dom.NodeList;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collection;
 
 public class AmqpModel implements Printable, NodeAware
 {
@@ -116,6 +117,12 @@ public class AmqpModel implements Printable, NodeAware
     public AmqpClassMap getClassMap()
     {
         return classMap;
+    }
+
+
+    public Collection<AmqpClass> getClasses()
+    {
+        return classMap.values();
     }
 
     public SingleVersionModel asSingleVersionModel()

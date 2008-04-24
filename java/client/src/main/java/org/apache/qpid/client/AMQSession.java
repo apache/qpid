@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.client;
 
-
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,7 +58,9 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
+import javax.jms.TransactionRolledBackException;
 
+import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
@@ -77,11 +80,12 @@ import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +110,86 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
+    public static final class IdToConsumerMap
+    {
+        private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];
+        private final ConcurrentHashMap<Integer, BasicMessageConsumer> _slowAccessConsumers = new ConcurrentHashMap<Integer, BasicMessageConsumer>();
+
+
+        public BasicMessageConsumer get(int id)
+        {
+            if((id & 0xFFFFFFF0) == 0)
+            {
+                return _fastAccessConsumers[id];
+            }
+            else
+            {
+                return _slowAccessConsumers.get(id);
+            }
+        }
+
+        public BasicMessageConsumer put(int id, BasicMessageConsumer consumer)
+        {
+            BasicMessageConsumer oldVal;
+            if((id & 0xFFFFFFF0) == 0)
+            {
+                oldVal = _fastAccessConsumers[id];
+                _fastAccessConsumers[id] = consumer;
+            }
+            else
+            {
+                oldVal = _slowAccessConsumers.put(id, consumer);
+            }
+
+            return consumer;
+
+        }
+
+
+        public BasicMessageConsumer remove(int id)
+        {
+            BasicMessageConsumer consumer;
+            if((id & 0xFFFFFFF0) == 0)
+            {
+                 consumer = _fastAccessConsumers[id];
+                _fastAccessConsumers[id] = null;
+            }
+            else
+            {
+                consumer = _slowAccessConsumers.remove(id);
+            }
+
+            return consumer;
+
+        }
+
+        public Collection<BasicMessageConsumer> values()
+        {
+            ArrayList<BasicMessageConsumer> values = new ArrayList<BasicMessageConsumer>();
+
+            for(int i = 0; i < 16; i++)
+            {
+                if(_fastAccessConsumers[i] != null)
+                {
+                    values.add(_fastAccessConsumers[i]);
+                }
+            }
+            values.addAll(_slowAccessConsumers.values());
+
+            return values;
+        }
+
+
+        public void clear()
+        {
+            _slowAccessConsumers.clear();
+            for(int i = 0; i<16; i++)
+            {
+                _fastAccessConsumers[i] = null;
+            }
+        }
+    }
+
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
@@ -155,7 +239,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     protected boolean _transacted;
 
     /** Holds the sessions acknowledgement mode. */
-    protected int _acknowledgeMode;
+    protected final int _acknowledgeMode;
 
     /** Holds this session unique identifier, used to distinguish it from other sessions. */
     protected int _channelId;
@@ -231,8 +315,16 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * Maps from identifying tags to message consumers, in order to pass dispatch incoming messages to the right
      * consumer.
      */
-    protected Map<AMQShortString, BasicMessageConsumer> _consumers =
-            new ConcurrentHashMap<AMQShortString, BasicMessageConsumer>();
+    protected final IdToConsumerMap _consumers = new IdToConsumerMap();
+    
+            //Map<AMQShortString, BasicMessageConsumer> _consumers =
+            //new ConcurrentHashMap<AMQShortString, BasicMessageConsumer>();
+
+    /**
+     * Contains a list of consumers which have been removed but which might still have
+     * messages to acknowledge, eg in client ack or transacted modes
+     */
+    private CopyOnWriteArrayList<BasicMessageConsumer> _removedConsumers = new CopyOnWriteArrayList<BasicMessageConsumer>();
 
     /** Provides a count of consumers on destinations, in order to be able to know if a destination has consumers. */
     private ConcurrentHashMap<Destination, AtomicInteger> _destinationConsumerCount =
@@ -284,6 +376,32 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     protected final boolean _strictAMQPFATAL;
     private final Object _messageDeliveryLock = new Object();
 
+    /** Session state : used to detect if commit is a) required b) allowed , i.e. does the tx span failover. */
+    private boolean _dirty;
+    /** Has failover occured on this session */
+    private boolean _failedOver;
+
+
+
+    private static final class FlowControlIndicator
+    {
+        private volatile boolean _flowControl = true;
+
+        public synchronized void setFlowControl(boolean flowControl)
+        {
+            _flowControl= flowControl;
+            notify();
+        }
+
+        public boolean getFlowControl()
+        {
+            return _flowControl;
+        }
+    }
+
+    /** Flow control */
+    private FlowControlIndicator _flowControl = new FlowControlIndicator();
+
     /**
      * Creates a new session on a connection.
      *
@@ -330,24 +448,20 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                                      {
                                                          public void aboveThreshold(int currentValue)
                                                          {
-                                                             if (_acknowledgeMode == NO_ACKNOWLEDGE)
-                                                             {
                                                                  _logger.debug(
                                                                          "Above threshold(" + _defaultPrefetchHighMark
                                                                          + ") so suspending channel. Current value is " + currentValue);
                                                                  new Thread(new SuspenderRunner(true)).start();
-                                                             }
+
                                                          }
 
                                                          public void underThreshold(int currentValue)
                                                          {
-                                                             if (_acknowledgeMode == NO_ACKNOWLEDGE)
-                                                             {
                                                                  _logger.debug(
                                                                          "Below threshold(" + _defaultPrefetchLowMark
                                                                          + ") so unsuspending channel. Current value is " + currentValue);
                                                                  new Thread(new SuspenderRunner(false)).start();
-                                                             }
+
                                                          }
                                                      });
         }
@@ -357,7 +471,22 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-
+    /**
+     * Creates a new session on a connection with the default message factory factory.
+     *
+     * @param con                 The connection on which to create the session.
+     * @param channelId           The unique identifier for the session.
+     * @param transacted          Indicates whether or not the session is transactional.
+     * @param acknowledgeMode     The acknoledgement mode for the session.
+     * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
+     * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
+     */
+    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh,
+               int defaultPrefetchLow)
+    {
+        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh,
+             defaultPrefetchLow);
+    }
 
     // ===== JMS Session methods.
 
@@ -371,6 +500,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         close(-1);
     }
 
+    public BytesMessage createBytesMessage() throws JMSException
+    {
+        checkNotClosed();
+        return new JMSBytesMessage();
+    }
+
     /**
      * Acknowledges all unacknowledged messages on the session, for all message consumers on the session.
      *
@@ -381,6 +516,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         if (isClosed())
         {
             throw new IllegalStateException("Session is already closed");
+        } 
+        else if (hasFailedOver())
+        {
+            throw new IllegalStateException("has failed over");
         }
 
         while (true)
@@ -404,6 +543,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     public abstract void acknowledgeMessage(long deliveryTag, boolean multiple);
+
+    public MethodRegistry getMethodRegistry()
+    {
+        MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
+        return methodRegistry;
+    }
 
     /**
      * Binds the named queue, with the specified routing key, to the named exchange.
@@ -471,30 +616,26 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Closing session: " + this );//+ ":"
-                        // + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            _logger.info("Closing session: " + this); // + ":"
+                         // + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
-        if( _dispatcher != null )
+        // Ensure we only try and close an open session.
+        if (!_closed.getAndSet(true))
         {
-            _dispatcher.setConnectionStopped(true);
-        }
-        synchronized (_messageDeliveryLock)
-        {
-
-            // We must close down all producers and consumers in an orderly fashion. This is the only method
-            // that can be called from a different thread of control from the one controlling the session.
             synchronized (_connection.getFailoverMutex())
             {
-                // Ensure we only try and close an open session.
-                if (!_closed.getAndSet(true))
+                // We must close down all producers and consumers in an orderly fashion. This is the only method
+                // that can be called from a different thread of control from the one controlling the session.
+                synchronized (_messageDeliveryLock)
                 {
                     // we pass null since this is not an error case
                     closeProducersAndConsumers(null);
 
                     try
                     {
-                        sendClose(timeout);
+                       sendClose(timeout);
                     }
                     catch (AMQException e)
                     {
@@ -527,25 +668,44 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     public void closed(Throwable e) throws JMSException
     {
-        synchronized (_messageDeliveryLock)
+        // This method needs to be improved. Throwables only arrive here from the mina : exceptionRecived
+        // calls through connection.closeAllSessions which is also called by the public connection.close()
+        // with a null cause
+        // When we are closing the Session due to a protocol session error we simply create a new AMQException
+        // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
+        // We need to determin here if the connection should be
+
+        if (e instanceof AMQDisconnectedException)
+        {
+            if (_dispatcher != null)
+            {
+                // Failover failed and ain't coming back. Knife the dispatcher.
+                _dispatcher.interrupt();
+            }
+        }
+
+        if (!_closed.getAndSet(true))
         {
             synchronized (_connection.getFailoverMutex())
             {
-                // An AMQException has an error code and message already and will be passed in when closure occurs as a
-                // result of a channel close request
-                _closed.set(true);
-                AMQException amqe;
-                if (e instanceof AMQException)
+                synchronized (_messageDeliveryLock)
                 {
-                    amqe = (AMQException) e;
-                }
-                else
-                {
-                    amqe = new AMQException(null, "Closing session forcibly", e);
-                }
+                    // An AMQException has an error code and message already and will be passed in when closure occurs as a
+                    // result of a channel close request
+                    AMQException amqe;
+                    if (e instanceof AMQException)
+                    {
+                        amqe = (AMQException) e;
+                    }
+                    else
+                    {
+                        amqe = new AMQException("Closing session forcibly", e);
+                    }
 
-                _connection.deregisterSession(_channelId);
-                closeProducersAndConsumers(amqe);
+
+                    _connection.deregisterSession(_channelId);
+                    closeProducersAndConsumers(amqe);
+                }
             }
         }
     }
@@ -565,10 +725,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     public void commit() throws JMSException
     {
-        checkTransacted();
+    	checkTransacted();
 
         try
         {
+
+            // TGM FIXME: what about failover?
             // Acknowledge all delivered messages
             while (true)
             {
@@ -580,7 +742,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
                 acknowledgeMessage(tag, false);
             }
-
             // Commits outstanding messages and acknowledgments
             sendCommit();
         }
@@ -600,16 +761,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
 
         // Remove the consumer from the map
-        BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
+        BasicMessageConsumer consumer = _consumers.get(consumerTag.toIntValue());
         if (consumer != null)
         {
-            // fixme this isn't right.. needs to check if _queue contains data for this consumer
-            if (consumer.isAutoClose()) // && _queue.isEmpty())
-            {
-                consumer.closeWhenNoMessages(true);
-            }
-
-            if (!consumer.isNoConsume())
+            if (!consumer.isNoConsume())  // Normal Consumer
             {
                 // Clean the Maps up first
                 // Flush any pending messages for this consumerTag
@@ -620,13 +775,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 else
                 {
                     _logger.info("Dispatcher is null so created stopped dispatcher");
-
-                    startDistpatcherIfNecessary(true);
+                    startDispatcherIfNecessary(true);
                 }
 
                 _dispatcher.rejectPending(consumer);
             }
-            else
+            else // Queue Browser
             {
                 // Just close the consumer
                 // fixme  the CancelOK is being processed before the arriving messages..
@@ -634,13 +788,24 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 // has yet to receive before the close comes in.
 
                 // consumer.markClosed();
+
+
+
+                if (consumer.isAutoClose())
+                {     
+                    // There is a small window where the message is between the two queues in the dispatcher.
+                    if (consumer.isClosed())
+                    {
+                        if (_logger.isInfoEnabled())
+                        {
+                            _logger.info("Closing consumer:" + consumer.debugIdentity());
+                        }
+
+                        deregisterConsumer(consumer);
+                    }
+                }
             }
         }
-        else
-        {
-            _logger.warn("Unable to confirm cancellation of consumer (" + consumerTag + "). Not found in consumer map.");
-        }
-
     }
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
@@ -675,21 +840,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   messageSelector, null, true, true);
     }
 
-    public BytesMessage createBytesMessage() throws JMSException
-    {
-        synchronized (_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-
-            return new JMSBytesMessage();
-        }
-    }
-
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, null, null,
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic), null, null,
                                   false, false);
     }
 
@@ -701,11 +856,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                                   false, false);
     }
 
+
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false,
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
 
@@ -714,16 +870,27 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false,
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
+
+
+    public MessageConsumer createExclusiveConsumer(Destination destination, String messageSelector, boolean noLocal)
+            throws JMSException
+    {
+        checkValidDestination(destination);
+
+        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, true,
+                                  messageSelector, null, false, false);
+    }
+
 
     public MessageConsumer createConsumer(Destination destination, int prefetch, boolean noLocal, boolean exclusive,
                                           String selector) throws JMSException
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, null, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, null, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -739,7 +906,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, rawSelector, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, rawSelector, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -770,12 +937,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public MapMessage createMapMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-
-            return new JMSMapMessage();
-        }
+        checkNotClosed();
+        return new JMSMapMessage();
     }
 
     public javax.jms.Message createMessage() throws JMSException
@@ -785,12 +948,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public ObjectMessage createObjectMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-
-            return (ObjectMessage) new JMSObjectMessage();
-        }
+        checkNotClosed();
+        return (ObjectMessage) new JMSObjectMessage();
     }
 
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
@@ -827,7 +986,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         checkNotClosed();
 
-        return new TopicPublisherAdapter((BasicMessageProducer) createProducer(topic), topic);
+        return new TopicPublisherAdapter((BasicMessageProducer) createProducer(topic,false,false), topic);
     }
 
     public Queue createQueue(String queueName) throws JMSException
@@ -874,7 +1033,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         {
             public Object execute() throws AMQException, FailoverException
             {
-                sendCreateQueue(name, autoDelete,durable,exclusive);
+                sendCreateQueue(name, autoDelete, durable, exclusive);
                 return null;
             }
         }, _connection).execute();
@@ -989,8 +1148,9 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         AMQTopic dest = checkValidTopic(topic);
 
         // AMQTopic dest = new AMQTopic(topic.getTopicName());
-        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createExclusiveConsumer(dest));
     }
+
 
     /**
      * Creates a non-durable subscriber with a message selector
@@ -1009,7 +1169,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         AMQTopic dest = checkValidTopic(topic);
 
         // AMQTopic dest = new AMQTopic(topic.getTopicName());
-        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
+        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createExclusiveConsumer(dest, messageSelector, noLocal));
     }
 
     public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
@@ -1267,14 +1427,14 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    public abstract void sendRecover() throws AMQException, FailoverException;
+    abstract void sendRecover() throws AMQException, FailoverException;
 
     public void rejectMessage(UnprocessedMessage message, boolean requeue)
     {
 
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("Rejecting Unacked message:" + message.getDeliveryTag());
+            _logger.debug("Rejecting Unacked message:" + message.getDeliveryTag());
         }
 
         rejectMessage(message.getDeliveryTag(), requeue);
@@ -1282,9 +1442,9 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public void rejectMessage(AbstractJMSMessage message, boolean requeue)
     {
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("Rejecting Abstract message:" + message.getDeliveryTag());
+            _logger.debug("Rejecting Abstract message:" + message.getDeliveryTag());
         }
 
         rejectMessage(message.getDeliveryTag(), requeue);
@@ -1324,6 +1484,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 releaseForRollback();
 
                 sendRollback();
+
+                markClean();
 
                 if (!isSuspended)
                 {
@@ -1460,6 +1622,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
                         AMQDestination amqd = (AMQDestination) destination;
 
+                        final AMQProtocolHandler protocolHandler = getProtocolHandler();
                         // TODO: Define selectors in AMQP
                         // TODO: construct the rawSelector from the selector string if rawSelector == null
                         final FieldTable ft = FieldTableFactory.newFieldTable();
@@ -1499,11 +1662,6 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         {
                             JMSException ex = new JMSException("Error registering consumer: " + e);
 
-                            if (_logger.isDebugEnabled())
-                            {
-                                e.printStackTrace();
-                            }
-
                             ex.setLinkedException(e);
                             throw ex;
                         }
@@ -1531,7 +1689,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     void deregisterConsumer(BasicMessageConsumer consumer)
     {
-        if (_consumers.remove(consumer.getConsumerTag()) != null)
+        if (_consumers.remove(consumer.getConsumerTag().toIntValue()) != null)
         {
             String subscriptionName = _reverseSubscriptionMap.remove(consumer);
             if (subscriptionName != null)
@@ -1546,6 +1704,13 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 {
                     _destinationConsumerCount.remove(dest);
                 }
+            }
+
+            // Consumers that are closed in a transaction must be stored
+            // so that messages they have received can be acknowledged on commit
+            if (_transacted)
+            {
+                _removedConsumers.add(consumer);
             }
         }
     }
@@ -1582,8 +1747,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     public abstract boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
             throws JMSException;
-
-
+            
     public abstract boolean isQueueBound(final AMQDestination destination) throws JMSException;
 
     /**
@@ -1605,6 +1769,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     void resubscribe() throws AMQException
     {
+        _failedOver = true;
         resubscribeProducers();
         resubscribeConsumers();
     }
@@ -1639,13 +1804,20 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         // If the event dispatcher is not running then start it too.
         if (hasMessageListeners())
         {
-            startDistpatcherIfNecessary();
+            startDispatcherIfNecessary();
         }
     }
 
-    synchronized void startDistpatcherIfNecessary()
+    void startDispatcherIfNecessary()
     {
+        //If we are the dispatcher then we don't need to check we are started
+        if (Thread.currentThread() == _dispatcher)
+        {
+            return;
+        }
+
         // If IMMEDIATE_PREFETCH is not set then we need to start fetching
+        // This is final per session so will be multi-thread safe.
         if (!_immediatePrefetch)
         {
             // We do this now if this is the first call on a started connection
@@ -1662,10 +1834,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
         }
 
-        startDistpatcherIfNecessary(false);
+        startDispatcherIfNecessary(false);
     }
 
-    synchronized void startDistpatcherIfNecessary(boolean initiallyStopped)
+    synchronized void startDispatcherIfNecessary(boolean initiallyStopped)
     {
         if (_dispatcher == null)
         {
@@ -1816,7 +1988,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
             else
             {
-                con.close();
+                con.close(false);
             }
         }
         // at this point the _consumers map will be empty
@@ -1891,20 +2063,22 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     private void consumeFromQueue(BasicMessageConsumer consumer, AMQShortString queueName,
                                   AMQProtocolHandler protocolHandler, boolean nowait, String messageSelector) throws AMQException, FailoverException
     {
-        //need to generate a consumer tag on the client so we can exploit the nowait flag
-        AMQShortString tag = new AMQShortString(Integer.toString(_nextTag++));
+        int tagId = _nextTag++;
+        // need to generate a consumer tag on the client so we can exploit the nowait flag
+        AMQShortString tag = new AMQShortString(Integer.toString(tagId));
+
         consumer.setConsumerTag(tag);
         // we must register the consumer in the map before we actually start listening
-        _consumers.put(tag, consumer);
+        _consumers.put(tagId, consumer);
 
         try
         {
-            sendConsume(consumer,queueName,protocolHandler,nowait,messageSelector,tag);
+            sendConsume(consumer, queueName, protocolHandler, nowait, messageSelector, tag);
         }
         catch (AMQException e)
         {
             // clean-up the map in the event of an error
-            _consumers.remove(tag);
+            _consumers.remove(tagId);
             throw e;
         }
     }
@@ -1945,6 +2119,34 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), protocolHandler, nowait);
     }
 
+
+    /**
+     * Returns the number of messages currently queued for the given destination.
+     *
+     * <p/>Note that this operation automatically retries in the event of fail-over.
+     *
+     * @param amqd            The destination to be checked
+     *
+     * @return the number of queued messages.
+     *
+     * @throws AMQException If the queue cannot be declared for any reason.
+     */
+    public long getQueueDepth(final AMQDestination amqd)
+            throws AMQException
+    {
+        return new FailoverNoopSupport<Long, AMQException>(
+                new FailoverProtectedOperation<Long, AMQException>()
+                {
+                    public Long execute() throws AMQException, FailoverException
+                    {
+                        return requestQueueDepth(amqd);
+                    }
+                }, _connection).execute();
+
+    }
+
+    abstract Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException;
+
     /**
      * Declares the named exchange and type of exchange.
      *
@@ -1960,7 +2162,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private void declareExchange(final AMQShortString name, final AMQShortString type,
-            final AMQProtocolHandler protocolHandler, final boolean nowait) throws AMQException
+                                 final AMQProtocolHandler protocolHandler, final boolean nowait) throws AMQException
     {
         new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
@@ -2013,7 +2215,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                             amqd.setQueueName(protocolHandler.generateQueueName());
                         }
 
-                        sendQueueDeclare(amqd,protocolHandler);
+                        sendQueueDeclare(amqd, protocolHandler);
 
                         return amqd.getAMQQueueName();
                     }
@@ -2064,12 +2266,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         return _connection.getProtocolHandler();
     }
 
-    protected byte getProtocolMajorVersion()
+    public byte getProtocolMajorVersion()
     {
         return getProtocolHandler().getProtocolMajorVersion();
     }
 
-    protected byte getProtocolMinorVersion()
+    public byte getProtocolMinorVersion()
     {
         return getProtocolHandler().getProtocolMinorVersion();
     }
@@ -2227,7 +2429,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Removing message(" + System.identityHashCode(message) + ") from _queue DT:"
-                                  + message.getDeliveryTag());
+                        + message.getDeliveryTag());
                 }
 
                 messages.remove();
@@ -2250,6 +2452,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         for (Iterator it = consumers.iterator(); it.hasNext();)
         {
             BasicMessageConsumer consumer = (BasicMessageConsumer) it.next();
+            consumer.failedOver();
             registerConsumer(consumer, true);
         }
     }
@@ -2276,11 +2479,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                     // Bounced message is processed here, away from the mina thread
                     AbstractJMSMessage bouncedMessage =
                             _messageFactoryRegistry.createMessage(0, false, msg.getExchange(),
-                                                                  msg.getExchange(), msg.getContentHeader(), msg.getBodies());
-
-                    AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
-                    AMQShortString reason = msg.getReplyText();
-                    _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+                            		msg.getRoutingKey(), msg.getContentHeader(), msg.getBodies());
+                        AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
+                        AMQShortString reason = msg.getReplyText();
+                        _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
 
                     // @TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
                     if (errorCode == AMQConstant.NO_CONSUMERS)
@@ -2318,7 +2520,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    protected  void suspendChannel(boolean suspend) throws AMQException // , FailoverException
+    protected void suspendChannel(boolean suspend) throws AMQException // , FailoverException
     {
         synchronized (_suspensionLock)
         {
@@ -2339,6 +2541,13 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
+    public abstract void sendSuspendChannel(boolean suspend) throws AMQException, FailoverException;
+
+    Object getMessageDeliveryLock()
+    {
+        return _messageDeliveryLock;
+    }
+
     /**
      * Indicates whether this session consumers pre-fetche messages
      *
@@ -2350,7 +2559,62 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     }
 
 
-    public abstract void sendSuspendChannel(boolean suspend) throws AMQException, FailoverException;
+    /** Signifies that the session has pending sends to commit. */
+    public void markDirty()
+    {
+        _dirty = true;
+    }
+
+    /** Signifies that the session has no pending sends to commit. */
+    public void markClean()
+    {
+        _dirty = false;
+        _failedOver = false;
+    }
+
+    /**
+     * Check to see if failover has occured since the last call to markClean(commit or rollback).
+     *
+     * @return boolean true if failover has occured.
+     */
+    public boolean hasFailedOver()
+    {
+        return _failedOver;
+    }
+
+    /**
+     * Check to see if any message have been sent in this transaction and have not been commited.
+     *
+     * @return boolean true if a message has been sent but not commited
+     */
+    public boolean isDirty()
+    {
+        return _dirty;
+    }
+
+    public void setTicket(int ticket)
+    {
+        _ticket = ticket;
+    }
+
+    public void setFlowControl(final boolean active)
+    {
+        _flowControl.setFlowControl(active);
+    }
+
+
+    public void checkFlowControl() throws InterruptedException
+    {
+        synchronized(_flowControl)
+        {
+            while(!_flowControl.getFlowControl())
+            {
+                _flowControl.wait();
+            }
+        }
+
+    }
+
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
     class Dispatcher extends Thread
@@ -2361,6 +2625,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         private final Object _lock = new Object();
         private final AtomicLong _rollbackMark = new AtomicLong(-1);
+        private String dispatcherID = "" + System.identityHashCode(this);
 
         public Dispatcher()
         {
@@ -2392,10 +2657,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 }
 
                 // Reject messages on pre-receive queue
-                consumer.rollback();
+                consumer.rollbackPendingMessages();
 
                 // Reject messages on pre-dispatch queue
                 rejectMessagesForConsumerTag(consumer.getConsumerTag(), true);
+                //Let the dispatcher deal with this when it gets to them.
 
                 // closeConsumer
                 consumer.markClosed();
@@ -2434,6 +2700,13 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         consumer.clearReceiveQueue();
                     }
 
+                }
+
+                for (int i = 0; i < _removedConsumers.size(); i++)
+                {
+                    // Sends acknowledgement to server
+                    _removedConsumers.get(i).rollback();
+                    _removedConsumers.remove(i);
                 }
 
                 setConnectionStopped(isStopped);
@@ -2484,9 +2757,16 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         }
                         else
                         {
-                            synchronized (_messageDeliveryLock)
+                            if (message.getDeliveryTag() <= _rollbackMark.get())
                             {
-                                dispatchMessage(message);
+                                rejectMessage(message, true);
+                            }
+                            else
+                            {
+                                synchronized (_messageDeliveryLock)
+                                {
+                                    dispatchMessage(message);
+                                }
                             }
                         }
 
@@ -2535,38 +2815,38 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             //This if block is not needed anymore as bounce messages are handled separately
             //if (message.getDeliverBody() != null)
             //{
-                final BasicMessageConsumer consumer =
-                        (BasicMessageConsumer) _consumers.get(new AMQShortString(message.getConsumerTag()));
+            final BasicMessageConsumer consumer =
+                _consumers.get(message.getConsumerTag().toIntValue());
 
-                if ((consumer == null) || consumer.isClosed())
+            if ((consumer == null) || consumer.isClosed())
+            {
+                if (_dispatcherLogger.isInfoEnabled())
                 {
-                    if (_dispatcherLogger.isInfoEnabled())
+                    if (consumer == null)
                     {
-                        if (consumer == null)
-                        {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
-                                                   + message.getDeliveryTag() + "] from queue "
-                                                   + message.getConsumerTag() + " )without a handler - rejecting(requeue)...");
-                        }
-                        else
-                        {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
-                                                   + message.getDeliveryTag() + "] from queue " + " consumer("
-                                                   + consumer.debugIdentity() + ") is closed rejecting(requeue)...");
-                        }
+                        _dispatcherLogger.info("Dispatcher(" + dispatcherID + ")Received a message(" + System.identityHashCode(message) + ")" + "["
+                                + message.getDeliveryTag() + "] from queue "
+                                + message.getConsumerTag() + " )without a handler - rejecting(requeue)...");
                     }
-                    // Don't reject if we're already closing
-                    if (!_closed.get())
+                    else
                     {
-                        rejectMessage(message, true);
+                        _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                                + message.getDeliveryTag() + "] from queue " + " consumer("
+                                + message.getConsumerTag() + ") is closed rejecting(requeue)...");
                     }
                 }
-                else
+                // Don't reject if we're already closing
+                if (!_closed.get())
                 {
-                    consumer.notifyMessage(message, _channelId);
+                    rejectMessage(message, true);
                 }
             }
-        //}
+            else
+            {
+                consumer.notifyMessage(message);
+            }
+
+        }
     }
 
     /*public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write,

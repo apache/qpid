@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.test.framework.clocksynch;
 
-import org.apache.log4j.Logger;
+import org.apache.qpid.junit.extensions.ShutdownHookable;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-
-import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
 
 /**
  * UDPClockReference supplies a refernce clock signal (generated from System.nanoTime()).
@@ -49,7 +47,7 @@ public class UDPClockReference implements Runnable, ShutdownHookable
     private static final int TIMEOUT = 200;
 
     /** Defines the port to run the clock reference on. */
-    public static final int REFERENCE_PORT = 4445;
+    public static final int REFERENCE_PORT = 4444;
 
     /** Holds the socket to receive clock reference requests on. */
     protected DatagramSocket socket = null;
@@ -164,3 +162,4 @@ public class UDPClockReference implements Runnable, ShutdownHookable
         }
     }
 }
+

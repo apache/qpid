@@ -21,8 +21,10 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.AMQException;
 
-public class HeartbeatBody extends AMQBody
+public class HeartbeatBody implements AMQBody
 {
     public static final byte TYPE = 8;
     public static AMQFrame FRAME = new HeartbeatBody().toFrame();
@@ -46,13 +48,19 @@ public class HeartbeatBody extends AMQBody
         return TYPE;
     }
 
-    protected int getSize()
+    public int getSize()
     {
         return 0;//heartbeats we generate have no payload
     }
 
-    protected void writePayload(ByteBuffer buffer)
+    public void writePayload(ByteBuffer buffer)
     {
+    }
+
+    public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
+            throws AMQException
+    {
+        session.heartbeatBodyReceived(channelId, this);
     }
 
     protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
