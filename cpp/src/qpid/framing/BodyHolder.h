@@ -47,14 +47,14 @@ class BodyHolder : public RefCounted
     BodyHolder(const AMQBody& b) { setBody(b); }
     BodyHolder(ClassId c, MethodId m) { setMethod(c,m); }
 
-    /** Construct from an in_place constructor expression */
+    /** Construct from an in_place constructor expression. */
     template <class InPlace>
     BodyHolder(const InPlace& ip, typename EnableInPlace<InPlace>::type* =0)
         : blob(ip) {}
 
     void setBody(const AMQBody& b);
 
-    /** Assign from an in_place constructor expression */
+    /** Assign from an in_place constructor expression. */
     template <class InPlace>
     typename EnableInPlace<InPlace,BodyHolder&>::type
     operator=(const InPlace& ip) { blob=ip; return *this; }

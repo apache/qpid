@@ -22,7 +22,7 @@
  */
 
 /** \file
- * Type definitions and forward declarations of all types used to
+ * Definitions and forward declarations of all types used 
  * in AMQP messages.
  */
 

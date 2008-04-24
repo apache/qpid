@@ -30,10 +30,10 @@ namespace framing {
 
 /** @file Generic visitor pattern. */
 
-/** visit() interface for type T (optional return type R, default void.)
+/** visit() interface for type T (optional return type R, default is void.)
  * To create  a visitor for a set of types T1, T2 ... do this:
  * struct MyVisitor : public Visit<T1>, public Visit<T2> ... {};
- *@param T Type to visit, must be forward declared, need not be defined.
+ *@param T Type to visit. This must be forward declared, and need not be defined.
  */
 template <class T, class R=void> struct Visit {
     typedef R ReturnType;
@@ -56,7 +56,7 @@ template <class T, class R=void> struct Visit {
  * @endcode
  * @param visitor name of the generated visitor class.
  * @param bases a sequence of visitable types in the form (T1)(T2)...
- * The odd parenthesized notation is due to quirks of the preprocesser.
+ * Any parenthesized notations are due to quirks of the preprocesser.
  */
 #define QPID_VISITOR(visitor,types) \
     BOOST_PP_SEQ_FOR_EACH(QPID_VISITOR_DECL, _, types) \
@@ -64,8 +64,8 @@ template <class T, class R=void> struct Visit {
     BOOST_PP_SEQ_FOR_EACH(QPID_VISITOR_BASE, _, BOOST_PP_SEQ_TAIL(types)) \
     {}
 
-/** Root class for hierarchy of objects visitable by Visitor V.
- * Defines virtual accept()
+/** The root class for the hierarchy of objects visitable by Visitor V.
+ * Defines virtual accept().
  */
 template <class V, class R=void>
 struct VisitableRoot {
@@ -75,8 +75,9 @@ struct VisitableRoot {
     virtual R accept(V& v) = 0;
 };
 
-/** Base class for concrete visitable classes, implements accept().
- * @param T type of visitable class (CRTP)
+/** The base class for concrete visitable classes.
+ * Implements accept().
+ * @param T type of visitable class (CRTP).
  * @param Base base class to inherit from.
  */
 template <class T, class Base>

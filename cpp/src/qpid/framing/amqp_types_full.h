@@ -20,12 +20,12 @@
  */
 
 /** \file
- * Type definitions and full declarations of all types used to
+ * Definitions and full declarations of all types used
  * in AMQP messages.
  *
- * Its better to include amqp_types.h in another header instead of this file
+ * It's better to include amqp_types.h in another header instead of this file
  * unless the header actually needs the full declarations. Including
- * full declarations when forward declarations would do increases compile
+ * full declarations when forward declarations would increase compile
  * times.
  */
 

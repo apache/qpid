@@ -102,11 +102,11 @@ class Channel : private sys::Runnable
      * 
      * @param transactional if true, the publishing and acknowledgement
      * of messages will be transactional and can be committed or
-     * aborted in atomic units (@see commit(), @see rollback())
+     * aborted in atomic units (@see commit(), @see rollback()).
      * 
      * @param prefetch specifies the number of unacknowledged
      * messages the channel is willing to have sent to it
-     * asynchronously
+     * asynchronously.
      */
     Channel(bool transactional = false, u_int16_t prefetch = 0);
      
@@ -115,43 +115,43 @@ class Channel : private sys::Runnable
     /**
      * Declares an exchange.
      * 
-     * In AMQP Exchanges are the destinations to which messages
+     * In AMQP, Exchanges are the destinations to which messages
      * are published. They have Queues bound to them and route
      * messages they receive to those queues. The routing rules
      * depend on the type of the exchange.
      * 
      * @param exchange an Exchange object representing the
-     * exchange to declare
+     * exchange to declare.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void declareExchange(Exchange& exchange, bool synch = true);
     /**
-     * Deletes an exchange
+     * Deletes an exchange.
      * 
-     * @param exchange an Exchange object representing the exchange to delete
+     * @param exchange an Exchange object representing the exchange to delete.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void deleteExchange(Exchange& exchange, bool synch = true);
     /**
-     * Declares a Queue
+     * Declares a Queue.
      * 
-     * @param queue a Queue object representing the queue to declare
+     * @param queue a Queue object representing the queue to declare.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void declareQueue(Queue& queue, bool synch = true);
     /**
-     * Deletes a Queue
+     * Deletes a Queue.
      * 
-     * @param queue a Queue object representing the queue to delete
+     * @param queue a Queue object representing the queue to delete.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void deleteQueue(Queue& queue, bool ifunused = false, bool ifempty = false, bool synch = true);
     /**
@@ -160,17 +160,17 @@ class Channel : private sys::Runnable
      * are used) depends on the type of the exchange.
      * 
      * @param exchange an Exchange object representing the
-     * exchange to bind to
+     * exchange to bind to.
      * 
      * @param queue a Queue object representing the queue to be
-     * bound
+     * bound.
      * 
-     * @param key the 'routing key' for the binding
+     * @param key the 'routing key' for the binding.
      * 
-     * @param args the 'binding arguments' for the binding
+     * @param args the 'binding arguments' for the binding.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void bind(const Exchange& exchange, const Queue& queue,
               const std::string& key,
@@ -180,13 +180,13 @@ class Channel : private sys::Runnable
     /**
      * For a transactional channel this will commit all
      * publications and acknowledgements since the last commit (or
-     * the channel was opened if there has been no previous
+     * the channel that was opened if there has been no previous
      * commit). This will cause published messages to become
      * available to consumers and acknowledged messages to be
      * consumed and removed from the queues they were dispatched
      * from.
      * 
-     * Transactionailty of a channel is specified when the channel
+     * A channel is specified as transactional or not when the channel
      * object is created (@see Channel()).
      */
     void commit();
@@ -194,7 +194,7 @@ class Channel : private sys::Runnable
     /**
      * For a transactional channel, this will rollback any
      * publications or acknowledgements. It will be as if the
-     * ppblished messages were never sent and the acknowledged
+     * published messages were never sent and the acknowledged
      * messages were never consumed.
      */
     void rollback();
@@ -207,7 +207,7 @@ class Channel : private sys::Runnable
     uint32_t getPrefetch() { return prefetch; }
 
     /**
-     * Start message dispatching on a new thread
+     * Start message dispatching on a new thread.
      */
     void start();
 
@@ -217,13 +217,13 @@ class Channel : private sys::Runnable
      */
     void close();
 
-    /** True if the channel is transactional */
+    /** True if the channel is transactional. */
     bool isTransactional() { return transactional; }
     
-    /** True if the channel is open */
+    /** True if the channel is open. */
     bool isOpen() const;
 
-    /** Return the protocol version */
+    /** Return the protocol version. */
     framing::ProtocolVersion getVersion() const { return version ; }
     
     /**
@@ -232,11 +232,11 @@ class Channel : private sys::Runnable
      * asynchronously.
      * 
      * @param queue a Queue instance representing the queue to
-     * consume from
+     * consume from.
      * 
      * @param tag an identifier to associate with the consumer
      * that can be used to cancel its subscription (if empty, this
-     * will be assigned by the broker)
+     * will be assigned by the broker).
      * 
      * @param listener a pointer to an instance of an
      * implementation of the MessageListener interface. Messages
@@ -248,10 +248,10 @@ class Channel : private sys::Runnable
      * should assume for this consumer. @see AckMode
      * 
      * @param noLocal if true, this consumer will not be sent any
-     * message published by this connection
+     * message published by this connection.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void consume(
         Queue& queue, const std::string& tag, MessageListener* listener, 
@@ -265,7 +265,7 @@ class Channel : private sys::Runnable
      * request that set up the subscription to be cancelled.
      * 
      * @param synch if true this call will block until a response
-     * is received from the broker
+     * is received from the broker.
      */
     void cancel(const std::string& tag, bool synch = true);
     /**
@@ -274,7 +274,7 @@ class Channel : private sys::Runnable
      * @param msg a message object that will contain the message
      * headers and content if the call completes.
      * 
-     * @param queue the queue to consume from
+     * @param queue the queue to consume from.
      * 
      * @param ackMode the acknowledgement mode to use (@see
      * AckMode)
@@ -287,11 +287,11 @@ class Channel : private sys::Runnable
     /**
      * Publishes (i.e. sends a message to the broker).
      * 
-     * @param msg the message to publish
+     * @param msg the message to publish.
      * 
-     * @param exchange the exchange to publish the message to
+     * @param exchange the exchange to publish the message to.
      * 
-     * @param routingKey the routing key to publish with
+     * @param routingKey the routing key to publish with.
      * 
      * @param mandatory if true and the exchange to which this
      * publish is directed has no matching bindings, the message

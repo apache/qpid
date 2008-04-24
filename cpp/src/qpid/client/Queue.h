@@ -36,19 +36,19 @@ namespace client {
      * that the queue exists or is created.
      * 
      * Queues hold messages and allow clients to consume
-     * (see Channel::consume()) or get (see Channel::get()) those messags. A
-     * queue receives messages by being bound to one or more Exchange;
-     * messages published to that exchange may then be routed to the
+     * (see Channel::consume()) or get (see Channel::get()) those messages. A
+     * queue receives messages by being bound to one or more Exchange.
+     * Messages published to that exchange may then be routed to the
      * queue based on the details of the binding and the type of the
      * exchange (see Channel::bind()).
      * 
      * Queues are identified by a name. They can be exclusive (in which
      * case they can only be used in the context of the connection
-     * over which they were declared, and are deleted when then
+     * over which they were declared, and are deleted when that
      * connection closes), or they can be shared. Shared queues can be
-     * auto deleted when they have no consumers.
+     * automatically deleted when they have no consumers.
      * 
-     * We use the term 'temporary queue' to refer to an exclusive
+     * The term 'temporary queue' refers to an exclusive
      * queue.
      */
     class Queue{
@@ -66,10 +66,10 @@ namespace client {
          */
 	Queue();
         /**
-         * Creates a shared, non-durable, queue with a given name,
-         * that will not be autodeleted.
+         * Creates a shared, non-durable queue with a given name,
+         * that will not be automatically deleted.
          * 
-         * @param name the name of the queue
+         * @param name the name of the queue.
          */
 	Queue(std::string name);
         /**
@@ -78,13 +78,13 @@ namespace client {
          * @param name the name of the queue
          * 
          * @param temp if true the queue will be a temporary queue, if
-         * false it will be shared and not autodeleted.
+         * false it will be shared and not automatically deleted.
          */
 	Queue(std::string name, bool temp);
         /**
-         * This constructor allows the autodelete, exclusive and
-         * durable propeties to be explictly set. Note however that if
-         * exclusive is true, autodelete has no meaning as exclusive
+         * This constructor allows the AutoDelete, Exclusive and
+         * Durable properties to be explictly set. Note however that if
+         * Exclusive is true, AutoDelete has no meaning as Exclusive
          * queues are always destroyed when the connection that
          * created them is closed.
          */

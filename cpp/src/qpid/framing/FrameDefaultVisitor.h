@@ -31,10 +31,10 @@
 namespace qpid {
 namespace framing {
 /**
- * Visitor for all concrete frame body types, combines
+ * Visitor for all concrete frame body types, which combines
  * AMQBodyConstVisitor and MethodBodyDefaultVisitor.
  * 
- * Derived classes may override visit methods to specify actions.
+ * Derived classes can override visit methods to specify actions.
  * Derived classes must override defaultVisit(), which is called
  * for any non-overridden visit functions.
  *
