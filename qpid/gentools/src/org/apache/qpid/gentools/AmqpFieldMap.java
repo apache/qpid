@@ -411,6 +411,20 @@ public class AmqpFieldMap implements VersionConsistencyCheck
         return true;
     }
 
+    public boolean isVersionInterfaceConsistent(AmqpVersionSet globalVersionSet)
+    {
+        for (String thisFieldName : _map.keySet())
+        {
+            AmqpField field = _map.get(thisFieldName);
+            if (!field.isVersionInterfaceConsistent(globalVersionSet))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     public AmqpVersionSet getVersionSet()
     {
         return _versionSet;

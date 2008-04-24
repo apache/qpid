@@ -25,17 +25,13 @@ import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.util.ConversationFactory;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
- * A TestCaseSequence is responsibile for creating test circuits appropriate to the context that a test case is
+ * A CircuitFactory is responsibile for creating test circuits appropriate to the context that a test case is
  * running in, and providing an implementation of a standard test procedure over a test circuit.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -43,12 +39,6 @@ import java.util.Properties;
  * <tr><td> Provide a standard test procedure over a test circuit.
  * <tr><td> Construct test circuits appropriate to a tests context.
  * </table>
- *
- * @todo The sequence test method is deprecated, in favour of using test circuits instead. This interface might be
- *       better renamed to somethign like CircuitFactory, also the split between this interface and
- *       DistributedTestSequencer could be removed and DistributedTestCase functionality merged into FrameworkBaseCase.
- *       This is so that any test case written on top of the framework base case can be distributed, without having
- *       to extend a different base test class.
  */
 public interface CircuitFactory
 {

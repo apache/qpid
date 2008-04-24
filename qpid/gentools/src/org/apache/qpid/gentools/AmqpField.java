@@ -198,6 +198,24 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
         return true;
     }
 
+
+    public boolean isVersionInterfaceConsistent(AmqpVersionSet globalVersionSet)
+    {
+        if (!_versionSet.equals(globalVersionSet))
+        {
+            return false;
+        }
+        if (!_domainMap.isVersionConsistent(globalVersionSet))
+        {
+            return false;
+        }
+        if (!_ordinalMap.isVersionConsistent(globalVersionSet))
+        {
+            return false;
+        }
+        return true;
+    }
+
     public String getDomain(AmqpVersion version)
     {
         return _versionToDomainMap.get(version);
@@ -247,4 +265,5 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
     {
         return _versionToOrdinalMap;
     }
+
 }

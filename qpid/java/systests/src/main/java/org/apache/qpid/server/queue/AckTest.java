@@ -34,7 +34,6 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.txn.MemoryTransactionManager;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.NullApplicationRegistry;
@@ -56,8 +55,6 @@ public class AckTest extends TestCase
 
     private TestableMemoryMessageStore _messageStore;
 
-    private MemoryTransactionManager _txm;
-
     private StoreContext _storeContext = new StoreContext();
 
     private AMQChannel _channel;
@@ -77,9 +74,8 @@ public class AckTest extends TestCase
     {
         super.setUp();
         _messageStore = new TestableMemoryMessageStore();
-        _txm = new MemoryTransactionManager();
         _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession, 5, _txm, _messageStore, null/*dont need exchange registry*/);
+        _channel = new AMQChannel(_protocolSession, 5, _messageStore);
 
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
@@ -94,8 +90,8 @@ public class AckTest extends TestCase
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
         TransactionalContext txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
-                                                                      new LinkedList<RequiredDeliveryException>(),
-                                                                      new HashSet<Long>());
+                                                                      new LinkedList<RequiredDeliveryException>()
+        );
         MessageHandleFactory factory = new MessageHandleFactory();
         for (int i = 1; i <= count; i++)
         {
@@ -107,6 +103,11 @@ public class AckTest extends TestCase
                 public AMQShortString getExchange()
                 {
                     return new AMQShortString("someExchange");
+                }
+
+                public void setExchange(AMQShortString exchange)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public boolean isImmediate()
@@ -144,7 +145,7 @@ public class AckTest extends TestCase
             msg.incrementReference();
             msg.routingComplete(_messageStore, _storeContext, factory);
             // we manually send the message to the subscription
-            _subscription.send(msg, _queue);
+            _subscription.send(new QueueEntry(_queue,msg), _queue);
         }
     }
 
@@ -172,7 +173,7 @@ public class AckTest extends TestCase
             assertTrue(deliveryTag == i);
             i++;
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
         }
 
         assertTrue(map.size() == msgCount);
@@ -219,7 +220,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
             {
@@ -248,7 +249,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i + 5);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             ++i;
         }
     }
@@ -272,7 +273,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i + 5);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             ++i;
         }
     }

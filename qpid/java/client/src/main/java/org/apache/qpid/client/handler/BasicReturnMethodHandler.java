@@ -22,15 +22,18 @@ package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.ReturnMessage;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BasicReturnMethodHandler implements StateAwareMethodListener
+public class BasicReturnMethodHandler implements StateAwareMethodListener<BasicReturnBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicReturnMethodHandler.class);
 
@@ -41,18 +44,20 @@ public class BasicReturnMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
-    {
-        BasicReturnBody returnBody = (BasicReturnBody)evt.getMethod();
-        _logger.debug("New JmsBounce method received");
-        final ReturnMessage msg = new ReturnMessage(evt.getChannelId(),
-                                                    returnBody.getExchange(),
-                                                    returnBody.getRoutingKey(),
-                                                    returnBody.getReplyText(),
-                                                    returnBody.getReplyCode()
-                                                    );
 
-        protocolSession.unprocessedMessageReceived(msg);
+    public void methodReceived(AMQStateManager stateManager, BasicReturnBody body, int channelId)
+    throws AMQException
+    {
+        _logger.debug("New JmsBounce method received");
+        final AMQProtocolSession session = stateManager.getProtocolSession();
+        final ReturnMessage msg = new ReturnMessage(channelId,
+                body.getExchange(),
+                body.getRoutingKey(),
+                body.getReplyText(),
+                body.getReplyCode()
+        );
+
+        session.unprocessedMessageReceived(msg);
     }
+
 }

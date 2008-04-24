@@ -27,8 +27,9 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class AMQProtocolSessionTest extends TestCase
+public class AMQProtocolSessionTest extends QpidTestCase
 {
     private static class AMQProtSession extends AMQProtocolSession
     {
@@ -50,7 +51,7 @@ public class AMQProtocolSessionTest extends TestCase
     }
 
     //private Strings for test values and expected results
-    private String _brokenAddress;
+    private String _brokenAddress = "tcp://myAddress;:";;
     private String _generatedAddress;
     private String _emptyAddress;
     private String _generatedAddress_2;
@@ -64,7 +65,7 @@ public class AMQProtocolSessionTest extends TestCase
         super.setUp();
 
         //don't care about the values set here apart from the dummy IoSession
-        _testSession = new AMQProtSession(null,new TestIoSession(),null);
+        _testSession = new AMQProtSession(null,new TestIoSession(), (AMQConnection) getConnection("guest", "guest"));
 
         //initialise addresses for test and expected results
         _port = 123;

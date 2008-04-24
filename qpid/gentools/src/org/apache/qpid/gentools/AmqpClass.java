@@ -24,6 +24,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.PrintStream;
+import java.util.Collection;
 
 public class AmqpClass implements Printable, NodeAware
 {
@@ -169,6 +170,11 @@ public class AmqpClass implements Printable, NodeAware
     public AmqpMethodMap getMethodMap()
     {
         return _methodMap;
+    }
+
+    public Collection<AmqpMethod> getMethods()
+    {
+        return getMethodMap().values();
     }
 
 

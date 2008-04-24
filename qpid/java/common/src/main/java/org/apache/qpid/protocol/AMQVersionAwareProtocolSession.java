@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.AMQException;
 
 /**
  * AMQVersionAwareProtocolSession is implemented by all AMQP session classes, that need to provide an awareness to
@@ -42,5 +43,15 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
      *
      * @return The method registry for a specific version of the AMQP.
      */
-    public VersionSpecificRegistry getRegistry();
+//    public VersionSpecificRegistry getRegistry();
+
+    MethodRegistry getMethodRegistry();
+
+
+    public void methodFrameReceived(int channelId, AMQMethodBody body) throws AMQException;
+    public void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException;
+    public void contentBodyReceived(int channelId, ContentBody body) throws AMQException;
+    public void heartbeatBodyReceived(int channelId, HeartbeatBody body) throws AMQException;
+
+
 }

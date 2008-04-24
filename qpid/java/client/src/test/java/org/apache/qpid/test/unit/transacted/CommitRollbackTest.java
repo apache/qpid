@@ -409,9 +409,9 @@ public class CommitRollbackTest extends QpidTestCase
             }
             else
             {
-                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");                
+                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");
                 assertFalse("Already received message two", _gottwo);
-
+                assertFalse("Already received message redelivered two", _gottwoRedelivered);
                 _gottwo = true;
             }
         }
@@ -419,6 +419,13 @@ public class CommitRollbackTest extends QpidTestCase
         verifyMessages(_consumer.receive(1000));
     }
 
+    /**
+     * This test sends two messages receives on of them but doesn't ack it.
+     * The consumer is then closed
+     * the first message should be returned as redelivered.
+     *  the second message should be delivered normally.
+     * @throws Exception
+     */
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -437,6 +444,7 @@ public class CommitRollbackTest extends QpidTestCase
         assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
         _logger.info("Closing Consumer");
+        
         _consumer.close();
 
         _logger.info("Creating New consumer");

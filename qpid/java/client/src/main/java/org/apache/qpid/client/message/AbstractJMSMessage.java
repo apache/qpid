@@ -63,8 +63,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     protected boolean _changedData = true;
     private Destination _destination;
     private JMSHeaderAdapter _headerAdapter;
-    private BasicMessageConsumer _consumer;
-    private boolean _strictAMQP;
+    private static final boolean STRICT_AMQP_COMPLIANCE =
+            Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
 
     /**
      * This is 0_10 specific
@@ -108,6 +108,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         return _010message;
     }
 
+
     protected AbstractJMSMessage(ByteBuffer data)
     {
         super(new BasicContentHeaderProperties());
@@ -122,8 +123,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _changedData = (data == null);
         _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
 
-        _strictAMQP =
-            Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
@@ -171,7 +170,10 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     {
         if (getContentHeaderProperties().getMessageIdAsString() == null)
         {
-            getContentHeaderProperties().setMessageId("ID:" + UUID.randomUUID());
+            StringBuilder b = new StringBuilder(39);
+            b.append("ID:");
+            b.append(UUID.randomUUID());
+            getContentHeaderProperties().setMessageId(b.toString());
         }
 
         return getContentHeaderProperties().getMessageIdAsString();
@@ -351,7 +353,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public boolean getBooleanProperty(AMQShortString propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -361,7 +363,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -371,7 +373,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public byte getByteProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -381,7 +383,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -391,7 +393,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public short getShortProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -401,7 +403,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public int getIntProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -411,7 +413,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public long getLongProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -421,7 +423,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public float getFloatProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -431,7 +433,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public double getDoubleProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -441,12 +443,20 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getStringProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
+        //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
+        if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
         }
+        else
+        {
+            if (STRICT_AMQP_COMPLIANCE)
+            {
+                throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            }
 
-        return getJmsHeaders().getString(propertyName);
+            return getJmsHeaders().getString(propertyName);
+        }
     }
 
     public Object getObjectProperty(String propertyName) throws JMSException
@@ -461,7 +471,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setBooleanProperty(AMQShortString propertyName, boolean b) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -472,7 +482,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -483,7 +493,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -494,7 +504,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setBytesProperty(AMQShortString propertyName, byte[] bytes) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -505,7 +515,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setShortProperty(String propertyName, short i) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -523,7 +533,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setLongProperty(String propertyName, long l) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -534,7 +544,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -545,7 +555,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException
     {
-        if (_strictAMQP)
+        if (STRICT_AMQP_COMPLIANCE)
         {
             throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
         }
@@ -739,11 +749,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             return 0;
         }
-    }
-
-    public void setConsumer(BasicMessageConsumer basicMessageConsumer)
-    {
-        _consumer = basicMessageConsumer;
     }
 
     public void receivedFromServer()

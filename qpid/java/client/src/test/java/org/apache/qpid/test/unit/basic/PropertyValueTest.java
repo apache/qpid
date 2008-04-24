@@ -60,6 +60,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
     private final List<String> messages = new ArrayList<String>();
     private int _count = 1;
     public String _connectionString = "vm://:1";
+    private static final String USERNAME = "guest";
 
     protected void setUp() throws Exception
     {
@@ -171,7 +172,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             m.setJMSReplyTo(q);
             m.setStringProperty("TempQueue", q.toString());
 
-            _logger.trace("Message:" + m);
+            _logger.debug("Message:" + m);
 
             Assert.assertEquals("Check temp queue has been set correctly", m.getJMSReplyTo().toString(),
                 m.getStringProperty("TempQueue"));
@@ -287,7 +288,14 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
 
             Assert.assertTrue("Check void properties are correctly transported",
-                ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+                              ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+
+            //JMSXUserID
+            if (m.getStringProperty("JMSXUserID") != null)
+            {
+                Assert.assertEquals("Check 'JMSXUserID' is supported ", USERNAME,
+                                    m.getStringProperty("JMSXUserID"));
+            }
         }
 
         received.clear();

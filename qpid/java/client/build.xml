@@ -21,7 +21,7 @@
 <project name="AMQ Client" default="build">
 
   <property name="module.depends" value="common"/>
-  <property name="module.test.depends" value="broker"/>
+  <property name="module.test.depends" value="broker junit-toolkit"/>
 
   <import file="../module.xml"/>
 
@@ -29,9 +29,9 @@
 
   <target name="precompile">
     <mkdir dir="${output.dir}"/>
-    <exec executable="javacc">
-      <arg line="-OUTPUT_DIRECTORY=${output.dir} src/main/grammar/SelectorParser.jj"/>
-    </exec>
+    <javacc target="src/main/grammar/SelectorParser.jj"
+            outputdirectory="${output.dir}"
+            javacchome="${project.root}/lib"/>
   </target>
 
 </project>

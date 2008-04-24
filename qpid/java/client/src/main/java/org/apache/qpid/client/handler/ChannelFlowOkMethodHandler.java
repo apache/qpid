@@ -30,7 +30,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelFlowOkMethodHandler implements StateAwareMethodListener
+public class ChannelFlowOkMethodHandler implements StateAwareMethodListener<ChannelFlowOkBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelFlowOkMethodHandler.class);
     private static final ChannelFlowOkMethodHandler _instance = new ChannelFlowOkMethodHandler();
@@ -43,10 +43,12 @@ public class ChannelFlowOkMethodHandler implements StateAwareMethodListener
     private ChannelFlowOkMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ChannelFlowOkBody body, int channelId)
+            throws AMQException
     {
-        ChannelFlowOkBody method = (ChannelFlowOkBody) evt.getMethod();
-        _logger.debug("Received Channel.Flow-Ok message, active = " + method.active);
+
+        _logger.debug("Received Channel.Flow-Ok message, active = " + body.getActive());
     }
+
+
 }

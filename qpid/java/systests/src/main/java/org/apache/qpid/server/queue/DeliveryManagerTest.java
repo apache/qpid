@@ -40,7 +40,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
     public void testStartInQueueingMode() throws AMQException
     {
-        AMQMessage[] messages = new AMQMessage[10];
+        QueueEntry[] messages = new QueueEntry[10];
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message();
@@ -85,7 +85,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
     public void testStartInDirectMode() throws AMQException
     {
-        AMQMessage[] messages = new AMQMessage[10];
+        QueueEntry[] messages = new QueueEntry[10];
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message();
@@ -132,7 +132,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
     {
         try
         {
-            AMQMessage msg = message(true);
+            QueueEntry msg = message(true);
             _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg, false);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
@@ -154,7 +154,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
             SubscriptionTestHelper s = new SubscriptionTestHelper("A");
             _subscriptions.addSubscriber(s);
             s.setSuspended(true);
-            AMQMessage msg = message(true);
+            QueueEntry msg = message(true);
             _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg, false);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");

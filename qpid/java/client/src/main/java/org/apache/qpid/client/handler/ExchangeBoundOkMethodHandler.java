@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Apache Software Foundation
  */
-public class ExchangeBoundOkMethodHandler implements StateAwareMethodListener
+public class ExchangeBoundOkMethodHandler implements StateAwareMethodListener<ExchangeBoundOkBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ExchangeBoundOkMethodHandler.class);
     private static final ExchangeBoundOkMethodHandler _instance = new ExchangeBoundOkMethodHandler();
@@ -46,14 +46,14 @@ public class ExchangeBoundOkMethodHandler implements StateAwareMethodListener
     private ExchangeBoundOkMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ExchangeBoundOkBody body, int channelId)
+            throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
-            ExchangeBoundOkBody body = (ExchangeBoundOkBody) evt.getMethod();
-            _logger.debug("Received Exchange.Bound-Ok message, response code: " + body.replyCode + " text: "
-                + body.replyText);
+            _logger.debug("Received Exchange.Bound-Ok message, response code: " + body.getReplyCode() + " text: "
+                + body.getReplyText());
         }
     }
+
 }

@@ -18,23 +18,40 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
+/**
+ * AMQTypedValue combines together a native Java Object value, and an {@link AMQType}, as a fully typed AMQP parameter
+ * value. It provides the ability to read and write fully typed parameters to and from byte buffers. It also provides
+ * the ability to create such parameters from Java native value and a type tag or to extract the native value and type
+ * from one.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Create a fully typed AMQP value from a native type and a type tag. <td> {@link AMQType}
+ * <tr><td> Create a fully typed AMQP value from a binary representation in a byte buffer. <td> {@link AMQType}
+ * <tr><td> Write a fully typed AMQP value to a binary representation in a byte buffer. <td> {@link AMQType}
+ * <tr><td> Extract the type from a fully typed AMQP value.
+ * <tr><td> Extract the value from a fully typed AMQP value.
+ * </table>
+ */
 public class AMQTypedValue
 {
+    /** The type of the value. */
     private final AMQType _type;
-    private final Object _value;
 
+    /** The Java native representation of the AMQP typed value. */
+    private final Object _value;
 
     public AMQTypedValue(AMQType type, Object value)
     {
-        if(type == null)
+        if (type == null)
         {
             throw new NullPointerException("Cannot create a typed value with null type");
         }
+
         _type = type;
         _value = type.toNativeValue(value);
     }
@@ -42,9 +59,8 @@ public class AMQTypedValue
     private AMQTypedValue(AMQType type, ByteBuffer buffer)
     {
         _type = type;
-        _value = type.readValueFromBuffer( buffer );
+        _value = type.readValueFromBuffer(buffer);
     }
-
 
     public AMQType getType()
     {
@@ -56,10 +72,9 @@ public class AMQTypedValue
         return _value;
     }
 
-
     public void writeToBuffer(ByteBuffer buffer)
     {
-        _type.writeToBuffer(_value,buffer);
+        _type.writeToBuffer(_value, buffer);
     }
 
     public int getEncodingSize()
@@ -70,11 +85,12 @@ public class AMQTypedValue
     public static AMQTypedValue readFromBuffer(ByteBuffer buffer)
     {
         AMQType type = AMQTypeMap.getType(buffer.get());
+
         return new AMQTypedValue(type, buffer);
     }
 
     public String toString()
     {
-        return "["+getType()+": "+getValue()+"]";
+        return "[" + getType() + ": " + getValue() + "]";
     }
 }

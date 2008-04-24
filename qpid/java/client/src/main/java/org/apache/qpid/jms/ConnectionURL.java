@@ -21,6 +21,7 @@
 package org.apache.qpid.jms;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ProtocolVersion;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public interface ConnectionURL
     public static final String OPTIONS_TEMPORARY_QUEUE_EXCHANGE = "temporaryQueueExchange";
     public static final byte  URL_0_8 = 1;
     public static final byte  URL_0_10 = 2;
- 
+    
     String getURL();
 
     String getFailoverMethod();
@@ -89,4 +90,5 @@ public interface ConnectionURL
     AMQShortString getTemporaryQueueExchangeName();
 
     AMQShortString getTemporaryTopicExchangeName();
+
 }

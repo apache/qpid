@@ -94,21 +94,23 @@ public class Job implements Runnable
     /**
      * Sequentially processes, up to the maximum number per job, the aggregated continuations in enqueued in this job.
      */
-    void processAll()
+    boolean processAll()
     {
         // limit the number of events processed in one run
-        for (int i = 0; i < _maxEvents; i++)
+        int i = _maxEvents;
+        while( --i != 0 )
         {
             Event e = _eventQueue.poll();
             if (e == null)
             {
-                break;
+                return true;
             }
             else
             {
                 e.process(_session);
             }
         }
+        return false;
     }
 
     /**
@@ -144,9 +146,15 @@ public class Job implements Runnable
      */
     public void run()
     {
-        processAll();
-        deactivate();
-        _completionHandler.completed(_session, this);
+        if(processAll())
+        {
+            deactivate();
+            _completionHandler.completed(_session, this);
+        }
+        else
+        {
+            _completionHandler.notCompleted(_session, this);
+        }
     }
 
     /**
@@ -158,5 +166,7 @@ public class Job implements Runnable
     static interface JobCompletionHandler
     {
         public void completed(IoSession session, Job job);
+
+        public void notCompleted(final IoSession session, final Job job);
     }
 }
