@@ -40,7 +40,7 @@ namespace qpid {
 namespace client {
 
 /**
- * \defgroup clientapi Application API for an AMQP client
+ * \defgroup clientapi Application API for an AMQP client.
  */
 
 /**
@@ -66,14 +66,14 @@ class Connection
      * Creates a connection object, but does not open the
      * connection.  
      * 
-     * @param _version the version of the protocol to connect with
+     * @param _version the version of the protocol to connect with.
      *
      * @param debug turns on tracing for the connection
      * (i.e. prints details of the frames sent and received to std
-     * out). Optional and defaults to false.
+     * out). Optional. Defaults to false.
      * 
      * @param max_frame_size the maximum frame size that the
-     * client will accept. Optional and defaults to 65535.
+     * client will accept. Optional. Defaults to 65535.
      */
     Connection(bool debug = false, uint32_t max_frame_size = 65535,
                framing::ProtocolVersion=framing::highestProtocolVersion);
@@ -83,15 +83,15 @@ class Connection
     /**
      * Opens a connection to a broker.
      * 
-     * @param host the host on which the broker is running
+     * @param host the host on which the broker is running.
      * 
-     * @param port the port on the which the broker is listening
+     * @param port the port on the which the broker is listening.
      * 
-     * @param uid the userid to connect with
+     * @param uid the userid to connect with.
      * 
      * @param pwd the password to connect with (currently SASL
      * PLAIN is the only authentication method supported so this
-     * is sent in clear text)
+     * is sent in clear text).
      * 
      * @param virtualhost the AMQP virtual host to use (virtual
      * hosts, where implemented(!), provide namespace partitioning
@@ -103,7 +103,7 @@ class Connection
               const std::string& virtualhost = "/");
 
     /**
-     * Close the connection
+     * Close the connection.
      *
      * Any further use of this connection (without reopening it) will
      * not succeed.
@@ -113,7 +113,7 @@ class Connection
     /**
      * Associate a Channel with this connection and open it for use.
      *
-     * In AMQP channels are like multi-plexed 'sessions' of work over
+     * In AMQP, channels are like multiplexed 'sessions' of work over
      * a connection. Almost all the interaction with AMQP is done over
      * a channel.
      * 
@@ -129,7 +129,7 @@ class Connection
      *
      *@param detachedLifetime: A session may be detached from its
      * channel, either by calling Session::suspend() or because of a
-     * network failure. The session state is perserved for
+     * network failure. The session state is preserved for
      * detachedLifetime seconds to allow a call to resume(). After
      * that the broker may discard the session state. Default is 0,
      * meaning the session cannot be resumed.

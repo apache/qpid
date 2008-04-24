@@ -35,7 +35,7 @@ namespace qpid {
 namespace framing {
 
 /**
- * Exception that is base exception for all field table errors 
+ * Exception that is the base exception for all field table errors.
  * 
  * \ingroup clientapi
  */
