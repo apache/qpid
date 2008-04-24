@@ -77,7 +77,7 @@ void Array::decode(Buffer& buffer){
     uint32_t size = buffer.getLong();//size added only when array is a top-level type
     uint32_t available = buffer.available();
     if (available < size) {
-        throw SyntaxErrorException(QPID_MSG("Not enough data for array, expected " 
+        throw IllegalArgumentException(QPID_MSG("Not enough data for array, expected " 
                                             << size << " bytes but only " << available << " available"));
     }
     if (size) {
@@ -88,7 +88,7 @@ void Array::decode(Buffer& buffer){
         dummy.setType(typeOctet);
         available = buffer.available();
         if (available < count * dummy.getData().size()) {
-            throw SyntaxErrorException(QPID_MSG("Not enough data for array, expected " 
+            throw IllegalArgumentException(QPID_MSG("Not enough data for array, expected " 
                                                 << count << " items of " << dummy.getData().size()
                                                 << " bytes each  but only " << available << " bytes available"));
         }
@@ -117,7 +117,7 @@ bool Array::operator==(const Array& x) const {
 void Array::add(ValuePtr value)
 {
     if (typeOctet != value->getType()) {
-        throw SyntaxErrorException(QPID_MSG("Wrong type of value, expected " << typeOctet));
+        throw IllegalArgumentException(QPID_MSG("Wrong type of value, expected " << typeOctet));
     }
     values.push_back(value);
 }

@@ -59,7 +59,7 @@ void BodyHolder::decode(uint8_t type, Buffer& buffer, uint32_t size) {
       case CONTENT_BODY: *this=in_place<AMQContentBody>(); break;
       case HEARTBEAT_BODY: *this=in_place<AMQHeartbeatBody>(); break;
       default:
-	throw SyntaxErrorException(QPID_MSG("Invalid frame type " << type));
+	throw IllegalArgumentException(QPID_MSG("Invalid frame type " << type));
     }
     get()->decode(buffer, size);
 }

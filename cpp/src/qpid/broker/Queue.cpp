@@ -340,11 +340,11 @@ bool Queue::seek(QueuedMessage& msg, Consumer& c) {
 void Queue::consume(Consumer& c, bool requestExclusive){
     Mutex::ScopedLock locker(consumerLock);
     if(exclusive) {
-        throw AccessRefusedException(
+        throw ResourceLockedException(
             QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
     } else if(requestExclusive) {
         if(consumerCount) {
-            throw AccessRefusedException(
+            throw ResourceLockedException(
                 QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
         } else {
             exclusive = c.getSession();
@@ -596,7 +596,6 @@ void Queue::tryAutoDelete(Broker& broker, Queue::shared_ptr queue)
         queue->unbind(broker.getExchanges(), queue);
         queue->destroy();
     }
-
 }
 
 bool Queue::isExclusiveOwner(const OwnershipToken* const o) const 

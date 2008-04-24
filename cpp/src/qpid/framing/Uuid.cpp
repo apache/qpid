@@ -34,7 +34,7 @@ void Uuid::encode(Buffer& buf) const {
 
 void Uuid::decode(Buffer& buf) {
     if (buf.available() < size())
-        throw SyntaxErrorException(QPID_MSG("Not enough data for UUID."));
+        throw IllegalArgumentException(QPID_MSG("Not enough data for UUID."));
     buf.getRawData(c_array(), size());
 }
 

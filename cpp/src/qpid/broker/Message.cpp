@@ -24,7 +24,6 @@
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
-#include "qpid/framing/MessageXTransferBody.h"
 #include "qpid/framing/SendContent.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/TypeFilter.h"
@@ -36,7 +35,6 @@ using namespace qpid::framing;
 using std::string;
 
 TransferAdapter Message::TRANSFER;
-PreviewAdapter Message::TRANSFER_99_0;
 
 Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), staged(false), publisher(0), adapter(0) {}
 
@@ -225,9 +223,7 @@ void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) 
 MessageAdapter& Message::getAdapter() const
 {
     if (!adapter) {
-        if(frames.isA<MessageXTransferBody>()) {
-            adapter = &TRANSFER_99_0;
-        } else if(frames.isA<MessageTransferBody>()) {
+        if(frames.isA<MessageTransferBody>()) {
             adapter = &TRANSFER;
         } else {
             const AMQMethodBody* method = frames.getMethod();

@@ -25,6 +25,7 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;

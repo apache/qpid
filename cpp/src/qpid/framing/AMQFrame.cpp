@@ -73,7 +73,7 @@ bool AMQFrame::decode(Buffer& buffer)
     uint8_t  flags = buffer.getOctet();
     uint8_t framing_version = (flags & 0xc0) >> 6;
     if (framing_version != 0)
-        throw SyntaxErrorException(QPID_MSG("Framing version unsupported"));
+        throw FramingErrorException(QPID_MSG("Framing version unsupported"));
     bof = flags & 0x08;
     eof = flags & 0x04;
     bos = flags & 0x02;
@@ -81,7 +81,7 @@ bool AMQFrame::decode(Buffer& buffer)
     uint8_t  type = buffer.getOctet();
     uint16_t frame_size =  buffer.getShort();
     if (frame_size < frameOverhead()-1)
-        throw SyntaxErrorException(QPID_MSG("Frame size too small"));    
+        throw FramingErrorException(QPID_MSG("Frame size too small"));    
     uint8_t  reserved1 = buffer.getOctet();
     uint8_t  field1 = buffer.getOctet();
     subchannel = field1 & 0x0f;
@@ -92,7 +92,7 @@ bool AMQFrame::decode(Buffer& buffer)
     // TODO: should we check reserved2 against zero as well? - the
     // spec isn't clear
     if ((flags & 0x30) != 0 || reserved1 != 0 || (field1 & 0xf0) != 0)
-        throw SyntaxErrorException(QPID_MSG("Reserved bits not zero"));
+        throw FramingErrorException(QPID_MSG("Reserved bits not zero"));
 
     // TODO: should no longer care about body size and only pass up
     // B,E,b,e flags
@@ -105,7 +105,7 @@ bool AMQFrame::decode(Buffer& buffer)
     body->decode(type,buffer, body_size);
     uint8_t end = buffer.getOctet();
     if (end != 0xCE)
-        throw SyntaxErrorException(QPID_MSG("Frame end not found"));
+        throw FramingErrorException(QPID_MSG("Frame end not found"));
     return true;
 }
 

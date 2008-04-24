@@ -13,10 +13,9 @@ force:
 
 if GENERATE
 
-# AMQP_PREVIEW_XML and AMQP_FINAL_XML are defined in ../configure.ac
-amqp_99_0_xml=@AMQP_PREVIEW_XML@  $(top_srcdir)/xml/extra.xml $(top_srcdir)/xml/cluster.xml
+# AMQP_FINAL_XML is defined in ../configure.ac
 amqp_0_10_xml=@AMQP_FINAL_XML@
-specs=$(amqp_99_0_xml) $(amqp_0_10_xml)
+specs=$(amqp_0_10_xml)
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
@@ -152,7 +151,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Buffer.cpp \
   qpid/framing/FieldTable.cpp \
   qpid/framing/FieldValue.cpp \
-  qpid/framing/FramingContent.cpp \
   qpid/framing/FrameSet.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
@@ -193,19 +191,11 @@ libqpidbroker_la_SOURCES = \
   qpid/amqp_0_10/Connection.h \
   qpid/amqp_0_10/Connection.cpp \
   qpid/broker/Broker.cpp \
-  qpid/broker/BrokerAdapter.cpp \
-  qpid/broker/SessionAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/PersistableMessage.cpp \
   qpid/broker/Bridge.cpp \
-  qpid/broker/PreviewConnection.cpp \
-  qpid/broker/PreviewConnectionCodec.cpp \
-  qpid/broker/PreviewConnectionHandler.cpp \
-  qpid/broker/PreviewSessionHandler.cpp \
-  qpid/broker/PreviewSessionManager.cpp \
-  qpid/broker/PreviewSessionState.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -215,7 +205,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/DirectExchange.cpp \
   qpid/broker/DtxAck.cpp \
   qpid/broker/DtxBuffer.cpp \
-  qpid/broker/DtxHandlerImpl.cpp \
   qpid/broker/DtxManager.cpp \
   qpid/broker/DtxTimeout.cpp \
   qpid/broker/DtxWorkRecord.cpp \
@@ -228,7 +217,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageDelivery.cpp \
-  qpid/broker/MessageHandlerImpl.cpp \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
@@ -241,6 +229,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SaslAuthenticator.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SemanticState.cpp \
+  qpid/broker/SessionAdapter.cpp \
   qpid/broker/SessionState.h \
   qpid/broker/SessionState.cpp \
   qpid/broker/SessionManager.h \
@@ -248,7 +237,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionHandler.h \
   qpid/broker/SessionContext.h \
   qpid/broker/SessionHandler.cpp \
-  qpid/broker/SemanticHandler.cpp \
   qpid/broker/System.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
@@ -308,18 +296,11 @@ nobase_include_HEADERS = \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
-  qpid/broker/BrokerAdapter.h \
   qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
   qpid/broker/Queue.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
-  qpid/broker/PreviewConnection.h \
-  qpid/broker/PreviewConnectionCodec.h \
-  qpid/broker/PreviewConnectionHandler.h \
-  qpid/broker/PreviewSessionHandler.h \
-  qpid/broker/PreviewSessionManager.h \
-  qpid/broker/PreviewSessionState.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionFactory.h \
@@ -337,7 +318,6 @@ nobase_include_HEADERS = \
   qpid/broker/DirectExchange.h \
   qpid/broker/DtxAck.h \
   qpid/broker/DtxBuffer.h \
-  qpid/broker/DtxHandlerImpl.h \
   qpid/broker/DtxManager.h \
   qpid/broker/DtxTimeout.h \
   qpid/broker/DtxWorkRecord.h \
@@ -351,7 +331,6 @@ nobase_include_HEADERS = \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
   qpid/broker/MessageDelivery.h \
-  qpid/broker/MessageHandlerImpl.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/NameGenerator.h \
@@ -372,8 +351,8 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveredEnqueue.h \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
-  qpid/broker/SemanticHandler.h \
   qpid/broker/SaslAuthenticator.h \
+  qpid/broker/SessionAdapter.h \
   qpid/broker/SessionManager.h \
   qpid/broker/System.h \
   qpid/broker/Timer.h \
@@ -434,7 +413,6 @@ nobase_include_HEADERS = \
   qpid/framing/FrameHandler.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/FrameSet.h \
-  qpid/framing/FramingContent.h \
   qpid/framing/Handler.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/Invoker.h \

@@ -46,7 +46,7 @@ class SessionState;
  * receives incoming frames, handles session controls and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
+class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
                        public framing::FrameHandler::InOutHandler,
                        private boost::noncopyable
 {
@@ -66,9 +66,8 @@ class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
-    // Called by closing connection.
-    void localSuspend();
-    void detach() { localSuspend(); }
+    void requestDetach();
+    void handleDetach();
     void sendCompletion();
     
   protected:
@@ -93,9 +92,6 @@ class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
     void flush(bool expected, bool confirmed, bool completed);
     void gap(const framing::SequenceSet& commands);    
 
-    //hacks for old generator:
-    void commandPoint(uint32_t id, uint64_t offset) { commandPoint(framing::SequenceNumber(id), offset); }
-
     void assertAttached(const char* method) const;
     void assertActive(const char* method) const;
     void assertClosed(const char* method) const;
@@ -105,7 +101,7 @@ class SessionHandler : public framing::AMQP_ServerOperations::Session010Handler,
     Connection& connection;
     framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
-    framing::AMQP_ClientProxy::Session010 peerSession;
+    framing::AMQP_ClientProxy::Session peerSession;
     bool ignoring;
     std::auto_ptr<SessionState> session;
     std::string name;//TODO: this should be part of the session state and replace the id
