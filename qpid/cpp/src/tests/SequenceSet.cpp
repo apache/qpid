@@ -18,6 +18,7 @@
 
 #include "qpid/framing/SequenceSet.h"
 #include "unit_test.h"
+#include <list>
 
 QPID_AUTO_TEST_SUITE(SequenceSetTestSuite)
 
