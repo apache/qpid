@@ -24,6 +24,7 @@
 #include "Queue.h"
 #include "RecoveredEnqueue.h"
 #include "RecoveredDequeue.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -103,7 +104,7 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
         if (exchange) {
             exchange->bind(queue, queue->getName(), 0);
         }
-    } catch (ChannelException& e) {
+    } catch (const framing::NotFoundException& e) {
         //assume no default exchange has been declared
     }
     return RecoverableQueue::shared_ptr(new RecoverableQueueImpl(queue));
