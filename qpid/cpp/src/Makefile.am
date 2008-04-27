@@ -138,6 +138,8 @@ libqpidcommon_la_SOURCES = \
   $(rgen_framing_srcs) \
   $(platform_src) \
   qpid/Serializer.h \
+  qpid/SessionState.cpp \
+  qpid/SessionState.h \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
