@@ -91,6 +91,39 @@ noinst_LTLIBRARIES=libLogger.la # libqpidamqp_0_10.la
 libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
+if RDMA
+
+# RDMA (Infiniband) protocol code
+libqpidrdma_la_SOURCES = \
+  qpid/sys/rdma/rdma_exception.h \
+  qpid/sys/rdma/rdma_factories.cpp \
+  qpid/sys/rdma/RdmaIO.cpp \
+  qpid/sys/rdma/RdmaIO.h \
+  qpid/sys/rdma/rdma_wrap.h
+libqpidrdma_la_LIBADD = \
+  -lrdmacm \
+  -libverbs
+libqpidrdma_la_CXXFLAGS = \
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+noinst_LTLIBRARIES += \
+  libqpidrdma.la
+qpidd_LDADD += \
+  libqpidrdma.la
+
+noinst_PROGRAMS += RdmaServer RdmaClient
+RdmaServer_SOURCES = qpid/sys/rdma/RdmaServer.cpp
+RdmaServer_CXXFLAGS = \
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+RdmaServer_LDADD = \
+  libqpidrdma.la libqpidcommon.la
+RdmaClient_SOURCES = qpid/sys/rdma/RdmaClient.cpp
+RdmaClient_CXXFLAGS = \
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+RdmaClient_LDADD = \
+  libqpidrdma.la libqpidcommon.la
+
+endif
+
 # New 0-10 codec, to be integrated in future.
 # libqpidamqp_0_10_la_SOURCES= 
 EXTRA_DIST+=\
