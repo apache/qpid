@@ -109,7 +109,7 @@ AC_ARG_ENABLE([valgrind],
 AC_CHECK_PROG([VALGRIND], [valgrind], [valgrind])
 test "$enable_VALGRIND" = no && VALGRIND=
 
-# If rpmlint is availalbe we'll run it when building RPMs.
+# If rpmlint is available we'll run it when building RPMs.
 AC_CHECK_PROG([RPMLINT], [rpmlint], [rpmlint])
 AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 
@@ -193,6 +193,34 @@ AS_IF([test "x$WANT_SASL" != xno],
      [AC_DEFINE([BROKER_SASL_NAME], ["qpidd"],
                 [The SASL app name for the qpid Broker])
       AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])])])
+
+# Setup --with-rdma/--without-rdma as arguments to configure
+AC_ARG_WITH([rdma],
+  [AS_HELP_STRING([--with-rdma], [Build with support for Remote DMA protocols])],
+  [case ${withval} in
+   yes)
+     with_RDMA=yes
+     AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[AC_MSG_ERROR([libibverbs not found])])
+     AC_CHECK_LIB([rdmacm],[rdma_create_id],,[AC_MSG_ERROR([librdmacm not found])])
+     AC_CHECK_HEADERS([infiniband/verbs.h],,[AC_MSG_ERROR([ibverbs header files not found])])
+     AC_CHECK_HEADERS([rdma/rdma_cma.h],,[AC_MSG_ERROR([rdma_cm header files not found])])
+     ;;
+   no)
+     with_RDMA=no
+     ;;
+   *)
+     AC_MSG_ERROR([Bad value for --with-rdma: ${withval}])
+     ;;
+   esac],
+  [
+   with_RDMA=no
+   AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[with_RDMA=no])
+   AC_CHECK_LIB([rdmacm],[rdma_create_id],,[with_RDMA=no])
+   AC_CHECK_HEADERS([infiniband/verbs.h],,[with_RDMA=no])
+   AC_CHECK_HEADERS([rdma/rdma_cma.h],,[with_RDMA=no])
+  ]
+)
+AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
 
 # Files to generate	
 AC_CONFIG_FILES([
