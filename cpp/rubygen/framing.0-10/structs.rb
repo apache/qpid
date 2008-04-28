@@ -107,9 +107,17 @@ class StructGen < CppGen
   end
 
   def print_packed_field(s, f, i)
+    classname = s.cppname
+    if (s.kind_of? AmqpMethod)
+      classname = s.body_name
+    end
     genl "if (flags & #{flag_mask(s, i)})"
     indent { 
-      genl "out << \"#{f.name}=\" << #{printable_form(f)} << \"; \";"
+      unless (classname == "ConnectionStartOkBody" && f.name == "response")
+        genl "out << \"#{f.name}=\" << #{printable_form(f)} << \"; \";"
+      else
+        genl "out << \"response=\" << \"xxxxxx\" << \"; \";"
+      end
     }
   end
 
