@@ -1,6 +1,7 @@
 
 # List all example files here
 nobase_pkgdata_DATA=						\
+        examples/README                                         \
 	examples/Makefile					\
 	examples/request-response/client.cpp			\
 	examples/request-response/server.cpp			\
