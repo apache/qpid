@@ -23,11 +23,13 @@
  */
 
 #include <string>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/variant.hpp>
 #include "PersistableMessage.h"
 #include "MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
 
 namespace qpid {
 	
@@ -125,7 +127,11 @@ public:
 
     bool isContentLoaded() const;
 
+    bool isExcluded(const std::vector<std::string>& excludes) const;
+    void addTraceId(const std::string& id);
+
   private:
+    mutable sys::Mutex lock;
     framing::FrameSet frames;
     mutable boost::shared_ptr<Exchange> exchange;
     mutable uint64_t persistenceId;
