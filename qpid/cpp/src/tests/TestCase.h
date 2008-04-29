@@ -21,8 +21,8 @@
  *
  */
 
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/Message.h"
-#include "TestOptions.h"
 
 
 namespace qpid {
@@ -39,7 +39,7 @@ public:
      * may be 'activated' at this stage others may require an explicit
      * start request.
      */
-    virtual void assign(const std::string& role, framing::FieldTable& params, TestOptions& options) = 0;
+    virtual void assign(const std::string& role, framing::FieldTable& params, client::ConnectionSettings& options) = 0;
     /**
      * Each test will be started on its own thread, which should block
      * until the test completes (this may or may not require an

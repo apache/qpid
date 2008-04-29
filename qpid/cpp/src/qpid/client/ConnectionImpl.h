@@ -22,22 +22,26 @@
 #ifndef _ConnectionImpl_
 #define _ConnectionImpl_
 
-#include <map>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include "Bounds.h"
+#include "ConnectionHandler.h"
+#include "Connector.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
-#include "ConnectionHandler.h"
-#include "Connector.h"
+
+#include <map>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 
 namespace qpid {
 namespace client {
 
+class ConnectionSettings;
 class SessionImpl;
 
-class ConnectionImpl : public framing::FrameHandler,
+class ConnectionImpl : public Bounds,
+                       public framing::FrameHandler,
                        public sys::TimeoutHandler, 
                        public sys::ShutdownHandler
 
@@ -47,13 +51,15 @@ class ConnectionImpl : public framing::FrameHandler,
 
     SessionMap sessions; 
     ConnectionHandler handler;
-    boost::shared_ptr<Connector> connector;
+    Connector connector;
     framing::ProtocolVersion version;
     sys::Mutex lock;
     bool isClosed;
     bool isClosing;
 
     template <class F> void detachAll(const F&);
+
+    void open(const std::string& host, int port);
 
     SessionVector closeInternal(const sys::Mutex::ScopedLock&);
     void incoming(framing::AMQFrame& frame);    
@@ -64,21 +70,16 @@ class ConnectionImpl : public framing::FrameHandler,
     bool setClosing();
 
   public:
-    typedef boost::shared_ptr<ConnectionImpl> shared_ptr;
-
-    ConnectionImpl(boost::shared_ptr<Connector> c);
+    ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
     
     void addSession(const boost::shared_ptr<SessionImpl>&);
         
-    void open(const std::string& host, int port = 5672, 
-              const std::string& uid = "guest",
-              const std::string& pwd = "guest", 
-              const std::string& virtualhost = "/");
     void close();
     void handle(framing::AMQFrame& frame);
     void erase(uint16_t channel);
-    boost::shared_ptr<Connector> getConnector() { return connector; }
+
+    const ConnectionSettings& getNegotiatedSettings();
 };
 
 }}

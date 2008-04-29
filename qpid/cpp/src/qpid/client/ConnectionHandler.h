@@ -22,9 +22,10 @@
 #define _ConnectionHandler_
 
 #include "ChainableFrameHandler.h"
-#include "Connector.h"
+#include "ConnectionSettings.h"
 #include "StateManager.h"
 #include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/Array.h"
@@ -35,27 +36,11 @@
 namespace qpid {
 namespace client {
 
-struct ConnectionProperties
-{
-    std::string uid;
-    std::string pwd;
-    std::string vhost;
-    framing::FieldTable properties;
-    std::string mechanism;
-    std::string locale;
-    framing::Array capabilities;
-    uint16_t heartbeat;
-    uint16_t maxChannels;
-    uint64_t maxFrameSize;
-    bool insist;
-    framing::ProtocolVersion version;
-};
-
-class ConnectionHandler : private StateManager, 
-    public ConnectionProperties, 
-    public ChainableFrameHandler,
-    public framing::InputHandler,
-    private framing::AMQP_ClientOperations::ConnectionHandler
+class ConnectionHandler : private StateManager,
+                          public ConnectionSettings,
+                          public ChainableFrameHandler,
+                          public framing::InputHandler,
+                          private framing::AMQP_ClientOperations::ConnectionHandler
 {
     typedef framing::AMQP_ClientOperations::ConnectionHandler ConnectionOperations;
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
@@ -73,6 +58,10 @@ class ConnectionHandler : private StateManager,
     framing::AMQP_ServerProxy::Connection proxy;
     uint16_t errorCode;
     std::string errorText;
+    bool insist;
+    framing::ProtocolVersion version;
+    framing::Array capabilities;
+    framing::FieldTable properties;
 
     void checkState(STATES s, const std::string& msg);
 
@@ -96,7 +85,7 @@ public:
     typedef boost::function<void()> CloseListener;    
     typedef boost::function<void(uint16_t, const std::string&)> ErrorListener;    
 
-    ConnectionHandler();
+    ConnectionHandler(const ConnectionSettings&, framing::ProtocolVersion&);
 
     void received(framing::AMQFrame& f) { incoming(f); } 
 

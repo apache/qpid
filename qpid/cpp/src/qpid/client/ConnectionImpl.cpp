@@ -18,12 +18,13 @@
  * under the License.
  *
  */
+#include "ConnectionImpl.h"
+#include "ConnectionSettings.h"
+#include "SessionImpl.h"
+
 #include "qpid/log/Statement.h"
 #include "qpid/framing/constants.h"
 #include "qpid/framing/reply_exceptions.h"
-
-#include "ConnectionImpl.h"
-#include "SessionImpl.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -34,24 +35,32 @@ using namespace qpid::sys;
 
 using namespace qpid::framing::connection;//for connection error codes
 
-ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
-    : connector(c), isClosed(false), isClosing(false)
+ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
+    : Bounds(settings.maxFrameSize * settings.bounds),
+      handler(settings, v),
+      connector(v, settings, this), 
+      version(v), 
+      isClosed(false), 
+      isClosing(false)
 {
+    QPID_LOG(debug, "ConnectionImpl created for " << version);
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
-    handler.out = boost::bind(&Connector::send, connector, _1);
+    handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   NORMAL, std::string());
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
-    connector->setInputHandler(&handler);
-    connector->setTimeoutHandler(this);
-    connector->setShutdownHandler(this);
+    connector.setInputHandler(&handler);
+    connector.setTimeoutHandler(this);
+    connector.setShutdownHandler(this);
+
+    open(settings.host, settings.port);
 }
 
 ConnectionImpl::~ConnectionImpl() {
     // Important to close the connector first, to ensure the
     // connector thread does not call on us while the destructor
     // is running.
-    connector->close(); 
+    connector.close(); 
 }
 
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session)
@@ -79,18 +88,11 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
     s->in(frame);
 }
 
-void ConnectionImpl::open(const std::string& host, int port,
-                          const std::string& uid, const std::string& pwd, 
-                          const std::string& vhost)
+void ConnectionImpl::open(const std::string& host, int port)
 {
-    //TODO: better management of connection properties
-    handler.uid = uid;
-    handler.pwd = pwd;
-    handler.vhost = vhost;
-
     QPID_LOG(info, "Connecting to " << host << ":" << port);
-    connector->connect(host, port);
-    connector->init();
+    connector.connect(host, port);
+    connector.init();
     handler.waitForOpen();
 }
 
@@ -102,7 +104,7 @@ void ConnectionImpl::idleIn()
 void ConnectionImpl::idleOut()
 {
     AMQFrame frame(in_place<AMQHeartbeatBody>());
-    connector->send(frame);
+    connector.send(frame);
 }
 
 void ConnectionImpl::close()
@@ -121,7 +123,7 @@ void ConnectionImpl::close()
 // so sessions can be updated outside the lock.
 ConnectionImpl::SessionVector ConnectionImpl::closeInternal(const Mutex::ScopedLock&) {
     isClosed = true;
-    connector->close();
+    connector.close();
     SessionVector save;
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         boost::shared_ptr<SessionImpl> s = i->second.lock();
@@ -156,5 +158,10 @@ void ConnectionImpl::shutdown()
 void ConnectionImpl::erase(uint16_t ch) {
     Mutex::ScopedLock l(lock);
     sessions.erase(ch);
+}
+
+const ConnectionSettings& ConnectionImpl::getNegotiatedSettings()
+{
+    return handler;
 }
     

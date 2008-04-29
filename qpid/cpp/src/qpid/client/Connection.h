@@ -39,6 +39,7 @@ namespace qpid {
  */
 namespace client {
 
+class ConnectionSettings;
 /**
  * \defgroup clientapi Application API for an AMQP client.
  */
@@ -54,9 +55,7 @@ class Connection
 {
     framing::ChannelId channelIdCounter;
     framing::ProtocolVersion version;
-    const uint32_t max_frame_size;
-    bool isOpen;
-    bool debug;
+    uint16_t max_frame_size;
 
   protected:
     boost::shared_ptr<ConnectionImpl> impl;
@@ -67,17 +66,8 @@ class Connection
      * connection.  
      * 
      * @param _version the version of the protocol to connect with.
-     *
-     * @param debug turns on tracing for the connection
-     * (i.e. prints details of the frames sent and received to std
-     * out). Optional. Defaults to false.
-     * 
-     * @param max_frame_size the maximum frame size that the
-     * client will accept. Optional. Defaults to 65535.
      */
-    Connection(bool debug = false, uint32_t max_frame_size = 65535,
-               framing::ProtocolVersion=framing::highestProtocolVersion);
-    Connection(boost::shared_ptr<Connector>);
+    Connection(framing::ProtocolVersion=framing::highestProtocolVersion);
     ~Connection();
 
     /**
@@ -100,7 +90,14 @@ class Connection
     void open(const std::string& host, int port = 5672, 
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
-              const std::string& virtualhost = "/");
+              const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
+
+    /**
+     * Opens a connection to a broker.
+     * 
+     * @param the settings to use (host, port etc) @see ConnectionSettings
+     */
+    void open(const ConnectionSettings& settings);
 
     /**
      * Close the connection.

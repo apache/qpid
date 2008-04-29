@@ -104,8 +104,8 @@ Socket::Socket(IOHandlePrivate* h) :
 
 void Socket::createTcp() const
 {
-	int& socket = impl->fd;
-	if (socket != -1) Socket::close();
+    int& socket = impl->fd;
+    if (socket != -1) Socket::close();
     int s = ::socket (PF_INET, SOCK_STREAM, 0);
     if (s < 0) throw QPID_POSIX_ERROR(errno);
     socket = s;
@@ -113,7 +113,7 @@ void Socket::createTcp() const
 
 void Socket::setTimeout(const Duration& interval) const
 {
-	const int& socket = impl->fd;
+    const int& socket = impl->fd;
     struct timeval tv;
     toTimeval(tv, interval);
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
@@ -138,7 +138,7 @@ const char* h_errstr(int e) {
 
 void Socket::connect(const std::string& host, int port) const
 {
-	const int& socket = impl->fd;
+    const int& socket = impl->fd;
     struct sockaddr_in name;
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
@@ -155,7 +155,7 @@ void Socket::connect(const std::string& host, int port) const
 void
 Socket::close() const
 {
-	int& socket = impl->fd;
+    int& socket = impl->fd;
     if (socket == -1) return;
     if (::close(socket) < 0) throw QPID_POSIX_ERROR(errno);
     socket = -1;
@@ -164,7 +164,7 @@ Socket::close() const
 ssize_t
 Socket::send(const void* data, size_t size) const
 {
-	const int& socket = impl->fd;
+    const int& socket = impl->fd;
     ssize_t sent = ::send(socket, data, size, 0);
     if (sent < 0) {
         if (errno == ECONNRESET) return SOCKET_EOF;
@@ -177,7 +177,7 @@ Socket::send(const void* data, size_t size) const
 ssize_t
 Socket::recv(void* data, size_t size) const
 {
-	const int& socket = impl->fd;
+    const int& socket = impl->fd;
     ssize_t received = ::recv(socket, data, size, 0);
     if (received < 0) {
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
@@ -209,22 +209,22 @@ int Socket::listen(int port, int backlog) const
 
 Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
 {
-	int afd = ::accept(impl->fd, addr, addrlen);
-	if ( afd >= 0)
-		return new Socket(new IOHandlePrivate(afd));
-	else if (errno == EAGAIN)
-		return 0;
+    int afd = ::accept(impl->fd, addr, addrlen);
+    if ( afd >= 0)
+        return new Socket(new IOHandlePrivate(afd));
+    else if (errno == EAGAIN)
+        return 0;
     else throw QPID_POSIX_ERROR(errno);
 }
 
 int Socket::read(void *buf, size_t count) const
 {
-	return ::read(impl->fd, buf, count);
+    return ::read(impl->fd, buf, count);
 }
 
 int Socket::write(const void *buf, size_t count) const
 {
-	return ::write(impl->fd, buf, count);
+    return ::write(impl->fd, buf, count);
 }
 
 std::string Socket::getSockname() const
@@ -255,6 +255,11 @@ uint16_t Socket::getLocalPort() const
 uint16_t Socket::getRemotePort() const
 {
     return atoi(getService(impl->fd, true).c_str());
+}
+
+void Socket::configure(const Configuration& c)
+{
+    c.configurePosixTcpSocket(impl->fd);
 }
 
 }} // namespace qpid::sys

@@ -18,11 +18,8 @@
  * under the License.
  *
  */
-#include <algorithm>
-#include <boost/format.hpp>
-#include <boost/bind.hpp>
-
 #include "Connection.h"
+#include "ConnectionSettings.h"
 #include "Channel.h"
 #include "Message.h"
 #include "SessionImpl.h"
@@ -30,9 +27,13 @@
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
 #include "qpid/shared_ptr.h"
+
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <functional>
+#include <boost/format.hpp>
+#include <boost/bind.hpp>
 
 using namespace qpid::framing;
 using namespace qpid::sys;
@@ -41,41 +42,49 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-Connection::Connection(bool _debug, uint32_t _max_frame_size, framing::ProtocolVersion _version) : 
-    channelIdCounter(0), version(_version), 
-    max_frame_size(_max_frame_size), 
-    isOpen(false),
-    impl(new ConnectionImpl(
-             shared_ptr<Connector>(new Connector(_version, _debug))))
-{}
-
-Connection::Connection(shared_ptr<Connector> c) : 
-    channelIdCounter(0), version(framing::highestProtocolVersion), 
-    max_frame_size(65535), 
-    isOpen(false),
-    impl(new ConnectionImpl(c))
-{}
+Connection::Connection(framing::ProtocolVersion _version) : 
+    channelIdCounter(0), version(_version) {}
 
 Connection::~Connection(){ }
 
 void Connection::open(
     const std::string& host, int port,
-    const std::string& uid, const std::string& pwd, const std::string& vhost)
+    const std::string& uid, const std::string& pwd, 
+    const std::string& vhost,
+    uint16_t maxFrameSize)
 {
-    if (isOpen)
-        throw Exception(QPID_MSG("Channel object is already open"));
-
-    impl->open(host, port, uid, pwd, vhost);
-    isOpen = true;
+    ConnectionSettings settings;
+    settings.host = host;
+    settings.port = port;
+    settings.username = uid;
+    settings.password = pwd;
+    settings.virtualhost = vhost;
+    settings.maxFrameSize = maxFrameSize;
+    open(settings);
 }
 
-void Connection::openChannel(Channel& channel) {
+void Connection::open(const ConnectionSettings& settings)
+{
+    if (impl)
+        throw Exception(QPID_MSG("Connection::open() was already called"));
+
+    impl = boost::shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
+}
+
+void Connection::openChannel(Channel& channel) 
+{
+    if (!impl)
+        throw Exception(QPID_MSG("Connection has not yet been opened"));
     channel.open(newSession(ASYNC));
 }
 
 Session Connection::newSession(SynchronousMode sync,
-                                    uint32_t detachedLifetime)
+                               uint32_t detachedLifetime)
 {
+    if (!impl)
+        throw Exception(QPID_MSG("Connection has not yet been opened"));
+
     shared_ptr<SessionImpl> core(
         new SessionImpl(impl, ++channelIdCounter, max_frame_size));
     core->setSync(sync);
@@ -85,13 +94,19 @@ Session Connection::newSession(SynchronousMode sync,
 }
 
 void Connection::resume(Session& session) {
+    if (!impl)
+        throw Exception(QPID_MSG("Connection has not yet been opened"));
+
     session.impl->setChannel(++channelIdCounter);
     impl->addSession(session.impl);
     session.impl->resume(impl);
 }
 
 void Connection::close() {
-    impl->close();
+    if (impl) {
+        impl->close();
+        impl.reset();
+    }
 }
 
 }} // namespace qpid::client

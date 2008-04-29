@@ -26,6 +26,7 @@
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #include <iostream>
 #include <exception>
@@ -35,22 +36,11 @@ namespace qpid {
 struct TestOptions : public qpid::Options
 {
     TestOptions(const std::string& helpText_=std::string()) :
-        Options("Test Options"),
-        host("localhost"), port(TcpAddress::DEFAULT_PORT),
-        clientid("cpp"), username("guest"), password("guest"),
-        help(false), helpText(helpText_)
+        Options("Test Options"), help(false), helpText(helpText_)
     {
         addOptions()
-            ("host,h", optValue(host, "HOST"), "Broker host to connect to")
-            // TODO aconway 2007-06-26: broker is synonym for host. Drop broker?
-            ("broker,b", optValue(host, "HOST"), "Broker host to connect to") 
-            ("port,p", optValue(port, "PORT"), "Broker port to connect to")
-            ("virtualhost,v", optValue(virtualhost, "VHOST"), "virtual host")
-            ("clientname,n", optValue(clientid, "ID"), "unique client identifier")
-            ("username", optValue(username, "USER"), "user name for broker log in.")
-            ("password", optValue(password, "USER"), "password for broker log in.")
             ("help", optValue(help), "print this usage statement");
-        add(log);
+        add(con);
     }
 
     /** As well as parsing, throw help message if requested. */
@@ -62,8 +52,7 @@ struct TestOptions : public qpid::Options
             msg << *this << std::endl << std::endl << e.what() << std::endl;
             throw qpid::Options::Exception(msg.str());
         }
-        trace = log.trace;
-        qpid::log::Logger::instance().configure(log, argv[0]);
+        qpid::log::Logger::instance().configure(con.log, argv[0]);
         if (help) {
             std::ostringstream msg;
             msg << *this << std::endl << std::endl << helpText << std::endl;
@@ -73,19 +62,12 @@ struct TestOptions : public qpid::Options
 
     /** Open a connection using option values */
     void open(qpid::client::Connection& connection) {
-        connection.open(host, port, username, password, virtualhost);
+        connection.open(con);
     }
 
     
-    std::string host;
-    uint16_t port;
-    std::string virtualhost;
-    std::string clientid;
-    std::string username;
-    std::string password;
-    bool trace;
     bool help;
-    log::Options log;
+    client::ConnectionSettings con;
     std::string helpText;
 };
 
