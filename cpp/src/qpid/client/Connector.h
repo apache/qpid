@@ -31,16 +31,20 @@
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/AsynchIO.h"
 
 #include <queue>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 	
 namespace client {
+
+class Bounds;
+class ConnectionSettings;
 
 class Connector : public framing::OutputHandler, 
                   private sys::Runnable
@@ -52,6 +56,7 @@ class Connector : public framing::OutputHandler,
         typedef sys::AsynchIO::BufferBase BufferBase;
         typedef std::vector<framing::AMQFrame> Frames;
 
+        const uint16_t maxFrameSize;
         sys::Mutex lock;
         sys::AsynchIO* aio;
         BufferBase* buffer;
@@ -60,22 +65,21 @@ class Connector : public framing::OutputHandler,
         framing::Buffer encode;
         size_t framesEncoded;
         std::string identifier;
+        Bounds* bounds;        
         
         void writeOne(const sys::Mutex::ScopedLock&);
         void newBuffer(const sys::Mutex::ScopedLock&);
 
       public:
         
-        Writer();
+        Writer(uint16_t maxFrameSize, Bounds*);
         ~Writer();
         void init(std::string id, sys::AsynchIO*);
         void handle(framing::AMQFrame&);
         void write(sys::AsynchIO&);
     };
     
-    const bool debug;
-    const int receive_buffer_size;
-    const int send_buffer_size;
+    const uint16_t maxFrameSize;
     framing::ProtocolVersion version;
     bool initiated;
 
@@ -122,7 +126,8 @@ class Connector : public framing::OutputHandler,
 
   public:
     Connector(framing::ProtocolVersion pVersion,
-              bool debug = false, uint32_t buffer_size = 1024);
+              const ConnectionSettings&, 
+              Bounds* bounds = 0);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);
     virtual void init();

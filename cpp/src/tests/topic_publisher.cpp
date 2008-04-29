@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
         if(args.help)
             cout << args << endl;
         else {
-            Connection connection(args.trace);
+            Connection connection;
             args.open(connection);
             Session session = connection.newSession(ASYNC);
             if (args.transactional) {

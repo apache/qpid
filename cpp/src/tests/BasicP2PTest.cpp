@@ -29,7 +29,7 @@ class BasicP2PTest::Receiver : public Worker, public MessageListener
     const std::string queue;
     std::string tag;
 public:
-    Receiver(TestOptions& options, const std::string& _queue, const int _messages) 
+    Receiver(ConnectionSettings& options, const std::string& _queue, const int _messages) 
         : Worker(options, _messages), queue(_queue){}
     void init()
     {
@@ -51,7 +51,7 @@ public:
     }
 };
 
-void BasicP2PTest::assign(const std::string& role, framing::FieldTable& params, TestOptions& options)
+void BasicP2PTest::assign(const std::string& role, framing::FieldTable& params, ConnectionSettings& options)
 {
     std::string queue = params.getString("P2P_QUEUE_AND_KEY_NAME");
     int messages = params.getInt("P2P_NUM_MESSAGES");

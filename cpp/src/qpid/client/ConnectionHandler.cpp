@@ -20,9 +20,9 @@
  */
 
 #include "ConnectionHandler.h"
+
 #include "qpid/log/Statement.h"
 #include "qpid/framing/amqp_framing.h"
-#include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -42,17 +42,10 @@ const std::string INVALID_STATE_OPEN_OK("open-ok received in invalid state");
 const std::string INVALID_STATE_CLOSE_OK("close-ok received in invalid state");
 }
 
-ConnectionHandler::ConnectionHandler() 
-    : StateManager(NOT_STARTED), outHandler(*this), proxy(outHandler), errorCode(200)
-{
-
-    mechanism = PLAIN;
-    locale = en_US;
-    heartbeat = 0; 
-    maxChannels = 32767; 
-    maxFrameSize = 65535; 
+ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, framing::ProtocolVersion& v) 
+    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler), errorCode(200), version(v)
+{    
     insist = true;
-    version = framing::highestProtocolVersion;
 
     ESTABLISHED.insert(FAILED);
     ESTABLISHED.insert(CLOSED);
@@ -141,7 +134,7 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& /*
     checkState(NOT_STARTED, INVALID_STATE_START);
     setState(NEGOTIATING);
     //TODO: verify that desired mechanism and locale are supported
-    string response = ((char)0) + uid + ((char)0) + pwd;
+    string response = ((char)0) + username + ((char)0) + password;
     proxy.startOk(properties, mechanism, response, locale);
 }
 
@@ -150,14 +143,16 @@ void ConnectionHandler::secure(const std::string& /*challenge*/)
     throw NotImplementedException("Challenge-response cycle not yet implemented in client");
 }
 
-void ConnectionHandler::tune(uint16_t channelMax, uint16_t /*frameMax*/, uint16_t /*heartbeatMin*/, uint16_t /*heartbeatMax*/)
+void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSizeProposed, 
+                             uint16_t /*heartbeatMin*/, uint16_t /*heartbeatMax*/)
 {
     checkState(NEGOTIATING, INVALID_STATE_TUNE);
-    //TODO: verify that desired heartbeat and max frame size are valid
-    maxChannels = channelMax;    
+    maxChannels = std::min(maxChannels, maxChannelsProposed);
+    maxFrameSize = std::min(maxFrameSize, maxFrameSizeProposed);
+    //TODO: implement heartbeats and check desired value is in valid range
     proxy.tuneOk(maxChannels, maxFrameSize, heartbeat);
     setState(OPENING);
-    proxy.open(vhost, capabilities, insist);
+    proxy.open(virtualhost, capabilities, insist);
 }
 
 void ConnectionHandler::openOk(const framing::Array& /*knownHosts*/)

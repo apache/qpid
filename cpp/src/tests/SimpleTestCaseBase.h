@@ -28,6 +28,7 @@
 #include "qpid/client/Channel.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/MessageListener.h"
 #include "TestCase.h"
 
@@ -49,7 +50,7 @@ protected:
 
     public:
 
-        Worker(TestOptions& options, const int messages);
+        Worker(ConnectionSettings& options, const int messages);
         virtual ~Worker(){}
 
         virtual void stop();
@@ -63,7 +64,7 @@ protected:
         const Exchange& exchange;
         const std::string key;
     public:
-        Sender(TestOptions& options, 
+        Sender(ConnectionSettings& options, 
                const Exchange& exchange, 
                const std::string& key, 
                const int messages); 
@@ -74,7 +75,7 @@ protected:
     std::auto_ptr<Worker> worker;
 
 public:
-    virtual void assign(const std::string& role, framing::FieldTable& params, TestOptions& options) = 0;
+    virtual void assign(const std::string& role, framing::FieldTable& params, ConnectionSettings& options) = 0;
     
     virtual ~SimpleTestCaseBase() {}
 

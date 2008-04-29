@@ -30,6 +30,7 @@
 
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/FrameSet.h"
@@ -40,15 +41,15 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using std::string;
 
-struct Args : public qpid::TestOptions {
+struct Args : public TestOptions {
     uint msgSize;
-    uint maxFrameSize;
+    bool verbose;
 
-    Args() : msgSize(26), maxFrameSize(65535) 
+    Args() : TestOptions("Simple test of Qpid c++ client; sends and receives a single message."), msgSize(26)
     {
         addOptions()            
             ("size", optValue(msgSize, "N"), "message size")
-            ("max-frame-size", optValue(maxFrameSize, "N"), "max frame size");
+            ("verbose", optValue(verbose), "print out some status messages");
     }
 };
 
@@ -85,33 +86,33 @@ int main(int argc, char** argv)
         opts.parse(argc, argv);
 
         //Connect to the broker:
-        Connection connection(opts.trace, opts.maxFrameSize);
+        Connection connection;
         opts.open(connection);
-	if (opts.trace) std::cout << "Opened connection." << std::endl;
+	if (opts.verbose) std::cout << "Opened connection." << std::endl;
 
         //Create and open a session on the connection through which
         //most functionality is exposed:
         Session session = connection.newSession(ASYNC);
-	if (opts.trace) std::cout << "Opened session." << std::endl;	
+	if (opts.verbose) std::cout << "Opened session." << std::endl;	
 
 
         //'declare' the exchange and the queue, which will create them
         //as they don't exist
 	session.exchangeDeclare(arg::exchange="MyExchange", arg::type="direct");
-	if (opts.trace) std::cout << "Declared exchange." << std::endl;
+	if (opts.verbose) std::cout << "Declared exchange." << std::endl;
 	session.queueDeclare(arg::queue="MyQueue", arg::autoDelete=true, arg::exclusive=true);
-	if (opts.trace) std::cout << "Declared queue." << std::endl;
+	if (opts.verbose) std::cout << "Declared queue." << std::endl;
 
         //now bind the queue to the exchange
 	session.exchangeBind(arg::exchange="MyExchange", arg::queue="MyQueue", arg::bindingKey="MyKey");
-	if (opts.trace) std::cout << "Bound queue to exchange." << std::endl;
+	if (opts.verbose) std::cout << "Bound queue to exchange." << std::endl;
 
         //create and send a message to the exchange using the routing
         //key we bound our queue with:
 	Message msgOut(generateData(opts.msgSize));
         msgOut.getDeliveryProperties().setRoutingKey("MyKey");
         session.messageTransfer(arg::destination="MyExchange", arg::content=msgOut, arg::acceptMode=1);
-	if (opts.trace) print("Published message: ", msgOut);
+	if (opts.verbose) print("Published message: ", msgOut);
 
         //subscribe to the queue, add sufficient credit and then get
         //incoming 'frameset', check that its a message transfer and
@@ -121,12 +122,12 @@ int main(int argc, char** argv)
         session.messageSubscribe(arg::queue="MyQueue", arg::destination="MyId");
         session.messageFlow(arg::destination="MyId", arg::unit=0, arg::value=1); //credit for one message
         session.messageFlow(arg::destination="MyId", arg::unit=1, arg::value=0xFFFFFFFF); //credit for infinite bytes
-	if (opts.trace) std::cout << "Subscribed to queue." << std::endl;
+	if (opts.verbose) std::cout << "Subscribed to queue." << std::endl;
         FrameSet::shared_ptr incoming = session.get();
         if (incoming->isA<MessageTransferBody>()) {
             Message msgIn(*incoming);
             if (msgIn.getData() == msgOut.getData()) {
-                if (opts.trace) std::cout << "Received the exepected message." << std::endl;
+                if (opts.verbose) std::cout << "Received the exepected message." << std::endl;
                 session.messageAccept(SequenceSet(msgIn.getId()));
                 session.markCompleted(msgIn.getId(), true, true);
             } else {
@@ -138,9 +139,9 @@ int main(int argc, char** argv)
         
         //close the session & connection
 	session.close();
-	if (opts.trace) std::cout << "Closed session." << std::endl;
+	if (opts.verbose) std::cout << "Closed session." << std::endl;
 	connection.close();	
-	if (opts.trace) std::cout << "Closed connection." << std::endl;
+	if (opts.verbose) std::cout << "Closed connection." << std::endl;
     return 0;
     } catch(const std::exception& e) {
 	std::cout << e.what() << std::endl;
