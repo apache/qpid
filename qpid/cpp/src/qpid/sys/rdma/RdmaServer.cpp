@@ -22,12 +22,12 @@ using qpid::sys::Dispatcher;
 struct ConRec {
     Rdma::Connection::intrusive_ptr connection;
     Rdma::AsynchIO* data;
-    int outstandingWrites;
+    bool writable;
     queue<Rdma::Buffer*> queuedWrites;
 
     ConRec(Rdma::Connection::intrusive_ptr c) :
         connection(c),
-        outstandingWrites(0)
+        writable(true)
     {}
 };
 
@@ -40,23 +40,24 @@ void data(ConRec* cr, Rdma::AsynchIO& a, Rdma::Buffer* b) {
     Rdma::Buffer* buf = a.getBuffer();
     std::copy(b->bytes+b->dataStart, b->bytes+b->dataStart+b->dataCount, buf->bytes);
     buf->dataCount = b->dataCount;
-    if (cr->outstandingWrites < 3*Rdma::DEFAULT_WR_ENTRIES/4) {
+    if (cr->queuedWrites.empty() && cr->writable) {
         a.queueWrite(buf);
-        ++(cr->outstandingWrites);
     } else {
         cr->queuedWrites.push(buf);
     }
 }
 
+void full(ConRec* cr, Rdma::AsynchIO&) {
+    cr->writable = false;
+}
+
 void idle(ConRec* cr, Rdma::AsynchIO& a) {
-    --(cr->outstandingWrites);
-    //if (cr->outstandingWrites < Rdma::DEFAULT_WR_ENTRIES/4)
-        while (!cr->queuedWrites.empty() && cr->outstandingWrites < 3*Rdma::DEFAULT_WR_ENTRIES/4) {
-            Rdma::Buffer* buf = cr->queuedWrites.front();
-            cr->queuedWrites.pop();
-            a.queueWrite(buf);
-            ++(cr->outstandingWrites);
-        }
+    cr->writable = true;
+    while (!cr->queuedWrites.empty() && cr->writable) {
+        Rdma::Buffer* buf = cr->queuedWrites.front();
+        cr->queuedWrites.pop();
+        a.queueWrite(buf);
+    }
 }
 
 void disconnected(Rdma::Connection::intrusive_ptr& ci) {
@@ -82,7 +83,7 @@ bool connectionRequest(Rdma::Connection::intrusive_ptr& ci) {
 
     // For fun reject alternate connection attempts
     static bool x = false;
-    x ^= 1;
+    x = true;
 
     // Must create aio here so as to prepost buffers *before* we accept connection
     if (x) {
@@ -91,6 +92,7 @@ bool connectionRequest(Rdma::Connection::intrusive_ptr& ci) {
             new Rdma::AsynchIO(ci->getQueuePair(), 8000,
                 boost::bind(data, cr, _1, _2),
                 boost::bind(idle, cr, _1),
+                boost::bind(full, cr, _1),
                 dataError);
         ci->addContext(cr);
         cr->data = aio;

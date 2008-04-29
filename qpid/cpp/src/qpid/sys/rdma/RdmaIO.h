@@ -4,6 +4,7 @@
 #include "rdma_wrap.h"
 
 #include "qpid/sys/Dispatcher.h"
+#include "qpid/sys/Mutex.h"
 
 #include <netinet/in.h>
 
@@ -17,18 +18,6 @@ using qpid::sys::Poller;
 namespace Rdma {
 
     class Connection;
-    enum ConnectionState {
-        IDLE,
-        RESOLVE_ADDR,
-        RESOLVE_ROUTE,
-        LISTENING,
-        CONNECTING,
-        ACCEPTING,
-        ESTABLISHED,
-        REJECTED,
-        DISCONNECTED,
-        ERROR
-    };
 
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> ConnectedCallback;
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> ErrorCallback;
@@ -41,16 +30,21 @@ namespace Rdma {
         typedef boost::function1<void, AsynchIO&> ErrorCallback;
         typedef boost::function2<void, AsynchIO&, Buffer*> ReadCallback;
         typedef boost::function1<void, AsynchIO&>  IdleCallback;
+        typedef boost::function1<void, AsynchIO&>  FullCallback;
 
         QueuePair::intrusive_ptr qp;
         DispatchHandle dataHandle;
         int bufferSize;
         int recvBufferCount;
+        int xmitBufferCount;
+        int outstandingWrites;
         std::deque<Buffer*> bufferQueue;
+        qpid::sys::Mutex bufferQueueLock;
         boost::ptr_deque<Buffer> buffers;
 
         ReadCallback readCallback;
         IdleCallback idleCallback;
+        FullCallback fullCallback;
         ErrorCallback errorCallback;
 
     public:
@@ -59,12 +53,12 @@ namespace Rdma {
             int s,
             ReadCallback rc,
             IdleCallback ic,
+            FullCallback fc,
             ErrorCallback ec
         );
         ~AsynchIO();
 
         void start(Poller::shared_ptr poller);
-        void queueReadBuffer(Buffer* buff);
         void queueWrite(Buffer* buff);
         void notifyPendingWrite();
         void queueWriteClose();
@@ -83,7 +77,6 @@ namespace Rdma {
         ErrorCallback errorCallback;
         DisconnectedCallback disconnectedCallback;
         ConnectionRequestCallback connectionRequestCallback;
-        ConnectionState state;
 
     public:
         Listener(
@@ -108,7 +101,6 @@ namespace Rdma {
         ErrorCallback errorCallback;
         DisconnectedCallback disconnectedCallback;
         RejectedCallback rejectedCallback;
-        ConnectionState state;
 
     public:
         Connector(
