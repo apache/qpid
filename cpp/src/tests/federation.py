@@ -24,6 +24,11 @@ from qpid.management import managementChannel, managementClient
 from qpid.datatypes import Message
 from qpid.queue import Empty
 
+def add_module(args=sys.argv[1:]):
+    for a in args:
+        if a.startswith("federation"):
+            return False
+    return True
 
 def scan_args(name, default=None, args=sys.argv[1:]):
     if (name in args):
@@ -55,6 +60,9 @@ class Helper:
         self.mc  = managementClient(self.session.spec)
         self.mch = self.mc.addChannel(self.session)
         self.mc.syncWaitForStable(self.mch)
+
+    def shutdown (self):
+        self.mc.removeChannel (self.mch)
 
     def get_objects(self, type):
         return self.mc.syncGetObjects(self.mch, type)
@@ -93,6 +101,8 @@ class FederationTests(TestBase010):
             
             mgmt.call_method(link, "close")
             self.assertEqual(len(mgmt.get_objects("link")), 0)
+
+        mgmt.shutdown ()
 
     def test_pull_from_exchange(self):
         session = self.session
@@ -135,6 +145,8 @@ class FederationTests(TestBase010):
         mgmt.call_method(link, "close")
         self.assertEqual(len(mgmt.get_objects("link")), 0)
 
+        mgmt.shutdown()
+
     def test_pull_from_queue(self):
         session = self.session
 
@@ -158,7 +170,7 @@ class FederationTests(TestBase010):
         mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
         link = mgmt.get_object("link")
 
-        mgmt.call_method(link, "bridge", {"src":"my-bridge-queue", "dest":"amq.fanout", "key":"", "src_is_queue":1})
+        mgmt.call_method(link, "bridge", {"src":"my-bridge-queue", "dest":"amq.fanout", "key":"", "id":"", "excludes":"", "src_is_queue":1})
         bridge = mgmt.get_object("bridge")
 
         #add some more messages (i.e. after bridge was created)
@@ -167,8 +179,11 @@ class FederationTests(TestBase010):
             r_session.message_transfer(message=Message(dp, "Message %d" % i))
 
         for i in range(1, 11):
-            msg = queue.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            try:
+                msg = queue.get(timeout=5)
+                self.assertEqual("Message %d" % i, msg.body)
+            except Empty:
+                self.fail("Failed to find expected message containing 'Message %d'" % i)
         try:
             extra = queue.get(timeout=1)
             self.fail("Got unexpected message in queue: " + extra.body)
@@ -181,12 +196,77 @@ class FederationTests(TestBase010):
         mgmt.call_method(link, "close")
         self.assertEqual(len(mgmt.get_objects("link")), 0)
 
+        mgmt.shutdown ()
+
+    def test_tracing(self):
+        session = self.session
+        
+        mgmt = Helper(self)
+        broker = mgmt.get_object("broker")
+
+        mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
+        link = mgmt.get_object("link")
+        
+        mgmt.call_method(link, "bridge", {"src":"amq.direct", "dest":"amq.fanout", "key":"my-key",
+                                          "id":"my-bridge-id", "excludes":"exclude-me,also-exclude-me"})
+        bridge = mgmt.get_object("bridge")
+
+        #setup queue to receive messages from local broker
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="amq.fanout")
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        #send messages to remote broker and confirm it is routed to local broker
+        r_conn = self.connect(host=remote_host(), port=remote_port())
+        r_session = r_conn.session("1")
+
+        trace = [None, "exclude-me", "a,exclude-me,b", "also-exclude-me,c", "dont-exclude-me"]
+        body = ["yes", "first-bad", "second-bad", "third-bad", "yes"]
+        for b, t in zip(body, trace):
+            headers = {}
+            if (t): headers["x-qpid.trace"]=t
+            dp = r_session.delivery_properties(routing_key="my-key")
+            mp = r_session.message_properties(application_headers=headers)
+            r_session.message_transfer(destination="amq.direct", message=Message(dp, mp, b))
+
+        for e in ["my-bridge-id", "dont-exclude-me,my-bridge-id"]:
+            msg = queue.get(timeout=5)
+            self.assertEqual("yes", msg.body)
+            self.assertEqual(e, self.getAppHeader(msg, "x-qpid.trace"))
+
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        mgmt.call_method(bridge, "close")
+        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
+        
+        mgmt.call_method(link, "close")
+        self.assertEqual(len(mgmt.get_objects("link")), 0)
+
+        mgmt.shutdown ()
+
+    def getProperty(self, msg, name):
+        for h in msg.headers:
+            if hasattr(h, name): return getattr(h, name)
+        return None            
+
+    def getAppHeader(self, msg, name):
+        headers = self.getProperty(msg, "application_headers")
+        if headers:
+            return headers[name]
+        return None            
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     #need to remove the extra options from args as test runner doesn't recognise them
     extract_args("--remote-port", args)
     extract_args("--remote-host", args)
-    #add module(s) to run to testrunners args
-    args.append("federation") 
+
+    if add_module():
+        #add module(s) to run to testrunners args
+        args.append("federation") 
     
     if not testrunner.run(args): sys.exit(1)

@@ -37,6 +37,8 @@
 
 #include <boost/bind.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -105,6 +107,11 @@ bool Queue::isLocal(boost::intrusive_ptr<Message>& msg)
     return noLocal && (isLocalTo(owner, msg) || isLocalTo(exclusive, msg));
 }
 
+bool Queue::isExcluded(boost::intrusive_ptr<Message>& msg)
+{
+    return traceExclude.size() && msg->isExcluded(traceExclude);
+}
+
 void Queue::deliver(boost::intrusive_ptr<Message>& msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
@@ -113,7 +120,10 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
         }
     } else if (isLocal(msg)) {
         //drop message
-        QPID_LOG(debug, "Dropping 'local' message from " << getName());
+        QPID_LOG(info, "Dropping 'local' message from " << getName());
+    } else if (isExcluded(msg)) {
+        //drop message
+        QPID_LOG(info, "Dropping excluded message from " << getName());
     } else {
         // if no store then mark as enqueued
         if (!enqueue(0, msg)){
@@ -448,6 +458,10 @@ bool Queue::canAutoDelete() const{
 // return true if store exists, 
 bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
 {
+    if (traceId.size()) {
+        msg->addTraceId(traceId);
+    }
+
     if (msg->isPersistent() && store) {
         msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg);
@@ -477,6 +491,8 @@ namespace
     const std::string qpidMaxSize("qpid.max_size");
     const std::string qpidMaxCount("qpid.max_count");
     const std::string qpidNoLocal("no-local");
+    const std::string qpidTraceIdentity("qpid.trace.id");
+    const std::string qpidTraceExclude("qpid.trace.exclude");
 }
 
 void Queue::create(const FieldTable& _settings)
@@ -497,6 +513,15 @@ void Queue::configure(const FieldTable& _settings)
     //set this regardless of owner to allow use of no-local with exclusive consumers also
     noLocal = _settings.get(qpidNoLocal);
     QPID_LOG(debug, "Configured queue with no-local=" << noLocal);
+
+    traceId = _settings.getString(qpidTraceIdentity);
+    std::string excludeList = _settings.getString(qpidTraceExclude);
+    if (excludeList.size()) {
+        boost::split(traceExclude, excludeList, boost::is_any_of(", ") );
+    }
+    QPID_LOG(info, "Configured queue " << getName() << " with qpid.trace.id='" << traceId 
+             << "' and qpid.trace.exclude='"<< excludeList << "' i.e. " << traceExclude.size() << " elements");
+
     if (mgmtObject.get() != 0)
         mgmtObject->set_arguments (_settings);
 }

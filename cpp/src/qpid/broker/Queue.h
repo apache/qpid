@@ -72,6 +72,8 @@ namespace qpid {
             uint32_t consumerCount;
             OwnershipToken* exclusive;
             bool noLocal;
+            std::string traceId;
+            std::vector<std::string> traceExclude;
             Listeners listeners;
             Messages messages;
             mutable qpid::sys::Mutex consumerLock;
@@ -98,6 +100,8 @@ namespace qpid {
             void removeListener(Consumer&);
             void addListener(Consumer&);
 
+            bool isExcluded(boost::intrusive_ptr<Message>& msg);
+
         public:
             virtual void notifyDurableIOComplete();
             typedef boost::shared_ptr<Queue> shared_ptr;
@@ -120,7 +124,6 @@ namespace qpid {
 
             bool acquire(const QueuedMessage& msg);
 
-            bool isLocal(boost::intrusive_ptr<Message>& msg);
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
@@ -174,6 +177,7 @@ namespace qpid {
 
             void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
             boost::shared_ptr<Exchange> getAlternateExchange();
+            bool isLocal(boost::intrusive_ptr<Message>& msg);
 
             //PersistableQueue support:
             uint64_t getPersistenceId() const;
