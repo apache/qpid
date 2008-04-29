@@ -100,3 +100,12 @@ class RangedSetTest(TestCase):
     range = a.ranges[0]
     assert range.lower == 0
     assert range.upper == 8
+
+class UUIDTest(TestCase):
+
+  def test(self):
+    # this test is kind of lame, but it does excercise the basic
+    # functionality of the class
+    u = uuid4()
+    for i in xrange(1024):
+      assert u != uuid4()
