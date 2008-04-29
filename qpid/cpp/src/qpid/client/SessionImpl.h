@@ -33,6 +33,7 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/sys/Semaphore.h"
 #include "qpid/sys/StateMonitor.h"
 
 #include <boost/optional.hpp>
@@ -124,6 +125,7 @@ private:
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
+    void proxyOut(framing::AMQFrame& frame);
     void deliver(framing::AMQFrame& frame);
 
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
@@ -164,14 +166,15 @@ private:
     int code;                   // Error code
     std::string text;           // Error text
     mutable StateMonitor state;
+    mutable sys::Semaphore sendLock;
     volatile bool syncMode;
     uint32_t detachedLifetime;
     const uint64_t maxFrameSize;
     const framing::Uuid id;
     const std::string name;
 
-
     shared_ptr<ConnectionImpl> connection;
+    framing::FrameHandler::MemFunRef<SessionImpl, &SessionImpl::proxyOut> ioHandler;
     framing::ChannelHandler channel;
     framing::AMQP_ServerProxy::Session proxy;
 

@@ -35,7 +35,7 @@ private:
     uint8_t minor_;
     
 public:
-    ProtocolVersion(uint8_t _major=0, uint8_t _minor=0) 
+    explicit ProtocolVersion(uint8_t _major=0, uint8_t _minor=0) 
         : major_(_major), minor_(_minor) {}
 
     uint8_t getMajor() const { return major_; }
