@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import threading
+import threading, struct
 
 class Struct:
 
@@ -172,3 +172,40 @@ class Future:
 
   def is_set(self):
     return self._set.isSet()
+
+try:
+  import uuid
+  def random_uuid():
+    return uuid.uuid4().get_bytes()
+except ImportError:
+  import random
+  def random_uuid():
+    bytes = [random.randint(0, 255) for i in xrange(16)]
+
+    # From RFC4122, the version bits are set to 0100
+    bytes[7] &= 0x0F
+    bytes[7] |= 0x40
+
+    # From RFC4122, the top two bits of byte 8 get set to 01
+    bytes[8] &= 0x3F
+    bytes[8] |= 0x80
+    return "".join(map(chr, bytes))
+
+def uuid4():
+  return UUID(random_uuid())
+
+class UUID:
+
+  def __init__(self, bytes):
+    self.bytes = bytes
+
+  def __cmp__(self, other):
+    if isinstance(other, UUID):
+      return cmp(self.bytes, other.bytes)
+    raise NotImplemented()
+
+  def __str__(self):
+    return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", self.bytes)
+
+  def __repr__(self):
+    return "UUID(%r)" % str(self)
