@@ -28,6 +28,8 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/log/Statement.h"
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
@@ -214,6 +216,7 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
 
 void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) const
 {
+    sys::Mutex::ScopedLock l(lock);
     Relay f(out);
     frames.map_if(f, TypeFilter<HEADER_BODY>());    
 }
@@ -242,4 +245,47 @@ uint64_t Message::contentSize() const
 bool Message::isContentLoaded() const
 {
     return loaded;
+}
+
+
+namespace 
+{
+    const std::string X_QPID_TRACE("x-qpid.trace");
+}
+
+bool Message::isExcluded(const std::vector<std::string>& excludes) const
+{
+    const FieldTable* headers = getApplicationHeaders();
+    if (headers) {
+        std::string traceStr = headers->getString(X_QPID_TRACE);
+        if (traceStr.size()) {
+            std::vector<std::string> trace;
+            boost::split(trace, traceStr, boost::is_any_of(", ") );
+
+            for (std::vector<std::string>::const_iterator i = excludes.begin(); i != excludes.end(); i++) {
+                for (std::vector<std::string>::const_iterator j = trace.begin(); j != trace.end(); j++) {
+                    if (*i == *j) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void Message::addTraceId(const std::string& id)
+{
+    sys::Mutex::ScopedLock l(lock);
+    if (isA<MessageTransferBody>()) {
+        FieldTable& headers = getProperties<MessageProperties>()->getApplicationHeaders();
+        std::string trace = headers.getString(X_QPID_TRACE);
+        if (trace.empty()) {
+            headers.setString(X_QPID_TRACE, id);
+        } else if (trace.find(id) == std::string::npos) {
+            trace += ",";
+            trace += id;
+            headers.setString(X_QPID_TRACE, trace);
+        }        
+    }
 }
