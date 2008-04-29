@@ -59,7 +59,16 @@ void Bridge::create()
         } else {
             string queue = "bridge_queue_";
             queue += Uuid(true).str();
-            peer.getQueue().declare(queue, "", false, false, true, true, FieldTable());
+            FieldTable queueSettings;
+            if (args.i_id.size()) {
+                queueSettings.setString("qpid.trace.id", args.i_id);
+            }
+            if (args.i_excludes.size()) {
+                queueSettings.setString("qpid.trace.exclude", args.i_excludes);
+            }
+            bool durable = false;//should this be an arg, or would be use src_is_queue for durable queues?
+            bool autoDelete = !durable;//auto delete transient queues?
+            peer.getQueue().declare(queue, "", false, durable, true, autoDelete, queueSettings);
             peer.getExchange().bind(queue, args.i_src, args.i_key, FieldTable());
             peer.getMessage().subscribe(queue, args.i_dest, 0, 0, false, "", 0, FieldTable());
             peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
