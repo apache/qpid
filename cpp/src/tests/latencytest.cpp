@@ -66,7 +66,8 @@ struct Args : public qpid::TestOptions {
             ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)")
             ("ack", optValue(ack, "N"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("durable", optValue(durable, "yes|no"), "use durable messages")
-            ("queue-base-name", optValue(base, "<name>"), "base name for queues");
+            ("queue-base-name", optValue(base, "<name>"), "base name for queues")
+            ("tcp-nodelay", optValue(con.tcpNoDelay), "Turn on tcp-nodelay");
     }
 };
 

@@ -103,8 +103,16 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
+    struct Configuration
+    {
+        virtual void configurePosixTcpSocket(int fd) const = 0;
+        virtual ~Configuration() {}
+    };
+
+    void configure(const Configuration&);
+
 private:
-	Socket(IOHandlePrivate*);
+    Socket(IOHandlePrivate*);
 };
 
 }}

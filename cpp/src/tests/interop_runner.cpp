@@ -24,6 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
@@ -45,7 +46,6 @@
 using namespace qpid::client;
 using namespace qpid::sys;
 using qpid::TestCase;
-using qpid::TestOptions;
 using qpid::framing::FieldTable;
 using qpid::framing::ReplyTo;
 using namespace std;
@@ -54,7 +54,7 @@ class DummyRun : public TestCase
 {
 public:
     DummyRun() {}
-    void assign(const string&, FieldTable&, TestOptions&) {}
+    void assign(const string&, FieldTable&, ConnectionSettings&) {}
     void start() {}
     void stop() {}
     void report(qpid::client::Message&) {}
@@ -68,7 +68,7 @@ class Listener : public MessageListener, private Runnable{
     typedef boost::ptr_map<string, TestCase> TestMap;
 
     Channel& channel;
-    TestOptions& options;
+    ConnectionSettings& options;
     TestMap tests;
     const string name;
     const string topic;
@@ -86,41 +86,52 @@ class Listener : public MessageListener, private Runnable{
     void sendSimpleResponse(const string& type, Message& request);
     void sendReport();
 public:
-    Listener(Channel& channel, TestOptions& options);
+    Listener(Channel& channel, ConnectionSettings& options);
     void received(Message& msg);
     void bindAndConsume();
     void registerTest(string name, TestCase* test);
 };
 
+struct TestSettings : ConnectionSettings
+{
+    bool help;
+
+    TestSettings() : help(false)
+    {
+        addOptions()
+            ("help", qpid::optValue(help), "print this usage statement");
+    }
+};
+
 int main(int argc, char** argv) {
     try {
-        TestOptions options;
+        TestSettings options;
         options.parse(argc, argv);
-        if (options.help) 
+        if (options.help) {
             cout << options;
-        else {
-            Connection connection(options.trace);
+        } else {
+            Connection connection;
             connection.open(options.host, options.port, "guest", "guest", options.virtualhost);
             
-                Channel channel;
-                connection.openChannel(channel);
+            Channel channel;
+            connection.openChannel(channel);
             
-                Listener listener(channel, options);
-                listener.registerTest("TC1_DummyRun", new DummyRun());
-                listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
-                listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
-
-                listener.bindAndConsume();
+            Listener listener(channel, options);
+            listener.registerTest("TC1_DummyRun", new DummyRun());
+            listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
+            listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
             
-                channel.run();
-                connection.close();
+            listener.bindAndConsume();
+            
+            channel.run();
+            connection.close();
         }
     } catch(const exception& error) {
         cout << error.what() << endl << "Type " << argv[0] << " --help for help" << endl;
     }
 }
 
-Listener::Listener(Channel& _channel, TestOptions& _options) : channel(_channel), options(_options), name(options.clientid), topic("iop.control." + name)
+Listener::Listener(Channel& _channel, ConnectionSettings& _options) : channel(_channel), options(_options), name(options.clientid), topic("iop.control." + name)
 {}
 
 void Listener::registerTest(string name, TestCase* test)

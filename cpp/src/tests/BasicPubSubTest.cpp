@@ -30,7 +30,7 @@ class BasicPubSubTest::Receiver : public Worker, public MessageListener
     const std::string key;
     std::string tag;
 public:
-    Receiver(TestOptions& options, const Exchange& _exchange, const std::string& _queue, const std::string& _key, const int _messages) 
+    Receiver(ConnectionSettings& options, const Exchange& _exchange, const std::string& _queue, const std::string& _key, const int _messages) 
         : Worker(options, _messages), exchange(_exchange), queue(_queue), key(_key){}
 
     void init()
@@ -58,7 +58,7 @@ class BasicPubSubTest::MultiReceiver : public Worker, public MessageListener
     ReceiverList receivers;
 
 public:
-    MultiReceiver(TestOptions& options, const Exchange& exchange, const std::string& key, const int _messages, int receiverCount) 
+    MultiReceiver(ConnectionSettings& options, const Exchange& exchange, const std::string& key, const int _messages, int receiverCount) 
         : Worker(options, _messages) 
     {
         for (int i = 0; i != receiverCount; i++) {                
@@ -104,7 +104,7 @@ public:
     }
 };
 
-void BasicPubSubTest::assign(const std::string& role, framing::FieldTable& params, TestOptions& options)
+void BasicPubSubTest::assign(const std::string& role, framing::FieldTable& params, ConnectionSettings& options)
 {
     std::string key = params.getString("PUBSUB_KEY");
     int messages = params.getInt("PUBSUB_NUM_MESSAGES");

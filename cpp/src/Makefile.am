@@ -289,21 +289,23 @@ libqpidbroker_la_SOURCES = \
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
-  qpid/client/Connection.cpp			\
+  qpid/client/Bounds.cpp		\
   qpid/client/Channel.cpp			\
-  qpid/client/Exchange.cpp			\
-  qpid/client/Queue.cpp				\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
+  qpid/client/Connection.cpp			\
+  qpid/client/ConnectionHandler.cpp		\
+  qpid/client/ConnectionSettings.cpp		\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
-  qpid/client/LocalQueue.cpp			\
-  qpid/client/Message.cpp			\
-  qpid/client/MessageListener.cpp		\
-  qpid/client/ConnectionHandler.cpp		\
+  qpid/client/Exchange.cpp			\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
+  qpid/client/LocalQueue.cpp			\
+  qpid/client/Message.cpp			\
+  qpid/client/MessageListener.cpp		\
+  qpid/client/Queue.cpp				\
   qpid/client/Results.cpp			\
   qpid/client/SessionBase.cpp			\
   qpid/client/SessionImpl.cpp			\
@@ -400,26 +402,28 @@ nobase_include_HEADERS = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.h \
   qpid/client/AckMode.h \
-  qpid/client/ChainableFrameHandler.h	\
-  qpid/client/Channel.h \
-  qpid/client/Exchange.h \
-  qpid/client/Message.h \
-  qpid/client/Queue.h \
   qpid/client/AckPolicy.h			\
+  qpid/client/Bounds.h \
   qpid/client/Completion.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
   qpid/client/ConnectionImpl.h \
+  qpid/client/ConnectionSettings.h \
   qpid/client/Connector.h \
+  qpid/client/ChainableFrameHandler.h	\
+  qpid/client/Channel.h \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
-  qpid/client/LocalQueue.h \
+  qpid/client/Exchange.h \
   qpid/client/Execution.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
+  qpid/client/LocalQueue.h \
+  qpid/client/Message.h \
   qpid/client/MessageListener.h \
   qpid/client/MessageQueue.h \
+  qpid/client/Queue.h \
   qpid/client/Results.h \
   qpid/client/SessionBase.h \
   qpid/client/Session.h \
