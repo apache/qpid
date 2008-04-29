@@ -30,7 +30,7 @@ from qpid.connection import Connection
 from qpid.util       import connect
 
 def Usage ():
-    print "Usage:  qpid-route [OPTIONS] add   <dest-broker> <src-broker> <exchange> <routing-key>"
+    print "Usage:  qpid-route [OPTIONS] add   <dest-broker> <src-broker> <exchange> <routing-key> [id] [exclude-list]"
     print "        qpid-route [OPTIONS] del   <dest-broker> <src-broker> <exchange> <routing-key>"
     print "        qpid-route [OPTIONS] list  <dest-broker>"
     #print "        qpid-route [OPTIONS] load  <filename>"
@@ -100,7 +100,7 @@ class RouteManager:
                 return link
         return None
 
-    def AddRoute (self, srcBroker, exchange, routingKey):
+    def AddRoute (self, srcBroker, exchange, routingKey, id, excludes):
         self.src  = Broker (srcBroker)
         mc = self.mclient
 
@@ -138,6 +138,8 @@ class RouteManager:
         bridgeArgs["src"]          = exchange
         bridgeArgs["dest"]         = exchange
         bridgeArgs["key"]          = routingKey
+        bridgeArgs["id"]           = id
+        bridgeArgs["excludes"]     = excludes
         bridgeArgs["src_is_queue"] = 0
         bridgeArgs["src_is_local"] = 0
         res = mc.syncCallMethod (self.mch, link.id, link.classKey, "bridge", bridgeArgs)
@@ -253,11 +255,18 @@ if cmd != "load":
     rm  = RouteManager (cargs[1])
     rm.ConnectToBroker ()
 
-if cmd == "add" or cmd == "del":
+if cmd == "add":
+    if nargs < 5 or nargs > 7:
+        Usage ()
+
+    id = ""
+    excludes = ""
+    if nargs > 5: id = cargs[5]     
+    if nargs > 6: excludes = cargs[6]     
+    rm.AddRoute (cargs[2], cargs[3], cargs[4], id, excludes)
+elif cmd == "del":
     if nargs != 5:
         Usage ()
-    if cmd == "add":
-        rm.AddRoute (cargs[2], cargs[3], cargs[4])
     else:
         rm.DelRoute (cargs[2], cargs[3], cargs[4])
 else:
