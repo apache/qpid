@@ -22,6 +22,7 @@
  */
 
 #include "Dispatcher.h"
+#include "Socket.h"
 
 #include <boost/function.hpp>
 #include <deque>
