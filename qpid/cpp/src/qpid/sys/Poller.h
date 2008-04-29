@@ -23,9 +23,6 @@
  */
 
 #include "Time.h"
-#include "Socket.h"
-
-#include <stdint.h>
 
 #include <boost/shared_ptr.hpp>
 
