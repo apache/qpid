@@ -230,11 +230,13 @@
     <method name="close"/> 
 
     <method name="bridge" desc="Bridge messages over the link">
-      <arg name="src"     dir="I" type="sstr"/>
-      <arg name="dest"     dir="I" type="sstr"/>
-      <arg name="key"     dir="I" type="sstr"   default=""/>
-      <arg name="src_is_queue"     dir="I" type="bool"   default="0"/>
-      <arg name="src_is_local"     dir="I" type="bool"   default="0"/>
+      <arg name="src"           dir="I" type="sstr"/>
+      <arg name="dest"          dir="I" type="sstr"/>
+      <arg name="key"           dir="I" type="sstr" default=""/>
+      <arg name="id"            dir="I" type="sstr" default=""/>
+      <arg name="excludes"      dir="I" type="sstr" default=""/>
+      <arg name="src_is_queue"  dir="I" type="bool" default="0"/>
+      <arg name="src_is_local"  dir="I" type="bool" default="0"/>
     </method>
   </class>
 
