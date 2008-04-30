@@ -383,6 +383,7 @@ abstract class AbstractEncoder implements Encoder
         sizer.writeMap(map);
         // XXX: - 4
         writeUint32(sizer.size() - 4);
+        writeUint32(map.size());
         writeMapEntries(map);
     }
 
