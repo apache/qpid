@@ -86,7 +86,6 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
         {
             hdr.put(buf);
         }
-        hdr.put((byte) FRAME_END);
         hdr.flip();
         synchronized (lock)
         {
