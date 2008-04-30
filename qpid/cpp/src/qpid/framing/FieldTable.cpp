@@ -31,7 +31,7 @@ namespace framing {
 FieldTable::~FieldTable() {}
 
 uint32_t FieldTable::size() const {
-    uint32_t len(4);
+    uint32_t len(4/*size field*/ + 4/*count field*/);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // shortstr_len_byte + key size + value size
 	len += 1 + (i->first).size() + (i->second)->size();
@@ -121,8 +121,9 @@ int FieldTable::getInt(const std::string& name) const {
 //    value = getValue<FieldTable>(name);
 //}
 
-void FieldTable::encode(Buffer& buffer) const{
+void FieldTable::encode(Buffer& buffer) const{    
     buffer.putLong(size() - 4);
+    buffer.putLong(values.size());
     for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
         buffer.putShortString(i->first);
     	i->second->encode(buffer);
@@ -132,10 +133,11 @@ void FieldTable::encode(Buffer& buffer) const{
 void FieldTable::decode(Buffer& buffer){
     uint32_t len = buffer.getLong();
     uint32_t available = buffer.available();
+    uint32_t count = buffer.getLong();
     if (available < len)
         throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
     uint32_t leftover = available - len;
-    while(buffer.available() > leftover){
+    while(buffer.available() > leftover && count--){
         std::string name;
         ValuePtr value(new FieldValue);
 

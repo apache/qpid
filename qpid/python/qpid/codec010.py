@@ -156,6 +156,7 @@ class Codec(Packer):
 
   def write_map(self, m):
     sc = StringCodec(self.spec)
+    sc.write_uint32(len(m))
     for k, v in m.items():
       type = self.spec.encoding(v.__class__)
       if type == None:
@@ -163,10 +164,10 @@ class Codec(Packer):
       sc.write_str8(k)
       sc.write_uint8(type.code)
       type.encode(sc, v)
-    # XXX: need to put in count when CPP supports it
     self.write_vbin32(sc.encoded)
   def read_map(self):
     sc = StringCodec(self.spec, self.read_vbin32())
+    count = sc.read_uint32()
     result = {}
     while sc.encoded:
       k = sc.read_str8()
