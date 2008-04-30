@@ -87,10 +87,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     private final Object _queueHeadLock = new Object();
     private String _processingThreadName = "";
 
-
-    /** Used by any reaping thread to purge messages */
-    private StoreContext _reapingStoreContext = new StoreContext();
-
     ConcurrentSelectorDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
     {
 
@@ -220,14 +216,22 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         _lock.lock();
 
 
-	    for(Iterator<QueueEntry> iter = _messages.iterator(); iter.hasNext();)
+        // New Context to for dealing with the MessageStore.
+        StoreContext context = new StoreContext();
+
+        for(Iterator<QueueEntry> iter = _messages.iterator(); iter.hasNext();)
         {
             QueueEntry entry = iter.next();
             if(entry.expired())
             {
                 // fixme: Currently we have to update the total byte size here for the data in the queue  
                 _totalMessageSize.addAndGet(-entry.getSize());
-                _queue.dequeue(_reapingStoreContext,entry);
+
+                // Remove the message from the queue in the MessageStore
+                _queue.dequeue(context,entry);
+
+                // This queue nolonger needs a reference to this message
+                entry.getMessage().decrementReference(context);
                 iter.remove();
             }
 	    }
@@ -469,14 +473,20 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         synchronized (_queueHeadLock)
         {
             QueueEntry entry = getNextMessage();
+
+            // todo: note: why do we need this? Why not reuse the passed 'storeContext'
+            //Create a new StoreContext for decrementing the References
+            StoreContext context = new StoreContext();
+
             while (entry != null)
             {
                 //and remove it
                 _messages.poll();
 
+                // todo: NOTE: Why is this a different context to the new local 'context'?
                 _queue.dequeue(storeContext, entry);
 
-                entry.getMessage().decrementReference(_reapingStoreContext);
+                entry.getMessage().decrementReference(context);
 
                 entry = getNextMessage();
                 count++;
@@ -518,10 +528,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 _totalMessageSize.addAndGet(-entry.getSize());
 
-                // Use the reapingStoreContext as any sub(if we have one) may be in a tx.
-                _queue.dequeue(_reapingStoreContext, entry);
+                // New Store Context for removing expired messages
+                StoreContext storeContext = new StoreContext();
 
-                message.decrementReference(_reapingStoreContext);
+                // Use the reapingStoreContext as any sub(if we have one) may be in a tx.
+                _queue.dequeue(storeContext, entry);
+
+                message.decrementReference(storeContext);
 
                 if (_log.isInfoEnabled())
                 {
