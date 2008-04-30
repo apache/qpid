@@ -272,6 +272,7 @@ abstract class AbstractDecoder implements Decoder
     {
         long size = readUint32();
         int start = count;
+        long fieldCount = readUint32();
         Map<String,Object> result = new LinkedHashMap();
         while (count < start + size)
         {

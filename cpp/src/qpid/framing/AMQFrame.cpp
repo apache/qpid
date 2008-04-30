@@ -37,14 +37,12 @@ void AMQFrame::setBody(const AMQBody& b) { body = new BodyHolder(b); }
 
 void AMQFrame::setMethod(ClassId c, MethodId m) { body = new BodyHolder(c,m); }
 
-// This is now misleadingly named as it is not the frame size as
-// defined in the spec (as it also includes the end marker)
 uint32_t AMQFrame::size() const {
     return frameOverhead() + body->size();
 }
 
 uint32_t AMQFrame::frameOverhead() {
-    return 12 /*frame header*/ + 1/*0xCE*/;
+    return 12 /*frame header*/;
 }
 
 void AMQFrame::encode(Buffer& buffer) const
@@ -55,18 +53,17 @@ void AMQFrame::encode(Buffer& buffer) const
     uint8_t flags = (bof ? 0x08 : 0) | (eof ? 0x04 : 0) | (bos ? 0x02 : 0) | (eos ? 0x01 : 0);
     buffer.putOctet(flags);
     buffer.putOctet(getBody()->type());
-    buffer.putShort(size() - 1); // Don't include end marker (it's not part of the frame itself)
+    buffer.putShort(size());
     buffer.putOctet(0);
     buffer.putOctet(0x0f & track);
     buffer.putShort(channel);    
     buffer.putLong(0);
     body->encode(buffer);
-    buffer.putOctet(0xCE);
 }
 
 bool AMQFrame::decode(Buffer& buffer)
 {    
-    if(buffer.available() < frameOverhead() - 1)
+    if(buffer.available() < frameOverhead())
         return false;
     buffer.record();
 
@@ -80,7 +77,7 @@ bool AMQFrame::decode(Buffer& buffer)
     eos = flags & 0x01;
     uint8_t  type = buffer.getOctet();
     uint16_t frame_size =  buffer.getShort();
-    if (frame_size < frameOverhead()-1)
+    if (frame_size < frameOverhead())
         throw FramingErrorException(QPID_MSG("Frame size too small"));    
     uint8_t  reserved1 = buffer.getOctet();
     uint8_t  field1 = buffer.getOctet();
@@ -96,16 +93,13 @@ bool AMQFrame::decode(Buffer& buffer)
 
     // TODO: should no longer care about body size and only pass up
     // B,E,b,e flags
-    uint16_t body_size = frame_size + 1 - frameOverhead(); 
-    if (buffer.available() < body_size+1u){
+    uint16_t body_size = frame_size - frameOverhead(); 
+    if (buffer.available() < body_size){
         buffer.restore();
         return false;
     }
     body = new BodyHolder();
     body->decode(type,buffer, body_size);
-    uint8_t end = buffer.getOctet();
-    if (end != 0xCE)
-        throw FramingErrorException(QPID_MSG("Frame end not found"));
     return true;
 }
 

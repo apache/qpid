@@ -218,7 +218,7 @@ public class InputHandler implements Receiver<ByteBuffer>
                 return FRAME_END;
             }
         case FRAME_END:
-            return expect(buf, OutputHandler.FRAME_END, FRAME_HDR);
+            return FRAME_HDR;
         default:
             throw new IllegalStateException();
         }
