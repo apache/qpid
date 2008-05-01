@@ -22,7 +22,6 @@
 
   <property name="module.depends" value="common"/>
   <property name="module.main" value="org.apache.qpid.server.Main"/>
-  <property name="module.vm.version" value="1.5"/>
 
   <import file="../module.xml"/>
 

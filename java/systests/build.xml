@@ -19,12 +19,10 @@ nn - or more contributor license agreements.  See the NOTICE file
  -
  -->
 <project name="System Tests" default="build">
-    <property name="module.depends" value="client broker common junit-toolkit"/>
-    <property name="module.dist" value="false"/>
 
+    <property name="module.depends" value="client broker common junit-toolkit"/>
     <property name="module.test.src" location="src/main/java"/>
 
     <import file="../module.xml"/>
-    <property name="module.test.classes" location="${module.build}/main/classes"/>
 
 </project>
