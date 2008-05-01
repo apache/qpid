@@ -306,7 +306,10 @@ namespace Apache.Qpid.Client
          if ( !_disableTimestamps )
          {
             message.Timestamp = DateTime.UtcNow.Ticks;
-            message.Expiration = message.Timestamp + timeToLive;
+            if (timeToLive != 0)
+            {
+                message.Expiration = message.Timestamp + timeToLive;
+            }
          } else
          {
             message.Expiration = 0;
