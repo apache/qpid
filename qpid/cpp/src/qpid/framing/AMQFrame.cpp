@@ -78,7 +78,7 @@ bool AMQFrame::decode(Buffer& buffer)
     uint8_t  type = buffer.getOctet();
     uint16_t frame_size =  buffer.getShort();
     if (frame_size < frameOverhead())
-        throw FramingErrorException(QPID_MSG("Frame size too small"));    
+        throw FramingErrorException(QPID_MSG("Frame size too small " << frame_size));    
     uint8_t  reserved1 = buffer.getOctet();
     uint8_t  field1 = buffer.getOctet();
     subchannel = field1 & 0x0f;

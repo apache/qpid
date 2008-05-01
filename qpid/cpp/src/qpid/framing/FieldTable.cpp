@@ -132,19 +132,21 @@ void FieldTable::encode(Buffer& buffer) const{
 
 void FieldTable::decode(Buffer& buffer){
     uint32_t len = buffer.getLong();
-    uint32_t available = buffer.available();
-    uint32_t count = buffer.getLong();
-    if (available < len)
-        throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
-    uint32_t leftover = available - len;
-    while(buffer.available() > leftover && count--){
-        std::string name;
-        ValuePtr value(new FieldValue);
-
-        buffer.getShortString(name);
-        value->decode(buffer);
-        values[name] = ValuePtr(value);
-    }    
+    if (len) {
+        uint32_t available = buffer.available();
+        if (available < len)
+            throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
+        uint32_t count = buffer.getLong();
+        uint32_t leftover = available - len;
+        while(buffer.available() > leftover && count--){
+            std::string name;
+            ValuePtr value(new FieldValue);
+            
+            buffer.getShortString(name);
+            value->decode(buffer);
+            values[name] = ValuePtr(value);
+        }    
+    }
 }
 
 
