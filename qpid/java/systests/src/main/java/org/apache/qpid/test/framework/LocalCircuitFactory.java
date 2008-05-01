@@ -68,7 +68,10 @@ public class LocalCircuitFactory implements CircuitFactory
      */
     public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties)
     {
-        FrameworkBaseCase.assertNoFailures(testCircuit.test(1, assertions));
+        if (testCircuit != null)
+        {
+    	    FrameworkBaseCase.assertNoFailures(testCircuit.test(1, assertions));
+        }
     }
 
     /**
