@@ -8,3 +8,7 @@ org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
 // those tests need durable subscribe states to be persisted
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
 org.apache.qpid.test.unit.ct.DurableSubscriberTests#testDurSubRestoresMessageSelector 
+//These tests are for the java broker
+org.apache.qpid.server.security.acl.SimpleACLTest
+org.apache.qpid.server.plugins.PluginTest
+
