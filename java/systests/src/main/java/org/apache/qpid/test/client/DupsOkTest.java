@@ -41,7 +41,7 @@ public class DupsOkTest extends VMTestCase
 {
 
     private Queue _queue;
-    private static final int MSG_COUNT = 9999;
+    private static final int MSG_COUNT = 4999;
     private CountDownLatch _awaitCompletion = new CountDownLatch(1);
 
     public void setUp() throws Exception
