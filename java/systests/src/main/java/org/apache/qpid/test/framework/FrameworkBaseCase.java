@@ -23,9 +23,11 @@ package org.apache.qpid.test.framework;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.junit.extensions.AsymptoticTestCase;
 import org.apache.qpid.junit.extensions.SetupTaskAware;
 import org.apache.qpid.junit.extensions.SetupTaskHandler;
@@ -54,7 +56,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTe
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
 
     /** Holds the test sequencer to create and run test circuits with. */
-    protected CircuitFactory circuitFactory = new LocalCircuitFactory();
+    protected CircuitFactory circuitFactory = new LocalAMQPCircuitFactory();
 
     /** Used to read the tests configurable properties through. */
     protected ParsedProperties testProps;
@@ -194,6 +196,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTe
         testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
 
         // Process all optional setup tasks. This may include in-vm broker creation, if a decorator has added it.
+        TransportConnection.createVMBroker(1);
         taskHandler.runSetupTasks();
     }
 
@@ -205,6 +208,8 @@ public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTe
         NDC.pop();
 
         // Process all optional tear down tasks. This may include in-vm broker clean up, if a decorator has added it.
+        TransportConnection.killVMBroker(1);
+        ApplicationRegistry.remove(1);
         taskHandler.runTearDownTasks();
     }
 
