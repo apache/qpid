@@ -21,6 +21,7 @@
 
 #include "Message.h"
 #include "ExchangeRegistry.h"
+#include "qpid/StringUtils.h"
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -28,8 +29,6 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/log/Statement.h"
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;
@@ -259,8 +258,7 @@ bool Message::isExcluded(const std::vector<std::string>& excludes) const
     if (headers) {
         std::string traceStr = headers->getString(X_QPID_TRACE);
         if (traceStr.size()) {
-            std::vector<std::string> trace;
-            boost::split(trace, traceStr, boost::is_any_of(", ") );
+            std::vector<std::string> trace = split(traceStr, ", ");
 
             for (std::vector<std::string>::const_iterator i = excludes.begin(); i != excludes.end(); i++) {
                 for (std::vector<std::string>::const_iterator j = trace.begin(); j != trace.end(); j++) {
