@@ -8,7 +8,7 @@ qpidd=../src/qpidd
 python=$srcdir/python
  
 trap "$qpidd -q" exit
-export QPID_PORT=`$qpidd -dp0 --data-dir ""`
+export QPID_PORT=`$qpidd -dp0 --data-dir "" --auth no`
 export PYTHON_EXAMPLES=$python/examples
 export PYTHONPATH=$python:$PYTHONPATH
 export AMQP_SPEC=$srcdir/specs/amqp.0-10.xml
