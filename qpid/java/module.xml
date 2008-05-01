@@ -89,6 +89,8 @@
     <path refid="module.test.libs"/>
   </path>
 
+  <property name="javac.deprecation" value="off"/>
+
   <target name="debug">
     <echo-prop name="basedir"/>
     <echo-prop name="project.root"/>
@@ -123,7 +125,8 @@
 
   <target name="compile" depends="prepare,precompile" description="compile sources">
     <javac source="${java.source}" target="${java.target}"
-           destdir="${module.classes}" debug="on">
+           destdir="${module.classes}" debug="on"
+           deprecation="${javac.deprecation}">
       <src refid="module.src.path"/>
       <classpath refid="module.class.path"/>
     </javac>
@@ -145,6 +148,7 @@
           description="compilte unit tests">
     <javac target="${java.target}" source="${java.source}"
            destdir="${module.test.classes}" debug="on"
+           deprecation="${javac.deprecation}"
            srcdir="${module.test.src}">
       <classpath refid="module.test.path"/>
     </javac>
