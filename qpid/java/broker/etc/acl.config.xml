@@ -129,6 +129,12 @@
                                                 <user>server</user>
                                             </users>
                                         </routing_key>
+                                        <routing_key>
+                                            <value>TempQueue*</value>
+                                            <users>
+                                                <user>server</user>
+                                            </users>
+                                        </routing_key>
                                     </routing_keys>
 
                                 </exchange>
