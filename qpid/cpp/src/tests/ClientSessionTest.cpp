@@ -65,8 +65,9 @@ struct DummyListener : public sys::Runnable, public MessageListener {
     void received(Message& msg)
     {
         messages.push_back(msg);
-        if (--expected == 0)
+        if (--expected == 0) {
             dispatcher.stop();
+        }
     }
 };
 
@@ -144,26 +145,22 @@ QPID_AUTO_TEST_CASE(testDispatcher)
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-// FIXME aconway 2008-04-23: hangs
-#if 0
-BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
+QPID_AUTO_TEST_CASE(testDispatcherThread)
 {
-    session =connection.newSession(ASYNC);
-    declareSubscribe();
-    size_t count = 10000;
-    DummyListener listener(session, "my-dest", count);
+    ClientSessionFixture fix;
+    fix.session =fix.connection.newSession(ASYNC);
+    fix.declareSubscribe();
+    size_t count = 1000;
+    DummyListener listener(fix.session, "my-dest", count);
     sys::Thread t(listener);
     for (size_t i = 0; i < count; ++i) {
-        session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
-        if (i%100 == 0) cout << "T" << i << std::flush;
+        fix.session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
     }
     t.join();
     BOOST_REQUIRE_EQUAL(count, listener.messages.size());        
     for (size_t i = 0; i < count; ++i) 
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
-#endif
-
 
 QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
 {
@@ -200,30 +197,28 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }
 
-// FIXME aconway 2008-04-23: broken due to a deadlock in SessionCore
-#if 0
-BOOST_FIXTURE_TEST_CASE(testSendToSelf, SessionFixture) {
-    // Deadlock if SubscriptionManager  run() concurrent with session ack.
+QPID_AUTO_TEST_CASE(testSendToSelf) {
+    ClientSessionFixture fix;
     SimpleListener mylistener;
-    session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
-    subs.subscribe(mylistener, "myq", "myq");
-    sys::Thread runner(subs);//start dispatcher thread
+    fix.session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
+    fix.subs.subscribe(mylistener, "myq", "myq");
+    sys::Thread runner(fix.subs);//start dispatcher thread
     string data("msg");
     Message msg(data, "myq");
-    const uint count=10000;
+    const uint count=1000;
     for (uint i = 0; i < count; ++i) {
-        session.messageTransfer(content=msg);
+        fix.session.messageTransfer(content=msg);
     }
     mylistener.waitFor(count);
-    subs.cancel("myq");
-    subs.stop();
-    session.close();
+    fix.subs.cancel("myq");
+    fix.subs.stop();
+    runner.join();
+    fix.session.close();
     BOOST_CHECK_EQUAL(mylistener.messages.size(), count);
     for (uint j = 0; j < count; ++j) {
         BOOST_CHECK_EQUAL(mylistener.messages[j].getData(), data);
     }
 }
-#endif
 
 QPID_AUTO_TEST_SUITE_END()
 
