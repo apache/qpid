@@ -112,6 +112,7 @@
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
     <mkdir dir="${build.data}"/>
+    <mkdir dir="${build.plugins}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
@@ -171,6 +172,8 @@
   <target name="test" depends="compile-tests" if="module.test.src.exists"
           description="execute unit tests">
 
+    <copy file="${build.lib}/${project.name}-broker-plugins-${project.version}.jar" todir="${build.plugins}"/>   
+     
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}" 
            printsummary="on" timeout="600000" >
@@ -186,6 +189,9 @@
       <sysproperty key="test.excludes" value="${test.excludes}"/>
       <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>  
+      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
+      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/broker"/>
+      <sysproperty key="QPID_HOME" value="${project.root}/broker"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
