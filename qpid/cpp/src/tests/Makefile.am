@@ -41,6 +41,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
 	SequenceSet.cpp \
+	StringUtils.cpp \
 	IncompleteMessageList.cpp \
 	RangeSet.cpp
 
