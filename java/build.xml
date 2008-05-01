@@ -26,8 +26,9 @@
   <property name="modules.examples"   value="client/example"/>
   <property name="modules.tests"      value="systests perftests integrationtests"/>
   <property name="modules.management" value="management/eclipse-plugin"/>
+  <property name="modules.plugin"     value="broker-plugins"/>
 
-  <property name="modules"            value="${modules.core} ${modules.examples} ${modules.tests} ${modules.management}"/>
+  <property name="modules"            value="${modules.core} ${modules.plugin} ${modules.examples} ${modules.tests} ${modules.management}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
