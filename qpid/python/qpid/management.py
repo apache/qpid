@@ -99,8 +99,6 @@ class managementChannel:
     ssn.queue_declare (queue=self.topicName, exclusive=True, auto_delete=True)
     ssn.queue_declare (queue=self.replyName, exclusive=True, auto_delete=True)
 
-    ssn.exchange_bind (exchange="qpid.management",
-                       queue=self.topicName, binding_key="mgmt.#")
     ssn.exchange_bind (exchange="amq.direct",
                        queue=self.replyName, binding_key=self.replyName)
     ssn.message_subscribe (queue=self.topicName, destination="tdest")
@@ -383,7 +381,7 @@ class managementClient:
     elif typecode == 5:
       data = codec.read_uint8 ()
     elif typecode == 6:
-      data = codec.read_str8 ()
+      data = str (codec.read_str8 ())
     elif typecode == 7:
       data = codec.read_vbin32 ()
     elif typecode == 8:  # ABSTIME
@@ -422,10 +420,13 @@ class managementClient:
     if ch.reqsOutstanding == 0:
       if self.ctrlCb != None:
         self.ctrlCb (ch.context, self.CTRL_SCHEMA_LOADED, None)
+      ch.ssn.exchange_bind (exchange="qpid.management",
+                            queue=ch.topicName, binding_key="mgmt.#")
+
 
   def handleMethodReply (self, ch, codec, sequence):
     status = codec.read_uint32 ()
-    sText  = codec.read_str8 ()
+    sText  = str (codec.read_str8 ())
 
     data = self.seqMgr.release (sequence)
     if data == None:
@@ -461,7 +462,7 @@ class managementClient:
 
   def handleCommandComplete (self, ch, codec, seq):
     code = codec.read_uint32 ()
-    text = codec.read_str8 ()
+    text = str (codec.read_str8 ())
     data = (seq, code, text)
     context = self.seqMgr.release (seq)
     if context == "outstanding":
@@ -488,7 +489,7 @@ class managementClient:
     ch.send ("qpid.management", smsg)
 
   def handlePackageInd (self, ch, codec):
-    pname = codec.read_str8 ()
+    pname = str (codec.read_str8 ())
     if pname not in self.packages:
       self.packages[pname] = {}
 
@@ -502,8 +503,8 @@ class managementClient:
       ch.send ("qpid.management", smsg)
 
   def handleClassInd (self, ch, codec):
-    pname = codec.read_str8 ()
-    cname = codec.read_str8 ()
+    pname = str (codec.read_str8 ())
+    cname = str (codec.read_str8 ())
     hash  = codec.read_bin128   ()
     if pname not in self.packages:
       return
@@ -523,8 +524,8 @@ class managementClient:
   def parseSchema (self, ch, codec):
     """ Parse a received schema-description message. """
     self.decOutstanding (ch)
-    packageName = codec.read_str8 ()
-    className   = codec.read_str8 ()
+    packageName = str (codec.read_str8 ())
+    className   = str (codec.read_str8 ())
     hash        = codec.read_bin128 ()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
@@ -550,7 +551,7 @@ class managementClient:
 
     for idx in range (configCount):
       ft = codec.read_map ()
-      name   = ft["name"]
+      name   = str (ft["name"])
       type   = ft["type"]
       access = ft["access"]
       index  = ft["index"]
@@ -562,7 +563,7 @@ class managementClient:
 
       for key, value in ft.items ():
         if   key == "unit":
-          unit = value
+          unit = str (value)
         elif key == "min":
           min = value
         elif key == "max":
@@ -570,42 +571,42 @@ class managementClient:
         elif key == "maxlen":
           maxlen = value
         elif key == "desc":
-          desc = value
+          desc = str (value)
 
       config = (name, type, unit, desc, access, index, min, max, maxlen)
       configs.append (config)
 
     for idx in range (instCount):
       ft = codec.read_map ()
-      name   = ft["name"]
+      name   = str (ft["name"])
       type   = ft["type"]
       unit   = None
       desc   = None
 
       for key, value in ft.items ():
         if   key == "unit":
-          unit = value
+          unit = str (value)
         elif key == "desc":
-          desc = value
+          desc = str (value)
 
       inst = (name, type, unit, desc)
       insts.append (inst)
 
     for idx in range (methodCount):
       ft = codec.read_map ()
-      mname    = ft["name"]
+      mname    = str (ft["name"])
       argCount = ft["argCount"]
       if "desc" in ft:
-        mdesc = ft["desc"]
+        mdesc = str (ft["desc"])
       else:
         mdesc = None
 
       args = []
       for aidx in range (argCount):
         ft = codec.read_map ()
-        name    = ft["name"]
+        name    = str (ft["name"])
         type    = ft["type"]
-        dir     = ft["dir"].upper ()
+        dir     = str (ft["dir"].upper ())
         unit    = None
         min     = None
         max     = None
@@ -615,7 +616,7 @@ class managementClient:
 
         for key, value in ft.items ():
           if   key == "unit":
-            unit = value
+            unit = str (value)
           elif key == "min":
             min = value
           elif key == "max":
@@ -623,9 +624,9 @@ class managementClient:
           elif key == "maxlen":
             maxlen = value
           elif key == "desc":
-            desc = value
+            desc = str (value)
           elif key == "default":
-            default = value
+            default = str (value)
 
         arg = (name, type, dir, unit, desc, min, max, maxlen, default)
         args.append (arg)
@@ -648,8 +649,8 @@ class managementClient:
     if cls == 'I' and self.instCb == None:
       return
 
-    packageName = codec.read_str8 ()
-    className   = codec.read_str8 ()
+    packageName = str (codec.read_str8 ())
+    className   = str (codec.read_str8 ())
     hash        = codec.read_bin128 ()
     classKey    = (packageName, className, hash)
 
