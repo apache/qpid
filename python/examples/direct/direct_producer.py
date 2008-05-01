@@ -8,8 +8,11 @@
 
 import qpid
 import sys
-from qpid.client import Client
-from qpid.content import Content
+import os
+from random import randint
+from qpid.util import connect
+from qpid.connection import Connection
+from qpid.datatypes import Message
 from qpid.queue import Empty
 
 #----- Initialization -----------------------------------
@@ -18,34 +21,33 @@ from qpid.queue import Empty
 
 host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
 port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
-amqp_spec="/usr/share/amqp/amqp.0-10-preview.xml"
 user="guest"
 password="guest"
+amqp_spec=""
 
-#  Create a client and log in to it.
+try:
+     amqp_spec = os.environ["AMQP_SPEC"]
+except KeyError:
+     amqp_spec="/usr/share/amqp/amqp.0-10.xml"
 
-client = Client(host, port, qpid.spec.load(amqp_spec))
-client.start({"LOGIN": user, "PASSWORD": password})
+#  Create a connection.
+conn = Connection (connect (host,port), qpid.spec.load(amqp_spec))
+conn.start()
 
-session = client.session()
-session.session_open()
+session = conn.session(str(randint(1,64*1024)))
 
 #----- Publish some messages ------------------------------
 
 # Create some messages and put them on the broker.
+props = session.delivery_properties(routing_key="routing_key")
 
 for i in range(10):
-  message = Content("message " + str(i))
-  message["routing_key"] = "routing_key"
-  session.message_transfer(destination="amq.direct", content=message)
+  session.message_transfer("amq.direct",None, None, Message(props,"message " + str(i)))
 
-final="That's all, folks!"
-message = Content(final)
-message["routing_key"] = "routing_key"
-session.message_transfer(destination="amq.direct", content=message)
+session.message_transfer("amq.direct",None,None, Message(props,"That's all, folks!"))
 
 #----- Cleanup --------------------------------------------
 
 # Clean up before exiting so there are no open threads.
 
-session.session_close()
+session.close(timeout=10)

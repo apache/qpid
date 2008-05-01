@@ -2,4 +2,4 @@
 background "Request server running" $PYTHON_EXAMPLES/request-response/server.py
 clients ./client
 kill %% 			# Must kill the server.
-outputs "./client.out | remove_uuid" "$PYTHON_EXAMPLES/request-response/server.py.out | remove_uuid64"
+outputs "./client.out | remove_uuid" "$PYTHON_EXAMPLES/request-response/server.py.out | remove_uuid"

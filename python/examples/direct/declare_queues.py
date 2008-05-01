@@ -10,8 +10,10 @@
 
 import qpid
 import sys
-from qpid.client import Client
-from qpid.content import Content
+import os
+from random import randint
+from qpid.util import connect
+from qpid.connection import Connection
 from qpid.queue import Empty
 
 #----- Initialization -----------------------------------
@@ -20,17 +22,20 @@ from qpid.queue import Empty
 
 host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
 port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
-amqp_spec="/usr/share/amqp/amqp.0-10-preview.xml"
 user="guest"
 password="guest"
+amqp_spec=""
 
-#  Create a client and log in to it.
+try:
+     amqp_spec = os.environ["AMQP_SPEC"]
+except KeyError:
+     amqp_spec="/usr/share/amqp/amqp.0-10.xml"     
 
-client = Client(host, port, qpid.spec.load(amqp_spec))
-client.start({"LOGIN": user, "PASSWORD": password})
+#  Create a connection.
+conn = Connection (connect (host,port), qpid.spec.load(amqp_spec))
+conn.start()
 
-session = client.session()
-session.session_open()
+session = conn.session(str(randint(1,64*1024)))
 
 #----- Create a queue -------------------------------------
 
@@ -38,15 +43,13 @@ session.session_open()
 # on the broker. Published messages are sent to the AMQP queue, 
 # from which messages are delivered to consumers. 
 # 
-# queue_bind() determines which messages are routed to a queue. 
-# Route all messages with the routing key "routing_key" to
+# exchange_bind() determines which messages are routed to a queue. 
+# Route all messages with the binding key "routing_key" to
 # the AMQP queue named "message_queue".
 
 session.queue_declare(queue="message_queue")
-session.queue_bind(exchange="amq.direct", queue="message_queue", routing_key="routing_key")
+session.exchange_bind(exchange="amq.direct", queue="message_queue", binding_key="routing_key")
 
 #----- Cleanup ---------------------------------------------
 
-session.session_close()
-
-
+session.close(timeout=10)

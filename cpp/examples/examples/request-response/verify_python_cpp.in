@@ -1,4 +1,4 @@
-==== client.py.out | remove_uuid64
+==== client.py.out | remove_uuid
 Request: Twas brilling, and the slithy toves
 Request: Did gyre and gimble in the wabe.
 Request: All mimsy were the borogroves,
@@ -9,7 +9,7 @@ Response: DID GYRE AND GIMBLE IN THE WABE.
 Response: ALL MIMSY WERE THE BOROGROVES,
 Response: AND THE MOME RATHS OUTGRABE.
 No more messages!
-==== server.out | remove_uuid64
+==== server.out | remove_uuid
 Activating request queue listener for: request
 Waiting for requests
 Request: Twas brilling, and the slithy toves  (ReplyTo:)
