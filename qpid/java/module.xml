@@ -69,11 +69,14 @@
       <istrue value="${module.plugin}"/>
     </and>
   </condition>
-  <property name="module.test.jar" location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
+
+  <property name="module.test.jar"
+            location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
 
   <!-- module.depends and module.test.depends are supplied by the importing file -->
-  <property name="module.depends"      value=""/>
-  <property name="module.test.depends" value=""/>
+  <property name="module.depends"       value=""/>
+  <property name="module.test.depends"  value=""/>
+  <property name="module.test.excludes" value=""/>
 
   <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
     <globmapper from="*" to="${build}/*/classes"/>
@@ -172,10 +175,10 @@
   <property name="java.naming.factory.initial" value="org.apache.qpid.jndi.PropertiesFileInitialContextFactory"/>
 
   <condition property="config" value="${profile}.testprofile" else="default.testprofile">
-      <and>
-          <isset property="profile"/>
-          <available file="${project.root}/${profile}.testprofile" type="file"/>
-      </and>
+    <and>
+      <isset property="profile"/>
+      <available file="${project.root}/${profile}.testprofile" type="file"/>
+    </and>
   </condition>
 
   <property file="${project.root}/${config}"/>
@@ -208,8 +211,7 @@
       <classpath refid="module.test.path"/>
 
       <batchtest fork="${test.fork}" todir="${build.results}">
-        <fileset dir="${module.test.src}">
-          <include name="**/${test1}.java"/>
+        <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
           <include name="**/${test}.java"/>
         </fileset>
       </batchtest>
