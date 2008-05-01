@@ -64,8 +64,8 @@ all-local:
 # to find .spec via PYTHONPATH.
 # 
 # Verify the examples in the buid tree.
-# check-local: all-local verify
-# 	$(srcdir)/verify_all $(abs_top_srcdir)/..
+check-local: all-local verify
+	$(srcdir)/verify_all $(abs_top_srcdir)/..
 
 # TODO:
 #  create a tarball for testing installed examples.
