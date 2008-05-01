@@ -81,11 +81,7 @@ Broker::Options::Options(const std::string& name) :
     enableMgmt(1),
     mgmtPubInterval(10),
 #if HAVE_SASL
-    //Authentication disabled by default for now to allow any
-    //scripts etc that might fail authentication to be updated.
-    //Note that this is a temporary measure (GS 14-APR-2008).
-    auth(false),
-    //auth(true),
+    auth(true),
 #else
     auth(false),
 #endif
