@@ -203,6 +203,7 @@ libqpidcommon_la_SOURCES = \
   qpid/assert.cpp qpid/assert.h \
   qpid/Exception.cpp \
   qpid/Plugin.cpp \
+  qpid/StringUtils.cpp \
   qpid/Url.cpp \
   qpid/sys/AggregateOutput.cpp \
   qpid/sys/AsynchIOHandler.cpp \
@@ -326,6 +327,7 @@ nobase_include_HEADERS = \
   qpid/RangeSet.h \
   qpid/RefCounted.h \
   qpid/SharedObject.h \
+  qpid/StringUtils.h \
   qpid/Url.h \
   qpid/InlineVector.h \
   qpid/InlineAllocator.h \

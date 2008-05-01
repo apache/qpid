@@ -26,6 +26,7 @@
 #include "MessageStore.h"
 #include "QueueRegistry.h"
 
+#include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/Monitor.h"
@@ -37,8 +38,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -517,9 +516,9 @@ void Queue::configure(const FieldTable& _settings)
     traceId = _settings.getString(qpidTraceIdentity);
     std::string excludeList = _settings.getString(qpidTraceExclude);
     if (excludeList.size()) {
-        boost::split(traceExclude, excludeList, boost::is_any_of(", ") );
+        split(traceExclude, excludeList, ", ");
     }
-    QPID_LOG(info, "Configured queue " << getName() << " with qpid.trace.id='" << traceId 
+    QPID_LOG(debug, "Configured queue " << getName() << " with qpid.trace.id='" << traceId 
              << "' and qpid.trace.exclude='"<< excludeList << "' i.e. " << traceExclude.size() << " elements");
 
     if (mgmtObject.get() != 0)
