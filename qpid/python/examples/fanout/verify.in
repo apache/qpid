@@ -1,5 +1,5 @@
 ==== fanout_producer.py.out
-==== fanout_consumer.py.out | remove_uuid64
+==== fanout_consumer.py.out | remove_uuid
 Messages queue: 
 Subscribed to queue 
 Response: message 0
@@ -14,7 +14,7 @@ Response: message 8
 Response: message 9
 Response: That's all, folks!
 No more messages!
-==== fanout_consumer.pyX.out | remove_uuid64
+==== fanout_consumer.pyX.out | remove_uuid
 Messages queue: 
 Subscribed to queue 
 Response: message 0

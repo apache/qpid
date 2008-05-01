@@ -10,6 +10,6 @@ Response: DID GIRE AND GYMBLE IN THE WABE.
 Response: ALL MIMSY WERE THE BOROGROVES,
 Response: AND THE MOME RATHS OUTGRABE.
 Shutting down listener for client
-==== server.py.out | remove_uuid64
+==== server.py.out | remove_uuid
 Request server running - run your client now.
 (Times out after 100 seconds ...)
