@@ -8,11 +8,11 @@ Table of Contents
 2. Prerequisites
    2.1. What to Install
    2.2. How to Install
-   	    2.2.1. Using Package Management Tools
-		2.2.2. From Source
-			   - openais
-			   - boost
-		2.2.3. autotools
+      2.2.1. Using Package Management Tools
+      2.2.2. From Source
+	 a. openais
+	 b. boost
+         c. autotools
    2.3. Important Environment Variable Settings
 
 3. Building from a Source Distribution
@@ -33,7 +33,7 @@ from a checkout of the source or from a source distribution.
 This also explains how to install the required prerequisites for Qpid/C++.
 
 
-2. Prerequisites.
+2. Prerequisites
 ================
 We prefer to avoid spending time accommodating older versions of these
 packages, so please make sure that you have the latest stable versions.
@@ -46,18 +46,20 @@ Redhat Linux 3, will almost certainly require some packages to be upgraded.
 ====================
 The following libraries and header files must be installed to build
 a source distribution:
- * boost      <http://www.boost.org>                   	(1.33.1)
+ * boost      <http://www.boost.org>                   	(1.35)(*)
  * e2fsprogs  <http://e2fsprogs.sourceforge.net/>      	(1.39)
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> 	(0.21)
 
+(*) earlier versions of boost e.g. 1.33 also work
+
 Optional cluster functionality requires:
- * openais <http://openais.org/> 	       				(0.80.3)
+ * openais <http://openais.org/> 	       		(0.80.3)
 
 Running qpid test suite requires:
- * cppunit <http://cppunit.sourceforge.net> 			(1.11.4)
+ * cppunit <http://cppunit.sourceforge.net> 		(1.11.4)
 
 Qpid has been built using the GNU C++ compiler:
- * gcc     <http://gcc.gnu.org/>            			(3.2.3)
+ * gcc     <http://gcc.gnu.org/>            		(3.2.3)
 
 If you want to build directly from the SVN repository you will need
 all of the above plus:
@@ -79,8 +81,8 @@ all of the above plus:
 =====================================
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
-  # yum install pkgconfig e2fsprogs boost-devel cppunit-devel openais-devel ruby
-  # yum install make gcc-c++ autoconf automake libtool doxygen help2man graphviz  # yum install e2fsprogs-devel
+  # yum install boost-devel e2fsprogs-devel pkgconfig openais-devel cppunit-devel
+  # yum install gcc-c++ make autoconf automake help2man libtool doxygen graphviz ruby
 
 Follow the manual installation instruction below for any packages not
 available through yum.
@@ -100,8 +102,8 @@ It is recommended that you create a directory to install them to, for example,
 
 The exceptions are openais and boost.
 
-- openais
-=========
+a. openais
+==========
 Unpack the source distribution and do:
  # make
  # sudo make install DESTDIR=
@@ -125,7 +127,9 @@ temporarily with the newgrp command.
 
 Troubleshooting tips:
 
-If aisexec goes into a loop printing "entering GATHER state", verify your firewall is allowing UDP traffic on the mcastport set in openais.conf.
+If aisexec goes into a loop printing "entering GATHER state", verify
+your firewall is allowing UDP traffic on the mcastport set in
+openais.conf.
 
 If aisexec reports "got nodejoin message 127.0.0.1" verify the
 bindnetaddr in openais.conf is an active local IP address.  ifconfig
@@ -138,19 +142,20 @@ bindnetaddr in openais.conf.
 
 For further info on openais http://openais.org/
 
-- boost
-=======
+b. boost
+========
  1. Unpack boost-jam.
  2. Add bjam in the unpacked directory to your path.
  3. Unpack boost and cd to the boost untarred directory.
  4. do:
 
-  # bjam -sTOOLS=gcc --prefix=~/qpid-tools
+  # bjam toolset=gcc variant=release threading=single link=shared \
+    --layout=system --prefix=~/qpid-tools install
 
-2.2.3. autotools
-================
+c. autotools
+============
 If you don't have sufficiently up-to-date autotools you can get the
-latest by running run the script qpid-autotools-install.
+latest by running the script qpid-autotools-install.
 
 1. Decide where you would like to install the tools. It should be in a
    local directory so that you do not need root privileges. (Suggest
