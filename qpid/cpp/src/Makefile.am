@@ -221,7 +221,8 @@ libqpidcommon_la_SOURCES = \
   qpid/ISList.h \
   qpid/pointer_to_other.h
 
-libqpidbroker_la_LIBADD = libqpidcommon.la 
+libqpidbroker_la_LIBADD = libqpidcommon.la \
+						  -luuid
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   qpid/amqp_0_10/Connection.h \
@@ -287,7 +288,8 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementObject.cpp \
   qpid/sys/TCPIOPlugin.cpp
 
-libqpidclient_la_LIBADD = libqpidcommon.la
+libqpidclient_la_LIBADD = libqpidcommon.la \
+						  -luuid
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
   qpid/client/Bounds.cpp		\
