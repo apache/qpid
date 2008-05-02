@@ -53,7 +53,7 @@ void Bridge::create()
         //TODO: handle 'push' here... simplest way is to create frames and pass them to Connection::received()
     } else {
         if (args.i_src_is_queue) {
-            peer.getMessage().subscribe(args.i_src, args.i_dest, 0, 0, false, "", 0, FieldTable());
+            peer.getMessage().subscribe(args.i_src, args.i_dest, 1, 0, false, "", 0, FieldTable());
             peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
             peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         } else {
@@ -70,7 +70,7 @@ void Bridge::create()
             bool autoDelete = !durable;//auto delete transient queues?
             peer.getQueue().declare(queue, "", false, durable, true, autoDelete, queueSettings);
             peer.getExchange().bind(queue, args.i_src, args.i_key, FieldTable());
-            peer.getMessage().subscribe(queue, args.i_dest, 0, 0, false, "", 0, FieldTable());
+            peer.getMessage().subscribe(queue, args.i_dest, 1, 0, false, "", 0, FieldTable());
             peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
             peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         }
