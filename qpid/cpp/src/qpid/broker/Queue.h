@@ -81,7 +81,8 @@ namespace qpid {
             mutable qpid::sys::Mutex ownershipLock;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
-            std::auto_ptr<QueuePolicy> policy;            
+            std::auto_ptr<QueuePolicy> policy;
+            bool policyExceeded;
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
