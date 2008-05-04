@@ -181,7 +181,7 @@ void Listener::report(){
               << time/TIME_MSEC << " ms.";
     Message msg(reportstr.str(), responseQueue);
     msg.getHeaders().setString("TYPE", "REPORT");
-    session.messageTransfer(arg::content=msg, arg::acceptMode=1);
+    session.messageTransfer(arg::destination="amq.direct", arg::content=msg, arg::acceptMode=1);
     if(transactional){
         session.txCommit();
     }
