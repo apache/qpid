@@ -61,7 +61,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     consumerCount(0),
     exclusive(0),
     noLocal(false),
-    persistenceId(0)
+    persistenceId(0),
+    policyExceeded(false)
 {
     if (parent != 0)
     {
@@ -420,12 +421,21 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
     if (policy.get()) {
         policy->enqueued(msg->contentSize());
         if (policy->limitExceeded()) {
+            if (!policyExceeded) {
+                policyExceeded = true;
+                QPID_LOG(info, "Queue size exceeded policy for " << name);
+            }
             if (store) {
                 QPID_LOG(debug, "Message " << msg << " on " << name << " released from memory");
                 msg->releaseContent(store);
             } else {
                 QPID_LOG(warning, "Message " << msg << " on " << name
                          << " exceeds the policy for the queue but can't be released from memory as the queue is not durable");
+            }
+        } else {
+            if (policyExceeded) {
+                policyExceeded = false;
+                QPID_LOG(info, "Queue size within policy for " << name);
             }
         }
     }
