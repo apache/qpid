@@ -170,9 +170,9 @@ void ConnectionHandler::redirect(const std::string& /*host*/, const Array& /*kno
 void ConnectionHandler::close(uint16_t replyCode, const std::string& replyText)
 {
     proxy.closeOk();
-    setState(CLOSED);
     errorCode = replyCode;
     errorText = replyText;
+    setState(CLOSED);
     QPID_LOG(warning, "Broker closed connection: " << replyCode << ", " << replyText);
     if (onError) {
         onError(replyCode, replyText);
