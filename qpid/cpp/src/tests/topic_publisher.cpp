@@ -113,8 +113,8 @@ int main(int argc, char** argv) {
             }
 
 
-            //declare queue (relying on default binding):
             session.queueDeclare(arg::queue="response");
+            session.exchangeBind(arg::exchange="amq.direct", arg::queue="response", arg::bindingKey="response");
 
             Publisher publisher(session, "topic_control", args.transactional, args.durable);
 
