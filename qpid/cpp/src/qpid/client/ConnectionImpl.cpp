@@ -48,12 +48,13 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   NORMAL, std::string());
-    handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
     connector.setInputHandler(&handler);
     connector.setTimeoutHandler(this);
     connector.setShutdownHandler(this);
 
     open(settings.host, settings.port);
+    //only set error handler once  open
+    handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
 }
 
 ConnectionImpl::~ConnectionImpl() {
