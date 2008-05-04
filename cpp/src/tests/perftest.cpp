@@ -75,6 +75,7 @@ struct Opts : public TestOptions {
     // Queue policy
     uint32_t queueMaxCount;
     uint64_t queueMaxSize;
+    bool queueDurable;
 
     // Publisher
     size_t pubs;
@@ -132,8 +133,9 @@ struct Opts : public TestOptions {
             ("iterations", optValue(iterations, "N"), "Desired number of iterations of the test.")
             ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec")
 
-            ("queue_max_count", optValue(queueMaxCount, "N"), "queue policy: count to trigger 'flow to disk'")
-            ("queue_max_size", optValue(queueMaxSize, "N"), "queue policy: accumulated size to trigger 'flow to disk'")
+            ("queue-max-count", optValue(queueMaxCount, "N"), "queue policy: count to trigger 'flow to disk'")
+            ("queue-max-size", optValue(queueMaxSize, "N"), "queue policy: accumulated size to trigger 'flow to disk'")
+            ("queue-durable", optValue(queueDurable, "N"), "Make queue durable (implied if durable set)")
 
             ("interval_sub", optValue(intervalSub, "ms"), ">=0 delay between msg consume")
             ("interval_pub", optValue(intervalPub, "ms"), ">=0 delay between msg publish");
@@ -226,7 +228,7 @@ struct Setup : public Client {
             for (size_t i = 0; i < opts.qt; ++i) {
                 ostringstream qname;
                 qname << "perftest" << i;
-                queueInit(qname.str(), opts.durable, settings); 
+                queueInit(qname.str(), opts.durable || opts.queueDurable, settings); 
             }
         }
     }
