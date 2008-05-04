@@ -7,6 +7,6 @@ java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Server
 
 background "can receive messages" server_java
 clients $cpp/client
-PID=`ps -aux | grep 'qpid-client-incubating-M3.jar'|grep -v 'grep'|awk '{ print $2 }'`
-kill -9 $PID
+#ps -ao pid,cmd | awk '/qpid-client-incubating-M3.jar/{ print $1 }' | xargs -r kill
+kill %%
 outputs "$cpp/client.out | remove_uuid" "server_java.out | remove_uuid"

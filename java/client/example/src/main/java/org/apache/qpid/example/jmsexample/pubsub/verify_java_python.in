@@ -31,7 +31,7 @@ Publisher: Sending message 5
 Publisher: Sending message 6
 Publisher: Closing connection
 Publisher: Closing JNDI context
-==== topic_subscriber.py.out | remove_uuid64 | sort
+==== topic_subscriber.py.out | remove_uuid | sort
 message 1
 message 1
 message 1

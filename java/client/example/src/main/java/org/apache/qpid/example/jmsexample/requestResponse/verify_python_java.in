@@ -13,6 +13,6 @@ Client: 	Request Content= And the mome raths outgrabe.
 Client: 	Response Content= AND THE MOME RATHS OUTGRABE.
 Client: Closing connection
 Client: Closing JNDI context
-==== server.py.out | remove_uuid64
+==== server.py.out | remove_uuid
 Request server running - run your client now.
 (Times out after 100 seconds ...)
