@@ -10,4 +10,4 @@ background "Subscribed" $py/fanout_consumer.py
 background "Subscribed" $py/fanout_consumer.py
 background "Subscribed" $py/fanout_consumer.py
 clients fanout_producer_java
-outputs ./fanout_producer_java.out "$py/fanout_consumer.py.out | remove_uuid64" "$py/fanout_consumer.pyX.out | remove_uuid64" "$py/fanout_consumer.pyXX.out | remove_uuid64"
+outputs ./fanout_producer_java.out "$py/fanout_consumer.py.out | remove_uuid" "$py/fanout_consumer.pyX.out | remove_uuid" "$py/fanout_consumer.pyXX.out | remove_uuid"

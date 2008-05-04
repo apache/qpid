@@ -1,21 +1,30 @@
 #!/bin/sh
-# This script assumes QPID_SRC_HOME is set .
 
-if [[ "x$QPID_SRC_HOME" =  "x" ]]; then
-  echo "WARNING >>>  QPID_SRC_HOME needs to be set "  
-  exit
-fi
-
+export QPID_SRC_HOME=$(cd "$(dirname $0)/../../../.."; pwd)
 export CPP=$QPID_SRC_HOME/cpp/examples/examples
 export PYTHON=$QPID_SRC_HOME/python/examples
 export JAVA=$QPID_SRC_HOME/java/client/example/src/main/java/org/apache/qpid/example/jmsexample
 
+export AMQP_SPEC=$QPID_SRC_HOME/specs/amqp.0-10.xml
+export PYTHONPATH=$QPID_SRC_HOME/python/
+
+trap cleanup EXIT
+
 run_broker(){
-  $QPID_SRC_HOME/cpp/src/qpidd -d --no-data-dir
+  $QPID_SRC_HOME/cpp/src/qpidd -d --no-data-dir --auth no
 }
 
 stop_broker(){
   $QPID_SRC_HOME/cpp/src/qpidd -q
+}
+
+cleanup(){
+  if [ -e /tmp/qpidd.5672.pid ]; then
+    stop_broker
+  fi
+  find $CPP -name '*.out' | xargs rm -f
+  find $PYTHON -name '*.out' | xargs rm -f
+  find $JAVA -name '*.out' | xargs rm -f
 }
 
 QPID_LIBS=`find $QPID_SRC_HOME/java/build/lib -name '*.jar' | tr '\n' ":"`
@@ -23,12 +32,10 @@ export CLASSPATH=$QPID_LIBS:$CLASSPATH
 
 verify=$QPID_SRC_HOME/cpp/examples/verify
 
-for dir in $(find $JAVA/ -maxdepth 1 -type d -not -name '*.svn')
+for script in $(find $JAVA -name 'verify*' -not -path '*.svn' -not -name '*.*')
 do
-  for script in $(find $dir -maxdepth 1 -type f -name 'verify*' -not -name '*.*')
-  do
-    run_broker
-    $verify $script
-    stop_broker
-  done
+  run_broker
+  $verify $script
+  stop_broker
 done
+

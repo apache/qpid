@@ -14,7 +14,7 @@ Producer: Sending message: 9
 Producer: Sending message: 10
 Producer: Closing connection
 Producer: Closing JNDI context
-==== fanout_consumer.py.out | remove_uuid64
+==== fanout_consumer.py.out | remove_uuid
 Messages queue: 
 Subscribed to queue 
 Response: Message 1
@@ -29,7 +29,7 @@ Response: Message 9
 Response: Message 10
 Response: That's all, folks!
 No more messages!
-==== fanout_consumer.pyX.out | remove_uuid64
+==== fanout_consumer.pyX.out | remove_uuid
 Messages queue: 
 Subscribed to queue 
 Response: Message 1
@@ -44,7 +44,7 @@ Response: Message 9
 Response: Message 10
 Response: That's all, folks!
 No more messages!
-==== fanout_consumer.pyXX.out | remove_uuid64
+==== fanout_consumer.pyXX.out | remove_uuid
 Messages queue: 
 Subscribed to queue 
 Response: Message 1

@@ -8,4 +8,4 @@ java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Client
 background "Request server running" $py/server.py
 clients client_java
 kill %%
-outputs "client_java.out | remove_uuid" "$py/server.py.out | remove_uuid64"
+outputs "client_java.out | remove_uuid" "$py/server.py.out | remove_uuid"
