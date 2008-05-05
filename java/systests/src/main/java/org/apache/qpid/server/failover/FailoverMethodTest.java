@@ -60,7 +60,10 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
      */
     public void testFailoverRoundRobinDelay() throws URLSyntaxException, InterruptedException, JMSException
     {
-        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1;tcp://localhost:5670?connectdelay='2000',retries='3''";
+        //note: The VM broker has no connect delay and the default 1 retry
+        //        while the tcp:localhost broker has 3 retries with a 2s connect delay
+        String connectionString = "amqp://guest:guest@/test?brokerlist=" +
+                                  "'vm://:1;tcp://localhost:5670?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
@@ -77,13 +80,22 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
 
             long end = System.currentTimeMillis();
 
-            //Failover should take less that 10 seconds.
-            // This is calculated by vm://:1 two retries left after initial connection
-            // localhost get three retries so (6s) so 10s in total for connection dropping
-            assertTrue("Failover took less than 6 seconds:"+(end - start), (end - start) > 6000);
-            // The sleep method is not 100% accurate under windows so with 5 sleeps and a 10ms accuracy then there is
-            // the potential for the tests to finish in 500ms sooner than the predicted 10s.
+            long duration = (end - start);
 
+            //Failover should take more that 6 seconds.
+            // 3 Retires
+            // so VM Broker NoDelay 0 (Connect) NoDelay 0
+            // then TCP NoDelay 0 Delay 1 Delay 2 Delay  3
+            // so 3 delays of 2s in total for connection
+            // as this is a tcp connection it will take 1second per connection to fail
+            // so max time is 6seconds of delay plus 4 seconds of TCP Delay + 1 second of runtime. == 11 seconds 
+
+            // Ensure we actually had the delay
+            assertTrue("Failover took less than 6 seconds", duration > 6000);
+
+            // Ensure we don't have delays before initial connection and reconnection.
+            // We allow 1 second for initial connection and failover logic on top of 6s of sleep.
+            assertTrue("Failover took more than 11 seconds:(" + duration + ")", duration < 11000);
         }
         catch (AMQException e)
         {
@@ -91,7 +103,8 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
         }
     }
 
-    public void testFailoverSingleDelay() throws URLSyntaxException, AMQVMBrokerCreationException, InterruptedException, JMSException
+    public void testFailoverSingleDelay() throws URLSyntaxException, AMQVMBrokerCreationException,
+                                                 InterruptedException, JMSException
     {
         String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='2000',retries='3''";
 
@@ -110,21 +123,26 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
 
             long end = System.currentTimeMillis();
 
-            //Failover should take less that 10 seconds.
-            // This is calculated by vm://:1 two retries left after initial connection
-            // so 4s in total for connection dropping
+            long duration = (end - start);
 
-            assertTrue("Failover took less than 3.7 seconds", (end - start) > 3700);
-            // The sleep method is not 100% accurate under windows so with 3 sleeps and a 10ms accuracy then there is
-            // the potential for the tests to finish in 300ms sooner than the predicted 4s.
+            //Failover should take more that 6 seconds.
+            // 3 Retires
+            // so NoDelay 0 (Connect) NoDelay 0 Delay 1 Delay 2 Delay  3
+            // so 3 delays of 2s in total for connection
+            // so max time is 6 seconds of delay + 1 second of runtime. == 7 seconds
 
+            // Ensure we actually had the delay
+            assertTrue("Failover took less than 6 seconds", duration > 6000);
+
+            // Ensure we don't have delays before initial connection and reconnection.
+            // We allow 1 second for initial connection and failover logic on top of 6s of sleep.
+            assertTrue("Failover took more than 7 seconds:(" + duration + ")", duration < 7000);
         }
         catch (AMQException e)
         {
             fail(e.getMessage());
         }
     }
-
 
     public void onException(JMSException e)
     {
