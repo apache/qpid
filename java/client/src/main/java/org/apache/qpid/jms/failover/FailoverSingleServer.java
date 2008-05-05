@@ -95,7 +95,7 @@ public class FailoverSingleServer implements FailoverMethod
 
 
         String delayStr = _brokerDetail.getProperty(BrokerDetails.OPTIONS_CONNECT_DELAY);
-        if (delayStr != null && _currentRetries != 1)
+        if (delayStr != null && _currentRetries > 0)
         {
             Long delay = Long.parseLong(delayStr);
             _logger.info("Delay between connect retries:" + delay);
@@ -106,9 +106,12 @@ public class FailoverSingleServer implements FailoverMethod
             }
             catch (InterruptedException ie)
             {
-                _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
                 return null;
             }
+        }
+        else
+        {
+            _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
         }
 
         return _brokerDetail;
