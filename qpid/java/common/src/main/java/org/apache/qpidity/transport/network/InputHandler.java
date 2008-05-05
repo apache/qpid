@@ -113,7 +113,7 @@ public class InputHandler implements Receiver<ByteBuffer>
 
     public void received(ByteBuffer buf)
     {
-        while (buf.hasRemaining())
+        while (buf.hasRemaining() || state == FRAME_PAYLOAD)
         {
             state = next(buf);
         }
