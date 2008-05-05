@@ -822,7 +822,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // in AMQP it is not possible to change the client ID. If one is not specified
         // upon connection construction, an id is generated automatically. Therefore
         // we can always throw an exception.
-        throw new IllegalStateException("Client name cannot be changed after being set");
+        if (!Boolean.getBoolean(ClientProperties.IGNORE_SET_CLIENTID_PROP_NAME))
+        {
+            throw new IllegalStateException("Client name cannot be changed after being set");
+        }
+        else
+        {
+            _logger.info("Operation setClientID is ignored using ID: " + getClientID());
+        }
     }
 
     public ConnectionMetaData getMetaData() throws JMSException
