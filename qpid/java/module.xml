@@ -26,6 +26,7 @@
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
+  <echo message="Running ant for module : ${module}"/>
 
   <property file="${project.root}/build.deps"/>
 
@@ -38,6 +39,10 @@
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
+
+  <available property="module.test.src.exists" file="${module.test.src}"/>
+  <available property="module.etc.exists" file="${module.etc}"/>
+  <available property="module.bin.exists" file="${module.bin}"/>
 
   <map property="module.name" value="${module}">
     <filtermapper>
@@ -150,8 +155,6 @@
     </copy>
   </target>
 
-  <available property="module.test.src.exists" file="${module.test.src}"/>
-
   <target name="precompile-tests" if="module.test.src.exists"/>
 
   <target name="compile-tests" depends="compile,precompile-tests" if="module.test.src.exists"
@@ -218,16 +221,21 @@
     </junit>
   </target>
 
-  <target name="build" depends="jar,libs" description="compile and copy resources into build tree">
+
+  <target name="copy-bin" if="module.bin.exists" description="copy bin directory if it exists to build tree">
     <copy todir="${build.bin}" failonerror="false">
       <fileset dir="${module.bin}"/>
     </copy>
     <chmod dir="${build.bin}" perm="ugo+rx" includes="**/*"/>
-   	 <copy todir="${build.etc}" failonerror="false">
+  </target>
+
+  <target name="copy-etc" if="module.etc.exists" description="copy etc directory if it exists to build tree">
+    <copy todir="${build.etc}" failonerror="false">
       <fileset dir="${module.etc}"/>
     </copy>
   </target>
 
+  <target name="build" depends="jar,jar-tests,libs,copy-bin,copy-etc" description="compile and copy resources into build tree"/>
   <target name="jar.manifest" depends="compile" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}"/>
   </target>
