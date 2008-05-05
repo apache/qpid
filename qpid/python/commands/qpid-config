@@ -28,6 +28,7 @@ from threading       import Condition
 from qpid.management import managementClient
 from qpid.peer       import Closed
 from qpid.connection import Connection
+from qpid.datatypes  import uuid4
 from qpid.util       import connect
 from time            import sleep
 
@@ -38,9 +39,14 @@ _host         = "localhost"
 _durable      = False
 _fileCount    = 8
 _fileSize     = 24
+_maxQueueSize = None
+_maxQueueCount= None
+
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
+MAX_QUEUE_SIZE  = "qpid.max_size"
+MAX_QUEUE_COUNT  = "qpid.max_count"
 
 def Usage ():
     print "Usage:  qpid-config [OPTIONS]"
@@ -65,6 +71,8 @@ def Usage ():
     print "    --durable           Queue is durable"
     print "    --file-count N (8)  Number of files in queue's persistence journal"
     print "    --file-size  N (24) File size in pages (64Kib/page)"
+    print "    --max-queue-size N Maximum in-memory queue size as bytes"
+    print "    --max-queue-count N Maximum in-memory queue size as a number of messages"
     print
     print "Add Exchange Options:"
     print "    --durable           Exchange is durable"
@@ -100,6 +108,7 @@ class BrokerManager:
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
             self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec)
             self.conn.start ()
+            self.session = self.conn.session(str(uuid4()))
             self.mclient  = managementClient (self.spec)
             self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
         except socket.error, e:
@@ -224,7 +233,7 @@ class BrokerManager:
         ename = args[1]
 
         try:
-            self.channel.exchange_declare (exchange=ename, type=etype, durable=_durable)
+            self.session.exchange_declare (exchange=ename, type=etype, durable=_durable)
         except Closed, e:
             print "Failed:", e
 
@@ -235,7 +244,7 @@ class BrokerManager:
         ename = args[0]
 
         try:
-            self.channel.exchange_delete (exchange=ename)
+            self.session.exchange_delete (exchange=ename)
         except Closed, e:
             print "Failed:", e
 
@@ -249,8 +258,13 @@ class BrokerManager:
             declArgs[FILECOUNT] = _fileCount
             declArgs[FILESIZE]  = _fileSize
 
+        if _maxQueueSize:
+            declArgs[MAX_QUEUE_SIZE]  = _maxQueueSize
+        if _maxQueueCount:
+            declArgs[MAX_QUEUE_COUNT]  = _maxQueueCount
+
         try:
-            self.channel.queue_declare (queue=qname, durable=_durable, arguments=declArgs)
+            self.session.queue_declare (queue=qname, durable=_durable, arguments=declArgs)
         except Closed, e:
             print "Failed:", e
 
@@ -261,7 +275,7 @@ class BrokerManager:
         qname = args[0]
 
         try:
-            self.channel.queue_delete (queue=qname)
+            self.session.queue_delete (queue=qname)
         except Closed, e:
             print "Failed:", e
 
@@ -276,7 +290,7 @@ class BrokerManager:
             key = args[2]
 
         try:
-            self.channel.queue_bind (queue=qname, exchange=ename, routing_key=key)
+            self.session.exchange_bind (queue=qname, exchange=ename, routing_key=key)
         except Closed, e:
             print "Failed:", e
 
@@ -291,7 +305,7 @@ class BrokerManager:
             key = args[2]
 
         try:
-            self.channel.queue_unbind (queue=qname, exchange=ename, routing_key=key)
+            self.session.exchange_unbind (queue=qname, exchange=ename, routing_key=key)
         except Closed, e:
             print "Failed:", e
 
@@ -318,7 +332,7 @@ def YN (bool):
 ##
 
 try:
-    longOpts = ("durable", "spec-file=", "bindings", "broker-addr=", "file-count=", "file-size=")
+    longOpts = ("durable", "spec-file=", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=")
     (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:a:b", longOpts)
 except:
     Usage ()
@@ -336,6 +350,10 @@ for opt in optlist:
         _fileCount = int (opt[1])
     if opt[0] == "--file-size":
         _fileSize = int (opt[1])
+    if opt[0] == "--max-queue-size":
+        _maxQueueSize = int (opt[1])
+    if opt[0] == "--max-queue-count":
+        _maxQueueCount = int (opt[1])
 
 nargs = len (cargs)
 bm    = BrokerManager ()
