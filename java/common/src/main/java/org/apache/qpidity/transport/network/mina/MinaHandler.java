@@ -27,14 +27,11 @@ import java.net.SocketAddress;
 import org.apache.mina.common.*;
 
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
-import org.apache.mina.transport.socket.nio.MemoryHandlerSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
-import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
 
 import org.apache.qpidity.transport.Binding;
 import org.apache.qpidity.transport.Connection;
@@ -48,13 +45,6 @@ import org.apache.qpidity.transport.network.Assembler;
 import org.apache.qpidity.transport.network.Disassembler;
 import org.apache.qpidity.transport.network.InputHandler;
 import org.apache.qpidity.transport.network.OutputHandler;
-import org.apache.qpid.client.failover.FailoverHandler;
-import org.apache.qpid.client.SSLConfiguration;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-
 
 /**
  * MinaHandler
