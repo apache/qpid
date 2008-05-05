@@ -128,6 +128,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
+    <mkdir dir="${build.results}/${module.name}"/>
     <mkdir dir="${build.data}"/>
     <mkdir dir="${build.plugins}"/>
     <mkdir dir="${module.classes}"/>
@@ -213,7 +214,7 @@
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="${test.fork}" todir="${build.results}">
+      <batchtest fork="${test.fork}" todir="${build.results}}/${module.name}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
           <include name="**/${test}.java"/>
         </fileset>
@@ -267,6 +268,7 @@
 
   <target name="clean" description="remove build artifacts">
     <delete dir="${module.build}"/>
+    <delete dir="${build.results}/${module.name}"/>
   </target>
 
 </project>
