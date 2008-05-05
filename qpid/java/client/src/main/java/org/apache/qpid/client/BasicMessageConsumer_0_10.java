@@ -167,6 +167,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         AMQShortString routingKey;
         boolean redelivered = false;
         Struct[] headers = {message.getMessageProperties(), message.getDeliveryProperties()};
+        if (headers[0] == null) {
+            headers[0] = new MessageProperties(); 
+        }
         if( message.getDeliveryProperties() != null )
         {
             exchange = new AMQShortString(message.getDeliveryProperties().getExchange());
@@ -190,7 +193,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             getSession().getAMQConnection().exceptionReceived(e);
         }
         // if there is a replyto destination then we need to request the exchange info
-        ReplyTo replyTo = message.getMessageProperties().getReplyTo();
+        ReplyTo replyTo = ((MessageProperties) headers[0]).getReplyTo();
         if (replyTo != null && replyTo.getExchange() != null && !replyTo.getExchange().equals(""))
         {
             // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
