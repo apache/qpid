@@ -23,19 +23,13 @@ package org.apache.qpid.client;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
-import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.failover.FailoverProtectedOperation;
-import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
@@ -355,7 +349,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         else
         {
             // use the defaul value set for all connections
-            _maxPrefetch = ClientProperties.MAX_PREFETCH;
+            _maxPrefetch = Long.valueOf(System.getProperties().getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME,
+                    ClientProperties.MAX_PREFETCH_DEFAULT));
         }
 
         if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
@@ -365,7 +360,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         else
         {
             // use the defaul value set for all connections
-            _syncPersistence = ClientProperties.SYNC_PERSISTENT;
+            _syncPersistence = Boolean.getBoolean(ClientProperties.SYNC_PERSISTENT_PROP_NAME);
         }
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
