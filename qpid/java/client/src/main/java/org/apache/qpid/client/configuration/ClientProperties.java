@@ -25,6 +25,14 @@ public class ClientProperties
 {
 
     /**
+     * Currently with Qpid it is not possible to change the client ID.
+     * If one is not specified upon connection construction, an id is generated automatically.
+     * Therefore an exception is always thrown unless this property is set to true.
+     * type: boolean
+     */
+    public static final String IGNORE_SET_CLIENTID_PROP_NAME = "ignore_setclientID";
+
+    /**
      * This property is currently used within the 0.10 code path only 
      * The maximum number of pre-fetched messages per destination
      * This property is used for all the connection unless it is overwritten by the connectionURL
