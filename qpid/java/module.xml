@@ -214,7 +214,7 @@
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="${test.fork}" todir="${build.results}}/${module.name}">
+      <batchtest fork="${test.fork}" todir="${build.results}/${module.name}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
           <include name="**/${test}.java"/>
         </fileset>
