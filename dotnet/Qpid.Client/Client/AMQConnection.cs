@@ -263,7 +263,6 @@ namespace Apache.Qpid.Client
 
             _log.Debug("Blocking for connection close ok frame");
 
-            _stateManager.AttainState(AMQState.CONNECTION_CLOSED);
             Disconnect();
         }
 
