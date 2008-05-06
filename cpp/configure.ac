@@ -221,7 +221,8 @@ if test $use_xml != no; then
     AC_MSG_ERROR([XML Exchange requested, but XQilla or Xerces-C not available])
 
   # Else XQilla is available - use it to build
-  AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
+  test $use_xml = yes &&
+    AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
 fi
 
 AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
