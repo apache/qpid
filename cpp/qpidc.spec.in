@@ -1,3 +1,4 @@
+
 #
 # Spec file for Qpid C++ packages: qpidc qpidc-devel, qpidd, qpidd-devel
 # svn revision: $Rev$
@@ -54,6 +55,8 @@ Summary: An AMQP message broker daemon
 Group: System Environment/Daemons
 Requires: %name = %version-%release
 Requires: openais
+Requires: xqilla
+Requires: xerces-c
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
