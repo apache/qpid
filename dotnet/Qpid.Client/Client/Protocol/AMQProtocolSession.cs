@@ -35,12 +35,6 @@ namespace Apache.Qpid.Client.Protocol
         private readonly IProtocolWriter _protocolWriter;
         private readonly IConnectionCloser _connectionCloser;
 
-        /**
-         * Counter to ensure unique queue names
-         */
-        private int _queueId = 1;
-        private readonly Object _queueIdLock = new Object();
-
         /// <summary>
         /// Maps from the channel id to the AmqChannel that it represents.
         /// </summary>
@@ -267,13 +261,7 @@ namespace Apache.Qpid.Client.Protocol
 
         internal string GenerateQueueName()
         {
-            int id;
-            lock(_queueIdLock)
-            {
-                id = _queueId++;
-            }
-
-            return "tmp_" + _connection.Transport.LocalEndpoint + "_" + id;          
+        	return "ntmp_" + System.Guid.NewGuid();
         }
     }
 }
