@@ -69,6 +69,13 @@ namespace client {
          * match zero or more words.
          */
 	static const std::string TOPIC_EXCHANGE;
+
+	/**
+	 *
+	 */
+
+	static const std::string XML_EXCHANGE;
+
         /**
          * The headers exchange routes messages based on whether their
          * headers match the binding arguments specified when

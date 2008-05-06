@@ -30,3 +30,11 @@
    fun:epoll_ctl
 }
 
+{
+   "Conditional jump or move depends on uninitialised value(s)" from Xerces parser
+   Memcheck:Cond
+   fun:_ZN11xercesc_2_717XMLUTF8Transcoder13transcodeFromEPKhjPtjRjPh
+   fun:_ZN11xercesc_2_79XMLReader14xcodeMoreCharsEPtPhj
+   fun:_ZN11xercesc_2_79XMLReader17refreshCharBufferEv
+}
+

@@ -46,7 +46,7 @@ DISTCLEANFILES+=qpid/framing/MaxMethodBodySize.h
 
 ## Compiler flags
 
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
 
@@ -221,8 +221,12 @@ libqpidcommon_la_SOURCES = \
   qpid/ISList.h \
   qpid/pointer_to_other.h
 
-libqpidbroker_la_LIBADD = libqpidcommon.la \
-						  -luuid
+libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
+if HAVE_XML
+libqpidbroker_la_LIBADD += -lxerces-c -lxqilla
+endif
+
+
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   qpid/amqp_0_10/Connection.h \
@@ -288,8 +292,13 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementObject.cpp \
   qpid/sys/TCPIOPlugin.cpp
 
-libqpidclient_la_LIBADD = libqpidcommon.la \
-						  -luuid
+if HAVE_XML
+libqpidbroker_la_SOURCES +=  qpid/broker/XmlExchange.cpp
+endif
+
+
+libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
+
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
   qpid/client/Bounds.cpp		\
@@ -527,6 +536,11 @@ nobase_include_HEADERS = \
   qpid/sys/Thread.h \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h
+
+if HAVE_XML
+nobase_include_HEADERS += qpid/broker/XmlExchange.h
+endif
+
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
