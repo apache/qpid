@@ -20,8 +20,9 @@
 #
 
 import os
-import getopt
+import optparse
 import sys
+import re
 import socket
 import qpid
 from threading       import Condition
@@ -30,21 +31,6 @@ from qpid.peer       import Closed
 from qpid.connection import Connection
 from qpid.util       import connect
 from time            import sleep
-
-defspecpath  = "/usr/share/amqp/amqp.0-10.xml"
-specpath     = defspecpath
-host         = "localhost"
-
-def Usage ():
-    print "Usage:  qpid-queue-stats [OPTIONS]"
-    print
-    print "Options:"
-    print "    -a <broker-addr>     default: localhost"
-    print "         broker-addr is in the form:   hostname | ip-address [:<port>]"
-    print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000"
-    print "    -s <amqp-spec-file>  default:", defspecpath
-    print
-    sys.exit (1)
 
 class Broker:
     def __init__ (self, text):
@@ -78,13 +64,15 @@ class BrokerManager:
         self.src     = None
         self.broker  = None
         self.objects = {}
+        self.filter  = None   
+        self.specpath="/usr/share/amqp/amqp.0-10.xml"
 
     def SetBroker (self, broker):
         self.broker = broker
 
     def ConnectToBroker (self):
         try:
-            self.spec     = qpid.spec.load (specpath)
+            self.spec     = qpid.spec.load (self.specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
             self.conn     = Connection (connect (self.broker.host, self.broker.port), self.spec)
             self.conn.start ()
@@ -93,6 +81,12 @@ class BrokerManager:
         except socket.error, e:
             print "Connect Error:", e
             exit (1)
+
+    def setFilter(self,filter):
+        self.filter = filter
+
+    def setSpecpath(self,spec):
+        self.specpath = spec
 
     def Disconnect (self):
         self.mclient.removeChannel (self.mchannel)
@@ -119,6 +113,16 @@ class BrokerManager:
         if first == None:
             self.objects[obj.id] = (name, obj, None)
             return
+
+        if len(self.filter) > 0 :
+           match = False
+                    
+           for x in self.filter:
+              if x.match(name):                 
+                 match = True
+                 break
+           if match == False:
+              return
 
         if last == None:
             lastSample = first
@@ -148,19 +152,27 @@ class BrokerManager:
 ##
 ## Main Program
 ##
+def main():
+  p = optparse.OptionParser()
+  p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:   hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000')
+  p.add_option('--amqp-spec-file','-s', default='"/usr/share/amqp/amqp.0-10.xml', help='the path to the amqp spec file')
+  p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
 
-try:
-    (optlist, cargs) = getopt.getopt (sys.argv[1:], "s:a:")
-except:
-    Usage ()
+  options, arguments = p.parse_args()
 
-for opt in optlist:
-    if opt[0] == "-s":
-        specpath = opt[1]
-    if opt[0] == "-a":
-        host = opt[1]
+  host = options.broker_address
+  specpath = options.amqp_spec_file
+  filter = []
+  if options.filter != None:
+    for s in options.filter.split(","):
+        filter.append(re.compile(s))
 
-nargs = len (cargs)
-bm  = BrokerManager ()
-bm.SetBroker (Broker (host))
-bm.Display ()
+  bm  = BrokerManager ()
+  bm.SetBroker (Broker (host))
+  bm.setSpecpath(specpath)
+  bm.setFilter(filter)
+  bm.Display()
+ 
+if __name__ == '__main__':
+  main()
+
