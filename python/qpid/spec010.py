@@ -621,6 +621,7 @@ class Loader:
 
 def load(xml):
   fname = xml + ".pcl"
+
   if os.path.exists(fname) and mtime(fname) > mtime(__file__):
     file = open(fname, "r")
     s = cPickle.load(file)
@@ -630,7 +631,14 @@ def load(xml):
     s = doc["amqp"].dispatch(Loader())
     s.register()
     s.resolve()
-    file = open(fname, "w")
-    cPickle.dump(s, file)
-    file.close()
+
+    try:
+      file = open(fname, "w")
+    except IOError:
+      file = None
+
+    if file:
+      cPickle.dump(s, file)
+      file.close()
+
   return s
