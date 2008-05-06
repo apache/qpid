@@ -1,4 +1,4 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)   $(APR_CXXFLAGS) -DBOOST_TEST_DYN_LINK
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CFLAGS)  $(APR_CXXFLAGS) -DBOOST_TEST_DYN_LINK
 INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
 abs_builddir=@abs_builddir@
@@ -29,6 +29,7 @@ TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
 	$(lib_client) $(lib_broker) # $(lib_amqp_0_10)
+
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \
@@ -44,6 +45,11 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	StringUtils.cpp \
 	IncompleteMessageList.cpp \
 	RangeSet.cpp
+
+if HAVE_XML
+unit_test_SOURCES+= XmlClientSessionTest.cpp
+endif
+
 
 # Disabled till we move to amqp_0_10 codec.
 # 	amqp_0_10/serialize.cpp allSegmentTypes.h \

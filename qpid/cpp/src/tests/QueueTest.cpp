@@ -54,11 +54,13 @@ public:
 
 class FailOnDeliver : public Deliverable
 {
+    Message msg;
 public:
     void deliverTo(Queue::shared_ptr& queue)
     {
         throw Exception(QPID_MSG("Invalid delivery to " << queue->getName()));
     }
+    Message& getMessage() { return msg; }
 };
 
 class QueueTest : public CppUnit::TestCase  

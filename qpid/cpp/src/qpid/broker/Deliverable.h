@@ -22,6 +22,7 @@
 #define _Deliverable_
 
 #include "Queue.h"
+#include "Message.h"
 
 namespace qpid {
     namespace broker {
@@ -29,6 +30,9 @@ namespace qpid {
         public:
             bool delivered;
             Deliverable() : delivered(false) {}
+
+	    virtual Message& getMessage() = 0;
+	    
             virtual void deliverTo(Queue::shared_ptr& queue) = 0;
             virtual uint64_t contentSize() { return 0; }
             virtual ~Deliverable(){}
