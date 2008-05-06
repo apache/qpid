@@ -17,6 +17,7 @@
 # under the License.
 #
 
+import os, tempfile, shutil, stat
 from unittest import TestCase
 from qpid.spec010 import load
 from qpid.codec010 import Codec, StringCodec
@@ -70,3 +71,14 @@ class SpecTest(TestCase):
     xid.encode(sc, st)
     assert sc.encoded == '\x00\x00\x00\x10\x06\x04\x07\x00\x00\x00\x00\x00\x03gid\x03bid'
     assert xid.decode(sc).__dict__ == st.__dict__
+
+  def testLoadReadOnly(self):
+    spec = "amqp.0-10-qpid-errata.xml"
+    f = testrunner.get_spec_file(spec)
+    dest = tempfile.mkdtemp()
+    shutil.copy(f, dest)
+    shutil.copy(os.path.join(os.path.dirname(f), "amqp.0-10.dtd"), dest)
+    os.chmod(dest, stat.S_IRUSR | stat.S_IXUSR)
+    fname = os.path.join(dest, spec)
+    load(fname)
+    assert not os.path.exists("%s.pcl" % fname)
