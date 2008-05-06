@@ -34,13 +34,18 @@ public class UnacknowledgedMessage
     public final long deliveryTag;
 
     private boolean _queueDeleted;
+    private final UnacknowledgedMessageMap _unacknowledgeMessageMap;
 
 
-    public UnacknowledgedMessage(QueueEntry entry, AMQShortString consumerTag, long deliveryTag)
+    public UnacknowledgedMessage(QueueEntry entry,
+                                 AMQShortString consumerTag,
+                                 long deliveryTag,
+                                 final UnacknowledgedMessageMap unacknowledgedMessageMap)
     {
         this.entry = entry;
         this.consumerTag = consumerTag;
         this.deliveryTag = deliveryTag;
+        _unacknowledgeMessageMap = unacknowledgedMessageMap;
     }
 
     public String toString()
@@ -60,12 +65,20 @@ public class UnacknowledgedMessage
 
     public void discard(StoreContext storeContext) throws AMQException
     {
-        if (entry.getQueue() != null)
+        synchronized(_unacknowledgeMessageMap)
         {
-            entry.getQueue().dequeue(storeContext, entry);
+            if(_unacknowledgeMessageMap.contains(deliveryTag))
+            {
+
+                if (entry.getQueue() != null)
+                {
+                    entry.getQueue().dequeue(storeContext, entry);
+                }
+                //if the queue is null then the message is waiting to be acked, but has been removed.
+                entry.getMessage().decrementReference(storeContext);
+            }
         }
-        //if the queue is null then the message is waiting to be acked, but has been removed.
-        entry.getMessage().decrementReference(storeContext);
+        
     }
 
     public AMQMessage getMessage()
