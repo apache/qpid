@@ -651,7 +651,13 @@ public class AMQSession_0_10 extends AMQSession
                         // Generate the queue name if the destination indicates that a client generated name is to be used.
                         if (amqd.isNameRequired())
                         {
-                            amqd.setQueueName(new AMQShortString("TempQueue" + UUID.randomUUID()));
+                            String binddingKey = "";
+                            for(AMQShortString key : amqd.getBindingKeys())
+                            {
+                               binddingKey = binddingKey + "_" + key.toString();  
+                            }
+                            amqd.setQueueName(new AMQShortString( binddingKey + "@"
+                                    + amqd.getExchangeName().toString() + "_" + UUID.randomUUID()));
                         }
                         return send0_10QueueDeclare(amqd, protocolHandler, noLocal);
                     }
