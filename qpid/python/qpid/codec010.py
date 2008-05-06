@@ -102,11 +102,15 @@ class Codec(Packer):
   def write_int64(self, n):
     self.pack("!q", n)
 
+  def read_datetime(self):
+    return self.read_uint64()
+  def write_datetime(self, n):
+    self.write_uint64(n)
+
   def read_double(self):
     return self.unpack("!d")
   def write_double(self, d):
     self.pack("!d", d)
-
 
   def read_vbin8(self):
     return self.read(self.read_uint8())
