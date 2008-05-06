@@ -139,6 +139,7 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
 # Check for optional CPG requirement.
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
 
+
 AC_ARG_WITH([cpg],  
   [AS_HELP_STRING([--with-cpg], [Build with CPG support])],
   [case "${withval}" in
@@ -162,7 +163,6 @@ AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 if test x$with_CPG = xyes; then
   CPPFLAGS+=" -DCPG"
 fi
-
 
 # Setup --with-sasl/--without-sasl as arguments to configure
 AC_ARG_WITH([sasl],
@@ -193,6 +193,38 @@ AS_IF([test "x$WANT_SASL" != xno],
      [AC_DEFINE([BROKER_SASL_NAME], ["qpidd"],
                 [The SASL app name for the qpid Broker])
       AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])])])
+
+
+# Setup --with-xml/--without-xml as arguments to configure
+use_xml=yes
+want_xml=check
+AC_ARG_WITH([xml],
+  [AS_HELP_STRING([--with-xml], [Build with XML Exchange])],
+  [want_xml=$withval])
+
+case $want_xml in
+  yes|no|check) ;;
+  *) AC_MSG_ERROR([Bad value for --with-xml: $withval]) ;;
+esac
+
+test $want_xml = no && use_xml=no
+
+# If the user doesn't say not to use XML, see if it's available.
+if test $use_xml != no; then
+  # Then see if XQilla is available
+  AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
+  AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
+  AC_CHECK_LIB([xqilla], [canonicalCombiningClassTable], , [use_xml=no])
+  
+  # If XQilla is not available, yet specifically requested, die.
+  test $use_xml:$want_xml = no:yes &&
+    AC_MSG_ERROR([XML Exchange requested, but XQilla or Xerces-C not available])
+
+  # Else XQilla is available - use it to build
+  AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
+fi
+
+AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
 
 # Setup --with-rdma/--without-rdma as arguments to configure
 AC_ARG_WITH([rdma],

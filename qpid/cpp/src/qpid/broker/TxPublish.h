@@ -69,6 +69,8 @@ namespace qpid {
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
+
+	    virtual Message& getMessage() { return *msg; };
             
             virtual void deliverTo(Queue::shared_ptr& queue);
 

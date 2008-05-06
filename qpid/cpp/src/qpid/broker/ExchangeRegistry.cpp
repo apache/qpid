@@ -18,11 +18,16 @@
  * under the License.
  *
  */
+
+#include "config.h"
 #include "ExchangeRegistry.h"
 #include "DirectExchange.h"
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "TopicExchange.h"
+#ifdef HAVE_XML
+#include "XmlExchange.h"
+#endif
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -55,7 +60,13 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
             exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent));
         }else if (type == ManagementExchange::typeName) {
             exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent));
-        }else{
+        }
+#ifdef HAVE_XML
+	else if (type == XmlExchange::typeName) {
+            exchange = Exchange::shared_ptr(new XmlExchange(name, durable, args, parent));
+        }
+#endif
+	else{
             throw UnknownExchangeTypeException();    
         }
         exchanges[name] = exchange;

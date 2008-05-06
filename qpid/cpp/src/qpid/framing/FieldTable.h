@@ -48,6 +48,7 @@ class FieldTable
   public:
     typedef boost::shared_ptr<FieldValue> ValuePtr;
     typedef std::map<std::string, ValuePtr> ValueMap;
+    typedef ValueMap::iterator iterator;
 
     ~FieldTable();
     uint32_t size() const;
@@ -79,6 +80,10 @@ class FieldTable
     ValueMap::const_iterator begin() const { return values.begin(); }
     ValueMap::const_iterator end() const { return values.end(); }
     ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
+
+    // ### Hack Alert
+
+    ValueMap::iterator getValues() { return values.begin(); }
     
   private:
     ValueMap values;
