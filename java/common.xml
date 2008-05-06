@@ -95,7 +95,7 @@
     <mkdir dir="${build.report}"/>
     <junitreport todir="${build.report}">
       <fileset dir="${build.results}">
-        <include name="TEST-*.xml"/>
+        <include name="**/TEST-*.xml"/>
       </fileset>
       <report todir="${build.report}"/>
     </junitreport>
