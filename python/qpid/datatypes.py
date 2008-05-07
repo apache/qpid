@@ -72,10 +72,39 @@ class Message:
     else:
       self.body = None
     if len(args) > 1:
-      self.headers = args[:-1]
+      self.headers = list(args[:-1])
     else:
       self.headers = None
     self.id = None
+
+  def has(self, name):
+    return self.get(name) != None
+
+  def get(self, name):
+    if self.headers:
+      for h in self.headers:
+        if h._type.name == name:
+          return h
+    return None
+
+  def set(self, header):
+    if self.headers is None:
+      self.headers = []
+    idx = 0
+    while idx < len(self.headers):
+      if self.headers[idx]._type == header._type:
+        self.headers[idx] = header
+        return
+      idx += 1
+    self.headers.append(header)
+
+  def clear(self, name):
+    idx = 0
+    while idx < len(self.headers):
+      if self.headers[idx]._type.name == name:
+        del self.headers[idx]
+        return
+      idx += 1
 
   def __repr__(self):
     args = []
