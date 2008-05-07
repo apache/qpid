@@ -7,29 +7,24 @@
 import qpid
 import sys
 import os
-from random import randint
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet, uuid4
 from qpid.queue import Empty
 
 #----- Functions -------------------------------------------
-def getProperty(msg, name):
-    for h in msg.headers:
-       if hasattr(h, name): return getattr(h, name)
-    return None            
-
 def respond(session, request):
 
     # The routing key for the response is the request's reply-to
     # property.  The body for the response is the request's body,
     # converted to upper case.
 
-    reply_to = getProperty(request,"reply_to")    
+    message_properties = request.get("message_properties")
+    reply_to = message_properties.reply_to
     if reply_to == None:
-       raise Exception("reply to property needs to be there")   
-   
-    props = session.delivery_properties(routing_key=reply_to["routing_key"]) 
+       raise Exception("reply to property needs to be there")
+
+    props = session.delivery_properties(routing_key=reply_to["routing_key"])
     session.message_transfer(reply_to["exchange"],None, None, Message(props,request.body.upper()))
 
 #----- Initialization --------------------------------------
@@ -40,16 +35,16 @@ port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
 user="guest"
 password="guest"
 amqp_spec=""
-  
+
 try:
      amqp_spec = os.environ["AMQP_SPEC"]
 except KeyError:
      amqp_spec="/usr/share/amqp/amqp.0-10.xml"
-  
+
 #  Create a connection.
 conn = Connection (connect (host,port), qpid.spec.load(amqp_spec))
 conn.start()
-  
+
 session_id = str(uuid4())
 session = conn.session(session_id)
 
