@@ -117,7 +117,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
             }
 
-            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
+            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 30), false);
 
             // Check that all messages really were received.
             Assert.IsTrue(allReceived, "All messages were not received, only got " + _messageReceivedCount + " but wanted " + expectedMessageCount);
@@ -139,14 +139,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
             SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.DIRECT,
                           true, false, null);
 
-            expectedMessageCount = MESSAGE_COUNT;
+            expectedMessageCount = (MESSAGE_COUNT * CONSUMER_COUNT);
 
             for (int i = 0; i < MESSAGE_COUNT; i++)
             {
                 testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
             }
 
-            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
+            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 30), false);
 
             // Check that all messages really were received.
             Assert.IsTrue(allReceived, "All messages were not received, only got: " + _messageReceivedCount + " but wanted " + expectedMessageCount);
