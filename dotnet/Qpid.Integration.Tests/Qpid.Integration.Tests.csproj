@@ -1,0 +1,64 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{DE21CEBC-F38C-43EA-B576-38CA9738A00A}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Qpid.Integration.Tests</RootNamespace>
+    <AssemblyName>Qpid.Integration.Tests</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+    <Optimize>True</Optimize>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="framework\Circuit.cs" />
+    <Compile Include="framework\FrameworkBaseCase.cs" />
+    <Compile Include="framework\Publisher.cs" />
+    <Compile Include="framework\Receiver.cs" />
+    <Compile Include="framework\TestClientDetails.cs" />
+    <Compile Include="framework\TestModel.cs" />
+    <Compile Include="interactive\SendReceiveTest.cs" />
+    <Compile Include="interop\InteropClientTestCase.cs" />
+    <Compile Include="interop\TestCases\TestCase1DummyRun.cs" />
+    <Compile Include="interop\TestCases\TestCase3BasicPubSub.cs" />
+    <Compile Include="testcases\ChannelQueueTest.cs" />
+    <Compile Include="testcases\CommitRollbackTest.cs" />
+    <Compile Include="testcases\ConnectionTest.cs" />
+    <Compile Include="testcases\DurableSubscriptionTest.cs" />
+    <Compile Include="testcases\HeadersExchangeTest.cs" />
+    <Compile Include="testcases\MandatoryMessageTest.cs" />
+    <Compile Include="testcases\ProducerMultiConsumerTest.cs" />
+    <Compile Include="testcases\SslConnectionTest.cs" />
+    <Compile Include="testcases\SustainedTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="framework\Assertion.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="interactive\FailoverTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="interop\TestClient.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="interop\TestCases\TestCase2BasicP2P.cs" />
+  </ItemGroup>
+</Project>
