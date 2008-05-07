@@ -50,7 +50,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private static ILog _logger = LogManager.GetLogger(typeof(HeadersExchangeTest));
 
         /// <summary> Holds the default test timeout for broker communications before tests give up. </summary>
-        private static readonly int TIMEOUT = 1000;
+        private static readonly int TIMEOUT = 2000;
 
         /// <summary> Holds the name of the headers exchange to create to send test messages on. </summary>
         private string _exchangeName = "ServiceQ1";

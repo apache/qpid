@@ -69,7 +69,7 @@ namespace Apache.Qpid.Client
 
         internal bool IsFailoverAllowed
         {
-            get { return _failoverPolicy.FailoverAllowed(); }
+            get { if(!_connected) return false; else return _failoverPolicy.FailoverAllowed(); }
         }
 
         /// <summary>
@@ -151,34 +151,22 @@ namespace Apache.Qpid.Client
                     _log.Error("Unable to connect to broker " + _failoverPolicy.GetCurrentBrokerInfo(), e);
                     // XXX: Should perhaps break out of the do/while here if not a SocketException...
                 }
-            } while (_failoverPolicy.FailoverAllowed());
+            } while (!_connected && _failoverPolicy.FailoverAllowed());
 
             _log.Debug("Are we connected:" + _connected);
-            
-            if (!_failoverPolicy.FailoverAllowed())
-            {
-                if ( lastException is AMQException )
-                   throw lastException;
-                else
-                   throw new AMQConnectionException("Unable to connect", lastException);
-            }
 
-            // TODO: this needs to be redone so that we are not spinning.
-            // A suitable object should be set that is then waited on
-            // and only notified when a connection is made or when
-            // the AMQConnection gets closed.
-            while (!_connected && !Closed)
+            if (!_connected)
             {
-                _log.Debug("Sleeping.");
-                Thread.Sleep(100);
+            	if ( lastException is AMQException )
+            	{
+            		throw lastException;
+            	}
+            	else
+            	{
+            		throw new AMQConnectionException("Unable to connect", lastException);
+            	}
             }
-            if (!_failoverPolicy.FailoverAllowed() || _failoverPolicy.GetCurrentBrokerInfo() == null)
-            {
-                if (_lastAMQException != null)
-                {
-                    throw _lastAMQException;
-                }
-            }
+            
         }
 
         /*private ITransport LoadTransportFromAssembly(string host, int port, String assemblyName, String transportType)

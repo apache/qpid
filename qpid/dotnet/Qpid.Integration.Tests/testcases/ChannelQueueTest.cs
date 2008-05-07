@@ -127,7 +127,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 .WithRoutingKey(_routingKey)
                 .Create();
             _logger.Info("Publisher created...");
-            SendTestMessage("Message 1");
+            SendTestMessage("DeleteNonEmptyQueue Message 1");
 
             try
             {
@@ -165,8 +165,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 .Create();
             _logger.Info("Publisher created...");
 
-            SendTestMessage("Message 1");
-            SendTestMessage("Message 2");
+            SendTestMessage("DeleteQueueWithResponse Message 1");
+            SendTestMessage("DeleteQueueWithResponse Message 2");
             
             // delete the queue, the server must respond
             _channel.DeleteQueue(_queueName, false, false, false);
