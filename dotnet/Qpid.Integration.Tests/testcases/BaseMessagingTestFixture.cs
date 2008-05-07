@@ -55,6 +55,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary> Holds an array of channels for building mutiple test end-points. </summary>
         protected IChannel[] testChannel = new IChannel[10];
 
+         /// <summary> Holds an array of queues for building mutiple test end-points. </summary>
+        protected String[] testQueue = new String[10];
+        
         /// <summary> Holds an array of producers for building mutiple test end-points. </summary>
         protected IMessagePublisher[] testProducer = new IMessagePublisher[10];
 
@@ -144,6 +147,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
                     if (declareBind)
                     {
+                    	if (durable) 
+                    	{
+                    		testQueue[n] = queueName;
+                    	}
                         testChannel[n].DeclareQueue(queueName, durable, true, true);
                         testChannel[n].Bind(queueName, exchangeName, routingKey);
                     }
@@ -167,6 +174,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             if (testConsumer[n] != null)
             {
+            	if (testQueue[n] != null)
+            	{
+            		testChannel[n].DeleteQueue(testQueue[n], false, false, true);
+            	}
                 testConsumer[n].Close();
                 testConsumer[n].Dispose();
                 testConsumer[n] = null;
