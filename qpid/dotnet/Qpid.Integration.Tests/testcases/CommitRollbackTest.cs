@@ -94,11 +94,11 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public void TestCommittedSendReceived() 
         {
             // Send messages.
-            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("B"));
             testChannel[0].Commit();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "B", testConsumer[1]);
             testChannel[1].Commit();
         }
 
@@ -107,11 +107,11 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public void TestRolledBackSendNotReceived()
         {
             // Send messages.
-            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("B"));
             testChannel[0].Rollback();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(0, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(0, "B", testConsumer[1]);
             testChannel[1].Commit();
         }
 
@@ -124,17 +124,17 @@ namespace Apache.Qpid.Integration.Tests.testcases
                           true, false, null);
 
             // Send messages.
-            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("C"));
             testChannel[0].Commit();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "C", testConsumer[1]);
 
             // Close end-point 1 without committing the message, then re-open to consume again.
             CloseEndPoint(1);
 
             // Check that the message was released from the rolled back end-point an can be received on the alternative one instead.
-            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
+            ConsumeNMessagesOnly(1, "C", testConsumer[2]);
 
             CloseEndPoint(2);
         }
@@ -144,38 +144,33 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public void TestCommittedReceiveNotRereceived() 
         {
             // Send messages.
-            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("D"));
             testChannel[0].Commit();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "D", testConsumer[1]);
             testChannel[1].Commit();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(0, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(0, "D", testConsumer[1]);
         }
 
         /// <summary> Check that a rolled back receive can be re-received. </summary>
         [Test]
         public void TestRolledBackReceiveCanBeRereceived() 
         {
-            // Create a third end-point as an alternative delivery route for the message.
-            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
-                          true, false, null);
-
             // Send messages.
-            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("E"));
             testChannel[0].Commit();
             
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "E", testConsumer[1]);
 
             testChannel[1].Rollback();
 
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
-
-            CloseEndPoint(2);
+            ConsumeNMessagesOnly(1, "E", testConsumer[1]);
+            
         }
     }
 }
