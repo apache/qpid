@@ -18,6 +18,8 @@
 #
 
 from unittest import TestCase
+from qpid.testlib import testrunner
+from qpid.spec010 import load
 from qpid.datatypes import *
 
 class RangedSetTest(TestCase):
@@ -109,3 +111,54 @@ class UUIDTest(TestCase):
     u = uuid4()
     for i in xrange(1024):
       assert u != uuid4()
+
+class MessageTest(TestCase):
+
+  def setUp(self):
+    self.spec = load(testrunner.get_spec_file("amqp.0-10-qpid-errata.xml"))
+    self.mp = Struct(self.spec["message.message_properties"])
+    self.dp = Struct(self.spec["message.delivery_properties"])
+    self.fp = Struct(self.spec["message.fragment_properties"])
+
+  def testHas(self):
+    m = Message(self.mp, self.dp, self.fp, "body")
+    assert m.has("message_properties")
+    assert m.has("delivery_properties")
+    assert m.has("fragment_properties")
+
+  def testGet(self):
+    m = Message(self.mp, self.dp, self.fp, "body")
+    assert m.get("message_properties") == self.mp
+    assert m.get("delivery_properties") == self.dp
+    assert m.get("fragment_properties") == self.fp
+
+  def testSet(self):
+    m = Message(self.mp, self.dp, "body")
+    assert m.get("fragment_properties") is None
+    m.set(self.fp)
+    assert m.get("fragment_properties") == self.fp
+
+  def testSetOnEmpty(self):
+    m = Message("body")
+    assert m.get("delivery_properties") is None
+    m.set(self.dp)
+    assert m.get("delivery_properties") == self.dp
+
+  def testSetReplace(self):
+    m = Message(self.mp, self.dp, self.fp, "body")
+    dp = Struct(self.spec["message.delivery_properties"])
+    assert m.get("delivery_properties") == self.dp
+    assert m.get("delivery_properties") != dp
+    m.set(dp)
+    assert m.get("delivery_properties") != self.dp
+    assert m.get("delivery_properties") == dp
+
+  def testClear(self):
+    m = Message(self.mp, self.dp, self.fp, "body")
+    assert m.get("message_properties") == self.mp
+    assert m.get("delivery_properties") == self.dp
+    assert m.get("fragment_properties") == self.fp
+    m.clear("fragment_properties")
+    assert m.get("fragment_properties") is None
+    assert m.get("message_properties") == self.mp
+    assert m.get("delivery_properties") == self.dp
