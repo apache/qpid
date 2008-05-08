@@ -58,7 +58,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             // Create one producer and one consumer, p2p, tx, consumer with queue bound to producers routing key.
             SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
                           true, false, null);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+            SetUpEndPoint(1, true, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
                           true, false, null);
         }
 
@@ -170,6 +170,23 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Try to receive messages.
             ConsumeNMessagesOnly(1, "E", testConsumer[1]);
+            
+        }
+        
+        [Test]
+        public void TestReceiveAndSendRollback()
+        {
+        	// Send messages
+        	testProducer[0].Send(testChannel[0].CreateTextMessage("F"));
+            testChannel[0].Commit();
+            
+            // Try to receive messages.
+            ConsumeNMessagesOnly(1, "F", testConsumer[1]);
+			testProducer[1].Send(testChannel[1].CreateTextMessage("G"));
+            testChannel[1].Rollback();
+
+            // Try to receive messages.
+            ConsumeNMessagesOnly(1, "F", testConsumer[1]);
             
         }
     }
