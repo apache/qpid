@@ -185,10 +185,15 @@
     </and>
   </condition>
 
+
   <property file="${project.root}/${config}"/>
 
+  <condition property="dontruntest" value="dontruntest" else="runtest">
+         <contains substring="${module.name}" string="${exclude.modules}" />
+  </condition>
+
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
-          description="execute unit tests">
+         unless="${dontruntest}" description="execute unit tests">
 
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
