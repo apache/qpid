@@ -214,7 +214,7 @@ class SchemaConfig:
       key = attrs.item(idx).nodeName
       val = attrs.item(idx).nodeValue
       if   key == 'name':
-        self.name = val
+        self.name = makeValidCppSymbol(val)
 
       elif key == 'type':
         self.type = Type (val, typespec)
@@ -309,7 +309,7 @@ class SchemaInst:
       key = attrs.item(idx).nodeName
       val = attrs.item(idx).nodeValue
       if   key == 'name':
-        self.name = val
+        self.name = makeValidCppSymbol(val)
 
       elif key == 'type':
         self.type = Type (val, typespec)
@@ -422,7 +422,7 @@ class SchemaArg:
       key = attrs.item(idx).nodeName
       val = attrs.item(idx).nodeValue
       if   key == 'name':
-        self.name = val
+        self.name = makeValidCppSymbol(val)
 
       elif key == 'type':
         self.type = Type (val, typespec)
@@ -496,7 +496,7 @@ class SchemaMethod:
       key = attrs.item(idx).nodeName
       val = attrs.item(idx).nodeValue
       if   key == 'name':
-        self.name = val
+        self.name = makeValidCppSymbol(val)
 
       elif key == 'desc':
         self.desc = val
@@ -602,7 +602,7 @@ class SchemaClass:
     self.hash (node)
 
     attrs = node.attributes
-    self.name = attrs['name'].nodeValue
+    self.name = makeValidCppSymbol(attrs['name'].nodeValue)
 
     children = node.childNodes
     for child in children:
@@ -660,11 +660,17 @@ class SchemaClass:
   def getName (self):
     return self.name
 
+  def getNameCap (self):
+    return capitalize(self.name)
+
   def getMethods (self):
     return self.methods
 
   def getEvents (self):
     return self.events
+
+  def getPackageNameCap (self):
+    return capitalize(self.packageName)
 
   #===================================================================================
   # Code Generation Functions.  The names of these functions (minus the leading "gen")
@@ -809,7 +815,7 @@ class SchemaClass:
     stream.write (self.name.lower ())
 
   def genNamePackageCap (self, stream, variables):
-    stream.write (self.packageName.capitalize ())
+    stream.write (self.getPackageNameCap ())
 
   def genNamePackageLower (self, stream, variables):
     stream.write (self.packageName.lower ())
@@ -859,7 +865,7 @@ class PackageSchema:
     if document.tagName != 'schema':
       raise ValueError ("Expected 'schema' node")
     attrs = document.attributes
-    self.packageName = attrs['package'].nodeValue
+    self.packageName = makeValidCppSymbol(attrs['package'].nodeValue)
 
     children = document.childNodes
     for child in children:
@@ -880,6 +886,9 @@ class PackageSchema:
   def getPackageName (self):
     return self.packageName
 
+  def getPackageNameCap (self):
+    return capitalize(self.packageName)
+
   def getClasses (self):
     return self.classes
 
@@ -887,7 +896,7 @@ class PackageSchema:
     stream.write (self.packageName.upper ())
 
   def genPackageNameCap (self, stream, variables):
-    stream.write (self.packageName.capitalize ())
+    stream.write (self.getPackageNameCap ())
 
   def genClassIncludes (self, stream, variables):
     for _class in self.classes:
@@ -907,3 +916,44 @@ class PackageSchema:
       _class.genNameCap (stream, variables)
       stream.write ("::writeSchema);\n")
 
+
+#=====================================================================================
+# Utility Functions
+#=====================================================================================
+
+# Create a valid C++ symbol from the input string so that it can be
+# used in generated C++ source. For instance, change "qpid.mgmt" to
+# "qpidMgmt".
+#
+# Input: Raw string (str) to process
+# Output: String (str) suitable for use as a C++ symbol
+#
+# Limitations: Currently, only strips periods ('.') from strings,
+#              eventually should strip :'s and ,'s and ''s, oh my!
+def makeValidCppSymbol(input):
+  output = str()
+  capitalize = False
+
+  for char in input:
+    skip = False
+
+    if char == ".":
+      capitalize = True
+      skip = True
+
+    if not skip:
+      output += capitalize and char.upper() or char
+
+      capitalize = False
+
+  return output
+
+# Capitalize a string by /only/ forcing the first character to be
+# uppercase. The rest of the string is left alone. This is different
+# from str.capitalize(), which forces the first character to uppercase
+# and the rest to lowercase.
+#
+# Input: A string (str) to capitalize
+# Output: A string (str) with the first character as uppercase
+def capitalize(input):
+  return input[0].upper() + input[1:]
