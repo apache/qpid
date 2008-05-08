@@ -33,16 +33,16 @@ import os, mllib, spec08, spec010
 
 def default():
   try:
-    specfile = os.environ["AMQP_SPEC"]
-    return specfile
+    amqp_spec = os.environ["AMQP_SPEC"]
+    return amqp_spec
   except KeyError:
     try:
-      from AMQP_SPEC import location as specfile
-      return specfile
+      from qpid_config import amqp_spec
+      return amqp_spec
     except ImportError:
       raise Exception("unable to locate the amqp specification, please set "
-                      "the AMQP_SPEC environment variable or supply a "
-                      "configured AMQP_SPEC.py")
+                      "the AMQP_SPEC environment variable or supply "
+                      "qpid_config.py on the PYTHONPATH")
 
 def load(specfile, *errata):
   for name in (specfile,) + errata:
