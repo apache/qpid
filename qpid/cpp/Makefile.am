@@ -12,7 +12,7 @@ EXTRA_DIST = \
 
 sysconf_DATA = etc/qpidd.conf
 
-SUBDIRS = src docs/api docs/man examples 
+SUBDIRS = managementgen src docs/api docs/man examples
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
