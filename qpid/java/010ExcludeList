@@ -14,5 +14,7 @@ org.apache.qpid.test.unit.xa.TopicTest#testRecover
 org.apache.qpid.test.unit.xa.QueueTest#testRecover
 org.apache.qpid.test.unit.xa.QueueTest#testSendAndRecover
 //These tests are for the java broker
-org.apache.qpid.server.security.acl.SimpleACLTest
-org.apache.qpid.server.plugins.PluginTest
+org.apache.qpid.server.security.acl.SimpleACLTest#*
+org.apache.qpid.server.plugins.PluginTest#*
+// This test is not finished
+org.apache.qpid.test.testcases.TTLTest#*
