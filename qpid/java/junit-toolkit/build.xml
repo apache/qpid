@@ -19,7 +19,6 @@
  -
  -->
 <project name="Junit Toolkit" default="build">
-  <property name="module.name" value="junit-toolkit-maven-plugin"/>
   <property name="module.src" value="src/main"/>
 
   <import file="../module.xml"/>
