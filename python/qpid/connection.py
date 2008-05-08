@@ -25,7 +25,8 @@ from assembler import Assembler, Segment
 from codec010 import StringCodec
 from session import Session
 from invoker import Invoker
-from spec010 import Control, Command
+from spec010 import Control, Command, load
+from spec import default
 from exceptions import *
 from logging import getLogger
 import delegates
@@ -44,8 +45,10 @@ def server(*args):
 
 class Connection(Assembler):
 
-  def __init__(self, sock, spec, delegate=client):
+  def __init__(self, sock, spec=None, delegate=client):
     Assembler.__init__(self, sock)
+    if spec == None:
+      spec = load(default())
     self.spec = spec
     self.track = self.spec["track"]
 
@@ -162,9 +165,9 @@ class Channel(Invoker):
   def resolve_method(self, name):
     inst = self.connection.spec.instructions.get(name)
     if inst is not None and isinstance(inst, Control):
-      return inst
+      return self.METHOD, inst
     else:
-      return None
+      return self.ERROR, None
 
   def invoke(self, type, args, kwargs):
     ctl = type.new(args, kwargs)
