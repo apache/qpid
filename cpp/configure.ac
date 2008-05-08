@@ -260,6 +260,7 @@ AC_CONFIG_FILES([
   qpidc.spec
   Makefile
   examples/Makefile
+  managementgen/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
