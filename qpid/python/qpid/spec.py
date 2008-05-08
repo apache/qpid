@@ -31,6 +31,19 @@ situations.
 
 import os, mllib, spec08, spec010
 
+def default():
+  try:
+    specfile = os.environ["AMQP_SPEC"]
+    return specfile
+  except KeyError:
+    try:
+      from AMQP_SPEC import location as specfile
+      return specfile
+    except ImportError:
+      raise Exception("unable to locate the amqp specification, please set "
+                      "the AMQP_SPEC environment variable or supply a "
+                      "configured AMQP_SPEC.py")
+
 def load(specfile, *errata):
   for name in (specfile,) + errata:
     if not os.path.exists(name):

@@ -41,16 +41,16 @@ class AlternateExchangeTests(TestBase010):
         session.queue_declare(queue="returns", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="returns", exchange="secondary")
         session.message_subscribe(destination="a", queue="returns")
-        session.message_flow(destination="a", unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination="a", unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination="a", unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination="a", unit=session.credit_unit.byte, value=0xFFFFFFFF)
         returned = session.incoming("a")
 
         #declare, bind (to the primary exchange) and consume from a queue for 'processed' messages
         session.queue_declare(queue="processed", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="processed", exchange="primary", binding_key="my-key")
         session.message_subscribe(destination="b", queue="processed")
-        session.message_flow(destination="b", unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination="b", unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination="b", unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination="b", unit=session.credit_unit.byte, value=0xFFFFFFFF)
         processed = session.incoming("b")
 
         #publish to the primary exchange
@@ -81,8 +81,8 @@ class AlternateExchangeTests(TestBase010):
         session.queue_declare(queue="deleted", exclusive=True, auto_delete=True)
         session.exchange_bind(exchange="dlq", queue="deleted")
         session.message_subscribe(destination="dlq", queue="deleted")
-        session.message_flow(destination="dlq", unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination="dlq", unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination="dlq", unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination="dlq", unit=session.credit_unit.byte, value=0xFFFFFFFF)
         dlq = session.incoming("dlq")
 
         #create a queue using the dlq as its alternate exchange:

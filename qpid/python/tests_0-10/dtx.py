@@ -493,8 +493,8 @@ class DtxTests(TestBase010):
         session2.dtx_select()
         session2.dtx_start(xid=tx)
         session2.message_subscribe(queue="dummy", destination="dummy")
-        session2.message_flow(destination="dummy", unit=0, value=1)
-        session2.message_flow(destination="dummy", unit=1, value=0xFFFFFFFF)
+        session2.message_flow(destination="dummy", unit=session2.credit_unit.message, value=1)
+        session2.message_flow(destination="dummy", unit=session2.credit_unit.byte, value=0xFFFFFFFF)
         msg = session2.incoming("dummy").get(timeout=1)
         session2.message_accept(RangedSet(msg.id))
         session2.message_cancel(destination="dummy")
@@ -629,8 +629,8 @@ class DtxTests(TestBase010):
     def swap(self, session, src, dest):
         #consume from src:
         session.message_subscribe(destination="temp-swap", queue=src)
-        session.message_flow(destination="temp-swap", unit=0, value=1)
-        session.message_flow(destination="temp-swap", unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination="temp-swap", unit=session.credit_unit.message, value=1)
+        session.message_flow(destination="temp-swap", unit=session.credit_unit.byte, value=0xFFFFFFFF)
         msg = session.incoming("temp-swap").get(timeout=1)
         session.message_cancel(destination="temp-swap")
         session.message_accept(RangedSet(msg.id))
@@ -646,8 +646,8 @@ class DtxTests(TestBase010):
 
     def assertMessageId(self, expected, queue):
         self.session.message_subscribe(queue=queue, destination="results")
-        self.session.message_flow(destination="results", unit=0, value=1)
-        self.session.message_flow(destination="results", unit=1, value=0xFFFFFFFF)
+        self.session.message_flow(destination="results", unit=self.session.credit_unit.message, value=1)
+        self.session.message_flow(destination="results", unit=self.session.credit_unit.byte, value=0xFFFFFFFF)
         self.assertEqual(expected, self.getMessageProperty(self.session.incoming("results").get(timeout=1), 'correlation_id'))
         self.session.message_cancel(destination="results")
 
