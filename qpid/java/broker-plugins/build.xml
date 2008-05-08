@@ -19,7 +19,7 @@ nn - or more contributor license agreements.  See the NOTICE file
  -
  -->
 <project name="AMQ Broker-Plugins" default="build">
-
+    <property name="module.name" value="broker-plugins"/>
     <property name="module.depends" value="client broker common junit-toolkit"/>
     <property name="module.manifest" value="MANIFEST.MF"/>
     <property name="module.plugin" value="true"/>
