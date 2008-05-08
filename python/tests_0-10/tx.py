@@ -251,13 +251,13 @@ class TxTests(TestBase010):
         session = session or self.session
         consumer_tag = keys["destination"]
         session.message_subscribe(**keys)
-        session.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination=consumer_tag, unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination=consumer_tag, unit=session.credit_unit.byte, value=0xFFFFFFFF)
 
     def enable_flow(self, tag, session=None):
         session = session or self.session
-        session.message_flow(destination=tag, unit=0, value=0xFFFFFFFF)
-        session.message_flow(destination=tag, unit=1, value=0xFFFFFFFF)
+        session.message_flow(destination=tag, unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination=tag, unit=session.credit_unit.byte, value=0xFFFFFFFF)
 
     def complete(self, session, msg):
         session.receiver._completed.add(msg.id)#TODO: this may be done automatically

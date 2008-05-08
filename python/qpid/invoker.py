@@ -17,16 +17,26 @@
 # under the License.
 #
 
+# TODO: need a better naming for this class now that it does the value
+# stuff
 class Invoker:
 
-  def resolve_method(self, name):
-    pass
-
-  def __getattr__(self, name):
-    resolved = self.resolve_method(name)
-    if resolved == None:
-      raise AttributeError("%s instance has no attribute '%s'" %
-                           (self.__class__.__name__, name))
+  def METHOD(self, name, resolved):
     method = lambda *args, **kwargs: self.invoke(resolved, args, kwargs)
     self.__dict__[name] = method
     return method
+
+  def VALUE(self, name, resolved):
+    self.__dict__[name] = resolved
+    return resolved
+
+  def ERROR(self, name, resolved):
+    raise AttributeError("%s instance has no attribute '%s'" %
+                         (self.__class__.__name__, name))
+
+  def resolve_method(self, name):
+    return ERROR, None
+
+  def __getattr__(self, name):
+    disp, resolved = self.resolve_method(name)
+    return disp(name, resolved)

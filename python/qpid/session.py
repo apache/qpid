@@ -112,15 +112,17 @@ class Session(Invoker):
   def resolve_method(self, name):
     cmd = self.spec.instructions.get(name)
     if cmd is not None and cmd.track == self.spec["track.command"].value:
-      return cmd
+      return self.METHOD, cmd
     else:
       # XXX
       for st in self.spec.structs.values():
         if st.name == name:
-          return st
-      if self.spec.structs_by_name.has_key(name):  
-        return self.spec.structs_by_name[name]
-      return None
+          return self.METHOD, st
+      if self.spec.structs_by_name.has_key(name):
+        return self.METHOD, self.spec.structs_by_name[name]
+      if self.spec.enums.has_key(name):
+        return self.VALUE, self.spec.enums[name]
+      return self.ERROR, None
 
   def invoke(self, type, args, kwargs):
     # XXX
