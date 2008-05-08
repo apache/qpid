@@ -192,7 +192,7 @@ class Generator:
     if dot == -1:
       raise ValueError ("Invalid template file name %s" % templateFile)
     extension = templateFile[dot:len (templateFile)]
-    path = self.dest + "Package" + schema.getPackageName().capitalize() + extension
+    path = self.dest + "Package" + schema.getPackageNameCap() + extension
     return path
 
   def targetClassFile (self, _class, templateFile):
@@ -200,7 +200,7 @@ class Generator:
     if dot == -1:
       raise ValueError ("Invalid template file name %s" % templateFile)
     extension = templateFile[dot:len (templateFile)]
-    path = self.dest + _class.getName ().capitalize () + extension
+    path = self.dest + _class.getNameCap () + extension
     return path
 
   def targetMethodFile (self, method, templateFile):
