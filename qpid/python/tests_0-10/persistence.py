@@ -49,8 +49,8 @@ class PersistenceTests(TestBase010):
 
         #create consumer
         session.message_subscribe(queue = "q", destination = "a", accept_mode = 1, acquire_mode=0)
-        session.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
-        session.message_flow(unit = 0, value = 10, destination = "a")
+        session.message_flow(unit = session.credit_unit.byte, value = 0xFFFFFFFF, destination = "a")
+        session.message_flow(unit = session.credit_unit.message, value = 10, destination = "a")
         queue = session.incoming("a")
 
         #consume the message, cancel subscription (triggering auto-delete), then ack it

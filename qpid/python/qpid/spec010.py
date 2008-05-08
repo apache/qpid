@@ -166,6 +166,15 @@ class Domain(Type, Lookup):
   def decode(self, codec):
     return self.type.decode(codec)
 
+class Enum:
+
+  def __init__(self, name):
+    self.name = name
+
+  def __repr__(self):
+    return "%s(%s)" % (self.name, ", ".join([k for k in self.__dict__.keys()
+                                             if k != "name"]))
+
 class Choice(Named, Node):
 
   def __init__(self, name, value, children):
@@ -177,6 +186,12 @@ class Choice(Named, Node):
     Named.register(self, node)
     node.choices[self.value] = self
     Node.register(self)
+    try:
+      enum = node.spec.enums[node.name]
+    except KeyError:
+      enum = Enum(node.name)
+      node.spec.enums[node.name] = enum
+    setattr(enum, self.name, self.value)
 
 class Composite(Type, Coded):
 
@@ -450,6 +465,7 @@ class Spec(Node):
     self.commands = {}
     self.structs = {}
     self.structs_by_name = {}
+    self.enums = {}
 
   def encoding(self, klass):
     if Spec.ENCODINGS.has_key(klass):
