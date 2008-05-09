@@ -37,6 +37,8 @@ class ChannelsBusy(Exception): pass
 
 class SessionBusy(Exception): pass
 
+class ConnectionFailed(Exception): pass
+
 def client(*args):
   return delegates.Client(*args)
 
@@ -45,7 +47,7 @@ def server(*args):
 
 class Connection(Assembler):
 
-  def __init__(self, sock, spec=None, delegate=client):
+  def __init__(self, sock, spec=None, delegate=client, **args):
     Assembler.__init__(self, sock)
     if spec == None:
       spec = load(default())
@@ -58,13 +60,14 @@ class Connection(Assembler):
 
     self.condition = Condition()
     self.opened = False
+    self.failed = False
 
     self.thread = Thread(target=self.run)
     self.thread.setDaemon(True)
 
     self.channel_max = 65535
 
-    self.delegate = delegate(self)
+    self.delegate = delegate(self, args)
 
   def attach(self, name, ch, delegate, force=False):
     self.lock.acquire()
@@ -127,8 +130,10 @@ class Connection(Assembler):
   def start(self, timeout=None):
     self.delegate.start()
     self.thread.start()
-    if not wait(self.condition, lambda: self.opened, timeout):
+    if not wait(self.condition, lambda: self.opened or self.failed, timeout):
       raise Timeout()
+    if (self.failed):
+      raise ConnectionFailed() 
 
   def run(self):
     # XXX: we don't really have a good way to exit this loop without

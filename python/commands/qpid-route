@@ -25,6 +25,7 @@ import socket
 import qpid
 import os
 from qpid.management import managementClient
+from qpid.managementdata import Broker
 from qpid.peer       import Closed
 from qpid.connection import Connection
 from qpid.util       import connect
@@ -41,8 +42,8 @@ def Usage ():
     print "    -v [ --verbose ]              Verbose output"
     print "    -q [ --quiet ]                Quiet output, don't print duplicate warnings"
     print
-    print "  dest-broker and src-broker are in the form:   hostname | ip-address [:<port>]"
-    print "  ex:  localhost, 10.1.1.7:10000, broker-host:10000"
+    print "  dest-broker and src-broker are in the form:  [username/password@] hostname | ip-address [:<port>]"
+    print "  ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
     #print "  If loading the route configuration from a file, the input file has one line per route"
     #print "  in the form:"
@@ -54,20 +55,6 @@ def Usage ():
 _specpath = "/usr/share/amqp/amqp.0-10.xml"
 _verbose  = False
 _quiet    = False
-
-class Broker:
-    def __init__ (self, text):
-        colon = text.find (":")
-        if colon == -1:
-            host = text
-            self.port = 5672
-        else:
-            host = text[:colon]
-            self.port = int (text[colon+1:])
-        self.host = socket.gethostbyname (host)
-
-    def name (self):
-        return self.host + ":" + str (self.port)
 
 class RouteManager:
     def __init__ (self, destBroker):
@@ -81,7 +68,7 @@ class RouteManager:
         try:
             self.spec    = qpid.spec.load (_specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn    = Connection (connect (broker.host, broker.port), self.spec)
+            self.conn    = Connection (connect (broker.host, broker.port), self.spec, username=broker.username, password=broker.password)
             self.conn.start ()
             self.mclient = managementClient (self.spec)
             self.mch     = self.mclient.addChannel (self.conn.session(self.sessionId))

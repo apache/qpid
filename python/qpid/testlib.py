@@ -353,7 +353,8 @@ class TestBase010(unittest.TestCase):
 
     def setUp(self):
         spec = testrunner.spec
-        self.conn = Connection(connect(testrunner.host, testrunner.port), spec)
+        self.conn = Connection(connect(testrunner.host, testrunner.port), spec,
+                               username=testrunner.user, password=testrunner.password)
         self.conn.start(timeout=10)        
         self.session = self.conn.session("test-session", timeout=10)
 
