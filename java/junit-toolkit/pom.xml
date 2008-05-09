@@ -22,14 +22,14 @@
     <groupId>org.apache.qpid</groupId>
     <artifactId>junit-toolkit</artifactId>
     <name>junit-toolkit</name>
-    <version>1.0-incubating-M2.1</version>
+    <version>1.0-incubating-M2.1.x-SNAPSHOT</version>
 
     <packaging>jar</packaging>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2.1</version>
+        <version>1.0-incubating-M2.1.x-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

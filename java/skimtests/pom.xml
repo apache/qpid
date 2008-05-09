@@ -24,14 +24,14 @@
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-skimtests</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-incubating-M2.1</version>
+    <version>1.0-incubating-M2.1.x-SNAPSHOT</version>
     <name>Qpid Skim Tests</name>
     <url>http://cwiki.apache.org/confluence/display/qpid</url>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2.1</version>
+        <version>1.0-incubating-M2.1.x-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -63,7 +63,7 @@
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
-            <version>1.0-incubating-M2.1</version>
+            <version>1.0-incubating-M2.1.x-SNAPSHOT</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
