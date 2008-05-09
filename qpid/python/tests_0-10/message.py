@@ -689,6 +689,32 @@ class MessageTests(TestBase010):
         #messages should still be on the queue:
         self.assertEquals(10, session.queue_query(queue = "q").message_count)
 
+    def test_acquire_with_no_accept_and_credit_flow(self):
+        """
+        Test that messages recieved unacquired, with accept not
+        required in windowing mode can be acquired.
+        """
+        session = self.session
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "acquire me"))
+
+        session.message_subscribe(queue = "q", destination = "a", acquire_mode = 1, accept_mode = 1)
+        session.message_set_flow_mode(flow_mode = session.flow_mode.credit, destination = "a")
+        session.message_flow(unit = session.credit_unit.message, value = 0xFFFFFFFF, destination = "a")
+        session.message_flow(unit = session.credit_unit.byte, value = 0xFFFFFFFF, destination = "a")
+        msg = session.incoming("a").get(timeout = 1)
+        self.assertEquals("acquire me", msg.body)
+        #message should still be on the queue:
+        self.assertEquals(1, session.queue_query(queue = "q").message_count)
+
+        transfers = RangedSet(msg.id)
+        response = session.message_acquire(transfers)
+        #check that we get notification (i.e. message_acquired)
+        self.assert_(msg.id in response.transfers)
+        #message should have been removed from the queue:
+        self.assertEquals(0, session.queue_query(queue = "q").message_count)
+
     def test_acquire(self):
         """
         Test explicit acquire function
@@ -696,7 +722,6 @@ class MessageTests(TestBase010):
         session = self.session
         session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
 
-        #use fanout for now:
         session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "acquire me"))
 
         session.message_subscribe(queue = "q", destination = "a", acquire_mode = 1)
