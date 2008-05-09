@@ -274,7 +274,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
     allocateCredit(msg.payload);
     DeliveryId deliveryTag =
         parent->deliveryAdapter.deliver(msg, token);
-    if (windowing || ackExpected) {
+    if (windowing || ackExpected || !acquire) {
         parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
     } 
     if (acquire && !ackExpected) {
