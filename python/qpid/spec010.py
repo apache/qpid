@@ -170,10 +170,14 @@ class Enum:
 
   def __init__(self, name):
     self.name = name
+    self._names = ()
+    self._values = ()
+
+  def values(self):
+    return self._values
 
   def __repr__(self):
-    return "%s(%s)" % (self.name, ", ".join([k for k in self.__dict__.keys()
-                                             if k != "name"]))
+    return "%s(%s)" % (self.name, ", ".join(self._names))
 
 class Choice(Named, Node):
 
@@ -192,6 +196,8 @@ class Choice(Named, Node):
       enum = Enum(node.name)
       node.spec.enums[node.name] = enum
     setattr(enum, self.name, self.value)
+    enum._names += (self.name,)
+    enum._values += (self.value,)
 
 class Composite(Type, Coded):
 
