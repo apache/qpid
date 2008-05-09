@@ -93,7 +93,8 @@ class Session(Invoker):
   def sync(self, timeout=None):
     if currentThread() == self.channel.connection.thread:
       raise SessionException("deadlock detected")
-    self.channel.session_flush(completed=True)
+    if not self.auto_sync:
+      self.execution_sync()
     last = self.sender.next_id - 1
     if not wait(self.condition, lambda:
                   last in self.sender._completed or self.exceptions,
@@ -250,6 +251,9 @@ class Session(Invoker):
     if result is not INCOMPLETE:
       for seg in segments:
         self.receiver.completed(seg)
+        # XXX: don't forget to obey sync for manual completion as well
+        if hdr.sync:
+          self.channel.session_completed(self.receiver._completed)
 
   def send(self, seg):
     self.sender.send(seg)
