@@ -129,7 +129,7 @@ class Client(Delegate):
     self.connection.read_header()
 
   def connection_start(self, ch, start):
-    ch.connection_start_ok(client_properties=Client.PROPERTIES)
+    ch.connection_start_ok(client_properties=Client.PROPERTIES, mechanism="ANONYMOUS")
 
   def connection_tune(self, ch, tune):
     ch.connection_tune_ok()
