@@ -24,8 +24,13 @@ class OperationsGen < CppGen
 
   def handler_classname(c) c.name.caps+"Handler"; end
 
+  def methods_on(parent, chassis)
+    chassis == "all" ?  parent.methods_ : parent.methods_on(chassis)
+  end
+
   def handler_class(c)
-    if (!c.methods_on(@chassis).empty?)
+    m = methods_on(c,@chassis)
+    if (not m.empty?)
       handlerclass=handler_classname c
       gen <<EOS
 // ==================== class #{handlerclass} ====================
@@ -38,7 +43,7 @@ class #{handlerclass} {
     virtual ~#{handlerclass}() {}
     // Protocol methods
 EOS
-      c.methods_on(@chassis).each { |m| handler_method(m) if !m.content() }
+      m.each { |m| handler_method(m) if !m.content() }
       gen <<EOS
 }; // class #{handlerclass}
 
@@ -48,7 +53,8 @@ EOS
   end
 
   def handler_get(c)
-    if (!c.methods_on(@chassis).empty?)
+    m = methods_on(c,@chassis)
+    if (not m.empty?)
       handlerclass=handler_classname c
       gen "virtual #{handlerclass}* get#{handlerclass}() = 0;\n"
     end
@@ -93,4 +99,5 @@ end
 
 OperationsGen.new("client",ARGV[0], $amqp).generate()
 OperationsGen.new("server",ARGV[0], $amqp).generate()
+OperationsGen.new("all",ARGV[0], $amqp).generate()
 

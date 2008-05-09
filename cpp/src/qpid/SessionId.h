@@ -1,3 +1,6 @@
+#ifndef QPID_SESSIONID_H
+#define QPID_SESSIONID_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,39 +22,28 @@
  *
  */
 
-#include "qpid/log/Statement.h"
-#include "Exception.h"
-#include <typeinfo>
-#include <errno.h>
-#include <assert.h>
-#include <string.h>
+#include <boost/operators.hpp>
+#include <string>
 
 namespace qpid {
 
-std::string strError(int err) {
-    char buf[512];
-    return std::string(strerror_r(err, buf, sizeof(buf)));
-}
+/** Identifier for a session */
+class SessionId : boost::totally_ordered1<SessionId> {
+    std::string userId;
+    std::string name;
+  public:
+    SessionId(const std::string& userId=std::string(), const std::string& name=std::string());
+    std::string getUserId() const { return userId; }
+    std::string getName() const { return name; }
+    bool operator<(const SessionId&) const ;
+    bool operator==(const SessionId& id) const;
+    // Convert to a string
+    std::string str() const;
+};
 
-Exception::Exception(const std::string& msg) throw() : message(msg) {
-    QPID_LOG(debug, "Exception: " << message);
-}
+std::ostream& operator<<(std::ostream&, const SessionId&);
 
-Exception::~Exception() throw() {}
-
-std::string Exception::getPrefix() const { return "Exception"; }
-
-std::string Exception::getMessage() const { return message; }
-
-const char* Exception::what() const throw() {
-    if (whatStr.empty())
-        whatStr = getPrefix() +  ": " + message;    
-    return whatStr.c_str();
-}
-
-ClosedException::ClosedException(const std::string& msg)
-  : Exception(msg) {}
-
-std::string ClosedException::getPrefix() const { return "Closed"; }
 
 } // namespace qpid
+
+#endif  /*!QPID_SESSIONID_H*/

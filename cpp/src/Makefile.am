@@ -46,7 +46,7 @@ DISTCLEANFILES+=qpid/framing/MaxMethodBodySize.h
 
 ## Compiler flags
 
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
 
@@ -170,9 +170,13 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_framing_srcs) \
   $(platform_src) \
+  qpid/amqp_0_10/SessionHandler.h \
+  qpid/amqp_0_10/SessionHandler.cpp \
   qpid/Serializer.h \
-  qpid/SessionState.cpp \
   qpid/SessionState.h \
+  qpid/SessionState.cpp \
+  qpid/SessionId.h \
+  qpid/SessionId.cpp \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
@@ -330,6 +334,7 @@ nobase_include_HEADERS = \
   qpid/assert.h \
   qpid/DataDir.h \
   qpid/Exception.h \
+  qpid/ExceptionHolder.h \
   qpid/amqp_0_10/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \

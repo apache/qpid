@@ -19,39 +19,29 @@
  *
  */
 
-#include "qpid/log/Statement.h"
-#include "Exception.h"
-#include <typeinfo>
-#include <errno.h>
-#include <assert.h>
-#include <string.h>
+#include "SessionId.h"
+#include <sstream>
 
 namespace qpid {
 
-std::string strError(int err) {
-    char buf[512];
-    return std::string(strerror_r(err, buf, sizeof(buf)));
+SessionId::SessionId(const std::string& u, const std::string& n) : userId(u), name(n) {}
+
+bool SessionId::operator<(const SessionId& id) const {
+    return userId < id.userId || (userId == id.userId && name < id.name);
 }
 
-Exception::Exception(const std::string& msg) throw() : message(msg) {
-    QPID_LOG(debug, "Exception: " << message);
+bool SessionId::operator==(const SessionId& id) const {
+    return id.name == name  && id.userId == userId;
 }
 
-Exception::~Exception() throw() {}
-
-std::string Exception::getPrefix() const { return "Exception"; }
-
-std::string Exception::getMessage() const { return message; }
-
-const char* Exception::what() const throw() {
-    if (whatStr.empty())
-        whatStr = getPrefix() +  ": " + message;    
-    return whatStr.c_str();
+std::ostream& operator<<(std::ostream& o, const SessionId& id) {
+    return o << id.getName() << "@" << id.getUserId();
 }
 
-ClosedException::ClosedException(const std::string& msg)
-  : Exception(msg) {}
-
-std::string ClosedException::getPrefix() const { return "Closed"; }
+std::string SessionId::str() const {
+    std::ostringstream o;
+    o << *this;
+    return o.str();
+}
 
 } // namespace qpid

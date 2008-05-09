@@ -22,16 +22,21 @@
 namespace qpid {
 namespace framing {
 
+Proxy::Proxy(FrameHandler& h) : out(&h) {}
+
 Proxy::~Proxy() {}
 
 void Proxy::send(const AMQBody& b) {
     AMQFrame f(b);
-    out.handle(f);
+    out->handle(f);
 }
-
 
 ProtocolVersion Proxy::getVersion() const {
     return ProtocolVersion();
 }
+
+FrameHandler& Proxy::getHandler() { return *out; }
+
+void Proxy::setHandler(FrameHandler& f) { out=&f; }
 
 }} // namespace qpid::framing
