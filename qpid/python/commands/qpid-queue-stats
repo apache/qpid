@@ -27,24 +27,11 @@ import socket
 import qpid
 from threading       import Condition
 from qpid.management import managementClient
+from qpid.managementdata import Broker
 from qpid.peer       import Closed
 from qpid.connection import Connection
 from qpid.util       import connect
 from time            import sleep
-
-class Broker:
-    def __init__ (self, text):
-        colon = text.find (":")
-        if colon == -1:
-            host = text
-            self.port = 5672
-        else:
-            host = text[:colon]
-            self.port = int (text[colon+1:])
-        self.host = socket.gethostbyname (host)
-
-    def name (self):
-        return self.host + ":" + str (self.port)
 
 class mgmtObject (object):
   """ Generic object that holds the contents of a management object with its
@@ -74,7 +61,8 @@ class BrokerManager:
         try:
             self.spec     = qpid.spec.load (self.specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn     = Connection (connect (self.broker.host, self.broker.port), self.spec)
+            self.conn     = Connection (connect (self.broker.host, self.broker.port), self.spec,
+                                    username=self.broker.username, password=self.broker.password)
             self.conn.start ()
             self.mclient  = managementClient (self.spec, None, self.configCb, self.instCb)
             self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
@@ -154,7 +142,7 @@ class BrokerManager:
 ##
 def main():
   p = optparse.OptionParser()
-  p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:   hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000')
+  p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
   p.add_option('--amqp-spec-file','-s', default='"/usr/share/amqp/amqp.0-10.xml', help='the path to the amqp spec file')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
 
