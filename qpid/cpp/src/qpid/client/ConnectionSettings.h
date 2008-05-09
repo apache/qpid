@@ -25,7 +25,6 @@
 #include "qpid/Options.h"
 #include "qpid/log/Options.h"
 #include "qpid/Url.h"
-#include "qpid/log/Logger.h"
 #include "qpid/sys/Socket.h"
 
 #include <iostream>
