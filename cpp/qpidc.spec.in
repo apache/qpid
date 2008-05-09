@@ -7,7 +7,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        32%{?dist}
+Release:        33%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -60,6 +60,9 @@ Requires: xqilla
 Requires: xerces-c
 Requires: cyrus-sasl
 BuildRequires: cyrus-sasl-devel
+BuildRequires: xqilla-devel
+BuildRequires: xerces-c-devel
+BuildRequires: openais-devel
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
@@ -71,6 +74,8 @@ Group: Development/System
 Requires: %name-devel = %version-%release
 Requires: %{qpidd} = %version-%release
 Requires: openais-devel
+Requires: boost-devel
+Requires: xqilla-devel
 
 %description -n %{qpidd}-devel
 Libraries and header files for developing extensions to the
@@ -114,7 +119,6 @@ make check
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
 %_libdir/libqpidclient.so.0.1.0
-%config(noreplace) %_sysconfdir/qpidd.conf
 
 %files devel
 %defattr(-,root,root,-)
@@ -139,6 +143,7 @@ make check
 %_libdir/libqpidcluster.so.0
 %_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
+%config(noreplace) %_sysconfdir/qpidd.conf
 %config(noreplace) %_sysconfdir/sasl2/qpidd.conf
 %{_initrddir}/%{qpidd}
 %attr(755, qpidd, qpidd) %_localstatedir/lib/qpidd
@@ -176,6 +181,12 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Fri May  9 2008 Matthew Farrellee <mfarrellee@redhat> - 0.2-33
+- Moved qpidd.conf from qpidc package to qpidd package
+- Added BuildRequires xqilla-devel and xerces-c-devel to qpidd for XML Exchange
+- Added BuildRequires openais-devel to qpidd for CPG
+- Added missing Requires xqilla-devel to qpidd-devel
+
 * Thu May  8 2008 Matthew Farrellee <mfarrellee@redhat> - 0.2-32
 - Added sasl2 config file for qpidd
 - Added cyrus-sasl dependencies
