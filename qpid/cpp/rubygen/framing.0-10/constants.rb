@@ -48,7 +48,8 @@ class ConstantsGen < CppGen
       genl
       doxygen_comment { genl c.doc }
       struct(c.name.caps+"Exception", base) {
-        genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{c.value}, \"#{c.name}: \"+msg) {}"
+      genl "std::string getPrefix() const { return \"#{c.name}\"; }"
+      genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{c.value}, \"\"+msg) {}"
       }
   end
 
@@ -60,12 +61,14 @@ class ConstantsGen < CppGen
   def reply_exceptions_h()
     h_file("#{@dir}/reply_exceptions") {
       include "qpid/Exception"
+      include "qpid/ExceptionHolder"
       namespace(@namespace) {
         define_exceptions_for("execution", "error-code", "SessionException")
         define_exceptions_for("connection", "close-code", "ConnectionException")
         define_exceptions_for("session", "detach-code", "ChannelException")
         genl
         genl "void throwExecutionException(int code, const std::string& text);"
+        genl "void setExecutionException(ExceptionHolder& holder, int code, const std::string& text);"
       }
     }
   end
@@ -74,14 +77,21 @@ class ConstantsGen < CppGen
     cpp_file("#{@dir}/reply_exceptions") {
       include "#{@dir}/reply_exceptions"
       include "<sstream>"
+      include "<assert.h>"
       namespace("qpid::framing") {
         scope("void throwExecutionException(int code, const std::string& text) {"){
+          genl "ExceptionHolder h;"
+          genl "setExecutionException(h, code, text);"
+          genl "h.raise();"
+        }
+        scope("void setExecutionException(ExceptionHolder& holder, int code, const std::string& text) {"){        
           scope("switch (code) {") {
             enum = @amqp.class_("execution").domain("error-code").enum
             enum.choices.each { |c| 
-                genl "case #{c.value}: throw #{c.name.caps}Exception(text);"
+              genl "case #{c.value}: holder = new #{c.name.caps}Exception(text); break;"
             }
-            genl "default: break;"
+            genl 'default: assert(0);'
+            genl '    holder = new InvalidArgumentException(QPID_MSG("Bad exception code: " << code << ": " << text));'
           }
         }
       }
