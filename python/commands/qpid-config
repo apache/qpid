@@ -26,6 +26,7 @@ import socket
 import qpid
 from threading       import Condition
 from qpid.management import managementClient
+from qpid.managementdata import Broker
 from qpid.peer       import Closed
 from qpid.connection import Connection
 from qpid.datatypes  import uuid4
@@ -62,8 +63,8 @@ def Usage ():
     print "Options:"
     print "    -b [ --bindings ]                         Show bindings in queue or exchange list"
     print "    -a [ --broker-addr ] Address (localhost)  Address of qpidd broker"
-    print "         broker-addr is in the form:   hostname | ip-address [:<port>]"
-    print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000"
+    print "         broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
+    print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print "    -s [ --spec-file] Path (" + _defspecpath + ")"
     print "                                              AMQP specification file"
     print
@@ -79,20 +80,6 @@ def Usage ():
     print
     sys.exit (1)
 
-class Broker:
-    def __init__ (self, text):
-        colon = text.find (":")
-        if colon == -1:
-            host = text
-            self.port = 5672
-        else:
-            host = text[:colon]
-            self.port = int (text[colon+1:])
-        self.host = socket.gethostbyname (host)
-
-    def name (self):
-        return self.host + ":" + str (self.port)
-
 class BrokerManager:
     def __init__ (self):
         self.dest   = None
@@ -106,7 +93,8 @@ class BrokerManager:
         try:
             self.spec = qpid.spec.load (_specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec)
+            self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec,
+                                    username=self.broker.username, password=self.broker.password)
             self.conn.start ()
             self.session = self.conn.session(str(uuid4()))
             self.mclient  = managementClient (self.spec)

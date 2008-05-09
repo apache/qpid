@@ -20,6 +20,7 @@
 #
 
 import qpid
+import re
 import socket
 import struct
 import os
@@ -32,14 +33,18 @@ from qpid.util       import connect
 
 class Broker:
   def __init__ (self, text):
-    colon = text.find (":")
-    if colon == -1:
-      host = text
-      self.port = 5672
-    else:
-      host = text[:colon]
-      self.port = int (text[colon+1:])
+    rex = re.compile(r"""
+    # [   <user>  [   / <password> ] @]  <host>  [   :<port>   ]
+    ^ (?: ([^/]*) (?: / ([^@]*)   )? @)? ([^:]+) (?: :([0-9]+))?$""", re.X)
+    match = rex.match(text)
+    if not match: raise ValueError("'%s' is not a valid broker url" % (text))
+    user, password, host, port = match.groups()
+
     self.host = socket.gethostbyname (host)
+    if port: self.port = int(port)
+    else: self.port = 5672
+    self.username = user or "guest"
+    self.password = password or "guest"
 
   def name (self):
     return self.host + ":" + str (self.port)
@@ -174,7 +179,8 @@ class ManagementData:
     self.sessionId      = "%s.%d" % (os.uname()[1], os.getpid())
 
     self.broker = Broker (host)
-    self.conn   = Connection (connect (self.broker.host, self.broker.port), self.spec)
+    self.conn   = Connection (connect (self.broker.host, self.broker.port), self.spec,
+                              username=self.broker.username, password=self.broker.password)
     self.conn.start ()
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
