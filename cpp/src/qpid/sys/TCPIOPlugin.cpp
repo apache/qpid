@@ -101,16 +101,20 @@ void AsynchIOProtocolFactory::accept(Poller::shared_ptr poller, ConnectionCodec:
                            boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, fact, false)));
     acceptor->start(poller);
 }
-    
+
 void AsynchIOProtocolFactory::connect(
     Poller::shared_ptr poller,
     const std::string& host, int16_t port,
     ConnectionCodec::Factory* f)
 {
-    Socket* socket = new Socket();//Should be deleted by handle when socket closes
-    socket->connect(host, port);
-
-    established(poller, *socket, f, true);
+    // Note that the following logic does not cause a memory leak.
+    // The allocated Socket is freed either by the AsynchConnector
+    // upon connection failure or by the AsynchIO upon connection
+    // shutdown.  The allocated AsynchConnector frees itself when it
+    // is no longer needed.
+    Socket* socket = new Socket();
+    new AsynchConnector(*socket, poller, host, port,
+                        boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, f, true));
 }
 
 }} // namespace qpid::sys

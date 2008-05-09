@@ -93,7 +93,12 @@ public:
     uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
 
-    
+    /**
+     * Returns the error code stored in the socket.  This may be used
+     * to determine the result of a non-blocking connect.
+     */
+    int getError() const;
+
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
