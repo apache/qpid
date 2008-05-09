@@ -36,7 +36,7 @@ ConnectionSettings::ConnectionSettings() :
     clientid("cpp"), 
     username("guest"), 
     password("guest"),
-    mechanism("ANONYMOUS"),
+    mechanism("PLAIN"),
     locale("en_US"),
     heartbeat(0),
     maxChannels(32767),
