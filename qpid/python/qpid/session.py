@@ -75,7 +75,7 @@ class Session(Invoker):
     try:
       queue = self._incoming.get(destination)
       if queue == None:
-        queue = Queue()
+        queue = Incoming(self, destination)
         self._incoming[destination] = queue
       return queue
     finally:
@@ -318,6 +318,17 @@ class Sender:
         idx += 1
     for range in commands.ranges:
       self._completed.add(range.lower, range.upper)
+
+class Incoming(Queue):
+
+  def __init__(self, session, destination):
+    Queue.__init__(self)
+    self.session = session
+    self.destination = destination
+
+  def start(self):
+    for unit in self.session.credit_unit.values():
+      self.session.message_flow(self.destination, unit, 0xFFFFFFFF)
 
 class Delegate:
 
