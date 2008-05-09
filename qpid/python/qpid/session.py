@@ -52,7 +52,8 @@ class Session(Invoker):
     self.timeout = timeout
     self.channel = None
     self.invoke_lock = Lock()
-    self.closed = False
+    self._closing = False
+    self._closed = False
 
     self.condition = Condition()
 
@@ -82,7 +83,9 @@ class Session(Invoker):
 
   def error(self):
     exc = self.exceptions[:]
-    if len(exc) == 1:
+    if len(exc) == 0:
+      return None
+    elif len(exc) == 1:
       return exc[0]
     else:
       return tuple(exc)
@@ -102,12 +105,30 @@ class Session(Invoker):
   def close(self, timeout=None):
     self.invoke_lock.acquire()
     try:
-      self.closed = True
+      self._closing = True
       self.channel.session_detach(self.name)
     finally:
       self.invoke_lock.release()
     if not wait(self.condition, lambda: self.channel is None, timeout):
       raise Timeout()
+
+  def closed(self):
+    self.lock.acquire()
+    try:
+      if self._closed: return
+      self._closed = True
+
+      error = self.error()
+      for id in self.results:
+        f = self.results[id]
+        f.error(error)
+      self.results.clear()
+
+      for q in self._incoming.values():
+        q.close(error)
+      notify(self.condition)
+    finally:
+      self.lock.release()
 
   def resolve_method(self, name):
     cmd = self.spec.instructions.get(name)
@@ -136,7 +157,7 @@ class Session(Invoker):
       self.invoke_lock.release()
 
   def do_invoke(self, type, args, kwargs):
-    if self.closed:
+    if self._closing:
       raise SessionClosed()
 
     if self.channel == None:
@@ -311,20 +332,7 @@ class Delegate:
     future.set(er.value)
 
   def execution_exception(self, ex):
-    self.session.lock.acquire()
-    try:
-      self.session.exceptions.append(ex)
-      error = self.session.error()
-      for id in self.session.results:
-        f = self.session.results[id]
-        f.error(error)
-      self.session.results.clear()
-
-      for q in self.session._incoming.values():
-        q.close(error)
-      notify(self.session.condition)
-    finally:
-      self.session.lock.release()
+    self.session.exceptions.append(ex)
 
 class Client(Delegate):
 
