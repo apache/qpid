@@ -216,6 +216,7 @@ test $want_xml = no && use_xml=no
 if test $use_xml != no; then
   # Then see if XQilla is available
   AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
+  AC_CHECK_HEADER([xercesc/framework/MemBufInputSource.hpp], , [use_xml=no])
   AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
   AC_CHECK_LIB([xqilla], [canonicalCombiningClassTable], , [use_xml=no])
   
