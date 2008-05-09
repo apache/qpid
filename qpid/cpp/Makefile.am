@@ -5,14 +5,11 @@ SPEC=$(PACKAGE).spec
 
 EXTRA_DIST = \
   LICENSE NOTICE README RELEASE_NOTES\
-  etc/qpidd etc/qpidd.conf \
   $(SPEC) $(SPEC).in \
   rpm/README.qpidd-devel \
   xml/cluster.xml
 
-sysconf_DATA = etc/qpidd.conf
-
-SUBDIRS = managementgen src docs/api docs/man examples
+SUBDIRS = managementgen etc src docs/api docs/man examples
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)

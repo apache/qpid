@@ -7,7 +7,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        31%{?dist}
+Release:        32%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -58,6 +58,8 @@ Requires: %name = %version-%release
 Requires: openais
 Requires: xqilla
 Requires: xerces-c
+Requires: cyrus-sasl
+BuildRequires: cyrus-sasl-devel
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
@@ -137,8 +139,10 @@ make check
 %_libdir/libqpidcluster.so.0
 %_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
+%config(noreplace) %_sysconfdir/sasl2/qpidd.conf
 %{_initrddir}/%{qpidd}
 %attr(755, qpidd, qpidd) %_localstatedir/lib/qpidd
+%attr(600, qpidd, qpidd) %config(noreplace) %_localstatedir/lib/qpidd/qpidd.sasldb
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
@@ -172,6 +176,10 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Thu May  8 2008 Matthew Farrellee <mfarrellee@redhat> - 0.2-32
+- Added sasl2 config file for qpidd
+- Added cyrus-sasl dependencies
+
 * Wed May  7 2008 Matthew Farrellee <mfarrellee@redhat> - 0.2-31
 - Added python dependency, needed by managementgen
 

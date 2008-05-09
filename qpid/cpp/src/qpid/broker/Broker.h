@@ -80,6 +80,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         bool enableMgmt;
         uint16_t mgmtPubInterval;
         bool auth;
+        std::string realm;
         uint32_t ack;
     };
     

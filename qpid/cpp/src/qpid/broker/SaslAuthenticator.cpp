@@ -109,8 +109,26 @@ CyrusAuthenticator::CyrusAuthenticator(Connection& c) : sasl_conn(0), connection
 
 void CyrusAuthenticator::init()
 {
-    int code = sasl_server_new(BROKER_SASL_NAME,
-                               NULL, NULL, NULL, NULL, NULL, 0,
+        /* Next to the service name, which specifies the
+          * /etc/sasl2/<service name>.conf file to read, the realm is
+          * currently the most important argument below. When
+          * performing authentication the user that is authenticating
+          * will be looked up in a specific realm. If none is given
+          * then the realm defaults to the hostname, which can cause
+          * confusion when the daemon is run on different hosts that
+          * may be logically sharing a realm (aka a user domain). This
+          * is especially important for SASL PLAIN authentication,
+          * which cannot specify a realm for the user that is
+          * authenticating.
+          */
+    const char *realm = connection.getBroker().getOptions().realm.c_str();
+    int code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
+                               NULL, /* Server FQDN, gethostname() */
+                               realm, /* Authentication realm */
+                               NULL, /* Local IP, needed for some mechanism */
+                               NULL, /* Remote IP, needed for some mechanism */
+                               NULL, /* Callbacks */
+                               0, /* Connection flags */
                                &sasl_conn);
     
     if (SASL_OK != code) {
