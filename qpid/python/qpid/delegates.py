@@ -52,6 +52,9 @@ class Delegate:
   def connection_close(self, ch, close):
     ch.connection_close_ok()
     self.connection.sock.close()
+    if not self.connection.opened:
+      self.connection.failed = True
+      notify(self.connection.condition)
 
   def connection_close_ok(self, ch, close_ok):
     self.connection.opened = False
@@ -124,12 +127,19 @@ class Client(Delegate):
                 "version": "development",
                 "platform": os.name}
 
+  def __init__(self, connection, args={}):
+    Delegate.__init__(self, connection)    
+    self.username = args.get('username', 'guest')
+    self.password = args.get('password', 'guest')
+    self.mechanism = args.get('mechanism', 'PLAIN')
+
   def start(self):
     self.connection.write_header(self.spec.major, self.spec.minor)
     self.connection.read_header()
 
   def connection_start(self, ch, start):
-    ch.connection_start_ok(client_properties=Client.PROPERTIES, mechanism="ANONYMOUS")
+    r = "\0%s\0%s" % (self.username, self.password)
+    ch.connection_start_ok(client_properties=Client.PROPERTIES, mechanism=self.mechanism, response=r)
 
   def connection_tune(self, ch, tune):
     ch.connection_tune_ok()
