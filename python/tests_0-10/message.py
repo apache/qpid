@@ -229,6 +229,7 @@ class MessageTests(TestBase010):
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-4"), "One"))
 
         session.message_subscribe(destination="my-consumer", queue="test-queue-4")
+        myqueue = session.incoming("my-consumer")
         session.message_flow(destination="my-consumer", unit=session.credit_unit.message, value=0xFFFFFFFF)
         session.message_flow(destination="my-consumer", unit=session.credit_unit.byte, value=0xFFFFFFFF)
 
@@ -237,7 +238,6 @@ class MessageTests(TestBase010):
         #cancel should stop messages being delivered
         session.message_cancel(destination="my-consumer")
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue-4"), "Two"))
-        myqueue = session.incoming("my-consumer")
         msg = myqueue.get(timeout=1)
         self.assertEqual("One", msg.body)
         try:
@@ -1000,6 +1000,22 @@ class MessageTests(TestBase010):
         msg = queue.get(timeout=1)
         self.assertEquals("", msg.body)
         session.message_accept(RangedSet(msg.id))
+
+    def test_incoming_start(self):
+        q = "test_incoming_start"
+        session = self.session
+
+        session.queue_declare(queue=q, exclusive=True, auto_delete=True)
+        session.message_subscribe(queue=q, destination="msgs")
+        messages = session.incoming("msgs")
+        assert messages.destination == "msgs"
+
+        dp = session.delivery_properties(routing_key=q)
+        session.message_transfer(message=Message(dp, "test"))
+
+        messages.start()
+        msg = messages.get()
+        assert msg.body == "test"
 
     def assertDataEquals(self, session, msg, expected):
         self.assertEquals(expected, msg.body)
