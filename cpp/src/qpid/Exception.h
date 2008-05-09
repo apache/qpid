@@ -43,10 +43,10 @@ class Exception : public std::exception
   public:
     explicit Exception(const std::string& message=std::string()) throw();
     virtual ~Exception() throw();
-    virtual const char* what() const throw();
+    virtual const char* what() const throw(); // prefix: message
+    virtual std::string getMessage() const; // Unprefixed message
+    virtual std::string getPrefix() const;  // Prefix
 
-  protected:
-    std::string getPrefix() const;
   private:
     std::string message;
     mutable std::string whatStr;

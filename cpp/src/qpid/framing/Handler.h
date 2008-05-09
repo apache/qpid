@@ -82,14 +82,14 @@ struct Handler {
     template <class X, void (X::*F)(T)>
     class MemFunRef : public Handler<T> {
       public:
-        MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(x) {}
-        void handle(T t) { (target.*F)(t); }
+        MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(&x) {}
+        void handle(T t) { (target->*F)(t); }
 
         /** Allow calling with -> syntax, compatible with Chains */
         MemFunRef* operator->() { return this; }
 
       private:
-        X& target;
+        X* target;
     };
 
     /** Interface for a handler that implements a

@@ -84,7 +84,7 @@ void SequenceSet::remove(const SequenceNumber& s) { *this -= s; }
 struct RangePrinter {
     std::ostream& out;
     RangePrinter(std::ostream& o) : out(o) {}
-    void operator()(SequenceNumber i, SequenceNumber j) {
+    void operator()(SequenceNumber i, SequenceNumber j) const {
         out << "[" << i.getValue() << "," << j.getValue() << "] ";
     }
 };

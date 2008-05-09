@@ -13,10 +13,15 @@ class OperationsInvokerGen < CppGen
     @filename="qpid/framing/#{@chassis.caps}Invoker"
   end
 
+  def methods_on(parent, chassis)
+    chassis == "all"  ? parent.methods_ : parent.methods_on(chassis)
+  end
+
   def handler(c) "#{@ops}::#{c.cppname}Handler"; end
   def getter(c) "get#{c.cppname}Handler"; end
   def invoker(c) "#{handler(c)}::Invoker"; end
-  def visit_methods(c) c.methods_on(@chassis).select { |m| !m.content } end
+  def visit_methods(c) methods_on(c, @chassis).select { |m| !m.content } end
+  
   
   def handler_visits_cpp(c)
     visit_methods(c).each { |m|
@@ -90,3 +95,4 @@ end
 
 OperationsInvokerGen.new("client",ARGV[0], $amqp).generate()
 OperationsInvokerGen.new("server",ARGV[0], $amqp).generate()
+OperationsInvokerGen.new("all",ARGV[0], $amqp).generate()

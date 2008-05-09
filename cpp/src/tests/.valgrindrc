@@ -4,4 +4,5 @@
 --suppressions=.valgrind.supp
 --num-callers=25
 --trace-children=yes
+--error-exitcode=1
 

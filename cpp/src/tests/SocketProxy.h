@@ -42,7 +42,7 @@ class SocketProxy : private qpid::sys::Runnable
      * Listen for connection on getPort().
      */
     SocketProxy(int connectPort, const std::string host="localhost")
-        : closed(false), port(listener.listen())
+        : closed(false), port(listener.listen()), dropClient(), dropServer()
     {
         client.connect(host, connectPort);
         thread = qpid::sys::Thread(static_cast<qpid::sys::Runnable*>(this));
@@ -58,9 +58,16 @@ class SocketProxy : private qpid::sys::Runnable
             closed=true;
         }
         poller.shutdown();
+        if (thread.id() != qpid::sys::Thread::current().id())
         thread.join();
         client.close();
     }
+
+    /** Simulate lost packets, drop data from client */
+    void dropClientData(bool drop=true) { dropClient=drop; }
+
+    /** Simulate lost packets, drop data from server */
+    void dropServerData(bool drop=true) { dropServer=drop; }
 
     bool isClosed() const {
         qpid::sys::Mutex::ScopedLock l(lock);
@@ -83,8 +90,8 @@ class SocketProxy : private qpid::sys::Runnable
             qpid::sys::PollerHandle listenerHandle(listener);
             poller.addFd(listenerHandle, qpid::sys::Poller::IN);
             qpid::sys::Poller::Event event = poller.wait();
-            throwIf(event.type == qpid::sys::Poller::SHUTDOWN, "Closed by close()");
-            throwIf(!(event.type == qpid::sys::Poller::READABLE && event.handle == &listenerHandle), "Accept failed");
+            throwIf(event.type == qpid::sys::Poller::SHUTDOWN, "SocketProxy: Closed by close()");
+            throwIf(!(event.type == qpid::sys::Poller::READABLE && event.handle == &listenerHandle), "SocketProxy: Accept failed");
 
             poller.delFd(listenerHandle);
             server.reset(listener.accept(0, 0));
@@ -97,24 +104,31 @@ class SocketProxy : private qpid::sys::Runnable
             char buffer[1024];
             for (;;) {
                 qpid::sys::Poller::Event event = poller.wait();
-                throwIf(event.type == qpid::sys::Poller::SHUTDOWN, "Closed by close()");
-                throwIf(event.type == qpid::sys::Poller::DISCONNECTED, "client/server disconnected");
+                throwIf(event.type == qpid::sys::Poller::SHUTDOWN, "SocketProxy: Closed by close()");
+                throwIf(event.type == qpid::sys::Poller::DISCONNECTED, "SocketProxy: client/server disconnected");
                 if (event.handle == &serverHandle) {
-                    client.write(buffer, server->read(buffer, sizeof(buffer)));
+                    ssize_t n = server->read(buffer, sizeof(buffer));
+                    if (!dropServer) client.write(buffer, n);
                     poller.rearmFd(serverHandle);
                 } else if (event.handle == &clientHandle) {
-                    server->write(buffer, client.read(buffer, sizeof(buffer)));
+                    ssize_t n = client.read(buffer, sizeof(buffer));
+                    if (!dropClient) server->write(buffer, n);
                     poller.rearmFd(clientHandle);
                 } else {
-                    throwIf(true, "No handle ready");
+                    throwIf(true, "SocketProxy: No handle ready");
                 }
             }
         }
         catch (const std::exception& e) {
-            QPID_LOG(debug, "SocketProxy::run exiting: " << e.what());
+            QPID_LOG(debug, "SocketProxy::run exception: " << e.what());
         }
+        try {
         if (server.get()) server->close();
         close(); 
+    }
+        catch (const std::exception& e) {
+            QPID_LOG(debug, "SocketProxy::run exception in client/server close()" << e.what());
+        }
     }
 
     mutable qpid::sys::Mutex lock;
@@ -123,6 +137,7 @@ class SocketProxy : private qpid::sys::Runnable
     qpid::sys::Socket client, listener;
     uint16_t port;
     qpid::sys::Thread thread;
+    bool dropClient, dropServer;
 };
 
 #endif

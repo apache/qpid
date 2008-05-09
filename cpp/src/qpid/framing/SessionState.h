@@ -70,7 +70,7 @@ class SessionState
     SessionState(const framing::Uuid& id=framing::Uuid(true));
 
     const framing::Uuid& getId() const { return id; }
-    State getState() const { return state; }
+    State getState() { return state; }
     
     /** Received incoming L3 frame.
      * @return SequenceNumber if an ack should be sent, empty otherwise.
