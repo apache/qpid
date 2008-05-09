@@ -85,6 +85,7 @@ Broker::Options::Options(const std::string& name) :
 #else
     auth(false),
 #endif
+	realm("QPID"),
     ack(0)
 {
     int c = sys::SystemInfo::concurrency();
@@ -110,6 +111,8 @@ Broker::Options::Options(const std::string& name) :
          "Management Publish Interval")
         ("auth", optValue(auth, "yes|no"),
          "Enable authentication, if disabled all incoming connections will be trusted")
+        ("realm", optValue(realm, "REALM"),
+         "Use the given realm when performing authentication")
         ("ack", optValue(ack, "N"),
          "Send session.ack/solicit-ack at least every N frames. 0 disables voluntary ack/solitict-ack");
 }
