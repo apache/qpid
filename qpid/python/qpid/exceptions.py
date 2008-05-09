@@ -17,4 +17,5 @@
 # under the License.
 #
 
+class Closed(Exception): pass
 class Timeout(Exception): pass

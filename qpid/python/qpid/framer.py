@@ -18,6 +18,7 @@
 #
 
 import struct, socket
+from exceptions import Closed
 from packer import Packer
 from threading import Lock
 from logging import getLogger
@@ -65,8 +66,6 @@ class Frame:
                                      self.track,
                                      self.channel,
                                      self.payload)
-
-class Closed(Exception): pass
 
 class FramingError(Exception): pass
 
