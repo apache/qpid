@@ -20,6 +20,7 @@
  */
 #include "ConnectionSettings.h"
 
+#include "qpid/log/Logger.h"
 #include "qpid/sys/posix/check.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -35,7 +36,7 @@ ConnectionSettings::ConnectionSettings() :
     clientid("cpp"), 
     username("guest"), 
     password("guest"),
-    mechanism("PLAIN"),
+    mechanism("ANONYMOUS"),
     locale("en_US"),
     heartbeat(0),
     maxChannels(32767),
