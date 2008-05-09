@@ -50,6 +50,7 @@ class Delegate:
       ssn.received(seg)
 
   def connection_close(self, ch, close):
+    self.connection.close_code = (close.reply_code, close.reply_text)
     ch.connection_close_ok()
     self.connection.sock.close()
     if not self.connection.opened:
@@ -73,13 +74,11 @@ class Delegate:
     notify(ch.session.condition)
 
   def session_detach(self, ch, d):
-    self.connection.detach(d.name, ch)
+    ssn = self.connection.detach(d.name, ch)
     ch.session_detached(d.name)
 
   def session_detached(self, ch, d):
-    ssn = self.connection.detach(d.name, ch)
-    if ssn is not None:
-      notify(ch.session.condition)
+    self.connection.detach(d.name, ch)
 
   def session_command_point(self, ch, cp):
     ssn = ch.session
@@ -127,11 +126,11 @@ class Client(Delegate):
                 "version": "development",
                 "platform": os.name}
 
-  def __init__(self, connection, args={}):
-    Delegate.__init__(self, connection)    
-    self.username = args.get('username', 'guest')
-    self.password = args.get('password', 'guest')
-    self.mechanism = args.get('mechanism', 'PLAIN')
+  def __init__(self, connection, username="guest", password="guest", mechanism="PLAIN"):
+    Delegate.__init__(self, connection)
+    self.username = username
+    self.password = password
+    self.mechanism = mechanism
 
   def start(self):
     self.connection.write_header(self.spec.major, self.spec.minor)
