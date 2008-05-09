@@ -24,4 +24,4 @@ EXTRA_DIST = $(nobase_managementgen_DATA)
 # WARNING: Because this target does not have a proper dependency
 # changes to the specs/management-types.xml will not be picked up!
 management-types.xml:
-	cp ../../specs/management-types.xml .
+	cp $(top_srcdir)/../specs/management-types.xml .
