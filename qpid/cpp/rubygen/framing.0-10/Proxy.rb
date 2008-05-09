@@ -11,6 +11,10 @@ class ProxyGen < CppGen
     @filename="qpid/framing/#{@classname}"
   end
 
+  def methods_on(parent, chassis)
+    chassis == "all"  ? parent.methods_ : parent.methods_on(chassis)
+  end
+  
   def proxy_member(c) c.name.lcaps+"Proxy"; end
   
   def inner_class_decl(c)
@@ -21,7 +25,7 @@ public:
 #{cname}(FrameHandler& f) : Proxy(f) {}
 static #{cname}& get(#{@classname}& proxy) { return proxy.get#{cname}(); }
 EOS
-      c.methods_on(@chassis).each { |m|
+      methods_on(c, @chassis).each { |m|
         genl "virtual void #{m.cppname}(#{m.signature.join(",\n            ")});"
         genl
       }}
@@ -29,7 +33,7 @@ EOS
 
   def inner_class_defn(c)
     cname=c.cppname
-    c.methods_on(@chassis).each { |m| 
+    methods_on(c, @chassis).each { |m| 
       genl "void #{@classname}::#{cname}::#{m.cppname}(#{m.signature.join(", ")})"
       scope { 
         params=(["getVersion()"]+m.param_names).join(", ")
@@ -64,7 +68,7 @@ EOS
       include "<sstream>"
       include "#{@classname}.h"
       include "qpid/framing/amqp_types_full.h"
-      @amqp.methods_on(@chassis).each {
+      methods_on(@amqp, @chassis).each {
         |m| include "qpid/framing/"+m.body_name
       }
       genl
@@ -81,4 +85,5 @@ end
 
 ProxyGen.new("client", $outdir, $amqp).generate;
 ProxyGen.new("server", $outdir, $amqp).generate;
+ProxyGen.new("all", $outdir, $amqp).generate;
     

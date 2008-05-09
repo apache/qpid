@@ -33,16 +33,18 @@ class AMQBody;
 class Proxy
 {
   public:
-    Proxy(FrameHandler& h) : out(h) {}
+    Proxy(FrameHandler& h);
     virtual ~Proxy();
 
     void send(const AMQBody&);
 
     ProtocolVersion getVersion() const;
-    FrameHandler& getHandler() { return out; }
 
-  protected:
-    FrameHandler& out;
+    FrameHandler& getHandler();
+    void setHandler(FrameHandler&);
+
+  private:
+    FrameHandler* out;
 };
 
 }} // namespace qpid::framing

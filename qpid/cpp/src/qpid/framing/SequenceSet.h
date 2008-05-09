@@ -34,6 +34,8 @@ class SequenceSet : public RangeSet<SequenceNumber> {
     explicit SequenceSet(const RangeSet<SequenceNumber>& r)
         : RangeSet<SequenceNumber>(r) {}
     explicit SequenceSet(const SequenceNumber& s) { add(s); }
+    SequenceSet(const SequenceNumber& start, const SequenceNumber finish) { add(start,finish); }
+    
     
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
@@ -41,17 +43,20 @@ class SequenceSet : public RangeSet<SequenceNumber> {
 
     bool contains(const SequenceNumber& s) const;
     void add(const SequenceNumber& s);
-    void add(const SequenceNumber& start, const SequenceNumber& end);
+    void add(const SequenceNumber& start, const SequenceNumber& finish); // Closed range
     void add(const SequenceSet& set);
     void remove(const SequenceNumber& s);
-    void remove(const SequenceNumber& start, const SequenceNumber& end);
+    void remove(const SequenceNumber& start, const SequenceNumber& finish); // Closed range
     void remove(const SequenceSet& set);
 
-    template <class T> T for_each(T& t) const {
-        for (RangeIterator i = rangesBegin(); i != rangesEnd(); i++) {
+    template <class T> void for_each(T& t) const {
+        for (RangeIterator i = rangesBegin(); i != rangesEnd(); i++) 
             t(i->first(), i->last());
         }
-        return t;
+
+    template <class T> void for_each(const T& t) const {
+        for (RangeIterator i = rangesBegin(); i != rangesEnd(); i++) 
+            t(i->first(), i->last());
     }
 
   friend std::ostream& operator<<(std::ostream&, const SequenceSet&);
