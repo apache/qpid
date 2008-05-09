@@ -41,7 +41,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private const string MESSAGE_DATA_BYTES = "-- Test Message -- Test Message -- Test Message -- Test Message -- Test Message ";
 
         /// <summary> The default timeout in milliseconds to use on receives. </summary>
-        private const long RECEIVE_WAIT = 500;
+        private const long RECEIVE_WAIT = 2000;
 
         /// <summary> The default AMQ connection URL to use for tests. </summary>
         public const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
@@ -55,6 +55,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary> Holds an array of channels for building mutiple test end-points. </summary>
         protected IChannel[] testChannel = new IChannel[10];
 
+         /// <summary> Holds an array of queues for building mutiple test end-points. </summary>
+        protected String[] testQueue = new String[10];
+        
         /// <summary> Holds an array of producers for building mutiple test end-points. </summary>
         protected IMessagePublisher[] testProducer = new IMessagePublisher[10];
 
@@ -65,7 +68,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private static int uniqueId = 0;
 
         /// <summary> Used to hold unique ids per test. </summary>
-        protected int testId;
+        protected Guid testId;
 
         /// <summary> Creates the test connection and channel. </summary>
         [SetUp]
@@ -74,7 +77,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             log.Debug("public virtual void Init(): called");
 
             // Set up a unique id for this test.
-            testId = uniqueId++;
+            testId = System.Guid.NewGuid();
         }
 
         /// <summary>
@@ -144,6 +147,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
                     if (declareBind)
                     {
+                    	if (durable) 
+                    	{
+                    		testQueue[n] = queueName;
+                    	}
                         testChannel[n].DeclareQueue(queueName, durable, true, true);
                         testChannel[n].Bind(queueName, exchangeName, routingKey);
                     }
@@ -167,6 +174,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             if (testConsumer[n] != null)
             {
+            	if (testQueue[n] != null)
+            	{
+            		testChannel[n].DeleteQueue(testQueue[n], false, false, true);
+            	}
                 testConsumer[n].Close();
                 testConsumer[n].Dispose();
                 testConsumer[n] = null;

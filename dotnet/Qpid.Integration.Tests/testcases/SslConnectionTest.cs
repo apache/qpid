@@ -39,7 +39,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// Make a test TLS connection to the broker
         /// without using client-certificates
         /// </summary>
-        [Test]
+        //[Test]
         public void DoSslConnection()
         {
             // because for tests we don't usually trust the server certificate

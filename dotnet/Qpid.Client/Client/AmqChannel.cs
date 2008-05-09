@@ -888,10 +888,14 @@ namespace Apache.Qpid.Client
         /// <param name="consumer"></param>
         private void RegisterConsumer(BasicMessageConsumer consumer)
         {
+            // Need to generate a consumer tag on the client so we can exploit the nowait flag.
+            String tag = string.Format("{0}-{1}", _sessionNumber, _nextConsumerNumber++);
+            consumer.ConsumerTag = tag;
+            _consumers.Add(tag, consumer);
+            
             String consumerTag = ConsumeFromQueue(consumer.QueueName, consumer.NoLocal,
-                                                  consumer.Exclusive, consumer.AcknowledgeMode);
-            consumer.ConsumerTag = consumerTag;
-            _consumers.Add(consumerTag, consumer);
+                                                  consumer.Exclusive, consumer.AcknowledgeMode, tag);
+            
         }
 
         internal void DoBind(string queueName, string exchangeName, string routingKey, FieldTable args)
@@ -902,19 +906,21 @@ namespace Apache.Qpid.Client
 
             AMQFrame queueBind = QueueBindBody.CreateAMQFrame(_channelId, 0,
                                                               queueName, exchangeName,
-                                                              routingKey, true, args);
-            _replayFrames.Add(queueBind);
+                                                              routingKey, false, args);
+            
 
             lock (_connection.FailoverMutex)
             {
-                _connection.ProtocolWriter.Write(queueBind);
+                _connection.ConvenientProtocolWriter.SyncWrite(queueBind, typeof(QueueBindOkBody));
             }
+            // AS FIXME: wasnae me
+            _replayFrames.Add(QueueBindBody.CreateAMQFrame(_channelId, 0,
+                                                           queueName, exchangeName,
+                                                           routingKey, true, args));
         }
 
-        private String ConsumeFromQueue(String queueName, bool noLocal, bool exclusive, AcknowledgeMode acknowledgeMode)
+        private String ConsumeFromQueue(String queueName, bool noLocal, bool exclusive, AcknowledgeMode acknowledgeMode, String tag)
         {
-            // Need to generate a consumer tag on the client so we can exploit the nowait flag.
-            String tag = string.Format("{0}-{1}", _sessionNumber, _nextConsumerNumber++);
             
             AMQFrame basicConsume = BasicConsumeBody.CreateAMQFrame(_channelId, 0,
                                                                     queueName, tag, noLocal,
@@ -934,9 +940,7 @@ namespace Apache.Qpid.Client
                 _logger.Debug(string.Format("DeleteQueue name={0}", queueName));
                 
                 AMQFrame queueDelete = QueueDeleteBody.CreateAMQFrame(_channelId, 0, queueName, ifUnused, ifEmpty, noWait);
-
-                _replayFrames.Add(queueDelete);
-
+                
                 if (noWait)
                 {
                     _connection.ProtocolWriter.Write(queueDelete);
@@ -945,6 +949,8 @@ namespace Apache.Qpid.Client
                 {
                     _connection.ConvenientProtocolWriter.SyncWrite(queueDelete, typeof(QueueDeleteOkBody));
                 }
+                // AS FIXME: wasnae me
+                _replayFrames.Add(QueueDeleteBody.CreateAMQFrame(_channelId, 0, queueName, ifUnused, ifEmpty, true));
             }
             catch (AMQException)
             {
@@ -958,14 +964,16 @@ namespace Apache.Qpid.Client
                                         queueName, isDurable, isExclusive, isAutoDelete));
 
             AMQFrame queueDeclare = QueueDeclareBody.CreateAMQFrame(_channelId, 0, queueName, false, isDurable, isExclusive,
-                                                                    isAutoDelete, true, null);
+                                                                    isAutoDelete, false, null);
 
-            _replayFrames.Add(queueDeclare);
 
             lock (_connection.FailoverMutex)
             {
-                _connection.ProtocolWriter.Write(queueDeclare);
+                _connection.ConvenientProtocolWriter.SyncWrite(queueDeclare, typeof(QueueDeclareOkBody));
             }
+            // AS FIXME: wasnae me
+            _replayFrames.Add(QueueDeclareBody.CreateAMQFrame(_channelId, 0, queueName, false, isDurable, isExclusive,
+                                                                    isAutoDelete, true, null));
         }
 
         // AMQP-level method.
@@ -978,8 +986,6 @@ namespace Apache.Qpid.Client
 
             AMQFrame declareExchange = ExchangeDeclareBody.CreateAMQFrame(channelId, ticket, exchangeName, exchangeClass, passive, 
                                                                           durable, autoDelete, xinternal, noWait, args);
-
-            _replayFrames.Add(declareExchange);
             
             if (noWait)
             {
@@ -987,6 +993,8 @@ namespace Apache.Qpid.Client
                 {
                     _connection.ProtocolWriter.Write(declareExchange);
                 }
+                // AS FIXME: wasnae me
+            	_replayFrames.Add(declareExchange);
             }
             else
             {

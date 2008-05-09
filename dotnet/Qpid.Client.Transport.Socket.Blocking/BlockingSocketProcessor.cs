@@ -53,6 +53,11 @@ namespace Apache.Qpid.Client.Transport.Socket.Blocking
         {
             _socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
+	    /// For future note TCP Set NoDelay options may help, though with the blocking io not sure
+	    /// The Don't linger may help with detecting disconnect but that hasn't been the case in testing.
+	    /// _socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.NoDelay, 0);
+	    /// _socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.DontLinger, 0);
+	    
             IPHostEntry ipHostInfo = Dns.Resolve(_host); // Note: don't fix this warning. We do this for .NET 1.1 compatibility.
             IPAddress ipAddress = ipHostInfo.AddressList[0];
 
@@ -77,6 +82,8 @@ namespace Apache.Qpid.Client.Transport.Socket.Blocking
             {
                 _log.Error("Write caused exception", e);
                 _protocolListener.OnException(e);
+                // We should provide the error synchronously as we are doing blocking io.
+                throw e;
             }
         }
 
@@ -87,6 +94,17 @@ namespace Apache.Qpid.Client.Transport.Socket.Blocking
             
             int numOctets = _networkStream.Read(bytes, 0, bytes.Length);
 
+	    /// Read only returns 0 if the socket has been gracefully shutdown.
+	    /// http://msdn2.microsoft.com/en-us/library/system.net.sockets.networkstream.read(VS.71).aspx            
+	    /// We can use this to block Send so the next Read will force an exception forcing failover.
+	    /// Otherwise we need to wait ~20 seconds for the NetworkStream/Socket code to realise that
+	    /// the socket has been closed.
+	    if (numOctets == 0)
+	    {              
+		_socket.Shutdown(SocketShutdown.Send);
+		_socket.Close();
+	    }
+             
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
             byteBuffer.limit(numOctets);
             

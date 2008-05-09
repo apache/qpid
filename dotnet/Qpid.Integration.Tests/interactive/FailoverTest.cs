@@ -73,16 +73,29 @@ namespace Apache.Qpid.Integration.Tests.interactive
         /// <summary>Used to wait for test completion on. </summary>
         private static object testComplete = new Object();
 
+        /// <summary>Used to wait for failover completion on. </summary>
+	private static object failoverComplete = new Object();
+	
+        bool failedOver=false;
+
+        /// <summary>Used to record the extra message count (1) if the message sent right after failover actually made it to the new broker.</summary>
+        int _extraMessage = 0;
+	
         /// <summary>
         /// Creates the test connection with a fail-over set up, and a producer/consumer pair on that connection.
         /// </summary>
         /// [SetUp]
         public void Init(IConnectionInfo connectionInfo)
         {
+	    //log4net.Config.BasicConfigurator.Configure();
             // Reset all counts.
             messagesSent = 0;
             messagesReceived = 0;
+            failedOver=false;
+            _extraMessage = 0;
 
+	    PromptAndWait("Ensure both brokers are running, then press Enter");	    
+	    
             // Create a connection for the test.
             _connection = new AMQConnection(connectionInfo);
             _connection.ConnectionListener = this;
@@ -119,7 +132,13 @@ namespace Apache.Qpid.Integration.Tests.interactive
         [TearDown]
         public virtual void Shutdown()
         {
-            Thread.Sleep(2000);
+ 	    if (!failedOver)
+	    {
+                 Assert.Fail("The failover callback never occured.");
+            }
+
+            Console.WriteLine("Test done shutting down");
+	    Thread.Sleep(2000);
             _connection.Close();
         }
 
@@ -152,11 +171,11 @@ namespace Apache.Qpid.Integration.Tests.interactive
             // Parse the connection parameters from a URL.
             String clientId = "failover" + DateTime.Now.Ticks;
             string defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
-                "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";            
+                "?brokerlist='tcp://localhost:9672;tcp://localhost:9673'&failover='roundrobin'";            
             IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(defaultUrl);
             
             Init(connectionInfo);
-            DoFailoverTest();
+            DoFailoverTest(0);
         }
 
         /// <summary>
@@ -165,35 +184,54 @@ namespace Apache.Qpid.Integration.Tests.interactive
         /// </summary>
         ///
         /// <param name="connectionInfo">The connection parameters, specifying the brokers to fail between.</param>
-        void DoFailoverTest()
+        void DoFailoverTest(int delay)
         {
             _log.Debug("void DoFailoverTest(IConnectionInfo connectionInfo): called");
 
+            // Wait for all of the test messages to be received, checking that this occurs within the test time limit.
+	    bool withinTimeout = false;
+
             for (int i = 1; i <= NUM_MESSAGES; ++i)
             {
-                ITextMessage msg = publishingChannel.CreateTextMessage("message=" + messagesSent);
-                //_log.Debug("sending message = " + msg.Text);
-                publisher.Send(msg);
-                messagesSent++;
+		SendMessage();
 
-                _log.Debug("messagesSent = " + messagesSent);
+		// Prompt the user to cause a failure if at the fail point.
+		if (i == FAIL_POINT)
+		{
+		    for( int min = delay ; min > 0 ; min--)
+		    {
+		       Console.WriteLine("Waiting for "+min+" minutes to test connection time bug.");
+		       Thread.Sleep(60*1000);
+		    }
 
-                if (transacted)
-                {
-                    publishingChannel.Commit();
-                }
+		    PromptAndWait("Cause a broker failure now, then press return.");
+		    Console.WriteLine("NOTE: ensure that the delay between killing the broker and continuing here is less than 20 second");
+		    
+		    Console.WriteLine("Sending a message to ensure send right after works");
 
-                // Prompt the user to cause a failure if at the fail point.
-                if (i == FAIL_POINT)
-                {
-                    PromptAndWait("Cause a broker failure now, then press return...");
-                }
+		    SendMessage();
 
-                //Thread.Sleep(SLEEP_MILLIS);               
-            }
+		    Console.WriteLine("Waiting for fail-over to complete before continuing...");
 
-            // Wait for all of the test messages to be received, checking that this occurs within the test time limit.
-            bool withinTimeout;
+
+		    lock(failoverComplete)
+		    {
+			if (!failedOver)
+			{
+			    withinTimeout = Monitor.Wait(failoverComplete, TIMEOUT);
+			}
+			else
+			{
+			    withinTimeout=true;
+			}
+		    }
+
+		    if (!withinTimeout)
+		    {
+			PromptAndWait("Failover has not yet occured. Press enter to give up waiting.");
+		    }
+		}
+	    }
 
             lock(testComplete)
             {
@@ -208,6 +246,38 @@ namespace Apache.Qpid.Integration.Tests.interactive
             _log.Debug("void DoFailoverTest(IConnectionInfo connectionInfo): exiting");
         }
 
+	[Test]
+        public void Test5MinuteWait()
+	{
+	    String clientId = "failover" + DateTime.Now.Ticks;
+
+	    QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
+	    connectionInfo.Username = "guest";
+	    connectionInfo.Password = "guest";
+	    connectionInfo.ClientName = clientId;
+	    connectionInfo.VirtualHost = "/test";
+	    connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 9672, false));
+	    connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 9673, false));
+	    
+	    Init(connectionInfo);
+	    DoFailoverTest(5);
+	}
+
+	void SendMessage()
+	{
+	    ITextMessage msg = publishingChannel.CreateTextMessage("message=" + messagesSent);
+
+	    publisher.Send(msg);
+	    messagesSent++;
+
+	    if (transacted)
+	    {
+		publishingChannel.Commit();
+	    }
+	    
+	    Console.WriteLine("messagesSent = " + messagesSent);
+	}
+	
         /// <summary>
         /// Receives all of the test messages.
         /// </summary>
@@ -228,10 +298,11 @@ namespace Apache.Qpid.Integration.Tests.interactive
 
                 // Check if all of the messages in the test have been received, in which case notify the message producer that the test has 
                 // succesfully completed.
-                if (messagesReceived == NUM_MESSAGES)
+                if (messagesReceived == NUM_MESSAGES + _extraMessage)
                 {
                     lock (testComplete)
                     {
+			failedOver = true;
                         Monitor.Pulse(testComplete);
                     }
                 }
@@ -314,7 +385,13 @@ namespace Apache.Qpid.Integration.Tests.interactive
         /// </summary>
         public void FailoverComplete() 
         {
+	    failedOver = true;
             _log.Debug("public void FailoverComplete(): called");
+	    Console.WriteLine("public void FailoverComplete(): called");
+	    lock (failoverComplete) 
+	    {
+	      Monitor.Pulse(failoverComplete);
+	    }
         }
     }
 }

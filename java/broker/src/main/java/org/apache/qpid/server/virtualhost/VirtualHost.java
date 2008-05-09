@@ -71,7 +71,7 @@ public class VirtualHost implements Accessable
 
     private ACLPlugin _accessManager;
 
-    private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
+    private final Timer _houseKeepingTimer;
      
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     
@@ -172,41 +172,53 @@ public class VirtualHost implements Accessable
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
+        _houseKeepingTimer = new Timer("Queue-housekeeping-" + _name, true);
         initialiseHouseKeeping(hostConfig);
     }
 
     private void initialiseHouseKeeping(final Configuration hostConfig)
     {
-     
-    	long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
-    
-    	/* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
-    	if(period != 0L)
-    	{
-    		class RemoveExpiredMessagesTask extends TimerTask
-    		{
-    			public void run()
-    			{
-    				for(AMQQueue q : _queueRegistry.getQueues())
-    				{
 
-    					try
-    					{
-    						q.removeExpiredIfNoSubscribers();
-    					}
-    					catch (AMQException e)
-    					{
-    						_logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
-    						throw new RuntimeException(e);
-    					}
-    				}
-    			}
-    		}
-    		
-    		_houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
-    				period/2,
-    				period);
-    	}
+        long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+
+        /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
+        if (period != 0L)
+        {
+            class RemoveExpiredMessagesTask extends TimerTask
+            {
+                public void run()
+                {
+                    try
+                    {
+                        _logger.info("Start Run");
+                        for (AMQQueue q : _queueRegistry.getQueues())
+                        {
+
+                            try
+                            {
+                                q.removeExpiredIfNoSubscribers();
+                            }
+                            catch (AMQException e)
+                            {
+                                _logger.error("Exception in housekeeping for queue: " + q.getName().toString(), e);
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        _logger.info("Stop Run");
+                    }
+                    catch (Exception fatal)
+                    {
+                        System.err.println(Thread.currentThread().getName()+" Exception in housekeeping "+fatal);
+                        fatal.printStackTrace();
+                        System.exit(-1);
+                    }
+                }
+            }
+
+            _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
+                                                   period / 2,
+                                                   period);
+        }
     }
     
     private void initialiseMessageStore(Configuration config) throws Exception
