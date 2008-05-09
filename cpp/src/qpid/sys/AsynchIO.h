@@ -52,7 +52,34 @@ private:
 };
 
 /*
- * Asycnchronous reader/writer: 
+ * Asynchronous connector: starts the process of initiating a connection and
+ * invokes a callback when completed or failed.
+ */
+class AsynchConnector : private DispatchHandle {
+public:
+    typedef boost::function1<void, const Socket&> ConnectedCallback;
+    typedef boost::function2<void, int, std::string> FailedCallback;
+
+private:
+    ConnectedCallback connCallback;
+    FailedCallback failCallback;
+    const Socket& socket;
+
+public:
+    AsynchConnector(const Socket& socket,
+                    Poller::shared_ptr poller,
+                    std::string hostname,
+                    uint16_t port,
+                    ConnectedCallback connCb,
+                    FailedCallback failCb = 0);
+
+private:
+    void connComplete(DispatchHandle& handle);
+    void failure(int, std::string);
+};
+
+/*
+ * Asychronous reader/writer: 
  * Reader accepts buffers to read into; reads into the provided buffers
  * and then does a callback with the buffer and amount read. Optionally it can callback
  * when there is something to read but no buffer to read it into.
