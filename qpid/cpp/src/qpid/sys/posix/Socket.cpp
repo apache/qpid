@@ -148,7 +148,8 @@ void Socket::connect(const std::string& host, int port) const
     if (hp == 0)
         throw Exception(QPID_MSG("Cannot resolve " << host << ": " << h_errstr(h_errno)));
     ::memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-    if (::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0)
+    if ((::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0) &&
+        (errno != EINPROGRESS))
         throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
 }
 
@@ -255,6 +256,17 @@ uint16_t Socket::getLocalPort() const
 uint16_t Socket::getRemotePort() const
 {
     return atoi(getService(impl->fd, true).c_str());
+}
+
+int Socket::getError() const
+{
+    int       result;
+    socklen_t rSize = sizeof (result);
+
+    if (::getsockopt(impl->fd, SOL_SOCKET, SO_ERROR, &result, &rSize) < 0)
+        throw QPID_POSIX_ERROR(errno);
+
+    return result;
 }
 
 void Socket::configure(const Configuration& c)

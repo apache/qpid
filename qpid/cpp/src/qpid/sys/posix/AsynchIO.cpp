@@ -97,6 +97,57 @@ void AsynchAcceptor::readable(DispatchHandle& h) {
 }
 
 /*
+ * Asynch Connector
+ */
+
+AsynchConnector::AsynchConnector(const Socket& s,
+                                 Poller::shared_ptr poller,
+                                 std::string hostname,
+                                 uint16_t port,
+                                 ConnectedCallback connCb,
+                                 FailedCallback failCb) :
+    DispatchHandle(s,
+                   0,
+                   boost::bind(&AsynchConnector::connComplete, this, _1),
+                   boost::bind(&AsynchConnector::connComplete, this, _1)),
+    connCallback(connCb),
+    failCallback(failCb),
+    socket(s)
+{
+    socket.setNonblocking();
+    try {
+        socket.connect(hostname, port);
+        startWatch(poller);
+    } catch(std::exception& e) {
+        failure(-1, std::string(e.what()));
+    }
+}
+
+void AsynchConnector::connComplete(DispatchHandle& h)
+{
+    int errCode = socket.getError();
+
+    h.stopWatch();
+    if (errCode == 0) {
+        connCallback(socket);
+	DispatchHandle::doDelete();
+    } else {
+        failure(errCode, std::string(strerror(errCode)));
+    }
+}
+
+void AsynchConnector::failure(int errCode, std::string message)
+{
+    if (failCallback)
+        failCallback(errCode, message);
+
+    socket.close();
+    delete &socket;
+
+    DispatchHandle::doDelete();
+}
+
+/*
  * Asynch reader/writer
  */
 AsynchIO::AsynchIO(const Socket& s,
