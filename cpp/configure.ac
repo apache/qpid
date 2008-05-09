@@ -177,6 +177,7 @@ AS_IF([test "x$WANT_SASL" != xyes -a \
   [AC_MSG_ERROR([Bad value for --with-sasl: $withval])])
 
 # If we weren't explicitly asked /not/ to test, i.e. not given --without-sasl
+have_sasl=no
 AS_IF([test "x$WANT_SASL" != xno],
   # Perform tests for headers and libraries. Remember, AC_CHECK_LIB
   # will give you some useful default behavior, e.g. setup LDFLAGS, if
@@ -189,10 +190,12 @@ AS_IF([test "x$WANT_SASL" != xno],
      # And we were given --with, then fail
      [AS_IF([test "x$WANT_SASL" = xyes],
        [AC_MSG_ERROR([sasl requested but not available])])],
-     # Otherwise, no tests failed, setup AC_SUBST/AC_DEFINE/AM_CONDITIONALs
+     # Otherwise, no tests failed, setup AC_SUBST/AC_DEFINE/vars for AM_CONDITIONALs
      [AC_DEFINE([BROKER_SASL_NAME], ["qpidd"],
                 [The SASL app name for the qpid Broker])
-      AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])])])
+      AC_DEFINE([HAVE_SASL], [1], [Enable if libsasl is present])
+      have_sasl=yes])])
+AM_CONDITIONAL([HAVE_SASL], [test "x$have_sasl" = xyes])
 
 
 # Setup --with-xml/--without-xml as arguments to configure
@@ -261,6 +264,7 @@ AC_CONFIG_FILES([
   Makefile
   examples/Makefile
   managementgen/Makefile
+  etc/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
