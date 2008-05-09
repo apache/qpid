@@ -322,8 +322,8 @@ void DispatchHandle::stopWatch() {
 // is to ensure that the lock is released before
 // we do the delete
 void DispatchHandle::doDelete() {
-	// Ensure that we're no longer watching anything
-	stopWatch();
+    // Ensure that we're no longer watching anything
+    stopWatch();
 
     // If we're in the middle of a callback defer the delete
     {
