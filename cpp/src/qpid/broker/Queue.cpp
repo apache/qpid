@@ -241,7 +241,7 @@ bool Queue::consumeNextMessage(QueuedMessage& m, Consumer& c)
             return false;
         } else {
             QueuedMessage msg = messages.front();
-            if (!msg.payload->isEnqueueComplete()) { 
+            if (store && !msg.payload->isEnqueueComplete()) { 
                 QPID_LOG(debug, "Messages not ready to dispatch on queue '" << name << "'");
                 addListener(c);
                 return false;
