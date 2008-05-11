@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
@@ -37,7 +38,7 @@ public class TxAck implements TxnOp
 {
     private final UnacknowledgedMessageMap _map;
     private final Map<Long, QueueEntry> _unacked = new HashMap<Long,QueueEntry>();
-    private final List<Long> _individual = new LinkedList<Long>();
+    private List<Long> _individual;
     private long _deliveryTag;
     private boolean _multiple;
 
@@ -50,7 +51,10 @@ public class TxAck implements TxnOp
     {
         if (!multiple)
         {
-
+            if(_individual == null)
+            {
+                _individual = new ArrayList<Long>();
+            }
             //have acked a single message that is not part of
             //the previously acked region so record
             //individually
@@ -67,26 +71,33 @@ public class TxAck implements TxnOp
 
     public void consolidate()
     {
-        //lookup all the unacked messages that have been acked in this transaction
-        if (_multiple)
+        if(_unacked.isEmpty())
         {
-            //get all the unacked messages for the accumulated
-            //multiple acks
-            _map.collect(_deliveryTag, true, _unacked);
-        }
-        //get any unacked messages for individual acks outside the
-        //range covered by multiple acks
-        for (long tag : _individual)
-        {
-            if(_deliveryTag < tag)
+            //lookup all the unacked messages that have been acked in this transaction
+            if (_multiple)
             {
-                _map.collect(tag, false, _unacked);
+                //get all the unacked messages for the accumulated
+                //multiple acks
+                _map.collect(_deliveryTag, true, _unacked);
+            }
+            if(_individual != null)
+            {
+                //get any unacked messages for individual acks outside the
+                //range covered by multiple acks
+                for (long tag : _individual)
+                {
+                    if(_deliveryTag < tag)
+                    {
+                        _map.collect(tag, false, _unacked);
+                    }
+                }
             }
         }
     }
 
     public boolean checkPersistent() throws AMQException
     {
+        consolidate();
         //if any of the messages in unacked are persistent the txn
         //buffer must be marked as persistent:
         for (QueueEntry msg : _unacked.values())

@@ -176,8 +176,7 @@ public class LocalTransactionalContext implements TransactionalContext
         // as new acks come in. If this is the first ack in the txn
         // we will need to create and enlist the op.
         if (_ackOp == null)
-        {
-            beginTranIfNecessary();
+        {            
             _ackOp = new TxAck(unacknowledgedMessageMap);
             _txnBuffer.enlist(_ackOp);
         }
@@ -191,6 +190,10 @@ public class LocalTransactionalContext implements TransactionalContext
         else
         {
             _ackOp.update(deliveryTag, multiple);
+        }
+        if(!_inTran && _ackOp.checkPersistent())
+        {
+            beginTranIfNecessary();
         }
     }
 
