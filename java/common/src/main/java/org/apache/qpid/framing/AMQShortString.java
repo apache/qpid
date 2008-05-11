@@ -469,6 +469,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             return false;
         }
 
+
+
         return (_offset == 0 && otherString._offset == 0 && _length == _data.length && otherString._length == otherString._data.length && Arrays.equals(_data,otherString._data))
                 || Arrays.equals(getBytes(),otherString.getBytes());
 

@@ -730,6 +730,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
+
+
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException, FailoverException
     {

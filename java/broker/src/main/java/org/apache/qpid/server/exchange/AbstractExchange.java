@@ -38,7 +38,6 @@ import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueueImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -192,9 +191,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         {
             _exchangeMbean.unregister();
         }
-    }
-
-    abstract public Map<AMQShortString, List<AMQQueue>> getBindings();
+    }    
 
     public String toString()
     {

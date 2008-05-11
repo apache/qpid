@@ -54,4 +54,9 @@ public abstract class AbstractFlowCreditManager implements FlowCreditManager
             notifyListeners(suspended);
         }
     }
+
+    protected final void notifyIncreaseBytesCredit()
+    {
+        notifyListeners(false);
+    }
 }

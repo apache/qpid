@@ -84,8 +84,10 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
     public synchronized void addCredit(final long messageCredit, final long bytesCredit)
     {
         final long messageCreditLimit = _messageCreditLimit;
+        boolean notifyIncrease = true;
         if(messageCreditLimit != 0L)
         {
+            notifyIncrease = (_messageCredit != 0);
             long newCredit = _messageCredit + messageCredit;
             _messageCredit = newCredit > messageCreditLimit ? messageCreditLimit : newCredit;
         }
@@ -96,7 +98,13 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
         {
             long newCredit = _bytesCredit + bytesCredit;
             _bytesCredit = newCredit > bytesCreditLimit ? bytesCreditLimit : newCredit;
+            if(notifyIncrease && bytesCredit>0)
+            {
+                notifyIncreaseBytesCredit();
+            }
         }
+
+
 
         setSuspended(!hasCredit());
 
@@ -138,7 +146,7 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                     }
                     else
                     {
-                        setSuspended(true);
+                        //setSuspended(true);
                         return false;
                     }
                 }
@@ -166,7 +174,7 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                 }
                 else
                 {
-                    setSuspended(true);
+                    //setSuspended(true);
                     return false;
                 }
             }

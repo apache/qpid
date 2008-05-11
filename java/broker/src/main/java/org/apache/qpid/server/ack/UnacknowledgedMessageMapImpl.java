@@ -113,11 +113,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public Object getLock()
-    {
-        return _lock;
-    }
-
     public void add(long deliveryTag, QueueEntry message)
     {
         synchronized (_lock)

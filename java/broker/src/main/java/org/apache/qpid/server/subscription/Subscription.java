@@ -45,11 +45,13 @@ public interface Subscription
 
     AMQQueue getQueue();
 
+    QueueEntry.SubscriptionAcquiredState getOwningState();
+
     void setQueue(AMQQueue queue);
 
     AMQChannel getChannel();
 
-    AMQShortString getConumerTag();
+    AMQShortString getConsumerTag();
 
     boolean isSuspended();
 
@@ -63,8 +65,6 @@ public interface Subscription
 
     void close();
 
-    
-
     boolean filtersMessages();
 
     void send(QueueEntry msg) throws AMQException;
@@ -72,26 +72,8 @@ public interface Subscription
     void queueDeleted(AMQQueue queue); 
 
 
-
-
-
-//    Queue<QueueEntry> getPreDeliveryQueue();
-//
-//    Queue<QueueEntry> getResendQueue();
-//
-//    Queue<QueueEntry> getNextQueue(Queue<QueueEntry> messages);
-//
-//    void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst);
-//
-
-
-
-
-
     boolean wouldSuspend(QueueEntry msg);
 
-//    void addToResendQueue(QueueEntry msg);
-//
     Object getSendLock();
 
 
@@ -101,8 +83,8 @@ public interface Subscription
 
     void setStateListener(final StateListener listener);
 
-    Object getQueueContext();
+    QueueEntry getLastSeenEntry();
 
-    boolean setQueueContext(Object expected, Object newValue);
+    boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
 
 }

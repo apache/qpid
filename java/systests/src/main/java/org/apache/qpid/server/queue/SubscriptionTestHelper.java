@@ -106,12 +106,12 @@ public class SubscriptionTestHelper implements Subscription
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public Object getQueueContext()
+    public QueueEntry getLastSeenEntry()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public boolean setQueueContext(Object expected, Object newValue)
+    public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)
     {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -126,7 +126,7 @@ public class SubscriptionTestHelper implements Subscription
         //no-op
     }
 
-    public AMQShortString getConumerTag()
+    public AMQShortString getConsumerTag()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -139,6 +139,11 @@ public class SubscriptionTestHelper implements Subscription
     public AMQQueue getQueue()
     {
         return null;
+    }
+
+    public QueueEntry.SubscriptionAcquiredState getOwningState()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void queueDeleted(AMQQueue queue)

@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A deliverable message.
  */
-public class AMQMessage
+public class AMQMessage implements Filterable<AMQException>
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);

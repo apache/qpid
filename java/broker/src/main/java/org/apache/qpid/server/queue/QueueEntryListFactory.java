@@ -20,15 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryList
+interface QueueEntryListFactory
 {
-    AMQQueue getQueue();
-
-    QueueEntry add(AMQMessage message);
-
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    public QueueEntryList createQueueEntryList(AMQQueue queue);
 }

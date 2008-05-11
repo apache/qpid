@@ -20,15 +20,22 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryList
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.AMQException;
+
+public class AMQPriorityQueue extends SimpleAMQQueue
 {
-    AMQQueue getQueue();
+    protected AMQPriorityQueue(final AMQShortString name,
+                               final boolean durable,
+                               final AMQShortString owner,
+                               final boolean autoDelete,
+                               final VirtualHost virtualHost,
+                               int priorities)
+            throws AMQException
+    {
+        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
+    }
 
-    QueueEntry add(AMQMessage message);
-
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    
 }

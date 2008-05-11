@@ -13,7 +13,6 @@ import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -31,12 +30,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Blob;
 import java.sql.Types;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -328,7 +324,8 @@ public class DerbyMessageStore implements MessageStore
             String queueName = rs.getString(1);
             String owner = rs.getString(2);
             AMQShortString queueNameShortString = new AMQShortString(queueName);
-            AMQQueue q =  AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost);
+            AMQQueue q =  AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                                                             null);
             _virtualHost.getQueueRegistry().registerQueue(q);
             queueMap.put(queueNameShortString,q);
 
@@ -1317,7 +1314,7 @@ public class DerbyMessageStore implements MessageStore
                 AMQQueue queue = queues.get(queueName);
                 if (queue == null)
                 {
-                    queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, null, false, _virtualHost);
+                    queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, null, false, _virtualHost, null);
                     _virtualHost.getQueueRegistry().registerQueue(queue);
                     queues.put(queueName, queue);
                 }

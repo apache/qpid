@@ -24,9 +24,11 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.common.AMQPFilterTypes;
 
 public class SubscriptionFactoryImpl implements SubscriptionFactory
@@ -37,11 +39,39 @@ public class SubscriptionFactoryImpl implements SubscriptionFactory
 
     }*/
 
-    public Subscription createSubscription(int channel, AMQProtocolSession protocolSession,
+    public Subscription createSubscription(int channelId, AMQProtocolSession protocolSession,
                                            AMQShortString consumerTag, boolean acks, FieldTable filters,
                                            boolean noLocal, FlowCreditManager creditManager) throws AMQException
     {
+        AMQChannel channel = protocolSession.getChannel(channelId);
+        if (channel == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session");
+        }
+        ClientDeliveryMethod clientMethod = channel.getClientDeliveryMethod();
+        RecordDeliveryMethod recordMethod = channel.getRecordDeliveryMethod();
 
+
+        return createSubscription(channel, protocolSession, consumerTag, acks, filters,
+                                  noLocal,
+                                  creditManager,
+                                  clientMethod,
+                                  recordMethod
+        );
+    }
+
+    public Subscription createSubscription(final AMQChannel channel,
+                                            final AMQProtocolSession protocolSession,
+                                            final AMQShortString consumerTag,
+                                            final boolean acks,
+                                            final FieldTable filters,
+                                            final boolean noLocal,
+                                            final FlowCreditManager creditManager,
+                                            final ClientDeliveryMethod clientMethod,
+                                            final RecordDeliveryMethod recordMethod
+    )
+            throws AMQException
+    {
         boolean isBrowser;
 
         if (filters != null)
@@ -56,18 +86,17 @@ public class SubscriptionFactoryImpl implements SubscriptionFactory
 
         if(isBrowser)
         {
-            return new SubscriptionImpl.BrowserSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager);
+            return new SubscriptionImpl.BrowserSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
         else if(acks)
         {
-            return new SubscriptionImpl.AckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager);
+            return new SubscriptionImpl.AckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
         else
         {
-            return new SubscriptionImpl.NoAckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager);
+            return new SubscriptionImpl.NoAckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
     }
-
 
 
     public static final SubscriptionFactoryImpl INSTANCE = new SubscriptionFactoryImpl();

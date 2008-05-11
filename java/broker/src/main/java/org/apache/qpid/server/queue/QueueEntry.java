@@ -26,6 +26,99 @@ import org.apache.qpid.server.subscription.Subscription;
 */
 public interface QueueEntry extends Comparable<QueueEntry>
 {
+
+
+
+    public static enum State
+    {
+        AVAILABLE,
+        ACQUIRED,
+        EXPIRED,
+        DEQUEUED
+    }
+
+    public static interface StateChangeListener
+    {
+        public void stateChanged(QueueEntry entry, State oldSate, State newState);
+    }
+
+    public abstract class EntryState
+    {
+        private EntryState()
+        {
+        }
+
+        public abstract State getState();
+    }
+
+
+    public final class AvailableState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.AVAILABLE;
+        }
+    }
+
+
+    public final class DeletedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DEQUEUED;
+        }
+    }
+
+    public final class ExpiredState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.EXPIRED;
+        }
+    }
+
+
+    public final class NonSubscriptionAcquiredState extends EntryState
+    {
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+    }
+
+    public final class SubscriptionAcquiredState extends EntryState
+    {
+        private final Subscription _subscription;
+
+        public SubscriptionAcquiredState(Subscription subscription)
+        {
+            _subscription = subscription;
+        }
+
+
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public Subscription getSubscription()
+        {
+            return _subscription;
+        }
+    }
+
+
+    final static EntryState AVAILABLE_STATE = new AvailableState();
+    final static EntryState DELETED_STATE = new DeletedState();
+    final static EntryState EXPIRED_STATE = new ExpiredState();
+    final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
+
+
+
+
     AMQQueue getQueue();
 
     AMQMessage getMessage();
@@ -38,7 +131,11 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isAcquired();
 
+    boolean acquire();
     boolean acquire(Subscription sub);
+
+    boolean delete();
+    boolean isDeleted();
 
     boolean acquiredBySubscription();
 
@@ -71,4 +168,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
     void discard(StoreContext storeContext) throws AMQException;
 
     boolean isQueueDeleted();
+
+    void addStateChangeListener(StateChangeListener listener);
+    boolean removeStateChangeListener(StateChangeListener listener);
 }

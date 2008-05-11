@@ -44,6 +44,8 @@ import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
@@ -435,10 +437,8 @@ public class AMQChannel
             }
         }
 
-        synchronized (_unacknowledgedMessageMap.getLock())
-        {
-            _unacknowledgedMessageMap.add(deliveryTag, entry);
-        }
+        _unacknowledgedMessageMap.add(deliveryTag, entry);
+
     }
 
     private final String id = "(" + System.identityHashCode(this) + ")";
@@ -807,22 +807,7 @@ public class AMQChannel
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
     {
-        synchronized (_unacknowledgedMessageMap.getLock())
-        {
-            if (_log.isDebugEnabled())
-            {
-                _log.debug("Unacked (PreAck) Size:" + _unacknowledgedMessageMap.size());
-            }
-
-            _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
-
-            if (_log.isDebugEnabled())
-            {
-                _log.debug("Unacked (PostAck) Size:" + _unacknowledgedMessageMap.size());
-            }
-
-        }
-
+        _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
     }
 
     /**
@@ -951,5 +936,34 @@ public class AMQChannel
     public MessageStore getMessageStore()
     {
         return _messageStore;
+    }
+
+    private final ClientDeliveryMethod _clientDeliveryMethod = new ClientDeliveryMethod()
+        {
+
+            public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+                    throws AMQException
+            {
+               getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannelId(), deliveryTag, sub.getConsumerTag());
+            }
+        };
+
+    public ClientDeliveryMethod getClientDeliveryMethod()
+    {
+        return _clientDeliveryMethod;
+    }
+
+    private final RecordDeliveryMethod _recordDeliveryMethod = new RecordDeliveryMethod()
+        {
+
+            public void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            {
+                addUnacknowledgedMessage(entry, deliveryTag, sub);
+            }
+        };
+
+    public RecordDeliveryMethod getRecordDeliveryMethod()
+    {
+        return _recordDeliveryMethod;
     }
 }

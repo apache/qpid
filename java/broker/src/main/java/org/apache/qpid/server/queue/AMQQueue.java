@@ -34,7 +34,7 @@ import org.apache.qpid.AMQException;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue extends Managable, Comparable
+public interface AMQQueue extends Managable, Comparable<AMQQueue>
 {
 
     AMQShortString getName();
@@ -147,11 +147,6 @@ public interface AMQQueue extends Managable, Comparable
 
     void deliverAsync();
 
-
-    boolean performGet(final AMQProtocolSession session, final AMQChannel channel, final boolean b) throws AMQException;
-
-
-
     void addQueueDeleteTask(final Task task);
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
@@ -159,6 +154,8 @@ public interface AMQQueue extends Managable, Comparable
     void removeExpiredIfNoSubscribers() throws AMQException;
 
     Set<NotificationCheck> getNotificationChecks();
+
+    void flushSubscription(final Subscription sub) throws AMQException;
 
 
     /**

@@ -72,7 +72,8 @@ public class AMQQueueAlertTest extends TestCase
     public void testMessageCountAlert() throws Exception
     {
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue1"), false, new AMQShortString("AMQueueAlertTest"),
-                              false, _virtualHost);
+                              false, _virtualHost,
+                              null);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
 
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
@@ -95,7 +96,8 @@ public class AMQQueueAlertTest extends TestCase
     public void testMessageSizeAlert() throws Exception
     {
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue2"), false, new AMQShortString("AMQueueAlertTest"),
-                              false, _virtualHost);
+                              false, _virtualHost,
+                              null);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageSize(MAX_MESSAGE_SIZE);
@@ -120,7 +122,8 @@ public class AMQQueueAlertTest extends TestCase
     public void testQueueDepthAlertNoSubscriber() throws Exception
     {
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue3"), false, new AMQShortString("AMQueueAlertTest"),
-                              false, _virtualHost);
+                              false, _virtualHost,
+                              null);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
@@ -148,7 +151,8 @@ public class AMQQueueAlertTest extends TestCase
     public void testMessageAgeAlert() throws Exception
     {
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue4"), false, new AMQShortString("AMQueueAlertTest"),
-                              false, _virtualHost);
+                              false, _virtualHost,
+                              null);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageAge(MAX_MESSAGE_AGE);
@@ -335,6 +339,6 @@ public class AMQQueueAlertTest extends TestCase
                             false,
                             new AMQShortString("AMQueueAlertTest"),
                             false,
-                            _virtualHost);
+                            _virtualHost, null);
     }
 }

@@ -18,17 +18,11 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.subscription;
 
-public interface QueueEntryList
+import org.apache.qpid.server.queue.QueueEntry;
+
+public interface RecordDeliveryMethod
 {
-    AMQQueue getQueue();
-
-    QueueEntry add(AMQMessage message);
-
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag);
 }

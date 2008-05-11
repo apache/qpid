@@ -26,13 +26,16 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQMessageHandle;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
@@ -100,12 +103,16 @@ public class TxAckTest extends TestCase
         private final List<Long> _unacked;
         private StoreContext _storeContext = new StoreContext();
 
-        Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws AMQException
+        Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
             TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(),
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );
+            AMQQueue queue =
+                    AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("", new MemoryMessageStore()),
+                                                       null);
+
             for (int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;
@@ -140,7 +147,7 @@ public class TxAckTest extends TestCase
                 };
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
-                _map.add(deliveryTag, new QueueEntryImpl(null,message, Long.MIN_VALUE));
+                _map.add(deliveryTag, queue.enqueue(new StoreContext(), message));
             }
             _acked = acked;
             _unacked = unacked;

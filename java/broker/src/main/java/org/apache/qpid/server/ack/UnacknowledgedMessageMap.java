@@ -45,8 +45,6 @@ public interface UnacknowledgedMessageMap
 
     void visit(Visitor visitor) throws AMQException;
 
-    Object getLock();
-
     void add(long deliveryTag, QueueEntry message);
 
     void collect(long deliveryTag, boolean multiple, Map<Long, QueueEntry> msgs);

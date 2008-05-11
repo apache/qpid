@@ -30,6 +30,7 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
@@ -177,11 +178,22 @@ public class VirtualHostConfiguration
                 boolean durable = queueConfiguration.getBoolean("durable" ,false);
                 boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
                 String owner = queueConfiguration.getString("owner", null);
+                FieldTable arguments = null;
+                Integer priorities = queueConfiguration.getInteger("priorities", null);
+                if(priorities != null && priorities.intValue() > 1)
+                {
+                    if(arguments == null)
+                    {
+                        arguments = new FieldTable();
+                    }
+                    arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
+                }
+
 
                 queue = AMQQueueFactory.createAMQQueueImpl(queueName,
                         durable,
                         owner == null ? null : new AMQShortString(owner) /* These queues will have no owner */,
-                        autodelete /* Therefore autodelete makes no sence */, virtualHost);
+                        autodelete /* Therefore autodelete makes no sence */, virtualHost, arguments);
 
                 if (queue.isDurable())
                 {

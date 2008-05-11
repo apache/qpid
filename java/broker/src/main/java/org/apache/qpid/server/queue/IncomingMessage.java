@@ -38,8 +38,9 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 
-public class IncomingMessage
+public class IncomingMessage implements Filterable<RuntimeException>
 {
 
     /** Used for debugging purposes. */
@@ -66,7 +67,7 @@ public class IncomingMessage
      * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
      * by the message handle.
      */
-    private List<AMQQueue> _destinationQueues;
+    private Collection<AMQQueue> _destinationQueues;
 
     private AMQProtocolSession _publisher;
     private MessageStore _messageStore;
@@ -160,7 +161,7 @@ public class IncomingMessage
 
         // we get a reference to the destination queues now so that we can clear the
         // transient message data as quickly as possible
-        List<AMQQueue> destinationQueues = _destinationQueues;
+        Collection<AMQQueue> destinationQueues = _destinationQueues;
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Delivering message " + _messageId + " to " + destinationQueues);
@@ -175,9 +176,6 @@ public class IncomingMessage
             _messageHandle.setPublishAndContentHeaderBody(_txnContext.getStoreContext(),
                                                           _messagePublishInfo, getContentHeaderBody());
 
-            // we then allow the transactional context to do something with the message content
-            // now that it has all been received, before we attempt delivery
-            _txnContext.messageFullyReceived(isPersistent());
 
             message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
             message.setPublisherIdentifier(_publisher.getClientIdentifier());
@@ -213,6 +211,10 @@ public class IncomingMessage
                     _txnContext.deliver(q, message);
                 }
             }
+
+            // we then allow the transactional context to do something with the message content
+            // now that it has all been received, before we attempt delivery
+            _txnContext.messageFullyReceived(isPersistent());
 
             return message;
         }
@@ -283,6 +285,11 @@ public class IncomingMessage
              ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 2;
     }
 
+    public boolean isRedelivered()
+    {
+        return false;
+    }
+
     public void setMessageStore(final MessageStore messageStore)
     {
         _messageStore = messageStore;
@@ -303,7 +310,7 @@ public class IncomingMessage
         _exchange.route(this);
     }
 
-    public void enqueue(final List<AMQQueue> queues)
+    public void enqueue(final Collection<AMQQueue> queues)
     {
         _destinationQueues = queues;
     }

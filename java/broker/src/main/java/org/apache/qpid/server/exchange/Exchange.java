@@ -93,6 +93,6 @@ public interface Exchange
      */
     boolean hasBindings();
 
-    Map<AMQShortString, List<AMQQueue>> getBindings();
+    
 
 }

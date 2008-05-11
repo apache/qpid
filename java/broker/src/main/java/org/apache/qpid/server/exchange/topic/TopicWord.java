@@ -28,7 +28,27 @@ import java.util.concurrent.ConcurrentHashMap;
 */
 public final class TopicWord
 {
-    public static final TopicWord ANY_WORD = new TopicWord();
-    public static final TopicWord WILDCARD_WORD = new TopicWord();
+    public static final TopicWord ANY_WORD = new TopicWord("*");
+    public static final TopicWord WILDCARD_WORD = new TopicWord("#");
+    private String _word;
 
+    public TopicWord()
+    {
+
+    }
+
+    public TopicWord(String s)
+    {
+        _word = s;
+    }
+
+    public TopicWord(final AMQShortString name)
+    {
+        _word = name.toString();
+    }
+
+    public String toString()
+    {
+        return _word;
+    }
 }

@@ -178,35 +178,35 @@ public class VirtualHost implements Accessable
     private void initialiseHouseKeeping(final Configuration hostConfig)
     {
      
-    	long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+        long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     
-    	/* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
-    	if(period != 0L)
-    	{
-    		class RemoveExpiredMessagesTask extends TimerTask
-    		{
-    			public void run()
-    			{
-    				for(AMQQueue q : _queueRegistry.getQueues())
-    				{
+        /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
+        if(period != 0L)
+        {
+            class RemoveExpiredMessagesTask extends TimerTask
+            {
+                public void run()
+                {
+                    for(AMQQueue q : _queueRegistry.getQueues())
+                    {
 
-    					try
-    					{
-    						q.removeExpiredIfNoSubscribers();
-    					}
-    					catch (AMQException e)
-    					{
-    						_logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
-    						throw new RuntimeException(e);
-    					}
-    				}
-    			}
-    		}
-    		
-    		_houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
-    				period/2,
-    				period);
-    	}
+                        try
+                        {
+                            q.removeExpiredIfNoSubscribers();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
+
+            _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
+                    period/2,
+                    period);
+        }
     }
     
     private void initialiseMessageStore(Configuration config) throws Exception

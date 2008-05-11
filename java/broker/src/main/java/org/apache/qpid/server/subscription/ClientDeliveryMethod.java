@@ -18,17 +18,12 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.subscription;
 
-public interface QueueEntryList
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.AMQException;
+
+public interface ClientDeliveryMethod
 {
-    AMQQueue getQueue();
-
-    QueueEntry add(AMQMessage message);
-
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag) throws AMQException;
 }

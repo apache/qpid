@@ -174,7 +174,9 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
         AMQShortString owner = body.getExclusive() ? session.getContextKey() : null;
-        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost);
+
+        final AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost,
+                                                                  body.getArguments());
 
 
         if (body.getExclusive() && !body.getDurable())

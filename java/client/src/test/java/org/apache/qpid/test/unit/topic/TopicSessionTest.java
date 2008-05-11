@@ -24,6 +24,7 @@ import javax.jms.*;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.Message;
+import javax.jms.MessageProducer;
 
 import junit.framework.TestCase;
 
@@ -32,12 +33,16 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.BasicMessageProducer;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQUndefinedDestination;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.*;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /** @author Apache Software Foundation */
@@ -144,7 +149,7 @@ public class TopicSessionTest extends TestCase
                 while(true)
                 {
                     publisher.publish(session1.createTextMessage("hello"));
-                    Thread.sleep(THREADS);
+                    Thread.sleep(20);
                 }
                 }
                 catch(Exception e)

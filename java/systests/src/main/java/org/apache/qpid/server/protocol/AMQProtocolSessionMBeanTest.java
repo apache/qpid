@@ -59,7 +59,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
                                                                    false,
                                                                    new AMQShortString("test"),
                                                                    true,
-                                                                   _protocolSession.getVirtualHost());
+                                                                   _protocolSession.getVirtualHost(), null);
         AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);

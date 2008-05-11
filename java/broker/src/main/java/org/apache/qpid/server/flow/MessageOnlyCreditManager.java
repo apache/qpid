@@ -28,7 +28,7 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
 {
     private final AtomicLong _messageCredit;
 
-    MessageOnlyCreditManager(final long initialCredit)
+    public MessageOnlyCreditManager(final long initialCredit)
     {
         _messageCredit = new AtomicLong(initialCredit);
     }

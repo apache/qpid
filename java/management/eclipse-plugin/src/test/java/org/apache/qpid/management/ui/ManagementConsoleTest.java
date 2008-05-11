@@ -63,7 +63,8 @@ public class ManagementConsoleTest extends TestCase
     {
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueueForManagement"), false, null, false, _virtualHost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueueForManagement"), false, null, false, _virtualHost,
+                                                            null);
         AMQManagedObject mbean = new AMQQueueMBean(queue);
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();
 

@@ -306,7 +306,8 @@ public class AMQQueueMBeanTest extends TestCase
                                                             new LinkedList<RequiredDeliveryException>()
         );
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost);
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost,
+                                                    null);
         _queueMBean = new AMQQueueMBean(_queue);
 
         _protocolSession = new TestMinaProtocolSession();

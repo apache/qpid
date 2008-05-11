@@ -20,6 +20,6 @@ package org.apache.qpid.server.exchange.topic;
 * under the License.
 *
 */
-public class TopicMatcherResult
+public interface TopicMatcherResult
 {
 }

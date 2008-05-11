@@ -1110,11 +1110,18 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
                             final boolean exclusive) throws AMQException
     {
+        createQueue(name, autoDelete, durable, exclusive, null);
+    }
+
+    public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
+                                final boolean exclusive, final FieldTable arguments) throws AMQException
+        {
+
         new FailoverRetrySupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
             public Object execute() throws AMQException, FailoverException
             {
-                    QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,null);
+                    QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,arguments);
 
                     AMQFrame queueDeclare = body.generateFrame(_channelId);
 
@@ -2353,6 +2360,28 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     }
                 }, _connection).execute();
 
+    }
+
+
+
+
+    public void setPrefecthLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    {
+        new FailoverRetrySupport<Object, AMQException>(
+                new FailoverProtectedOperation<Object, AMQException>()
+                {
+                    public Object execute() throws AMQException, FailoverException
+                    {
+
+                        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
+
+                        // todo send low water mark when protocol allows.
+                        // todo Be aware of possible changes to parameter order as versions change.
+                        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
+
+                        return null;
+                    }
+                }, _connection).execute();
     }
 
 

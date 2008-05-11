@@ -42,7 +42,7 @@ public class TopicWordDictionary
 
     public TopicWord getOrCreateWord(AMQShortString name)
     {
-        TopicWord word = _dictionary.putIfAbsent(name, new TopicWord());
+        TopicWord word = _dictionary.putIfAbsent(name, new TopicWord(name));
         if(word == null)
         {
             word = _dictionary.get(name);

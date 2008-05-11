@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
@@ -46,7 +45,6 @@ import org.apache.qpid.server.store.StoreContext;
  */
 public abstract class SubscriptionImpl implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
-    private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
     private StateListener _stateListener = new StateListener()
                                             {
@@ -59,17 +57,25 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
-    private final AtomicReference<Object> _queueContext = new AtomicReference<Object>(null);
+    private final AtomicReference<QueueEntry> _queueContext = new AtomicReference<QueueEntry>(null);
+    private final ClientDeliveryMethod _deliveryMethod;
+    private final RecordDeliveryMethod _recordMethod;
+    
+    private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
-        public BrowserSubscription(int channelId, AMQProtocolSession protocolSession,
+        public BrowserSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                    AMQShortString consumerTag, FieldTable filters,
-                                   boolean noLocal, FlowCreditManager creditManager)
+                                   boolean noLocal, FlowCreditManager creditManager,
+                                   ClientDeliveryMethod deliveryMethod,
+                                   RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
+
 
         public boolean isBrowser()
         {
@@ -91,21 +97,22 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             synchronized (getChannel())
             {
                 long deliveryTag = getChannel().getNextDeliveryTag();
-
-                getProtocolSession().getProtocolOutputConverter().writeDeliver(msg.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
+                sendToClient(msg, deliveryTag);
             }
 
         }
     }
 
-    static final class NoAckSubscription extends SubscriptionImpl
+    public static class NoAckSubscription extends SubscriptionImpl
     {
-        public NoAckSubscription(int channelId, AMQProtocolSession protocolSession,
+        public NoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                  AMQShortString consumerTag, FieldTable filters,
-                                 boolean noLocal, FlowCreditManager creditManager)
+                                 boolean noLocal, FlowCreditManager creditManager,
+                                   ClientDeliveryMethod deliveryMethod,
+                                   RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
 
@@ -142,7 +149,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                 {
                     long deliveryTag = getChannel().getNextDeliveryTag();
 
-                    getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
+                    sendToClient(entry, deliveryTag);
 
                 }
                 entry.dispose(storeContext);
@@ -166,12 +173,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     static final class AckSubscription extends SubscriptionImpl
     {
-        public AckSubscription(int channelId, AMQProtocolSession protocolSession,
+        public AckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                AMQShortString consumerTag, FieldTable filters,
-                               boolean noLocal, FlowCreditManager creditManager)
+                               boolean noLocal, FlowCreditManager creditManager,
+                                   ClientDeliveryMethod deliveryMethod,
+                                   RecordDeliveryMethod recordMethod)
             throws AMQException
         {
-            super(channelId, protocolSession, consumerTag, filters, noLocal, creditManager);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
         public boolean isBrowser()
@@ -189,7 +198,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          */
         public void send(QueueEntry entry) throws AMQException
         {
-            StoreContext storeContext = getChannel().getStoreContext();
+
             try
             { // if we do not need to wait for client acknowledgements
                 // we can decrement the reference count immediately.
@@ -206,11 +215,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                     long deliveryTag = getChannel().getNextDeliveryTag();
 
 
+                    recordMessageDelivery(entry, deliveryTag);
+                    sendToClient(entry, deliveryTag);
 
-
-                    getChannel().addUnacknowledgedMessage(entry, deliveryTag, this);
-
-                    getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannel().getChannelId(), deliveryTag, getConumerTag());
 
                 }
             }
@@ -223,7 +230,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                 entry.setDeliveredToSubscription();
             }
         }
-
 
 
     }
@@ -252,16 +258,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
     
-    public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
+    public SubscriptionImpl(AMQChannel channel , AMQProtocolSession protocolSession,
                             AMQShortString consumerTag, FieldTable arguments,
-                            boolean noLocal, FlowCreditManager creditManager)
+                            boolean noLocal, FlowCreditManager creditManager,
+                            ClientDeliveryMethod deliveryMethod,
+                            RecordDeliveryMethod recordMethod)
             throws AMQException
     {
-        AMQChannel channel = protocolSession.getChannel(channelId);
-        if (channel == null)
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session");
-        }
 
         _channel = channel;
         _consumerTag = consumerTag;
@@ -274,11 +277,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
         _filters = FilterManagerFactory.createManager(arguments);
 
+        _deliveryMethod = deliveryMethod;
+        _recordMethod = recordMethod;
 
 
 
-
-        if (_filters != null)
+        if (arguments != null)
         {
             Object autoClose = arguments.get(AMQPFilterTypes.AUTO_CLOSE.getValue());
             if (autoClose != null)
@@ -421,6 +425,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _autoClose;
     }
 
+    public FlowCreditManager getCreditManager()
+    {
+        return _creditManager;
+    }
+
+
     public void close()
     {
         boolean closed = false;
@@ -484,7 +494,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _channel;
     }
 
-    public AMQShortString getConumerTag()
+    public AMQShortString getConsumerTag()
     {
         return _consumerTag;
     }
@@ -514,6 +524,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             {
                 _stateListener.stateChange(this, State.SUSPENDED, State.ACTIVE);
             }
+            else
+            {
+                // this is a hack to get round the issue of increasing bytes credit
+                _stateListener.stateChange(this, State.ACTIVE, State.ACTIVE);
+            }
         }
         else
         {
@@ -536,14 +551,27 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     }
 
 
-    public Object getQueueContext()
+    public QueueEntry getLastSeenEntry()
     {
         return _queueContext.get();
     }
 
-    public boolean setQueueContext(Object expected, Object newvalue)
+    public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newvalue)
     {
         return _queueContext.compareAndSet(expected,newvalue);
+    }
+
+
+    protected void sendToClient(final QueueEntry entry, final long deliveryTag)
+            throws AMQException
+    {
+        _deliveryMethod.deliverToClient(this,entry,deliveryTag);
+    }
+
+
+    protected void recordMessageDelivery(final QueueEntry entry, final long deliveryTag)
+    {
+        _recordMethod.recordMessageDelivery(this,entry,deliveryTag);
     }
 
 
@@ -551,4 +579,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return getState() == State.ACTIVE;
     }
+
+    public QueueEntry.SubscriptionAcquiredState getOwningState()
+    {
+        return _owningState;
+    }
+
 }

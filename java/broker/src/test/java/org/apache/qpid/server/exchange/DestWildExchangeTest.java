@@ -63,7 +63,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
@@ -78,7 +78,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testDirectMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("ab"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("ab"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 
@@ -118,7 +118,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testStarMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*"), queue, null);
 
 
@@ -176,7 +176,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashMatch() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.#"), queue, null);
 
 
@@ -272,7 +272,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMidHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
@@ -316,7 +316,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMatchafterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*.#.b.c"), queue, null);
 
 
@@ -389,7 +389,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashAfterHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*.#.b.c.#.d"), queue, null);
 
 
@@ -429,7 +429,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testHashHash() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a#"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.#.*.#.d"), queue, null);
 
 
@@ -468,7 +468,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testSubMatchFails() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.b.c.d"), queue, null);
 
 
@@ -497,7 +497,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMoreRouting() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 
@@ -518,7 +518,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void testMoreQueue() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.b"), queue, null);
 
 

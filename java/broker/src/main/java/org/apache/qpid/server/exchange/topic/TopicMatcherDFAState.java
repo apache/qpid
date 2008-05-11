@@ -4,6 +4,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
 *
@@ -27,6 +28,10 @@ import java.util.*;
 */
 public class TopicMatcherDFAState
 {
+    private static final AtomicInteger stateId = new AtomicInteger();
+
+    private final int _id = stateId.incrementAndGet();
+
     private final Collection<TopicMatcherResult> _results;
     private final Map<TopicWord, TopicMatcherDFAState> _nextStateMap;
     private static final byte TOPIC_DELIMITTER = (byte)'.';
@@ -232,5 +237,59 @@ public class TopicMatcherDFAState
 
     }
 
+
+    public String toString()
+    {
+        StringBuilder transitions = new StringBuilder();
+        for(Map.Entry<TopicWord, TopicMatcherDFAState> entry : _nextStateMap.entrySet())
+        {
+            transitions.append("[ ");
+            transitions.append(entry.getKey());
+            transitions.append("\t ->\t ");
+            transitions.append(entry.getValue()._id);
+            transitions.append(" ]\n");
+        }
+
+
+        return "[ State " + _id + " ]\n" + transitions + "\n";
+
+    }
+
+    public String reachableStates()
+    {
+        StringBuilder result = new StringBuilder("Start state: " + _id + "\n");
+
+        SortedSet<TopicMatcherDFAState> reachableStates =
+                new TreeSet<TopicMatcherDFAState>(new Comparator<TopicMatcherDFAState>()
+                                                        {
+                                                            public int compare(final TopicMatcherDFAState o1, final TopicMatcherDFAState o2)
+                                                            {
+                                                                return o1._id - o2._id;
+                                                            }
+                                                        });
+        reachableStates.add(this);
+
+        int count;
+
+        do
+        {
+            count = reachableStates.size();
+            Collection<TopicMatcherDFAState> originalStates = new ArrayList<TopicMatcherDFAState>(reachableStates);
+            for(TopicMatcherDFAState state : originalStates)
+            {
+                reachableStates.addAll(state._nextStateMap.values());
+            }
+        }
+        while(reachableStates.size() != count);
+
+
+
+        for(TopicMatcherDFAState state : reachableStates)
+        {
+            result.append(state.toString());
+        }
+
+        return result.toString();
+    }
 
 }

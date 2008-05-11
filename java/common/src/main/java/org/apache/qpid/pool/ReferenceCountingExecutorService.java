@@ -22,6 +22,9 @@ package org.apache.qpid.pool;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * ReferenceCountingExecutorService wraps an ExecutorService in order to provide shared reference to it. It counts
@@ -111,7 +114,12 @@ public class ReferenceCountingExecutorService
         {
             if (_refCount++ == 0)
             {
-                _pool = Executors.newFixedThreadPool(_poolSize);
+//                _pool = Executors.newFixedThreadPool(_poolSize);
+
+                // Use a job queue that biases to writes
+                _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
+                                      0L, TimeUnit.MILLISECONDS,
+                                      new ReadWriteJobQueue());
             }
 
             return _pool;

@@ -20,15 +20,11 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryList
+public interface QueueEntryIterator
 {
-    AMQQueue getQueue();
+    boolean atTail();
 
-    QueueEntry add(AMQMessage message);
+    QueueEntry getNode();
 
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    boolean advance();
 }

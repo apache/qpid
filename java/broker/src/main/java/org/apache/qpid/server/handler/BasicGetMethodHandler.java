@@ -26,11 +26,21 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.flow.MessageOnlyCreditManager;
+import org.apache.qpid.server.subscription.SubscriptionImpl;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.RecordDeliveryMethod;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueueImpl;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -86,7 +96,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 //Perform ACLs
                 vHost.getAccessManager().authorise(session, Permission.CONSUME, body, queue);
 
-                if (!queue.performGet(session, channel, !body.getNoAck()))
+                if (!performGet(queue,session, channel, !body.getNoAck()))
                 {
                     MethodRegistry methodRegistry = session.getMethodRegistry();
                     // TODO - set clusterId
@@ -97,5 +107,81 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 }
             }
         }
+    }
+
+    public static boolean performGet(final AMQQueue queue,
+                                     final AMQProtocolSession session,
+                                     final AMQChannel channel,
+                                     final boolean acks)
+            throws AMQException
+    {
+
+        final FlowCreditManager singleMessageCredit = new MessageOnlyCreditManager(1L);
+
+        final ClientDeliveryMethod getDeliveryMethod = new ClientDeliveryMethod()
+        {
+
+            int _msg;
+
+            public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            throws AMQException
+            {
+                singleMessageCredit.useCreditForMessage(entry.getMessage());
+                session.getProtocolOutputConverter().writeGetOk(entry.getMessage(), channel.getChannelId(),
+                                                                        deliveryTag, queue.getMessageCount());
+
+            }
+        };
+        final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
+        {
+
+            public void recordMessageDelivery(final Subscription sub, final QueueEntry entry, final long deliveryTag)
+            {
+                channel.addUnacknowledgedMessage(entry, deliveryTag, null);
+            }
+        };
+
+        Subscription sub;
+        if(acks)
+        {
+            sub = SubscriptionFactoryImpl.INSTANCE.createSubscription(channel, session, null, acks, null, false, singleMessageCredit, getDeliveryMethod, getRecordMethod);
+        }
+        else
+        {
+            sub = new GetNoAckSubscription(channel,
+                                                 session,
+                                                 null,
+                                                 null,
+                                                 false,
+                                                 singleMessageCredit,
+                                                 getDeliveryMethod,
+                                                 getRecordMethod);
+        }
+
+        queue.registerSubscription(sub,false);
+        queue.flushSubscription(sub);
+        queue.unregisterSubscription(sub);
+        return(!singleMessageCredit.hasCredit());
+
+
+    }
+
+    public static final class GetNoAckSubscription extends SubscriptionImpl.NoAckSubscription
+    {
+        public GetNoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
+                               AMQShortString consumerTag, FieldTable filters,
+                               boolean noLocal, FlowCreditManager creditManager,
+                                   ClientDeliveryMethod deliveryMethod,
+                                   RecordDeliveryMethod recordMethod)
+            throws AMQException
+        {
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+        }
+
+        public boolean wouldSuspend(QueueEntry msg)
+        {
+            return !getCreditManager().useCreditForMessage(msg.getMessage());
+        }
+
     }
 }

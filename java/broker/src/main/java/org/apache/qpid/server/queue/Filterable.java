@@ -20,15 +20,14 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryList
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.AMQException;
+
+public interface Filterable<E extends Exception>
 {
-    AMQQueue getQueue();
+    ContentHeaderBody getContentHeaderBody() throws E;
 
-    QueueEntry add(AMQMessage message);
+    boolean isPersistent() throws E;
 
-    QueueEntry next(QueueEntry node);
-
-    QueueEntryIterator iterator();
-
-    QueueEntry getHead();
+    boolean isRedelivered();
 }

@@ -33,6 +33,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.log4j.Logger;
 
@@ -236,7 +237,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         return properties;
     }
 
-    static class TestQueue extends AMQQueueImpl
+    static class TestQueue extends SimpleAMQQueue
     {
         final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
 
@@ -250,12 +251,160 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * not invoked. It is unnecessary since for this test we only care to know whether the message was
          * sent to the queue; the queue processing logic is not being tested.
          * @param msg
-         * @param deliverFirst
          * @throws AMQException
          */
-        public void process(StoreContext context, QueueEntry msg, boolean deliverFirst) throws AMQException
+        @Override
+        public QueueEntry enqueue(StoreContext context, AMQMessage msg) throws AMQException
         {
-            messages.add( new HeadersExchangeTest.Message(msg.getMessage()));
+            messages.add( new HeadersExchangeTest.Message(msg));
+            return new QueueEntry()
+            {
+
+                public AMQQueue getQueue()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public AMQMessage getMessage()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public long getSize()
+                {
+                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean getDeliveredToConsumer()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean expired() throws AMQException
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isAcquired()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean acquire()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean acquire(Subscription sub)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean delete()
+                {
+                    return false;
+                }
+
+                public boolean isDeleted()
+                {
+                    return false;
+                }
+
+                public boolean acquiredBySubscription()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void setDeliveredToSubscription()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void release()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public String debugIdentity()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean immediateAndNotDelivered()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void setRedelivered(boolean b)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public Subscription getDeliveredSubscription()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void reject()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void reject(Subscription subscription)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isRejectedBy(Subscription subscription)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void requeue(StoreContext storeContext) throws AMQException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void dequeue(final StoreContext storeContext) throws FailedDequeueException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void dispose(final StoreContext storeContext) throws MessageCleanupException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void restoreCredit()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void discard(StoreContext storeContext) throws AMQException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isQueueDeleted()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void addStateChangeListener(StateChangeListener listener)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean removeStateChangeListener(StateChangeListener listener)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public int compareTo(final QueueEntry o)
+                {
+                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+            };
         }
 
         boolean isInQueue(Message msg)

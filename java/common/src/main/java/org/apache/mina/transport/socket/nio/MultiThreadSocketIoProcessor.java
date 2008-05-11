@@ -766,7 +766,7 @@ class MultiThreadSocketIoProcessor extends SocketIoProcessor
                 session.increaseWrittenBytes(writtenBytes);
             }
 
-            if (buf.hasRemaining() || (totalFlushedBytes <= MAX_FLUSH_BYTES_PER_SESSION))
+            if (buf.hasRemaining())
             {
                 // Kernel buffer is full
                 synchronized (writeLock)

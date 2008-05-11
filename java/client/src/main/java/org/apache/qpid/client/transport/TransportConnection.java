@@ -174,7 +174,7 @@ public class TransportConnection
         return -1;
     }
 
-    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate)
+    private synchronized static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate)
             throws AMQVMBrokerCreationException
     {
         int port = details.getPort();
@@ -197,7 +197,7 @@ public class TransportConnection
         return new VmPipeTransportConnection(port);
     }
 
-    public static void createVMBroker(int port) throws AMQVMBrokerCreationException
+    public static synchronized void createVMBroker(int port) throws AMQVMBrokerCreationException
     {
         if (_acceptor == null)
         {
@@ -275,7 +275,7 @@ public class TransportConnection
         }
     }
 
-    private static IoHandlerAdapter createBrokerInstance(int port) throws AMQVMBrokerCreationException
+    private static synchronized IoHandlerAdapter createBrokerInstance(int port) throws AMQVMBrokerCreationException
     {
         String protocolProviderClass = System.getProperty("amqj.protocolprovider.class", DEFAULT_QPID_SERVER);
         _logger.info("Creating Qpid protocol provider: " + protocolProviderClass);
@@ -314,7 +314,7 @@ public class TransportConnection
         return provider;
     }
 
-    public static void killAllVMBrokers()
+    public synchronized static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
         if (_acceptor != null)
@@ -330,7 +330,7 @@ public class TransportConnection
         _currentVMPort = -1;
     }
 
-    public static void killVMBroker(int port)
+    public synchronized static void killVMBroker(int port)
     {
         synchronized (_inVmPipeAddress)
         {

@@ -21,20 +21,32 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
 
 
 public class AMQQueueFactory
 {
+    private static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
-                                                  boolean durable,
-                                                  AMQShortString owner,
-                                                  boolean autoDelete,
-                                                  VirtualHost virtualHost)
+                                              boolean durable,
+                                              AMQShortString owner,
+                                              boolean autoDelete,
+                                              VirtualHost virtualHost, final FieldTable arguments)
             throws AMQException
     {
-        //return new AMQQueueImpl(name, durable, owner, autoDelete, virtualHost);
-        return new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
+
+        final int priorities = arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
+
+        if(priorities > 1)
+        {
+            return new AMQPriorityQueue(name, durable, owner, autoDelete, virtualHost, priorities);
+        }
+        else
+        {
+            return new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
+        }
     }
 }

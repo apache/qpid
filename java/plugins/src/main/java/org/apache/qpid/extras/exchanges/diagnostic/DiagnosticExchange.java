@@ -34,7 +34,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQQueueImpl;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -207,12 +206,7 @@ public class DiagnosticExchange extends AbstractExchange
         
     }
 
-	@Override
-	public Map<AMQShortString, List<AMQQueue>> getBindings() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 	public boolean isBound(AMQShortString routingKey, FieldTable arguments,
 			AMQQueue queue) {
 		// TODO Auto-generated method stub
