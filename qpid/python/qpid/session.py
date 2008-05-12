@@ -289,6 +289,16 @@ class Receiver:
     if seg.last:
       self._completed.add(seg.id)
 
+  def known_completed(self, commands):
+    completed = RangeSet()
+    for c in self._completed.ranges:
+      for kc in commands.ranges:
+        if c.lower in kc and c.upper in kc:
+          break
+      else:
+        completed.add_range(c)
+    self._completed = completed
+
 class Sender:
 
   def __init__(self, session):
