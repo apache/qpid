@@ -53,7 +53,7 @@ void ManagementExchange::route (Deliverable&      msg,
     TopicExchange::route (msg, routingKey, args);
 }
 
-void ManagementExchange::setManagmentAgent (ManagementAgent::shared_ptr agent)
+void ManagementExchange::setManagmentAgent (ManagementBroker* agent)
 {
     managementAgent = agent;
 }

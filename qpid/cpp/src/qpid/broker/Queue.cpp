@@ -586,7 +586,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
     if (mgmtObject != 0 && persistenceId == 0)
     {
         ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        agent->addObject (mgmtObject, _persistenceId);
+        agent->addObject (mgmtObject, _persistenceId, 3);
     }
     persistenceId = _persistenceId;
 }

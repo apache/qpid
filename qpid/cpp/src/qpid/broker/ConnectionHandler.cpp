@@ -35,8 +35,9 @@ using namespace qpid::framing;
 
 namespace 
 {
-const std::string PLAIN = "PLAIN";
-const std::string en_US = "en_US";
+const std::string ANONYMOUS = "ANONYMOUS";
+const std::string PLAIN     = "PLAIN";
+const std::string en_US     = "en_US";
 }
 
 void ConnectionHandler::close(ReplyCode code, const string& text, ClassId, MethodId)
@@ -135,10 +136,8 @@ void ConnectionHandler::Handler::start(const FieldTable& /*serverProperties*/,
                                        const framing::Array& /*mechanisms*/,
                                        const framing::Array& /*locales*/)
 {
-    string uid = "qpidd";
-    string pwd = "qpidd";
-    string response = ((char)0) + uid + ((char)0) + pwd;
-    server.startOk(FieldTable(), PLAIN, response, en_US);
+    string response;
+    server.startOk(FieldTable(), ANONYMOUS, response, en_US);
     connection.initMgmt(true);
 }
 

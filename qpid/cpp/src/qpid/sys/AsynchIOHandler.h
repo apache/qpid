@@ -32,7 +32,7 @@ namespace framing {
 }
 
 namespace sys {
-
+class ProtocolAccess;
 class AsynchIOHandler : public OutputControl {
     std::string identifier;
     AsynchIO* aio;
@@ -40,11 +40,12 @@ class AsynchIOHandler : public OutputControl {
     ConnectionCodec* codec;
     bool readError;
     bool isClient;
+    ProtocolAccess* access;
 
     void write(const framing::ProtocolInitiation&);
 
   public:
-    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f);
+    AsynchIOHandler(std::string id, ConnectionCodec::Factory* f, ProtocolAccess* a =0);
     ~AsynchIOHandler();
     void init(AsynchIO* a, int numBuffs);
 

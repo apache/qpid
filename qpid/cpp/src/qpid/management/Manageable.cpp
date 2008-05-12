@@ -25,13 +25,19 @@ std::string Manageable::StatusText (status_t status)
 {
     switch (status)
     {
-    case STATUS_OK              : return "OK";
-    case STATUS_UNKNOWN_OBJECT  : return "UnknownObject";
-    case STATUS_UNKNOWN_METHOD  : return "UnknownMethod";
-    case STATUS_NOT_IMPLEMENTED : return "NotImplemented";
-    case STATUS_INVALID_PARAMETER : return "InvalidParameter";
+    case STATUS_OK                      : return "OK";
+    case STATUS_UNKNOWN_OBJECT          : return "UnknownObject";
+    case STATUS_UNKNOWN_METHOD          : return "UnknownMethod";
+    case STATUS_NOT_IMPLEMENTED         : return "NotImplemented";
+    case STATUS_INVALID_PARAMETER       : return "InvalidParameter";
+    case STATUS_FEATURE_NOT_IMPLEMENTED : return "FeatureNotImplemented";
     }
 
     return "??";
+}
+
+Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&)
+{
+    return STATUS_UNKNOWN_METHOD;
 }
 
