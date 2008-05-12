@@ -258,6 +258,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/IncomingExecutionContext.cpp \
   qpid/broker/IncompleteMessageList.cpp \
+  qpid/broker/Link.cpp \
+  qpid/broker/LinkRegistry.cpp \
   qpid/broker/Message.cpp \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
@@ -291,7 +293,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.cpp \
   qpid/broker/Vhost.cpp \
   qpid/management/Manageable.cpp \
-  qpid/management/ManagementAgent.cpp \
+  qpid/management/ManagementBroker.cpp \
   qpid/management/ManagementExchange.cpp \
   qpid/management/ManagementObject.cpp \
   qpid/sys/TCPIOPlugin.cpp
@@ -382,6 +384,8 @@ nobase_include_HEADERS = \
   qpid/broker/HeadersExchange.h \
   qpid/broker/IncomingExecutionContext.h \
   qpid/broker/IncompleteMessageList.h \
+  qpid/broker/Link.h \
+  qpid/broker/LinkRegistry.h \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
@@ -391,6 +395,7 @@ nobase_include_HEADERS = \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.h \
   qpid/broker/Persistable.h \
+  qpid/broker/PersistableConfig.h \
   qpid/broker/PersistableExchange.h \
   qpid/broker/PersistableMessage.h \
   qpid/broker/PersistableQueue.h \
@@ -398,6 +403,7 @@ nobase_include_HEADERS = \
   qpid/broker/QueueBindings.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.h \
+  qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
   qpid/broker/RecoverableQueue.h \
@@ -506,6 +512,7 @@ nobase_include_HEADERS = \
   qpid/management/Args.h \
   qpid/management/Manageable.h \
   qpid/management/ManagementAgent.h \
+  qpid/management/ManagementBroker.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
   qpid/sys/AggregateOutput.h \
@@ -527,6 +534,7 @@ nobase_include_HEADERS = \
   qpid/sys/OutputControl.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
+  qpid/sys/ProtocolAccess.h \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \

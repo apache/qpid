@@ -83,7 +83,7 @@ class RouteManager:
     def getLink (self):
         links = self.mclient.syncGetObjects (self.mch, "link")
         for link in links:
-            if link.address == self.src.name ():
+            if "%s:%d" % (link.host, link.port) == self.src.name ():
                 return link
         return None
 
@@ -100,8 +100,13 @@ class RouteManager:
                 print "Inter-broker link not found, creating..."
 
             connectArgs = {}
-            connectArgs["host"] = self.src.host
-            connectArgs["port"] = self.src.port
+            connectArgs["host"]          = self.src.host
+            connectArgs["port"]          = self.src.port
+            connectArgs["useSsl"]        = False
+            connectArgs["durable"]       = False
+            connectArgs["authMechanism"] = "ANONYMOUS"
+            connectArgs["username"]      = ""
+            connectArgs["password"]      = ""
             res = mc.syncCallMethod (self.mch, broker.id, broker.classKey, "connect", connectArgs)
             if _verbose:
                 print "Connect method returned:", res.status, res.statusText
@@ -122,6 +127,7 @@ class RouteManager:
         if _verbose:
             print "Creating inter-broker binding..."
         bridgeArgs = {}
+        bridgeArgs["durable"]      = 0
         bridgeArgs["src"]          = exchange
         bridgeArgs["dest"]         = exchange
         bridgeArgs["key"]          = routingKey
@@ -180,7 +186,7 @@ class RouteManager:
                     myLink = link
                     break
             if myLink != None:
-                print "%s %s %s %s" % (self.dest.name(), myLink.address, bridge.dest, bridge.key)
+                print "%s %s:%d %s %s" % (self.dest.name(), myLink.host, myLink.port, bridge.dest, bridge.key)
 
     def LoadRoutes (self, inFile):
         pass
@@ -198,7 +204,7 @@ class RouteManager:
                         myLink = link
                         break
                 if myLink != None:
-                    print "Deleting Bridge: %s %s %s... " % (myLink.address, bridge.dest, bridge.key),
+                    print "Deleting Bridge: %s:%d %s %s... " % (myLink.host, myLink.port, bridge.dest, bridge.key),
             res = mc.syncCallMethod (self.mch, bridge.id, bridge.classKey, "close")
             if res.status != 0:
                 print "Error: %d - %s" % (res.status, res.statusText)
@@ -208,7 +214,7 @@ class RouteManager:
         links = mc.syncGetObjects (self.mch, "link")
         for link in links:
             if _verbose:
-                print "Deleting Link: %s... " % link.address,
+                print "Deleting Link: %s:%d... " % (link.host, link.port),
             res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
             if res.status != 0:
                 print "Error: %d - %s" % (res.status, res.statusText)

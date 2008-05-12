@@ -1,3 +1,6 @@
+#ifndef _broker_PersistableConfig_h
+#define _broker_PersistableConfig_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,41 +21,25 @@
  * under the License.
  *
  */
-#ifndef _ManagementExchange_
-#define _ManagementExchange_
 
-#include "qpid/broker/TopicExchange.h"
-#include "ManagementBroker.h"
+#include <string>
+#include "Persistable.h"
 
 namespace qpid {
 namespace broker {
 
-class ManagementExchange : public virtual TopicExchange
+/**
+ * The interface used by general-purpose persistable configuration for
+ * the message store.
+ */
+class PersistableConfig : public Persistable
 {
-  private:
-    management::ManagementBroker* managementAgent;
- 
-  public:
-    static const std::string typeName;
-
-    ManagementExchange (const string& name, Manageable* _parent = 0);
-    ManagementExchange (const string& _name, bool _durable, 
-                        const qpid::framing::FieldTable& _args,
-                        Manageable* _parent = 0);
-
-    virtual std::string getType() const { return typeName; }
-
-    virtual void route (Deliverable& msg,
-                        const string& routingKey,
-                        const qpid::framing::FieldTable* args);
-
-    void setManagmentAgent (management::ManagementBroker* agent);
-
-    virtual ~ManagementExchange();
+public:
+    virtual  const std::string& getName() const = 0;
+    virtual ~PersistableConfig() {};
 };
 
+}}
 
-}
-}
 
 #endif

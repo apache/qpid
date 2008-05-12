@@ -90,7 +90,7 @@ namespace qpid {
             virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
 
             //PersistableExchange:
-            void setPersistenceId(uint64_t id) const { persistenceId = id; }
+            void setPersistenceId(uint64_t id) const;
             uint64_t getPersistenceId() const { return persistenceId; }
             uint32_t encodedSize() const;
             void encode(framing::Buffer& buffer) const; 

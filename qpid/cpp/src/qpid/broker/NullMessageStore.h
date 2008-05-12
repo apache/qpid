@@ -37,6 +37,7 @@ class NullMessageStore : public MessageStore
 {
     std::set<std::string> prepared;
     const bool warn;
+    uint64_t nextPersistenceId;
 public:
     NullMessageStore(bool warn = false);
 
@@ -57,6 +58,8 @@ public:
                       const std::string& key, const framing::FieldTable& args);
     virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                         const std::string& key, const framing::FieldTable& args);
+    virtual void create(const PersistableConfig& config);
+    virtual void destroy(const PersistableConfig& config);
     virtual void recover(RecoveryManager& queues);
     virtual void stage(boost::intrusive_ptr<PersistableMessage>& msg);
     virtual void destroy(PersistableMessage& msg);
