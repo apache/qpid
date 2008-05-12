@@ -8,7 +8,7 @@ nobase_sysconf_DATA = \
 	qpidd.conf
 
 if HAVE_SASL
-SASL_DB = sasl2/qpidd.sasldb
+SASL_DB = qpidd.sasldb
 
 nobase_sysconf_DATA += \
 	$(SASL_CONF)
