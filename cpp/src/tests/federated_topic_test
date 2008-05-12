@@ -1,0 +1,94 @@
+#!/bin/sh
+# Run the topic test on a federated setup
+
+# Clean up old log files
+rm -f subscriber_*.log 
+
+# Defaults values 
+SUBSCRIBERS=2
+MESSAGES=1000
+BATCHES=1
+
+while getopts "s:m:b:" opt ; do
+    case $opt in
+	s) SUBSCRIBERS=$OPTARG ;;
+	m) MESSAGES=$OPTARG ;;
+	b) BATCHES=$OPTARG ;;
+	?)
+	    echo "Usage: %0 [-s <subscribers>] [-m <messages.] [-b <batches>]"
+	    exit 1
+	    ;;
+    esac
+done
+
+MY_DIR=$(dirname $(which $0))
+PYTHON_DIR=${MY_DIR}/../../../python
+
+trap stop_brokers EXIT
+
+start_brokers() {
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    PORT_A=`cat qpidd.port`
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    PORT_B=`cat qpidd.port`
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    PORT_C=`cat qpidd.port`
+}
+
+stop_brokers() {
+    ${MY_DIR}/../qpidd -q --port $PORT_A
+    ${MY_DIR}/../qpidd -q --port $PORT_B
+    ${MY_DIR}/../qpidd -q --port $PORT_C
+}
+
+subscribe() {
+    #which broker should we connect to?
+    if (( $1 % 2 )); then
+        MY_PORT=$PORT_C;
+    else
+        MY_PORT=$PORT_A;
+    fi
+
+    echo Subscriber $1 connecting on $MY_PORT
+    LOG="subscriber_$1.log"
+    ${MY_DIR}/topic_listener -p $MY_PORT  > $LOG 2>&1 && rm -f $LOG 
+}
+
+publish() {
+    ${MY_DIR}/topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS -p $PORT_A
+}
+
+setup_routes() {
+    BROKER_A="localhost:$PORT_A"
+    BROKER_B="localhost:$PORT_B"
+    BROKER_C="localhost:$PORT_C"
+    export PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
+    echo "Establishing routes for topic..."
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_A amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_C $BROKER_B amq.topic topic_control C C
+    echo "linked A->B->C"        
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_C amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_A $BROKER_B amq.topic topic_control A A
+    echo "linked C->B->A"        
+
+    echo "Establishing routes for response queue..."
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_C amq.direct response B B 
+    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_A $BROKER_B amq.direct response A A
+    echo "linked C->B->A"        
+}
+
+if test -d ${PYTHON_DIR} ;  then
+    start_brokers
+    echo "Running federated topic test against brokers on ports $PORT_A $PORT_B $PORT_C"
+
+    setup_routes
+
+    for ((i=$SUBSCRIBERS ; i--; )); do
+        subscribe $i &
+    done
+
+    #sleep to give subscribers time to get initialised
+    sleep 1
+
+    publish 2>&1 || exit 1
+fi
