@@ -290,7 +290,7 @@ class Receiver:
       self._completed.add(seg.id)
 
   def known_completed(self, commands):
-    completed = RangeSet()
+    completed = RangedSet()
     for c in self._completed.ranges:
       for kc in commands.ranges:
         if c.lower in kc and c.upper in kc:
