@@ -13,61 +13,27 @@ from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet, uuid4
 from qpid.queue import Empty
 
-#----- Functions -------------------------------------------
-
-def dump_queue(session, queue_name):
-
-  print "Messages queue: " + queue_name 
-
-  consumer_tag = queue_name     # Use the queue name as the consumer tag - need a unique tag
-  queue = session.incoming(queue_name)
-
-  # Call message_subscribe() to tell the broker to deliver messages
-  # from the AMQP queue to a local client queue. The broker will
-  # start delivering messages as soon as message_subscribe() is called.
-
-  session.message_subscribe(queue=queue_name, destination=consumer_tag)
-  session.message_flow(consumer_tag, 0, 0xFFFFFFFF)
-  session.message_flow(consumer_tag, 1, 0xFFFFFFFF)
-
-  print "Subscribed to queue " + queue_name
-  sys.stdout.flush()
-
-  message = 0
-
-  while True:
-    try:
-      message = queue.get(timeout=10)
-      content = message.body
-      session.message_accept(RangedSet(message.id))
-      print "Response: " + content
-    except Empty:
-      print "No more messages!"
-      break
-    except:
-      print "Unexpected exception!"
-      break
-
-
-  #  Messages are not removed from the queue until they
-  #  are acknowledged. Using cumulative=True, all messages
-  #  in the session up to and including the one identified
-  #  by the delivery tag are acknowledged. This is more efficient,
-  #  because there are fewer network round-trips.
-
-  #if message != 0:
-  # message.complete(cumulative=True)
-
-
 #----- Initialization --------------------------------------
+
 
 #  Set parameters for login
 
-host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
-port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
+host="127.0.0.1"
+port=5672
 user="guest"
 password="guest"
-amqp_spec=""
+amqp_spec="/usr/share/amqp/amqp.0-10.xml"     
+
+# If an alternate host or port has been specified, use that instead
+# (this is used in our unit tests)
+#
+# If AMQP_SPEC is defined, use it to locate the spec file instead of
+# looking for it in the default location.
+
+if len(sys.argv) > 1 :
+     host=sys.argv[1]
+if len(sys.argv) > 2 :
+     port=int(sys.argv[2])
 
 try:
      amqp_spec = os.environ["AMQP_SPEC"]
@@ -75,25 +41,48 @@ except KeyError:
      amqp_spec="/usr/share/amqp/amqp.0-10.xml"
 
 #  Create a connection.
-conn = Connection (connect (host,port), qpid.spec.load(amqp_spec))
-conn.start()
+socket = connect(host, port)
+connection = Connection (sock=socket, spec=qpid.spec.load(amqp_spec))
+connection.start()
+session = connection.session(str(uuid4()))
 
-session_id = str(uuid4())
-session = conn.session(session_id)
 
-#----- Main Body -- ----------------------------------------
+#----- Main Body -------------------------------------------
 
-# Make a unique queue name for my queue from the session ID.
-my_queue = session_id
-session.queue_declare(queue=my_queue)
+# Create a server-side queue and route messages to it.
+# The server-side queue must have a unique name. Use the
+# session id for that.
+server_queue_name = session.name
+session.queue_declare(queue=server_queue_name)
+session.exchange_bind(queue=server_queue_name, exchange="amq.fanout")
 
-# Bind my queue to the fanout exchange. No routing key is required
-# the fanout exchange copies messages unconditionally to every
-# bound queue
-session.exchange_bind(queue=my_queue, exchange="amq.fanout")
+# Create a local queue to receive messages from the server-side
+# queue.
+local_queue_name = "local_queue"
+local_queue = session.incoming(local_queue_name)
 
-# Dump the messages on the queue.
-dump_queue(session, my_queue)
+# Call message_consume() to tell the server to deliver messages
+# from the AMQP queue to this local client queue. 
+
+session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+session.message_flow(local_queue_name,  session.credit_unit.message, 0xFFFFFFFF) 
+session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF) 
+
+print "Subscribed to queue " + server_queue_name
+sys.stdout.flush()
+
+#  Initialize 'final' and 'content', variables used to identify the last message.
+final = "That's all, folks!"   # In a message body, signals the last message
+content = ""		       # Content of the last message read
+
+# Read the messages - acknowledge each one
+message = None
+while content != final:
+	message = local_queue.get(timeout=10)
+	content = message.body          
+        session.message_accept(RangedSet(message.id))
+	print content
+
 
 #----- Cleanup ------------------------------------------------
 

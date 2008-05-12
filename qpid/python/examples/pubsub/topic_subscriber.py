@@ -16,20 +16,7 @@ from qpid.queue import Empty
 
 #----- Functions -------------------------------------------
 
-def dump_queue(queue_name):
-
-  print "Messages queue: " + queue_name 
-
-  consumer_tag = queue_name     # Use the queue name as the consumer tag - need a unique tag
-  queue = session.incoming(consumer_tag)
-
-  # Call message_subscribe() to tell the broker to deliver messages
-  # from the AMQP queue to a local client queue. The broker will
-  # start delivering messages as soon as message_subscribe() is called.
-
-  session.message_subscribe(queue=queue_name, destination=consumer_tag)
-  session.message_flow(consumer_tag, 0, 0xFFFFFFFF)
-  session.message_flow(consumer_tag, 1, 0xFFFFFFFF)
+def dump_queue(queue):
 
   content = ""		         # Content of the last message read
   final = "That's all, folks!"   # In a message body, signals the last message
@@ -37,36 +24,48 @@ def dump_queue(queue_name):
 
   while content != final:
     try:
-      message = queue.get()
+      message = queue.get(timeout=10)
       content = message.body
       session.message_accept(RangedSet(message.id)) 
       print content
     except Empty:
-      #if message != 0:
-      #  message.complete(cumulative=True)
       print "No more messages!"
       return
 
 
-  #  Messages are not removed from the queue until they
-  #  are acknowledged. Using multiple=True, all messages
-  #  in the channel up to and including the one identified
-  #  by the delivery tag are acknowledged. This is more efficient,
-  #  because there are fewer network round-trips.
 
-  #if message != 0:
-  #  message.complete(cumulative=True)
+def subscribe_queue(server_queue_name, local_queue_name):
 
+  print "Subscribing local queue '" + local_queue_name + "' to " + server_queue_name + "'"
+
+  queue = session.incoming(local_queue_name)
+
+  session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+  session.message_flow(local_queue_name, session.credit_unit.message, 0xFFFFFFFF)
+  session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)
+
+  return queue
 
 #----- Initialization --------------------------------------
 
 #  Set parameters for login
 
-host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
-port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
+host="127.0.0.1"
+port=5672
 user="guest"
 password="guest"
-amqp_spec=""
+amqp_spec="/usr/share/amqp/amqp.0-10.xml"     
+
+# If an alternate host or port has been specified, use that instead
+# (this is used in our unit tests)
+#
+# If AMQP_SPEC is defined, use it to locate the spec file instead of
+# looking for it in the default location.
+
+if len(sys.argv) > 1 :
+  host=sys.argv[1]
+if len(sys.argv) > 2 :
+  port=int(sys.argv[2])
 
 try:
      amqp_spec = os.environ["AMQP_SPEC"]
@@ -74,19 +73,19 @@ except KeyError:
      amqp_spec="/usr/share/amqp/amqp.0-10.xml"
 
 #  Create a connection.
-conn = Connection (connect (host,port), qpid.spec.load(amqp_spec))
-conn.start()
-
-session_id = str(uuid4())
-session = conn.session(session_id)
+socket = connect(host, port)
+connection = Connection (sock=socket, spec=qpid.spec.load(amqp_spec))
+connection.start()
+session = connection.session(str(uuid4()))
 
 #----- Main Body -- ----------------------------------------
 
+# declare queues on the server
 
-news = "news" + session_id
-weather = "weather" + session_id
-usa = "usa" + session_id
-europe = "europe" + session_id
+news = "news-" + session.name
+weather = "weather-" + session.name
+usa = "usa-" + session.name
+europe = "europe-" + session.name
 
 session.queue_declare(queue=news, exclusive=True)
 session.queue_declare(queue=weather, exclusive=True)
@@ -115,12 +114,31 @@ session.exchange_bind(exchange="amq.topic", queue=europe, binding_key="control")
 print "Queues created - please start the topic producer"
 sys.stdout.flush()
 
+# Subscribe local queues to server queues
+
+local_news = "local_news"
+local_weather = "local_weather"
+local_usa = "local_usa" 
+local_europe = "local_europe"
+
+local_news_queue = subscribe_queue(news, local_news)
+local_weather_queue = subscribe_queue(weather, local_weather)
+local_usa_queue = subscribe_queue(usa, local_usa)
+local_europe_queue = subscribe_queue(europe, local_europe)
+
 # Call dump_queue to print messages from each queue
 
-dump_queue(news)
-dump_queue(weather)
-dump_queue(usa)
-dump_queue(europe)
+print "Messages on 'news' queue:"
+dump_queue(local_news_queue)
+
+print "Messages on 'weather' queue:"
+dump_queue(local_weather_queue)
+
+print "Messages on 'usa' queue:"
+dump_queue(local_usa_queue)
+
+print "Messages on 'europe' queue:"
+dump_queue(local_europe_queue)
 
 #----- Cleanup ------------------------------------------------
 
