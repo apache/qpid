@@ -45,12 +45,12 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 
 SessionState::SessionState(
-    SessionManager* f, SessionHandler* h, uint32_t timeout_, uint32_t ack) 
+      SessionManager* f, SessionHandler* h, uint32_t timeout_, uint32_t ack, string& _name) 
     : framing::SessionState(ack, timeout_ > 0), nextOut(0),
       factory(f), handler(h), id(true), timeout(timeout_),
       broker(h->getConnection().broker),
       version(h->getConnection().getVersion()),
-      ignoring(false),
+      ignoring(false), name(_name),
       semanticState(*this, *this),
       adapter(semanticState),
       msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
@@ -68,7 +68,7 @@ SessionState::SessionState(
         if (agent.get () != 0)
         {
             mgmtObject = management::Session::shared_ptr
-                (new management::Session (this, parent, id.str ()));
+                (new management::Session (this, parent, name));
             mgmtObject->set_attached (1);
             mgmtObject->set_clientRef (h->getConnection().GetManagementObject()->getObjectId());
             mgmtObject->set_channelId (h->getChannel());

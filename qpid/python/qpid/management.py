@@ -81,7 +81,7 @@ class methodResult:
 class managementChannel:
   """ This class represents a connection to an AMQP broker. """
 
-  def __init__ (self, ssn, topicCb, replyCb, cbContext, _detlife=0):
+  def __init__ (self, ssn, topicCb, replyCb, exceptionCb, cbContext, _detlife=0):
     """ Given a channel on an established AMQP broker connection, this method
     opens a session and performs all of the declarations and bindings needed
     to participate in the management protocol. """
@@ -93,6 +93,7 @@ class managementChannel:
     self.qpidChannel = ssn
     self.tcb         = topicCb
     self.rcb         = replyCb
+    self.ecb         = exceptionCb
     self.context     = cbContext
     self.reqsOutstanding = 0
 
@@ -104,7 +105,7 @@ class managementChannel:
     ssn.message_subscribe (queue=self.topicName, destination="tdest")
     ssn.message_subscribe (queue=self.replyName, destination="rdest")
 
-    ssn.incoming ("tdest").listen (self.topicCb)
+    ssn.incoming ("tdest").listen (self.topicCb, self.exceptionCb)
     ssn.incoming ("rdest").listen (self.replyCb)
 
     ssn.message_set_flow_mode (destination="tdest", flow_mode=1)
@@ -129,6 +130,10 @@ class managementChannel:
     """ Receive messages via the reply queue on this channel. """
     if self.enabled:
       self.rcb (self, msg)
+
+  def exceptionCb (self, data):
+    if self.ecb != None:
+      self.ecb (data)
 
   def send (self, exchange, msg):
     if self.enabled:
@@ -160,12 +165,13 @@ class managementClient:
   #========================================================
   # User API - interacts with the class's user
   #========================================================
-  def __init__ (self, amqpSpec, ctrlCb=None, configCb=None, instCb=None, methodCb=None):
+  def __init__ (self, amqpSpec, ctrlCb=None, configCb=None, instCb=None, methodCb=None, closeCb=None):
     self.spec     = amqpSpec
     self.ctrlCb   = ctrlCb
     self.configCb = configCb
     self.instCb   = instCb
     self.methodCb = methodCb
+    self.closeCb  = closeCb
     self.schemaCb = None
     self.eventCb  = None
     self.channels = []
@@ -189,7 +195,7 @@ class managementClient:
 
   def addChannel (self, channel, cbContext=None):
     """ Register a new channel. """
-    mch = managementChannel (channel, self.topicCb, self.replyCb, cbContext)
+    mch = managementChannel (channel, self.topicCb, self.replyCb, self.exceptCb, cbContext)
 
     self.channels.append (mch)
     self.incOutstanding (mch)
@@ -311,6 +317,10 @@ class managementClient:
     else:
       self.parse (ch, codec, hdr[0], hdr[1])
     ch.accept(msg)
+
+  def exceptCb (self, data):
+    if self.closeCb != None:
+      self.closeCb (data)
 
   #========================================================
   # Internal Functions

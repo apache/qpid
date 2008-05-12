@@ -142,6 +142,9 @@ class FederationTests(TestBase010):
 
         mgmt.call_method(bridge, "close")
         mgmt.call_method(link, "close")
+        sleep(6)
+        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
+        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown()
 
@@ -191,6 +194,9 @@ class FederationTests(TestBase010):
 
         mgmt.call_method(bridge, "close")
         mgmt.call_method(link, "close")
+        sleep(6)
+        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
+        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown ()
 
@@ -239,6 +245,9 @@ class FederationTests(TestBase010):
 
         mgmt.call_method(bridge, "close")
         mgmt.call_method(link, "close")
+        sleep(6)
+        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
+        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown ()
 
