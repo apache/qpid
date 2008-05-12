@@ -106,24 +106,9 @@ public class DupsOkTest extends VMTestCase
 
                         if (message.getIntProperty("count") == MSG_COUNT)
                         {
-                            try
-                            {
-                                long remainingMessages = ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue);
-                                if(remainingMessages != 0)
-                                {
-
-                                    assertEquals("The queue should have 0 msgs left, seen " + _msgCount + " messages.", 0, getMessageCount(_queue.getQueueName()));
-                                }
-                            }
-                            catch (AMQException e)
-                            {
-                                assertNull("Got AMQException", e);
-                            }
-                            finally
-                            {
-                                //This is the last message so release test.
-                                _awaitCompletion.countDown();
-                            }
+                        	assertEquals("Should have recieved all messages now", _msgCount, MSG_COUNT);
+                        	//This is the last message so release test.
+                        	_awaitCompletion.countDown();
                         }
 
                     }
