@@ -111,7 +111,8 @@ class SessionState : public framing::SessionState,
     SessionState(SessionManager*,
                  SessionHandler* out,
                  uint32_t timeout,
-                 uint32_t ackInterval);
+                 uint32_t ackInterval,
+                 std::string& name);
     
 
     framing::SequenceSet completed;
@@ -131,6 +132,7 @@ class SessionState : public framing::SessionState,
     framing::ProtocolVersion version;
     sys::Mutex lock;
     bool ignoring;
+    std::string name;
 
     SemanticState semanticState;
     SessionAdapter adapter;
