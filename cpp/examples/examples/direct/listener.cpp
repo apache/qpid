@@ -20,7 +20,7 @@
  */
 
 /**
- *  listener.cpp: This program reads messages fro a queue on
+ *  listener.cpp: This program reads messages from a queue on
  *  the broker using a message listener.
  */
 

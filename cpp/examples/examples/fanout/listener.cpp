@@ -69,16 +69,20 @@ int main(int argc, char** argv) {
 
         //--------- Main body of program --------------------------------------------
 
-        // Unique name for private queue:
+        // Each client creates its own private queue, using the 
+        // session id to guarantee a unique name. It then routes
+        // all messages from the fanout exchange to its own queue
+        // by binding to the queue.
+        //
+        // The binding specifies a binding key, but for a fanout
+        // exchange, the binding key is optional and is not used
+        // for routing decisions. It can be useful for tracking
+        // messages and routing in logs.
+
         std::string myQueue=session.getId().str();
-        // Declare my queue. 
         session.queueDeclare(arg::queue=myQueue, arg::exclusive=true,
                              arg::autoDelete=true);
-        // Bind my queue to the fanout exchange.  
-        //Note no the binding key will not affect routing (its just
-        //used to identify the binding e.g. when unbinding), the
-        //fanout exchange delivers all messages to all bound queues
-        //unconditionally.
+
         session.exchangeBind(arg::exchange="amq.fanout", arg::queue=myQueue, arg::bindingKey="my-key");
 
         // Create a listener and subscribe it to my queue.

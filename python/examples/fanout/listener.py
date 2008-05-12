@@ -8,11 +8,15 @@
 
 import qpid
 import sys
-from qpid.client  import Client
-from qpid.content import Content
-from qpid.queue   import Empty
-from time         import sleep
+import os
+from qpid.util import connect
+from qpid.connection import Connection
+from qpid.datatypes import Message, RangedSet, uuid4
+from qpid.queue import Empty
 
+# 
+
+from time         import sleep
 
 #----- Message Receive Handler -----------------------------
 class Receiver:
@@ -23,57 +27,76 @@ class Receiver:
     return self.finalReceived
     
   def Handler (self, message):
-    content = message.content.body
+    content = message.body
+    session.message_accept(RangedSet(message.id))
     print content
     if content == "That's all, folks!":
       self.finalReceived = True
-
-      #  Messages are not removed from the queue until they are
-      #  acknowledged. Using cumulative=True, all messages from the session
-      #  up to and including the one identified by the delivery tag are
-      #  acknowledged. This is more efficient, because there are fewer
-      #  network round-trips.
-      message.complete(cumulative=True)
 
 
 #----- Initialization --------------------------------------
 
 #  Set parameters for login
 
-host=len(sys.argv) > 1 and sys.argv[1] or "127.0.0.1"
-port=len(sys.argv) > 2 and int(sys.argv[2]) or 5672
-amqp_spec="/usr/share/amqp/amqp.0-10-preview.xml"
+host="127.0.0.1"
+port=5672
 user="guest"
 password="guest"
+amqp_spec="/usr/share/amqp/amqp.0-10.xml"     
 
-#  Create a client and log in to it.
+# If an alternate host or port has been specified, use that instead
+# (this is used in our unit tests)
+#
+# If AMQP_SPEC is defined, use it to locate the spec file instead of
+# looking for it in the default location.
 
-client = Client(host, port, qpid.spec.load(amqp_spec))
-client.start({"LOGIN": user, "PASSWORD": password})
+if len(sys.argv) > 1 :
+  host=sys.argv[1]
+if len(sys.argv) > 2 :
+  port=int(sys.argv[2])
 
-session = client.session()
-session.session_open()
+try:
+     amqp_spec = os.environ["AMQP_SPEC"]
+except KeyError:
+     amqp_spec="/usr/share/amqp/amqp.0-10.xml"
+
+#  Create a connection.
+socket = connect(host, port)
+connection = Connection (sock=socket, spec=qpid.spec.load(amqp_spec))
+connection.start()
+session = connection.session(str(uuid4()))
 
 #----- Read from queue --------------------------------------------
 
-# Now let's create a local client queue and tell it to read
-# incoming messages.
+# Create a server-side queue and route messages to it.
+# The server-side queue must have a unique name. Use the
+# session id for that.
 
-# The consumer tag identifies the client-side queue.
+server_queue_name = session.name
+session.queue_declare(queue=server_queue_name)
+session.exchange_bind(queue=server_queue_name, exchange="amq.fanout")
 
-consumer_tag = "consumer1"
-queue = client.queue(consumer_tag)
+# Create a local queue to receive messages from the server-side
+# queue.
+local_queue_name = "local_queue"
+local_queue = session.incoming(local_queue_name)
+
+
+# The local queue name identifies the client-side queue.
+
+local_queue_name = "local_queue"
+local_queue = session.incoming(local_queue_name)
 
 # Call message_subscribe() to tell the broker to deliver messages
 # from the AMQP queue to this local client queue. The broker will
 # start delivering messages as soon as message_subscribe() is called.
 
-session.message_subscribe(queue="message_queue", destination=consumer_tag)
-session.message_flow(consumer_tag, 0, 0xFFFFFFFF)  # Kill these?
-session.message_flow(consumer_tag, 1, 0xFFFFFFFF) # Kill these?
+session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+session.message_flow(local_queue_name,  session.credit_unit.message, 0xFFFFFFFF) 
+session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF) 
 
 receiver = Receiver ()
-queue.listen (receiver.Handler)
+local_queue.listen (receiver.Handler)
 
 while not receiver.isFinal ():
   sleep (1)
@@ -84,4 +107,4 @@ while not receiver.isFinal ():
 # Clean up before exiting so there are no open threads.
 #
 
-session.session_close()
+session.close()
