@@ -29,6 +29,24 @@ namespace qpid {
 
 using namespace std;
 
+
+/*
+ *  ---------------------------------------------
+ *  Explanation for Boost 103200 conditional code
+ *  ---------------------------------------------
+ *
+ *  Please see large comment in Options.h .
+ *
+ */
+
+#if ( BOOST_VERSION == 103200 )
+std::vector<std::string> Options::long_names;
+std::vector<std::string> Options::short_names;
+#endif
+
+
+
+
 namespace {
 
 struct EnvOptMapper {
@@ -126,7 +144,18 @@ std::string prettyArg(const std::string& name, const std::string& value) {
     return value.empty() ? name+" " : name+" ("+value+") ";
 }
 
-Options::Options(const string& name) : po::options_description(name) {}
+Options::Options(const string& name) : 
+  po::options_description(name) 
+
+#if ( BOOST_VERSION == 103200 )
+  , m_less_easy(this, this)
+#endif
+{
+}
+
+
+
+
 
 void Options::parse(int argc, char** argv, const std::string& configFile, bool allowUnknown)
 {
@@ -150,6 +179,51 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
                     if (!i->unregistered)
                         filtopts.options.push_back (*i);
                 po::store(filtopts, vm);
+#elif ( BOOST_VERSION == 103200 )
+      char ** filtered_argv = new char * [ argc ];
+      filtered_argv[0] = strdup(argv[0]);
+      int filtered_argc = 1;
+
+      int i = 1;
+      while ( i < argc )
+      {
+        /*
+         * If this is an argument that is registered,
+         * copy it to filtered_argv and also copy all
+         * of its arguments.
+         */
+        if ( is_registered_option ( argv[i] ) )
+        {
+          // Store this recognized arg.
+          filtered_argv [ filtered_argc ] = strdup ( argv[i] );
+          ++ filtered_argc;
+          ++ i;
+
+          // Copy all values for the above arg.
+          // Args are tokens that do not start with a minus.
+          while ( (i < argc) && ( '-' != argv[i][0] ) )
+          {
+            filtered_argv [ filtered_argc ] = strdup ( argv[i] );
+            ++ filtered_argc;
+            ++ i;
+          }
+        }
+        else
+        {
+          // Skip this unrecognized arg.
+          ++ i;
+
+          // Copy all values for the above arg.
+          // Values are tokens that do not start with a minus.
+          while ( (i < argc) && ( '-' != argv[i][0] ) )
+          {
+            ++ i;
+          }
+        }
+      }
+
+      po::basic_parsed_options<char> bpo = po::parse_command_line(filtered_argc, const_cast<char**>(filtered_argv), *this);
+      po::store(bpo, vm);
 #endif
             }
             else
@@ -205,6 +279,109 @@ CommonOptions::CommonOptions(const string& name, const string& configfile)
         ("version,v", optValue(version), "Displays version information")
         ("config", optValue(config, "FILE"), "Reads configuration from FILE");
 }
+
+
+
+
+#if ( BOOST_VERSION == 103200 )
+options_description_less_easy_init&
+options_description_less_easy_init::operator()(char const * name,
+           char const * description)
+{
+  // Snoop on the arguments....
+  owner->register_names ( name );
+  // ... then call parent function explicitly.
+  po::options_description_easy_init::operator() ( name, description );
+  return * this;
+}
+
+
+options_description_less_easy_init&
+options_description_less_easy_init::operator()(char const * name,
+           const po::value_semantic* s)
+{
+  // Snoop on the arguments....
+  owner->register_names ( name );
+  // ... then call parent function explicitly.
+  po::options_description_easy_init::operator() ( name, s );
+  return * this;
+}
+
+
+options_description_less_easy_init&
+options_description_less_easy_init::operator()(const char* name,
+           const po::value_semantic* s,
+           const char* description)
+{
+  // Snoop on the arguments....
+  owner->register_names ( name );
+  // ... then call parent function explicitly.
+  po::options_description_easy_init::operator() ( name, s, description );
+  return * this;
+}
+
+
+
+
+
+void
+Options::register_names ( std::string s )
+{
+  
+  std::string::size_type comma_pos = s.find_first_of ( ',' );
+
+  if ( std::string::npos == comma_pos )
+  {
+    // There is no short-name.
+    long_names.push_back ( s );
+  }
+  else
+  {
+    std::string long_name  = s.substr(0, comma_pos),
+                short_name = s.substr(comma_pos+1);
+    long_names .push_back ( long_name );
+    short_names.push_back ( short_name );
+  }
+  
+  /*
+   * There is no way to tell when the adding of new options is finished,
+   * so I re-sort after each one.
+   */
+  std::sort ( long_names .begin(), long_names .end() );
+  std::sort ( short_names.begin(), short_names.end() );
+}
+
+
+
+
+
+bool 
+Options::is_registered_option ( std::string s )
+{
+  std::string without_dashes = s.substr ( s.find_first_not_of ( '-' ) );
+  std::vector<std::string>::iterator i;
+
+  // Look among the long names.
+  i = std::find ( long_names.begin(),
+                  long_names.end(),
+                  without_dashes
+                );
+  if ( i != long_names.end() )
+    return true;
+
+  // Look among the short names.
+  i = std::find ( short_names.begin(),
+                  short_names.end(),
+                  without_dashes
+                );
+  if ( i != short_names.end() )
+    return true;
+
+
+  return false;
+}
+#endif
+
 
 } // namespace qpid
 
