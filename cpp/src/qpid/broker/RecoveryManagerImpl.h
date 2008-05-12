@@ -25,6 +25,7 @@
 #include "DtxManager.h"
 #include "ExchangeRegistry.h"
 #include "QueueRegistry.h"
+#include "LinkRegistry.h"
 #include "RecoveryManager.h"
 
 namespace qpid {
@@ -33,10 +34,12 @@ namespace broker {
     class RecoveryManagerImpl : public RecoveryManager{
         QueueRegistry& queues;
         ExchangeRegistry& exchanges;
+        LinkRegistry& links;
         DtxManager& dtxMgr;
         const uint64_t stagingThreshold;
     public:
-        RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, DtxManager& dtxMgr, uint64_t stagingThreshold);
+        RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, LinkRegistry& links,
+                            DtxManager& dtxMgr, uint64_t stagingThreshold);
         ~RecoveryManagerImpl();
 
         RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer);
@@ -44,6 +47,7 @@ namespace broker {
         RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer);
         RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
                                                               std::auto_ptr<TPCTransactionContext> txn);
+        RecoverableConfig::shared_ptr recoverConfig(framing::Buffer& buffer);
         void recoveryComplete();
     };
 

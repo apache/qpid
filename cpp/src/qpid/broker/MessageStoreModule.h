@@ -57,6 +57,8 @@ public:
               const std::string& key, const framing::FieldTable& args);
     void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                 const std::string& key, const framing::FieldTable& args);
+    void create(const PersistableConfig& config);
+    void destroy(const PersistableConfig& config);
     void recover(RecoveryManager& queues);
     void stage(boost::intrusive_ptr<PersistableMessage>& msg);
     void destroy(PersistableMessage& msg);

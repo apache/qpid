@@ -22,7 +22,6 @@
  *
  */
 
-#include "Manageable.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
 #include <qpid/framing/Buffer.h>

@@ -281,7 +281,13 @@ class managementClient:
     hdr   = self.checkHeader (codec)
     if hdr == None:
       raise ValueError ("outer header invalid");
-    self.parse (ch, codec, hdr[0], hdr[1])
+
+    if hdr[0] == 'p':
+      self.handlePackageInd (ch, codec)
+    elif hdr[0] == 'q':
+      self.handleClassInd (ch, codec)
+    else:
+      self.parse (ch, codec, hdr[0], hdr[1])
     ch.accept(msg)
 
   def replyCb (self, ch, msg):

@@ -54,6 +54,7 @@ class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState
 {
   public:
+    typedef boost::shared_ptr<Connection> shared_ptr;
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~Connection ();
 
@@ -78,6 +79,7 @@ class Connection : public sys::ConnectionInputHandler,
         ManagementMethod (uint32_t methodId, management::Args& args);
 
     void initMgmt(bool asLink = false);
+    void requestIOProcessing (boost::function0<void>);
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
@@ -100,7 +102,6 @@ class Connection : public sys::ConnectionInputHandler,
         virtual void process(Connection&, const management::Args&){}
     };
     class MgmtClient;
-    class MgmtLink;
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;
@@ -108,6 +109,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::auto_ptr<MgmtWrapper> mgmtWrapper;
     bool mgmtClosing;
     const std::string mgmtId;
+    boost::function0<void> ioCallback;
 };
 
 }}

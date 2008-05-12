@@ -42,9 +42,6 @@ class System : public management::Manageable
 
     management::ManagementObject::shared_ptr GetManagementObject (void) const
     { return mgmtObject; }
-
-    management::Manageable::status_t ManagementMethod (uint32_t, management::Args&)
-    { return management::Manageable::STATUS_OK; }
 };
 
 }}

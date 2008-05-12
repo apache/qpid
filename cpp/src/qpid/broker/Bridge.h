@@ -28,33 +28,36 @@
 #include "qpid/management/Bridge.h"
 
 #include <boost/function.hpp>
+#include <memory>
 
 namespace qpid {
 namespace broker {
 
 class ConnectionState;
+class Link;
 
 class Bridge : public management::Manageable
 {
 public:
     typedef boost::function<void(Bridge*)> CancellationListener;
 
-    Bridge(framing::ChannelId id, ConnectionState& c, CancellationListener l,
-           const management::ArgsLinkBridge& args);
+    Bridge(Link* link, framing::ChannelId id, CancellationListener l, const management::ArgsLinkBridge& args);
     ~Bridge();
 
-    void create();
+    void create(ConnectionState& c);
     void cancel();
 
     management::ManagementObject::shared_ptr GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId, management::Args& args);
 
 private:
-    management::ArgsLinkBridge args;
-    framing::ChannelHandler channel;
-    framing::AMQP_ServerProxy peer;
-    management::Bridge::shared_ptr mgmtObject;
-    ConnectionState& connection;
+    std::auto_ptr<framing::ChannelHandler>            channelHandler;
+    std::auto_ptr<framing::AMQP_ServerProxy::Session> session;
+    std::auto_ptr<framing::AMQP_ServerProxy>          peer;
+
+    framing::ChannelId                  id;
+    management::ArgsLinkBridge          args;
+    management::Bridge::shared_ptr      mgmtObject;
     CancellationListener listener;
     std::string name;
 };

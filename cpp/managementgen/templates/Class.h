@@ -24,6 +24,7 @@
 /*MGEN:Root.Disclaimer*/
 
 #include "qpid/management/ManagementObject.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 
 namespace qpid {

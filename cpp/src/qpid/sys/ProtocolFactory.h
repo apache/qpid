@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include "qpid/SharedObject.h"
 #include "ConnectionCodec.h"
-
+#include "ProtocolAccess.h"
 
 namespace qpid {
 namespace sys {
@@ -42,7 +42,8 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
     virtual void connect(
         boost::shared_ptr<Poller>,
         const std::string& host, int16_t port,
-        ConnectionCodec::Factory* codec) = 0;
+        ConnectionCodec::Factory* codec,
+        ProtocolAccess* access = 0) = 0;
 };
 
 inline ProtocolFactory::~ProtocolFactory() {}
