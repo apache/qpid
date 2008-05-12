@@ -25,6 +25,7 @@
 #include "RecoverableQueue.h"
 #include "RecoverableMessage.h"
 #include "RecoverableTransaction.h"
+#include "RecoverableConfig.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/Buffer.h"
 
@@ -39,6 +40,8 @@ class RecoveryManager{
     virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
     virtual RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
                                                                   std::auto_ptr<TPCTransactionContext> txn) = 0;
+    virtual RecoverableConfig::shared_ptr recoverConfig(framing::Buffer& buffer) = 0;
+
     virtual void recoveryComplete() = 0;
 };
 

@@ -24,6 +24,7 @@
 #include "PersistableExchange.h"
 #include "PersistableMessage.h"
 #include "PersistableQueue.h"
+#include "PersistableConfig.h"
 #include "RecoveryManager.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/FieldTable.h"
@@ -85,6 +86,16 @@ public:
      */
     virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                         const std::string& key, const framing::FieldTable& args) = 0;
+
+    /**
+     * Record generic durable configuration
+     */
+    virtual void create(const PersistableConfig& config) = 0;
+
+    /**
+     * Destroy generic durable configuration
+     */
+    virtual void destroy(const PersistableConfig& config) = 0;
 
     /**
      * Stores a messages before it has been enqueued

@@ -130,7 +130,7 @@ void AsynchConnector::connComplete(DispatchHandle& h)
     h.stopWatch();
     if (errCode == 0) {
         connCallback(socket);
-	DispatchHandle::doDelete();
+        DispatchHandle::doDelete();
     } else {
         failure(errCode, std::string(strerror(errCode)));
     }
@@ -148,6 +148,7 @@ void AsynchConnector::failure(int errCode, std::string message)
 }
 
 /*
+>>>>>>> .r654667
  * Asynch reader/writer
  */
 AsynchIO::AsynchIO(const Socket& s,

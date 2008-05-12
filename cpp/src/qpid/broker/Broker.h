@@ -29,11 +29,12 @@
 #include "ExchangeRegistry.h"
 #include "MessageStore.h"
 #include "QueueRegistry.h"
+#include "LinkRegistry.h"
 #include "SessionManager.h"
 #include "Vhost.h"
 #include "System.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/management/ManagementBroker.h"
 #include "qpid/management/Broker.h"
 #include "qpid/management/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
@@ -43,6 +44,7 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/ProtocolAccess.h"
 
 #include <vector>
 
@@ -111,6 +113,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
+    LinkRegistry& getLinks() { return links; }
     uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
@@ -130,10 +133,15 @@ class Broker : public sys::Runnable, public Plugin::Target,
     void accept();
 
     /** Create a connection to another broker. */
-    void connect(const std::string& host, uint16_t port,
-                 sys::ConnectionCodec::Factory* =0);
+    void connect(const std::string& host, uint16_t port, bool useSsl,
+                 sys::ConnectionCodec::Factory* =0,
+                 sys::ProtocolAccess* =0);
     /** Create a connection to another broker. */
     void connect(const Url& url, sys::ConnectionCodec::Factory* =0);
+
+    // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
+    // For the present just return the first ProtocolFactory registered.
+    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
   private:
     boost::shared_ptr<sys::Poller> poller;
@@ -144,6 +152,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
+    LinkRegistry links;
     ConnectionFactory factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
@@ -151,10 +160,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;
     System::shared_ptr             systemObject;
-
-    // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
-    // For the present just return the first ProtocolFactory registered.
-    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 };

@@ -49,7 +49,7 @@ public:
 
 using namespace qpid::broker;
 
-NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
+NullMessageStore::NullMessageStore(bool _warn) : warn(_warn), nextPersistenceId(1) {}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
@@ -57,6 +57,7 @@ void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable
 {
     QPID_LOG(info, "Queue '" << queue.getName() 
              << "' will not be durable. Persistence not enabled.");
+    queue.setPersistenceId(nextPersistenceId++);
 }
 
 void NullMessageStore::destroy(PersistableQueue&)
@@ -67,6 +68,7 @@ void NullMessageStore::create(const PersistableExchange& exchange, const framing
 {
     QPID_LOG(info, "Exchange'" << exchange.getName() 
              << "' will not be durable. Persistence not enabled.");
+    exchange.setPersistenceId(nextPersistenceId++);
 }
 
 void NullMessageStore::destroy(const PersistableExchange& )
@@ -75,6 +77,17 @@ void NullMessageStore::destroy(const PersistableExchange& )
 void NullMessageStore::bind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
 
 void NullMessageStore::unbind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
+
+void NullMessageStore::create(const PersistableConfig& config)
+{
+    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
+    config.setPersistenceId(nextPersistenceId++);
+}
+
+void NullMessageStore::destroy(const PersistableConfig&)
+{
+    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
+}
 
 void NullMessageStore::recover(RecoveryManager&)
 {

@@ -40,7 +40,7 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
         if (agent.get () != 0)
         {
             mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (this, parent, _name));
+                (new management::Exchange (this, parent, _name, durable));
             agent->addObject (mgmtExchange);
         }
     }
@@ -56,8 +56,9 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         if (agent.get () != 0)
         {
             mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (this, parent, _name));
-            agent->addObject (mgmtExchange);
+                (new management::Exchange (this, parent, _name, durable));
+            if (!durable)
+                agent->addObject (mgmtExchange);
         }
     }
 }
@@ -66,6 +67,16 @@ Exchange::~Exchange ()
 {
     if (mgmtExchange.get () != 0)
         mgmtExchange->resourceDestroy ();
+}
+
+void Exchange::setPersistenceId(uint64_t id) const
+{
+    if (mgmtExchange != 0 && persistenceId == 0)
+    {
+        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        agent->addObject (mgmtExchange, id, 2);
+    }
+    persistenceId = id;
 }
 
 Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffer)

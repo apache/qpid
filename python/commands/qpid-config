@@ -96,9 +96,9 @@ class BrokerManager:
             self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec,
                                     username=self.broker.username, password=self.broker.password)
             self.conn.start ()
-            self.session = self.conn.session(str(uuid4()))
+            self.session  = self.conn.session (self.sessionId)
             self.mclient  = managementClient (self.spec)
-            self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
+            self.mchannel = self.mclient.addChannel (self.session)
         except socket.error, e:
             print "Socket Error:", e
             sys.exit (1)
@@ -141,11 +141,11 @@ class BrokerManager:
         mch = self.mchannel
         mc.syncWaitForStable (mch)
         exchanges = mc.syncGetObjects (mch, "exchange")
-        print "Type      Bindings  Exchange Name"
-        print "============================================="
+        print "Durable   Type      Bindings  Exchange Name"
+        print "======================================================="
         for ex in exchanges:
             if self.match (ex.name, filter):
-                print "%-10s%5d     %s" % (ex.type, ex.bindings, ex.name)
+                print "%4c      %-10s%5d     %s" % (YN (ex.durable), ex.type, ex.bindings, ex.name)
 
     def ExchangeListRecurse (self, filter):
         self.ConnectToBroker ()
@@ -278,7 +278,7 @@ class BrokerManager:
             key = args[2]
 
         try:
-            self.session.exchange_bind (queue=qname, exchange=ename, routing_key=key)
+            self.session.exchange_bind (queue=qname, exchange=ename, binding_key=key)
         except Closed, e:
             print "Failed:", e
 
@@ -293,7 +293,7 @@ class BrokerManager:
             key = args[2]
 
         try:
-            self.session.exchange_unbind (queue=qname, exchange=ename, routing_key=key)
+            self.session.exchange_unbind (queue=qname, exchange=ename, binding_key=key)
         except Closed, e:
             print "Failed:", e
 

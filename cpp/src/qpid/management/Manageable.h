@@ -39,11 +39,12 @@ class Manageable
     typedef uint32_t status_t;
     static std::string StatusText (status_t status);
 
-    static const status_t STATUS_OK                = 0;
-    static const status_t STATUS_UNKNOWN_OBJECT    = 1;
-    static const status_t STATUS_UNKNOWN_METHOD    = 2;
-    static const status_t STATUS_NOT_IMPLEMENTED   = 3;
-    static const status_t STATUS_INVALID_PARAMETER = 4;
+    static const status_t STATUS_OK                      = 0;
+    static const status_t STATUS_UNKNOWN_OBJECT          = 1;
+    static const status_t STATUS_UNKNOWN_METHOD          = 2;
+    static const status_t STATUS_NOT_IMPLEMENTED         = 3;
+    static const status_t STATUS_INVALID_PARAMETER       = 4;
+    static const status_t STATUS_FEATURE_NOT_IMPLEMENTED = 5;
 
     //  Every "Manageable" object must hold a reference to exactly one
     //  management object.  This object is always of a class derived from
@@ -58,7 +59,7 @@ class Manageable
     //  on this object.  The input and output arguments are specific to the
     //  method being called and must be down-cast to the appropriate sub class
     //  before use.
-    virtual status_t ManagementMethod (uint32_t methodId, Args& args) = 0;
+    virtual status_t ManagementMethod (uint32_t methodId, Args& args);
 };
 
 inline Manageable::~Manageable (void) {}

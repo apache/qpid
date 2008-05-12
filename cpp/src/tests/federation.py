@@ -23,6 +23,7 @@ from qpid.testlib import TestBase010, testrunner
 from qpid.management import managementChannel, managementClient
 from qpid.datatypes import Message
 from qpid.queue import Empty
+from time import sleep
 
 def add_module(args=sys.argv[1:]):
     for a in args:
@@ -89,18 +90,18 @@ class FederationTests(TestBase010):
         mgmt = Helper(self)
         broker = mgmt.get_object("broker")
 
-        for i in range(10):
-            mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
-            link = mgmt.get_object("link")
+        mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
+        link = mgmt.get_object("link")
             
-            mgmt.call_method(link, "bridge", {"src":"amq.direct", "dest":"amq.direct", "key":"my-key"})
-            bridge = mgmt.get_object("bridge")
+        mgmt.call_method(link, "bridge", {"durable":0, "src":"amq.direct", "dest":"amq.direct", "key":"my-key"})
+        bridge = mgmt.get_object("bridge")
             
-            mgmt.call_method(bridge, "close")
-            self.assertEqual(len(mgmt.get_objects("bridge")), 0)
-            
-            mgmt.call_method(link, "close")
-            self.assertEqual(len(mgmt.get_objects("link")), 0)
+        mgmt.call_method(bridge, "close")
+        mgmt.call_method(link, "close")
+
+        sleep(6)
+        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
+        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown ()
 
@@ -113,7 +114,7 @@ class FederationTests(TestBase010):
         mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
         link = mgmt.get_object("link")
         
-        mgmt.call_method(link, "bridge", {"src":"amq.direct", "dest":"amq.fanout", "key":"my-key"})
+        mgmt.call_method(link, "bridge", {"durable":0, "src":"amq.direct", "dest":"amq.fanout", "key":"my-key"})
         bridge = mgmt.get_object("bridge")
 
         #setup queue to receive messages from local broker
@@ -121,6 +122,7 @@ class FederationTests(TestBase010):
         session.exchange_bind(queue="fed1", exchange="amq.fanout")
         self.subscribe(queue="fed1", destination="f1")
         queue = session.incoming("f1")
+        sleep(6)
 
         #send messages to remote broker and confirm it is routed to local broker
         r_conn = self.connect(host=remote_host(), port=remote_port())
@@ -138,12 +140,8 @@ class FederationTests(TestBase010):
             self.fail("Got unexpected message in queue: " + extra.body)
         except Empty: None
 
-
         mgmt.call_method(bridge, "close")
-        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
-        
         mgmt.call_method(link, "close")
-        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown()
 
@@ -170,7 +168,8 @@ class FederationTests(TestBase010):
         mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
         link = mgmt.get_object("link")
 
-        mgmt.call_method(link, "bridge", {"src":"my-bridge-queue", "dest":"amq.fanout", "key":"", "id":"", "excludes":"", "src_is_queue":1})
+        mgmt.call_method(link, "bridge", {"durable":0, "src":"my-bridge-queue", "dest":"amq.fanout", "key":"", "id":"", "excludes":"", "src_is_queue":1})
+        sleep(6)
         bridge = mgmt.get_object("bridge")
 
         #add some more messages (i.e. after bridge was created)
@@ -191,10 +190,7 @@ class FederationTests(TestBase010):
 
 
         mgmt.call_method(bridge, "close")
-        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
-        
         mgmt.call_method(link, "close")
-        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown ()
 
@@ -207,8 +203,9 @@ class FederationTests(TestBase010):
         mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
         link = mgmt.get_object("link")
         
-        mgmt.call_method(link, "bridge", {"src":"amq.direct", "dest":"amq.fanout", "key":"my-key",
+        mgmt.call_method(link, "bridge", {"durable":0, "src":"amq.direct", "dest":"amq.fanout", "key":"my-key",
                                           "id":"my-bridge-id", "excludes":"exclude-me,also-exclude-me"})
+        sleep(6)
         bridge = mgmt.get_object("bridge")
 
         #setup queue to receive messages from local broker
@@ -241,10 +238,7 @@ class FederationTests(TestBase010):
         except Empty: None
 
         mgmt.call_method(bridge, "close")
-        self.assertEqual(len(mgmt.get_objects("bridge")), 0)
-        
         mgmt.call_method(link, "close")
-        self.assertEqual(len(mgmt.get_objects("link")), 0)
 
         mgmt.shutdown ()
 

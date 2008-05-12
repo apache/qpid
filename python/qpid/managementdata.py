@@ -84,7 +84,7 @@ class ManagementData:
   def rawObjId (self, displayId):
     bank  = displayId / 1000
     id    = displayId % 1000
-    if bank < 3:
+    if bank < 5:
       objId = (bank << 24) + id
     else:
       objId = self.bootSequence + (bank << 24) + id

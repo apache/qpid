@@ -36,13 +36,14 @@ struct Buff : public AsynchIO::BufferBase {
     { delete [] bytes;}
 };
 
-AsynchIOHandler::AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
+AsynchIOHandler::AsynchIOHandler(std::string id, ConnectionCodec::Factory* f, ProtocolAccess* a) :
     identifier(id),
     aio(0),
     factory(f),
     codec(0),
     readError(false),
-    isClient(false)
+    isClient(false),
+    access(a)
 {}
 
 AsynchIOHandler::~AsynchIOHandler() {
@@ -152,7 +153,7 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 
 void AsynchIOHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier);
+        codec = factory->create(*this, identifier, access);
         write(framing::ProtocolInitiation(codec->getVersion()));
         return;
     }

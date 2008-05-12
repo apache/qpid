@@ -70,6 +70,16 @@ void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQ
     TRANSFER_EXCEPTION(store->unbind(e, q, k, a));
 }
 
+void MessageStoreModule::create(const PersistableConfig& config)
+{
+    TRANSFER_EXCEPTION(store->create(config));
+}
+
+void MessageStoreModule::destroy(const PersistableConfig& config)
+{
+    TRANSFER_EXCEPTION(store->destroy(config));
+}
+
 void MessageStoreModule::recover(RecoveryManager& registry)
 {
     TRANSFER_EXCEPTION(store->recover(registry));
