@@ -19,7 +19,7 @@
  -
  -->
 <project name="AMQ Client" default="build">
-  <property name="module.name" value="client"/>
+
   <property name="module.depends" value="common"/>
   <property name="module.test.depends" value="broker junit-toolkit"/>
 
