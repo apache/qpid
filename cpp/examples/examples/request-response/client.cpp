@@ -61,9 +61,9 @@ private:
   int counter;
 public:
   Listener(Session& session, string destination_name): 
+    session(session),
     destination_name(destination_name),
     dispatcher(session),
-    session(session),
     counter(0)
   {};
 

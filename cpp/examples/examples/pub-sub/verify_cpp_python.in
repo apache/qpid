@@ -40,11 +40,15 @@ Message 4
 Message 4
 Message 4
 Message 4
-Messages queue: europe
-Messages queue: news
-Messages queue: usa
-Messages queue: weather
+Messages on 'europe' queue:
+Messages on 'news' queue:
+Messages on 'usa' queue:
+Messages on 'weather' queue:
 Queues created - please start the topic producer
+Subscribing local queue 'local_europe' to europe-'
+Subscribing local queue 'local_news' to news-'
+Subscribing local queue 'local_usa' to usa-'
+Subscribing local queue 'local_weather' to weather-'
 That's all, folks!
 That's all, folks!
 That's all, folks!
