@@ -29,6 +29,7 @@ import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.slf4j.Logger;
@@ -346,4 +347,9 @@ public class TransportConnection
         }
     }
 
+    public static synchronized void connect(final AMQProtocolHandler protocolHandler, final BrokerDetails brokerDetail)
+            throws AMQTransportConnectionException, IOException
+    {
+        getInstance(brokerDetail).connect(protocolHandler, brokerDetail);
+    }
 }

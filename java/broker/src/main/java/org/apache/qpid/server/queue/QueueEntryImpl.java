@@ -252,13 +252,18 @@ public class QueueEntryImpl implements QueueEntry
 
     public void dequeue(final StoreContext storeContext) throws FailedDequeueException
     {
+        EntryState state = _state;
 
-
-        getQueue().dequeue(storeContext, this);
-        if(_stateChangeListeners != null)
+        if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
         {
-            notifyStateChange(_state.getState() , QueueEntry.State.DEQUEUED);
+            getQueue().dequeue(storeContext, this);
+            if(_stateChangeListeners != null)
+            {
+                notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
+            }
+
         }
+
     }
 
     private void notifyStateChange(final State oldState, final State newState)
@@ -271,8 +276,10 @@ public class QueueEntryImpl implements QueueEntry
 
     public void dispose(final StoreContext storeContext) throws MessageCleanupException
     {
-        getMessage().decrementReference(storeContext);
-        delete();
+        if(delete())
+        {
+            getMessage().decrementReference(storeContext);
+        }
     }
 
     public void restoreCredit()

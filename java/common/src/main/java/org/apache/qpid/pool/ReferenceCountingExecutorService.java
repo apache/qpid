@@ -87,6 +87,8 @@ public class ReferenceCountingExecutorService
     /** Holds the number of executor threads to create. */
     private int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
 
+    private final boolean _useBiasedPool = Boolean.getBoolean("org.apache.qpid.use_write_biased_pool");
+
     /**
      * Retrieves the singleton instance of this reference counter.
      *
@@ -117,10 +119,18 @@ public class ReferenceCountingExecutorService
 //                _pool = Executors.newFixedThreadPool(_poolSize);
 
                 // Use a job queue that biases to writes
-                _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
-                                      0L, TimeUnit.MILLISECONDS,
-                                      new ReadWriteJobQueue());
+                if(_useBiasedPool)
+                {
+                    _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
+                                          0L, TimeUnit.MILLISECONDS,
+                                          new ReadWriteJobQueue());
+                }
+                else
+                {
+                    _pool = Executors.newFixedThreadPool(_poolSize);
+                }
             }
+
 
             return _pool;
         }

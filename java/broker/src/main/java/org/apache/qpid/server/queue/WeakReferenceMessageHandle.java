@@ -203,11 +203,14 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
         MessageMetaData mmd = new MessageMetaData(publishBody, contentHeaderBody, _contentBodies.size(), arrivalTime);
 
-        _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
+
 
 
         _persistent =  contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
                ((BasicContentHeaderProperties) contentHeaderBody.properties).getDeliveryMode() == 2;
+
+        _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
+
 
         populateFromMessageMetaData(mmd);
     }

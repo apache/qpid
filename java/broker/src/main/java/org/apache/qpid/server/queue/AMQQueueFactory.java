@@ -38,7 +38,7 @@ public class AMQQueueFactory
             throws AMQException
     {
 
-        final int priorities = arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
+        final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
 
         if(priorities > 1)
         {

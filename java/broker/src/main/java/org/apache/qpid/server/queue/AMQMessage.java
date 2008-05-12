@@ -278,9 +278,17 @@ public class AMQMessage implements Filterable<AMQException>
     }
 
     /** Threadsafe. Increment the reference count on the message. */
-    public void incrementReference()
+    public boolean incrementReference()
     {
-        _referenceCount.incrementAndGet();
+        if(_referenceCount.incrementAndGet() <= 1)
+        {
+            _referenceCount.decrementAndGet();
+            return false;
+        }
+        else
+        {
+            return true;
+        }
         // if (_log.isDebugEnabled())
         // {
         // _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
@@ -298,6 +306,7 @@ public class AMQMessage implements Filterable<AMQException>
      */
     public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
+
         int count = _referenceCount.decrementAndGet();
 
         // note that the operation of decrementing the reference count and then removing the message does not
@@ -306,6 +315,11 @@ public class AMQMessage implements Filterable<AMQException>
         // not relying on the all the increments having taken place before the delivery manager decrements.
         if (count == 0)
         {
+            // set the reference count way below 0 so that we can detect that the message has been deleted
+            // this is to guard against the message being spontaneously recreated (from the mgmt console)
+            // by copying from other queues at the same time as it is being removed.
+            _referenceCount.set(Integer.MIN_VALUE/2);
+
             try
             {
                 // if (_log.isDebugEnabled())

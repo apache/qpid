@@ -103,10 +103,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void start();
 
-    void enqueueMovedMessages(final StoreContext storeContext, final List<QueueEntry> foundMessagesList);
-
-
-
     long getMaximumMessageSize();
 
     void setMaximumMessageSize(long value);

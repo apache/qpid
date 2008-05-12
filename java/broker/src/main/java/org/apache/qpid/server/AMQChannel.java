@@ -495,9 +495,6 @@ public class AMQChannel
                 // Deliver Message
                 deliveryContext.requeue(unacked);
 
-                // Should we allow access To the DM to directy deliver the message?
-                // As we don't need to check for Consumers or worry about incrementing the message count?
-                // unacked.queue.getDeliveryManager().deliver(_storeContext, unacked.queue.getName(), unacked.message, false);
             }
             else
             {

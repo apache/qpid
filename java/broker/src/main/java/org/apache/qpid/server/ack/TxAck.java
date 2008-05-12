@@ -49,6 +49,7 @@ public class TxAck implements TxnOp
 
     public void update(long deliveryTag, boolean multiple)
     {
+        _unacked.clear();
         if (!multiple)
         {
             if(_individual == null)

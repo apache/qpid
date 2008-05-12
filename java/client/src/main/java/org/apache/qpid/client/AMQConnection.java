@@ -538,7 +538,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         try
         {
 
-            TransportConnection.getInstance(brokerDetail).connect(_protocolHandler, brokerDetail);
+            TransportConnection.connect(_protocolHandler,brokerDetail);
+            
             // this blocks until the connection has been set up or when an error
             // has prevented the connection being set up
 

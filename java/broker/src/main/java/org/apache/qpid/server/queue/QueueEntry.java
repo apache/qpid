@@ -34,7 +34,8 @@ public interface QueueEntry extends Comparable<QueueEntry>
         AVAILABLE,
         ACQUIRED,
         EXPIRED,
-        DEQUEUED
+        DEQUEUED,
+        DELETED
     }
 
     public static interface StateChangeListener
@@ -62,12 +63,22 @@ public interface QueueEntry extends Comparable<QueueEntry>
     }
 
 
-    public final class DeletedState extends EntryState
+    public final class DequeuedState extends EntryState
     {
 
         public State getState()
         {
             return State.DEQUEUED;
+        }
+    }
+
+
+    public final class DeletedState extends EntryState
+    {
+
+        public State getState()
+        {
+            return State.DELETED;
         }
     }
 
@@ -113,6 +124,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     final static EntryState AVAILABLE_STATE = new AvailableState();
     final static EntryState DELETED_STATE = new DeletedState();
+    final static EntryState DEQUEUED_STATE = new DequeuedState();
     final static EntryState EXPIRED_STATE = new ExpiredState();
     final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
 
@@ -165,7 +177,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     void restoreCredit();
 
-    void discard(StoreContext storeContext) throws AMQException;
+    void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException;
 
     boolean isQueueDeleted();
 

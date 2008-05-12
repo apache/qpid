@@ -5,6 +5,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -134,9 +135,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _stateChangeCount = new AtomicLong(Long.MIN_VALUE);
     private AtomicReference _asynchronousRunner = new AtomicReference(null);
     private AtomicInteger _deliveredMessages = new AtomicInteger();
-
-
-
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -428,6 +426,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         if(entry.immediateAndNotDelivered())
         {
             dequeue(storeContext, entry);
+            entry.dispose(storeContext);
         }
         else if(!entry.isAcquired())
         {
@@ -582,7 +581,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 _virtualHost.getMessageStore().dequeueMessage(storeContext, getName(), msg.getMessageId());
             }
-            entry.delete();
+            //entry.dispose(storeContext);
 
         }
         catch (MessageCleanupException e)
@@ -685,7 +684,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public long getOldestMessageArrivalTime()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        QueueEntry entry = getOldestQueueEntry();
+        return entry == null ? Long.MAX_VALUE : entry.getMessage().getArrivalTime();
+    }
+
+    protected QueueEntry getOldestQueueEntry()
+    {
+        return _entries.next(_entries.getHead());
     }
 
     public boolean isDeleted()
@@ -809,35 +814,217 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     }
 
 
-    public void moveMessagesToAnotherQueue(long fromMessageId,
-                                           long toMessageId,
+    public void moveMessagesToAnotherQueue(final long fromMessageId,
+                                           final long toMessageId,
                                            String queueName,
                                            StoreContext storeContext)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
+        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+        MessageStore store = getVirtualHost().getMessageStore();
+
+
+        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
+                                        {
+
+                                            public boolean accept(QueueEntry entry)
+                                            {
+                                                final long messageId = entry.getMessage().getMessageId();
+                                                return (messageId >= fromMessageId)
+                                                       && (messageId <= toMessageId)
+                                                       && entry.acquire();
+                                            }
+
+                                            public boolean filterComplete()
+                                            {
+                                                return false;
+                                            }
+                                        });
+
+
+        try
+        {
+            store.beginTran(storeContext);
+
+            // Move the messages in on the message store.
+            for (QueueEntry entry : entries)
+            {
+                AMQMessage message = entry.getMessage();
+
+                if(message.isPersistent() && toQueue.isDurable())
+                {
+                    store.enqueueMessage(storeContext, toQueue.getName(), message.getMessageId());
+                }
+                // dequeue does not decrement the refence count
+                entry.dequeue(storeContext);
+            }
+
+            // Commit and flush the move transcations.
+            try
+            {
+                store.commitTran(storeContext);
+            }
+            catch (AMQException e)
+            {
+                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
+            }
+        }
+        catch (AMQException e)
+        {
+            try
+            {
+                store.abortTran(storeContext);
+            }
+            catch (AMQException rollbackEx)
+            {
+                _logger.error("Failed to rollback transaction when error occured moving messages", rollbackEx);
+            }
+            throw new RuntimeException(e);
+        }
+
+        try
+        {
+            for (QueueEntry entry : entries)
+            {
+                toQueue.enqueue(storeContext, entry.getMessage());
+
+            }
+        }
+        catch (MessageCleanupException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (AMQException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
-    public void copyMessagesToAnotherQueue(long fromMessageId,
-                                           long toMessageId,
+    public void copyMessagesToAnotherQueue(final long fromMessageId,
+                                           final long toMessageId,
                                            String queueName,
-                                           StoreContext storeContext)
+                                           final StoreContext storeContext)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+        MessageStore store = getVirtualHost().getMessageStore();
+
+
+        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
+                                        {
+
+                                            public boolean accept(QueueEntry entry)
+                                            {
+                                                final long messageId = entry.getMessage().getMessageId();
+                                                if((messageId >= fromMessageId)
+                                                       && (messageId <= toMessageId))
+                                                {
+                                                    if(!entry.isDeleted())
+                                                    {
+                                                        return entry.getMessage().incrementReference();
+                                                    }
+                                                }
+
+                                                return false;
+                                            }
+
+                                            public boolean filterComplete()
+                                            {
+                                                return false;
+                                            }
+                                        });
+
+        try
+        {
+            store.beginTran(storeContext);
+
+            // Move the messages in on the message store.
+            for (QueueEntry entry : entries)
+            {
+                AMQMessage message = entry.getMessage();
+
+                if(message.isReferenced() && message.isPersistent() && toQueue.isDurable())
+                {
+                    store.enqueueMessage(storeContext, toQueue.getName(), message.getMessageId());
+                }
+            }
+
+            // Commit and flush the move transcations.
+            try
+            {
+                store.commitTran(storeContext);
+            }
+            catch (AMQException e)
+            {
+                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
+            }
+        }
+        catch (AMQException e)
+        {
+            try
+            {
+                store.abortTran(storeContext);
+            }
+            catch (AMQException rollbackEx)
+            {
+                _logger.error("Failed to rollback transaction when error occured moving messages", rollbackEx);
+            }
+            throw new RuntimeException(e);
+        }
+
+        try
+        {
+            for (QueueEntry entry : entries)
+            {
+                if(entry.getMessage().isReferenced())
+                {
+                    toQueue.enqueue(storeContext, entry.getMessage());
+                }
+            }
+        }
+        catch (MessageCleanupException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (AMQException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     public void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
+        try
+        {
+            QueueEntryIterator queueListIterator = _entries.iterator();
+
+
+            while(queueListIterator.advance())
+            {
+                QueueEntry node = queueListIterator.getNode();
+
+                final long messageId = node.getMessage().getMessageId();
+
+                if((messageId >= fromMessageId)
+                           && (messageId <= toMessageId)
+                           && !node.isDeleted()
+                           && node.acquire())
+                {
+                    node.discard(storeContext);
+                }
+
+            }
+        }
+        catch (AMQException e)
+        {
+            throw new RuntimeException(e);
+        }
+
     }
-
-
-    public void enqueueMovedMessages(final StoreContext storeContext, final List<QueueEntry> foundMessagesList)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-
-
 
     public void quiesce()
     {
@@ -868,10 +1055,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if(!node.isDeleted() && node.acquire())
             {
-                node.dequeue(storeContext);
-
-                node.dispose(storeContext);                
-
+                node.discard(storeContext);
                 noDeletes = false;
             }
 
@@ -889,10 +1073,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if(!node.isDeleted() && node.acquire())
             {
-                node.dequeue(storeContext);
-
-                node.dispose(storeContext);
-
+                node.discard(storeContext);
                 count++;
             }
 
@@ -1046,9 +1227,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 if(node.acquire())
                 {
                     final StoreContext reapingStoreContext = new StoreContext();
-                    node.dequeue(reapingStoreContext);
-                    node.dispose(reapingStoreContext);
-
+                    node.discard(reapingStoreContext);
                 }
             }
             QueueEntry newNode = _entries.next(node);
@@ -1209,10 +1388,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             if(!node.isDeleted() && node.expired() && node.acquire())
             {
 
-                node.dequeue(storeContext);
-
-                node.dispose(storeContext);
-
+                node.discard(storeContext);
             }
 
         }

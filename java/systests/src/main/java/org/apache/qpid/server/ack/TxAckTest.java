@@ -243,9 +243,10 @@ public class TxAckTest extends TestCase
         }
 
 
-        public void incrementReference()
+        public boolean incrementReference()
         {
             _count++;
+            return true;
         }
 
         public void decrementReference(StoreContext context)
