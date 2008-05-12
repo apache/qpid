@@ -28,9 +28,13 @@
 #include <sstream>
 #include <iterator>
 #include <algorithm>
+#include <string>
+
 
 namespace qpid { 
 namespace po=boost::program_options;
+
+
 
 ///@internal
 std::string prettyArg(const std::string&, const std::string&);
@@ -113,16 +117,92 @@ inline po::value_semantic* optValue(bool& value) { return po::bool_switch(&value
   
  @endcode
  */
+
+
+
+
+/*
+ *  ---------------------------------------------
+ *  Explanation for Boost 103200 conditional code
+ *  ---------------------------------------------
+ *  
+ *  This boost version has an implementation of the program_options library
+ *  that has no provision for allowing unregistered options to pass by.
+ *
+ *  But that means that, if you have a program that loads optional modules
+ *  after start-up, and those modules each have their own set of options,
+ *  then if you parse the command line too soon, you will get spurious
+ *  reports of unrecognized options -- and the program will exit!
+ *  
+ *  And we must process the command-line before module-loading, because we
+ *  need to look at the "bootstrap" options.
+ *  
+ *  This conditional code:
+ *    
+ *      1. implements it's own functor class, derived from the Boost 
+ *         "options_description_easy_init" class.  This functor is used
+ *         to process added options and do the functor chaining, so that 
+ *         I can snoop on the arguments before doing an explicit call
+ *         to its parent.
+ *
+ *      2. It implements two static vectors, one to hold long names, and
+ *         one for short names, so that options declared by modules are
+ *         not forgotten when their options_description goes out of scope.
+ *  
+ *  I will be thrilled to personally delete this code if we ever decide
+ *  that qpid doesn't really need to support this antique version of Boost.
+ *
+ */
+
+#if ( BOOST_VERSION == 103200 )
+struct Options;
+
+
+struct 
+options_description_less_easy_init 
+  : public po::options_description_easy_init 
+{
+  options_description_less_easy_init ( Options * my_owner,
+                                       po::options_description * my_parents_owner 
+                                     ) 
+    : po::options_description_easy_init(my_parents_owner)
+  {
+    owner = my_owner;
+  }
+
+
+  options_description_less_easy_init&
+  operator()(char const * name,
+             char const * description);
+
+
+  options_description_less_easy_init&
+  operator()(char const * name,
+             const po::value_semantic* s);
+
+
+  options_description_less_easy_init&
+  operator()(const char* name,
+             const po::value_semantic* s,
+             const char* description);
+
+
+  Options * owner;
+};
+#endif
+
+
+
+
+
+
 struct Options : public po::options_description {
+
     struct Exception : public qpid::Exception {
         Exception(const std::string& msg) : qpid::Exception(msg) {}
     };
 
     Options(const std::string& name=std::string());
-
-    boost::program_options::options_description_easy_init addOptions() {
-        return add_options();
-    }
 
     /**
      * Parses options from argc/argv, environment variables and config file.
@@ -132,7 +212,31 @@ struct Options : public po::options_description {
     void parse(int argc, char** argv,
                const std::string& configfile=std::string(),
                bool  allowUnknown = false);
+    
+
+  #if ( BOOST_VERSION == 103200 )
+  options_description_less_easy_init m_less_easy;
+
+  options_description_less_easy_init addOptions() {
+      return m_less_easy;
+  }
+
+  bool 
+  is_registered_option ( std::string s );
+
+  void
+  register_names ( std::string s );
+
+  static std::vector<std::string> long_names;
+  static std::vector<std::string> short_names;
+  #else
+  boost::program_options::options_description_easy_init addOptions() {
+      return add_options();
+  }
+  #endif
 };
+
+
 
 /**
  * Standard options for configuration
@@ -144,6 +248,9 @@ struct CommonOptions : public Options {
     bool version;
     std::string config;
 };
+
+
+
 
 } // namespace qpid
 
