@@ -87,7 +87,12 @@ class Delegate:
 
   def session_completed(self, ch, cmp):
     ch.session.sender.completed(cmp.commands)
+    if cmp.timely_reply:
+      ch.session_known_completed(cmp.commands)
     notify(ch.session.condition)
+
+  def session_known_completed(self, ch, kn_cmp):
+    ch.session.receiver.known_completed(kn_cmp.commands)
 
   def session_flush(self, ch, f):
     rcv = ch.session.receiver
