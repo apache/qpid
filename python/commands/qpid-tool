@@ -31,15 +31,22 @@ from qpid.peer           import Closed
 
 class Mcli (Cmd):
   """ Management Command Interpreter """
-  prompt = "qpid: "
 
   def __init__ (self, dataObject, dispObject):
     Cmd.__init__ (self)
     self.dataObject = dataObject
     self.dispObject = dispObject
+    self.dataObject.setCli (self)
+    self.prompt = "qpid: "
     
   def emptyline (self):
     pass
+
+  def setPromptMessage (self, p):
+    if p == None:
+      self.prompt = "qpid: "
+    else:
+      self.prompt = "qpid[%s]: " % p
 
   def do_help (self, data):
     print "Management Tool for QPID"

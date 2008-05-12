@@ -160,10 +160,19 @@ class ManagementData:
     finally:
       self.lock.release ()
 
+  def closeHandler (self, reason):
+    print "Connection to broker lost:", reason
+    self.operational = False
+    if self.cli != None:
+      self.cli.setPromptMessage ("Broker Disconnected")
+
   def schemaHandler (self, context, className, configs, insts, methods, events):
     """ Callback for schema updates """
     if className not in self.schema:
       self.schema[className] = (configs, insts, methods, events)
+
+  def setCli (self, cliobj):
+    self.cli = cliobj
 
   def __init__ (self, disp, host, username="guest", password="guest",
                 specfile="../../specs/amqp.0-10.xml"):
@@ -184,9 +193,11 @@ class ManagementData:
     self.conn.start ()
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
-                                     self.instHandler, self.methodReply)
+                                     self.instHandler, self.methodReply, self.closeHandler)
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))
+    self.operational = True
+    self.cli         = None
 
   def close (self):
     pass

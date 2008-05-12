@@ -117,7 +117,7 @@ void SessionHandler::attach(const std::string& _name, bool /*force*/)
 
     //TODO: need to revise session manager to support resume as well
     assertClosed("attach");
-    session.reset(new SessionState(0, this, 0, 0));
+    session.reset(new SessionState(0, this, 0, 0, name));
     peerSession.attached(name);
     peerSession.commandPoint(session->nextOut, 0);
 }
@@ -126,7 +126,7 @@ void SessionHandler::attached(const std::string& _name)
 {
     name = _name;//TODO: this should be used in conjunction with
                  //userid for connection as sessions identity
-    session.reset(new SessionState(0, this, 0, 0));
+    session.reset(new SessionState(0, this, 0, 0, name));
     peerSession.commandPoint(session->nextOut, 0);
 }
 
