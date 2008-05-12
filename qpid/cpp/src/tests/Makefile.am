@@ -127,7 +127,7 @@ testprogs=		\
   topic_publisher	
 #  echo_service
 
-check_PROGRAMS += $(testprogs) interop_runner
+check_PROGRAMS += $(testprogs) interop_runner publish consume
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
@@ -186,6 +186,14 @@ interop_runner_SOURCES = 	\
   TestCase.h			\
   TestOptions.h
 interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
+
+publish_SOURCES = publish.cpp
+publish_LDADD = $(lib_client) $(lib_common) $(extra_libs)
+
+consume_SOURCES = consume.cpp
+consume_LDADD = $(lib_client) $(lib_common) $(extra_libs)
+
+
 
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
