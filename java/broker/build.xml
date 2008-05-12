@@ -19,7 +19,7 @@
  -
  -->
 <project name="AMQ Broker" default="build">
-  <property name="module.name" value="broker"/>
+
   <property name="module.depends" value="common"/>
   <property name="module.main" value="org.apache.qpid.server.Main"/>
 
