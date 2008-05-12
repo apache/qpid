@@ -97,7 +97,7 @@ void Listener::prepareQueue(std::string queue, std::string routing_key) {
     /* Declare an exclusive queue on the broker
      */
 
-    session.queueDeclare(arg::queue=queue, arg::exclusive=true);
+    session.queueDeclare(arg::queue=queue, arg::exclusive=true, arg::autoDelete=true);
 
     /* Route messages to the new queue if they match the routing key.
      *
