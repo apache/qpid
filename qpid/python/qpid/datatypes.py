@@ -142,6 +142,14 @@ class Range:
   def span(self, r):
     return Range(min(self.lower, r.lower), max(self.upper, r.upper))
 
+  def intersect(self, r):
+    lower = max(self.lower, r.lower)
+    upper = min(self.upper, r.upper)
+    if lower > upper:
+      return None
+    else:
+      return Range(lower, upper)
+
   def __repr__(self):
     return "%s-%s" % (self.lower, self.upper)
 
