@@ -63,9 +63,7 @@ public class InputHandler implements Receiver<ByteBuffer>
         FRAME_HDR_RSVD3,
         FRAME_HDR_RSVD4,
         FRAME_HDR_RSVD5,
-        FRAME_PAYLOAD,
         FRAME_FRAGMENT,
-        FRAME_END,
         ERROR;
     }
 
@@ -113,7 +111,7 @@ public class InputHandler implements Receiver<ByteBuffer>
 
     public void received(ByteBuffer buf)
     {
-        while (buf.hasRemaining() || state == FRAME_PAYLOAD)
+        while (buf.hasRemaining())
         {
             state = next(buf);
         }
@@ -188,8 +186,11 @@ public class InputHandler implements Receiver<ByteBuffer>
         case FRAME_HDR_RSVD4:
             return expect(buf, 0, FRAME_HDR_RSVD5);
         case FRAME_HDR_RSVD5:
-            return expect(buf, 0, FRAME_PAYLOAD);
-        case FRAME_PAYLOAD:
+            if (!expect(buf, 0))
+            {
+                return ERROR;
+            }
+
             frame = new Frame(flags, type, track, channel);
             if (size > buf.remaining()) {
                 frame.addFragment(buf.slice());
@@ -201,7 +202,7 @@ public class InputHandler implements Receiver<ByteBuffer>
                 buf.position(buf.position() + size);
                 frame.addFragment(payload);
                 frame();
-                return FRAME_END;
+                return FRAME_HDR;
             }
         case FRAME_FRAGMENT:
             int delta = size - frame.getSize();
@@ -215,10 +216,8 @@ public class InputHandler implements Receiver<ByteBuffer>
                 buf.position(buf.position() + delta);
                 frame.addFragment(fragment);
                 frame();
-                return FRAME_END;
+                return FRAME_HDR;
             }
-        case FRAME_END:
-            return FRAME_HDR;
         default:
             throw new IllegalStateException();
         }
@@ -236,12 +235,32 @@ public class InputHandler implements Receiver<ByteBuffer>
 
     private State expect(ByteBuffer buf, byte expected, State next)
     {
-        byte b = buf.get();
-        if (b == expected) {
+        if (expect(buf, expected))
+        {
             return next;
-        } else {
-            error("expecting '%x', got '%x'", expected, b);
+        }
+        else
+        {
             return ERROR;
+        }
+    }
+
+    private boolean expect(ByteBuffer buf, int expected)
+    {
+        return expect(buf, (byte) expected);
+    }
+
+    private boolean expect(ByteBuffer buf, byte expected)
+    {
+        byte b = buf.get();
+        if (b == expected)
+        {
+            return true;
+        }
+        else
+        {
+            error("expecting '%x', got '%x'", expected, b);
+            return false;
         }
     }
 

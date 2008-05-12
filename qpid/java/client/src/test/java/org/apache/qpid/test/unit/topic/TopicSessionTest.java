@@ -180,7 +180,7 @@ public class TopicSessionTest extends QpidTestCase
         con.start();
         TextMessage tm = session1.createTextMessage("Hello");
         publisher.publish(tm);
-        tm = (TextMessage) consumer1.receive(200000L);
+        tm = (TextMessage) consumer1.receive(10000L);
         assertNotNull(tm);
         String msgText = tm.getText();
         assertEquals("Hello", msgText);
@@ -188,7 +188,7 @@ public class TopicSessionTest extends QpidTestCase
         msgText = tm.getText();
         assertNull(msgText);
         publisher.publish(tm);
-        tm = (TextMessage) consumer1.receive(20000000L);
+        tm = (TextMessage) consumer1.receive(10000L);
         assertNotNull(tm);
         msgText = tm.getText();
         assertNull(msgText);
