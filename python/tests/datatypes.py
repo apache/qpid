@@ -103,6 +103,34 @@ class RangedSetTest(TestCase):
     assert range.lower == 0
     assert range.upper == 8
 
+class RangeTest(TestCase):
+
+  def testIntersect1(self):
+    a = Range(0, 10)
+    b = Range(9, 20)
+    i1 = a.intersect(b)
+    i2 = b.intersect(a)
+    assert i1.upper == 10
+    assert i2.upper == 10
+    assert i1.lower == 9
+    assert i2.lower == 9
+
+  def testIntersect2(self):
+    a = Range(0, 10)
+    b = Range(11, 20)
+    assert a.intersect(b) == None
+    assert b.intersect(a) == None
+
+  def testIntersect3(self):
+    a = Range(0, 10)
+    b = Range(3, 5)
+    i1 = a.intersect(b)
+    i2 = b.intersect(a)
+    assert i1.upper == 5
+    assert i2.upper == 5
+    assert i1.lower == 3
+    assert i2.lower == 3
+
 class UUIDTest(TestCase):
 
   def test(self):
