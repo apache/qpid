@@ -65,6 +65,9 @@ void SessionHandler::handleIn(AMQFrame& f) {
         } else if (session.get()) {
             //we are attached and frame was not a session control so it is for upper layers
             session->handle(f);
+        } else if (m && m->isA<SessionDetachedBody>()) {
+            handleDetach();
+            connection.closeChannel(channel.get()); 
         } else {
             throw NotAttachedException(QPID_MSG("Channel " << channel.get() << " is not attached"));                
         }
