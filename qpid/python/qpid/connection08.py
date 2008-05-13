@@ -27,6 +27,7 @@ import socket, codec, logging, qpid
 from cStringIO import StringIO
 from spec import load
 from codec import EOF
+from compat import SHUT_RDWR
 
 class SockIO:
 
@@ -54,7 +55,8 @@ class SockIO:
     pass
 
   def close(self):
-    self.sock.shutdown(socket.SHUT_RDWR)
+    self.sock.shutdown(SHUT_RDWR)
+    self.sock.close()
 
 def connect(host, port):
   sock = socket.socket()
@@ -407,7 +409,6 @@ class Header(Frame):
     else:
       return Header.decode_legacy(spec, c, size)
 
-  @staticmethod
   def decode_structs(spec, c, size):
     structs = []
     start = c.nread
@@ -425,7 +426,8 @@ class Header(Frame):
             length = s.get(f.name)
     return Header(None, 0, length, props)
 
-  @staticmethod
+  decode_structs = staticmethod(decode_structs)
+
   def decode_legacy(spec, c, size):
     klass = spec.classes.byid[c.decode_short()]
     weight = c.decode_short()
@@ -452,6 +454,8 @@ class Header(Frame):
         # stringify the names.
         properties[str(f.name)] = c.decode(f.type)
     return Header(klass, weight, size, properties)
+
+  decode_legacy = staticmethod(decode_legacy)
 
   def __str__(self):
     return "%s %s %s %s" % (self.klass, self.weight, self.size,

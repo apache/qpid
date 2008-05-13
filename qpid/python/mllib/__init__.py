@@ -22,7 +22,7 @@ This module provides document parsing and transformation utilities for
 both SGML and XML.
 """
 
-import dom, transforms, parsers
+import os, dom, transforms, parsers
 import xml.sax, types
 from cStringIO import StringIO
 
@@ -49,7 +49,9 @@ def sgml_parse(source):
   p.close()
   return p.parser.tree
 
-def xml_parse(source):
+def xml_parse(filename):
+  # XXX: this is for older versions of python
+  source = "file://%s" % os.path.abspath(filename) 
   p = parsers.XMLParser()
   xml.sax.parse(source, p)
   return p.parser.tree
