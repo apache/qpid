@@ -194,7 +194,7 @@ namespace qpid {
             // Manageable entry points
             management::ManagementObject::shared_ptr GetManagementObject (void) const;
             management::Manageable::status_t
-                ManagementMethod (uint32_t methodId, management::Args& args);
+            ManagementMethod (uint32_t methodId, management::Args& args);
         };
     }
 }
