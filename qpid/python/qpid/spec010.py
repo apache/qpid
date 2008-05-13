@@ -447,7 +447,7 @@ class Spec(Node):
 
   ENCODINGS = {
     basestring: "vbin16",
-    int: "int32",
+    int: "int64",
     long: "int64",
     None.__class__: "void",
     list: "list",
