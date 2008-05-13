@@ -69,6 +69,13 @@ struct Client
         session = connection.newSession(ASYNC);
     }
 
+    std::string id(uint i)
+    {
+        std::stringstream s;
+        s << "msg" << i;
+        return s.str();
+    }
+
     void publish()
     {
         Message msg(string(opts.size, 'X'), opts.routingKey);
@@ -76,8 +83,7 @@ struct Client
             msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
         
         for (uint i = 0; i < opts.count; i++) {
-            const_cast<std::string&>(msg.getData()).replace(0, sizeof(uint32_t), 
-                                                            reinterpret_cast<const char*>(&i), sizeof(uint32_t));
+            msg.getMessageProperties().setCorrelationId(id(i + 1));
             session.messageTransfer(arg::destination=opts.destination,
                                     arg::content=msg,
                                     arg::acceptMode=1);

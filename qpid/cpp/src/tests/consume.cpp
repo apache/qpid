@@ -77,7 +77,7 @@ struct Client
         Message msg;
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
-            std::cout << "Received: " << msg.getData().substr(0, 10) << "..." << std::endl;
+            std::cout << "Received: " << msg.getMessageProperties().getCorrelationId() << std::endl;
         }
         if (opts.ack != 0)
             subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
