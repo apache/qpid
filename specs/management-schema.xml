@@ -243,7 +243,7 @@
       <arg name="src"           dir="I" type="sstr"/>
       <arg name="dest"          dir="I" type="sstr"/>
       <arg name="key"           dir="I" type="sstr" default=""/>
-      <arg name="id"            dir="I" type="sstr" default=""/>
+      <arg name="tag"           dir="I" type="sstr" default=""/>
       <arg name="excludes"      dir="I" type="sstr" default=""/>
       <arg name="src_is_queue"  dir="I" type="bool" default="0"/>
       <arg name="src_is_local"  dir="I" type="bool" default="0"/>
@@ -259,11 +259,14 @@
   <class name="bridge">
     <configElement name="linkRef"       type="objId"  access="RC" index="y" parentRef="y"/>
     <configElement name="channelId"     type="uint16" access="RC" index="y"/>
+    <configElement name="durable"       type="bool"   access="RC"/>
     <configElement name="src"           type="sstr"   access="RC"/>
     <configElement name="dest"          type="sstr"   access="RC"/>
     <configElement name="key"           type="sstr"   access="RC"/>
     <configElement name="src_is_queue"  type="bool"   access="RC"/>
     <configElement name="src_is_local"  type="bool"   access="RC"/>
+    <configElement name="tag"           type="sstr"   access="RC"/>
+    <configElement name="excludes"      type="sstr"   access="RC"/>
     <method name="close"/> 
   </class>
 

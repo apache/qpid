@@ -23,6 +23,7 @@
 #include "Message.h"
 #include "Queue.h"
 #include "Link.h"
+#include "Bridge.h"
 #include "RecoveredEnqueue.h"
 #include "RecoveredDequeue.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -85,10 +86,11 @@ public:
 
 class RecoverableConfigImpl : public RecoverableConfig
 {
-    // TODO: Add links for other config types, consider using super class (PersistableConfig?)
-    Link::shared_ptr link;
+    Link::shared_ptr   link;
+    Bridge::shared_ptr bridge;
 public:
-    RecoverableConfigImpl(Link::shared_ptr _link) : link(_link) {}
+    RecoverableConfigImpl(Link::shared_ptr _link)     : link(_link)     {}
+    RecoverableConfigImpl(Bridge::shared_ptr _bridge) : bridge(_bridge) {}
     void setPersistenceId(uint64_t id);
 };
 
@@ -140,10 +142,10 @@ RecoverableConfig::shared_ptr RecoveryManagerImpl::recoverConfig(framing::Buffer
     string kind;
 
     buffer.getShortString (kind);
-    if (kind == "link")
-    {
+    if      (kind == "link")
         return RecoverableConfig::shared_ptr(new RecoverableConfigImpl(Link::decode (links, buffer)));
-    }
+    else if (kind == "bridge")
+        return RecoverableConfig::shared_ptr(new RecoverableConfigImpl(Bridge::decode (links, buffer)));
 
     return RecoverableConfig::shared_ptr(); // TODO: raise an exception instead
 }
@@ -212,7 +214,8 @@ void RecoverableConfigImpl::setPersistenceId(uint64_t id)
 {
     if (link.get())
         link->setPersistenceId(id);
-    // TODO: add calls to other types.  Consider using a parent class.
+    else if (bridge.get())
+        bridge->setPersistenceId(id);
 }
 
 void RecoverableExchangeImpl::bind(string& queueName, string& key, framing::FieldTable& args)

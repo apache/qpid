@@ -171,7 +171,8 @@ class FederationTests(TestBase010):
         mgmt.call_method(broker, "connect", {"host":remote_host(), "port":remote_port()})
         link = mgmt.get_object("link")
 
-        mgmt.call_method(link, "bridge", {"durable":0, "src":"my-bridge-queue", "dest":"amq.fanout", "key":"", "id":"", "excludes":"", "src_is_queue":1})
+        mgmt.call_method(link, "bridge", {"durable":0, "src":"my-bridge-queue", "dest":"amq.fanout",
+                                          "key":"", "tag":"", "excludes":"", "src_is_queue":1})
         sleep(6)
         bridge = mgmt.get_object("bridge")
 
@@ -210,7 +211,7 @@ class FederationTests(TestBase010):
         link = mgmt.get_object("link")
         
         mgmt.call_method(link, "bridge", {"durable":0, "src":"amq.direct", "dest":"amq.fanout", "key":"my-key",
-                                          "id":"my-bridge-id", "excludes":"exclude-me,also-exclude-me"})
+                                          "tag":"my-bridge-id", "excludes":"exclude-me,also-exclude-me"})
         sleep(6)
         bridge = mgmt.get_object("bridge")
 
