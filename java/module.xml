@@ -207,6 +207,7 @@
       <sysproperty key="broker" value="${broker}"/>
       <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
+      <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="test.excludes" value="${test.excludes}"/>
       <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
