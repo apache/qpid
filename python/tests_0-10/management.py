@@ -63,6 +63,21 @@ class ManagementTest (TestBase010):
         self.assertEqual (len (systems), 1)
         mc.removeChannel (mch)
 
+    def test_self_session_id (self):
+        session = self.session
+ 
+        mc  = managementClient (session.spec)
+        mch = mc.addChannel (session)
+
+        info = mc.syncWaitForStable (mch)
+        brokerSessions = mc.syncGetObjects (mch, "session")
+        found = False
+        for bs in brokerSessions:
+            if bs.name == info[1]:
+                found = True
+        self.assertEqual (found, True)
+        mc.removeChannel (mch)
+
     def test_standard_exchanges (self):
         session = self.session
  
