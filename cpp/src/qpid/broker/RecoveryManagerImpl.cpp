@@ -46,7 +46,7 @@ class RecoverableMessageImpl : public RecoverableMessage
     intrusive_ptr<Message> msg;
     const uint64_t stagingThreshold;
 public:
-    RecoverableMessageImpl(Message::shared_ptr& _msg, uint64_t _stagingThreshold) 
+    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) 
         : msg(_msg), stagingThreshold(_stagingThreshold) {}
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
@@ -122,7 +122,7 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
 
 RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buffer& buffer)
 {
-    Message::shared_ptr message(new Message());
+    boost::intrusive_ptr<Message> message(new Message());
     message->decodeHeader(buffer);
     return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    
 }

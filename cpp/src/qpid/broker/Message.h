@@ -47,8 +47,6 @@ class Queue;
 
 class Message : public PersistableMessage {
 public:
-    typedef boost::intrusive_ptr<Message> shared_ptr;
-
     Message(const framing::SequenceNumber& id = framing::SequenceNumber());
     ~Message();
         
