@@ -54,7 +54,7 @@ import org.apache.qpidity.transport.network.OutputHandler;
 //RA making this public until we sort out the package issues
 public class MinaHandler<E> implements IoHandler
 {
-    private static final int DEFAULT_BUFFER_SIZE = 64 * 1024;
+    private static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
     /** Default buffer size for pending messages reads */
     private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
     /** Default buffer size for pending messages writes */
@@ -206,10 +206,17 @@ public class MinaHandler<E> implements IoHandler
         IoServiceConfig acceptorConfig = connector.getDefaultConfig();
         acceptorConfig.setThreadModel(ThreadModel.MANUAL);
         SocketSessionConfig scfg = (SocketSessionConfig) acceptorConfig.getSessionConfig();
-        scfg.setTcpNoDelay("true".equalsIgnoreCase(System.getProperty("amqj.tcpNoDelay", "true")));
-        scfg.setSendBufferSize(Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE));
-        scfg.setReceiveBufferSize(Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE));
-
+        scfg.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
+        Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize");
+        if (sendBufferSize != null && sendBufferSize > 0)
+        {
+            scfg.setSendBufferSize(sendBufferSize);
+        }
+        Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize");
+        if (receiveBufferSize != null && receiveBufferSize > 0)
+        {
+            scfg.setReceiveBufferSize(receiveBufferSize);
+        }       
         connector.setWorkerTimeout(0);
         ConnectFuture cf = connector.connect(address, handler);
         cf.join();
@@ -270,9 +277,7 @@ public class MinaHandler<E> implements IoHandler
         {
             // XXX: hardcoded max-frame
             return new Connection
-                (new Disassembler(new OutputHandler(sender),
-                        Math.min(DEFAULT_BUFFER_SIZE, Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE)) - 1),
-                 delegate);
+                (new Disassembler(new OutputHandler(sender), MAX_FRAME_SIZE), delegate);
         }
 
         public Receiver<java.nio.ByteBuffer> receiver(Connection conn)
