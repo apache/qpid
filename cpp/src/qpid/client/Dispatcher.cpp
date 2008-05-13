@@ -91,6 +91,7 @@ void Dispatcher::run()
     } catch (const ClosedException&) {
         //ignore it and return
     }
+    session.sync();             // Make sure all our acks are received before returning.
 }
 
 void Dispatcher::stop()
