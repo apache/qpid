@@ -118,11 +118,13 @@ void Daemon::fork()
         }
         catch (const exception& e) {
             QPID_LOG(critical, "Daemon startup failed: " << e.what());
-            stringstream pipeFailureMessage;
-            pipeFailureMessage <<  "0 " << e.what() << endl;
+            uint16_t port = 0;
+            write(pipeFds[1], &port, sizeof(uint16_t));
+
+            std::string pipeFailureMessage = e.what();
             write ( pipeFds[1], 
-                    pipeFailureMessage.str().c_str(), 
-                    strlen(pipeFailureMessage.str().c_str())
+                    pipeFailureMessage.c_str(), 
+                    strlen(pipeFailureMessage.c_str())
                   );
         }
     }
@@ -176,11 +178,11 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
 
        // Get Message
        string errmsg;
-       while ( 1 ) {
-         if ( 1 > ::read(pipeFds[0], &c, 1) )
-           throw Exception("Daemon startup failed"+
-                           (errmsg.empty() ? string(".") : ": " + errmsg));
-       }
+       do {
+           errmsg += c;
+       } while (::read(pipeFds[0], &c, 1));
+       throw Exception("Daemon startup failed"+
+                       (errmsg.empty() ? string(".") : ": " + errmsg));
      }
 
     return port;
