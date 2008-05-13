@@ -73,7 +73,7 @@ class ManagementTest (TestBase010):
         brokerSessions = mc.syncGetObjects (mch, "session")
         found = False
         for bs in brokerSessions:
-            if bs.name == info[1]:
+            if bs.name == info.sessionId:
                 found = True
         self.assertEqual (found, True)
         mc.removeChannel (mch)
