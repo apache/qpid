@@ -380,7 +380,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void discard(StoreContext storeContext) throws AMQException
+                public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

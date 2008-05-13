@@ -292,7 +292,7 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void discard(StoreContext storeContext) throws AMQException
+    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
     {
         //if the queue is null then the message is waiting to be acked, but has been removed.
         if (getQueue() != null)
