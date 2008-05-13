@@ -45,6 +45,8 @@ using framing::MethodContent;
 using framing::SequenceNumberSet;
 using framing::Uuid;
 
+enum CreditUnit { MESSAGE=0, BYTE=1 };
+
 /** \defgroup clientapi Synchronous mode of a session.
  * 
  * SYNC means that Session functions do not return until the remote
