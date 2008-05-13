@@ -21,6 +21,7 @@ from qpid.queue import Empty
 from qpid.datatypes import Message, RangedSet
 from qpid.session import SessionException
 from qpid.testlib import TestBase010
+from qpid.compat import set
 from struct import pack, unpack
 from time import sleep
 
