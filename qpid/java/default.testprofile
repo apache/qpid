@@ -12,7 +12,6 @@ log4j.configuration=file:///${project.root}/log4j-test.xml
 test.fork=no
 test.mem=512M
 test=*Test
-test1=*Tests
 haltonfailure=no
 haltonerror=no
 exclude.modules=none
