@@ -96,7 +96,7 @@ session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)
 
 # Send some messages to the server's request queue
 
-lines = ["Twas brilling, and the slithy toves",
+lines = ["Twas brillig, and the slithy toves",
          "Did gyre and gimble in the wabe.",
          "All mimsy were the borogroves,",
          "And the mome raths outgrabe."]
