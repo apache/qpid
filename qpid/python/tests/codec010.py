@@ -32,7 +32,7 @@ class CodecTest(TestCase):
     sc = StringCodec(self.spec)
     t.encode(sc, value)
     decoded = t.decode(sc)
-    assert decoded == value
+    assert decoded == value, "%s, %s" % (decoded, value)
 
   def testMapString(self):
     self.check("map", {"string": "this is a test"})
