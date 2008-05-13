@@ -45,10 +45,14 @@ namespace qpid {
         private:
             sys::Mutex          lock;
             LinkRegistry*       links;
-            const string        host;
-            const uint16_t      port;
-            const bool          useSsl;
-            const bool          durable;
+            MessageStore*       store;
+            string        host;
+            uint16_t      port;
+            bool          useSsl;
+            bool          durable;
+            string        authMechanism;
+            string        username;
+            string        password;
             mutable uint64_t    persistenceId;
             management::Link::shared_ptr mgmtObject;
             Broker* broker;
@@ -58,10 +62,9 @@ namespace qpid {
             uint32_t currentInterval;
             bool     closing;
 
-            typedef boost::ptr_vector<Bridge> Bridges;
+            typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
             Bridges active;    // Bridges active
-            Bridges cancelled; // Bridges pending deletion
             uint channelCounter;
             boost::shared_ptr<Connection> connection;
 
@@ -71,29 +74,37 @@ namespace qpid {
 
             static const uint32_t MAX_INTERVAL = 16;
 
-            void setState (int newState);
-            void startConnection();          // Start the IO Connection
+            void setStateLH (int newState);
+            void startConnectionLH();        // Start the IO Connection
             void established();              // Called when connection is created
             void closed(int, std::string);   // Called when connection goes away
             void destroy();                  // Called when mgmt deletes this link
-            void cancel(Bridge*);            // Called by self-cancelling bridge
             void ioThreadProcessing();       // Called on connection's IO thread by request
             void setConnection(boost::shared_ptr<Connection>); // Set pointer to the AMQP Connection
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;
 
-            Link(LinkRegistry*           links,
-                 string&                 host,
-                 uint16_t                port,
-                 bool                    useSsl,
-                 bool                    durable,
-                 Broker*                 broker,
+            Link(LinkRegistry* links,
+                 MessageStore* store,
+                 string&       host,
+                 uint16_t      port,
+                 bool          useSsl,
+                 bool          durable,
+                 string&       authMechanism,
+                 string&       username,
+                 string&       password,
+                 Broker*       broker,
                  management::Manageable* parent = 0);
             virtual ~Link();
 
+            std::string getHost() { return host; }
+            uint16_t    getPort() { return port; }
             bool isDurable() { return durable; }
             void maintenanceVisit ();
+            uint nextChannel();
+            void add(Bridge::shared_ptr);
+            void cancel(Bridge::shared_ptr);
 
             // PersistableConfig:
             void     setPersistenceId(uint64_t id) const;
