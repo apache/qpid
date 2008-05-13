@@ -28,7 +28,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.exchange.Exchange;
@@ -36,7 +35,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.log4j.Logger;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -143,7 +141,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
                     if(q.isDurable())
                     {
 
-                        _messageStore.enqueueMessage(_txnContext.getStoreContext(), q.getName(), _messageId);
+                        _messageStore.enqueueMessage(_txnContext.getStoreContext(), q, _messageId);
                     }
                 }
             }

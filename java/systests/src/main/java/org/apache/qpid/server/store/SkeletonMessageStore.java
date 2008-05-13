@@ -129,17 +129,17 @@ public class SkeletonMessageStore implements MessageStore
         return null;
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
 
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
     }

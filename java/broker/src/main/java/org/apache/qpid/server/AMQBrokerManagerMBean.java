@@ -222,7 +222,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.removeQueue(new AMQShortString(queueName));
+            _messageStore.removeQueue(queue);
 
         }
         catch (AMQException ex)

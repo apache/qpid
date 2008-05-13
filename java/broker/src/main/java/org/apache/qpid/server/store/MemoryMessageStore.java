@@ -126,17 +126,17 @@ public class MemoryMessageStore implements MessageStore
         // Not required to do anything
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
         // Not required to do anything
     }

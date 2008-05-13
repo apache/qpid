@@ -112,7 +112,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
                 if (queue.isDurable())
                 {
-                    store.removeQueue(queue.getName());
+                    store.removeQueue(queue);
                 }
 
                 MethodRegistry methodRegistry = session.getMethodRegistry();

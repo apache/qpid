@@ -736,9 +736,10 @@ public class DerbyMessageStore implements MessageStore
         return DriverManager.getConnection(_connectionURL);
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
 
+        AMQShortString name = queue.getName();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         Connection conn = null;
 
@@ -782,12 +783,13 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
+        AMQShortString name = queue.getName();
 
         try
         {
@@ -822,9 +824,10 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
+        AMQShortString name = queue.getName();
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();

@@ -336,7 +336,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
     {
-        // need to get the enqueue lock
+
 
 
         incrementQueueCount();
@@ -579,7 +579,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             AMQMessage msg = entry.getMessage();
             if(isDurable() && msg.isPersistent())
             {
-                _virtualHost.getMessageStore().dequeueMessage(storeContext, getName(), msg.getMessageId());
+                _virtualHost.getMessageStore().dequeueMessage(storeContext, this, msg.getMessageId());
             }
             //entry.dispose(storeContext);
 
@@ -853,7 +853,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                 if(message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue.getName(), message.getMessageId());
+                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
                 // dequeue does not decrement the refence count
                 entry.dequeue(storeContext);
@@ -946,7 +946,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                 if(message.isReferenced() && message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue.getName(), message.getMessageId());
+                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
             }
 
