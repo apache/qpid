@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -187,11 +188,15 @@ public class QpidTestCase extends TestCase
             this(in, null);
         }
 
-        public void await() throws InterruptedException
+        public boolean await(long timeout, TimeUnit unit) throws InterruptedException
         {
-            if (latch != null)
+            if (latch == null)
             {
-                latch.await();
+                return true;
+            }
+            else
+            {
+                return latch.await(timeout, unit);
             }
         }
 
@@ -242,7 +247,13 @@ public class QpidTestCase extends TestCase
                                 System.getProperty(BROKER_READY));
 
             p.start();
-            p.await();
+
+            if (!p.await(30, TimeUnit.SECONDS))
+            {
+                _logger.info("broker failed to become ready");
+                cleanBroker();
+                throw new RuntimeException("broker failed to become ready");
+            }
 
             try
             {
