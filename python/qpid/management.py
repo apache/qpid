@@ -78,6 +78,13 @@ class methodResult:
     for arg in args:
       setattr (self, arg, args[arg])
 
+class brokerInfo:
+  """ Object that contains information about a broker and the session to it """
+
+  def __init__ (self, brokerId, sessionId):
+    self.brokerId = brokerId
+    self.sessionId = sessionId
+
 class managementChannel:
   """ This class represents a connection to an AMQP broker. """
 
@@ -137,7 +144,7 @@ class managementChannel:
 
   def exceptionCb (self, data):
     if self.ecb != None:
-      self.ecb (data)
+      self.ecb (self, data)
 
   def send (self, exchange, msg):
     if self.enabled:
@@ -323,9 +330,9 @@ class managementClient:
       self.parse (ch, codec, hdr[0], hdr[1])
     ch.accept(msg)
 
-  def exceptCb (self, data):
+  def exceptCb (self, ch, data):
     if self.closeCb != None:
-      self.closeCb (data)
+      self.closeCb (ch.context, data)
 
   #========================================================
   # Internal Functions
@@ -498,10 +505,9 @@ class managementClient:
 
   def handleBrokerResponse (self, ch, codec):
     uuid = codec.read_uuid ()
-    data = (uuid, ch.sessionId)
-    ch.setBrokerInfo (data)
+    ch.brokerInfo = brokerInfo (uuid, ch.sessionId)
     if self.ctrlCb != None:
-      self.ctrlCb (ch.context, self.CTRL_BROKER_INFO, data)
+      self.ctrlCb (ch.context, self.CTRL_BROKER_INFO, ch.brokerInfo)
 
     # Send a package request
     sendCodec = Codec (self.spec)

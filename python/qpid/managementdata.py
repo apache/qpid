@@ -160,7 +160,7 @@ class ManagementData:
     finally:
       self.lock.release ()
 
-  def closeHandler (self, reason):
+  def closeHandler (self, context, reason):
     print "Connection to broker lost:", reason
     self.operational = False
     if self.cli != None:
