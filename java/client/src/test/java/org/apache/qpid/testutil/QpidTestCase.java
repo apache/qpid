@@ -23,9 +23,10 @@ import junit.framework.TestResult;
 import javax.jms.Connection;
 import javax.naming.InitialContext;
 import java.io.*;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -105,6 +106,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION  = "broker.version";
+    private static final String BROKER_READY = "broker.ready";
 
     // values
     private static final String VM = "vm";
@@ -162,28 +164,62 @@ public class QpidTestCase extends TestCase
     private static final class Piper extends Thread
     {
 
-        private InputStream in;
+        private LineNumberReader in;
+        private String ready;
+        private CountDownLatch latch;
+
+        public Piper(InputStream in, String ready)
+        {
+            this.in = new LineNumberReader(new InputStreamReader(in));
+            this.ready = ready;
+            if (this.ready != null && !this.ready.equals(""))
+            {
+                this.latch = new CountDownLatch(1);
+            }
+            else
+            {
+                this.latch = null;
+            }
+        }
 
         public Piper(InputStream in)
         {
-            this.in = in;
+            this(in, null);
+        }
+
+        public void await() throws InterruptedException
+        {
+            if (latch != null)
+            {
+                latch.await();
+            }
         }
 
         public void run()
         {
             try
             {
-                byte[] buf = new byte[4*1024];
-                int n;
-                while ((n = in.read(buf)) != -1)
+                String line;
+                while ((line = in.readLine()) != null)
                 {
-                    System.out.write(buf, 0, n);
+                    System.out.println(line);
+                    if (latch != null && line.contains(ready))
+                    {
+                        latch.countDown();
+                    }
                 }
             }
             catch (IOException e)
             {
                 // this seems to happen regularly even when
                 // exits are normal
+            }
+            finally
+            {
+                if (latch != null)
+                {
+                    latch.countDown();
+                }
             }
         }
     }
@@ -202,9 +238,11 @@ public class QpidTestCase extends TestCase
             pb.redirectErrorStream(true);
             _brokerProcess = pb.start();
 
-            new Piper(_brokerProcess.getInputStream()).start();
+            Piper p = new Piper(_brokerProcess.getInputStream(),
+                                System.getProperty(BROKER_READY));
 
-            Thread.sleep(1000);
+            p.start();
+            p.await();
 
             try
             {

@@ -1,6 +1,7 @@
 broker.version=0-10
 broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --load-module ${project.root}/../../cppStore/cpp/lib/.libs/libbdbstore.so --store-async no --auth no
 broker.clean=${project.root}/clean-dir ${build.data}
+broker.ready=Listening on TCP port
 java.naming.provider.url=${project.root}/test-provider.properties
 test.excludes=true
 max_prefetch=1000
@@ -12,7 +13,6 @@ log4j.configuration=file://${project.root}/log4j-test.xml
 test.fork=no
 test.mem=512M
 test=*Test
-test1=*Tests
 haltonfailure=no
 haltonerror=no
 exclude.modules=systests
