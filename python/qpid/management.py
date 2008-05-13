@@ -96,6 +96,7 @@ class managementChannel:
     self.ecb         = exceptionCb
     self.context     = cbContext
     self.reqsOutstanding = 0
+    self.brokerInfo  = None
 
     ssn.queue_declare (queue=self.topicName, exclusive=True, auto_delete=True)
     ssn.queue_declare (queue=self.replyName, exclusive=True, auto_delete=True)
@@ -115,6 +116,9 @@ class managementChannel:
     ssn.message_set_flow_mode (destination="rdest", flow_mode=1)
     ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFF)
     ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFF)
+
+  def setBrokerInfo (self, data):
+    self.brokerInfo = data
 
   def shutdown (self):
     self.enabled = False
@@ -229,7 +233,7 @@ class managementClient:
     self.cv.acquire ()
     if channel.reqsOutstanding == 0:
       self.cv.release ()
-      return
+      return channel.brokerInfo
 
     self.syncInFlight = True
     starttime = time ()
@@ -239,6 +243,7 @@ class managementClient:
         self.cv.release ()
         raise RuntimeError ("Timed out waiting for response on channel")
     self.cv.release ()
+    return channel.brokerInfo
 
   def syncCallMethod (self, channel, objId, className, methodName, args=None):
     """ Synchronous (blocking) method call """
@@ -492,9 +497,10 @@ class managementClient:
       self.ctrlCb (ch.context, self.CTRL_USER, data)
 
   def handleBrokerResponse (self, ch, codec):
+    uuid = codec.read_uuid ()
+    data = (uuid, ch.sessionId)
+    ch.setBrokerInfo (data)
     if self.ctrlCb != None:
-      uuid = codec.read_uuid ()
-      data = (uuid, ch.sessionId)
       self.ctrlCb (ch.context, self.CTRL_BROKER_INFO, data)
 
     # Send a package request
