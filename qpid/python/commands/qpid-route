@@ -31,30 +31,32 @@ from qpid.connection import Connection
 from qpid.util       import connect
 
 def Usage ():
-    print "Usage:  qpid-route [OPTIONS] add   <dest-broker> <src-broker> <exchange> <routing-key> [id] [exclude-list]"
-    print "        qpid-route [OPTIONS] del   <dest-broker> <src-broker> <exchange> <routing-key>"
-    print "        qpid-route [OPTIONS] list  <dest-broker>"
-    #print "        qpid-route [OPTIONS] load  <filename>"
-    print "        qpid-route [OPTIONS] flush <dest-broker>"
+    print "Usage:  qpid-route [OPTIONS] link add  <dest-broker> <src-broker>"
+    print "        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>"
+    print "        qpid-route [OPTIONS] link list <dest-broker>"
+    print
+    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [id] [exclude-list]"
+    print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
+    print "        qpid-route [OPTIONS] route list  <dest-broker>"
+    print "        qpid-route [OPTIONS] route flush <dest-broker>"
     print
     print "Options:"
     print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10.xml)"
-    print "    -v [ --verbose ]              Verbose output"
-    print "    -q [ --quiet ]                Quiet output, don't print duplicate warnings"
+    print "    -v [ --verbose ]         Verbose output"
+    print "    -q [ --quiet ]           Quiet output, don't print duplicate warnings"
+    print "    -d [ --durable ]         Added configuration shall be durable"
+    print "    -e [ --del-empty-link ]  Delete link after deleting last route on the link"
     print
     print "  dest-broker and src-broker are in the form:  [username/password@] hostname | ip-address [:<port>]"
     print "  ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
-    #print "  If loading the route configuration from a file, the input file has one line per route"
-    #print "  in the form:"
-    #print
-    #print "  <dest-broker> <src-broker> <exchange> <routing-key>"
-    #print
     sys.exit (1)
 
 _specpath = "/usr/share/amqp/amqp.0-10.xml"
 _verbose  = False
 _quiet    = False
+_durable  = False
+_dellink  = False
 
 class RouteManager:
     def __init__ (self, destBroker):
@@ -87,6 +89,57 @@ class RouteManager:
                 return link
         return None
 
+    def AddLink (self, srcBroker):
+        self.src  = Broker (srcBroker)
+        mc = self.mclient
+
+        brokers = mc.syncGetObjects (self.mch, "broker")
+        broker = brokers[0]
+        link = self.getLink()
+        if link != None:
+            print "Link already exists"
+            sys.exit(1)
+
+        connectArgs = {}
+        connectArgs["host"]          = self.src.host
+        connectArgs["port"]          = self.src.port
+        connectArgs["useSsl"]        = False
+        connectArgs["durable"]       = _durable
+        connectArgs["authMechanism"] = "PLAIN"
+        connectArgs["username"]      = self.src.username
+        connectArgs["password"]      = self.src.password
+        res = mc.syncCallMethod (self.mch, broker.id, broker.classKey, "connect", connectArgs)
+        if _verbose:
+            print "Connect method returned:", res.status, res.statusText
+        link = self.getLink ()
+
+    def DelLink (self, srcBroker):
+        self.src  = Broker (srcBroker)
+        mc = self.mclient
+
+        brokers = mc.syncGetObjects (self.mch, "broker")
+        broker = brokers[0]
+        link = self.getLink()
+        if link == None:
+            print "Link not found"
+            sys.exit(1)
+
+        res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
+        if _verbose:
+            print "Close method returned:", res.status, res.statusText
+
+    def ListLinks (self):
+        mc = self.mclient
+        links = mc.syncGetObjects (self.mch, "link")
+        if len(links) == 0:
+            print "No Links Found"
+        else:
+            print
+            print "Host            Port    Durable  State             Last Error"
+            print "==================================================================="
+            for link in links:
+                print "%-16s%-8d   %c     %-18s%s" % (link.host, link.port, YN(link.durable), link.state, link.lastError)
+
     def AddRoute (self, srcBroker, exchange, routingKey, id, excludes):
         self.src  = Broker (srcBroker)
         mc = self.mclient
@@ -103,10 +156,10 @@ class RouteManager:
             connectArgs["host"]          = self.src.host
             connectArgs["port"]          = self.src.port
             connectArgs["useSsl"]        = False
-            connectArgs["durable"]       = False
-            connectArgs["authMechanism"] = "ANONYMOUS"
-            connectArgs["username"]      = ""
-            connectArgs["password"]      = ""
+            connectArgs["durable"]       = _durable
+            connectArgs["authMechanism"] = "PLAIN"
+            connectArgs["username"]      = self.src.username
+            connectArgs["password"]      = self.src.password
             res = mc.syncCallMethod (self.mch, broker.id, broker.classKey, "connect", connectArgs)
             if _verbose:
                 print "Connect method returned:", res.status, res.statusText
@@ -127,15 +180,18 @@ class RouteManager:
         if _verbose:
             print "Creating inter-broker binding..."
         bridgeArgs = {}
-        bridgeArgs["durable"]      = 0
+        bridgeArgs["durable"]      = _durable
         bridgeArgs["src"]          = exchange
         bridgeArgs["dest"]         = exchange
         bridgeArgs["key"]          = routingKey
-        bridgeArgs["id"]           = id
+        bridgeArgs["tag"]          = id
         bridgeArgs["excludes"]     = excludes
         bridgeArgs["src_is_queue"] = 0
         bridgeArgs["src_is_local"] = 0
         res = mc.syncCallMethod (self.mch, link.id, link.classKey, "bridge", bridgeArgs)
+        if res.status == 4:
+            print "Can't create a durable route on a non-durable link"
+            sys.exit(1)
         if _verbose:
             print "Bridge method returned:", res.status, res.statusText
 
@@ -159,7 +215,7 @@ class RouteManager:
                 if res.status != 0:
                     print "Error closing bridge: %d - %s" % (res.status, res.statusText)
                     sys.exit (1)
-                if len (bridges) == 1:
+                if len (bridges) == 1 and _dellink:
                     link = self.getLink ()
                     if link == None:
                         sys.exit (0)
@@ -188,9 +244,6 @@ class RouteManager:
             if myLink != None:
                 print "%s %s:%d %s %s" % (self.dest.name(), myLink.host, myLink.port, bridge.dest, bridge.key)
 
-    def LoadRoutes (self, inFile):
-        pass
-
     def ClearAllRoutes (self):
         mc = self.mclient
         links   = mc.syncGetObjects (self.mch, "link")
@@ -211,23 +264,29 @@ class RouteManager:
             elif _verbose:
                 print "Ok"
 
-        links = mc.syncGetObjects (self.mch, "link")
-        for link in links:
-            if _verbose:
-                print "Deleting Link: %s:%d... " % (link.host, link.port),
-            res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
-            if res.status != 0:
-                print "Error: %d - %s" % (res.status, res.statusText)
-            elif _verbose:
-                print "Ok"
+        if _dellink:
+            links = mc.syncGetObjects (self.mch, "link")
+            for link in links:
+                if _verbose:
+                    print "Deleting Link: %s:%d... " % (link.host, link.port),
+                res = mc.syncCallMethod (self.mch, link.id, link.classKey, "close")
+                if res.status != 0:
+                    print "Error: %d - %s" % (res.status, res.statusText)
+                elif _verbose:
+                    print "Ok"
+
+def YN(val):
+    if val == 1:
+        return 'Y'
+    return 'N'
 
 ##
 ## Main Program
 ##
 
 try:
-    longOpts = ("verbose", "quiet", "spec-file=")
-    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:vq", longOpts)
+    longOpts = ("verbose", "quiet", "spec-file=", "durable", "del-empty-link")
+    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:vqde", longOpts)
 except:
     Usage ()
 
@@ -238,40 +297,57 @@ for opt in optlist:
         _verbose = True
     if opt[0] == "-q" or opt[0] == "--quiet":
         _quiet = True
+    if opt[0] == "-d" or opt[0] == "--durable":
+        _durable = True
+    if opt[0] == "-e" or opt[0] == "--del-empty-link":
+        _dellink = True
 
 nargs = len (cargs)
-if nargs < 2:
+if nargs < 3:
     Usage ()
 
-cmd = cargs[0]
-if cmd != "load":
-    rm  = RouteManager (cargs[1])
-    rm.ConnectToBroker ()
+group = cargs[0]
+cmd   = cargs[1]
+rm    = RouteManager (cargs[2])
+rm.ConnectToBroker ()
 
-if cmd == "add":
-    if nargs < 5 or nargs > 7:
-        Usage ()
+if group == "link":
+    if cmd == "add":
+        if nargs != 4:
+            Usage()
+        rm.AddLink (cargs[3])
+    elif cmd == "del":
+        if nargs != 4:
+            Usage()
+        rm.DelLink (cargs[3])
+    elif cmd == "list":
+        if nargs != 3:
+            Usage()
+        rm.ListLinks ()
 
-    id = ""
-    excludes = ""
-    if nargs > 5: id = cargs[5]     
-    if nargs > 6: excludes = cargs[6]     
-    rm.AddRoute (cargs[2], cargs[3], cargs[4], id, excludes)
-elif cmd == "del":
-    if nargs != 5:
-        Usage ()
+elif group == "route":
+    if cmd == "add":
+        if nargs < 6 or nargs > 8:
+            Usage ()
+
+        id = ""
+        excludes = ""
+        if nargs > 6: id = cargs[6]     
+        if nargs > 7: excludes = cargs[7]     
+        rm.AddRoute (cargs[3], cargs[4], cargs[5], id, excludes)
+    elif cmd == "del":
+        if nargs != 6:
+            Usage ()
+        else:
+            rm.DelRoute (cargs[3], cargs[4], cargs[5])
     else:
-        rm.DelRoute (cargs[2], cargs[3], cargs[4])
-else:
-    if nargs != 2:
-        Usage ()
+        if nargs != 3:
+            Usage ()
 
-    if   cmd == "list":
-        rm.ListRoutes ()
-    #elif cmd == "load":
-    #    rm.LoadRoutes (cargs[1])
-    elif cmd == "flush":
-        rm.ClearAllRoutes ()
-    else:
-        Usage ()
+        if   cmd == "list":
+            rm.ListRoutes ()
+        elif cmd == "flush":
+            rm.ClearAllRoutes ()
+        else:
+            Usage ()
 rm.Disconnect ()

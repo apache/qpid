@@ -329,7 +329,8 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
             return Manageable::STATUS_FEATURE_NOT_IMPLEMENTED;
 
         std::pair<Link::shared_ptr, bool> response =
-            links.declare (hp.i_host, hp.i_port, hp.i_useSsl, hp.i_durable);
+            links.declare (hp.i_host, hp.i_port, hp.i_useSsl, hp.i_durable,
+                           hp.i_authMechanism, hp.i_username, hp.i_password);
         if (hp.i_durable && response.second)
             store->create(*response.first);
 

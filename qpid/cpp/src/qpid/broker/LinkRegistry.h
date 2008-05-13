@@ -24,6 +24,7 @@
 
 #include <map>
 #include "Link.h"
+#include "Bridge.h"
 #include "MessageStore.h"
 #include "Timer.h"
 #include "qpid/sys/Mutex.h"
@@ -47,8 +48,13 @@ namespace broker {
         };
 
         typedef std::map<std::string, Link::shared_ptr> LinkMap;
-        LinkMap links;
-        LinkMap linksToDestroy;
+        typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
+
+        LinkMap   links;
+        LinkMap   linksToDestroy;
+        BridgeMap bridges;
+        BridgeMap bridgesToDestroy;
+
         qpid::sys::Mutex lock;
         Broker* broker;
         Timer   timer;
@@ -59,11 +65,32 @@ namespace broker {
 
     public:
         LinkRegistry (Broker* _broker);
-        std::pair<Link::shared_ptr, bool> declare(std::string& host,
-                                                  uint16_t     port,
-                                                  bool         useSsl,
-                                                  bool         durable);
+        std::pair<Link::shared_ptr, bool>
+            declare(std::string& host,
+                    uint16_t     port,
+                    bool         useSsl,
+                    bool         durable,
+                    std::string& authMechanism,
+                    std::string& username,
+                    std::string& password);
+        std::pair<Bridge::shared_ptr, bool>
+            declare(std::string& host,
+                    uint16_t     port,
+                    bool         durable,
+                    std::string& src,
+                    std::string& dest,
+                    std::string& key,
+                    bool         is_queue,
+                    bool         is_local,
+                    std::string& id,
+                    std::string& excludes);
+
         void destroy(const std::string& host, const uint16_t port);
+        void destroy(const std::string& host,
+                     const uint16_t     port,
+                     const std::string& src,
+                     const std::string& dest,
+                     const std::string& key);
 
         /**
          * Register the manageable parent for declared queues
