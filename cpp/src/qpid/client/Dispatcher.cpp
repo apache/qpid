@@ -88,10 +88,12 @@ void Dispatcher::run()
                 }
             }
         }
-    } catch (const ClosedException&) {
-        //ignore it and return
+        session.sync();             // Make sure all our acks are received before returning.
     }
-    session.sync();             // Make sure all our acks are received before returning.
+    catch (const ClosedException&) {} //ignore it and return
+    catch (const std::exception& e) {
+        QPID_LOG(error, "Exception in client dispatch thread: " << e.what());
+    }
 }
 
 void Dispatcher::stop()
