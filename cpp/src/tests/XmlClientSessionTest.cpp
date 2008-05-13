@@ -118,7 +118,7 @@ struct ClientSessionFixture : public ProxySessionFixture
 
 // ########### START HERE ####################################
 
-BOOST_AUTO_TEST_CASE(testXmlBinding) {
+QPID_AUTO_TEST_CASE(testXmlBinding) {
   ClientSessionFixture f;
 
   Session session = f.connection.newSession(ASYNC);
