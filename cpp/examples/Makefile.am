@@ -64,18 +64,10 @@ all-local:
 	test -d examples || cp -R $(srcdir)/examples .
 	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I$(abs_top_srcdir)/src -I$(abs_top_srcdir)/src/gen -I$(abs_top_builddir)/src -I$(abs_top_builddir)/src/gen -L$(abs_top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
 
+if !HAVE_XML
+exclude_examples_regexp="xml"	# Exclude XML examples.
+endif
+
 # Verify the examples in the buid tree.
 check-local: all-local verify
 	$(srcdir)/verify_all $(abs_top_srcdir)/..
-
-# TODO:
-#  create a tarball for testing installed examples.
-#  installcheck-local to use the tarball on installed example and clean up after.
-# Build and verify installed C++ examples, clean up to avoid rpmbuild warnings.
-# EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTDIR)$(libdir)
-# EXAMPLE_DIR=$(DESTDIR)$(pkgdatadir)/examples/cpp 
-# installcheck-local:
-# 	cd $(EXAMPLE_DIR) && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(EXAMPLE_FLAGS)" all
-# 	cd $(EXAMPLE_DIR) && QPIDD=$(sbindir)/qpidd $(srcdir)/verify *
-# 	cd $(EXAMPLE_DIR) && $(MAKE) clean
-
