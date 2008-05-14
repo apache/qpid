@@ -322,7 +322,7 @@ void SessionImpl::sendContent(const MethodContent& content)
         header.setLastSegment(false);
         handleOut(header);   
         /*Note: end of frame marker included in overhead but not in size*/
-        const u_int32_t frag_size = maxFrameSize - (AMQFrame::frameOverhead() - 1); 
+        const u_int32_t frag_size = maxFrameSize - AMQFrame::frameOverhead(); 
 
         if(data_length < frag_size){
             AMQFrame frame(in_place<AMQContentBody>(content.getData()));
