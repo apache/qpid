@@ -63,7 +63,19 @@
   </target>
 
   <target name="test" description="execute tests">
-    <iterate target="test"/>
+
+    <delete file="${build.failed}"/>
+
+    <iterate target="test">
+      <property name="test.failures.ignore" value="true"/>
+    </iterate>
+
+    <condition property="failed">
+      <available file="${build.failed}"/>
+    </condition>
+
+    <fail if="failed" message="TEST SUITE FAILED"/>
+
   </target>
 
   <target name="jar" description="create module jars">
