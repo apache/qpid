@@ -125,16 +125,9 @@ testprogs=		\
   client_test		\
   topic_listener	\
   topic_publisher	
+#  echo_service
 
 check_PROGRAMS += $(testprogs) interop_runner publish consume
-
-# Copy the SVN valgrind files to the real valgrind files so we will
-# have the real files in the working dir for VPATH or in-tree builds.
-check_DATA = .valgrindrc .valgrind.suppress
-.valgrindrc: valgrindrc
-	cp $^ $@
-.valgrind.suppress: valgrind.suppress
-	cp $^ $@
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
@@ -148,8 +141,8 @@ EXTRA_DIST +=								\
   quick_perftest							\
   topictest								\
   run_federation_tests							\
-  valgrind.suppress							\
-  valgrindrc								\
+  .valgrind.supp							\
+  .valgrindrc								\
   MessageUtils.h							\
   MockConnectionInputHandler.h						\
   TxMocks.h								\
