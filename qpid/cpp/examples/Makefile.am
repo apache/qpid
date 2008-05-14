@@ -70,4 +70,4 @@ endif
 
 # Verify the examples in the buid tree.
 check-local: all-local verify
-	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(exclude_examples_regexp)
+	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(top_builddir)/src/qpidd $(exclude_examples_regexp)
