@@ -54,6 +54,10 @@ a source distribution:
 
 Optional cluster functionality requires:
  * openais <http://openais.org/> 	       		(0.80.3)
+ 
+Optional XML exchange requires:
+ * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)                                  
+ * xerces-c <http://xerces.apache.org/xerces-c/>        (2.7.0)  
 
 Running qpid test suite requires:
  * cppunit <http://cppunit.sourceforge.net> 		(1.11.4)
@@ -72,6 +76,9 @@ all of the above plus:
  * doxygen    <ftp://ftp.stack.nl/pub/users/dimitri/>  	(1.5.1)
  * graphviz   <http://www.graphviz.org/>               	(2.12)
  * ruby 1.8   <http://www.ruby-lang.org>               	(1.8.4)
+
+
+NOTE: make sure to install the related '-devel' packages also!
 
 
 2.2. How to Install
