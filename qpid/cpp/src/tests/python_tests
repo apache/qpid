@@ -3,7 +3,7 @@
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
 MY_DIR=$(dirname $(which $0))
-PYTHON_DIR=${MY_DIR}/../../../python
+PYTHON_DIR=${QPID_PYTHON_DIR:-${MY_DIR}/../../../python}
 
 run() {
     SPEC=$1
