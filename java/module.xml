@@ -35,6 +35,8 @@
   <property name="module.precompiled"  location="${module.build}/src"/>
   <property name="module.api"          location="${module.build}/api"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
+  <property name="module.results"      location="${build.results}/${module}"/>
+  <property name="module.failed"       location="${module.results}/FAILED"/>
   <property name="module.src"          location="src/main/java"/>
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
@@ -128,13 +130,13 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.results}/${module.name}"/>
     <mkdir dir="${build.data}"/>
     <mkdir dir="${build.plugins}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.api}"/>
     <mkdir dir="${module.test.classes}"/>
+    <mkdir dir="${module.results}"/>
   </target>
 
   <target name="precompile"/>
@@ -195,9 +197,11 @@
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
 
+    <delete file="${module.failed}"/>
+
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           printsummary="on" timeout="600000" >
+           failureproperty="test.failures" printsummary="on" timeout="600000" >
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
@@ -220,14 +224,30 @@
 
       <classpath refid="module.test.path"/>
 
-      <batchtest fork="${test.fork}" todir="${build.results}/${module.name}">
+      <batchtest fork="${test.fork}" todir="${module.results}">
         <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
           <include name="**/${test}.java"/>
         </fileset>
       </batchtest>
     </junit>
+
+    <antcall target="touch-failed"/>
+
+    <condition property="failed">
+      <and>
+        <isfalse value="${test.failures.ignore}"/>
+        <available file="${module.failed}"/>
+      </and>
+    </condition>
+
+    <fail if="failed" message="TEST SUITE FAILED"/>
+
   </target>
 
+  <target name="touch-failed" if="test.failures">
+    <touch file="${module.failed}"/>
+    <touch file="${build.failed}"/>
+  </target>
 
   <target name="copy-bin" if="module.bin.exists" description="copy bin directory if it exists to build tree">
     <copy todir="${build.bin}" failonerror="false">
@@ -274,7 +294,7 @@
 
   <target name="clean" description="remove build artifacts">
     <delete dir="${module.build}"/>
-    <delete dir="${build.results}/${module.name}"/>
+    <delete dir="${module.results}"/>
   </target>
 
 </project>
