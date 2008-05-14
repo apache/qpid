@@ -12,6 +12,6 @@ do_tests() {
     ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
 }
 
-cd ${QPID_PYTHON_DIR} || { echo "Cannot cd ${QPID_PYTHON_DIR}"; exit 1; }
+cd ${QPID_PYTHON_DIR} || { echo "Cannot cd ${QPID_PYTHON_DIR}"; exit; }
 do_tests 0-10-errata cpp_failing_0-10.txt
 
