@@ -6,16 +6,14 @@ verify=`dirname $0`/verify
 topsrcdir=$1
 qpidd=$2
 exclude_regexp=$3
-
-python=$topsrcdir/python
+python=${QPID_PYTHON_DIR:-$topsrcdir/python}
 
 trap "$qpidd -q" exit
 export QPID_PORT=`$qpidd -dp0 --data-dir "" --auth no` || { echo "Can't run qpidd" ; exit 1; }
 export PYTHON_EXAMPLES=$python/examples
 export PYTHONPATH=$python:$PYTHONPATH
-export AMQP_SPEC=$topsrcdir/specs/amqp.0-10.xml
 
-test -d $PYTHON_EXAMPLES || echo "Warning: not verifying python examples, $PYTHON_EXAMPLES not found"
+test -d $PYTHON_EXAMPLES || echo "WARNING: No python examples. $PYTHON_EXAMPLES not found."
 find="find examples"
 test -d $PYTHON_EXAMPLES && find="$find $PYTHON_EXAMPLES"
 find="$find -name verify"
