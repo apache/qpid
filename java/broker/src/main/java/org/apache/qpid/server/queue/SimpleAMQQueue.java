@@ -80,19 +80,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private final AtomicBoolean _quiesced = new AtomicBoolean(false);
 
-    /**
-     * the _enqueueLock is used to control the entry of new messages onto the queue.  In normal operation many threads
-     * may concurrently enqueue messages.  However while certain operations are being carried out (e.g. clearing the
-     * queue), it is important to prevent new messages being added to the queue.  To obtain this behaviour we use the
-     * readLock for shared "enqueue" access and the write lock for the exclusive access.
-     */
-  //  private final ReadWriteLock _enqueueLock = new ReentrantReadWriteLock();
-
-
-    private final Lock _subscriberLock = new ReentrantLock();
-
-//    private final List<Subscription> _subscriberList = new CopyOnWriteArrayList<Subscription>();
-
 
     private final SubscriptionList _subscriptionList = new SubscriptionList(this);
     private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
@@ -293,9 +280,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new NullPointerException("subscription argument is null");
         }
-
-
-
 
         boolean removed = _subscriptionList.remove(subscription);
 
