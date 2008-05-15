@@ -25,10 +25,6 @@ password="guest"
 
 # If an alternate host or port has been specified, use that instead
 # (this is used in our unit tests)
-#
-# If AMQP_SPEC is defined, use it to locate the spec file instead of
-# looking for it in the default location.
-
 if len(sys.argv) > 1 :
      host=sys.argv[1]
 if len(sys.argv) > 2 :
