@@ -129,8 +129,8 @@ class managementChannel:
 
   def shutdown (self):
     self.enabled = False
-    self.ssn.message_cancel (destination="tdest")
-    self.ssn.message_cancel (destination="rdest")
+    self.ssn.incoming("tdest").stop()
+    self.ssn.incoming("rdest").stop()
 
   def topicCb (self, msg):
     """ Receive messages via the topic queue on this channel. """

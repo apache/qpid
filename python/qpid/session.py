@@ -110,14 +110,13 @@ class Session(Invoker):
       self.channel.session_detach(self.name)
     finally:
       self.invoke_lock.release()
-    if not wait(self.condition, lambda: self.channel is None, timeout):
+    if not wait(self.condition, lambda: self._closed, timeout):
       raise Timeout()
 
   def closed(self):
     self.lock.acquire()
     try:
       if self._closed: return
-      self._closed = True
 
       error = self.error()
       for id in self.results:
@@ -127,6 +126,8 @@ class Session(Invoker):
 
       for q in self._incoming.values():
         q.close(error)
+
+      self._closed = True
       notify(self.condition)
     finally:
       self.lock.release()
@@ -343,6 +344,10 @@ class Incoming(Queue):
   def start(self):
     for unit in self.session.credit_unit.values():
       self.session.message_flow(self.destination, unit, 0xFFFFFFFF)
+
+  def stop(self):
+    self.session.message_cancel(self.destination)
+    self.listen(None)
 
 class Delegate:
 

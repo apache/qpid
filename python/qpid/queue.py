@@ -42,6 +42,9 @@ class Queue(BaseQueue):
   def close(self, error = None):
     self.error = error
     self.put(Queue.END)
+    if self.thread is not None:
+      self.thread.join()
+      self.thread = None
 
   def get(self, block = True, timeout = None):
     result = BaseQueue.get(self, block, timeout)
