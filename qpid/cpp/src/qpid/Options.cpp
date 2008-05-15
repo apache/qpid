@@ -179,51 +179,113 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
                     if (!i->unregistered)
                         filtopts.options.push_back (*i);
                 po::store(filtopts, vm);
+
 #elif ( BOOST_VERSION == 103200 )
-      char ** filtered_argv = new char * [ argc ];
-      filtered_argv[0] = strdup(argv[0]);
-      int filtered_argc = 1;
 
-      int i = 1;
-      while ( i < argc )
+      /*
+       * "Tokenize" the argv to get rid of equals signs.
+       */
+      vector<string> tokenized_argv;
+      vector<string>::iterator iter;
+
+      for ( int i = 0; i < argc; ++ i )
       {
-        /*
-         * If this is an argument that is registered,
-         * copy it to filtered_argv and also copy all
-         * of its arguments.
-         */
-        if ( is_registered_option ( argv[i] ) )
-        {
-          // Store this recognized arg.
-          filtered_argv [ filtered_argc ] = strdup ( argv[i] );
-          ++ filtered_argc;
-          ++ i;
+	string s = argv[i];
+	int equals_pos = s.find_first_of ( '=' );
 
-          // Copy all values for the above arg.
-          // Args are tokens that do not start with a minus.
-          while ( (i < argc) && ( '-' != argv[i][0] ) )
-          {
-            filtered_argv [ filtered_argc ] = strdup ( argv[i] );
-            ++ filtered_argc;
-            ++ i;
-          }
-        }
-        else
-        {
-          // Skip this unrecognized arg.
-          ++ i;
-
-          // Copy all values for the above arg.
-          // Values are tokens that do not start with a minus.
-          while ( (i < argc) && ( '-' != argv[i][0] ) )
-          {
-            ++ i;
-          }
-        }
+	if ( string::npos == equals_pos )  // There's no equals sign.  This is a token.
+	{
+	  tokenized_argv.push_back(s);
+	}
+	else
+	{
+	  // Two tokens -- before and after the equals position.
+	  tokenized_argv.push_back ( s.substr(0, equals_pos) );
+	  tokenized_argv.push_back ( s.substr(equals_pos+1) );
+	}
       }
 
-      po::basic_parsed_options<char> bpo = po::parse_command_line(filtered_argc, const_cast<char**>(filtered_argv), *this);
-      po::store(bpo, vm);
+
+      /*
+       * Now "filter" the tokenized argv, to get rid of all
+       * unrecognized options.  Because Boost 103200 has no
+       * facility for dealing gracefully with "unregistered" 
+       * options.
+       */
+      vector<string>            filtered_argv;
+      vector<string>::iterator  the_end = tokenized_argv.end();
+
+      // The program-name gets in for free...
+      iter = tokenized_argv.begin();
+      filtered_argv.push_back ( * iter );
+      ++ iter;
+
+      // ...but all other args get checked.
+      while ( iter < the_end )
+      {
+       /*
+	* If this is an argument that is registered,
+	* copy it to filtered_argv and also copy all
+	* of its arguments.
+	*/
+       if ( is_registered_option ( * iter ) )
+       {
+	 // Store this recognized arg.
+	 filtered_argv.push_back ( * iter );
+	 ++ iter;
+
+	 // Copy all values for the above arg.
+	 // Args are tokens that do not start with a minus.
+	 while ( (iter < the_end) && ((* iter)[0] != '-') )
+	 {
+	   filtered_argv.push_back ( * iter );
+	   ++ iter;
+	 }
+       }
+       else
+       {
+	 // Skip this unrecognized arg.
+	 ++ iter;
+
+	 // Copy all values for the above arg.
+	 // Values are tokens that do not start with a minus.
+	 while ( (iter < the_end) && ( '-' != (*iter)[0] ) )
+	 {
+	   ++ iter;
+	 }
+       }
+     }
+
+     // Make an array of temporary C strings, because 
+     // the interface I can use wants it that way.
+     int     new_argc = filtered_argv.size();
+     char ** new_argv = new char * [ new_argc ];
+     int i = 0;
+
+     // cout << "NEW ARGV: |";
+     for ( iter = filtered_argv.begin();
+	   iter < filtered_argv.end();
+	   ++ iter, ++ i
+	 )
+     {
+       new_argv[i] = strdup( (* iter).c_str() );
+       // cout << " " << new_argv[i] ;
+     }
+     // cout << "|\n";
+
+
+     // Use the array of C strings.
+     po::basic_parsed_options<char> bpo = po::parse_command_line(new_argc, const_cast<char**>(new_argv), *this);
+     po::store(bpo, vm);
+
+
+     // Now free the temporary C strings.
+     for ( i = 0; i < new_argc; ++ i )
+     {
+       free ( new_argv[i] );
+     }
+     delete[] new_argv;
+
 #endif
             }
             else
