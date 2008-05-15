@@ -108,79 +108,9 @@ public abstract class Struct implements Encodable
         return getFlagCount() - getFields().size();
     }
 
-    public final void read(Decoder dec)
-    {
-        List<Field<?,?>> fields = getFields();
+    public abstract void read(Decoder dec);
 
-        assert fields.size() <= getFlagCount();
-
-        if (packed())
-        {
-            for (Field<?,?> f : fields)
-            {
-                if (isBit(f))
-                {
-                    f.has(this, true);
-                    f.read(dec, this);
-                }
-                else
-                {
-                    f.has(this, dec.readBit());
-                }
-            }
-
-            for (int i = 0; i < getReservedFlagCount(); i++)
-            {
-                if (dec.readBit())
-                {
-                    throw new IllegalStateException("reserved flag true");
-                }
-            }
-        }
-
-        for (Field<?,?> f : fields)
-        {
-            if (encoded(f))
-            {
-                f.read(dec, this);
-            }
-        }
-    }
-
-    public final void write(Encoder enc)
-    {
-        List<Field<?,?>> fields = getFields();
-
-        assert fields.size() <= getFlagCount();
-
-        if (packed())
-        {
-            for (Field<?,?> f : fields)
-            {
-                if (isBit(f))
-                {
-                    f.write(enc, this);
-                }
-                else
-                {
-                    enc.writeBit(f.has(this));
-                }
-            }
-
-            for (int i = 0; i < getReservedFlagCount(); i++)
-            {
-                enc.writeBit(false);
-            }
-        }
-
-        for (Field<?,?> f : fields)
-        {
-            if (encoded(f))
-            {
-                f.write(enc, this);
-            }
-        }
-    }
+    public abstract void write(Encoder enc);
 
     public String toString()
     {
