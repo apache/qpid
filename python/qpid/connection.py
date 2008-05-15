@@ -102,7 +102,6 @@ class Connection(Assembler):
       if ssn is not None:
         ssn.channel = None
         ssn.closed()
-        notify(ssn.condition)
         return ssn
     finally:
       self.lock.release()
