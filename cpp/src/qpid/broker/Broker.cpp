@@ -155,7 +155,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_dataDirEnabled   (dataDir.isEnabled ());
         mgmtObject->set_dataDir          (dataDir.getPath ());
         
-        managementAgent->addObject (mgmtObject, 1, 1);
+        managementAgent->addObject (mgmtObject, 2, 1);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the
