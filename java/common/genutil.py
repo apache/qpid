@@ -147,20 +147,21 @@ class Field:
   def __init__(self, index, nd):
     self.index = index
     self.name = camel(1, nd["@name"])
-    type_node = resolve_type(nd)
-    tname = cname(type_node)
-    if type_node.name == "struct":
+    self.type_node = resolve_type(nd)
+    tname = cname(self.type_node)
+    if self.type_node.name == "struct":
       self.read = "(%s) dec.readStruct(%s.TYPE)" % (tname, tname)
       self.write = "enc.writeStruct(%s.TYPE, check(struct).%s)" % (tname, self.name)
-    elif type_node.name == "domain":
-      coder = camel(0, resolve_type(type_node)["@name"])
-      self.read = "%s.get(dec.read%s())" % (tname, coder)
-      self.write = "enc.write%s(check(struct).%s.getValue())" % (coder, self.name)
+      self.coder = "Struct"
+    elif self.type_node.name == "domain":
+      self.coder = camel(0, resolve_type(self.type_node)["@name"])
+      self.read = "%s.get(dec.read%s())" % (tname, self.coder)
+      self.write = "enc.write%s(check(struct).%s.getValue())" % (self.coder, self.name)
     else:
-      coder = camel(0, type_node["@name"])
-      self.read = "dec.read%s()" % coder
-      self.write = "enc.write%s(check(struct).%s)" % (coder, self.name)
-    self.type = jtype(type_node)
+      self.coder = camel(0, self.type_node["@name"])
+      self.read = "dec.read%s()" % self.coder
+      self.write = "enc.write%s(check(struct).%s)" % (self.coder, self.name)
+    self.type = jtype(self.type_node)
     self.default = DEFAULTS.get(self.type, "null")
     self.has = camel(1, "has", self.name)
     self.get = camel(1, "get", self.name)
