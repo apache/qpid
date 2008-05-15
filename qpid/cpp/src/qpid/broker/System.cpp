@@ -74,7 +74,7 @@ System::System (string _dataDir)
             mgmtObject->set_machine  (std::string (_uname.machine));
         }
 
-        agent->addObject (mgmtObject, 3, 1);
+        agent->addObject (mgmtObject, 1, 1);
     }
 }
 
