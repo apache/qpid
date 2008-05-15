@@ -126,7 +126,7 @@ endif
 
 # New 0-10 codec, to be integrated in future.
 # libqpidamqp_0_10_la_SOURCES= 
-EXTRA_DIST+=\
+EXTRA_DIST +=\
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
