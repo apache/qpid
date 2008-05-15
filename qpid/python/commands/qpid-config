@@ -108,6 +108,8 @@ class BrokerManager:
 
     def Disconnect (self):
         self.mclient.removeChannel (self.mchannel)
+        self.session.close(timeout=10)
+        self.conn.close(timeout=10)
 
     def Overview (self):
         self.ConnectToBroker ()
