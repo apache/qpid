@@ -170,4 +170,66 @@ for f in fields:
         });
     }
 """)
-}}
+}
+
+    public void write(Encoder enc)
+    {
+${
+flag_count = 8*int(pack)
+reserved_count = flag_count - len(fields)
+
+if pack > 0:
+  for f in fields:
+    if f.type == "boolean":
+      out("        enc.writeBit(this.$(f.name));\n")
+    else:
+      out("        enc.writeBit(this.has_$(f.name));\n")
+  for i in range(reserved_count):
+    out("        enc.writeBit(false);\n")
+
+for f in fields:
+  if f.type == "boolean":
+    continue
+  if pack > 0:
+    out("        if (this.has_$(f.name))\n    ")
+  pre = ""
+  post = ""
+  if f.type_node.name == "struct":
+    pre = "%s.TYPE, " % cname(f.type_node)
+  elif f.type_node.name == "domain":
+    post = ".getValue()"
+  out("        enc.write$(f.coder)($(pre)this.$(f.name)$(post));\n")
+}
+    }
+
+    public void read(Decoder dec)
+    {
+${
+if pack > 0:
+  for f in fields:
+    if f.type == "boolean":
+      out("        this.$(f.name) = dec.readBit();\n")
+    else:
+      out("        this.has_$(f.name) = dec.readBit();\n")
+  for i in range(reserved_count):
+    out("        dec.readBit();\n")
+
+for f in fields:
+  if f.type == "boolean":
+    continue
+  if pack > 0:
+    out("        if (this.has_$(f.name))\n    ")
+  pre = ""
+  post = ""
+  arg = ""
+  if f.type_node.name == "struct":
+    pre = "(%s)" % cname(f.type_node)
+    arg = "%s.TYPE" % cname(f.type_node)
+  elif f.type_node.name == "domain":
+    pre = "%s.get(" % cname(f.type_node)
+    post = ")"
+  out("        this.$(f.name) = $(pre)dec.read$(f.coder)($(arg))$(post);\n")
+}
+    }
+
+}
