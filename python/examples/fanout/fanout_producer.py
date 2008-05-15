@@ -21,7 +21,6 @@ host="127.0.0.1"
 port=5672
 user="guest"
 password="guest"
-amqp_spec="/usr/share/amqp/amqp.0-10.xml"     
 
 # If an alternate host or port has been specified, use that instead
 # (this is used in our unit tests)
@@ -34,14 +33,9 @@ if len(sys.argv) > 1 :
 if len(sys.argv) > 2 :
      port=int(sys.argv[2])
 
-try:
-     amqp_spec = os.environ["AMQP_SPEC"]
-except KeyError:
-     amqp_spec="/usr/share/amqp/amqp.0-10.xml"
-
 #  Create a connection.
 socket = connect(host, port)
-connection = Connection (sock=socket, spec=qpid.spec.load(amqp_spec))
+connection = Connection (sock=socket)
 connection.start()
 session = connection.session(str(uuid4()))
 
