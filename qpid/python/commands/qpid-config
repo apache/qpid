@@ -33,8 +33,6 @@ from qpid.datatypes  import uuid4
 from qpid.util       import connect
 from time            import sleep
 
-_defspecpath  = "/usr/share/amqp/amqp.0-10.xml"
-_specpath     = _defspecpath
 _recursive    = False
 _host         = "localhost"
 _durable      = False
@@ -65,8 +63,6 @@ def Usage ():
     print "    -a [ --broker-addr ] Address (localhost)  Address of qpidd broker"
     print "         broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
     print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
-    print "    -s [ --spec-file] Path (" + _defspecpath + ")"
-    print "                                              AMQP specification file"
     print
     print "Add Queue Options:"
     print "    --durable           Queue is durable"
@@ -91,13 +87,12 @@ class BrokerManager:
 
     def ConnectToBroker (self):
         try:
-            self.spec = qpid.spec.load (_specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn = Connection (connect (self.broker.host, self.broker.port), self.spec,
+            self.conn = Connection (connect (self.broker.host, self.broker.port),
                                     username=self.broker.username, password=self.broker.password)
             self.conn.start ()
             self.session  = self.conn.session (self.sessionId)
-            self.mclient  = managementClient (self.spec)
+            self.mclient  = managementClient (self.conn.spec)
             self.mchannel = self.mclient.addChannel (self.session)
         except socket.error, e:
             print "Socket Error %s - %s" % (e[0], e[1])
@@ -325,14 +320,12 @@ def YN (bool):
 ##
 
 try:
-    longOpts = ("durable", "spec-file=", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=")
-    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:a:b", longOpts)
+    longOpts = ("durable", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=")
+    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
 
 for opt in optlist:
-    if opt[0] == "-s" or opt[0] == "--spec-file":
-        _specpath = opt[1]
     if opt[0] == "-b" or opt[0] == "--bindings":
         _recursive = True
     if opt[0] == "-a" or opt[0] == "--broker-addr":
