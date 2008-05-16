@@ -1,0 +1,26 @@
+= Qpid C++ Examples =
+
+For more information read examples/README.
+
+== The Verify All Script ==
+
+The verify_all script will run C++ examples against itself and against the
+Python examples. The success of the script is determined by comparing its output
+against what is expected.
+
+=== Arguments ===
+
+The verify_all script expects the path to Qpid trunk as an argument, in order to
+setup the environment for Python examples.
+
+== The Verify Script ==
+
+The verify script is capable of running one or many scripts designed to verify
+the success of Qpid examples. The verify script is utilized by the verify_all
+scripts.
+
+=== Verifying an individual example ===
+
+This will require you using the verify script, and providing the necessary sub
+script(s) it will utilize in the process. Please note that it is your
+responsibility to setup the necessary environment for the verification process
