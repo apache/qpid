@@ -89,6 +89,11 @@ public class AMQMessage
     private static final boolean SYNCED_CLOCKS =
             ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false);
 
+    private static final long UNKNOWN_SIZE = Long.MIN_VALUE;
+
+    private long _size = UNKNOWN_SIZE;
+
+
 
     public String debugIdentity()
     {
@@ -255,7 +260,6 @@ public class AMQMessage
         _txnContext = txnContext;
         _immediate = info.isImmediate();
         _transientMessageData.setMessagePublishInfo(info);
-
     }
 
     /**
@@ -276,6 +280,7 @@ public class AMQMessage
         _messageHandle = factory.createMessageHandle(messageId, store, true);
         _txnContext = txnConext;
         _transientMessageData = null;
+
     }
 
     /**
@@ -352,6 +357,7 @@ public class AMQMessage
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _transientMessageData.setContentHeaderBody(contentHeaderBody);
+        _size = _transientMessageData.getContentHeaderBody().bodySize;
     }
 
     public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory)
@@ -376,6 +382,8 @@ public class AMQMessage
         {
             deliver(storeContext);
         }
+
+
     }
 
     public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk) throws AMQException
@@ -670,6 +678,7 @@ public class AMQMessage
 
             // Remove refence for routing process . Reference count should now == delivered queue count
             decrementReference(storeContext);
+            _transientMessageData = null;
         }
     }
 
@@ -681,19 +690,19 @@ public class AMQMessage
 
     public long getSize()
     {
-        try
+        if(_size == UNKNOWN_SIZE)
         {
-            long size = getContentHeaderBody().bodySize;
-
-            return size;
+            try
+            {
+                _size = getContentHeaderBody().bodySize;
+            }
+            catch (AMQException e)
+            {
+                _log.warn("Unable to retrieve message meta data for message:" + this, e);
+                return 0;
+            }
         }
-        catch (AMQException e)
-        {
-            _log.error(e.toString(), e);
-
-            return 0;
-        }
-
+        return _size;
     }
 
     public void restoreTransientMessageData() throws AMQException
