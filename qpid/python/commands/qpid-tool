@@ -24,6 +24,7 @@ import getopt
 import sys
 import socket
 from cmd                 import Cmd
+from qpid.connection     import ConnectionFailed
 from qpid.managementdata import ManagementData
 from shlex               import split
 from qpid.disp           import Display
@@ -183,6 +184,9 @@ except Closed, e:
 except IOError, e:
   print "IOError: %d - %s: %s" % (e.errno, e.strerror, e.filename)
   sys.exit (1)
+except ConnectionFailed, e:
+  print "Connect Failed %d - %s" % (e[0], e[1])
+  sys.exit(1)
 
 # Instantiate the CLI interpreter and launch it.
 cli = Mcli (data, disp)

@@ -28,7 +28,7 @@ from threading       import Condition
 from qpid.management import managementClient
 from qpid.managementdata import Broker
 from qpid.peer       import Closed
-from qpid.connection import Connection
+from qpid.connection import Connection, ConnectionFailed
 from qpid.datatypes  import uuid4
 from qpid.util       import connect
 from time            import sleep
@@ -72,7 +72,7 @@ def Usage ():
     print "    --durable           Queue is durable"
     print "    --file-count N (8)  Number of files in queue's persistence journal"
     print "    --file-size  N (24) File size in pages (64Kib/page)"
-    print "    --max-queue-size N Maximum in-memory queue size as bytes"
+    print "    --max-queue-size N  Maximum in-memory queue size as bytes"
     print "    --max-queue-count N Maximum in-memory queue size as a number of messages"
     print
     print "Add Exchange Options:"
@@ -100,11 +100,14 @@ class BrokerManager:
             self.mclient  = managementClient (self.spec)
             self.mchannel = self.mclient.addChannel (self.session)
         except socket.error, e:
-            print "Socket Error:", e
+            print "Socket Error %s - %s" % (e[0], e[1])
             sys.exit (1)
         except Closed, e:
-            print "Connect Failed:", e
+            print "Connect Failed %d - %s" % (e[0], e[1])
             sys.exit (1)
+        except ConnectionFailed, e:
+            print "Connect Failed %d - %s" % (e[0], e[1])
+            sys.exit(1)
 
     def Disconnect (self):
         self.mclient.removeChannel (self.mchannel)
