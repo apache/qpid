@@ -53,6 +53,14 @@ void ManagementExchange::route (Deliverable&      msg,
     TopicExchange::route (msg, routingKey, args);
 }
 
+bool ManagementExchange::bind (Queue::shared_ptr queue,
+                               const string& routingKey,
+                               const qpid::framing::FieldTable* args)
+{
+    managementAgent->clientAdded ();
+    return TopicExchange::bind (queue, routingKey, args);
+}
+
 void ManagementExchange::setManagmentAgent (ManagementBroker* agent)
 {
     managementAgent = agent;
