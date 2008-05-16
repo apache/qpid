@@ -29,7 +29,8 @@ class so that the generated code can be reused in a variety of
 situations.
 """
 
-import re, textwrap, new, mllib, qpid
+import re, new, mllib, qpid
+from util import fill
 
 class SpecContainer:
 
@@ -448,15 +449,6 @@ def pythonize(name):
   except KeyError:
     pass
   return name
-
-def fill(text, indent, heading = None):
-  sub = indent * " "
-  if heading:
-    init = (indent - 2) * " " + heading + " -- "
-  else:
-    init = sub
-  w = textwrap.TextWrapper(initial_indent = init, subsequent_indent = sub)
-  return w.fill(" ".join(text.split()))
 
 class Rule(Metadata):
 
