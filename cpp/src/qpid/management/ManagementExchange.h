@@ -46,6 +46,10 @@ class ManagementExchange : public virtual TopicExchange
                         const string& routingKey,
                         const qpid::framing::FieldTable* args);
 
+    virtual bool bind (Queue::shared_ptr queue,
+                       const string& routingKey,
+                       const qpid::framing::FieldTable* args);
+
     void setManagmentAgent (management::ManagementBroker* agent);
 
     virtual ~ManagementExchange();

@@ -155,6 +155,7 @@ class ManagementBroker : public ManagementAgent
     uint32_t                     localBank;
     uint32_t                     nextObjectId;
     uint32_t                     nextRemoteBank;
+    bool                         clientWasAdded;
 
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];
