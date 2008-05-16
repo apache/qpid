@@ -17,15 +17,18 @@
 # under the License.
 #
 
+import sys
+
 # TODO: need a better naming for this class now that it does the value
 # stuff
 class Invoker:
 
   def METHOD(self, name, resolved):
     method = lambda *args, **kwargs: self.invoke(resolved, args, kwargs)
-    method.__name__ = resolved.pyname
-    method.__doc__ = resolved.pydoc
-    method.__module__ = self.__class__.__module__
+    if sys.version_info[:2] > (2, 3):
+      method.__name__ = resolved.pyname
+      method.__doc__ = resolved.pydoc
+      method.__module__ = self.__class__.__module__
     self.__dict__[name] = method
     return method
 
