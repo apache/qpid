@@ -19,7 +19,7 @@
 
 import os, cPickle, datatypes
 from codec010 import StringCodec
-from util import mtime
+from util import mtime, fill
 
 class Node:
 
@@ -201,9 +201,10 @@ class Choice(Named, Node):
 
 class Composite(Type, Coded):
 
-  def __init__(self, name, code, size, pack, children):
+  def __init__(self, name, label, code, size, pack, children):
     Coded.__init__(self, code)
     Type.__init__(self, name, children)
+    self.label = label
     self.fields = []
     self.size = size
     self.pack = pack
@@ -254,11 +255,30 @@ class Composite(Type, Coded):
       if flags & (0x1 << i):
         f.type.encode(codec, values[f.name])
 
+  def docstring(self):
+    docs = []
+    if self.label:
+      docs.append(self.label)
+    docs += [d.text for d in self.docs]
+    s = "\n\n".join([fill(t, 2) for t in docs])
+    for f in self.fields:
+      fdocs = []
+      if f.label:
+        fdocs.append(f.label)
+      else:
+        fdocs.append("")
+      fdocs += [d.text for d in f.docs]
+      s += "\n\n" + "\n\n".join([fill(fdocs[0], 4, f.name)] +
+                                [fill(t, 4) for t in fdocs[1:]])
+    return s
+
+
 class Field(Named, Node, Lookup):
 
-  def __init__(self, name, type, children):
+  def __init__(self, name, label, type, children):
     Named.__init__(self, name)
     Node.__init__(self, children)
+    self.label = label
     self.type = type
     self.exceptions = []
 
@@ -284,6 +304,8 @@ class Struct(Composite):
     if self.code is not None:
       self.spec.structs[self.code] = self
     self.spec.structs_by_name[self.name] = self
+    self.pyname = self.name
+    self.pydoc = self.docstring()
 
   def __str__(self):
     fields = ",\n    ".join(["%s: %s" % (f.name, f.type.qname)
@@ -303,8 +325,8 @@ class Segment:
 
 class Instruction(Composite, Segment):
 
-  def __init__(self, name, code, children):
-    Composite.__init__(self, name, code, 0, 2, children)
+  def __init__(self, name, label, code, children):
+    Composite.__init__(self, name, label, code, 0, 2, children)
     Segment.__init__(self)
     self.track = None
     self.handlers = []
@@ -315,12 +337,14 @@ class Instruction(Composite, Segment):
 
   def register(self, node):
     Composite.register(self, node)
-    self.spec.instructions[self.qname.replace(".", "_")] = self
+    self.pyname = self.qname.replace(".", "_")
+    self.pydoc = self.docstring()
+    self.spec.instructions[self.pyname] = self
 
 class Control(Instruction):
 
-  def __init__(self, name, code, children):
-    Instruction.__init__(self, name, code, children)
+  def __init__(self, name, code, label, children):
+    Instruction.__init__(self, name, code, label, children)
     self.response = None
 
   def register(self, node):
@@ -332,8 +356,8 @@ class Control(Instruction):
 
 class Command(Instruction):
 
-  def __init__(self, name, code, children):
-    Instruction.__init__(self, name, code, children)
+  def __init__(self, name, label, code, children):
+    Instruction.__init__(self, name, label, code, children)
     self.result = None
     self.exceptions = []
     self.segments = []
@@ -599,7 +623,7 @@ class Loader:
     return Role(id(r["@name"]), self.children(r))
 
   def do_control(self, c):
-    return Control(id(c["@name"]), self.code(c), self.children(c))
+    return Control(id(c["@name"]), c["@label"], self.code(c), self.children(c))
 
   def do_rule(self, r):
     return Rule(id(r["@name"]), self.children(r))
@@ -611,14 +635,14 @@ class Loader:
     return Response(id(r["@name"]), self.children(r))
 
   def do_field(self, f):
-    return Field(id(f["@name"]), id(f["@type"]), self.children(f))
+    return Field(id(f["@name"]), f["@label"], id(f["@type"]), self.children(f))
 
   def do_struct(self, s):
-    return Struct(id(s["@name"]), self.code(s), num(s["@size"]),
+    return Struct(id(s["@name"]), s["@label"], self.code(s), num(s["@size"]),
                   num(s["@pack"]), self.children(s))
 
   def do_command(self, c):
-    return Command(id(c["@name"]), self.code(c), self.children(c))
+    return Command(id(c["@name"]), c["@label"], self.code(c), self.children(c))
 
   def do_segments(self, s):
     return Anonymous(self.children(s))

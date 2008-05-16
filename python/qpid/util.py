@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, socket, time
+import os, socket, time, textwrap
 
 def connect(host, port):
   sock = socket.socket()
@@ -65,3 +65,14 @@ def notify(condition, action=lambda: None):
     condition.notifyAll()
   finally:
     condition.release()
+
+def fill(text, indent, heading = None):
+  sub = indent * " "
+  if heading:
+    if not text:
+      return (indent - 2) * " " + heading
+    init = (indent - 2) * " " + heading + " -- "
+  else:
+    init = sub
+  w = textwrap.TextWrapper(initial_indent = init, subsequent_indent = sub)
+  return w.fill(" ".join(text.split()))
