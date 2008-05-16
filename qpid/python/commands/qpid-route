@@ -27,7 +27,7 @@ import os
 from qpid.management import managementClient
 from qpid.managementdata import Broker
 from qpid.peer       import Closed
-from qpid.connection import Connection
+from qpid.connection import Connection, ConnectionFailed
 from qpid.util       import connect
 
 def Usage ():
@@ -70,14 +70,21 @@ class RouteManager:
         try:
             self.spec    = qpid.spec.load (_specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn    = Connection (connect (broker.host, broker.port), self.spec, username=broker.username, password=broker.password)
+            self.conn    = Connection (connect (broker.host, broker.port), self.spec, \
+                                           username=broker.username, password=broker.password)
             self.conn.start ()
             self.mclient = managementClient (self.spec)
             self.mch     = self.mclient.addChannel (self.conn.session(self.sessionId))
             self.mclient.syncWaitForStable (self.mch)
         except socket.error, e:
-            print "Connect Error:", e
+            print "Socket Error %s - %s" % (e[0], e[1])
             sys.exit (1)
+        except Closed, e:
+            print "Connect Failed %d - %s" % (e[0], e[1])
+            sys.exit (1)
+        except ConnectionFailed, e:
+            print "Connect Failed %d - %s" % (e[0], e[1])
+            sys.exit(1)
 
     def Disconnect (self):
         self.mclient.removeChannel (self.mch)
