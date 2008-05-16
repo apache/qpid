@@ -79,11 +79,11 @@ class ManagementData:
   def displayObjId (self, objId):
     bank = (objId & 0x0000FFFFFF000000L) >> 24
     id   =  objId & 0x0000000000FFFFFFL
-    return bank * 1000 + id
+    return bank * 10000 + id
 
   def rawObjId (self, displayId):
-    bank  = displayId / 1000
-    id    = displayId % 1000
+    bank  = displayId / 10000
+    id    = displayId % 10000
     if bank < 5:
       objId = (bank << 24) + id
     else:
@@ -135,12 +135,14 @@ class ManagementData:
                 value = oldInst[idx][1]
             newInst.append ((key, value))
         self.tables[className][id] = (timestamps, oldConf, newInst)
-      
+
     finally:
       self.lock.release ()
 
   def ctrlHandler (self, context, op, data):
     if op == self.mclient.CTRL_BROKER_INFO:
+      pass
+    elif op == self.mclient.CTRL_HEARTBEAT:
       pass
 
   def configHandler (self, context, className, list, timestamps):
@@ -174,9 +176,7 @@ class ManagementData:
   def setCli (self, cliobj):
     self.cli = cliobj
 
-  def __init__ (self, disp, host, username="guest", password="guest",
-                specfile="../../specs/amqp.0-10.xml"):
-    self.spec           = qpid.spec.load (specfile)
+  def __init__ (self, disp, host, username="guest", password="guest"):
     self.lock           = Lock ()
     self.tables         = {}
     self.schema         = {}
@@ -188,8 +188,9 @@ class ManagementData:
     self.sessionId      = "%s.%d" % (os.uname()[1], os.getpid())
 
     self.broker = Broker (host)
-    self.conn   = Connection (connect (self.broker.host, self.broker.port), self.spec,
+    self.conn   = Connection (connect (self.broker.host, self.broker.port),
                               username=self.broker.username, password=self.broker.password)
+    self.spec = self.conn.spec
     self.conn.start ()
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,

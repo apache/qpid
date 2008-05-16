@@ -142,9 +142,6 @@ class Mcli (Cmd):
 def Usage ():
   print "Usage:", sys.argv[0], "[OPTIONS] [<target-host[:<tcp-port>]]"
   print
-  print "Options:"
-  print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10.xml)"
-  print
   sys.exit (1)
 
 #=========================================================
@@ -152,19 +149,9 @@ def Usage ():
 #=========================================================
 
 # Get host name and port if specified on the command line
-try:
-  longOpts = ("spec-file=")
-  (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], 's:', longOpts)
-except:
-  Usage ()
-  sys.exit (1)
+cargs = sys.argv[1:]
 
-_specpath = "/usr/share/amqp/amqp.0-10.xml"
 _host     = "localhost"
-
-for opt in optlist:
-  if opt[0] == "-s" or opt[0] == "--spec-file":
-    _specpath = opt[1]
 
 if len (cargs) > 0:
   _host = cargs[0]
@@ -173,7 +160,7 @@ disp = Display ()
 
 # Attempt to make a connection to the target broker
 try:
-  data = ManagementData (disp, _host, specfile=_specpath)
+  data = ManagementData (disp, _host)
 except socket.error, e:
   print "Socket Error (%s):" % _host, e[1]
   sys.exit (1)
