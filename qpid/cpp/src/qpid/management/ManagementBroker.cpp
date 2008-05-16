@@ -25,6 +25,7 @@
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/sys/Time.h"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -245,6 +246,17 @@ void ManagementBroker::PeriodicProcessing (void)
     uint32_t            contentSize;
     string              routingKey;
     std::list<uint64_t> deleteList;
+
+    {
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        EncodeHeader(msgBuffer, 'h');
+        msgBuffer.putLongLong(uint64_t(Duration(now())));
+
+        contentSize = BUFSIZE - msgBuffer.available ();
+        msgBuffer.reset ();
+        routingKey = "mgmt." + uuid.str() + ".heartbeat";
+        SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+    }
 
     if (managementObjects.empty ())
         return;

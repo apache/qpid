@@ -170,6 +170,7 @@ class managementClient:
   CTRL_BROKER_INFO   = 1
   CTRL_SCHEMA_LOADED = 2
   CTRL_USER          = 3
+  CTRL_HEARTBEAT     = 4
 
   SYNC_TIME = 10.0
 
@@ -304,6 +305,8 @@ class managementClient:
       self.handlePackageInd (ch, codec)
     elif hdr[0] == 'q':
       self.handleClassInd (ch, codec)
+    elif hdr[0] == 'h':
+      self.handleHeartbeat (ch, codec)
     else:
       self.parse (ch, codec, hdr[0], hdr[1])
     ch.accept(msg)
@@ -548,6 +551,11 @@ class managementClient:
       sendCodec.write_bin128   (hash)
       smsg = ch.message(sendCodec.encoded)
       ch.send ("qpid.management", smsg)
+
+  def handleHeartbeat (self, ch, codec):
+    timestamp = codec.read_uint64()
+    if self.ctrlCb != None:
+      self.ctrlCb (ch.context, self.CTRL_HEARTBEAT, timestamp)
 
   def parseSchema (self, ch, codec):
     """ Parse a received schema-description message. """
