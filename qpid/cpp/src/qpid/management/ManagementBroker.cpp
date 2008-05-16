@@ -55,6 +55,7 @@ ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Managea
     nextObjectId   = 1;
     bootSequence   = 1;
     nextRemoteBank = 10;
+    clientWasAdded = false;
 
     // Get from file or generate and save to file.
     if (dataDir.empty ())
@@ -129,16 +130,16 @@ void ManagementBroker::shutdown (void)
 }
 
 void ManagementBroker::setExchange (broker::Exchange::shared_ptr _mexchange,
-                                   broker::Exchange::shared_ptr _dexchange)
+                                    broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
 }
 
 void ManagementBroker::RegisterClass (string   packageName,
-                                     string   className,
-                                     uint8_t* md5Sum,
-                                     ManagementObject::writeSchemaCall_t schemaCall)
+                                      string   className,
+                                      uint8_t* md5Sum,
+                                      ManagementObject::writeSchemaCall_t schemaCall)
 {
     Mutex::ScopedLock lock (userLock);
     PackageMap::iterator pIter = FindOrAddPackage (packageName);
@@ -146,15 +147,22 @@ void ManagementBroker::RegisterClass (string   packageName,
 }
 
 void ManagementBroker::addObject (ManagementObject::shared_ptr object,
-                                 uint32_t                     persistId,
-                                 uint32_t                     persistBank)
+                                  uint32_t                     persistId,
+                                  uint32_t                     persistBank)
 {
     Mutex::ScopedLock lock (userLock);
     uint64_t objectId;
 
     if (persistId == 0)
+    {
         objectId = ((uint64_t) bootSequence) << 48 |
             ((uint64_t) localBank) << 24 | nextObjectId++;
+        if ((nextObjectId & 0xFF000000) != 0)
+        {
+            nextObjectId = 1;
+            localBank++;
+        }
+    }
     else
         objectId = ((uint64_t) persistBank) << 24 | persistId;
 
@@ -175,13 +183,9 @@ void ManagementBroker::Periodic::fire ()
 
 void ManagementBroker::clientAdded (void)
 {
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++)
-    {
-        ManagementObject::shared_ptr object = iter->second;
-        object->setAllChanged ();
-    }
+    Mutex::ScopedLock lock (userLock);
+
+    clientWasAdded = true;
 }
 
 void ManagementBroker::EncodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
@@ -256,6 +260,18 @@ void ManagementBroker::PeriodicProcessing (void)
         msgBuffer.reset ();
         routingKey = "mgmt." + uuid.str() + ".heartbeat";
         SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+    }
+
+    if (clientWasAdded)
+    {
+        clientWasAdded = false;
+        for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+             iter != managementObjects.end ();
+             iter++)
+        {
+            ManagementObject::shared_ptr object = iter->second;
+            object->setAllChanged ();
+        }
     }
 
     if (managementObjects.empty ())
@@ -542,9 +558,6 @@ void ManagementBroker::handleSchemaRequestLH (Buffer& inBuffer, string replyToKe
                 outBuffer.reset ();
                 SendBuffer (outBuffer, outLen, dExchange, replyToKey);
             }
-
-            clientAdded ();
-            // TODO: Send client-added to each remote agent.
         }
     }
 }
