@@ -29,7 +29,7 @@ from threading       import Condition
 from qpid.management import managementClient
 from qpid.managementdata import Broker
 from qpid.peer       import Closed
-from qpid.connection import Connection
+from qpid.connection import Connection, ConnectionFailed
 from qpid.util       import connect
 from time            import sleep
 
@@ -67,8 +67,14 @@ class BrokerManager:
             self.mclient  = managementClient (self.spec, None, self.configCb, self.instCb)
             self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
         except socket.error, e:
-            print "Connect Error:", e
-            exit (1)
+            print "Socket Error %s - %s" % (e[0], e[1])
+            sys.exit (1)
+        except Closed, e:
+            print "Connect Failed %d - %s" % (e[0], e[1])
+            sys.exit (1)
+        except ConnectionFailed, e:
+            print "Connect Failed %d - %s" % (e[0], e[1])
+            sys.exit(1)
 
     def setFilter(self,filter):
         self.filter = filter
@@ -143,7 +149,7 @@ class BrokerManager:
 def main():
   p = optparse.OptionParser()
   p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
-  p.add_option('--amqp-spec-file','-s', default='"/usr/share/amqp/amqp.0-10.xml', help='the path to the amqp spec file')
+  p.add_option('--amqp-spec-file','-s', default='/usr/share/amqp/amqp.0-10.xml', help='the path to the amqp spec file')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
 
   options, arguments = p.parse_args()
