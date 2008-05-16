@@ -30,11 +30,9 @@ clean-local:
 
 rpmbuild: $(SPEC) dist-gzip
 	mkdir -p $(RPMDIRS)
-	QPID_PYTHON_DIR=$(abs_top_srcdir)/../python rpmbuild $(RPMMACROS) $(RPMOPTS) $(SPEC)
+	QPID_PYTHON_DIR=@abs_top_srcdir@/../python rpmbuild $(RPMMACROS) $(RPMOPTS) $(SPEC)
 if HAS_RPMLINT
 	rpmlint `find rpm -name '*.rpm'`
 else
 	@echo "WARNING: rpmlint not found, could not validate RPMs."
 endif
-
-
