@@ -52,20 +52,19 @@ class BrokerManager:
         self.broker  = None
         self.objects = {}
         self.filter  = None   
-        self.specpath="/usr/share/amqp/amqp.0-10.xml"
 
     def SetBroker (self, broker):
         self.broker = broker
 
     def ConnectToBroker (self):
         try:
-            self.spec     = qpid.spec.load (self.specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn     = Connection (connect (self.broker.host, self.broker.port), self.spec,
+            self.conn     = Connection (connect (self.broker.host, self.broker.port),
                                     username=self.broker.username, password=self.broker.password)
             self.conn.start ()
-            self.mclient  = managementClient (self.spec, None, self.configCb, self.instCb)
-            self.mchannel = self.mclient.addChannel (self.conn.session(self.sessionId))
+            self.session  = self.conn.session(self.sessionId)
+            self.mclient  = managementClient (self.conn.spec, None, self.configCb, self.instCb)
+            self.mchannel = self.mclient.addChannel (self.session)
         except socket.error, e:
             print "Socket Error %s - %s" % (e[0], e[1])
             sys.exit (1)
@@ -79,11 +78,10 @@ class BrokerManager:
     def setFilter(self,filter):
         self.filter = filter
 
-    def setSpecpath(self,spec):
-        self.specpath = spec
-
     def Disconnect (self):
         self.mclient.removeChannel (self.mchannel)
+        self.session.close(timeout=10)
+        self.conn.close(timeout=10)
 
     def configCb (self, context, classKey, row, timestamps):
         className = classKey[1]
@@ -149,13 +147,11 @@ class BrokerManager:
 def main():
   p = optparse.OptionParser()
   p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
-  p.add_option('--amqp-spec-file','-s', default='/usr/share/amqp/amqp.0-10.xml', help='the path to the amqp spec file')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
 
   options, arguments = p.parse_args()
 
   host = options.broker_address
-  specpath = options.amqp_spec_file
   filter = []
   if options.filter != None:
     for s in options.filter.split(","):
@@ -163,7 +159,6 @@ def main():
 
   bm  = BrokerManager ()
   bm.SetBroker (Broker (host))
-  bm.setSpecpath(specpath)
   bm.setFilter(filter)
   bm.Display()
  

@@ -41,7 +41,6 @@ def Usage ():
     print "        qpid-route [OPTIONS] route flush <dest-broker>"
     print
     print "Options:"
-    print "    -s [ --spec-file ] PATH (/usr/share/amqp/amqp.0-10.xml)"
     print "    -v [ --verbose ]         Verbose output"
     print "    -q [ --quiet ]           Quiet output, don't print duplicate warnings"
     print "    -d [ --durable ]         Added configuration shall be durable"
@@ -52,7 +51,6 @@ def Usage ():
     print
     sys.exit (1)
 
-_specpath = "/usr/share/amqp/amqp.0-10.xml"
 _verbose  = False
 _quiet    = False
 _durable  = False
@@ -68,13 +66,13 @@ class RouteManager:
         if _verbose:
             print "Connecting to broker: %s:%d" % (broker.host, broker.port)
         try:
-            self.spec    = qpid.spec.load (_specpath)
             self.sessionId = "%s.%d" % (os.uname()[1], os.getpid())
-            self.conn    = Connection (connect (broker.host, broker.port), self.spec, \
+            self.conn    = Connection (connect (broker.host, broker.port), \
                                            username=broker.username, password=broker.password)
             self.conn.start ()
-            self.mclient = managementClient (self.spec)
-            self.mch     = self.mclient.addChannel (self.conn.session(self.sessionId))
+            self.session = self.conn.session(self.sessionId)
+            self.mclient = managementClient (self.conn.spec)
+            self.mch     = self.mclient.addChannel (self.session)
             self.mclient.syncWaitForStable (self.mch)
         except socket.error, e:
             print "Socket Error %s - %s" % (e[0], e[1])
@@ -88,6 +86,8 @@ class RouteManager:
 
     def Disconnect (self):
         self.mclient.removeChannel (self.mch)
+        self.session.close(timeout=10)
+        self.conn.close(timeout=10)
 
     def getLink (self):
         links = self.mclient.syncGetObjects (self.mch, "link")
@@ -292,14 +292,12 @@ def YN(val):
 ##
 
 try:
-    longOpts = ("verbose", "quiet", "spec-file=", "durable", "del-empty-link")
-    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "s:vqde", longOpts)
+    longOpts = ("verbose", "quiet", "durable", "del-empty-link")
+    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "vqde", longOpts)
 except:
     Usage ()
 
 for opt in optlist:
-    if opt[0] == "-s" or opt[0] == "--spec-file":
-        _specpath = opt[1]
     if opt[0] == "-v" or opt[0] == "--verbose":
         _verbose = True
     if opt[0] == "-q" or opt[0] == "--quiet":
