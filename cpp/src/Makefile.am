@@ -349,7 +349,6 @@ nobase_include_HEADERS = \
   qpid/Url.h \
   qpid/InlineVector.h \
   qpid/InlineAllocator.h \
-  qpid/log/Statement.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
@@ -507,6 +506,7 @@ nobase_include_HEADERS = \
   qpid/framing/variant.h \
   qpid/log/Helpers.h \
   qpid/log/Options.h \
+  qpid/log/Logger.h \
   qpid/log/Selector.h \
   qpid/log/Statement.h \
   qpid/management/Args.h \
