@@ -139,11 +139,13 @@ class ManagementBroker : public ManagementAgent
     RemoteAgentMap               remoteAgents;
     PackageMap                   packages;
     ManagementObjectMap          managementObjects;
+    ManagementObjectMap          newManagementObjects;
 
     static shared_ptr            agent;
     static bool                  enabled;
 
     framing::Uuid                uuid;
+    sys::Mutex                   addLock;
     sys::Mutex                   userLock;
     broker::Timer                timer;
     broker::Exchange::shared_ptr mExchange;
@@ -169,6 +171,7 @@ class ManagementBroker : public ManagementAgent
                              uint32_t                     length,
                              broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
+    void moveNewObjectsLH();
 
     void dispatchMethodLH (broker::Message&   msg,
                            const std::string& routingKey,
