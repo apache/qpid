@@ -67,7 +67,7 @@ public interface AMQMessageHandle
 
     void setRedelivered(boolean redelivered);
 
-    boolean isPersistent(StoreContext context) throws AMQException;
+    boolean isPersistent();
 
     void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,
                                         ContentHeaderBody contentHeaderBody)

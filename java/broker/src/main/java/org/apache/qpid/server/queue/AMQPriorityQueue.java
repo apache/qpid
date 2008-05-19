@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.AMQException;
 
 public class AMQPriorityQueue extends SimpleAMQQueue
@@ -35,6 +37,30 @@ public class AMQPriorityQueue extends SimpleAMQQueue
             throws AMQException
     {
         super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
+    }
+
+    @Override
+    protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
+    {
+        // check that all subscriptions are not in advance of the entry
+        SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
+        while(subIter.advance() && !entry.isAcquired())
+        {
+            final Subscription subscription = subIter.getNode().getSubscription();
+            QueueEntry subnode = subscription.getLastSeenEntry();
+            while((entry.compareTo(subnode) < 0) && !entry.isAcquired())
+            {
+                if(subscription.setLastSeenEntry(subnode,entry))
+                {
+                    break;
+                }
+                else
+                {
+                    subnode = subscription.getLastSeenEntry();
+                }
+            }
+
+        }
     }
 
     

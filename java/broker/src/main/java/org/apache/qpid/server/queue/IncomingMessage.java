@@ -176,13 +176,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
 
             message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
-            message.setPublisherIdentifier(_publisher.getClientIdentifier());
-            message.setExpiration(_expiration);
 
-            if (_publisher.getClientProperties() != null)
-            {
-                message.setPublisherClientInstance(_publisher.getClientProperties().getObject(ClientProperties.instance.toAMQShortString()));
-            }
+            message.setExpiration(_expiration);
+            message.setClientIdentifier(_publisher.getSessionIdentifier());
+
 
 
 

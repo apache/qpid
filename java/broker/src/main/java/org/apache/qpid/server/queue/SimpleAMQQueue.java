@@ -81,7 +81,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicBoolean _quiesced = new AtomicBoolean(false);
 
 
-    private final SubscriptionList _subscriptionList = new SubscriptionList(this);
+    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
     private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
 
     private boolean _exclusiveSubscriber;
@@ -389,12 +389,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                             }
                             else
                             {
-                                deliverMessage(sub, entry);
                                 QueueEntry queueEntryNode =  sub.getLastSeenEntry();
                                 if(_entries.next(queueEntryNode) == entry)
                                 {
                                     sub.setLastSeenEntry(queueEntryNode,entry);
                                 }
+
+                                deliverMessage(sub, entry);
 
                             }
                         }
@@ -414,25 +415,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
         else if(!entry.isAcquired())
         {
-            // check that all subscriptions are not in advance of the entry
-            SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
-            while(subIter.advance() && !entry.isAcquired())
-            {
-                final Subscription subscription = subIter.getNode().getSubscription();
-                QueueEntry subnode = subscription.getLastSeenEntry();
-                while((entry.compareTo(subnode) < 0) && !entry.isAcquired())
-                {
-                    if(subscription.setLastSeenEntry(subnode,entry))
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        subnode = subscription.getLastSeenEntry();
-                    }
-                }
+            checkSubscriptionsNotAheadOfDelivery(entry);
 
-            }
             deliverAsync();
         }
 
@@ -449,6 +433,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         return entry;
 
+    }
+
+    protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
+    {
+        // This method is only required for queues which mess with ordering
     }
 
     private void incrementQueueSize(final AMQMessage message)
@@ -1204,6 +1193,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throws AMQException
     {
         QueueEntry node = sub.getLastSeenEntry();
+        
         while(node.isAcquired() || node.isDeleted() || node.expired())
         {
             if(!node.isAcquired() && !node.isDeleted() && node.expired())

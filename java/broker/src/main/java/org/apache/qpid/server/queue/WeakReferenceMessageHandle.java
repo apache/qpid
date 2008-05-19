@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
@@ -50,8 +49,6 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     private final Long _messageId;
     private long _arrivalTime;
-    private boolean _persistent;
-
 
     public WeakReferenceMessageHandle(final Long messageId, MessageStore messageStore)
     {
@@ -175,9 +172,9 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(StoreContext context) throws AMQException
+    public boolean isPersistent()
     {
-        return _persistent;
+        return true;
     }
 
     /**
@@ -202,12 +199,6 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
 
         MessageMetaData mmd = new MessageMetaData(publishBody, contentHeaderBody, _contentBodies.size(), arrivalTime);
-
-
-
-
-        _persistent =  contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
-               ((BasicContentHeaderProperties) contentHeaderBody.properties).getDeliveryMode() == 2;
 
         _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
 

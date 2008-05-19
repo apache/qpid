@@ -22,10 +22,10 @@ package org.apache.qpid.server.queue;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
@@ -40,7 +40,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     private MessagePublishInfo _messagePublishInfo;
 
-    private List<ContentChunk> _contentBodies = new LinkedList<ContentChunk>();
+    private List<ContentChunk> _contentBodies;
 
     private boolean _redelivered;
 
@@ -86,7 +86,22 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     public void addContentBodyFrame(StoreContext storeContext, ContentChunk contentBody, boolean isLastContentBody)
             throws AMQException
     {
-        _contentBodies.add(contentBody);
+        if(_contentBodies == null)
+        {
+            if(isLastContentBody)
+            {
+                _contentBodies = Collections.singletonList(contentBody);
+            }
+            else
+            {
+                _contentBodies = new ArrayList<ContentChunk>();
+                _contentBodies.add(contentBody);
+            }
+        }
+        else
+        {
+            _contentBodies.add(contentBody);
+        }
     }
 
     public MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException
@@ -105,12 +120,9 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(StoreContext context) throws AMQException
+    public boolean isPersistent()
     {
-        //todo remove literal values to a constant file such as AMQConstants in common
-        ContentHeaderBody chb = getContentHeaderBody(context);
-        return chb.properties instanceof BasicContentHeaderProperties &&
-               ((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2;
+        return false;
     }
 
     /**
@@ -125,6 +137,10 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     {
         _messagePublishInfo = messagePublishInfo;
         _contentHeaderBody = contentHeaderBody;
+        if(contentHeaderBody.bodySize == 0)
+        {
+            _contentBodies = Collections.EMPTY_LIST;
+        }
         _arrivalTime = System.currentTimeMillis();
     }
 

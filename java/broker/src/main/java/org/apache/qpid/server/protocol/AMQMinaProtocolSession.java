@@ -113,6 +113,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
+    private ProtocolSessionIdentifier _sessionIdentifier;
 
     public ManagedObject getManagedObject()
     {
@@ -702,6 +703,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                 _clientVersion = new AMQShortString(_clientProperties.getString(ClientProperties.version.toString()));
             }
         }
+        _sessionIdentifier = new ProtocolSessionIdentifier(this);
     }
 
     private void setProtocolVersion(ProtocolVersion pv)
@@ -787,6 +789,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public MethodDispatcher getMethodDispatcher()
     {
         return _dispatcher;
+    }
+
+    public ProtocolSessionIdentifier getSessionIdentifier()
+    {
+        return _sessionIdentifier;
     }
 
     public String getClientVersion()

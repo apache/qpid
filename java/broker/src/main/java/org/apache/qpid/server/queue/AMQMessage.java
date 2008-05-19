@@ -33,8 +33,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.exchange.Exchange;
- 
+
 
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,20 +53,26 @@ public class AMQMessage implements Filterable<AMQException>
     /** Holds the transactional context in which this message is being processed. */
     private StoreContext _storeContext;
 
+    /** Flag to indicate that this message requires 'immediate' delivery. */
+
+    private static final byte IMMEDIATE = 0x01;
+
     /**
      * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
      * for messages published with the 'immediate' flag.
      */
-    private boolean _deliveredToConsumer;
 
-    /** Flag to indicate that this message requires 'immediate' delivery. */
-    private boolean _immediate;
+    private static final byte DELIVERED_TO_CONSUMER = 0x02;
+
+    private byte _flags = 0;
 
     private long _expiration;
 
-    private Object _publisherClientInstance;
-    private Object _publisherIdentifier;
     private final long _size;
+
+    private AMQProtocolSession.ProtocolSessionIdentifier _sessionIdentifier;
+    private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
+
 
 
     /**
@@ -211,7 +216,11 @@ public class AMQMessage implements Filterable<AMQException>
     {
         _messageHandle = messageHandle;
         _storeContext = storeConext;
-        _immediate = info.isImmediate();
+
+        if(info.isImmediate())
+        {
+            _flags |= IMMEDIATE;
+        }
         _size = messageHandle.getBodySize(storeConext);
 
     }
@@ -221,7 +230,7 @@ public class AMQMessage implements Filterable<AMQException>
     {
         _messageHandle = msg._messageHandle;
         _storeContext = msg._storeContext;
-        _deliveredToConsumer = msg._deliveredToConsumer;
+        _flags = msg._flags;
         _size = msg._size;
 
     }
@@ -289,10 +298,7 @@ public class AMQMessage implements Filterable<AMQException>
         {
             return true;
         }
-        // if (_log.isDebugEnabled())
-        // {
-        // _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-        // }
+
     }
 
     /**
@@ -322,11 +328,6 @@ public class AMQMessage implements Filterable<AMQException>
 
             try
             {
-                // if (_log.isDebugEnabled())
-                // {
-                // _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-                // }
-
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
                 if (_messageHandle != null)
@@ -359,12 +360,12 @@ public class AMQMessage implements Filterable<AMQException>
      */
     public boolean getDeliveredToConsumer()
     {
-        return _deliveredToConsumer;
+        return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
     public boolean isPersistent() throws AMQException
     {
-        return _messageHandle.isPersistent(getStoreContext());
+        return _messageHandle.isPersistent();
     }
 
     /**
@@ -376,7 +377,7 @@ public class AMQMessage implements Filterable<AMQException>
     public boolean immediateAndNotDelivered() 
     {
 
-        return (_immediate && !_deliveredToConsumer);
+        return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
 
     }
 
@@ -428,7 +429,7 @@ public class AMQMessage implements Filterable<AMQException>
      */
     public void setDeliveredToConsumer()
     {
-        _deliveredToConsumer = true;
+        _flags |= DELIVERED_TO_CONSUMER;
     }
 
 
@@ -444,25 +445,21 @@ public class AMQMessage implements Filterable<AMQException>
 
     }
 
-    public void setPublisherClientInstance(final Object publisherClientInstance)
-    {
-        _publisherClientInstance = publisherClientInstance;
-    }
-
     public Object getPublisherClientInstance()
     {
-        return _publisherClientInstance;
+        return _sessionIdentifier.getSessionInstance();
     }
                                                                                           
     public Object getPublisherIdentifier()
     {
-        return _publisherIdentifier;
+        return _sessionIdentifier.getSessionIdentifier();
     }
 
-    public void setPublisherIdentifier(final Object publisherIdentifier)
+    public void setClientIdentifier(final AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier)
     {
-        _publisherIdentifier = publisherIdentifier;
+        _sessionIdentifier = sessionIdentifier;
     }
+
 
     public String toString()
     {
