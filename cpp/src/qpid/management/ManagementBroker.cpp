@@ -150,7 +150,7 @@ void ManagementBroker::addObject (ManagementObject::shared_ptr object,
                                   uint32_t                     persistId,
                                   uint32_t                     persistBank)
 {
-    Mutex::ScopedLock lock (userLock);
+    Mutex::ScopedLock lock (addLock);
     uint64_t objectId;
 
     if (persistId == 0)
@@ -167,7 +167,7 @@ void ManagementBroker::addObject (ManagementObject::shared_ptr object,
         objectId = ((uint64_t) persistBank) << 24 | persistId;
 
     object->setObjectId (objectId);
-    managementObjects[objectId] = object;
+    newManagementObjects[objectId] = object;
 }
 
 ManagementBroker::Periodic::Periodic (ManagementBroker& _broker, uint32_t _seconds)
@@ -242,6 +242,16 @@ void ManagementBroker::SendBuffer (Buffer&  buf,
     exchange->route (deliverable, routingKey, 0);
 }
 
+void ManagementBroker::moveNewObjectsLH()
+{
+    Mutex::ScopedLock lock (addLock);
+    for (ManagementObjectMap::iterator iter = newManagementObjects.begin ();
+         iter != newManagementObjects.end ();
+         iter++)
+        managementObjects[iter->first] = iter->second;
+    newManagementObjects.clear();
+}
+
 void ManagementBroker::PeriodicProcessing (void)
 {
 #define BUFSIZE   65536
@@ -261,6 +271,8 @@ void ManagementBroker::PeriodicProcessing (void)
         routingKey = "mgmt." + uuid.str() + ".heartbeat";
         SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
     }
+
+    moveNewObjectsLH();
 
     if (clientWasAdded)
     {
@@ -637,6 +649,8 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
 {
     FieldTable           ft;
     FieldTable::ValuePtr value;
+
+    moveNewObjectsLH();
 
     ft.decode (inBuffer);
     value = ft.get ("_class");
