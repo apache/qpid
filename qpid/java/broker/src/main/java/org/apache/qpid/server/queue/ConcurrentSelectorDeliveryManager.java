@@ -751,13 +751,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
             else if (messageQueue == sub.getPreDeliveryQueue() && !sub.isBrowser())
             {
-                if (_log.isInfoEnabled())
-                {
-                    //fixme - we should do the clean up as the message remains on the _message queue
-                    // this is resulting in the next consumer receiving the message and then attempting to purge it
-                    //
-                    cleanMainQueue(sub);
-                }
+                cleanMainQueue(sub);
             }
 
         }
