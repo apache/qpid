@@ -171,7 +171,7 @@ void ManagementBroker::addObject (ManagementObject::shared_ptr object,
 }
 
 ManagementBroker::Periodic::Periodic (ManagementBroker& _broker, uint32_t _seconds)
-    : TimerTask (qpid::sys::Duration (_seconds * qpid::sys::TIME_SEC)), broker(_broker) {}
+    : TimerTask (qpid::sys::Duration ((_seconds ? _seconds : 1) * qpid::sys::TIME_SEC)), broker(_broker) {}
 
 ManagementBroker::Periodic::~Periodic () {}
 
