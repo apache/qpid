@@ -22,6 +22,9 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Hashtable;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -34,18 +37,13 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
+import java.util.Hashtable;
 
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-
 /**
  * Test Case to ensure that messages are correctly returned.
  * This includes checking:
@@ -107,7 +105,7 @@ public class QueueDepthWithSelectorTest extends TestCase
         {
             TransportConnection.killAllVMBrokers();
         }
-    } 
+    }
 
     public void test() throws Exception
     {
@@ -153,14 +151,42 @@ public class QueueDepthWithSelectorTest extends TestCase
 
     private void verifyBrokerState()
     {
-        IApplicationRegistry registry = ApplicationRegistry.getInstance();
+        try
+        {
+            _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
-        VirtualHost testVhost = registry.getVirtualHostRegistry().getVirtualHost(VHOST);
-        assertNotNull("Unable to get test Vhost", testVhost);
-        assertNotNull("Unable to get test queue registry", testVhost.getQueueRegistry());
-        AMQQueue q = testVhost.getQueueRegistry().getQueue(new AMQShortString(QUEUE));
-        assertNotNull("Unable to get test queue", q);
-        assertEquals("Queue count too big", 0, q.getMessageCount());
+            _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        }
+        catch (Exception e)
+        {
+            fail(e.getMessage());
+        }
+
+        try
+        {
+            long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _context.lookup("queue"));
+            assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
+        }
+        catch (NamingException e)
+        {
+            fail(e.getMessage());
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                _clientConnection.close();
+            }
+            catch (JMSException e)
+            {
+                fail(e.getMessage());
+            }
+        }
+
     }
 
     private void verifyAllMessagesRecevied() throws JMSException
