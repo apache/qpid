@@ -22,6 +22,7 @@
 #define _framing_SequenceNumber_h
 
 #include "amqp_types.h"
+#include <iosfwd>
 
 namespace qpid {
 namespace framing {
@@ -65,6 +66,8 @@ struct Window
     SequenceNumber hwm;
     SequenceNumber lwm;
 };
+
+std::ostream& operator<<(std::ostream& o, const SequenceNumber& n);
 
 }} // namespace qpid::framing
 

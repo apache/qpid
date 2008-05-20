@@ -57,7 +57,7 @@ def remote_port():
 class Helper:
     def __init__(self, parent):
         self.parent = parent
-        self.session = parent.conn.session("2")
+        self.session = parent.conn.session("Helper")
         self.mc  = managementClient(self.session.spec)
         self.mch = self.mc.addChannel(self.session)
         self.mc.syncWaitForStable(self.mch)
@@ -126,7 +126,7 @@ class FederationTests(TestBase010):
 
         #send messages to remote broker and confirm it is routed to local broker
         r_conn = self.connect(host=remote_host(), port=remote_port())
-        r_session = r_conn.session("1")
+        r_session = r_conn.session("test_pull_from_exchange")
 
         for i in range(1, 11):
             dp = r_session.delivery_properties(routing_key="my-key")
@@ -153,7 +153,7 @@ class FederationTests(TestBase010):
 
         #setup queue on remote broker and add some messages
         r_conn = self.connect(host=remote_host(), port=remote_port())
-        r_session = r_conn.session("1")
+        r_session = r_conn.session("test_pull_from_queue")
         r_session.queue_declare(queue="my-bridge-queue", exclusive=True, auto_delete=True)
         for i in range(1, 6):
             dp = r_session.delivery_properties(routing_key="my-bridge-queue")
@@ -223,7 +223,7 @@ class FederationTests(TestBase010):
 
         #send messages to remote broker and confirm it is routed to local broker
         r_conn = self.connect(host=remote_host(), port=remote_port())
-        r_session = r_conn.session("1")
+        r_session = r_conn.session("test_tracing")
 
         trace = [None, "exclude-me", "a,exclude-me,b", "also-exclude-me,c", "dont-exclude-me"]
         body = ["yes", "first-bad", "second-bad", "third-bad", "yes"]

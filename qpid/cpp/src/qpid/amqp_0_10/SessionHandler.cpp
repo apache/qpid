@@ -33,10 +33,8 @@ namespace amqp_0_10 {
 using namespace framing;
 using namespace std;
 
-SessionHandler::SessionHandler() : peer(channel), ignoring(), sendReady(), receiveReady() {}
-
-SessionHandler::SessionHandler(FrameHandler& out, ChannelId ch)
-    : channel(ch, &out), peer(channel), ignoring(false) {}
+SessionHandler::SessionHandler(FrameHandler* out, ChannelId ch)
+    : channel(ch, out), peer(channel), ignoring(false), sendReady(), receiveReady() {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -75,7 +73,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
             checkAttached();
             if (!receiveReady)
                 throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to receive data"));
-            if (!getState()->receiver.record(f))
+            if (!getState()->receiverRecord(f))
                 return; // Ignore duplicates.
             getInHandler()->handle(f);
         }
@@ -100,10 +98,10 @@ void SessionHandler::handleOut(AMQFrame& f) {
     checkAttached();
     if (!sendReady)
         throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to send data"));
-    getState()->sender.record(f); 
-    if (getState()->sender.needFlush()) {
+    getState()->senderRecord(f); 
+    if (getState()->senderNeedFlush()) {
         peer.flush(false, true, true); 
-        getState()->sender.recordFlush();
+        getState()->senderRecordFlush();
     }
     channel.handle(f);
 }
@@ -128,7 +126,7 @@ void SessionHandler::attach(const std::string& name, bool force) {
     if (getState()->hasState())
         peer.flush(true, true, true);
     else
-        sendCommandPoint();
+        sendCommandPoint(getState()->senderGetCommandPoint());
 }
 
 void SessionHandler::attached(const std::string& name) {
@@ -168,7 +166,7 @@ void SessionHandler::timeout(uint32_t t) {
 
 void SessionHandler::commandPoint(const SequenceNumber& id, uint64_t offset) {
     checkAttached();
-    getState()->receiver.setCommandPoint(SessionPoint(id, offset));
+    getState()->receiverSetCommandPoint(SessionPoint(id, offset));
     if (!receiveReady) {
         receiveReady = true;
         readyToReceive();
@@ -177,32 +175,37 @@ void SessionHandler::commandPoint(const SequenceNumber& id, uint64_t offset) {
 
 void SessionHandler::expected(const SequenceSet& commands, const Array& /*fragments*/) {
     checkAttached();
-    if (commands.empty() && getState()->hasState())
-        throw IllegalStateException(
+    if (getState()->hasState()) { // Replay
+        if (commands.empty()) throw IllegalStateException(
             QPID_MSG(getState()->getId() << ": has state but client is attaching as new session."));        
-    getState()->sender.expected(commands.empty() ? SequenceNumber(0) : commands.front());
-    if (!sendReady)  // send command point if not already sent
-        sendCommandPoint();
+        // TODO aconway 2008-05-12: support replay of partial commands.
+        // Here we always round down to the last command boundary.
+        SessionPoint expectedPoint = commands.empty() ? SequenceNumber(0) : SessionPoint(commands.front(),0);
+        SessionState::ReplayRange replay = getState()->senderExpected(expectedPoint);
+        sendCommandPoint(expectedPoint);
+        std::for_each(replay.begin(), replay.end(), out); // replay
+    }
+    else
+        sendCommandPoint(getState()->senderGetCommandPoint());
 }
 
 void SessionHandler::confirmed(const SequenceSet& commands, const Array& /*fragments*/) {
     checkAttached();
     // Ignore non-contiguous confirmations.
-    if (!commands.empty() && commands.front() >= getState()->sender.getReplayPoint()) {
-        getState()->sender.confirmed(commands.rangesBegin()->last());
-        }
+    if (!commands.empty() && commands.front() >= getState()->senderGetReplayPoint()) 
+        getState()->senderConfirmed(commands.rangesBegin()->last());
 }
 
 void SessionHandler::completed(const SequenceSet& commands, bool /*timelyReply*/) {
     checkAttached();
-    getState()->sender.completed(commands);
+    getState()->senderCompleted(commands);
     if (!commands.empty())
         peer.knownCompleted(commands);    // Always send a timely reply
 }
 
 void SessionHandler::knownCompleted(const SequenceSet& commands) {
     checkAttached();
-    getState()->receiver.knownCompleted(commands);
+    getState()->receiverKnownCompleted(commands);
 }
 
 void SessionHandler::flush(bool expected, bool confirmed, bool completed) {
@@ -210,18 +213,18 @@ void SessionHandler::flush(bool expected, bool confirmed, bool completed) {
     if (expected)  {
         SequenceSet expectSet;
         if (getState()->hasState())
-            expectSet.add(getState()->receiver.getExpected().command);
+            expectSet.add(getState()->receiverGetExpected().command);
         peer.expected(expectSet, Array());
     }
     if (confirmed) {
         SequenceSet confirmSet;
-        if (!getState()->receiver.getUnknownComplete().empty()) 
-            confirmSet.add(getState()->receiver.getUnknownComplete().front(),
-                           getState()->receiver.getReceived().command);
+        if (!getState()->receiverGetUnknownComplete().empty()) 
+            confirmSet.add(getState()->receiverGetUnknownComplete().front(),
+                           getState()->receiverGetReceived().command);
         peer.confirmed(confirmSet, Array());
     }
     if (completed)
-        peer.completed(getState()->receiver.getUnknownComplete(), true);
+        peer.completed(getState()->receiverGetUnknownComplete(), true);
 }
 
 void SessionHandler::gap(const SequenceSet& /*commands*/) {
@@ -237,20 +240,20 @@ void SessionHandler::sendDetach()
 
 void SessionHandler::sendCompletion() {
     checkAttached();
-    peer.completed(getState()->receiver.getUnknownComplete(), true);
+    peer.completed(getState()->receiverGetUnknownComplete(), true);
 }
 
 void SessionHandler::sendAttach(bool force) {
     checkAttached();
+    QPID_LOG(debug, "SessionHandler::sendAttach attach id=" << getState()->getId());
     peer.attach(getState()->getId().getName(), force);
     if (getState()->hasState())
         peer.flush(true, true, true);
     else
-        sendCommandPoint();
+        sendCommandPoint(getState()->senderGetCommandPoint());
 }
 
-void SessionHandler::sendCommandPoint()  {
-    SessionPoint point(getState()->sender.getCommandPoint());
+void SessionHandler::sendCommandPoint(const SessionPoint& point)  {
     peer.commandPoint(point.command, point.offset);
     if (!sendReady) {
         sendReady = true;
