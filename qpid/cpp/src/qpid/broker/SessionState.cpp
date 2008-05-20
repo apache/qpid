@@ -267,7 +267,8 @@ void SessionState::sendCompletion() { handler->sendCompletion(); }
 
 void SessionState::senderCompleted(const SequenceSet& commands) {
     qpid::SessionState::senderCompleted(commands);
-    commands.for_each(boost::bind(&SemanticState::completed, &semanticState, _1, _2));
+    for (SequenceSet::RangeIterator i = commands.rangesBegin(); i != commands.rangesEnd(); i++)
+      semanticState.completed(i->first(), i->last());
 }
 
 void SessionState::readyToSend() {
