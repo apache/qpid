@@ -22,7 +22,7 @@
  *
  */
 
-#include <qpid/framing/Uuid.h>
+#include <qpid/SessionState.h>
 #include <qpid/sys/Time.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/RefCounted.h>
@@ -37,7 +37,7 @@
 
 namespace qpid {
 namespace broker {
-
+class Broker;
 class SessionState;
 class SessionHandler;
 
@@ -50,44 +50,43 @@ class SessionManager : private boost::noncopyable {
      * Observer notified of SessionManager events.
      */
     struct Observer : public RefCounted {
+        /** Called when a stateless session is attached. */
         virtual void opened(SessionState&) {}
     };
     
-    SessionManager(uint32_t ack);
+    SessionManager(const qpid::SessionState::Configuration&, Broker&);
     
     ~SessionManager();
     
     /** Open a new active session, caller takes ownership */
-    std::auto_ptr<SessionState> open(SessionHandler& c, uint32_t timeout_, std::string name);
+    std::auto_ptr<SessionState> attach(SessionHandler& h, const SessionId& id, bool/*force*/);
     
-    /** Suspend a session, start it's timeout counter.
-     * The factory takes ownership.
-     */
-    void suspend(std::auto_ptr<SessionState> session);
+    /** Return a detached session to the manager, start the timeout counter. */
+    void detach(std::auto_ptr<SessionState>);
         
-    /** Resume a suspended session.
-     *@throw Exception if timed out or non-existant.
-     */
-    std::auto_ptr<SessionState> resume(const framing::Uuid&);
+    /** Forget about an attached session. Called by SessionState destructor. */
+    void forget(const SessionId&);
 
     /** Add an Observer. */
     void add(const boost::intrusive_ptr<Observer>&);
     
+    Broker& getBroker() const { return broker; }
+
+    const qpid::SessionState::Configuration& getSessionConfig() const { return config; }
+
   private:
-    typedef boost::ptr_vector<SessionState> Suspended;
-    typedef std::set<framing::Uuid> Active;
+    typedef boost::ptr_vector<SessionState> Detached; // Sorted in expiry order.
+    typedef std::set<SessionId> Attached;
     typedef std::vector<boost::intrusive_ptr<Observer> > Observers;
 
-    void erase(const framing::Uuid&);             
     void eraseExpired();             
 
     sys::Mutex lock;
-    Suspended suspended;
-    Active active;
-    uint32_t ack;
+    Detached detached;
+    Attached attached;
+    qpid::SessionState::Configuration config;
     Observers observers;
-    
-  friend class SessionState; // removes deleted sessions from active set.
+    Broker& broker;
 };
 
 

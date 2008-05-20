@@ -89,13 +89,20 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
 }
 
-void NullAuthenticator::start(const string& /*mechanism*/, const string& /*response*/)
+void NullAuthenticator::start(const string& mechanism, const string& response)
 {
     QPID_LOG(warning, "SASL: No Authentication Performed");
-    
-    // TODO: Figure out what should actually be set in this case
-    connection.setUserId("anonymous");
-    
+    if (mechanism == "PLAIN") { // Old behavior
+        if (response.size() > 0 && response[0] == (char) 0) {
+            string temp = response.substr(1);
+            string::size_type i = temp.find((char)0);
+            string uid = temp.substr(0, i);
+            string pwd = temp.substr(i + 1);
+            connection.setUserId(uid);
+        }
+    } else {
+        connection.setUserId("anonymous");
+    }   
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
 }
 

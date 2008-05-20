@@ -71,9 +71,9 @@ struct ClusterDeliverHandler : public FrameHandler {
     
     void handle(AMQFrame& f) {
         next->handle(f);
-        Mutex::ScopedLock l(sender.lock);
-        sender.busy=false;
-        sender.lock.notify();
+        Mutex::ScopedLock l(senderLock);
+        senderBusy=false;
+        senderLock.notify();
     }
 };
 
