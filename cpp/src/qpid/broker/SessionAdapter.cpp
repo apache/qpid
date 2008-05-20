@@ -410,7 +410,7 @@ void SessionAdapter::MessageHandlerImpl::accept(const framing::SequenceSet& comm
 
 framing::MessageAcquireResult SessionAdapter::MessageHandlerImpl::acquire(const framing::SequenceSet& transfers)
 {
-    //TODO: change this when SequenceNumberSet is deleted along with preview code
+    // FIXME aconway 2008-05-12: create SequenceSet directly, no need for intermediate results vector.
     SequenceNumberSet results;
     RangedOperation f = boost::bind(&SemanticState::acquire, &state, _1, _2, boost::ref(results));
     transfers.for_each(f);

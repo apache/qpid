@@ -21,6 +21,7 @@
 
 #include "SequenceNumber.h"
 #include "Buffer.h"
+#include <ostream>
 
 using qpid::framing::SequenceNumber;
 using qpid::framing::Buffer;
@@ -100,6 +101,10 @@ int32_t operator-(const SequenceNumber& a, const SequenceNumber& b)
 {
     int32_t result = a.value - b.value;    
     return result;
+}
+
+std::ostream& operator<<(std::ostream& o, const SequenceNumber& n) {
+    return o << n.getValue();
 }
 
 }}

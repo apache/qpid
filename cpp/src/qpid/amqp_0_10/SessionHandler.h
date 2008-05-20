@@ -25,10 +25,10 @@
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/AMQP_AllProxy.h"
 #include "qpid/framing/AMQP_AllOperations.h"
+#include "qpid/SessionState.h"
 
 namespace qpid {
 
-class SessionState;
 
 namespace amqp_0_10 {
 
@@ -45,8 +45,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
   public:
     typedef framing::AMQP_AllProxy::Session Peer;
 
-    SessionHandler();
-    SessionHandler(framing::FrameHandler& out, uint16_t channel);
+    SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
     ~SessionHandler();
 
     void setChannel(uint16_t ch) { channel = ch; }
@@ -63,7 +62,6 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     void sendAttach(bool force);
     void sendTimeout(uint32_t t);
     void sendFlush();
-    void sendCommandPoint();
 
     /** True if the handler is ready to send and receive */
     bool ready() const;
@@ -96,8 +94,8 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     // Notification of events
     virtual void readyToSend() {}
     virtual void readyToReceive() {}
-    virtual void handleDetach();
     
+    virtual void handleDetach();
     virtual void handleIn(framing::AMQFrame&);
     virtual void handleOut(framing::AMQFrame&);
 
@@ -108,8 +106,9 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     Peer peer;
     bool ignoring;
     bool sendReady, receiveReady;
-    // FIXME aconway 2008-05-07: move handler-related functions from SessionState.
 
+  private:
+    void sendCommandPoint(const SessionPoint&);
 };
 }} // namespace qpid::amqp_0_10
 

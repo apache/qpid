@@ -22,11 +22,9 @@
  *
  */
 
-#include "qpid/framing/Uuid.h"
+#include "qpid/SessionState.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/SessionState.h"
 #include "qpid/framing/SequenceSet.h"
-#include "qpid/framing/ProtocolVersion.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
@@ -63,20 +61,19 @@ class SessionManager;
  * Broker-side session state includes sessions handler chains, which may
  * themselves have state. 
  */
-class SessionState : public framing::SessionState,
+class SessionState : public qpid::SessionState, 
     public SessionContext,
     public DeliveryAdapter,
-    public management::Manageable
+                     public management::Manageable,
+                     public framing::FrameHandler
 {
   public:
+    SessionState(Broker&, SessionHandler&, const SessionId&, const SessionState::Configuration&);
     ~SessionState();
     bool isAttached() const { return handler; }
 
     void detach();
     void attach(SessionHandler& handler);
-
-    
-    SessionHandler* getHandler();
 
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();
@@ -85,18 +82,15 @@ class SessionState : public framing::SessionState,
     ConnectionState& getConnection();
     bool isLocal(const ConnectionToken* t) const;
 
-    uint32_t getTimeout() const { return timeout; }
-    void setTimeout(uint32_t t) { timeout = t; }
-
-    Broker& getBroker() { return broker; }
-    framing::ProtocolVersion getVersion() const { return version; }
+    Broker& getBroker();
 
     /** OutputControl **/
     void activateOutput();
 
     void handle(framing::AMQFrame& frame);
 
-    void complete(const framing::SequenceSet& ranges);    
+    void senderCompleted(const framing::SequenceSet& ranges);
+    
     void sendCompletion();
 
     //delivery adapter methods:
@@ -107,29 +101,13 @@ class SessionState : public framing::SessionState,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
-    // Normally SessionManager creates sessions.
-    SessionState(SessionManager*,
-                 SessionHandler* out,
-                 uint32_t timeout,
-                 uint32_t ackInterval,
-                 std::string& name);
-    
-
-    framing::SequenceSet completed;
-    framing::SequenceSet knownCompleted;
-    framing::SequenceNumber nextIn;
-    framing::SequenceNumber nextOut;
+    void readyToSend();
 
   private:
-    typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
 
-    SessionManager* factory;
-    SessionHandler* handler;    
-    framing::Uuid id;
-    uint32_t timeout;
-    sys::AbsTime expiry;        // Used by SessionManager.
     Broker& broker;
-    framing::ProtocolVersion version;
+    SessionHandler* handler;    
+    sys::AbsTime expiry;        // Used by SessionManager.
     sys::Mutex lock;
     bool ignoring;
     std::string name;
@@ -139,12 +117,11 @@ class SessionState : public framing::SessionState,
     MessageBuilder msgBuilder;
     IncompleteMessageList incomplete;
 
-    RangedOperation ackOp;
     IncompleteMessageList::CompletionListener enqueuedOp;
 
     management::Session::shared_ptr mgmtObject;
-    void handleCommand(framing::AMQMethodBody* method, framing::SequenceNumber& id);
-    void handleContent(framing::AMQFrame& frame, framing::SequenceNumber& id);
+    void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
+    void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
     void enqueued(boost::intrusive_ptr<Message> msg);
 
     friend class SessionManager;

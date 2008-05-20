@@ -150,7 +150,7 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
     ClientSessionFixture fix;
     fix.session =fix.connection.newSession(ASYNC);
     fix.declareSubscribe();
-    size_t count = 1000;
+    size_t count = 10;
     DummyListener listener(fix.session, "my-dest", count);
     sys::Thread t(listener);
     for (size_t i = 0; i < count; ++i) {
@@ -205,7 +205,7 @@ QPID_AUTO_TEST_CASE(testSendToSelf) {
     sys::Thread runner(fix.subs);//start dispatcher thread
     string data("msg");
     Message msg(data, "myq");
-    const uint count=1000;
+    const uint count=10;
     for (uint i = 0; i < count; ++i) {
         fix.session.messageTransfer(content=msg);
     }

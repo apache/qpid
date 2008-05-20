@@ -59,6 +59,7 @@ void Bridge::create(ConnectionState& c)
     peer.reset(new framing::AMQP_ServerProxy(*channelHandler));
 
     session->attach(name, false);
+    session->commandPoint(0,0);
 
     if (args.i_src_is_local) {
         //TODO: handle 'push' here... simplest way is to create frames and pass them to Connection::received()
