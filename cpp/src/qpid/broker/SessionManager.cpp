@@ -40,68 +40,58 @@ using boost::intrusive_ptr;
 using namespace sys;
 using namespace framing;
 
-SessionManager::SessionManager(uint32_t a) : ack(a) {}
+SessionManager::SessionManager(const SessionState::Configuration& c, Broker& b)
+    : config(c), broker(b) {}
 
-SessionManager::~SessionManager() {}
-
-// FIXME aconway 2008-02-01: pass handler*, allow open  unattached.
-std::auto_ptr<SessionState>  SessionManager::open(
-    SessionHandler& h, uint32_t timeout_, std::string _name)
-{
-    Mutex::ScopedLock l(lock);
-    std::auto_ptr<SessionState> session(
-        new SessionState(this, &h, timeout_, ack, _name));
-    active.insert(session->getId());
-    for_each(observers.begin(), observers.end(),
-             boost::bind(&Observer::opened, _1,boost::ref(*session)));
-    return session;
+SessionManager::~SessionManager() {
+    detached.clear();           // Must clear before destructor as session dtor will call forget()
 }
 
-void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
+std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const SessionId& id, bool/*force*/) {
     Mutex::ScopedLock l(lock);
-    active.erase(session->getId());
-    session->suspend();
+    eraseExpired();             // Clean up expired table
+    std::pair<Attached::iterator, bool> insert = attached.insert(id);
+    if (!insert.second)
+        throw SessionBusyException(QPID_MSG("Session already attached: " << id));
+    Detached::iterator i = std::find(detached.begin(), detached.end(), id);
+    std::auto_ptr<SessionState> state;
+    if (i == detached.end())  {
+        state.reset(new SessionState(broker, h, id, config));
+    for_each(observers.begin(), observers.end(),
+                 boost::bind(&Observer::opened, _1,boost::ref(*state)));
+    }
+    else {
+        state.reset(detached.release(i).release());
+        state->attach(h);
+    }
+    return state;
+    // FIXME aconway 2008-04-29: implement force 
+}
+
+void  SessionManager::detach(std::auto_ptr<SessionState> session) {
+    Mutex::ScopedLock l(lock);
+    attached.erase(session->getId());
+    session->detach();
+    if (session->getTimeout() > 0) {
     session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
     if (session->mgmtObject.get() != 0)
         session->mgmtObject->set_expireTime ((uint64_t) Duration (session->expiry));
-    suspended.push_back(session.release()); // In expiry order
+        detached.push_back(session.release()); // In expiry order
     eraseExpired();
 }
-
-std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id)
-{
-    Mutex::ScopedLock l(lock);
-    eraseExpired();
-    if (active.find(id) != active.end()) 
-        throw SessionBusyException(
-            QPID_MSG("Session already active: " << id));
-    Suspended::iterator i = std::find_if(
-        suspended.begin(), suspended.end(),
-        boost::bind(std::equal_to<Uuid>(), id, boost::bind(&SessionState::getId, _1))
-    );
-    if (i == suspended.end())
-        throw InvalidArgumentException(
-            QPID_MSG("No suspended session with id=" << id));
-    active.insert(id);
-    std::auto_ptr<SessionState> state(suspended.release(i).release());
-    return state;
 }
 
-void SessionManager::erase(const framing::Uuid& id)
-{
-    Mutex::ScopedLock l(lock);
-    active.erase(id);
-}
+void SessionManager::forget(const SessionId& id) { attached.erase(id); }
 
 void SessionManager::eraseExpired() {
     // Called with lock held.
-    if (!suspended.empty()) {
-        Suspended::iterator keep = std::lower_bound(
-            suspended.begin(), suspended.end(), now(),
+    if (!detached.empty()) {
+        Detached::iterator keep = std::lower_bound(
+            detached.begin(), detached.end(), now(),
             boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
-        if (suspended.begin() != keep) {
-            QPID_LOG(debug, "Expiring sessions: " << log::formatList(suspended.begin(), keep));
-            suspended.erase(suspended.begin(), keep);
+        if (detached.begin() != keep) {
+            QPID_LOG(debug, "Expiring sessions: " << log::formatList(detached.begin(), keep));
+            detached.erase(detached.begin(), keep);
         }
     }
 }

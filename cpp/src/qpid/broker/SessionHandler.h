@@ -22,19 +22,12 @@
  *
  */
 
-#include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/AMQP_ClientOperations.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/amqp_0_10/SessionHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/Array.h"
-#include "qpid/framing/ChannelHandler.h"
-#include "qpid/framing/SequenceNumber.h"
-
-
-#include <boost/noncopyable.hpp>
 
 namespace qpid {
+class SessionState;
+
 namespace broker {
 
 class Connection;
@@ -46,65 +39,38 @@ class SessionState;
  * receives incoming frames, handles session controls and manages the
  * association between the channel and a session.
  */
-class SessionHandler : public framing::AMQP_ServerOperations::SessionHandler,
-                       public framing::FrameHandler::InOutHandler,
-                       private boost::noncopyable
-{
+class SessionHandler : public amqp_0_10::SessionHandler {
   public:
     SessionHandler(Connection&, framing::ChannelId);
     ~SessionHandler();
 
-    /** Returns 0 if not attached to a session */
+    /** Get broker::SessionState */
     SessionState* getSession() { return session.get(); }
     const SessionState* getSession() const { return session.get(); }
 
-    framing::ChannelId getChannel() const { return channel.get(); }
-    
     ConnectionState& getConnection();
     const ConnectionState& getConnection() const;
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
-    void requestDetach();
-    void handleDetach();
-    void sendCompletion();
+    virtual void handleDetach();
     
-  protected:
-    void handleIn(framing::AMQFrame&);
-    void handleOut(framing::AMQFrame&);
-    
-  private:
-    //new methods:
-    void attach(const std::string& name, bool force);
+    // Overrides
     void attached(const std::string& name);
-    void detach(const std::string& name);
-    void detached(const std::string& name, uint8_t code);
 
-    void requestTimeout(uint32_t t);
-    void timeout(uint32_t t);
+  protected:
+    virtual void setState(const std::string& sessionName, bool force);
+    virtual qpid::SessionState* getState();
+    virtual framing::FrameHandler* getInHandler();
+    virtual void channelException(uint16_t code, const std::string& msg);
+    virtual void connectionException(uint16_t code, const std::string& msg);
+    virtual void readyToSend();
 
-    void commandPoint(const framing::SequenceNumber& id, uint64_t offset);
-    void expected(const framing::SequenceSet& commands, const framing::Array& fragments);
-    void confirmed(const framing::SequenceSet& commands,const framing::Array& fragments);
-    void completed(const framing::SequenceSet& commands, bool timelyReply);
-    void knownCompleted(const framing::SequenceSet& commands);
-    void flush(bool expected, bool confirmed, bool completed);
-    void gap(const framing::SequenceSet& commands);    
-
-    void assertAttached(const char* method) const;
-    void assertActive(const char* method) const;
-    void assertClosed(const char* method) const;
-
-    bool isValid(framing::AMQMethodBody*);
-
+  private:
     Connection& connection;
-    framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
-    framing::AMQP_ClientProxy::Session peerSession;
-    bool ignoring;
     std::auto_ptr<SessionState> session;
-    std::string name;//TODO: this should be part of the session state and replace the id
 };
 
 }} // namespace qpid::broker

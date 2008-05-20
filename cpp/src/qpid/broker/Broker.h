@@ -83,7 +83,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint16_t mgmtPubInterval;
         bool auth;
         std::string realm;
-        uint32_t ack;
+        size_t replayFlushLimit;
+        size_t replayHardLimit;
     };
     
     virtual ~Broker();

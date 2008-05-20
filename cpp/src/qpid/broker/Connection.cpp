@@ -124,8 +124,8 @@ void Connection::idleIn(){}
 
 void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
-	for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
-	    ptr_map_ptr(i)->handleDetach();
+        while (!channels.empty()) 
+	    ptr_map_ptr(channels.begin())->handleDetach();
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();

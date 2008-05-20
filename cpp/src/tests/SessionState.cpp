@@ -58,7 +58,7 @@ string str(const AMQFrame& f) {
     return "H";                 // Must be a header.
 }
 // Make a string from a range of frames.
-string str(const vector<AMQFrame>& frames) {
+string str(const boost::iterator_range<vector<AMQFrame>::const_iterator>& frames) {
     string (*strFrame)(const AMQFrame&) = str;
     return applyAccumulate(frames.begin(), frames.end(), string(), ptr_fun(strFrame));
 }
@@ -84,7 +84,7 @@ AMQFrame contentFrameChar(char content, bool isLast=true) {
 }
 
 // Send frame & return size of frame.
-size_t send(qpid::SessionState& s, const AMQFrame& f) { s.sender.record(f); return f.size(); }
+size_t send(qpid::SessionState& s, const AMQFrame& f) { s.senderRecord(f); return f.size(); }
 // Send transfer command with no content.
 size_t transfer0(qpid::SessionState& s) { return send(s, transferFrame(false)); }
 // Send transfer frame with single content frame.
@@ -126,136 +126,132 @@ using qpid::SessionPoint;
 
 QPID_AUTO_TEST_CASE(testSendGetReplyList) {
     qpid::SessionState s;
-    s.sender.getCommandPoint();
+    s.senderGetCommandPoint();
     transfer1(s, "abc");
     transfers(s, "def");
     transferN(s, "xyz");
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()),"CabcCdCeCfCxyz");
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))),"CabcCdCeCfCxyz");
     // Ignore controls.
-    s.sender.record(AMQFrame(in_place<SessionFlushBody>()));
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()),"CabcCdCeCfCxyz");    
+    s.senderRecord(AMQFrame(in_place<SessionFlushBody>()));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(2,0))),"CeCfCxyz");    
 }
 
 QPID_AUTO_TEST_CASE(testNeedFlush) {
     qpid::SessionState::Configuration c;
     // sync after 2 1-byte transfers or equivalent bytes.
-    c.replaySyncSize = 2*(transferFrameSize()+contentFrameSize());
+    c.replayFlushLimit = 2*(transferFrameSize()+contentFrameSize());
     qpid::SessionState s(SessionId(), c);
-    s.sender.getCommandPoint();
+    s.senderGetCommandPoint();
     transfers(s, "a");
-    BOOST_CHECK(!s.sender.needFlush());
+    BOOST_CHECK(!s.senderNeedFlush());
     transfers(s, "b");
-    BOOST_CHECK(s.sender.needFlush());
-    s.sender.recordFlush();
-    BOOST_CHECK(!s.sender.needFlush());
+    BOOST_CHECK(s.senderNeedFlush());
+    s.senderRecordFlush();
+    BOOST_CHECK(!s.senderNeedFlush());
     transfers(s, "c");
-    BOOST_CHECK(!s.sender.needFlush());
+    BOOST_CHECK(!s.senderNeedFlush());
     transfers(s, "d");
-    BOOST_CHECK(s.sender.needFlush());
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CaCbCcCd");
+    BOOST_CHECK(s.senderNeedFlush());
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint())), "CaCbCcCd");
 }
 
 QPID_AUTO_TEST_CASE(testPeerConfirmed) {
     qpid::SessionState::Configuration c;
     // sync after 2 1-byte transfers or equivalent bytes.
-    c.replaySyncSize = 2*(transferFrameSize()+contentFrameSize());
+    c.replayFlushLimit = 2*(transferFrameSize()+contentFrameSize());
     qpid::SessionState s(SessionId(), c);
-    s.sender.getCommandPoint();
+    s.senderGetCommandPoint();
     transfers(s, "ab");
-    BOOST_CHECK(s.sender.needFlush());
+    BOOST_CHECK(s.senderNeedFlush());
     transfers(s, "cd");
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CaCbCcCd");
-    s.sender.confirmed(SessionPoint(3));
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "Cd");
-    BOOST_CHECK(!s.sender.needFlush());
-
-    // Never go backwards.
-    s.sender.confirmed(SessionPoint(2));
-    s.sender.confirmed(SessionPoint(3));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))), "CaCbCcCd");
+    s.senderConfirmed(SessionPoint(3));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(3,0))), "Cd");
+    BOOST_CHECK(!s.senderNeedFlush());
 
     // Multi-frame transfer.
     transfer1(s, "efg");
     transfers(s, "xy");
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CdCefgCxCy");
-    BOOST_CHECK(s.sender.needFlush());
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(3,0))), "CdCefgCxCy");
+    BOOST_CHECK(s.senderNeedFlush());
 
-    s.sender.confirmed(SessionPoint(4));
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CefgCxCy");
-    BOOST_CHECK(s.sender.needFlush());
+    s.senderConfirmed(SessionPoint(4));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(4,0))), "CefgCxCy");
+    BOOST_CHECK(s.senderNeedFlush());
 
-    s.sender.confirmed(SessionPoint(5));
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CxCy");
-    BOOST_CHECK(s.sender.needFlush());
+    s.senderConfirmed(SessionPoint(5));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(5,0))), "CxCy");
+    BOOST_CHECK(s.senderNeedFlush());
     
-    s.sender.confirmed(SessionPoint(6));
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "Cy");
-    BOOST_CHECK(!s.sender.needFlush());
+    s.senderConfirmed(SessionPoint(6));
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(6,0))), "Cy");
+    BOOST_CHECK(!s.senderNeedFlush());
 }
 
 QPID_AUTO_TEST_CASE(testPeerCompleted) {
     qpid::SessionState s;
-    s.sender.getCommandPoint();
+    s.senderGetCommandPoint();
     // Completion implies confirmation 
     transfers(s, "abc");
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CaCbCc");
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))), "CaCbCc");
     SequenceSet set(SequenceSet() + 0 + 1);
-    s.sender.completed(set);
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "Cc");
+    s.senderCompleted(set);
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(2,0))), "Cc");
 
     transfers(s, "def");
     // We dont do out-of-order confirmation, so this will only confirm up to 3:
     set = SequenceSet(SequenceSet() + 2 + 3 + 5);
-    s.sender.completed(set);    
-    BOOST_CHECK_EQUAL(str(s.sender.getReplayList()), "CeCf");
+    s.senderCompleted(set);    
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(4,0))), "CeCf");
 }
 
 QPID_AUTO_TEST_CASE(testReceive) {
     // Advance expected/received correctly
     qpid::SessionState s;
-    s.receiver.setCommandPoint(SessionPoint());
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), SessionPoint(0));
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), SessionPoint(0));
+    s.receiverSetCommandPoint(SessionPoint());
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(0));
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(0));
     
-    BOOST_CHECK(s.receiver.record(transferFrame(false)));
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), SessionPoint(1));
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), SessionPoint(1));
+    BOOST_CHECK(s.receiverRecord(transferFrame(false)));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(1));
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(1));
     
-    BOOST_CHECK(s.receiver.record(transferFrame(true)));
+    BOOST_CHECK(s.receiverRecord(transferFrame(true)));
     SessionPoint point = SessionPoint(1, transferFrameSize());
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), point);
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), point);
-    BOOST_CHECK(s.receiver.record(contentFrame("", false)));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), point);
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), point);
+    BOOST_CHECK(s.receiverRecord(contentFrame("", false)));
     point.offset += contentFrameSize(0);
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), point);
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), point);
-    BOOST_CHECK(s.receiver.record(contentFrame("", true)));
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), SessionPoint(2));
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), SessionPoint(2));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), point);
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), point);
+    BOOST_CHECK(s.receiverRecord(contentFrame("", true)));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(2));
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(2));
 
     // Idempotence barrier, rewind expected & receive some duplicates.
-    s.receiver.setCommandPoint(SessionPoint(1));
-    BOOST_CHECK(!s.receiver.record(transferFrame(false)));
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), SessionPoint(2));
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), SessionPoint(2));
-    BOOST_CHECK(s.receiver.record(transferFrame(false)));
-    BOOST_CHECK_EQUAL(s.receiver.getExpected(), SessionPoint(3));
-    BOOST_CHECK_EQUAL(s.receiver.getReceived(), SessionPoint(3));
+    s.receiverSetCommandPoint(SessionPoint(1));
+    BOOST_CHECK(!s.receiverRecord(transferFrame(false)));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(2));
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(2));
+    BOOST_CHECK(s.receiverRecord(transferFrame(false)));
+    BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(3));
+    BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(3));
 }
 
 QPID_AUTO_TEST_CASE(testCompleted) {
     // completed & unknownCompleted
     qpid::SessionState s;
-    s.receiver.setCommandPoint(SessionPoint());
-    s.receiver.record(transferFrame(false));
-    s.receiver.record(transferFrame(false));
-    s.receiver.record(transferFrame(false));
-    s.receiver.completed(1);
-    BOOST_CHECK_EQUAL(s.receiver.getUnknownComplete(), SequenceSet(SequenceSet()+1));
-    s.receiver.completed(0);
-    BOOST_CHECK_EQUAL(s.receiver.getUnknownComplete(),
+    s.receiverSetCommandPoint(SessionPoint());
+    s.receiverRecord(transferFrame(false));
+    s.receiverRecord(transferFrame(false));
+    s.receiverRecord(transferFrame(false));
+    s.receiverCompleted(1);
+    BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(), SequenceSet(SequenceSet()+1));
+    s.receiverCompleted(0);
+    BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(),
                       SequenceSet(SequenceSet() + SequenceSet::Range(0,2)));
-    s.receiver.knownCompleted(SequenceSet(SequenceSet()+1));
-    BOOST_CHECK_EQUAL(s.receiver.getUnknownComplete(), SequenceSet(SequenceSet()+2));
+    s.receiverKnownCompleted(SequenceSet(SequenceSet()+1));
+    BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(), SequenceSet(SequenceSet()+2));
     // TODO aconway 2008-04-30: missing tests for known-completed.
 }
 
