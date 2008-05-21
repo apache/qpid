@@ -44,7 +44,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SequenceSet.cpp \
 	StringUtils.cpp \
 	IncompleteMessageList.cpp \
-	RangeSet.cpp
+	RangeSet.cpp \
+	AtomicValue.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
@@ -108,10 +109,6 @@ framing_unit_tests =	\
   FramingTest		\
   HeaderTest		\
   SequenceNumberTest
-
-posix_unit_tests =	\
-  EventChannelTest	\
-  EventChannelThreadsTest
 
 unit_tests =		\
   $(broker_unit_tests)	\
