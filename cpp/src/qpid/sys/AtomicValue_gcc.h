@@ -22,7 +22,7 @@
  *
  */
 
-#if !defined(QPID_SYS_ATOMICVALUE_H) || !defined(__GNUC__)
+#if !defined(QPID_SYS_ATOMICVALUE_H)
 #error "This file should only be included via AtomicValue.h."
 #endif
 
