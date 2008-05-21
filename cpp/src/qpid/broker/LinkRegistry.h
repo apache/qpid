@@ -34,6 +34,7 @@ namespace qpid {
 namespace broker {
 
     class Broker;
+    class Connection;
     class LinkRegistry {
 
         // Declare a timer task to manage the establishment of link connections and the
@@ -106,6 +107,12 @@ namespace broker {
          * Return the message store used.
          */
         MessageStore* getStore() const;
+
+        void notifyConnection (const std::string& key, Connection* c);
+        void notifyClosed     (const std::string& key);
+        void notifyConnectionForced    (const std::string& key, const std::string& text);
+        std::string getAuthMechanism   (const std::string& key);
+        std::string getAuthCredentials (const std::string& key);
     };
 }
 }

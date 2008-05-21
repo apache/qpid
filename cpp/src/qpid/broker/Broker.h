@@ -44,7 +44,6 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
-#include "qpid/sys/ProtocolAccess.h"
 
 #include <vector>
 
@@ -135,10 +134,12 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     /** Create a connection to another broker. */
     void connect(const std::string& host, uint16_t port, bool useSsl,
-                 sys::ConnectionCodec::Factory* =0,
-                 sys::ProtocolAccess* =0);
+                 boost::function2<void, int, std::string> failed,
+                 sys::ConnectionCodec::Factory* =0);
     /** Create a connection to another broker. */
-    void connect(const Url& url, sys::ConnectionCodec::Factory* =0);
+    void connect(const Url& url,
+                 boost::function2<void, int, std::string> failed,
+                 sys::ConnectionCodec::Factory* =0);
 
     // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
     // For the present just return the first ProtocolFactory registered.

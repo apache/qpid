@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include "qpid/SharedObject.h"
 #include "ConnectionCodec.h"
-#include "ProtocolAccess.h"
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace sys {
@@ -43,7 +43,7 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
         boost::shared_ptr<Poller>,
         const std::string& host, int16_t port,
         ConnectionCodec::Factory* codec,
-        ProtocolAccess* access = 0) = 0;
+        boost::function2<void, int, std::string> failed) = 0;
 };
 
 inline ProtocolFactory::~ProtocolFactory() {}
