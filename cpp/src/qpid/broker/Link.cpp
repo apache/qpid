@@ -51,13 +51,11 @@ Link::Link(LinkRegistry*  _links,
     : links(_links), store(_store), host(_host), port(_port), useSsl(_useSsl), durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
       persistenceId(0), broker(_broker), state(0),
-      access(boost::bind(&Link::established, this),
-             boost::bind(&Link::closed, this, _1, _2),
-             boost::bind(&Link::setConnection, this, _1)),
       visitCount(0),
       currentInterval(1),
       closing(false),
-      channelCounter(1)
+      channelCounter(1),
+      connection(0)
 {
     if (parent != 0)
     {
@@ -75,8 +73,9 @@ Link::Link(LinkRegistry*  _links,
 
 Link::~Link ()
 {
-    if (state == STATE_OPERATIONAL)
-        access.close();
+    if (state == STATE_OPERATIONAL && connection != 0)
+        connection->close();
+
     if (mgmtObject.get () != 0)
         mgmtObject->resourceDestroy ();
 }
@@ -95,13 +94,16 @@ void Link::setStateLH (int newState)
     case STATE_WAITING     : mgmtObject->set_state("Waiting");     break;
     case STATE_CONNECTING  : mgmtObject->set_state("Connecting");  break;
     case STATE_OPERATIONAL : mgmtObject->set_state("Operational"); break;
+    case STATE_FAILED      : mgmtObject->set_state("Failed");      break;
+    case STATE_CLOSED      : mgmtObject->set_state("Closed");      break;
     }
 }
 
 void Link::startConnectionLH ()
 {
     try {
-        broker->connect (host, port, useSsl, 0, &access);
+        broker->connect (host, port, useSsl,
+                         boost::bind (&Link::closed, this, _1, _2));
         setStateLH(STATE_CONNECTING);
     } catch(std::exception& e) {
         setStateLH(STATE_WAITING);
@@ -125,16 +127,21 @@ void Link::closed (int, std::string text)
 {
     Mutex::ScopedLock mutex(lock);
 
+    connection = 0;
+
     if (state == STATE_OPERATIONAL)
         QPID_LOG (warning, "Inter-broker link disconnected from " << host << ":" << port);
 
-    connection.reset();
     for (Bridges::iterator i = active.begin(); i != active.end(); i++)
         created.push_back(*i);
     active.clear();
 
-    setStateLH(STATE_WAITING);
-    mgmtObject->set_lastError (text);
+    if (state != STATE_FAILED)
+    {
+        setStateLH(STATE_WAITING);
+        mgmtObject->set_lastError (text);
+    }
+
     if (closing)
         destroy();
 }
@@ -145,7 +152,10 @@ void Link::destroy ()
     Bridges toDelete;
 
     QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
-    connection.reset();
+    if (connection)
+        connection->close(403, "closed by management");
+
+    setStateLH(STATE_CLOSED);
 
     // Move the bridges to be deleted into a local vector so there is no
     // corruption of the iterator caused by bridge deletion.
@@ -168,10 +178,7 @@ void Link::destroy ()
 void Link::add(Bridge::shared_ptr bridge)
 {
     Mutex::ScopedLock mutex(lock);
-
     created.push_back (bridge);
-    if (state == STATE_OPERATIONAL && connection.get() != 0)
-        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
 void Link::cancel(Bridge::shared_ptr bridge)
@@ -197,6 +204,9 @@ void Link::ioThreadProcessing()
 {
     Mutex::ScopedLock mutex(lock);
 
+    if (state != STATE_OPERATIONAL)
+        return;
+
     //process any pending creates
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
@@ -207,12 +217,10 @@ void Link::ioThreadProcessing()
     }
 }
 
-void Link::setConnection(Connection::shared_ptr c)
+void Link::setConnection(Connection* c)
 {
     Mutex::ScopedLock mutex(lock);
-
     connection = c;
-    connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
 void Link::maintenanceVisit ()
@@ -231,6 +239,8 @@ void Link::maintenanceVisit ()
             startConnectionLH();
         }
     }
+    else if (state == STATE_OPERATIONAL && !created.empty() && connection != 0)
+        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
 uint Link::nextChannel()
@@ -238,6 +248,14 @@ uint Link::nextChannel()
     Mutex::ScopedLock mutex(lock);
 
     return channelCounter++;
+}
+
+void Link::notifyConnectionForced(const string text)
+{
+    Mutex::ScopedLock mutex(lock);
+
+    setStateLH(STATE_FAILED);
+    mgmtObject->set_lastError(text);
 }
 
 void Link::setPersistenceId(uint64_t id) const

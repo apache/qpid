@@ -536,7 +536,6 @@ nobase_include_HEADERS = \
   qpid/sys/OutputControl.h \
   qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
-  qpid/sys/ProtocolAccess.h \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \

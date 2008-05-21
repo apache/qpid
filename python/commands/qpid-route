@@ -112,9 +112,12 @@ class RouteManager:
         connectArgs["port"]          = self.src.port
         connectArgs["useSsl"]        = False
         connectArgs["durable"]       = _durable
-        connectArgs["authMechanism"] = "PLAIN"
-        connectArgs["username"]      = self.src.username
-        connectArgs["password"]      = self.src.password
+        if self.src.username == "anonymous":
+            connectArgs["authMechanism"] = "ANONYMOUS"
+        else:
+            connectArgs["authMechanism"] = "PLAIN"
+            connectArgs["username"]      = self.src.username
+            connectArgs["password"]      = self.src.password
         res = mc.syncCallMethod (self.mch, broker.id, broker.classKey, "connect", connectArgs)
         if _verbose:
             print "Connect method returned:", res.status, res.statusText
@@ -164,9 +167,12 @@ class RouteManager:
             connectArgs["port"]          = self.src.port
             connectArgs["useSsl"]        = False
             connectArgs["durable"]       = _durable
-            connectArgs["authMechanism"] = "PLAIN"
-            connectArgs["username"]      = self.src.username
-            connectArgs["password"]      = self.src.password
+            if self.src.username == "anonymous":
+                connectArgs["authMechanism"] = "ANONYMOUS"
+            else:
+                connectArgs["authMechanism"] = "PLAIN"
+                connectArgs["username"]      = self.src.username
+                connectArgs["password"]      = self.src.password
             res = mc.syncCallMethod (self.mch, broker.id, broker.classKey, "connect", connectArgs)
             if _verbose:
                 print "Connect method returned:", res.status, res.statusText

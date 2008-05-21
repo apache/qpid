@@ -26,6 +26,7 @@
 #include "Connection.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
+#include "qpid/framing/constants.h"
 #include "qpid/log/Statement.h"
 
 using namespace qpid;
@@ -123,6 +124,10 @@ void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyTe
     if (replyCode != 200) {
         QPID_LOG(warning, "Client closed connection with " << replyCode << ": " << replyText);
     }
+
+    if (replyCode == framing::connection::CONNECTION_FORCED)
+        connection.notifyConnectionForced(replyText);
+
     client.closeOk();
     connection.getOutput().close();
 } 
@@ -136,9 +141,10 @@ void ConnectionHandler::Handler::start(const FieldTable& /*serverProperties*/,
                                        const framing::Array& /*mechanisms*/,
                                        const framing::Array& /*locales*/)
 {
-    string response;
-    server.startOk(FieldTable(), ANONYMOUS, response, en_US);
-    connection.initMgmt(true);
+    string mechanism = connection.getAuthMechanism();
+    string response  = connection.getAuthCredentials();
+    
+    server.startOk(FieldTable(), mechanism, response, en_US);
 }
 
 void ConnectionHandler::Handler::secure(const string& /*challenge*/)

@@ -39,9 +39,9 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
 }
 
 sys::ConnectionCodec*
-ConnectionFactory::create(sys::OutputControl& out, const std::string& id, sys::ProtocolAccess* a) {
+ConnectionFactory::create(sys::OutputControl& out, const std::string& id) {
     // used to create connections from one broker to another
-    return new amqp_0_10::Connection(out, broker, id, true, a);
+    return new amqp_0_10::Connection(out, broker, id, true);
 }
 
 }} // namespace qpid::broker

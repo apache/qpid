@@ -118,6 +118,7 @@ public:
 
 private:
     Socket(IOHandlePrivate*);
+    mutable std::string connectname;
 };
 
 }}

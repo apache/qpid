@@ -32,6 +32,7 @@
 #include <netdb.h>
 #include <cstdlib>
 #include <string.h>
+#include <iostream>
 
 #include <boost/format.hpp>
 
@@ -138,6 +139,10 @@ const char* h_errstr(int e) {
 
 void Socket::connect(const std::string& host, int port) const
 {
+    std::stringstream namestream;
+    namestream << host << ":" << port;
+    connectname = namestream.str();
+
     const int& socket = impl->fd;
     struct sockaddr_in name;
     name.sin_family = AF_INET;
@@ -240,6 +245,8 @@ std::string Socket::getPeername() const
 
 std::string Socket::getPeerAddress() const
 {
+    if (!connectname.empty())
+        return std::string (connectname);
     return getName(impl->fd, false, true);
 }
 
