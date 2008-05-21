@@ -29,7 +29,6 @@
 namespace qpid {
 
 namespace sys {
-class ProtocolAccess;
 
 /**
  * Interface of coder/decoder for a connection of a specific protocol
@@ -69,7 +68,7 @@ class ConnectionCodec {
 
         /** Return "preferred" codec for outbound connections. */
         virtual ConnectionCodec* create(
-            OutputControl&, const std::string& id, ProtocolAccess* a = 0
+            OutputControl&, const std::string& id
         ) = 0;
     };
 };

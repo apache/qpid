@@ -29,7 +29,6 @@
 #include <queue>
 
 namespace qpid {
-namespace sys { class ProtocolAccess; }
 namespace broker { class Broker; }
 namespace amqp_0_10 {
 
@@ -41,13 +40,13 @@ class Connection  : public sys::ConnectionCodec,
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
-    broker::Connection::shared_ptr connection; // FIXME aconway 2008-03-18: 
+    broker::Connection connection; // FIXME aconway 2008-03-18: 
     std::string identifier;
     bool initialized;
     bool isClient;
     
   public:
-    Connection(sys::OutputControl&, broker::Broker&, const std::string& id, bool isClient = false, sys::ProtocolAccess* a =0);
+    Connection(sys::OutputControl&, broker::Broker&, const std::string& id, bool isClient = false);
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool isClosed() const;

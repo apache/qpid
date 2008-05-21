@@ -19,7 +19,6 @@
  *
  */
 #include "Connection.h"
-#include "qpid/sys/ProtocolAccess.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
 
@@ -28,13 +27,9 @@ namespace amqp_0_10 {
 
 using sys::Mutex;
 
-Connection::Connection(sys::OutputControl& o, broker::Broker& broker, const std::string& id, bool _isClient, sys::ProtocolAccess* a)
-    : frameQueueClosed(false), output(o), connection(new broker::Connection(this, broker, id, _isClient)),
-          identifier(id), initialized(false), isClient(_isClient)
-{
-    if (a != 0)
-        a->callConnCb(connection);
-}
+Connection::Connection(sys::OutputControl& o, broker::Broker& broker, const std::string& id, bool _isClient)
+    : frameQueueClosed(false), output(o), connection(this, broker, id, _isClient),
+      identifier(id), initialized(false), isClient(_isClient) {}
 
 size_t  Connection::decode(const char* buffer, size_t size) {
     framing::Buffer in(const_cast<char*>(buffer), size);
@@ -50,13 +45,13 @@ size_t  Connection::decode(const char* buffer, size_t size) {
     framing::AMQFrame frame;
     while(frame.decode(in)) {
         QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
-        connection->received(frame);
+        connection.received(frame);
     }
     return in.getPosition();
 }
 
 bool Connection::canEncode() {
-    if (!frameQueueClosed) connection->doOutput();
+    if (!frameQueueClosed) connection.doOutput();
     Mutex::ScopedLock l(frameQueueLock);
     return (!isClient && !initialized) || !frameQueue.empty();
 }
@@ -95,7 +90,7 @@ void  Connection::close() {
 }
 
 void  Connection::closed() {
-    connection->closed();
+    connection.closed();
 }
 
 void Connection::send(framing::AMQFrame& f) {

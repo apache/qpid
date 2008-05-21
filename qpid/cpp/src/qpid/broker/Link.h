@@ -27,7 +27,6 @@
 #include "PersistableConfig.h"
 #include "Bridge.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/ProtocolAccess.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Link.h"
@@ -57,7 +56,6 @@ namespace qpid {
             management::Link::shared_ptr mgmtObject;
             Broker* broker;
             int     state;
-            sys::ProtocolAccess access;
             uint32_t visitCount;
             uint32_t currentInterval;
             bool     closing;
@@ -66,21 +64,20 @@ namespace qpid {
             Bridges created;   // Bridges pending creation
             Bridges active;    // Bridges active
             uint channelCounter;
-            boost::shared_ptr<Connection> connection;
+            Connection* connection;
 
             static const int STATE_WAITING     = 1;
             static const int STATE_CONNECTING  = 2;
             static const int STATE_OPERATIONAL = 3;
+            static const int STATE_FAILED      = 4;
+            static const int STATE_CLOSED      = 5;
 
-            static const uint32_t MAX_INTERVAL = 16;
+            static const uint32_t MAX_INTERVAL = 32;
 
             void setStateLH (int newState);
             void startConnectionLH();        // Start the IO Connection
-            void established();              // Called when connection is created
-            void closed(int, std::string);   // Called when connection goes away
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
-            void setConnection(boost::shared_ptr<Connection>); // Set pointer to the AMQP Connection
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;
@@ -106,6 +103,16 @@ namespace qpid {
             void add(Bridge::shared_ptr);
             void cancel(Bridge::shared_ptr);
 
+            void established();              // Called when connection is created
+            void closed(int, std::string);   // Called when connection goes away
+            void setConnection(Connection*); // Set pointer to the AMQP Connection
+
+            string getAuthMechanism() { return authMechanism; }
+            string getUsername()      { return username; }
+            string getPassword()      { return password; }
+
+            void notifyConnectionForced(const std::string text);
+            
             // PersistableConfig:
             void     setPersistenceId(uint64_t id) const;
             uint64_t getPersistenceId() const { return persistenceId; }

@@ -43,12 +43,13 @@
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Client.h"
-#include "qpid/management/Link.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
 namespace qpid {
 namespace broker {
+
+class LinkRegistry;
 
 class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionState
@@ -62,7 +63,10 @@ class Connection : public sys::ConnectionInputHandler,
     SessionHandler& getChannel(framing::ChannelId channel);
 
     /** Close the connection */
-    void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
+    void close(framing::ReplyCode code = 403,
+               const string& text = string(),
+               framing::ClassId classId = 0,
+               framing::MethodId methodId = 0);
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -78,38 +82,26 @@ class Connection : public sys::ConnectionInputHandler,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
-    void initMgmt(bool asLink = false);
     void requestIOProcessing (boost::function0<void>);
+    void recordFromServer (framing::AMQFrame& frame);
+    void recordFromClient (framing::AMQFrame& frame);
+    std::string getAuthMechanism();
+    std::string getAuthCredentials();
+    void notifyConnectionForced(const std::string& text);
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
-    /**
-     * Connection may appear, for the purposes of management, as a
-     * normal client initiated connection or as an agent initiated
-     * inter-broker link. This wrapper abstracts the common interface
-     * for both.
-     */
-    class MgmtWrapper
-    {
-    public:
-        virtual ~MgmtWrapper(){}
-        virtual void received(framing::AMQFrame& frame) = 0;
-        virtual management::ManagementObject::shared_ptr getManagementObject() const = 0;
-        virtual void closing() = 0;
-        virtual void processPending(){}
-        virtual void process(Connection&, const management::Args&){}
-    };
-    class MgmtClient;
-
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;
     ConnectionHandler adapter;
-    std::auto_ptr<MgmtWrapper> mgmtWrapper;
+    bool isLink;
     bool mgmtClosing;
     const std::string mgmtId;
     boost::function0<void> ioCallback;
+    management::Client::shared_ptr mgmtObject;
+    LinkRegistry& links;
 };
 
 }}

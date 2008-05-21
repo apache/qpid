@@ -361,18 +361,20 @@ void Broker::accept() {
 // TODO: How to chose the protocolFactory to use for the connection
 void Broker::connect(
     const std::string& host, uint16_t port, bool /*useSsl*/,
-    sys::ConnectionCodec::Factory* f,
-    sys::ProtocolAccess* access)
+    boost::function2<void, int, std::string> failed,
+    sys::ConnectionCodec::Factory* f)
 {
-    getProtocolFactory()->connect(poller, host, port, f ? f : &factory, access);
+    getProtocolFactory()->connect(poller, host, port, f ? f : &factory, failed);
 }
 
 void Broker::connect(
-    const Url& url, sys::ConnectionCodec::Factory* f)
+    const Url& url,
+    boost::function2<void, int, std::string> failed,
+    sys::ConnectionCodec::Factory* f)
 {
     url.throwIfEmpty();
     TcpAddress addr=boost::get<TcpAddress>(url[0]);
-    connect(addr.host, addr.port, false, f, (sys::ProtocolAccess*) 0);
+    connect(addr.host, addr.port, false, failed, f);
 }
 
 }} // namespace qpid::broker
