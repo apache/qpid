@@ -22,7 +22,7 @@
  *
  */
 
-#if defined( __GNUC__ ) && ( defined( __i686__ ) || defined( __x86_64__ ) )
+#if defined( __GNUC__ ) && __GNUC__ >= 4 && ( defined( __i686__ ) || defined( __x86_64__ ) )
 // Use the Gnu C built-in atomic operations if compiling with gcc on a suitable platform.
 #include "qpid/sys/AtomicValue_gcc.h"
 
