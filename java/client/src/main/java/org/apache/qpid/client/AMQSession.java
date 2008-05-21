@@ -468,12 +468,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     new FlowControllingBlockingQueue(_defaultPrefetchHighMark, _defaultPrefetchLowMark,
                                                      new FlowControllingBlockingQueue.ThresholdListener()
                                                      {
+                                                         private final AtomicBoolean _suspendState = new AtomicBoolean();
+
                                                          public void aboveThreshold(int currentValue)
                                                          {
-                                                                 _logger.debug(
-                                                                         "Above threshold(" + _defaultPrefetchHighMark
-                                                                         + ") so suspending channel. Current value is " + currentValue);
-                                                                 new Thread(new SuspenderRunner(true)).start();
+                                                            _logger.debug(
+                                                                 "Above threshold(" + _defaultPrefetchHighMark
+                                                                 + ") so suspending channel. Current value is " + currentValue);
+                                                            _suspendState.set(true);
+                                                                 new Thread(new SuspenderRunner(_suspendState)).start();
 
                                                          }
 
@@ -482,7 +485,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                  _logger.debug(
                                                                          "Below threshold(" + _defaultPrefetchLowMark
                                                                          + ") so unsuspending channel. Current value is " + currentValue);
-                                                                 new Thread(new SuspenderRunner(false)).start();
+                                                             _suspendState.set(false);
+                                                                 new Thread(new SuspenderRunner(_suspendState)).start();
 
                                                          }
                                                      });
@@ -3106,9 +3110,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private class SuspenderRunner implements Runnable
     {
-        private boolean _suspend;
+        private AtomicBoolean _suspend;
 
-        public SuspenderRunner(boolean suspend)
+        public SuspenderRunner(AtomicBoolean suspend)
         {
             _suspend = suspend;
         }
@@ -3117,7 +3121,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             try
             {
-                suspendChannel(_suspend);
+                synchronized(_suspensionLock)
+                {
+                    suspendChannel(_suspend.get());
+                }
             }
             catch (AMQException e)
             {
