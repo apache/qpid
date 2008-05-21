@@ -79,7 +79,7 @@ public abstract class SessionDelegate
         }
         if (flush.getConfirmed())
         {
-            throw new Error("not implemented");
+           ssn.flushProcessed();
         }
         if (flush.getExpected())
         {
