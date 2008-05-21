@@ -27,7 +27,7 @@ using std::pair;
 using std::stringstream;
 using boost::intrusive_ptr;
 
-#define LINK_MAINT_INTERVAL 5
+#define LINK_MAINT_INTERVAL 2
 
 LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0)
 {
@@ -184,4 +184,57 @@ void LinkRegistry::setStore (MessageStore* _store)
 MessageStore* LinkRegistry::getStore() const {
     return store;
 }
+
+void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l != links.end())
+    {
+        l->second->established();
+        l->second->setConnection(c);
+    }
+}
+
+void LinkRegistry::notifyClosed(const std::string& key)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l != links.end())
+        l->second->closed(0, "Closed by peer");
+}
+
+void LinkRegistry::notifyConnectionForced(const std::string& key, const std::string& text)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l != links.end())
+        l->second->notifyConnectionForced(text);
+}
+
+std::string LinkRegistry::getAuthMechanism(const std::string& key)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l != links.end())
+        return l->second->getAuthMechanism();
+    return string("ANONYMOUS");
+}
+
+std::string LinkRegistry::getAuthCredentials(const std::string& key)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l == links.end())
+        return string();
+
+    string result;
+    result += '\0';
+    result += l->second->getUsername();
+    result += '\0';
+    result += l->second->getPassword();
+
+    return result;
+}
+
 

@@ -24,7 +24,6 @@
 #include "qpid/sys/ConnectionCodec.h"
 
 namespace qpid {
-namespace sys { class ProtocolAccess; }
 namespace broker {
 class Broker;
 
@@ -38,7 +37,7 @@ class ConnectionFactory : public sys::ConnectionCodec::Factory {
     create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
 
     sys::ConnectionCodec*
-    create(sys::OutputControl&, const std::string& id, sys::ProtocolAccess* a =0);
+    create(sys::OutputControl&, const std::string& id);
 
   private:
     Broker& broker;
