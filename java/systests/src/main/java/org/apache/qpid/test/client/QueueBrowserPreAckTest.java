@@ -22,29 +22,11 @@ package org.apache.qpid.test.client;
 
 import org.apache.qpid.client.AMQSession;
 
-import javax.jms.Queue;
-import javax.jms.ConnectionFactory;
-
 public class QueueBrowserPreAckTest extends QueueBrowserAutoAckTest
 {
-    public void setUp() throws Exception
+
+    protected void setupSession() throws Exception
     {
-
-        super.setUp();
-
-        _clientConnection.close();
-        _clientSession.close();
-
-        _clientConnection.close();
-        _clientSession.close();
-
-        _queue = (Queue) _context.lookup("queue");
-
-        //Create Client
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
-
-        _clientConnection.start();
-
         _clientSession = _clientConnection.createSession(false, AMQSession.PRE_ACKNOWLEDGE);
 
         //Ensure _queue is created

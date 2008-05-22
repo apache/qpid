@@ -20,57 +20,53 @@
  */
 package org.apache.qpid.test;
 
-import org.apache.qpid.test.VMTestCase;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.testutil.QpidTestCase;
 
-import javax.naming.spi.InitialContextFactory;
-import javax.naming.NamingException;
-import java.util.Hashtable;
-import java.util.Map;
+import javax.jms.Connection;
 
-public class FailoverBaseCase extends VMTestCase
+public class FailoverBaseCase extends QpidTestCase
 {
-    private boolean failedOver = true;
+    protected long RECEIVE_TIMEOUT = 1000l;
 
-    public void setUp() throws Exception
+    protected void setUp() throws java.lang.Exception
     {
-        // Make Broker 2 the first one so we can kill it and allow VMTestCase to clean up vm://:1
-        _brokerlist = "vm://:2;vm://:1";
-        _clientID = this.getClass().getName();
-        _virtualhost = "/test";
-
-        _connections.put("connection1", "amqp://guest:guest@" + _clientID + _virtualhost + "?brokerlist='vm://:1'");
-        _connections.put("connection2", "amqp://guest:guest@" + _clientID + _virtualhost + "?brokerlist='vm://:2'");
-
-        try
-        {
-            TransportConnection.createVMBroker(2);
-        }
-        catch (Exception e)
-        {
-            fail("Unable to create broker: " + e);
-        }
-
         super.setUp();
-    }
-
-    public void tearDown() throws Exception
-    {
-        if (!failedOver)
+        if( _broker.equals(VM) )
         {
-            TransportConnection.killVMBroker(2);
-            ApplicationRegistry.remove(2);
+            System.getProperties().setProperty("amqj.AutoCreateVMBroker", "true");
         }
-        super.tearDown();
     }
 
+    /**
+     * We are using failover factories, Note that 0.10 code path does not yet support failover.
+     *
+     * @return a connection 
+     * @throws Exception
+     */
+    public Connection getConnection() throws Exception
+    {
+        Connection conn;
+        if( _broker.equals(VM) )
+        {
+            conn = getConnectionFactory("vmfailover").createConnection("guest", "guest");
+        }
+        else
+        {
+            conn = getConnectionFactory("failover").createConnection("guest", "guest");
+        }
+        _connections.add(conn);
+        return conn;
+    }
 
+    /**
+     * Only used of VM borker.
+     * // TODO: update the failover mechanism once 0.10 provides support for failover. 
+     */
     public void failBroker()
     {
-        failedOver = true;
-        TransportConnection.killVMBroker(2);
-        ApplicationRegistry.remove(2);
+        TransportConnection.killVMBroker(1);
+        ApplicationRegistry.remove(1);
     }
 }

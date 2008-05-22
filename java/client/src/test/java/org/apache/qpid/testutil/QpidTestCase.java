@@ -110,12 +110,12 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_READY = "broker.ready";
 
     // values
-    private static final String VM = "vm";
+    protected static final String VM = "vm";
     private static final String EXTERNAL = "external";
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
-    private String _broker = System.getProperty(BROKER, VM);
+    protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
 
@@ -123,6 +123,10 @@ public class QpidTestCase extends TestCase
 
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
+    private boolean _brokerStarted;
+
+    // the connections created for a given test
+    protected List<Connection> _connections = new ArrayList<Connection>();
 
     public void runBare() throws Throwable
     {
@@ -267,6 +271,7 @@ public class QpidTestCase extends TestCase
                 // this is expect if the broker started succesfully
             }
         }
+        _brokerStarted = true;
     }
 
     public void cleanBroker()
@@ -311,6 +316,7 @@ public class QpidTestCase extends TestCase
         {
             TransportConnection.killAllVMBrokers();
         }
+        _brokerStarted = false;
     }
 
     /**
@@ -351,7 +357,8 @@ public class QpidTestCase extends TestCase
     }
 
     /**
-     * Get a connection factory for the currently used broker
+     * Get the default connection factory for the currently used broker
+     * Default factory is "local"
      *
      * @return A conection factory
      * @throws Exception if there is an error getting the tactory
@@ -361,9 +368,28 @@ public class QpidTestCase extends TestCase
         _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
-            _connectionFactory = (AMQConnectionFactory) getInitialContext().lookup("local");
+             if (_broker.equals(VM))
+             {
+                _connectionFactory = getConnectionFactory("vm");
+             }
+             else
+             {
+                _connectionFactory = getConnectionFactory("local");
+             }
         }
         return _connectionFactory;
+    }
+
+    /**
+     * Get a connection factory for the currently used broker
+     *
+     * @param factoryName  The factory name
+     * @return A conection factory
+     * @throws Exception if there is an error getting the tactory
+     */
+    public AMQConnectionFactory getConnectionFactory(String factoryName) throws Exception
+    {
+        return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
 
     public Connection getConnection() throws Exception
@@ -382,15 +408,9 @@ public class QpidTestCase extends TestCase
     public Connection getConnection(String username, String password) throws Exception
     {
         _logger.info("get Connection");
-        Connection con;
-        if (_broker.equals(VM))
-        {
-            con = new AMQConnection("vm://:1", username, password, "Test", "test");
-        }
-        else
-        {
-            con = getConnectionFactory().createConnection(username, password);
-        }
+        Connection con = getConnectionFactory().createConnection(username, password);        
+        //add the connection in the lis of connections
+        _connections.add(con);
         return con;
     }
 
@@ -406,7 +426,21 @@ public class QpidTestCase extends TestCase
         {
             con = getConnectionFactory().createConnection(username, password);
         }
+         //add the connection in the lis of connections
+        _connections.add(con);
         return con;
+    }
+
+    protected void tearDown() throws java.lang.Exception
+    {
+        // close all the connections used by this test.
+        if (_brokerStarted)
+        {
+            for (Connection c : _connections)
+            {
+                c.close();
+            }
+        }
     }
 
 }

@@ -15,4 +15,4 @@ test.mem=512M
 test=*Test
 haltonfailure=no
 haltonerror=no
-exclude.modules=systests
+exclude.modules=none

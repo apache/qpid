@@ -53,17 +53,22 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         super.setUp();
 
-        _queue = (Queue) _context.lookup("queue");
+        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection();
 
         _clientConnection.start();
 
-        _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        setupSession();
 
         //Ensure there are no messages on the queue to start with.
         checkQueueDepth(0);
+    }
+
+    protected void setupSession() throws Exception
+    {
+        _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     public void tearDown() throws Exception
@@ -81,9 +86,9 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         Connection producerConnection = null;
         try
         {
-            producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+            producerConnection = getConnection();
         }
-        catch (NamingException e)
+        catch (Exception e)
         {
             fail("Unable to lookup connection in JNDI.");
         }
@@ -96,10 +101,11 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         Connection producerConnection = null;
         try
         {
-            producerConnection = ((ConnectionFactory) _context.lookup(connection)).createConnection();
+            producerConnection = getConnectionFactory(connection).createConnection("guest", "guest");
         }
-        catch (NamingException e)
+        catch (Exception e)
         {
+            e.printStackTrace();
             fail("Unable to lookup connection in JNDI.");
         }
         sendMessages(producerConnection, num);
@@ -285,9 +291,9 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         try
         {
-            connection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+            connection = getConnection();
         }
-        catch (NamingException e)
+        catch (Exception e)
         {
             fail("Unable to make validation connection");
         }
@@ -415,7 +421,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
     public void testFailoverWithQueueBrowser() throws JMSException
     {
-        int messages = 50;
+        int messages = 5;
 
         sendMessages("connection1", messages);
         sendMessages("connection2", messages);
