@@ -44,7 +44,7 @@ class ManagementObject
     bool        instChanged;
     bool        deleted;
     Manageable* coreObject;
-    sys::RWlock accessLock;
+    sys::Mutex  accessLock;
 
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;
@@ -112,7 +112,7 @@ class ManagementObject
         deleted     = true;
     }
     bool isDeleted (void) { return deleted; }
-
+    sys::Mutex& getLock() { return accessLock; }
 };
 
 typedef std::map<uint64_t,ManagementObject::shared_ptr> ManagementObjectMap;
