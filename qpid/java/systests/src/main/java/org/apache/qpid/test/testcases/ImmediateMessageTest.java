@@ -75,7 +75,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     }
 
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
-    public void test_QPID_517_ImmediateOkNoTxP2P()
+    public void test_QPID_517_ImmediateOkNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -83,13 +83,13 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps))));
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
-    public void test_QPID_517_ImmediateOkTxP2P()
+    public void test_QPID_517_ImmediateOkTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -97,13 +97,13 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps))));
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
-    public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P()
+    public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -113,7 +113,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
@@ -121,7 +121,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
-    public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P()
+    public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -131,7 +131,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(),  testProps);
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
@@ -139,7 +139,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
-    public void test_QPID_517_ImmediateFailsNoRouteNoTxP2P()
+    public void test_QPID_517_ImmediateFailsNoRouteNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -151,14 +151,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
-    public void test_QPID_517_ImmediateFailsNoRouteTxP2P()
+    public void test_QPID_517_ImmediateFailsNoRouteTxP2P() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -170,14 +170,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
     }
 
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
-    public void test_QPID_517_ImmediateOkNoTxPubSub()
+    public void test_QPID_517_ImmediateOkNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -185,14 +185,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(testProps))));
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
-    public void test_QPID_517_ImmediateOkTxPubSub()
+    public void test_QPID_517_ImmediateOkTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -200,14 +200,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message with no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noExceptionsAssertion(testProps))));
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
-    public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub()
+    public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -220,7 +220,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
@@ -228,7 +228,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
-    public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub()
+    public void test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -241,7 +241,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
 
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         // Send one message and get a linked no consumers exception.
         assertNoFailures(testCircuit.test(1,
@@ -249,7 +249,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
-    public void test_QPID_517_ImmediateFailsNoRouteNoTxPubSub()
+    public void test_QPID_517_ImmediateFailsNoRouteNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -261,14 +261,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
-    public void test_QPID_517_ImmediateFailsNoRouteTxPubSub()
+    public void test_QPID_517_ImmediateFailsNoRouteTxPubSub() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -280,7 +280,7 @@ public class ImmediateMessageTest extends FrameworkBaseCase
 
         // Send one message and get a linked no route exception.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(((AMQPPublisher) testCircuit.getPublisher()).noRouteAssertion(testProps))));

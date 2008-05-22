@@ -73,7 +73,7 @@ public class FailoverTest extends FrameworkBaseCase
      *
      * @throws JMSException Allowed to fall through and fail test.
      */
-    public void testTxP2PFailover() throws JMSException
+    public void testTxP2PFailover() throws Exception
     {
         // Set up the test properties to match the test cases requirements.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -84,7 +84,7 @@ public class FailoverTest extends FrameworkBaseCase
 
         // Create the test circuit from the test configuration parameters.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         // Create an assertion that all messages are received.
         Assertion allMessagesReceived = testCircuit.getReceiver().allMessagesReceivedAssertion(testProps);

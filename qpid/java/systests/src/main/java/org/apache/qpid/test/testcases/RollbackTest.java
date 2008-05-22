@@ -55,7 +55,7 @@ public class RollbackTest extends FrameworkBaseCase
     }
 
     /** Check messages sent but rolled back are never received. */
-    public void testRolledbackMessageNotDelivered()
+    public void testRolledbackMessageNotDelivered() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, true);
@@ -63,7 +63,7 @@ public class RollbackTest extends FrameworkBaseCase
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps),
@@ -71,7 +71,7 @@ public class RollbackTest extends FrameworkBaseCase
     }
 
     /** Check messages received but rolled back are redelivered on subsequent receives. */
-    public void testRolledbackMessagesSubsequentlyReceived()
+    public void testRolledbackMessagesSubsequentlyReceived() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_RECEIVER_PROPNAME, true);
@@ -79,7 +79,7 @@ public class RollbackTest extends FrameworkBaseCase
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1,
                 assertionList(testCircuit.getPublisher().noExceptionsAssertion(testProps),
@@ -87,7 +87,7 @@ public class RollbackTest extends FrameworkBaseCase
     }
 
     /** Attempting to rollback outside of a transaction results in an IllegalStateException. */
-    public void testRollbackUnavailableOutsideTransactionPublisher()
+    public void testRollbackUnavailableOutsideTransactionPublisher() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PUBLISHER_PROPNAME, false);
@@ -95,13 +95,13 @@ public class RollbackTest extends FrameworkBaseCase
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().channelClosedAssertion(testProps))));
     }
 
     /** Attempting to rollback outside of a transaction results in an IllegalStateException. */
-    public void testRollbackUnavailableOutsideTransactionReceiver()
+    public void testRollbackUnavailableOutsideTransactionReceiver() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_RECEIVER_PROPNAME, false);
@@ -109,7 +109,7 @@ public class RollbackTest extends FrameworkBaseCase
 
         // Run the default test sequence over the test circuit checking for no errors.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getReceiver().channelClosedAssertion(testProps))));
     }
