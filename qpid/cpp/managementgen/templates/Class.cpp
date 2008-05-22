@@ -87,7 +87,7 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 
 void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 {
-    sys::RWlock::ScopedRlock readLock (accessLock);
+    sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
 
     writeTimestamps (buf);
@@ -96,7 +96,7 @@ void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 
 void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf, bool skipHeaders)
 {
-    sys::RWlock::ScopedWlock writeLock (accessLock);
+    sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
 
     if (!skipHeaders)

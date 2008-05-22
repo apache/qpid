@@ -130,6 +130,7 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
             push(msg);
             msg->enqueueComplete();
             if (mgmtObject.get() != 0) {
+                sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                 mgmtObject->inc_msgDepth ();
@@ -137,6 +138,7 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
             }
         }else {
             if (mgmtObject.get() != 0) {
+                sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                 mgmtObject->inc_msgDepth ();
@@ -155,6 +157,7 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
     push(msg);
     msg->enqueueComplete(); // mark the message as enqueued
     if (mgmtObject.get() != 0) {
+        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgPersistEnqueues ();
@@ -173,6 +176,7 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
 void Queue::process(boost::intrusive_ptr<Message>& msg){
     push(msg);
     if (mgmtObject.get() != 0) {
+        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgTxnEnqueues ();
@@ -363,6 +367,7 @@ void Queue::consume(Consumer& c, bool requestExclusive){
     consumerCount++;
 
     if (mgmtObject.get() != 0){
+        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_consumers ();
     }
 }
@@ -373,6 +378,7 @@ void Queue::cancel(Consumer& c){
     consumerCount--;
     if(exclusive) exclusive = 0;
     if (mgmtObject.get() != 0){
+        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->dec_consumers ();
     }
 }
@@ -403,6 +409,7 @@ void Queue::pop(){
 
     if (policy.get()) policy->dequeued(msg.payload->contentSize());
     if (mgmtObject.get() != 0){
+        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalDequeues  ();
         mgmtObject->inc_byteTotalDequeues (msg.payload->contentSize());
         mgmtObject->dec_msgDepth ();
