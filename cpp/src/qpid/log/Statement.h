@@ -79,6 +79,26 @@ struct Statement {
     { 0, __FILE__, __LINE__,  BOOST_CURRENT_FUNCTION, (::qpid::log::level) }
 
 /**
+ * Like QPID_LOG but computes an additional boolean test expression
+ * to determine if the message should be logged. Evaluation of both
+ * the test and  message expressions occurs only if the requested log level
+ * is enabled.
+ *@param LEVEL severity Level for message, should be one of:
+ * debug, info, notice, warning, error, critical. NB no qpid::log:: prefix.
+ *@param TEST message is logged only if expression TEST evaluates to true.
+ *@param MESSAGE any object with an @eostream operator<<, or a sequence
+ * like of ostreamable objects separated by @e<<.
+ */
+#define QPID_LOG_IF(LEVEL, TEST, MESSAGE)                       \
+    do {                                                        \
+        using ::qpid::log::Statement;                           \
+        static Statement stmt_= QPID_LOG_STATEMENT_INIT(LEVEL); \
+        static Statement::Initializer init_(stmt_);             \
+        if (stmt_.enabled && (TEST))                            \
+            stmt_.log(::qpid::Msg() << MESSAGE);                \
+    } while(0)
+
+/**
  * Macro for log statements. Example of use:
  * @code
  * QPID_LOG(debug, "There are " << foocount << " foos in the bar.");
@@ -97,13 +117,7 @@ struct Statement {
  *@param MESSAGE any object with an @eostream operator<<, or a sequence
  * like of ostreamable objects separated by @e<<.
  */
-#define QPID_LOG(level, message)                                        \
-    do {                                                                \
-        static ::qpid::log::Statement stmt_= QPID_LOG_STATEMENT_INIT(level); \
-        static ::qpid::log::Statement::Initializer init_(stmt_);        \
-        if (stmt_.enabled)                                              \
-            stmt_.log(::qpid::Msg() << message);                        \
-    } while(0)
+#define QPID_LOG(LEVEL, MESSAGE) QPID_LOG_IF(LEVEL, true, MESSAGE);
 
 }} // namespace qpid::log
 

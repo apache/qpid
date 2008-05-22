@@ -71,6 +71,7 @@ SessionPoint SessionState::senderGetReplayPoint() const { return sender.replayPo
 SessionState::ReplayRange SessionState::senderExpected(const SessionPoint& expect) {
     if (expect < sender.replayPoint || sender.sendPoint < expect)
         throw InvalidArgumentException(QPID_MSG(getId() << ": expected command-point out of range."));
+    QPID_LOG(debug, getId() << ": sender expected point moved to " << expect);
     ReplayList::iterator i = sender.replayList.begin();
     SessionPoint p = sender.replayPoint;
     while (i != sender.replayList.end() && p.command < expect.command)
@@ -81,6 +82,7 @@ SessionState::ReplayRange SessionState::senderExpected(const SessionPoint& expec
 
 void SessionState::senderRecord(const AMQFrame& f) {
     if (isControl(f)) return;   // Ignore control frames.
+    QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
     stateful = true;
     sender.replayList.push_back(f);
     sender.unflushedSize += f.size();
@@ -104,6 +106,7 @@ void SessionState::senderRecordFlush() {
 void SessionState::senderConfirmed(const SessionPoint& confirmed) {
     if (confirmed > sender.sendPoint)
         throw InvalidArgumentException(QPID_MSG(getId() << "Confirmed commands not yet sent."));
+    QPID_LOG(debug, getId() << ": sender confirmed point moved to " << confirmed);
     ReplayList::iterator i = sender.replayList.begin();
     while (i != sender.replayList.end() && sender.replayPoint.command < confirmed.command) {
         sender.replayPoint.advance(*i);
@@ -121,6 +124,7 @@ void SessionState::senderConfirmed(const SessionPoint& confirmed) {
 
 void SessionState::senderCompleted(const SequenceSet& commands) {
     if (commands.empty()) return;
+    QPID_LOG(debug, getId() << ": sender marked completed: " << commands);
     sender.incomplete -= commands;
     // Completion implies confirmation but we don't handle out-of-order
     // confirmation, so confirm only the first contiguous range of commands.
@@ -130,6 +134,7 @@ void SessionState::senderCompleted(const SequenceSet& commands) {
 void SessionState::receiverSetCommandPoint(const SessionPoint& point) {
     if (hasState() && point > receiver.received)
         throw InvalidArgumentException(QPID_MSG(getId() << ": Command-point out of range."));
+    QPID_LOG(debug, getId() << ": receiver command-point set to: " << point);
     receiver.expected = point;
     if (receiver.expected > receiver.received)
         receiver.received = receiver.expected;
@@ -139,14 +144,12 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
     if (isControl(f)) return true; // Ignore control frames.
     stateful = true;
     receiver.expected.advance(f);
-    if (receiver.expected > receiver.received) {
+    bool firstTime = receiver.expected > receiver.received;
+    if (firstTime)
         receiver.received = receiver.expected;
-        return true;
-    }
-    else {
-        QPID_LOG(debug, "Ignoring duplicate: " << f);
-    return false;
-}
+    QPID_LOG_IF(debug, f.getMethod(), getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getMethod());
+    QPID_LOG_IF(debug, !firstTime, "Ignoring duplicate frame: " << receiverGetCurrent() << ": " << f);
+    return firstTime;
 }
     
 void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
@@ -157,13 +160,14 @@ void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
     else
         receiver.unknownCompleted += command;
     receiver.firstIncomplete = receiver.unknownCompleted.rangeContaining(receiver.firstIncomplete).end();
-    QPID_LOG(debug, "Completed " << command << " unknown=" << receiver.unknownCompleted);
+    QPID_LOG(debug, getId() << ": receiver marked completed: " << command << " unknown: " << receiver.unknownCompleted);
 }
 
 void SessionState::receiverKnownCompleted(const SequenceSet& commands) {
     if (!commands.empty() && commands.back() > receiver.received.command)
         throw InvalidArgumentException(QPID_MSG(getId() << ": Known-completed has invalid commands."));
     receiver.unknownCompleted -= commands;
+    QPID_LOG(debug, getId() << ": receiver known completed: " << commands << " unknown: " << receiver.unknownCompleted);
 }
 
 const SessionPoint& SessionState::receiverGetExpected() const { return receiver.expected; }
