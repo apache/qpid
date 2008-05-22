@@ -358,7 +358,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (!_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getDeliveryTag());
+            ranges.add((int) message.getDeliveryTag());
             _0_10session.getQpidSession().messageAcknowledge(ranges);
             _0_10session.getCurrentException();
         }
@@ -375,7 +375,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getDeliveryTag());
+            ranges.add((int) message.getDeliveryTag());
             _0_10session.getQpidSession().messageRelease(ranges);
             _0_10session.getCurrentException();
         }
@@ -394,7 +394,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (!_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getDeliveryTag());
+            ranges.add((int) message.getDeliveryTag());
 
             Acquired acq = _0_10session.getQpidSession().messageAcquire(ranges).get();
 

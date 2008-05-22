@@ -27,7 +27,7 @@ public class ByteBufferMessage implements Message
     private int _dataSize;
     private DeliveryProperties _currentDeliveryProps;
     private MessageProperties _currentMessageProps;
-    private long _transferId;
+    private int _transferId;
     private Header _header;
 
     public void setHeader(Header header) {
@@ -44,12 +44,12 @@ public class ByteBufferMessage implements Message
         _currentMessageProps = new MessageProperties();
     }
 
-    public ByteBufferMessage(long transferId)
+    public ByteBufferMessage(int transferId)
     {
         _transferId = transferId;
     }
 
-    public long getMessageTransferId()
+    public int getMessageTransferId()
     {
         return _transferId;
     }

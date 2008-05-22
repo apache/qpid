@@ -121,6 +121,6 @@ public interface Message
      *
      * @return the message transfer id.
      */
-    public long getMessageTransferId();
+    public int getMessageTransferId();
 
 }

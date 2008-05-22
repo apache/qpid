@@ -199,7 +199,7 @@ public class ChannelCloseOkTest extends QpidTestCase
 
     private void waitFor(List<Message> received, int count) throws InterruptedException
     {
-        long timeout = 6000;
+        long timeout = 20000;
 
         synchronized (received)
         {

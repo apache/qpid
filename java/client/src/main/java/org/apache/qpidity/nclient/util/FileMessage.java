@@ -89,7 +89,7 @@ public class FileMessage extends ReadOnlyMessage implements Message
      * does not have a transfer id. Hence this method is not
      * applicable to this implementation.    
      */
-    public long getMessageTransferId()
+    public int getMessageTransferId()
     {
         throw new UnsupportedOperationException();
     }

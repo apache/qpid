@@ -246,8 +246,8 @@ abstract class AbstractEncoder implements Encoder
             writeUint16(ranges.size() * 8);
             for (Range range : ranges)
             {
-                writeUint32(range.getLower());
-                writeUint32(range.getUpper());
+                writeSequenceNo(range.getLower());
+                writeSequenceNo(range.getUpper());
             }
         }
     }

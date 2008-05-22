@@ -39,7 +39,7 @@ public interface MessagePartListener
      * 
      * @param transferId
      */
-    public void messageTransfer(long transferId);
+    public void messageTransfer(int transferId);
     
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}

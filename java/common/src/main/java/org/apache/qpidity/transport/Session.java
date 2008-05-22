@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.qpidity.transport.Option.*;
+import static org.apache.qpidity.transport.util.Functions.*;
+import static org.apache.qpid.util.Serial.*;
 
 /**
  * Session
@@ -42,6 +44,11 @@ import static org.apache.qpidity.transport.Option.*;
 
 public class Session extends Invoker
 {
+
+    private static final Logger log = Logger.get(Session.class);
+
+    private static boolean ENABLE_REPLAY = false;
+
     static
     {
         String enableReplay = "enable_command_replay";
@@ -54,8 +61,6 @@ public class Session extends Invoker
             ENABLE_REPLAY = false;
         }
     }
-    private static boolean ENABLE_REPLAY = false;
-    private static final Logger log = Logger.get(Session.class);
 
     private byte[] name;
     private long timeout = 60000;
@@ -64,15 +69,15 @@ public class Session extends Invoker
     Channel channel;
 
     // incoming command count
-    long commandsIn = 0;
+    int commandsIn = 0;
     // completed incoming commands
     private final RangeSet processed = new RangeSet();
     private Range syncPoint = null;
 
     // outgoing command count
-    private long commandsOut = 0;
-    private Map<Long,Method> commands = new HashMap<Long,Method>();
-    private long maxComplete = -1;
+    private int commandsOut = 0;
+    private Map<Integer,Method> commands = new HashMap<Integer,Method>();
+    private int maxComplete = commandsOut - 1;
 
     private AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -86,22 +91,22 @@ public class Session extends Invoker
         return name;
     }
 
-    public Map<Long,Method> getOutstandingCommands()
+    public Map<Integer,Method> getOutstandingCommands()
     {
         return commands;
     }
 
-    public long getCommandsOut()
+    public int getCommandsOut()
     {
         return commandsOut;
     }
 
-    public long getCommandsIn()
+    public int getCommandsIn()
     {
         return commandsIn;
     }
 
-    public long nextCommandId()
+    public int nextCommandId()
     {
         return commandsIn++;
     }
@@ -116,12 +121,12 @@ public class Session extends Invoker
         processed(command.getId());
     }
 
-    public void processed(long command)
+    public void processed(int command)
     {
         processed(new Range(command, command));
     }
 
-    public void processed(long lower, long upper)
+    public void processed(int lower, int upper)
     {
 
         processed(new Range(lower, upper));
@@ -155,7 +160,7 @@ public class Session extends Invoker
 
     void syncPoint()
     {
-        long id = getCommandsIn() - 1;
+        int id = getCommandsIn() - 1;
         log.debug("%s synced to %d", this, id);
         Range range = new Range(0, id - 1);
         boolean flush;
@@ -179,7 +184,7 @@ public class Session extends Invoker
         channel.setSession(this);
     }
 
-    public Method getCommand(long id)
+    public Method getCommand(int id)
     {
         synchronized (commands)
         {
@@ -187,18 +192,18 @@ public class Session extends Invoker
         }
     }
 
-    void complete(long lower, long upper)
+    void complete(int lower, int upper)
     {
         log.debug("%s complete(%d, %d)", this, lower, upper);
         synchronized (commands)
         {
-            for (long id = maxComplete; id <= upper; id++)
+            for (int id = max(maxComplete, lower); le(id, upper); id++)
             {
                 commands.remove(id);
             }
-            if (lower <= maxComplete + 1)
+            if (le(lower, maxComplete + 1))
             {
-                maxComplete = Math.max(maxComplete, upper);
+                maxComplete = max(maxComplete, upper);
             }
             commands.notifyAll();
             log.debug("%s   commands remaining: %s", this, commands);
@@ -211,7 +216,7 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                long next = commandsOut++;
+                int next = commandsOut++;
                 if (next == 0)
                 {
                     sessionCommandPoint(0, 0);
@@ -276,9 +281,9 @@ public class Session extends Invoker
         log.debug("%s sync()", this);
         synchronized (commands)
         {
-            long point = commandsOut - 1;
+            int point = commandsOut - 1;
 
-            if (maxComplete < point)
+            if (lt(maxComplete, point))
             {
                 ExecutionSync sync = new ExecutionSync();
                 sync.setSync(true);
@@ -287,7 +292,7 @@ public class Session extends Invoker
 
             long start = System.currentTimeMillis();
             long elapsed = 0;
-            while (!closed.get() && elapsed < timeout && maxComplete < point)
+            while (!closed.get() && elapsed < timeout && lt(maxComplete, point))
             {
                 try {
                     log.debug("%s   waiting for[%d]: %d, %s", this, point,
@@ -301,7 +306,7 @@ public class Session extends Invoker
                 }
             }
 
-            if (maxComplete < point)
+            if (lt(maxComplete, point))
             {
                 if (closed.get())
                 {
@@ -315,10 +320,10 @@ public class Session extends Invoker
         }
     }
 
-    private Map<Long,ResultFuture<?>> results =
-        new HashMap<Long,ResultFuture<?>>();
+    private Map<Integer,ResultFuture<?>> results =
+        new HashMap<Integer,ResultFuture<?>>();
 
-    void result(long command, Struct result)
+    void result(int command, Struct result)
     {
         ResultFuture<?> future;
         synchronized (results)
@@ -332,7 +337,7 @@ public class Session extends Invoker
     {
         synchronized (commands)
         {
-            long command = commandsOut;
+            int command = commandsOut;
             ResultFuture<T> future = new ResultFuture<T>(klass);
             synchronized (results)
             {
@@ -444,6 +449,11 @@ public class Session extends Invoker
                 }
             }
         }
+    }
+
+    public String toString()
+    {
+        return String.format("ssn:%s", str(name));
     }
 
 }
