@@ -156,7 +156,7 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
         CircuitFactory circuitFactory = getCircuitFactory();
 
         // Create the test circuit. This projects the circuit onto the available test nodes and connects it up.
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(null, testProps);
 
         // Store the test configuration for the thread.
         PerThreadSetup setup = new PerThreadSetup();

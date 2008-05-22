@@ -27,6 +27,7 @@ import org.apache.qpid.util.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
+import javax.jms.Connection;
 import java.util.List;
 import java.util.Properties;
 
@@ -62,7 +63,7 @@ public interface CircuitFactory
      *
      * @return A test circuit.
      */
-    public Circuit createCircuit(ParsedProperties testProperties);
+    public Circuit createCircuit(Connection connection, ParsedProperties testProperties);
 
     /**
      * Sets the sender test client to coordinate the test with.

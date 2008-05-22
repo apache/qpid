@@ -31,10 +31,7 @@ import org.apache.qpid.util.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
+import javax.jms.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -74,7 +71,7 @@ public class FanOutCircuitFactory extends BaseCircuitFactory
      * @param testProperties The test parameters.
      * @return A test circuit.
      */
-    public Circuit createCircuit(ParsedProperties testProperties)
+    public Circuit createCircuit(Connection connection, ParsedProperties testProperties)
     {
         log.debug("public Circuit createCircuit(ParsedProperties testProperties): called");
 
