@@ -150,7 +150,7 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
     {
         StringBuilder str = new StringBuilder();
         str.append(String.format
-                   ("[%05d %05d %1d %1d %d%d%d%d] ", getChannel(), getSize(),
+                   ("[%05d %05d %1d %s %d%d%d%d] ", getChannel(), getSize(),
                     getTrack(), getType(),
                     isFirstSegment() ? 1 : 0, isLastSegment() ? 1 : 0,
                     isFirstFrame() ? 1 : 0, isLastFrame() ? 1 : 0));

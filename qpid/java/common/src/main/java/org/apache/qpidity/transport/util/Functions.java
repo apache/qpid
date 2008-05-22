@@ -73,4 +73,14 @@ public class Functions
         return str.toString();
     }
 
+    public static final String str(byte[] bytes)
+    {
+        return str(ByteBuffer.wrap(bytes));
+    }
+
+    public static final String str(byte[] bytes, int limit)
+    {
+        return str(ByteBuffer.wrap(bytes), limit);
+    }
+
 }

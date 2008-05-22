@@ -39,15 +39,15 @@ public abstract class Method extends Struct implements ProtocolEvent
     }
 
     // XXX: command subclass?
-    private long id;
+    private int id;
     private boolean sync = false;
 
-    public final long getId()
+    public final int getId()
     {
         return id;
     }
 
-    void setId(long id)
+    void setId(int id)
     {
         this.id = id;
     }

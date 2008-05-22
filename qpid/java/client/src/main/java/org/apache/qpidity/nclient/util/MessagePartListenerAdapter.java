@@ -26,7 +26,7 @@ public class MessagePartListenerAdapter implements MessagePartListener
 		_adaptee = listener;
     }
 
-    public void messageTransfer(long transferId)
+    public void messageTransfer(int transferId)
     {
         _currentMsg = new ByteBufferMessage(transferId);
     }

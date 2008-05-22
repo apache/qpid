@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 
+import static org.apache.qpid.util.Serial.*;
 
 /**
  * RangeSet
@@ -72,7 +73,7 @@ public class RangeSet implements Iterable<Range>
                 it.remove();
                 range = range.span(next);
             }
-            else if (range.getUpper() < next.getLower())
+            else if (lt(range.getUpper(), next.getLower()))
             {
                 it.previous();
                 it.add(range);
@@ -83,12 +84,12 @@ public class RangeSet implements Iterable<Range>
         it.add(range);
     }
 
-    public void add(long lower, long upper)
+    public void add(int lower, int upper)
     {
         add(new Range(lower, upper));
     }
 
-    public void add(long value)
+    public void add(int value)
     {
         add(value, value);
     }

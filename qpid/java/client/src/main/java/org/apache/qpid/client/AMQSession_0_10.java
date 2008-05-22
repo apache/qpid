@@ -173,7 +173,7 @@ public class AMQSession_0_10 extends AMQSession
             {
                 if( messageTag <= deliveryTag )
                 {
-                    ranges.add(messageTag);
+                    ranges.add((int) (long) messageTag);
                     _unacknowledgedMessageTags.remove(messageTag);
                 }
             }
@@ -182,7 +182,7 @@ public class AMQSession_0_10 extends AMQSession
         }
         else
         {
-            ranges.add(deliveryTag);
+            ranges.add((int) deliveryTag);
             _unacknowledgedMessageTags.remove(deliveryTag);
         }
         getQpidSession().messageAcknowledge(ranges);
@@ -287,7 +287,7 @@ public class AMQSession_0_10 extends AMQSession
             {
                 break;
             }
-            ranges.add(tag);
+            ranges.add((int) (long) tag);
         }
         getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         // We need to sync so that we get notify of an error.
@@ -311,7 +311,7 @@ public class AMQSession_0_10 extends AMQSession
                 break;
             }
 
-            ranges.add(tag);
+            ranges.add((int) (long) tag);
         }
         getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
     }
@@ -326,7 +326,7 @@ public class AMQSession_0_10 extends AMQSession
     {
         // The value of requeue is always true
         RangeSet ranges = new RangeSet();
-        ranges.add(deliveryTag);
+        ranges.add((int) deliveryTag);
         getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         //I don't think we need to sync
     }
