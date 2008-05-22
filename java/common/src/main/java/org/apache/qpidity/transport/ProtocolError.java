@@ -64,4 +64,9 @@ public class ProtocolError implements NetworkEvent, ProtocolEvent
         delegate.error(this);
     }
 
+    public String toString()
+    {
+        return String.format("protocol error: %s", getMessage());
+    }
+
 }

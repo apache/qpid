@@ -77,14 +77,14 @@ public class Connection
 
     public void received(ConnectionEvent event)
     {
-        log.debug("RECV: %s", event);
+        log.debug("RECV: [%s] %s", this, event);
         Channel channel = getChannel(event.getChannel());
         channel.received(event.getProtocolEvent());
     }
 
     public void send(ConnectionEvent event)
     {
-        log.debug("SEND: %s", event);
+        log.debug("SEND: [%s] %s", this, event);
         sender.send(event);
     }
 
@@ -133,6 +133,11 @@ public class Connection
     public void close()
     {
         sender.close();
+    }
+
+    public String toString()
+    {
+        return String.format("conn:%x", System.identityHashCode(this));
     }
 
 }

@@ -208,7 +208,7 @@ abstract class AbstractDecoder implements Decoder
             RangeSet ranges = new RangeSet();
             for (int i = 0; i < count; i++)
             {
-                ranges.add(readUint32(), readUint32());
+                ranges.add(readSequenceNo(), readSequenceNo());
             }
             return ranges;
         }

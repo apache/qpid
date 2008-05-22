@@ -20,7 +20,7 @@
  */
 package org.apache.qpidity.transport;
 
-import static java.lang.Math.*;
+import static org.apache.qpid.util.Serial.*;
 
 
 /**
@@ -31,28 +31,28 @@ import static java.lang.Math.*;
 
 public class Range
 {
-    private final long lower;
-    private final long upper;
+    private final int lower;
+    private final int upper;
 
-    public Range(long lower, long upper)
+    public Range(int lower, int upper)
     {
         this.lower = lower;
         this.upper = upper;
     }
 
-    public long getLower()
+    public int getLower()
     {
         return lower;
     }
 
-    public long getUpper()
+    public int getUpper()
     {
         return upper;
     }
 
-    public boolean includes(long value)
+    public boolean includes(int value)
     {
-        return lower <= value && value <= upper;
+        return le(lower, value) && le(value, upper);
     }
 
     public boolean includes(Range range)
