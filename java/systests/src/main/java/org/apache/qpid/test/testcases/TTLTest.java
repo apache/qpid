@@ -78,7 +78,7 @@ public class TTLTest extends FrameworkBaseCase
      *
      * @throws javax.jms.JMSException Allowed to fall through and fail test.
      */
-    public void testTTLP2P() throws JMSException
+    public void testTTLP2P() throws Exception
     {
         String errorMessages = "";
         Random r = new Random();
@@ -92,7 +92,7 @@ public class TTLTest extends FrameworkBaseCase
 
         // Create the test circuit from the test configuration parameters.
         CircuitFactory circuitFactory = getCircuitFactory();
-        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+        Circuit testCircuit = circuitFactory.createCircuit(getConnection(), testProps);
 
         // This test case assumes it is using a local circuit.
         LocalCircuitImpl localCircuit = (LocalCircuitImpl) testCircuit;
