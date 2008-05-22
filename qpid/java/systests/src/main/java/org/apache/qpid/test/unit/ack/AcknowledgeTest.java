@@ -22,25 +22,20 @@ package org.apache.qpid.test.unit.ack;
  */
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.test.VMTestCase;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class AcknowledgeTest extends VMTestCase
+public class AcknowledgeTest extends QpidTestCase
 {
     private static final int NUM_MESSAGES = 50;
     private Connection _con;
@@ -49,19 +44,15 @@ public class AcknowledgeTest extends VMTestCase
     private Session _producerSession;
 	private Session _consumerSession;
 	private MessageConsumer _consumerA;
-	private MessageConsumer _consumerB;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queue = (Queue) _context.lookup("queue");
-
-        //CreateQueue
-        ((ConnectionFactory) _context.lookup("connection")).createConnection().createSession(false, Session.AUTO_ACKNOWLEDGE).createConsumer(_queue).close();
+        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Producer put some messages on the queue
-        _con = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _con = getConnection();
         _con.start();
     }
 
@@ -88,16 +79,6 @@ public class AcknowledgeTest extends VMTestCase
 
     }
 
-    private void consumeMessages(int toConsume, MessageConsumer consumer) throws JMSException
-    {
-        Message msg;
-        for (int i = 0; i < toConsume; i++)
-        {
-            msg = consumer.receive(1000);
-            assertNotNull("Message " + i + " was null!", msg);
-            assertEquals("message " + i, ((TextMessage) msg).getText());
-        }
-    }
 
     private void sendMessages(int totalMessages) throws JMSException
     {
@@ -107,15 +88,22 @@ public class AcknowledgeTest extends VMTestCase
         }
     }
 
+    /**
+     * Produces and consumes messages an either ack or commit the receipt of those messages
+     *
+     * @param transacted
+     * @param mode
+     * @throws Exception
+     */
     private void testMessageAck(boolean transacted, int mode) throws Exception
     {
     	init(transacted, mode);
         sendMessages(NUM_MESSAGES/2);
         Thread.sleep(1500);
-        _consumerB = _consumerSession.createConsumer(_queue);
+        MessageConsumer consumerB = _consumerSession.createConsumer(_queue);
         sendMessages(NUM_MESSAGES/2);
         int count = 0;
-        Message msg = _consumerB.receive(1500);
+        Message msg = consumerB.receive(1500);
         while (msg != null) 
         {
         	if (mode == Session.CLIENT_ACKNOWLEDGE)
@@ -123,14 +111,14 @@ public class AcknowledgeTest extends VMTestCase
         		msg.acknowledge();
             }
         	count++;
-        	msg = _consumerB.receive(1500);
+        	msg = consumerB.receive(1500);
         }
         if (transacted)
         {
         	_consumerSession.commit();
         }  
         _consumerA.close();
-        _consumerB.close();
+        consumerB.close();
         _consumerSession.close();
         assertEquals("Wrong number of messages on queue", NUM_MESSAGES - count,
                         ((AMQSession) _producerSession).getQueueDepth((AMQDestination) _queue));
@@ -153,7 +141,6 @@ public class AcknowledgeTest extends VMTestCase
             _consumerSession.commit();
         }
         _consumerSession.close();
-        super.tearDown();
     }
     
     public void test2ConsumersAutoAck() throws Exception
