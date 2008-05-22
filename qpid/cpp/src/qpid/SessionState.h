@@ -108,7 +108,7 @@ class SessionState {
     /** Called when flush for confirmed and completed commands is sent to peer. */
     virtual void senderRecordFlush();
 
-        /** Called when the peer confirms up to comfirmed. */
+    /** Called when the peer confirms up to comfirmed. */
     virtual void senderConfirmed(const SessionPoint& confirmed);
 
     /** Called when the peer indicates commands completed */
@@ -117,15 +117,15 @@ class SessionState {
     /** Point from which the next new (not replayed) data will be sent. */
     virtual SessionPoint senderGetCommandPoint();
 
-        /** Set of outstanding incomplete commands */
+    /** Set of outstanding incomplete commands */
     virtual SequenceSet senderGetIncomplete() const;
 
     /** Point from which we can replay. */
     virtual SessionPoint senderGetReplayPoint() const;
 
-        /** Peer expecting commands from this point.
-     virtual *@return Range of frames to be replayed.
-         */
+    /** Peer expecting commands from this point.
+        virtual *@return Range of frames to be replayed.
+    */
     virtual ReplayRange senderExpected(const SessionPoint& expected);
 
 
@@ -143,23 +143,25 @@ class SessionState {
     /** Peer has indicated commands are known completed */
     virtual void receiverKnownCompleted(const SequenceSet& commands);
 
-        /** Get the incoming command point */
+    /** Get the incoming command point */
     virtual const SessionPoint& receiverGetExpected() const;
 
-        /** Get the received high-water-mark, may be > getExpected() during replay */
+    /** Get the received high-water-mark, may be > getExpected() during replay */
     virtual const SessionPoint& receiverGetReceived() const;
 
-        /** Completed commands that the peer may not know about */
+    /** Completed received commands that the peer may not know about. */
     virtual const SequenceSet& receiverGetUnknownComplete() const;
 
-        /** ID of the command currently being handled. */
+    /** Incomplete received commands. */
+    virtual const SequenceSet& receiverGetIncomplete() const;
+
+    /** ID of the command currently being handled. */
     virtual SequenceNumber receiverGetCurrent() const;
 
   private:
 
     struct SendState {
-        SendState() : session(), unflushedSize(), replaySize() {}
-        SessionState* session;
+        SendState() : unflushedSize(), replaySize() {}
         // invariant: replayPoint <= flushPoint <= sendPoint
         SessionPoint replayPoint;   // Can replay from this point
         SessionPoint flushPoint;    // Point of last flush
@@ -171,12 +173,11 @@ class SessionState {
     } sender;
 
     struct ReceiveState {
-        ReceiveState() : session() {}
-        SessionState* session;
+        ReceiveState() {}
         SessionPoint expected;  // Expected from here
         SessionPoint received; // Received to here. Invariant: expected <= received.
         SequenceSet unknownCompleted; // Received & completed, may not  not known-complete by peer.
-        SequenceNumber firstIncomplete;  // First incomplete command.
+        SequenceSet incomplete;       // Incomplete received commands.
     } receiver;
 
     SessionId id;

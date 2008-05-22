@@ -32,6 +32,7 @@ using amqp_0_10::NotImplementedException;
 using amqp_0_10::InvalidArgumentException;
 using amqp_0_10::IllegalStateException;
 using amqp_0_10::ResourceLimitExceededException;
+using amqp_0_10::InternalErrorException;
 
 namespace {
 bool isControl(const AMQFrame& f) {
@@ -145,22 +146,25 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
     stateful = true;
     receiver.expected.advance(f);
     bool firstTime = receiver.expected > receiver.received;
-    if (firstTime)
+    if (firstTime) {
         receiver.received = receiver.expected;
+        receiver.incomplete += receiverGetCurrent();
+    }
     QPID_LOG_IF(debug, f.getMethod(), getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getMethod());
     QPID_LOG_IF(debug, !firstTime, "Ignoring duplicate frame: " << receiverGetCurrent() << ": " << f);
     return firstTime;
 }
     
 void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
-    assert(command <= receiver.received.command); // Internal error to complete an unreceived command.
-    assert(receiver.firstIncomplete <= command);
-    if (cumulative)
-        receiver.unknownCompleted.add(receiver.firstIncomplete, command);
-    else
-        receiver.unknownCompleted += command;
-    receiver.firstIncomplete = receiver.unknownCompleted.rangeContaining(receiver.firstIncomplete).end();
-    QPID_LOG(debug, getId() << ": receiver marked completed: " << command << " unknown: " << receiver.unknownCompleted);
+    if (!receiver.incomplete.contains(command))
+        throw InternalErrorException(QPID_MSG(getId() << "command is not received-incomplete: " << command ));
+    SequenceNumber first =cumulative ? receiver.incomplete.front() : command;
+    SequenceNumber last = command;
+    receiver.unknownCompleted.add(first, last);
+    receiver.incomplete.remove(first, last);
+    QPID_LOG(debug, getId() << ": receiver marked completed: " << command
+             << " incomplete: " << receiver.incomplete
+             << " unknown-completed: " << receiver.unknownCompleted);
 }
 
 void SessionState::receiverKnownCompleted(const SequenceSet& commands) {
@@ -173,6 +177,7 @@ void SessionState::receiverKnownCompleted(const SequenceSet& commands) {
 const SessionPoint& SessionState::receiverGetExpected() const { return receiver.expected; }
 const SessionPoint& SessionState::receiverGetReceived() const { return receiver.received; }
 const SequenceSet& SessionState::receiverGetUnknownComplete() const { return receiver.unknownCompleted; }
+const SequenceSet& SessionState::receiverGetIncomplete() const { return receiver.incomplete; }
 
 SequenceNumber SessionState::receiverGetCurrent() const {
     SequenceNumber current = receiver.expected.command;
