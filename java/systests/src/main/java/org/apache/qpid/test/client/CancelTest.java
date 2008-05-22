@@ -22,19 +22,17 @@
 package org.apache.qpid.test.client;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.VMTestCase;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
 import java.util.Enumeration;
-public class CancelTest extends VMTestCase
+
+public class CancelTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(CancelTest.class);
 
@@ -47,10 +45,10 @@ public class CancelTest extends VMTestCase
 
         super.setUp();
 
-        _queue = (Queue) _context.lookup("queue");
+        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection();
 
         _clientConnection.start();
 
@@ -62,10 +60,13 @@ public class CancelTest extends VMTestCase
 
     /**
      * Simply
+     * This test originally did not assert anything but was just checking
+     * that a message could be browsed and consumed without throwing an exception.
+     * It now checks that at least a message is browsed and that a message is received.
      */
-    public void test() throws JMSException, NamingException
+    public void test() throws Exception
     {
-        Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
@@ -78,6 +79,7 @@ public class CancelTest extends VMTestCase
         QueueBrowser browser = _clientSession.createBrowser(_queue);
         Enumeration e = browser.getEnumeration();
 
+        assertTrue(e.hasMoreElements());
 
         while (e.hasMoreElements())
         {
@@ -87,25 +89,7 @@ public class CancelTest extends VMTestCase
         browser.close();
 
         MessageConsumer consumer = _clientSession.createConsumer(_queue);
-        consumer.receive();
+        assertNotNull( consumer.receive() );
         consumer.close();
     }
-
-    public void loop()
-    {
-        try
-        {
-            int run = 0;
-            while (true)
-            {
-                System.err.println(run++);
-                test();
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.error(e, e);
-        }
-    }
-
 }
