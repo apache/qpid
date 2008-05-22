@@ -130,18 +130,26 @@ public class AMQSession_0_10 extends AMQSession
     {
         checkNotClosed();
         checkValidTopic(topic);
-        if( _subscriptions.containsKey(name))
+        if (_subscriptions.containsKey(name))
         {
             _subscriptions.get(name).close();
         }
         AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
-        BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
-        TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
+        try
+        {
+            BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
+            TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
+            _subscriptions.put(name, subscriber);
+            _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
 
-        _subscriptions.put(name, subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+            return subscriber;
+        }
+        catch (JMSException e)
+        {
+            deleteQueue(dest.getAMQQueueName());
+            throw e;
+        }
 
-        return subscriber;
     }
 
     /**

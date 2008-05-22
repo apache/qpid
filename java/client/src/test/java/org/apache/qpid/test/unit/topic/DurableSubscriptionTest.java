@@ -33,6 +33,9 @@ import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.Connection;
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -273,6 +276,76 @@ public class DurableSubscriptionTest extends QpidTestCase
         con3.close();
     }
 
+    /***
+     * This tests the fix for QPID-1085
+     * Creates a durable subscriber with an invalid selector, checks that the
+     * exception is thrown correctly and that the subscription is not created. 
+     * @throws Exception 
+     */
+    public void testDurableWithInvalidSelector() throws Exception
+    {
+    	Connection conn = getConnection();
+    	conn.start();
+    	Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+    	AMQTopic topic = new AMQTopic((AMQConnection) conn, "MyTestDurableWithInvalidSelectorTopic");
+    	MessageProducer producer = session.createProducer(topic);
+    	producer.send(session.createTextMessage("testDurableWithInvalidSelector1"));
+    	try 
+    	{
+    		TopicSubscriber deadSubscriber = session.createDurableSubscriber(topic, "testDurableWithInvalidSelectorSub",
+																	 		 "=TEST 'test", true);
+    		assertNull("Subscriber should not have been created", deadSubscriber);
+    	} 
+    	catch (InvalidSelectorException e)
+    	{
+    		// This was expected
+    	}
+    	
+    	TopicSubscriber liveSubscriber = session.createDurableSubscriber(topic, "testDurableWithInvalidSelectorSub");
+    	assertNotNull("Subscriber should have been created", liveSubscriber);
+
+    	producer.send(session.createTextMessage("testDurableWithInvalidSelector2"));
+    	
+    	Message msg = liveSubscriber.receive();
+    	assertNotNull ("Message should have been received", msg);
+    	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
+    	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
+    }
+    
+    /***
+     * This tests the fix for QPID-1085
+     * Creates a durable subscriber with an invalid destination, checks that the
+     * exception is thrown correctly and that the subscription is not created. 
+     * @throws Exception 
+     */
+    public void testDurableWithInvalidDestination() throws Exception
+    {
+    	Connection conn = getConnection();
+    	conn.start();
+    	Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+    	AMQTopic topic = new AMQTopic((AMQConnection) conn, "testDurableWithInvalidDestinationTopic");
+    	try 
+    	{
+    		TopicSubscriber deadSubscriber = session.createDurableSubscriber(null, "testDurableWithInvalidDestinationsub");
+    		assertNull("Subscriber should not have been created", deadSubscriber);
+    	} 
+    	catch (InvalidDestinationException e)
+    	{
+    		// This was expected
+    	}
+    	MessageProducer producer = session.createProducer(topic);    	
+    	producer.send(session.createTextMessage("testDurableWithInvalidSelector1"));
+    	
+    	TopicSubscriber liveSubscriber = session.createDurableSubscriber(topic, "testDurableWithInvalidDestinationsub");
+    	assertNotNull("Subscriber should have been created", liveSubscriber);
+    	
+    	producer.send(session.createTextMessage("testDurableWithInvalidSelector2"));
+    	Message msg = liveSubscriber.receive();
+    	assertNotNull ("Message should have been received", msg);
+    	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
+    	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
+    }
+    
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(DurableSubscriptionTest.class);
