@@ -29,7 +29,7 @@ felix.libs=${osgi-core} ${felix-framework}
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
     ${mina-filter-ssl} ${commons-codec} ${commons-lang} ${commons-collections} \
     ${commons-configuration}
-client.libs=${common.libs}  ${geronimo-jms}
+client.libs=${common.libs}  ${geronimo-jms} ${junit}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs}
 
