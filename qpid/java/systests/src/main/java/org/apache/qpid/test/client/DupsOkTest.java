@@ -1,12 +1,11 @@
 package org.apache.qpid.test.client;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.VMTestCase;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -15,32 +14,35 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.naming.NamingException;
-import java.util.concurrent.CountDownLatch;/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class DupsOkTest extends VMTestCase
+/*
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+*/
+
+public class DupsOkTest extends QpidTestCase
 {
 
     private Queue _queue;
+    // Question why do we need to send so many messages?
     private static final int MSG_COUNT = 4999;
     private CountDownLatch _awaitCompletion = new CountDownLatch(1);
 
@@ -48,13 +50,11 @@ public class DupsOkTest extends VMTestCase
     {
         super.setUp();
 
-        _queue = (Queue) _context.lookup("queue");
+        _queue = (Queue)  getInitialContext().lookup("queue");
 
-        //CreateQueue
-        ((ConnectionFactory) _context.lookup("connection")).createConnection().createSession(false, Session.AUTO_ACKNOWLEDGE).createConsumer(_queue).close();
 
         //Create Producer put some messages on the queue
-        Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
@@ -72,10 +72,17 @@ public class DupsOkTest extends VMTestCase
         producerConnection.close();
     }
 
-    public void testDupsOK() throws NamingException, JMSException, InterruptedException, AMQException
+    /**
+     * This test sends x messages and receives them with an async consumer.
+     * Waits for all messages to be received or for 60 s
+     * and checks whether the queue is empty.
+     * 
+     * @throws Exception
+     */
+    public void testDupsOK() throws Exception
     {
         //Create Client
-        Connection clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection clientConnection = getConnection();
 
         clientConnection.start();
 
@@ -98,26 +105,18 @@ public class DupsOkTest extends VMTestCase
                 if (message instanceof TextMessage)
                 {
                     try
-                    {
-                        /*if (message.getIntProperty("count") == 5000)
-                        {
-                            assertEquals("The queue should have 4999 msgs left", 4999, getMessageCount(_queue.getQueueName()));
-                        }*/
-
+                    {                 
                         if (message.getIntProperty("count") == MSG_COUNT)
                         {
                             try
                             {
                                 long remainingMessages = ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue);
-                                if(remainingMessages != 0)
-                                {
-
-                                    assertEquals("The queue should have 0 msgs left, seen " + _msgCount + " messages.", 0, getMessageCount(_queue.getQueueName()));
-                                }
+                                fail("The queue should have 0 msgs left, seen " + _msgCount + " messages, left: "
+                                        + remainingMessages);
                             }
                             catch (AMQException e)
                             {
-                                assertNull("Got AMQException", e);
+                                fail("Got AMQException" + e.getMessage());
                             }
                             finally
                             {
@@ -134,27 +133,21 @@ public class DupsOkTest extends VMTestCase
                 }
                 else
                 {
-                    fail("");
+                    fail("Got wrong message type");
                 }
             }
         });
 
         try
         {
-            _awaitCompletion.await();
+            _awaitCompletion.await(60, TimeUnit.SECONDS);
         }
         catch (InterruptedException e)
         {
             fail("Unable to wait for test completion");
             throw e;
         }
-
-//        consumer.close();
-
         assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
-        clientConnection.close();
-
     }
-
 
 }

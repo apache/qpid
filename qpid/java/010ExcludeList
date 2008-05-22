@@ -18,3 +18,16 @@ org.apache.qpid.server.security.acl.SimpleACLTest#*
 org.apache.qpid.server.plugins.PluginTest#*
 // This test is not finished
 org.apache.qpid.test.testcases.TTLTest#*
+// Those tests require failover support
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
