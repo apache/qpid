@@ -20,13 +20,15 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.network.Frame;
 import org.apache.qpidity.transport.util.Logger;
 
 import java.nio.ByteBuffer;
 
-import java.util.List;
 import java.util.ArrayList;
-
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.qpidity.transport.network.Frame.*;
 import static org.apache.qpidity.transport.util.Functions.*;
@@ -51,6 +53,7 @@ public class Channel extends Invoker
     // session may be null
     private Session session;
 
+    private Lock commandLock = new ReentrantLock();
     private boolean first = true;
     private ByteBuffer data = null;
 
@@ -156,7 +159,17 @@ public class Channel extends Invoker
 
     public void method(Method m)
     {
+        if (m.getEncodedTrack() == Frame.L4)
+        {
+            commandLock.lock();
+        }
+
         emit(m);
+
+        if (m.getEncodedTrack() == Frame.L4 && !m.hasPayload())
+        {
+            commandLock.unlock();
+        }
     }
 
     public void header(Header header)
@@ -190,6 +203,7 @@ public class Channel extends Invoker
         emit(new Data(data, first, true));
         first = true;
         data = null;
+        commandLock.unlock();
     }
 
     protected void invoke(Method m)
