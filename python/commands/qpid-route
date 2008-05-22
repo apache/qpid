@@ -33,12 +33,12 @@ from qpid.util       import connect
 def Usage ():
     print "Usage:  qpid-route [OPTIONS] link add  <dest-broker> <src-broker>"
     print "        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>"
-    print "        qpid-route [OPTIONS] link list <dest-broker>"
+    print "        qpid-route [OPTIONS] link list [<dest-broker>]"
     print
     print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [id] [exclude-list]"
     print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
-    print "        qpid-route [OPTIONS] route list  <dest-broker>"
-    print "        qpid-route [OPTIONS] route flush <dest-broker>"
+    print "        qpid-route [OPTIONS] route list  [<dest-broker>]"
+    print "        qpid-route [OPTIONS] route flush [<dest-broker>]"
     print
     print "Options:"
     print "    -v [ --verbose ]         Verbose output"
@@ -100,6 +100,10 @@ class RouteManager:
         self.src  = Broker (srcBroker)
         mc = self.mclient
 
+        if self.dest.name() == self.src.name():
+            print "Linking broker to itself is not permitted"
+            sys.exit(1)
+
         brokers = mc.syncGetObjects (self.mch, "broker")
         broker = brokers[0]
         link = self.getLink()
@@ -153,6 +157,10 @@ class RouteManager:
     def AddRoute (self, srcBroker, exchange, routingKey, id, excludes):
         self.src  = Broker (srcBroker)
         mc = self.mclient
+
+        if self.dest.name() == self.src.name():
+            print "Linking broker to itself is not permitted"
+            sys.exit(1)
 
         brokers = mc.syncGetObjects (self.mch, "broker")
         broker = brokers[0]
@@ -314,12 +322,16 @@ for opt in optlist:
         _dellink = True
 
 nargs = len (cargs)
-if nargs < 3:
+if nargs < 2:
     Usage ()
+if nargs == 2:
+    destBroker = "localhost"
+else:
+    destBroker = cargs[2]
 
 group = cargs[0]
 cmd   = cargs[1]
-rm    = RouteManager (cargs[2])
+rm    = RouteManager (destBroker)
 rm.ConnectToBroker ()
 
 if group == "link":
@@ -332,8 +344,6 @@ if group == "link":
             Usage()
         rm.DelLink (cargs[3])
     elif cmd == "list":
-        if nargs != 3:
-            Usage()
         rm.ListLinks ()
 
 elif group == "route":
@@ -352,9 +362,6 @@ elif group == "route":
         else:
             rm.DelRoute (cargs[3], cargs[4], cargs[5])
     else:
-        if nargs != 3:
-            Usage ()
-
         if   cmd == "list":
             rm.ListRoutes ()
         elif cmd == "flush":
