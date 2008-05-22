@@ -128,6 +128,16 @@ public class QpidTestCase extends TestCase
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
 
+    public QpidTestCase(String name)
+    {
+        super(name);
+    }
+
+    public QpidTestCase()
+       {
+           super("QpidTestCase");
+       }
+
     public void runBare() throws Throwable
     {
         String name = getClass().getSimpleName() + "." + getName();

@@ -81,7 +81,7 @@ public class LocalCircuitFactory implements CircuitFactory
      *
      * @return A test circuit.
      */
-    public Circuit createCircuit(ParsedProperties testProperties)
+    public Circuit createCircuit(Connection connection, ParsedProperties testProperties)
     {
         Circuit result;
 
@@ -93,9 +93,6 @@ public class LocalCircuitFactory implements CircuitFactory
         {
             // Get a unique offset to append to destination names to make them unique to the connection.
             long uniqueId = uniqueDestsId.incrementAndGet();
-
-            // Set up the connection.
-            Connection connection = TestUtils.createConnection(testProperties);
 
             // Add the connection exception listener to assert on exception conditions with.
             // ExceptionMonitor exceptionMonitor = new ExceptionMonitor();
