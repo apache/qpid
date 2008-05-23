@@ -60,19 +60,19 @@ class Queue(BaseQueue):
     if listener is None and exc_listener is not None:
       raise ValueError("cannot set exception listener without setting listener")
 
-    self.listener = listener
-    self.exc_listener = exc_listener
-
     if listener is None:
       if self.thread is not None:
         self.put(Queue.STOP)
         self.thread.join()
         self.thread = None
-    else:
-      if self.thread is None:
-        self.thread = Thread(target = self.run)
-        self.thread.setDaemon(True)
-        self.thread.start()
+
+    self.listener = listener
+    self.exc_listener = exc_listener
+
+    if listener is not None and self.thread is None:
+      self.thread = Thread(target = self.run)
+      self.thread.setDaemon(True)
+      self.thread.start()
 
   def run(self):
     while True:
