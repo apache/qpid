@@ -160,17 +160,20 @@ class Codec(Packer):
 
   def write_map(self, m):
     sc = StringCodec(self.spec)
-    sc.write_uint32(len(m))
-    for k, v in m.items():
-      type = self.spec.encoding(v.__class__)
-      if type == None:
-        raise CodecException("no encoding for %s" % v.__class__)
-      sc.write_str8(k)
-      sc.write_uint8(type.code)
-      type.encode(sc, v)
+    if m is not None:
+      sc.write_uint32(len(m))
+      for k, v in m.items():
+        type = self.spec.encoding(v.__class__)
+        if type == None:
+          raise CodecException("no encoding for %s" % v.__class__)
+        sc.write_str8(k)
+        sc.write_uint8(type.code)
+        type.encode(sc, v)
     self.write_vbin32(sc.encoded)
   def read_map(self):
     sc = StringCodec(self.spec, self.read_vbin32())
+    if not sc.encoded:
+      return None
     count = sc.read_uint32()
     result = {}
     while sc.encoded:
@@ -182,15 +185,48 @@ class Codec(Packer):
     return result
 
   def write_array(self, a):
-    pass
+    sc = StringCodec(self.spec)
+    if a is not None:
+      if len(a) > 0:
+        type = self.spec.encoding(a[0].__class__)
+      else:
+        type = self.spec.encoding(None.__class__)
+      sc.write_uint8(type.code)
+      sc.write_uint32(len(a))
+      for o in a:
+        type.encode(sc, o)
+    self.write_vbin32(sc.encoded)
   def read_array(self):
     sc = StringCodec(self.spec, self.read_vbin32())
+    if not sc.encoded:
+      return None
     type = self.spec.types[sc.read_uint8()]
     count = sc.read_uint32()
     result = []
-    while count:
+    while count > 0:
       result.append(type.decode(sc))
-      count = count - 1
+      count -= 1
+    return result
+
+  def write_list(self, l):
+    sc = StringCodec(self.spec)
+    if l is not None:
+      sc.write_uint32(len(l))
+      for o in l:
+        type = self.spec.encoding(o.__class__)
+        sc.write_uint8(type.code)
+        type.encode(sc, o)
+    self.write_vbin32(sc.encoded)
+  def read_list(self):
+    sc = StringCodec(self.spec, self.read_vbin32())
+    if not sc.encoded:
+      return None
+    count = sc.read_uint32()
+    result = []
+    while count > 0:
+      type = self.spec.types[sc.read_uint8()]
+      result.append(type.decode(sc))
+      count -= 1
     return result
 
   def read_struct32(self):

@@ -473,6 +473,7 @@ class Spec(Node):
     basestring: "vbin16",
     int: "int64",
     long: "int64",
+    float: "float",
     None.__class__: "void",
     list: "list",
     tuple: "list",
