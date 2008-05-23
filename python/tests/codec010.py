@@ -55,3 +55,30 @@ class CodecTest(TestCase):
                        "long": 2**32,
                        "none": None,
                        "map": {"string": "nested map"}})
+
+  def testMapEmpty(self):
+    self.check("map", {})
+
+  def testMapNone(self):
+    self.check("map", None)
+
+  def testList(self):
+    self.check("list", [1, "two", 3.0, -4])
+
+  def testListEmpty(self):
+    self.check("list", [])
+
+  def testListNone(self):
+    self.check("list", None)
+
+  def testArrayInt(self):
+    self.check("array", [1, 2, 3, 4])
+
+  def testArrayString(self):
+    self.check("array", ["one", "two", "three", "four"])
+
+  def testArrayEmpty(self):
+    self.check("array", [])
+
+  def testArrayNone(self):
+    self.check("array", None)
