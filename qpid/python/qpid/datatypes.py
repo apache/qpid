@@ -116,14 +116,55 @@ class Message:
       args.append("id=%s" % self.id)
     return "Message(%s)" % ", ".join(args)
 
+def serial(o):
+  if isinstance(o, Serial):
+    return o
+  else:
+    return Serial(o)
+
+class Serial:
+
+  def __init__(self, value):
+    self.value = value & 0xFFFFFFFF
+
+  def __hash__(self):
+    return hash(self.value)
+
+  def __cmp__(self, other):
+    if other is None:
+      return 1
+
+    other = serial(other)
+
+    delta = (self.value - other.value) & 0xFFFFFFFF
+    neg = delta & 0x80000000
+    mag = delta & 0x7FFFFFFF
+
+    if neg:
+      return -mag
+    else:
+      return mag
+
+  def __add__(self, other):
+    return Serial(self.value + other)
+
+  def __sub__(self, other):
+    return Serial(self.value - other)
+
+  def __repr__(self):
+    return "serial(%s)" % self.value
+
+  def __str__(self):
+    return str(self.value)
+
 class Range:
 
   def __init__(self, lower, upper = None):
-    self.lower = lower
+    self.lower = serial(lower)
     if upper is None:
-      self.upper = lower
+      self.upper = self.lower
     else:
-      self.upper = upper
+      self.upper = serial(upper)
 
   def __contains__(self, n):
     return self.lower <= n and n <= self.upper
