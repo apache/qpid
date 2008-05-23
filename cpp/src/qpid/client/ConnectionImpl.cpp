@@ -52,7 +52,6 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     connector.setTimeoutHandler(this);
     connector.setShutdownHandler(this);
 
-    open(settings.host, settings.port);
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
 }
@@ -135,11 +134,13 @@ ConnectionImpl::SessionVector ConnectionImpl::closeInternal(const Mutex::ScopedL
 }
 
 void ConnectionImpl::closed(uint16_t code, const std::string& text) 
-{
-    Mutex::ScopedLock l(lock);
-    if (isClosed) return;
-    SessionVector save(closeInternal(l));
-    Mutex::ScopedUnlock u(lock);
+{ 
+    SessionVector save;
+    {
+        Mutex::ScopedLock l(lock);
+        if (isClosed) return;
+        save = closeInternal(l);
+    }
     std::for_each(save.begin(), save.end(), boost::bind(&SessionImpl::connectionClosed, _1, code, text));
 }
 
