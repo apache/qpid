@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.apache.qpidity.transport.codec.Decoder;
 import org.apache.qpidity.transport.codec.Encodable;
 import org.apache.qpidity.transport.codec.Encoder;
+import org.apache.qpidity.transport.codec.Validator;
 
 import org.apache.qpidity.transport.network.Frame;
 
@@ -136,6 +137,7 @@ for f in fields:
     }
 
     public final $name $(f.set)($(f.type) value) {
+        $(f.check)
         this.$(f.name) = value;
         this.has_$(f.name) = true;
         this.dirty = true;
@@ -143,6 +145,7 @@ for f in fields:
     }
 
     public final $name $(f.name)($(f.type) value) {
+        $(f.check)
         this.$(f.name) = value;
         this.has_$(f.name) = true;
         this.dirty = true;
