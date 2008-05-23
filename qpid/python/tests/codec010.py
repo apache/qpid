@@ -49,12 +49,16 @@ class CodecTest(TestCase):
   def testMapNested(self):
     self.check("map", {"map": {"string": "nested test"}})
 
+  def testMapList(self):
+    self.check("map", {"list": [1, "two", 3.0, -4]})
+
   def testMapAll(self):
     self.check("map", {"string": "this is a test",
                        "int": 3,
                        "long": 2**32,
                        "none": None,
-                       "map": {"string": "nested map"}})
+                       "map": {"string": "nested map"},
+                       "list": [1, "two", 3.0, -4]})
 
   def testMapEmpty(self):
     self.check("map", {})
