@@ -164,15 +164,15 @@ try:
 except socket.error, e:
   print "Socket Error (%s):" % _host, e[1]
   sys.exit (1)
-except Closed, e:
-  if str(e).find ("Exchange not found") != -1:
-    print "Management not enabled on broker:  Use '-m yes' option on broker startup."
-  sys.exit (1)
 except IOError, e:
   print "IOError: %d - %s: %s" % (e.errno, e.strerror, e.filename)
   sys.exit (1)
 except ConnectionFailed, e:
   print "Connect Failed %d - %s" % (e[0], e[1])
+  sys.exit(1)
+except Exception, e:
+  if str(e).find ("Exchange not found") != -1:
+    print "Management not enabled on broker:  Use '-m yes' option on broker startup."
   sys.exit(1)
 
 # Instantiate the CLI interpreter and launch it.

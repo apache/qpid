@@ -163,7 +163,8 @@ class ManagementData:
       self.lock.release ()
 
   def closeHandler (self, context, reason):
-    print "Connection to broker lost:", reason
+    if self.operational:
+      print "Connection to broker lost:", reason
     self.operational = False
     if self.cli != None:
       self.cli.setPromptMessage ("Broker Disconnected")
@@ -181,7 +182,9 @@ class ManagementData:
     self.tables         = {}
     self.schema         = {}
     self.bootSequence   = 0
+    self.operational    = False
     self.disp           = disp
+    self.cli            = None
     self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
@@ -198,7 +201,6 @@ class ManagementData:
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))
     self.operational = True
-    self.cli         = None
 
   def close (self):
     pass
