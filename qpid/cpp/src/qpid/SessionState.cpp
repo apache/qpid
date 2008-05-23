@@ -20,7 +20,7 @@
  */
 
 #include "SessionState.h"
-#include "qpid/amqp_0_10/exceptions.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
@@ -28,32 +28,56 @@
 
 namespace qpid {
 using framing::AMQFrame;
-using amqp_0_10::NotImplementedException;
-using amqp_0_10::InvalidArgumentException;
-using amqp_0_10::IllegalStateException;
-using amqp_0_10::ResourceLimitExceededException;
-using amqp_0_10::InternalErrorException;
+using framing::NotImplementedException;
+using framing::InvalidArgumentException;
+using framing::IllegalStateException;
+using framing::ResourceLimitExceededException;
+using framing::InternalErrorException;
+using framing::FramingErrorException;
 
 namespace {
 bool isControl(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == 0;
+    return f.getMethod() && f.getMethod()->type() == framing::CONTROL;
+}
+bool isCommand(const AMQFrame& f) {
+    return f.getMethod() && f.getMethod()->type() == framing::COMMAND;
 }
 } // namespace
 
-/** A point in the session - command id + offset */
+SessionPoint::SessionPoint(SequenceNumber c, uint64_t o) : command(c), offset(o) {}
+
+// TODO aconway 2008-05-22: Do complete frame sequence validity check here,
+// currently duplicated betwen broker and client session impl.
+//
 void SessionPoint::advance(const AMQFrame& f) {
-    if (f.isLastSegment() && f.isLastFrame()) {
-        ++command;
-        offset = 0;
+    if (isControl(f)) return;   // Ignore controls.
+    if (f.isFirstSegment() && f.isFirstFrame()) {
+        if (offset != 0)
+            throw FramingErrorException(QPID_MSG("Unexpected command start frame."));
+        if (!isCommand(f))
+            throw FramingErrorException(
+                QPID_MSG("Command start frame has invalid type" << f.getBody()->type()));
+        if (f.isLastSegment() && f.isLastFrame()) 
+            ++command;          // Single-frame command.
+        else
+            offset += f.size();
     }
-    else {
-        // TODO aconway 2008-04-24: if we go to support for partial
-        // command replay, then it may be better to record the unframed
-        // data size in a command point rather than the framed size so
-        // that the relationship of fragment offsets to the replay
-        // list can be computed more easily.
-        // 
-        offset += f.size();
+    else {                      // continuation frame for partial command
+        if (offset == 0)
+            throw FramingErrorException(QPID_MSG("Unexpected command continuation frame."));
+        if (f.isLastSegment() && f.isLastFrame()) {
+            ++command;
+            offset = 0;
+        }
+        else {
+            // TODO aconway 2008-04-24: if we go to support for partial
+            // command replay, then it may be better to record the unframed
+            // data size in a command point rather than the framed size so
+            // that the relationship of fragment offsets to the replay
+            // list can be computed more easily.
+            // 
+            offset += f.size();
+        }
     }
 }
 
@@ -64,6 +88,7 @@ bool SessionPoint::operator<(const SessionPoint& x) const {
 bool SessionPoint::operator==(const SessionPoint& x) const {
     return command == x.command && offset == x.offset;
 }
+
 
 SessionPoint SessionState::senderGetCommandPoint() { return sender.sendPoint; }
 SequenceSet  SessionState::senderGetIncomplete() const { return sender.incomplete; }
@@ -156,8 +181,7 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
 }
     
 void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
-    if (!receiver.incomplete.contains(command))
-        throw InternalErrorException(QPID_MSG(getId() << "command is not received-incomplete: " << command ));
+    assert(receiver.incomplete.contains(command)); // Internal error to complete command twice.
     SequenceNumber first =cumulative ? receiver.incomplete.front() : command;
     SequenceNumber last = command;
     receiver.unknownCompleted.add(first, last);

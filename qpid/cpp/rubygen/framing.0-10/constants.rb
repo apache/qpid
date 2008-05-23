@@ -23,6 +23,7 @@ class ConstantsGen < CppGen
           }
           genl l.join(",\n")
         }
+        define_constants_for(@amqp.domain("segment-type").enum)
         namespace("execution") {
           define_constants_for(@amqp.class_("execution").domain("error-code").enum)
         }
