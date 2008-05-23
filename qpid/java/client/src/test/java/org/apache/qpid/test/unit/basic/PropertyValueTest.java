@@ -113,6 +113,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
                 }
                 catch (Exception e)
                 {
+                    _logger.error("exception:", e);
                     fail("Unable to initialilse connection: " + e);
                 }
 

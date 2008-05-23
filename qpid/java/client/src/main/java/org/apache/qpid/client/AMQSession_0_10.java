@@ -125,33 +125,6 @@ public class AMQSession_0_10 extends AMQSession
 
     //------- overwritten methods of class AMQSession
 
-     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
-            throws JMSException
-    {
-        checkNotClosed();
-        checkValidTopic(topic);
-        if (_subscriptions.containsKey(name))
-        {
-            _subscriptions.get(name).close();
-        }
-        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
-        try
-        {
-            BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
-            TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
-            _subscriptions.put(name, subscriber);
-            _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
-
-            return subscriber;
-        }
-        catch (JMSException e)
-        {
-            deleteQueue(dest.getAMQQueueName());
-            throw e;
-        }
-
-    }
-
     /**
      * Acknowledge one or many messages.
      *

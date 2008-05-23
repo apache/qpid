@@ -919,28 +919,22 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public abstract TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException;
 
-    /** Note, currently this does not handle reuse of the same name with different topics correctly. */
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
-            throws JMSException
+        throws JMSException
     {
         checkNotClosed();
         checkValidTopic(topic);
+        if (_subscriptions.containsKey(name))
+        {
+            _subscriptions.get(name).close();
+        }
         AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
-        try
-        {
-            BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
-            TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
-            _subscriptions.put(name, subscriber);
-            _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
+        BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
+        TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
+        _subscriptions.put(name, subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
 
-            return subscriber;
-        }
-        catch (JMSException e)
-        {
-            deleteQueue(dest.getAMQQueueName());
-            throw e;
-        }
-        
+        return subscriber;
     }
 
     public MapMessage createMapMessage() throws JMSException

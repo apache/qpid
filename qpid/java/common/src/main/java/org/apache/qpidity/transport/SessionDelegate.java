@@ -59,6 +59,11 @@ public abstract class SessionDelegate
         ssn.result(result.getCommandId(), result.getValue());
     }
 
+    @Override public void executionException(Session ssn, ExecutionException exc)
+    {
+        ssn.addException(exc);
+    }
+
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
     {
         RangeSet ranges = cmp.getCommands();
