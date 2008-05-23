@@ -38,7 +38,7 @@ using framing::SequenceSet;
 
 /** A point in the session. Points to command id + offset */
 struct SessionPoint : boost::totally_ordered1<SessionPoint> {
-    SessionPoint(SequenceNumber command_=0, uint64_t offset_ = 0) : command(command_), offset(offset_) {}
+    SessionPoint(SequenceNumber command = 0, uint64_t offset = 0);
 
     SequenceNumber command;
     uint64_t offset;
@@ -178,6 +178,8 @@ class SessionState {
         SessionPoint received; // Received to here. Invariant: expected <= received.
         SequenceSet unknownCompleted; // Received & completed, may not  not known-complete by peer.
         SequenceSet incomplete;       // Incomplete received commands.
+        int segmentType;
+        
     } receiver;
 
     SessionId id;

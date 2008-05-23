@@ -121,10 +121,8 @@ void SessionState::activateOutput() {
     Mutex::ScopedLock l(lock);
     if (isAttached()) 
         getConnection().outputTasks.activateOutput();
-    }
-    //This class could be used as the callback for queue notifications
-    //if not attached, it can simply ignore the callback, else pass it
-    //on to the connection
+    // FIXME aconway 2008-05-22: should we hold the lock over activateOutput??
+}
 
 ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
 {
