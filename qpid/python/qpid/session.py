@@ -23,7 +23,7 @@ from datatypes import RangedSet, Struct, Future
 from codec010 import StringCodec
 from assembler import Segment
 from queue import Queue
-from datatypes import Message
+from datatypes import Message, serial
 from util import wait, notify
 from exceptions import *
 from logging import getLogger
@@ -304,7 +304,7 @@ class Sender:
 
   def __init__(self, session):
     self.session = session
-    self.next_id = 0
+    self.next_id = serial(0)
     self.next_offset = 0
     self.segments = []
     self._completed = RangedSet()
