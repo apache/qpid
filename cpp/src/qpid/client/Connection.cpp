@@ -20,7 +20,6 @@
  */
 #include "Connection.h"
 #include "ConnectionSettings.h"
-#include "Channel.h"
 #include "Message.h"
 #include "SessionImpl.h"
 #include "qpid/log/Logger.h"
@@ -71,13 +70,6 @@ void Connection::open(const ConnectionSettings& settings)
     impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
     impl->open(settings.host, settings.port);
     max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
-}
-
-void Connection::openChannel(Channel& channel) 
-{
-    if (!impl)
-        throw Exception(QPID_MSG("Connection has not yet been opened"));
-    channel.open(newSession(ASYNC));
 }
 
 Session Connection::newSession(SynchronousMode sync,
