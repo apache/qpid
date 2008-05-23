@@ -44,6 +44,8 @@ import javax.jms.MessageProducer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class FieldTableMessageTest extends QpidTestCase implements MessageListener
 {
@@ -56,6 +58,7 @@ public class FieldTableMessageTest extends QpidTestCase implements MessageListen
     private FieldTable _expected;
     private int _count = 10;
     public String _connectionString = "vm://:1";
+    private CountDownLatch _waitForCompletion;
 
     protected void setUp() throws Exception
     {
@@ -102,8 +105,9 @@ public class FieldTableMessageTest extends QpidTestCase implements MessageListen
     public void test() throws Exception
     {
         int count = _count;
-        send(count);
-        waitFor(count);
+        _waitForCompletion = new CountDownLatch(_count);
+        send(count);        
+        _waitForCompletion.await(20, TimeUnit.SECONDS);
         check();
         _logger.info("Completed without failure");
         _connection.close();
@@ -121,16 +125,6 @@ public class FieldTableMessageTest extends QpidTestCase implements MessageListen
         }
     }
 
-    void waitFor(int count) throws InterruptedException
-    {
-        synchronized (received)
-        {
-            while (received.size() < count)
-            {
-                received.wait();
-            }
-        }
-    }
 
     void check() throws JMSException, AMQFrameDecodingException
     {
@@ -150,7 +144,7 @@ public class FieldTableMessageTest extends QpidTestCase implements MessageListen
         synchronized (received)
         {
             received.add((JMSBytesMessage) message);
-            received.notify();
+            _waitForCompletion.countDown();
         }
     }
 
