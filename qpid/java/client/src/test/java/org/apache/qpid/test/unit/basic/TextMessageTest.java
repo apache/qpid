@@ -43,6 +43,8 @@ import javax.jms.Session;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TextMessageTest extends QpidTestCase implements MessageListener
 {
@@ -55,6 +57,7 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
     private final List<String> messages = new ArrayList<String>();
     private int _count = 100;
     public String _connectionString = "vm://:1";
+    private CountDownLatch _waitForCompletion;
 
     protected void setUp() throws Exception
     {
@@ -102,8 +105,9 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
     public void test() throws Exception
     {
         int count = _count;
+        _waitForCompletion = new CountDownLatch(_count);
         send(count);
-        waitFor(count);
+        _waitForCompletion.await(20, TimeUnit.SECONDS);
         check();
         _logger.info("Completed without failure");
         _connection.close();
@@ -126,16 +130,6 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
         _logger.info("sent " + count  + " mesages");
     }
 
-    void waitFor(int count) throws InterruptedException
-    {
-        synchronized (received)
-        {
-            while (received.size() < count)
-            {
-                received.wait();
-            }
-        }
-    }
 
     void check() throws JMSException
     {
@@ -236,7 +230,7 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
         {
             _logger.info("===== received one message");
             received.add((JMSTextMessage) message);
-            received.notify();
+            _waitForCompletion.countDown();
         }
     }
 
