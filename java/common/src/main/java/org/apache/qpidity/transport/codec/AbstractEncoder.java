@@ -340,7 +340,7 @@ abstract class AbstractEncoder implements Encoder
         }
     }
 
-    private Type resolve(Class klass)
+    static final Type resolve(Class klass)
     {
         Type type = ENCODINGS.get(klass);
         if (type != null)

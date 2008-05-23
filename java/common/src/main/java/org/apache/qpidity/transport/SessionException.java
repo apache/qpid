@@ -20,36 +20,27 @@
  */
 package org.apache.qpidity.transport;
 
-import java.util.UUID;
-
+import java.util.List;
 
 /**
- * ChannelDelegate
+ * SessionException
  *
- * @author Rafael H. Schloming
  */
 
-class ChannelDelegate extends MethodDelegate<Channel>
+public class SessionException extends RuntimeException
 {
 
-    public @Override void sessionAttach(Channel channel, SessionAttach atch)
+    private List<ExecutionException> exceptions;
+
+    public SessionException(List<ExecutionException> exceptions)
     {
-        Session ssn = new Session(atch.getName());
-        ssn.attach(channel);
-        ssn.sessionAttached(ssn.getName());
+        super(exceptions.isEmpty() ? "" : exceptions.toString());
+        this.exceptions = exceptions;
     }
 
-    public @Override void sessionDetached(Channel channel, SessionDetached closed)
+    public List<ExecutionException> getExceptions()
     {
-        channel.getSession().closed();
-        // XXX: should we remove the channel from the connection? It
-        // could have an external reference to it. Maybe we need a
-        // weak hash map in connection.
-    }
-
-    public @Override void sessionDetach(Channel channel, SessionDetach dtc)
-    {
-        channel.getSession().closed();
+        return exceptions;
     }
 
 }

@@ -26,6 +26,7 @@ import org.apache.qpidity.transport.network.Frame;
 import org.apache.qpidity.transport.util.Logger;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -310,7 +311,7 @@ public class Session extends Invoker
             {
                 if (closed.get())
                 {
-                    throw new RuntimeException("session closed");
+                    throw new SessionException(getExceptions());
                 }
                 else
                 {
@@ -322,6 +323,8 @@ public class Session extends Invoker
 
     private Map<Integer,ResultFuture<?>> results =
         new HashMap<Integer,ResultFuture<?>>();
+    private List<ExecutionException> exceptions =
+        new ArrayList<ExecutionException>();
 
     void result(int command, Struct result)
     {
@@ -331,6 +334,22 @@ public class Session extends Invoker
             future = results.remove(command);
         }
         future.set(result);
+    }
+
+    void addException(ExecutionException exc)
+    {
+        synchronized (exceptions)
+        {
+            exceptions.add(exc);
+        }
+    }
+
+    List<ExecutionException> getExceptions()
+    {
+        synchronized (exceptions)
+        {
+            return new ArrayList<ExecutionException>(exceptions);
+        }
     }
 
     protected <T> Future<T> invoke(Method m, Class<T> klass)
@@ -395,7 +414,7 @@ public class Session extends Invoker
             }
             else if (closed.get())
             {
-                throw new RuntimeException("session closed");
+                throw new SessionException(getExceptions());
             }
             else
             {
