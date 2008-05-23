@@ -308,7 +308,6 @@ libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
   qpid/client/Bounds.cpp		\
-  qpid/client/Channel.cpp			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/Connection.cpp			\
@@ -434,7 +433,6 @@ nobase_include_HEADERS = \
   qpid/client/ConnectionSettings.h \
   qpid/client/Connector.h \
   qpid/client/ChainableFrameHandler.h	\
-  qpid/client/Channel.h \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/Exchange.h \

@@ -23,7 +23,6 @@
  */
 #include <map>
 #include <string>
-#include "Channel.h"
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
@@ -106,18 +105,6 @@ class Connection
      * not succeed.
      */
     void close();
-
-    /**
-     * Associate a Channel with this connection and open it for use.
-     *
-     * In AMQP, channels are like multiplexed 'sessions' of work over
-     * a connection. Almost all the interaction with AMQP is done over
-     * a channel.
-     * 
-     * @param connection the connection object to be associated with
-     * the channel. Call Channel::close() to close the channel.
-     */
-    void openChannel(Channel&);
 
     /**
      * Create a new session on this connection.  Sessions allow
