@@ -21,6 +21,7 @@
 #include "Connector.h"
 
 #include "Bounds.h"
+#include "ConnectionImpl.h"
 #include "ConnectionSettings.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"
@@ -42,7 +43,9 @@ using namespace qpid::framing;
 using boost::format;
 using boost::str;
 
-Connector::Connector(ProtocolVersion ver, const ConnectionSettings& settings, Bounds* bounds)
+Connector::Connector(ProtocolVersion ver,
+                     const ConnectionSettings& settings,
+                     ConnectionImpl* cimpl)
     : maxFrameSize(settings.maxFrameSize),
       version(ver), 
       initiated(false),
@@ -52,8 +55,9 @@ Connector::Connector(ProtocolVersion ver, const ConnectionSettings& settings, Bo
       idleIn(0), idleOut(0), 
       timeoutHandler(0),
       shutdownHandler(0),
-      writer(maxFrameSize, bounds),
-      aio(0)
+      writer(maxFrameSize, cimpl),
+      aio(0),
+      impl(cimpl)
 {
     QPID_LOG(debug, "Connector created for " << version);
     socket.configure(settings);
@@ -294,6 +298,9 @@ void Connector::eof(AsynchIO&) {
 // TODO: astitcher 20070908 This version of the code can never time out, so the idle processing
 // will never be called
 void Connector::run(){
+    // Keep the connection impl in memory until run() completes.
+    boost::shared_ptr<ConnectionImpl> protect = impl->shared_from_this();
+    assert(protect);
     try {
         Dispatcher d(poller);
 	

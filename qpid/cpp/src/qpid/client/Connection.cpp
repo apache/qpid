@@ -68,7 +68,8 @@ void Connection::open(const ConnectionSettings& settings)
     if (impl)
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
-    impl = boost::shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    impl->open(settings.host, settings.port);
     max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
 }
 

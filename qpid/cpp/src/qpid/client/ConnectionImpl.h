@@ -33,6 +33,7 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
 namespace client {
@@ -43,7 +44,8 @@ class SessionImpl;
 class ConnectionImpl : public Bounds,
                        public framing::FrameHandler,
                        public sys::TimeoutHandler, 
-                       public sys::ShutdownHandler
+                       public sys::ShutdownHandler,
+                       public boost::enable_shared_from_this<ConnectionImpl>
 
 {
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
@@ -59,8 +61,6 @@ class ConnectionImpl : public Bounds,
 
     template <class F> void detachAll(const F&);
 
-    void open(const std::string& host, int port);
-
     SessionVector closeInternal(const sys::Mutex::ScopedLock&);
     void incoming(framing::AMQFrame& frame);    
     void closed(uint16_t, const std::string&);
@@ -73,6 +73,8 @@ class ConnectionImpl : public Bounds,
     ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
     
+    void open(const std::string& host, int port);
+
     void addSession(const boost::shared_ptr<SessionImpl>&);
         
     void close();

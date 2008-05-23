@@ -65,17 +65,18 @@ string str(const boost::iterator_range<vector<AMQFrame>::const_iterator>& frames
 // Make a transfer command frame.
 AMQFrame transferFrame(bool hasContent) {
     AMQFrame t(in_place<MessageTransferBody>());
-    t.setFirstFrame();
-    t.setLastFrame();
-    t.setFirstSegment();
+    t.setFirstFrame(true);
+    t.setLastFrame(true);
+    t.setFirstSegment(true);
     t.setLastSegment(!hasContent);
     return t;
 }
 // Make a content frame
 AMQFrame contentFrame(string content, bool isLast=true) {
     AMQFrame f(in_place<AMQContentBody>(content));
-    f.setFirstFrame();
-    f.setLastFrame();
+    f.setFirstFrame(true);
+    f.setLastFrame(true);
+    f.setFirstSegment(false);
     f.setLastSegment(isLast);
     return f;
 }

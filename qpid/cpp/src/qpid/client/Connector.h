@@ -37,6 +37,7 @@
 #include "qpid/sys/AsynchIO.h"
 
 #include <queue>
+#include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
@@ -45,6 +46,7 @@ namespace client {
 
 class Bounds;
 class ConnectionSettings;
+class ConnectionImpl;
 
 class Connector : public framing::OutputHandler, 
                   private sys::Runnable
@@ -121,13 +123,15 @@ class Connector : public framing::OutputHandler,
     void eof(qpid::sys::AsynchIO&);
 
     std::string identifier;
+
+    ConnectionImpl* impl;
     
   friend class Channel;
 
   public:
     Connector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
-              Bounds* bounds = 0);
+              ConnectionImpl*);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);
     virtual void init();

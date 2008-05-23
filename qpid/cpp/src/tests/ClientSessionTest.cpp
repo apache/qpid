@@ -157,7 +157,7 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         fix.session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
     }
     t.join();
-    BOOST_CHECK_EQUAL(count, listener.messages.size());        
+    BOOST_REQUIRE_EQUAL(count, listener.messages.size());        
     for (size_t i = 0; i < count; ++i) 
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
