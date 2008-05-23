@@ -18,7 +18,7 @@
 #
 
 from packer import Packer
-from datatypes import RangedSet, Struct
+from datatypes import serial, RangedSet, Struct
 
 class CodecException(Exception): pass
 
@@ -87,9 +87,9 @@ class Codec(Packer):
     self.pack("!f", f)
 
   def read_sequence_no(self):
-    return self.read_uint32()
+    return serial(self.read_uint32())
   def write_sequence_no(self, n):
-    self.write_uint32(n)
+    self.write_uint32(n.value)
 
 
   def read_uint64(self):
