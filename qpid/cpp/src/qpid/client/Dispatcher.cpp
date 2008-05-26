@@ -37,7 +37,8 @@ using qpid::sys::Thread;
 namespace qpid {
 namespace client {
 
-Subscriber::Subscriber(Session& s, MessageListener* l, AckPolicy a) : session(s), listener(l), autoAck(a) {}
+Subscriber::Subscriber(const Session& s, MessageListener* l, AckPolicy a)
+  : session(s), listener(l), autoAck(a) {}
 
 void Subscriber::received(Message& msg)
 {
@@ -47,7 +48,7 @@ void Subscriber::received(Message& msg)
     }
 }
 
-Dispatcher::Dispatcher(Session& s, const std::string& q)
+Dispatcher::Dispatcher(const Session& s, const std::string& q)
     : session(s), running(false), autoStop(true)
 {
     queue = q.empty() ? 
@@ -88,7 +89,7 @@ void Dispatcher::run()
                 }
             }
         }
-        session.sync();             // Make sure all our acks are received before returning.
+        sync(session).sync(); // Make sure all our acks are received before returning.
     }
     catch (const ClosedException&) {} //ignore it and return
     catch (const std::exception& e) {

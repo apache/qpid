@@ -28,7 +28,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
-#include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 
 using namespace qpid;
@@ -61,12 +61,12 @@ Args opts;
 struct Client 
 {
     Connection connection;
-    Session session;
+    AsyncSession session;
 
     Client() 
     {
         opts.open(connection);
-        session = connection.newSession(ASYNC);
+        session = connection.newSession();
     }
 
     std::string id(uint i)

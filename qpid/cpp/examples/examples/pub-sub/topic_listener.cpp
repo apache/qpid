@@ -91,7 +91,7 @@ void Listener::prepareQueue(std::string queue, std::string routing_key) {
      * the queue name parameter with the Session ID.
      */
 
-    queue += session.getId().str();
+    queue += session.getId().getName();
     std::cout << "Declaring queue: " << queue <<  std::endl;
    
     /* Declare an exclusive queue on the broker
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
     Connection connection;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
         //--------- Main body of program --------------------------------------------
 
@@ -152,9 +152,6 @@ int main(int argc, char** argv) {
 	listener.prepareQueue("europe", "europe.#");
 	listener.prepareQueue("news", "#.news");
 	listener.prepareQueue("weather", "#.weather");
-
-        // Wait for the broker to indicate that our queues have been created.
-        session.sync();
 
 	std::cout << "Listening for messages ..." << std::endl;
 

@@ -36,5 +36,5 @@ for ((i=$SUBSCRIBERS ; i--; )); do
     subscribe $i &
 done
 # FIXME aconway 2007-03-27: Hack around startup race. Fix topic test.
-sleep 1
+sleep 2
 publish 2>&1 || exit 1

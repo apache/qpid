@@ -48,18 +48,16 @@ typedef sys::Monitor::ScopedUnlock  UnLock;
 typedef sys::ScopedLock<sys::Semaphore>  Acquire;
 
 
-SessionImpl::SessionImpl(shared_ptr<ConnectionImpl> conn,
+SessionImpl::SessionImpl(const std::string& name,
+                         shared_ptr<ConnectionImpl> conn,
                          uint16_t ch, uint64_t _maxFrameSize)
     : error(OK),
       code(NORMAL),
       text(EMPTY),
       state(INACTIVE),
-      syncMode(false),
       detachedLifetime(0),
       maxFrameSize(_maxFrameSize),
-      id(true),//generate unique uuid for each session
-      name(id.str()),
-      //TODO: may want to allow application defined names instead
+      id(conn->getNegotiatedSettings().username, name.empty() ? Uuid(true).str() : name),
       connection(conn),
       ioHandler(*this),
       channel(ch),
@@ -81,15 +79,6 @@ SessionImpl::~SessionImpl() {
     connection->erase(channel);
 }
 
-void SessionImpl::setSync(bool s) // user thread
-{
-    syncMode = s; //syncMode is volatile
-}
-
-bool SessionImpl::isSync() // user thread
-{
-    return syncMode; //syncMode is volatile
-}
 
 FrameSet::shared_ptr SessionImpl::get() // user thread
 {
@@ -97,7 +86,7 @@ FrameSet::shared_ptr SessionImpl::get() // user thread
     return demux.getDefault()->pop();
 }
 
-const Uuid SessionImpl::getId() const //user thread
+const SessionId SessionImpl::getId() const //user thread
 {
     return id; //id is immutable
 }
@@ -107,7 +96,7 @@ void SessionImpl::open(uint32_t timeout) // user thread
     Lock l(state);
     if (state == INACTIVE) {
         setState(ATTACHING);
-        proxy.attach(name, false);
+        proxy.attach(id.getName(), false);
         waitFor(ATTACHED);
         //TODO: timeout will not be set locally until get response to
         //confirm, should we wait for that?
@@ -144,7 +133,7 @@ void SessionImpl::suspend() //user thread
 void SessionImpl::detach() //call with lock held 
 {
     if (state == ATTACHED) {
-        proxy.detach(name);
+        proxy.detach(id.getName());
         setState(DETACHING);
     }
 }
@@ -285,15 +274,11 @@ Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* con
 {
     Acquire a(sendLock);
     SequenceNumber id = nextOut++;
-    bool sync;
     {
         Lock l(state);
         checkOpen();    
         incompleteOut.add(id);
-        sync = syncMode;
     }
-    
-    if (sync) command.getMethod()->setSync(true);
     Future f(id);
     if (command.getMethod()->resultExpected()) {        
         Lock l(state);
@@ -307,9 +292,6 @@ Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* con
     handleOut(frame);
     if (content) {
         sendContent(*content);
-    }
-    if (sync) {
-        waitForCompletion(id);
     }
     return f;
 }
@@ -441,27 +423,27 @@ void SessionImpl::attach(const std::string& /*name*/, bool /*force*/)
 void SessionImpl::attached(const std::string& _name)
 {
     Lock l(state);
-    if (name != _name) throw InternalErrorException("Incorrect session name");
+    if (id.getName() != _name) throw InternalErrorException("Incorrect session name");
     setState(ATTACHED);
 }
 
 void SessionImpl::detach(const std::string& _name)
 {
     Lock l(state);
-    if (name != _name) throw InternalErrorException("Incorrect session name");
+    if (id.getName() != _name) throw InternalErrorException("Incorrect session name");
     setState(DETACHED);
-    QPID_LOG(info, "Session detached by peer: " << name);
+    QPID_LOG(info, "Session detached by peer: " << id);
 }
 
 void SessionImpl::detached(const std::string& _name, uint8_t _code)
 {
     Lock l(state);
-    if (name != _name) throw InternalErrorException("Incorrect session name");
+    if (id.getName() != _name) throw InternalErrorException("Incorrect session name");
     setState(DETACHED);
     if (_code) {
         //TODO: make sure this works with execution.exception - don't
         //want to overwrite the code from that
-        QPID_LOG(error, "Session detached by peer: " << name << " " << code);
+        QPID_LOG(error, "Session detached by peer: " << id << " " << code);
         error = SESSION_DETACH;
         code = _code;
         text = "Session detached by peer";
@@ -560,8 +542,6 @@ void SessionImpl::gap(const framing::SequenceSet& /*commands*/)
 {
     throw NotImplementedException("gap not yet supported");
 }
-
-
 
 void SessionImpl::sync() {}
 

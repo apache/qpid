@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     Message msg;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
         //--------- Main body of program --------------------------------------------
 
@@ -89,9 +89,6 @@ int main(int argc, char** argv) {
         SubscriptionManager subscriptions(session);
         Listener listener(subscriptions);
         subscriptions.subscribe(listener, myQueue);
-
-        // Wait for the broker to indicate that our queues have been created.
-        session.sync();
 
         // Deliver messages until the subscription is cancelled
         // by Listener::received()
