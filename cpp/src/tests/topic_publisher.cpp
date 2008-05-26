@@ -37,7 +37,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
-#include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Monitor.h"
 #include <unistd.h>
@@ -56,7 +56,7 @@ using namespace std;
  * back by the subscribers.
  */
 class Publisher {    
-    Session& session;
+    AsyncSession session;
     SubscriptionManager mgr;
     LocalQueue queue;
     const string controlTopic;
@@ -66,7 +66,7 @@ class Publisher {
     string generateData(int size);
 
 public:
-    Publisher(Session& session, const string& controlTopic, bool tx, bool durable);
+    Publisher(const AsyncSession& session, const string& controlTopic, bool tx, bool durable);
     int64_t publish(int msgs, int listeners, int size);
     void terminate();
 };
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
         else {
             Connection connection;
             args.open(connection);
-            Session session = connection.newSession(ASYNC);
+            AsyncSession session = connection.newSession();
             if (args.transactional) {
                 session.txSelect();
             }
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     return 1;
 }
 
-Publisher::Publisher(Session& _session, const string& _controlTopic, bool tx, bool d) : 
+Publisher::Publisher(const AsyncSession& _session, const string& _controlTopic, bool tx, bool d) : 
     session(_session), mgr(session), controlTopic(_controlTopic), transactional(tx), durable(d) 
 {
     mgr.subscribe(queue, "response");

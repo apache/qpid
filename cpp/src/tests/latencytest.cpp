@@ -30,7 +30,7 @@
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
-#include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 
 using namespace qpid;
@@ -99,7 +99,7 @@ class Client : public Runnable
 {
 protected:
     Connection connection;
-    Session session;
+    AsyncSession session;
     Thread thread;
     string queue;
 
@@ -157,7 +157,7 @@ public:
 Client::Client(const string& q) : queue(q)
 {
     opts.open(connection);
-    session = connection.newSession(ASYNC);       
+    session = connection.newSession();       
 }
 
 void Client::start()
@@ -262,7 +262,7 @@ void Sender::sendByCount()
         uint64_t sentAt(current_time());
         msg.getDeliveryProperties().setTimestamp(sentAt);
         //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
-        session.messageTransfer(arg::content=msg, arg::acceptMode=1);
+        async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
     }
     session.sync();
 }
@@ -283,7 +283,7 @@ void Sender::sendByRate()
             uint64_t sentAt(current_time());
             msg.getDeliveryProperties().setTimestamp(sentAt);
             //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
-            session.messageTransfer(arg::content=msg, arg::acceptMode=1);
+            async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         }
         uint64_t timeTaken = (current_time() - start) / TIME_USEC;
         if (timeTaken < 1000) {

@@ -26,6 +26,7 @@
 #include "Execution.h"
 #include "Results.h"
 
+#include "qpid/SessionId.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ChannelHandler.h"
@@ -59,14 +60,14 @@ class SessionImpl : public framing::FrameHandler::InOutHandler,
                     private framing::AMQP_ClientOperations::ExecutionHandler
 {
 public:
-    SessionImpl(shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
+    SessionImpl(const std::string& name, shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
     ~SessionImpl();
 
 
     //NOTE: Public functions called in user thread.
     framing::FrameSet::shared_ptr get();
 
-    const framing::Uuid getId() const;
+    const SessionId getId() const;
 
     uint16_t getChannel() const;
     void setChannel(uint16_t channel);
@@ -76,8 +77,6 @@ public:
     void resume(shared_ptr<ConnectionImpl>);
     void suspend();
 
-    void setSync(bool s);
-    bool isSync();
     void assertOpen() const;
 
     Future send(const framing::AMQBody& command);
@@ -131,7 +130,8 @@ private:
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
     void sendContent(const framing::MethodContent&);
     void waitForCompletionImpl(const framing::SequenceNumber& id);
-
+    void requestTimeout(uint32_t timeout);    
+    
     void sendCompletionImpl();
 
     // Note: Following methods are called by network thread in
@@ -140,7 +140,6 @@ private:
     void attached(const std::string& name);    
     void detach(const std::string& name);    
     void detached(const std::string& name, uint8_t detachCode);    
-    void requestTimeout(uint32_t timeout);    
     void timeout(uint32_t timeout);    
     void commandPoint(const framing::SequenceNumber& commandId, uint64_t commandOffset);    
     void expected(const framing::SequenceSet& commands, const framing::Array& fragments);    
@@ -167,11 +166,9 @@ private:
     std::string text;           // Error text
     mutable StateMonitor state;
     mutable sys::Semaphore sendLock;
-    volatile bool syncMode;
     uint32_t detachedLifetime;
     const uint64_t maxFrameSize;
-    const framing::Uuid id;
-    const std::string name;
+    const SessionId id;
 
     shared_ptr<ConnectionImpl> connection;
     framing::FrameHandler::MemFunRef<SessionImpl, &SessionImpl::proxyOut> ioHandler;

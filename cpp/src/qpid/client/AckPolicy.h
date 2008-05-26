@@ -22,6 +22,7 @@
  */
 
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/client/AsyncSession.h"
 
 namespace qpid {
 namespace client {
@@ -44,7 +45,7 @@ class AckPolicy
      */
     AckPolicy(size_t n=1) : interval(n), count(n) {}
 
-    void ack(const Message& msg, Session& session) {
+    void ack(const Message& msg, AsyncSession session) {
         accepted.add(msg.getId());
         if (!interval) return;
         if (--count==0) {
@@ -57,7 +58,7 @@ class AckPolicy
         }
     }
 
-    void ackOutstanding(Session& session) {
+    void ackOutstanding(AsyncSession session) {
         if (!accepted.empty()) {
             session.messageAccept(accepted);
             accepted.clear();

@@ -106,19 +106,19 @@ struct ClientSessionFixture : public ProxySessionFixture
 
 QPID_AUTO_TEST_CASE(testQueueQuery) {
     ClientSessionFixture fix;
-    fix.session = fix.connection.newSession(ASYNC);
+    fix.session = fix.connection.newSession();
     fix.session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
-    TypedResult<QueueQueryResult> result = fix.session.queueQuery(string("my-queue"));
-    BOOST_CHECK_EQUAL(false, result.get().getDurable());
-    BOOST_CHECK_EQUAL(true, result.get().getExclusive());
+    QueueQueryResult result = fix.session.queueQuery(string("my-queue"));
+    BOOST_CHECK_EQUAL(false, result.getDurable());
+    BOOST_CHECK_EQUAL(true, result.getExclusive());
     BOOST_CHECK_EQUAL(string("amq.fanout"),
-                      result.get().getAlternateExchange());
+                      result.getAlternateExchange());
 }
 
 QPID_AUTO_TEST_CASE(testTransfer)
 {
     ClientSessionFixture fix;
-    fix.session=fix.connection.newSession(ASYNC);
+    fix.session=fix.connection.newSession();
     fix.declareSubscribe();
     fix.session.messageTransfer(acceptMode=1, content=TransferContent("my-message", "my-queue"));
     //get & test the message:
@@ -133,7 +133,7 @@ QPID_AUTO_TEST_CASE(testTransfer)
 QPID_AUTO_TEST_CASE(testDispatcher)
 {
     ClientSessionFixture fix;
-    fix.session =fix.connection.newSession(ASYNC);
+    fix.session =fix.connection.newSession();
     fix.declareSubscribe();
     size_t count = 100;
     for (size_t i = 0; i < count; ++i) 
@@ -148,7 +148,7 @@ QPID_AUTO_TEST_CASE(testDispatcher)
 QPID_AUTO_TEST_CASE(testDispatcherThread)
 {
     ClientSessionFixture fix;
-    fix.session =fix.connection.newSession(ASYNC);
+    fix.session =fix.connection.newSession();
     fix.declareSubscribe();
     size_t count = 10;
     DummyListener listener(fix.session, "my-dest", count);
@@ -162,40 +162,42 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
-{
-    ClientSessionFixture fix;
-    fix.session =fix.connection.newSession(ASYNC, 0);
-    fix.session.suspend();  // session has 0 timeout.
-    try {
-        fix.connection.resume(fix.session);
-        BOOST_FAIL("Expected InvalidArgumentException.");
-    } catch(const InternalErrorException&) {}
-}
+// FIXME aconway 2008-05-26: Re-enable with final resume implementation.
+// 
+// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
+// {
+//     ClientSessionFixture fix;
+//     fix.session.suspend();  // session has 0 timeout.
+//     try {
+//         fix.connection.resume(fix.session);
+//         BOOST_FAIL("Expected InvalidArgumentException.");
+//     } catch(const InternalErrorException&) {}
+// }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUseSuspendedError, 1)
-{
-    ClientSessionFixture fix;
-    fix.session =fix.connection.newSession(ASYNC, 60);
-    fix.session.suspend();
-    try {
-        fix.session.exchangeQuery(name="amq.fanout");
-        BOOST_FAIL("Expected session suspended exception");
-    } catch(const CommandInvalidException&) {}
-}
+// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUseSuspendedError, 1)
+// {
+//     ClientSessionFixture fix;
+//     fix.session =fix.session.timeout(60);
+//     fix.session.suspend();
+//     try {
+//         fix.session.exchangeQuery(name="amq.fanout");
+//         BOOST_FAIL("Expected session suspended exception");
+//     } catch(const CommandInvalidException&) {}
+// }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
-{
-    ClientSessionFixture fix;
-    fix.session =fix.connection.newSession(ASYNC, 60);
-    fix.declareSubscribe();
-    fix.session.suspend();
-    // Make sure we are still subscribed after resume.
-    fix.connection.resume(fix.session);
-    fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
-    FrameSet::shared_ptr msg = fix.session.get();
-    BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
-}
+// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
+// {
+//     ClientSessionFixture fix;
+//     fix.session.timeout(60);
+//     fix.declareSubscribe();
+//     fix.session.suspend();
+//     // Make sure we are still subscribed after resume.
+//     fix.connection.resume(fix.session);
+//     fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
+//     FrameSet::shared_ptr msg = fix.session.get();
+//     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
+// }
+
 
 QPID_AUTO_TEST_CASE(testSendToSelf) {
     ClientSessionFixture fix;

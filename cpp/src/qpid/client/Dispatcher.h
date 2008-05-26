@@ -37,13 +37,13 @@ namespace client {
 
 class Subscriber : public MessageListener
 {
-    Session& session;
+    AsyncSession session;
     MessageListener* const listener;
     AckPolicy autoAck;
 
 public:
     typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(Session& session, MessageListener* listener, AckPolicy);
+    Subscriber(const Session& session, MessageListener* listener, AckPolicy);
     void received(Message& msg);
     
 };
@@ -55,7 +55,7 @@ class Dispatcher : public sys::Runnable
     typedef std::map<std::string, Subscriber::shared_ptr> Listeners;
     sys::Mutex lock;
     sys::Thread worker;
-    Session& session;
+    Session session;
     Demux::QueuePtr queue;
     bool running;
     bool autoStop;
@@ -67,7 +67,7 @@ class Dispatcher : public sys::Runnable
     bool isStopped();
 
 public:
-    Dispatcher(Session& session, const std::string& queue = "");
+    Dispatcher(const Session& session, const std::string& queue = "");
 
     void start();
     void run();

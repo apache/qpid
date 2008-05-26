@@ -120,7 +120,10 @@ void Listener::received(Message& request) {
 
   // Send it back to the user
   response.getDeliveryProperties().setRoutingKey(routingKey);
-  session.messageTransfer(arg::content=response, arg::destination="amq.direct");
+
+  // Asynchronous transfer sends messages as quickly as
+  // possible without waiting for confirmation.
+  async(session).messageTransfer(arg::content=response, arg::destination="amq.direct");
 }
 
 
@@ -131,7 +134,7 @@ int main(int argc, char** argv) {
     Message message;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------
 
