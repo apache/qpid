@@ -45,6 +45,7 @@
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
+#include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 
 
