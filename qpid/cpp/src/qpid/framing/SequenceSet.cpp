@@ -67,7 +67,7 @@ bool SequenceSet::contains(const SequenceNumber& s) const {
 void SequenceSet::add(const SequenceNumber& s) { *this += s; }
 
 void SequenceSet::add(const SequenceNumber& start, const SequenceNumber& finish) {
-    *this += Range::makeClosed(std::min(start,finish), std::max(start, finish));
+    *this += Range<SequenceNumber>::makeClosed(std::min(start,finish), std::max(start, finish));
 }
 
 void SequenceSet::add(const SequenceSet& set) { *this += set; }
@@ -75,7 +75,7 @@ void SequenceSet::add(const SequenceSet& set) { *this += set; }
 void SequenceSet::remove(const SequenceSet& set) { *this -= set; }
 
 void SequenceSet::remove(const SequenceNumber& start, const SequenceNumber& finish) {
-    *this -= Range::makeClosed(std::min(start,finish), std::max(start, finish));
+    *this -= Range<SequenceNumber>::makeClosed(std::min(start,finish), std::max(start, finish));
 }
 
 void SequenceSet::remove(const SequenceNumber& s) { *this -= s; }
