@@ -63,9 +63,13 @@ void Connection::open(
     open(settings);
 }
 
+bool Connection::isOpen() const {
+    return impl && impl->isOpen();
+}
+
 void Connection::open(const ConnectionSettings& settings)
 {
-    if (impl)
+    if (isOpen())
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
     impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
@@ -74,7 +78,7 @@ void Connection::open(const ConnectionSettings& settings)
 }
 
 Session Connection::newSession(const std::string& name) {
-    if (!impl)
+    if (!isOpen())
         throw Exception(QPID_MSG("Connection has not yet been opened"));
     shared_ptr<SessionImpl> simpl(
         new SessionImpl(name, impl, ++channelIdCounter, max_frame_size));
@@ -86,8 +90,8 @@ Session Connection::newSession(const std::string& name) {
 }
 
 void Connection::resume(Session& session) {
-    if (!impl)
-        throw Exception(QPID_MSG("Connection has not yet been opened"));
+    if (!isOpen())
+        throw Exception(QPID_MSG("Connection is not open."));
 
     session.impl->setChannel(++channelIdCounter);
     impl->addSession(session.impl);
@@ -95,10 +99,7 @@ void Connection::resume(Session& session) {
 }
 
 void Connection::close() {
-    if (impl) {
-        impl->close();
-        impl.reset();
-    }
+    impl->close();
 }
 
 }} // namespace qpid::client

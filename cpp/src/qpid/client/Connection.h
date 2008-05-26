@@ -121,6 +121,8 @@ class Connection
      * on a different connection to the one that created it.
      */
     void resume(Session& session);
+
+    bool isOpen() const;
 };
 
 }} // namespace qpid::client

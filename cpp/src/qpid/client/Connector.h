@@ -126,8 +126,6 @@ class Connector : public framing::OutputHandler,
 
     ConnectionImpl* impl;
     
-  friend class Channel;
-
   public:
     Connector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
