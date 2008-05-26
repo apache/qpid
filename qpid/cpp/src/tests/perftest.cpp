@@ -21,7 +21,7 @@
 
 #include "TestOptions.h"
 
-#include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Completion.h"
@@ -194,12 +194,12 @@ Opts opts;
 
 struct Client : public Runnable {
     Connection connection;
-    Session session;
+    AsyncSession session;
     Thread thread;
 
     Client() {
         opts.open(connection);
-        session = connection.newSession(ASYNC);
+        session = connection.newSession();
     }
 
     ~Client() {
@@ -431,7 +431,7 @@ struct PublishThread : public Client {
                 offset = 5;
                 data += "data:";//marker (requested for latency testing tool scripts)
                 data += string(sizeof(size_t), 'X');//space for seq no
-                data += string(reinterpret_cast<const char*>(session.getId().data()), session.getId().size());
+                data += session.getId().str();
                 if (opts.size > data.size()) {
                     data += string(opts.size - data.size(), 'X');
                 } else if(opts.size < data.size()) {

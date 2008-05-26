@@ -45,10 +45,10 @@ class SubscriptionManager : public sys::Runnable
     typedef sys::Mutex::ScopedLock Lock;
     typedef sys::Mutex::ScopedUnlock Unlock;
 
-    Completion subscribeInternal(const std::string& q, const std::string& dest);
+    void subscribeInternal(const std::string& q, const std::string& dest);
     
     qpid::client::Dispatcher dispatcher;
-    qpid::client::Session& session;
+    qpid::client::Session session;
     uint32_t messages;
     uint32_t bytes;
     bool window;
@@ -58,7 +58,7 @@ class SubscriptionManager : public sys::Runnable
     bool autoStop;
     
   public:
-    SubscriptionManager(Session& session);
+    SubscriptionManager(const Session& session);
     
     /**
      * Subscribe a MessagesListener to receive messages from queue.
@@ -68,7 +68,7 @@ class SubscriptionManager : public sys::Runnable
      *@param tag Unique destination tag for the listener.
      * If not specified, the queue name is used.
      */
-    Completion subscribe(MessageListener& listener,
+    void subscribe(MessageListener& listener,
                          const std::string& queue,
                          const std::string& tag=std::string());
 
@@ -79,7 +79,7 @@ class SubscriptionManager : public sys::Runnable
      *@param tag Unique destination tag for the listener.
      * If not specified, the queue name is used.
      */
-    Completion subscribe(LocalQueue& localQueue,
+    void subscribe(LocalQueue& localQueue,
                    const std::string& queue,
                    const std::string& tag=std::string());
 

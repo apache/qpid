@@ -27,7 +27,17 @@
 
 namespace qpid {
 
-/** Identifier for a session */
+/** Identifier for a session.
+ * There are two parts to a session identifier:
+ * 
+ * getUserId() returns the authentication principal associated with
+ * the session's connection.
+ * 
+ * getName() returns the session name.
+ *
+ * The name must be unique among sessions with the same authentication
+ * principal.
+ */
 class SessionId : boost::totally_ordered1<SessionId> {
     std::string userId;
     std::string name;

@@ -32,23 +32,23 @@
 namespace qpid {
 namespace client {
 
-SubscriptionManager::SubscriptionManager(Session& s)
+SubscriptionManager::SubscriptionManager(const Session& s)
     : dispatcher(s), session(s),
       messages(UNLIMITED), bytes(UNLIMITED), window(true),
       acceptMode(0), acquireMode(0),
       autoStop(true)
 {}
 
-Completion SubscriptionManager::subscribeInternal(
+void SubscriptionManager::subscribeInternal(
     const std::string& q, const std::string& dest)
 {
-    Completion c = session.messageSubscribe(arg::queue=q, arg::destination=dest,
-                             arg::acceptMode=acceptMode, arg::acquireMode=acquireMode);
-    setFlowControl(dest, messages, bytes, window);
-    return c;
+    async(session).messageSubscribe( // setFlowControl will sync.
+        arg::queue=q, arg::destination=dest,
+        arg::acceptMode=acceptMode, arg::acquireMode=acquireMode);
+    setFlowControl(dest, messages, bytes, window); 
 }
 
-Completion SubscriptionManager::subscribe(
+void SubscriptionManager::subscribe(
     MessageListener& listener, const std::string& q, const std::string& d)
 {
     std::string dest=d.empty() ? q:d;
@@ -56,7 +56,7 @@ Completion SubscriptionManager::subscribe(
     return subscribeInternal(q, dest);
 }
 
-Completion SubscriptionManager::subscribe(
+void SubscriptionManager::subscribe(
     LocalQueue& lq, const std::string& q, const std::string& d)
 {
     std::string dest=d.empty() ? q:d;
@@ -68,9 +68,9 @@ Completion SubscriptionManager::subscribe(
 void SubscriptionManager::setFlowControl(
     const std::string& dest, uint32_t messages,  uint32_t bytes, bool window)
 {
-    session.messageSetFlowMode(dest, window); 
-    session.messageFlow(dest, 0, messages); 
-    session.messageFlow(dest, 1, bytes);
+    async(session).messageSetFlowMode(dest, window); 
+    async(session).messageFlow(dest, 0, messages); 
+    session.messageFlow(dest, 1, bytes); // Only need one sync
 }
 
 void SubscriptionManager::setFlowControl(

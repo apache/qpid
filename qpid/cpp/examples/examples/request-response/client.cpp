@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
     Message request;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------
 
@@ -157,7 +157,9 @@ int main(int argc, char** argv) {
 
 	for (int i=0; i<4; i++) {
 	  request.setData(s[i]);
-          session.messageTransfer(arg::content=request, arg::destination="amq.direct");
+          // Asynchronous transfer sends messages as quickly as
+          // possible without waiting for confirmation.
+          async(session).messageTransfer(arg::content=request, arg::destination="amq.direct");
 	  std::cout << "Request: " << s[i] << std::endl;
 	}
 

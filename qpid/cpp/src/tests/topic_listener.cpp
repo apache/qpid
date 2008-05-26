@@ -53,7 +53,7 @@ using namespace std;
  * defined.
  */
 class Listener : public MessageListener{    
-    Session& session;
+    Session session;
     SubscriptionManager& mgr;
     const string responseQueue;
     const bool transactional;
@@ -64,7 +64,7 @@ class Listener : public MessageListener{
     void shutdown();
     void report();
 public:
-    Listener(Session& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
+    Listener(const Session& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
     virtual void received(Message& msg);
 };
 
@@ -101,7 +101,7 @@ int main(int argc, char** argv){
         else {
             Connection connection;
             args.open(connection);
-            Session session = connection.newSession(ASYNC);
+            AsyncSession session = connection.newSession();
             if (args.transactional) {
                 session.txSelect();
             }
@@ -127,7 +127,8 @@ int main(int argc, char** argv){
                 mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
             }
             mgr.subscribe(listener, control);
-
+            session.sync();
+            
             cout << "topic_listener: listening..." << endl;
             mgr.run();
             if (args.durable) {
@@ -144,7 +145,7 @@ int main(int argc, char** argv){
     return 1;
 }
 
-Listener::Listener(Session& s, SubscriptionManager& m, const string& _responseq, bool tx) : 
+Listener::Listener(const Session& s, SubscriptionManager& m, const string& _responseq, bool tx) : 
     session(s), mgr(m), responseQueue(_responseq), transactional(tx), init(false), count(0){}
 
 void Listener::received(Message& message){

@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     try {
       connection.open(host, port);
-      Session session =  connection.newSession(ASYNC);
+      Session session =  connection.newSession();
 
 
   //--------- Main body of program --------------------------------------------
