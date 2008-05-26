@@ -24,15 +24,36 @@ AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG([C++])	
 
-# AM_MISSING_PROG([HELP2MAN], [help2man])
+# Check for optional use of help2man
 AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
-test -z "$HELP2MAN" && AC_MSG_ERROR([Missing help2man installation (try "yum install help2man").])
+AC_ARG_WITH([help2man],
+  [AS_HELP_STRING([--with-help2man], [Use help2man to generate man pages.])],
+  [case "$withval" in
+    yes) test -z "$HELP2MAN" && AC_MSG_ERROR([help2man not found.]) ;;
+    no) HELP2MAN="" ;;
+    *)   AC_MSG_ERROR([Bad value ${withval} for --with-help2man.]) ;;
+   esac])
+AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
+
+# Check for optional use of doxygen
+AC_CHECK_PROG([DOXYGEN], [doxygen], [doxygen])
+AC_ARG_WITH([doxygen],
+  [AS_HELP_STRING([--with-doxygen], [Use doxygen to generate API documentation.])],
+  [case "$withval" in
+    yes) test -z "$DOXYGEN" && AC_MSG_ERROR([doxygen not found.]) ;;
+    no) DOXYGEN="" ;;
+    *)   AC_MSG_ERROR([Bad value ${withval} for --with-doxygen.]) ;;
+   esac])
+AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
+
+# Check for use of CPG
+AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings   turn on lots of compiler warnings (recommended)],
 [case "${enableval}" in
    yes|no) ;;
-   *)      AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
+   *)  AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
  esac],
  [enableval=yes])
 

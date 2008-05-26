@@ -1,3 +1,5 @@
+if HAVE_HELP2MAN
+
 dist_man_MANS = qpidd.1
 
 man_aux = $(dist_man_MANS:.1=.x) 
@@ -18,3 +20,7 @@ SUFFIXES = .x .1
 	$(HELP2MAN) --no-info --include=$(srcdir)/$*.x --output=$@-t ../../src/$*
 	@chmod a-w $@-t
 	@mv $@-t $@
+
+CLEANFILES=qpidd.1
+
+endif
