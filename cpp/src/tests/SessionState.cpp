@@ -250,7 +250,7 @@ QPID_AUTO_TEST_CASE(testCompleted) {
     BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(), SequenceSet(SequenceSet()+1));
     s.receiverCompleted(0);
     BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(),
-                      SequenceSet(SequenceSet() + SequenceSet::Range(0,2)));
+                      SequenceSet(SequenceSet() + qpid::Range<SequenceNumber>(0,2)));
     s.receiverKnownCompleted(SequenceSet(SequenceSet()+1));
     BOOST_CHECK_EQUAL(s.receiverGetUnknownComplete(), SequenceSet(SequenceSet()+2));
     // TODO aconway 2008-04-30: missing tests for known-completed.
