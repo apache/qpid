@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_SESSION_H
-#define QPID_CLIENT_SESSION_H
+#ifndef QPID_CLIENT_ASYNCSESSION_H
+#define QPID_CLIENT_ASYNCSESSION_H
 
 /*
  *
@@ -21,19 +21,18 @@
  * under the License.
  *
  */
-#include "qpid/client/Session_0_10.h"
+#include "qpid/client/AsyncSession_0_10.h"
 
 namespace qpid {
 namespace client {
 
 /**
- * Session is an alias for Session_0_10
+ * AsyncSession is an alias for Session_0_10
  *
  * \ingroup clientapi
  */
-typedef Session_0_10 Session;
-
+typedef AsyncSession_0_10 AsyncSession;
 
 }} // namespace qpid::client
 
-#endif  /*!QPID_CLIENT_SESSION_H*/
+#endif  /*!QPID_CLIENT_ASYNCSESSION_H*/

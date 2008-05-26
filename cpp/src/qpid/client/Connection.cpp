@@ -22,6 +22,7 @@
 #include "ConnectionSettings.h"
 #include "Message.h"
 #include "SessionImpl.h"
+#include "SessionBase_0_10Access.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
@@ -72,18 +73,16 @@ void Connection::open(const ConnectionSettings& settings)
     max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
 }
 
-Session Connection::newSession(SynchronousMode sync,
-                               uint32_t detachedLifetime)
-{
+Session Connection::newSession(const std::string& name) {
     if (!impl)
         throw Exception(QPID_MSG("Connection has not yet been opened"));
-
-    shared_ptr<SessionImpl> core(
-        new SessionImpl(impl, ++channelIdCounter, max_frame_size));
-    core->setSync(sync);
-    impl->addSession(core);
-    core->open(detachedLifetime);
-    return Session(core);
+    shared_ptr<SessionImpl> simpl(
+        new SessionImpl(name, impl, ++channelIdCounter, max_frame_size));
+    impl->addSession(simpl);
+    simpl->open(0);
+    Session s;
+    SessionBase_0_10Access(s).set(simpl);
+    return s;
 }
 
 void Connection::resume(Session& session) {

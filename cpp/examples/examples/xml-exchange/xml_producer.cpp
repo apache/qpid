@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     Message message;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------
 
@@ -66,7 +66,9 @@ int main(int argc, char** argv) {
 	  std::cout << "Message data: " << message_data.str() << std::endl;
 
 	  message.setData(message_data.str());
-          session.messageTransfer(arg::content=message,  arg::destination="xml");
+          // Asynchronous transfer sends messages as quickly as
+          // possible without waiting for confirmation.
+          async(session).messageTransfer(arg::content=message,  arg::destination="xml");
 	}
 	
 	// And send a final message to indicate termination.

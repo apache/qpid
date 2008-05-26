@@ -62,7 +62,7 @@ struct Client
     Client() 
     {
         opts.open(connection);
-        session = connection.newSession(ASYNC);
+        session = connection.newSession();
     }
 
     void consume()

@@ -324,7 +324,9 @@ libqpidclient_la_SOURCES =			\
   qpid/client/MessageListener.cpp		\
   qpid/client/Queue.cpp				\
   qpid/client/Results.cpp			\
-  qpid/client/SessionBase.cpp			\
+  qpid/client/SessionBase_0_10.cpp		\
+  qpid/client/SessionBase_0_10.h		\
+  qpid/client/SessionBase_0_10Access.h		\
   qpid/client/SessionImpl.cpp			\
   qpid/client/StateManager.cpp			\
   qpid/client/SubscriptionManager.cpp
@@ -446,8 +448,9 @@ nobase_include_HEADERS = \
   qpid/client/MessageQueue.h \
   qpid/client/Queue.h \
   qpid/client/Results.h \
-  qpid/client/SessionBase.h \
+  qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \
+  qpid/client/AsyncSession.h \
   qpid/client/SessionImpl.h \
   qpid/client/StateManager.h \
   qpid/client/SubscriptionManager.h \

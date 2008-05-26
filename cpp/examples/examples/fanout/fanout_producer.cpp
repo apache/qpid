@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     Message message;
     try {
         connection.open(host, port);
-        Session session =  connection.newSession(ASYNC);
+        Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------
 
@@ -83,7 +83,9 @@ int main(int argc, char** argv) {
 	  message_data << "Message " << i;
 
 	  message.setData(message_data.str());
-          session.messageTransfer(arg::content=message, arg::destination="amq.fanout");
+          // Asynchronous transfer sends messages as quickly as
+          // possible without waiting for confirmation.
+          async(session).messageTransfer(arg::content=message, arg::destination="amq.fanout");
 	}
 	
 	// And send a final message to indicate termination.

@@ -26,7 +26,6 @@
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-#include "qpid/framing/Uuid.h"
 
 namespace qpid {
 
@@ -111,14 +110,11 @@ class Connection
      * multiple streams of work to be multiplexed over the same
      * connection.
      *
-     *@param detachedLifetime: A session may be detached from its
-     * channel, either by calling Session::suspend() or because of a
-     * network failure. The session state is preserved for
-     * detachedLifetime seconds to allow a call to resume(). After
-     * that the broker may discard the session state. Default is 0,
-     * meaning the session cannot be resumed.
+     *@param name: A name to identify the session. @see qpid::SessionId
+     * If the name is empty (the default) then a unique name will be
+     * chosen using a Universally-unique identifier (UUID) algorithm.
      */
-    Session newSession(SynchronousMode sync, uint32_t detachedLifetime=0);
+    Session newSession(const std::string& name=std::string());
 
     /**
      * Resume a suspended session. A session may be resumed

@@ -121,7 +121,7 @@ struct ClientSessionFixture : public ProxySessionFixture
 QPID_AUTO_TEST_CASE(testXmlBinding) {
   ClientSessionFixture f;
 
-  Session session = f.connection.newSession(ASYNC);
+  Session session = f.connection.newSession();
   SubscriptionManager subscriptions(session);
   SubscribedLocalQueue localQueue(subscriptions);
 

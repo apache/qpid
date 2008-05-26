@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_SESSION_H
-#define QPID_CLIENT_SESSION_H
+#ifndef QPID_CLIENT_SESSIONBASEACCESS_H
+#define QPID_CLIENT_SESSIONBASEACCESS_H
 
 /*
  *
@@ -21,19 +21,22 @@
  * under the License.
  *
  */
-#include "qpid/client/Session_0_10.h"
+
+#include "qpid/client/SessionBase_0_10.h"
+
+/**@file @internal  Internal use only */
 
 namespace qpid {
 namespace client {
 
-/**
- * Session is an alias for Session_0_10
- *
- * \ingroup clientapi
- */
-typedef Session_0_10 Session;
-
-
+class SessionBase_0_10Access {
+  public:
+    SessionBase_0_10Access(SessionBase_0_10& sb_) : sb(sb_) {}
+    void set(const boost::shared_ptr<SessionImpl>& si) { sb.impl = si; }
+    boost::shared_ptr<SessionImpl> get() { return sb.impl; }
+  private:
+    SessionBase_0_10& sb;
+};
 }} // namespace qpid::client
 
-#endif  /*!QPID_CLIENT_SESSION_H*/
+#endif  /*!QPID_CLIENT_SESSIONBASEACCESS_H*/
