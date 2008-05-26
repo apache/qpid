@@ -96,11 +96,7 @@ class RangeSet
                        boost::additive2<RangeSet<T>, Range<T>,
                                         boost::additive2<RangeSet<T>, T> > >
 {
-  public:
-    typedef qpid::Range<T> Range;
-
-  private:
-    typedef InlineVector<Range, 3> Ranges; // TODO aconway 2008-04-21: what's the optimial inlined value?
+    typedef InlineVector<Range<T>, 3> Ranges; // TODO aconway 2008-04-21: what's the optimial inlined value?
 
   public:
     
@@ -132,32 +128,32 @@ class RangeSet
     typedef iterator const_iterator;
     
     RangeSet() {}
-    explicit RangeSet(const Range& r) { *this += r; }
-    RangeSet(const T& a, const T& b) { *this += Range(a,b); }
+    explicit RangeSet(const Range<T>& r) { *this += r; }
+    RangeSet(const T& a, const T& b) { *this += Range<T>(a,b); }
     
     bool contiguous() const { return ranges.size() <= 1; }
 
     bool contains(const T& t) const;
-    bool contains(const Range&) const;
+    bool contains(const Range<T>&) const;
 
     /**@pre contiguous() */
-    Range toRange() const;
+    Range<T> toRange() const;
 
     bool operator==(const RangeSet<T>&) const;
 
-    void addRange (const Range&);
-    void addSet (const RangeSet&);
+    void addRange (const Range<T>&);
+    void addSet (const RangeSet<T>&);
 
-    RangeSet& operator+=(const T& t) { return *this += Range(t); }
-    RangeSet& operator+=(const Range& r) { addRange(r); return *this; }
-    RangeSet& operator+=(const RangeSet& s) { addSet(s); return *this; }
+    RangeSet<T>& operator+=(const T& t) { return *this += Range<T>(t); }
+    RangeSet<T>& operator+=(const Range<T>& r) { addRange(r); return *this; }
+    RangeSet<T>& operator+=(const RangeSet<T>& s) { addSet(s); return *this; }
 
-    void removeRange (const Range&);
-    void removeSet (const RangeSet&);
+    void removeRange (const Range<T>&);
+    void removeSet (const RangeSet<T>&);
 
-    RangeSet& operator-=(const T& t)  { return *this -= Range(t); }
-    RangeSet& operator-=(const Range& r) { removeRange(r); return *this; }
-    RangeSet& operator-=(const RangeSet& s) { removeSet(s); return *this; }
+    RangeSet<T>& operator-=(const T& t)  { return *this -= Range<T>(t); }
+    RangeSet<T>& operator-=(const Range<T>& r) { removeRange(r); return *this; }
+    RangeSet<T>& operator-=(const RangeSet<T>& s) { removeSet(s); return *this; }
 
     T front() const { return ranges.front().begin(); }
     T back() const { return ranges.back().end(); }
@@ -178,11 +174,11 @@ class RangeSet
     /** Return the largest contiguous range containing x.
      * Returns the empty range [x,x) if x is not in the set.
      */
-    Range rangeContaining(const T&) const;
+    Range<T> rangeContaining(const T&) const;
 
     template <class S> void serialize(S& s) { s.split(*this); s(ranges.begin(), ranges.end()); }
-    template <class S> void encode(S& s) const { s(uint16_t(ranges.size()*sizeof(Range))); }
-    template <class S> void decode(S& s) { uint16_t sz; s(sz); ranges.resize(sz/sizeof(Range)); }
+    template <class S> void encode(S& s) const { s(uint16_t(ranges.size()*sizeof(Range<T>))); }
+    template <class S> void decode(S& s) { uint16_t sz; s(sz); ranges.resize(sz/sizeof(Range<T>)); }
     
  private:
     Ranges ranges;
@@ -213,13 +209,13 @@ bool RangeSet<T>::contains(const T& t) const {
 }
 
 template <class T>
-bool RangeSet<T>::contains(const Range& r) const {
+bool RangeSet<T>::contains(const Range<T>& r) const {
     typename Ranges::const_iterator i =
         std::lower_bound(ranges.begin(), ranges.end(), r.begin());
     return i != ranges.end() && i->contains(r);
 }
 
-template <class T> void RangeSet<T>::addRange(const Range& r) {
+template <class T> void RangeSet<T>::addRange(const Range<T>& r) {
     if (r.empty()) return;
     typename Ranges::iterator i =
         std::lower_bound(ranges.begin(), ranges.end(), r.begin());
@@ -237,11 +233,12 @@ template <class T> void RangeSet<T>::addRange(const Range& r) {
 
 
 template <class T> void RangeSet<T>::addSet(const RangeSet<T>& s) {
+    typedef RangeSet<T>& (RangeSet<T>::*RangeSetRangeOp)(const Range<T>&);
     std::for_each(s.ranges.begin(), s.ranges.end(), 
-                  boost::bind((RangeSet<T>& (RangeSet<T>::*)(const Range&))&RangeSet<T>::operator+=, this, _1));
+                  boost::bind((RangeSetRangeOp)&RangeSet<T>::operator+=, this, _1));
 }
 
-template <class T> void RangeSet<T>::removeRange(const Range& r) {
+template <class T> void RangeSet<T>::removeRange(const Range<T>& r) {
     if (r.empty()) return;
     typename Ranges::iterator i,j;
     i = std::lower_bound(ranges.begin(), ranges.end(), r.begin());
@@ -250,8 +247,8 @@ template <class T> void RangeSet<T>::removeRange(const Range& r) {
     if (*i == r)                // Erase i
         ranges.erase(i);
     else if (i->strictContains(r)) {  // Split i
-        Range i1(i->begin(), r.begin());
-        Range i2(r.end(), i->end());
+        Range<T> i1(i->begin(), r.begin());
+        Range<T> i2(r.end(), i->end());
         *i = i2;
         ranges.insert(i, i1);
     } else {
@@ -267,7 +264,7 @@ template <class T> void RangeSet<T>::removeRange(const Range& r) {
     }
 }
 
-template <class T> void RangeSet<T>::removeSet(const RangeSet& r) {
+template <class T> void RangeSet<T>::removeSet(const RangeSet<T>& r) {
     std::for_each(
         r.ranges.begin(), r.ranges.end(),
         boost::bind(&RangeSet<T>::removeRange, this, _1));
@@ -275,7 +272,7 @@ template <class T> void RangeSet<T>::removeSet(const RangeSet& r) {
 
 template <class T> Range<T> RangeSet<T>::toRange() const {
     assert(contiguous());
-    return empty() ? Range() :  ranges.front();
+    return empty() ? Range<T>() :  ranges.front();
 }
 
 template <class T> void RangeSet<T>::iterator::increment() {
@@ -308,7 +305,7 @@ template <class T> bool RangeSet<T>::iterator::equal(const iterator& i) const {
 template <class T> Range<T> RangeSet<T>::rangeContaining(const T& t) const {
     typename Ranges::const_iterator i =
         std::lower_bound(ranges.begin(), ranges.end(), t);
-    return (i != ranges.end() && i->contains(t)) ? *i : Range(t,t);
+    return (i != ranges.end() && i->contains(t)) ? *i : Range<T>(t,t);
 }
 
 
