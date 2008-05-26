@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
         // for routing decisions. It can be useful for tracking
         // messages and routing in logs.
 
-        std::string myQueue=session.getId().str();
+        std::string myQueue=session.getId().getName();
         session.queueDeclare(arg::queue=myQueue, arg::exclusive=true,
                              arg::autoDelete=true);
 
