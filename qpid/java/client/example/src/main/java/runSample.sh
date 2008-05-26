@@ -39,7 +39,7 @@ javac -cp  "$CLASSPATH" -sourcepath "$QPID_SAMPLE" -d . `find $QPID_SAMPLE -name
 CLASSPATH="$CLASSPATH$DIVIDER$."
 
 # Set VM parameters
-QPID_PARAM="$QPID_PARAM -Dlog4j.configuration=file://$QPID_SAMPLE/java/log4j.xml"
+QPID_PARAM="$QPID_PARAM -Dlog4j.configuration=file://$PWD/log4j.xml"
 
 
 # Check if the user supplied a sample classname
