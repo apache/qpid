@@ -138,7 +138,6 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text)
     SessionVector save;
     {
         Mutex::ScopedLock l(lock);
-        if (isClosed) return;
         save = closeInternal(l);
     }
     std::for_each(save.begin(), save.end(), boost::bind(&SessionImpl::connectionClosed, _1, code, text));
