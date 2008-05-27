@@ -35,7 +35,7 @@ namespace client {
 
 /**
  * Used to hold seetings for a connection (and parse these from
- * command line oprions etc as a convenience).
+ * command line options etc if desired).
  */
 struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration
 {
@@ -53,20 +53,67 @@ struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration
      */
     void parse(int argc, char** argv);
 
+    /**
+     * The host (or ip address) to connect to (defaults to 'localhost').
+     */
     std::string host;
+    /**
+     * The port to connect to (defaults to 5672).
+     */
     uint16_t port;
+    /**
+     * Allows an AMQP 'virtual host' to be specified for the
+     * connection.
+     */
     std::string virtualhost;
+
     std::string clientid;
+    /**
+     * The username to use when authenticating the connection.
+     */
     std::string username;
+    /**
+     * The password to use when authenticating the connection.
+     */
     std::string password;
+    /**
+     * The SASL mechanism to use when authenticating the connection;
+     * the options are currently PLAIN or ANONYMOUS.
+     */
     std::string mechanism;
+    /**
+     * Allows a locale to be specified for the connection.
+     */
     std::string locale;
+    /**
+     * Allows a heartbeat frequency to be specified (this feature is
+     * not yet implemented).
+     */
     uint16_t heartbeat;
+    /**
+     * The maximum number of channels that the client will request for
+     * use on this connection.
+     */
     uint16_t maxChannels;
+    /**
+     * The maximum frame size that the client will request for this
+     * connection.
+     */
     uint16_t maxFrameSize;
+    /**
+     * Allows the size of outgoing frames to be limited. The value
+     * should be a mutliple of the maximum buffer size in use (which
+     * is in turn set through the maxFrameSize setting above).
+     */
     uint bounds;
+    /**
+     * If true, TCP_NODELAY will be set for the connection.
+     */
     bool tcpNoDelay;
 
+    /**
+     * Logging settings to use.
+     */
     log::Options log;
 };
 
