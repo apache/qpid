@@ -29,6 +29,11 @@
 namespace qpid {
 namespace client {
 
+/** 
+ * Returned by asynchronous commands that do not return any result.
+ * You can use this to wait for an individual command to complete.
+ * \clientapi
+ */
 class Completion
 {
 protected:
@@ -40,6 +45,7 @@ public:
 
     Completion(Future f, shared_ptr<SessionImpl> s) : future(f), session(s) {}
 
+    /** Wait for the command to complete */
     void wait()
     {
         future.wait(*session);
