@@ -82,9 +82,8 @@ void Listener::listen() {
 
   session.messageSubscribe(arg::queue=destination_name, arg::destination=destination_name);
 
-  // ##### Should not be needed. Sigh.
-  session.messageFlow(arg::destination=destination_name, arg::unit=0, arg::value=1);//messages ### Define a constant?
-  session.messageFlow(arg::destination=destination_name, arg::unit=1, arg::value=0xFFFFFFFF);//bytes ###### Define a constant?
+  session.messageFlow(arg::destination=destination_name, arg::unit=MESSAGE_CREDIT, arg::value=1);
+  session.messageFlow(arg::destination=destination_name, arg::unit=BYTE_CREDIT, arg::value=UNLIMITED_CREDIT);
 
   dispatcher.listen(destination_name, this);
 }

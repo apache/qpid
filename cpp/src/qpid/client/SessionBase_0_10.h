@@ -48,7 +48,7 @@ using framing::SequenceNumberSet;
 using qpid::SessionId;
 using framing::Xid;
 
-enum CreditUnit { MESSAGE=0, BYTE=1 };
+enum CreditUnit { MESSAGE_CREDIT=0, BYTE_CREDIT=1, UNLIMITED_CREDIT=0xFFFFFFFF };
 
 /**
  * Base class for handles to an AMQP session.
