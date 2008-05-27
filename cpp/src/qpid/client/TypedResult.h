@@ -27,6 +27,11 @@
 namespace qpid {
 namespace client {
 
+/**
+ * Returned by asynchronous commands that return a result.
+ * You can use get() to wait for completion and get the result value.
+ * \clientapi
+ */
 template <class T> class TypedResult : public Completion
 {
     T result;
@@ -35,6 +40,7 @@ template <class T> class TypedResult : public Completion
 public:
     TypedResult(Future f, shared_ptr<SessionImpl> s) : Completion(f, s), decoded(false) {}
 
+    /** Wait for command to complete and return the result */
     T& get() 
     {
         if (!decoded) {

@@ -108,7 +108,39 @@ class Connection
     /**
      * Create a new session on this connection.  Sessions allow
      * multiple streams of work to be multiplexed over the same
-     * connection.
+     * connection. The returned Session provides functions to send
+     * commands to the broker.
+     *
+     * Session functions are synchronous. In other words, a Session
+     * function will send a command to the broker and does not return
+     * until it receives the broker's response confirming the command
+     * was executed.
+     *
+     * AsyncSession provides asynchronous versions of the same
+     * functions.  These functions send a command to the broker but do
+     * not wait for a response. 
+     *
+     * You can convert a Session s into an AsyncSession as follows:
+     * @code
+     *  #include <qpid/client/AsyncSession.h>
+     *  AsyncSession as = async(s);
+     * @endcode
+     *
+     * You can execute a single command asynchronously will a Session s
+     * like ths:
+     * @code
+     *  async(s).messageTransfer(...);
+     * @endcode
+     * 
+     * Using an AsyncSession is faster for sending large numbers of
+     * commands, since each command is sent as soon as possible
+     * without waiting for the previous command to be confirmed.
+     *
+     * However with AsyncSession you cannot assume that a command has
+     * completed until you explicitly synchronize. The simplest way to
+     * do this is to call Session::sync() or AsyncSession::sync().
+     * Both of these functions wait for the broker to confirm all
+     * commands issued so far on the session.
      *
      *@param name: A name to identify the session. @see qpid::SessionId
      * If the name is empty (the default) then a unique name will be
