@@ -12,7 +12,10 @@
 # examination.
 #
 
-source `dirname $0`/vg_check
+srcdir=`dirname $0`
+source $srcdir/vg_check
+test -f .valgrindrc || cp $srcdir/.valgrindrc .
+test -f .valgrind.supp || cp $srcdir/.valgrind.supp .
 
 
 # Export variables from makefile.
