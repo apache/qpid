@@ -44,6 +44,7 @@ import org.apache.mina.common.ByteBuffer;
 
 import javax.management.Notification;
 import java.util.LinkedList;
+import java.util.Collections;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
@@ -303,7 +304,7 @@ public class AMQQueueAlertTest extends TestCase
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false, size);
-            messages[i].enqueue(_queue);
+            messages[i].enqueue(Collections.singleton(_queue));
             messages[i].routingComplete(_messageStore, new MessageHandleFactory());
 
         }

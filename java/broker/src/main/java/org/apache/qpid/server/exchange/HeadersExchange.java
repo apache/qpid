@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -248,8 +249,10 @@ public class HeadersExchange extends AbstractExchange
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
         }
         boolean routed = false;
+        Collection<AMQQueue> queues = new ArrayList<AMQQueue>();
         for (Registration e : _bindings)
         {
+
             if (e.binding.matches(headers))
             {
                 if (_logger.isDebugEnabled())
@@ -257,10 +260,12 @@ public class HeadersExchange extends AbstractExchange
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
                                   headers + " to " + e.queue.getName());
                 }
-                payload.enqueue(e.queue);
+                queues.add(e.queue);
+
                 routed = true;
             }
         }
+        payload.enqueue(queues);
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)

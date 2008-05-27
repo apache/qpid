@@ -48,6 +48,7 @@ import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
 import java.util.LinkedList;
+import java.util.Collections;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -216,7 +217,7 @@ public class AMQQueueMBeanTest extends TestCase
         long id = msg.getMessageId();
         _queue.clearQueue(_storeContext);
 
-        msg.enqueue(_queue);
+        msg.enqueue(Collections.singleton(_queue));
         msg.routingComplete(_messageStore, new MessageHandleFactory());
 
         msg.addContentBodyFrame(new ContentChunk()
@@ -318,7 +319,7 @@ public class AMQQueueMBeanTest extends TestCase
         for (int i = 0; i < messageCount; i++)
         {
             IncomingMessage currentMessage = message(false, persistent);
-            currentMessage.enqueue(_queue);
+            currentMessage.enqueue(Collections.singleton(_queue));
 
             // route header
             currentMessage.routingComplete(_messageStore, new MessageHandleFactory());

@@ -464,15 +464,49 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             return false;
         }
 
-        if ((_hashCode != 0) && (otherString._hashCode != 0) && (_hashCode != otherString._hashCode))
+        final int hashCode = _hashCode;
+
+        final int otherHashCode = otherString._hashCode;
+
+        if ((hashCode != 0) && (otherHashCode != 0) && (hashCode != otherHashCode))
+        {
+            return false;
+        }
+
+        final int length = _length;
+
+        if(length != otherString._length)
         {
             return false;
         }
 
 
+        final byte[] data = _data;
 
-        return (_offset == 0 && otherString._offset == 0 && _length == _data.length && otherString._length == otherString._data.length && Arrays.equals(_data,otherString._data))
-                || Arrays.equals(getBytes(),otherString.getBytes());
+        final byte[] otherData = otherString._data;
+
+        final int offset = _offset;
+
+        final int otherOffset = otherString._offset;
+
+        if(offset == 0 && otherOffset == 0 && length == data.length && length == otherData.length)
+        {
+            return Arrays.equals(data, otherData);
+        }
+        else
+        {
+            int thisIdx = offset;
+            int otherIdx = otherOffset;
+            for(int i = length;  i-- != 0; )
+            {
+                if(!(data[thisIdx++] == otherData[otherIdx++]))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
 
     }
 

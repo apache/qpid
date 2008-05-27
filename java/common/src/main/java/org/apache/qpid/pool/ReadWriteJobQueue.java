@@ -41,16 +41,16 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
 
     private final ReentrantLock _putLock = new ReentrantLock();
 
-    private final ConcurrentLinkedQueue<Job> _readJobQueue = new ConcurrentLinkedQueue<Job>();
+    private final ConcurrentLinkedQueue<ReadWriteRunnable> _readJobQueue = new ConcurrentLinkedQueue<ReadWriteRunnable>();
 
-    private final ConcurrentLinkedQueue<Job> _writeJobQueue = new ConcurrentLinkedQueue<Job>();
+    private final ConcurrentLinkedQueue<ReadWriteRunnable> _writeJobQueue = new ConcurrentLinkedQueue<ReadWriteRunnable>();
 
 
     private class ReadWriteJobIterator implements Iterator<Runnable>
     {
 
         private boolean _onReads;
-        private Iterator<Job> _iter = _writeJobQueue.iterator();
+        private Iterator<ReadWriteRunnable> _iter = _writeJobQueue.iterator();
 
         public boolean hasNext()
         {
@@ -112,12 +112,12 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
 
     public boolean offer(final Runnable runnable)
     {
-        final Job job = (Job) runnable;
+        final ReadWriteRunnable job = (ReadWriteRunnable) runnable;
         final ReentrantLock putLock = _putLock;
         putLock.lock();
         try
         {
-            if(job.isReadJob())
+            if(job.isRead())
             {
                 _readJobQueue.offer(job);
             }
@@ -147,13 +147,13 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
 
     public void put(final Runnable runnable) throws InterruptedException
     {
-        final Job job = (Job) runnable;
+        final ReadWriteRunnable job = (ReadWriteRunnable) runnable;
         final ReentrantLock putLock = _putLock;
         putLock.lock();
 
         try
         {
-            if(job.isReadJob())
+            if(job.isRead())
             {
                 _readJobQueue.offer(job);
             }
@@ -185,13 +185,13 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
 
     public boolean offer(final Runnable runnable, final long timeout, final TimeUnit unit) throws InterruptedException
     {
-        final Job job = (Job) runnable;
+        final ReadWriteRunnable job = (ReadWriteRunnable) runnable;
         final ReentrantLock putLock = _putLock;
         putLock.lock();
 
         try
         {
-            if(job.isReadJob())
+            if(job.isRead())
             {
                 _readJobQueue.offer(job);
             }
@@ -240,7 +240,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
                 throw ie;
             }
 
-            Job job = _writeJobQueue.poll();
+            ReadWriteRunnable job = _writeJobQueue.poll();
             if(job == null)
             {
                 job = _readJobQueue.poll();
@@ -266,7 +266,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
         final AtomicInteger count = _count;
         long nanos = unit.toNanos(timeout);
         takeLock.lockInterruptibly();
-        Job job = null;
+        ReadWriteRunnable job = null;
         try
         {
 
@@ -322,7 +322,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
         _takeLock.lock();
         try
         {
-            Job job;
+            ReadWriteRunnable job;
             while((job = _writeJobQueue.peek())!= null)
             {
                 c.add(job);
@@ -356,7 +356,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
         _takeLock.lock();
         try
         {
-            Job job;
+            ReadWriteRunnable job;
             while(total<=maxElements && (job = _writeJobQueue.peek())!= null)
             {
                 c.add(job);
@@ -391,7 +391,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
         {
             if(_count.get() > 0)
             {
-                Job job = _writeJobQueue.poll();
+                ReadWriteRunnable job = _writeJobQueue.poll();
                 if(job == null)
                 {
                     job = _readJobQueue.poll();
@@ -417,7 +417,7 @@ public class ReadWriteJobQueue extends AbstractQueue<Runnable> implements Blocki
         takeLock.lock();
         try
         {
-            Job job = _writeJobQueue.peek();
+            ReadWriteRunnable job = _writeJobQueue.peek();
             if(job == null)
             {
                 job = _readJobQueue.peek();

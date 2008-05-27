@@ -91,6 +91,11 @@ public class SubscriptionTestHelper implements Subscription
         return new Object();
     }
 
+    public void releaseSendLock()
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void resend(final QueueEntry entry)
     {
         //To change body of implemented methods use File | Settings | File Templates.

@@ -22,6 +22,9 @@ package org.apache.qpid.server.subscription;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -62,6 +65,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final RecordDeliveryMethod _recordMethod;
     
     private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final Lock _stateChangeLock;
+    private final Lock _stateChangeExclusiveLock;
+
 
 
     static final class BrowserSubscription extends SubscriptionImpl
@@ -254,7 +260,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
     private AMQQueue _queue;
-    private final AtomicBoolean _sendLock = new AtomicBoolean(false);
+    private final AtomicBoolean _deleted = new AtomicBoolean(false);
+
 
 
     
@@ -280,7 +287,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _deliveryMethod = deliveryMethod;
         _recordMethod = recordMethod;
 
-
+        ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+        _stateChangeLock = readWriteLock.readLock();
+        _stateChangeExclusiveLock = readWriteLock.writeLock();
 
         if (arguments != null)
         {
@@ -334,7 +343,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean isSuspended()
     {
-        return !isActive() || _channel.isSuspended() || _sendLock.get();
+        return !isActive() || _channel.isSuspended() || _deleted.get();
     }
 
     /**
@@ -344,7 +353,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
      */
     public void queueDeleted(AMQQueue queue)
     {
-        _sendLock.set(true);
+        _deleted.set(true);
 //        _channel.queueDeleted(queue);
     }
 
@@ -435,7 +444,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         boolean closed = false;
         State state = getState();
-        synchronized (_sendLock)
+
+        _stateChangeExclusiveLock.lock();
+        try
         {
             while(!closed && state != State.CLOSED)
             {
@@ -451,6 +462,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             }
             _creditManager.removeListener(this);
         }
+        finally
+        {
+            _stateChangeExclusiveLock.unlock();
+        }
+
 
         if (closed)
         {
@@ -481,7 +497,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public Object getSendLock()
     {
-        return _sendLock;
+        _stateChangeLock.lock();
+        return _deleted;
+    }
+
+    public void releaseSendLock()
+    {
+        _stateChangeLock.unlock();
     }
 
     public void resend(final QueueEntry entry) throws AMQException

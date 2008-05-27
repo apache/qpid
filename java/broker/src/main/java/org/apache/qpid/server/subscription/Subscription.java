@@ -28,7 +28,6 @@ import org.apache.qpid.server.queue.QueueEntry;
 
 public interface Subscription
 {
-    boolean isActive();
 
 
     public static enum State
@@ -75,7 +74,7 @@ public interface Subscription
     boolean wouldSuspend(QueueEntry msg);
 
     Object getSendLock();
-
+    void releaseSendLock();
 
     void resend(final QueueEntry entry) throws AMQException;
 
@@ -86,5 +85,10 @@ public interface Subscription
     QueueEntry getLastSeenEntry();
 
     boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
+
+
+    boolean isActive();
+
+
 
 }

@@ -110,7 +110,7 @@ public class ReferenceCountingExecutorService
      *
      * @return An executor service.
      */
-    ExecutorService acquireExecutorService()
+    public ExecutorService acquireExecutorService()
     {
         synchronized (_lock)
         {
@@ -140,7 +140,7 @@ public class ReferenceCountingExecutorService
      * Releases a reference to a shared executor service, decrementing the reference count. If the refence count falls
      * to zero, the executor service is shut down.
      */
-    void releaseExecutorService()
+    public void releaseExecutorService()
     {
         synchronized (_lock)
         {

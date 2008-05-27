@@ -262,8 +262,24 @@ public class TopicExchange extends AbstractExchange
             _filteredQueues.put(queue,newFilters);
         }
 
-        public Set<AMQQueue> processMessage(IncomingMessage msg, Set<AMQQueue> queues)
+        public Collection<AMQQueue> processMessage(IncomingMessage msg, Collection<AMQQueue> queues)
         {
+            if(queues == null)
+            {
+                if(_filteredQueues.isEmpty())
+                {
+                    return new ArrayList<AMQQueue>(_unfilteredQueues.keySet());
+                }
+                else
+                {
+                    queues = new HashSet<AMQQueue>();
+                }
+            }
+            else if(!(queues instanceof Set))
+            {
+                queues = new HashSet<AMQQueue>(queues);
+            }
+
             queues.addAll(_unfilteredQueues.keySet());
             if(!_filteredQueues.isEmpty())
             {
@@ -621,11 +637,11 @@ public class TopicExchange extends AbstractExchange
         }
         else
         {
-            Set<AMQQueue> queues = new HashSet<AMQQueue>();
+            Collection<AMQQueue> queues = results.size() == 1 ? null : new HashSet<AMQQueue>();
             for(TopicMatcherResult result : results)
             {
 
-                ((TopicExchangeResult)result).processMessage(message, queues);
+                queues = ((TopicExchangeResult)result).processMessage(message, queues);
             }
             return queues;
         }

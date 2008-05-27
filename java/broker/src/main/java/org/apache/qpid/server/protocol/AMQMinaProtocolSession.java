@@ -444,7 +444,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public boolean channelAwaitingClosure(int channelId)
     {
-        return _closingChannelsList.contains(channelId);
+        return !_closingChannelsList.isEmpty() && _closingChannelsList.contains(channelId);
     }
 
     public void addChannel(AMQChannel channel) throws AMQException

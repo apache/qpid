@@ -136,6 +136,11 @@ public class AMQMessage implements Filterable<AMQException>
         }
     }
 
+    public void clearStoreContext()
+    {
+        _storeContext = new StoreContext();
+    }
+
     public StoreContext getStoreContext()
     {
         return _storeContext;

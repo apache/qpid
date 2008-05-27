@@ -58,14 +58,12 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void unregisterSubscription(final Subscription subscription) throws AMQException;
 
+
     int getConsumerCount();
 
     int getActiveConsumerCount();
 
     boolean isUnused();
-
-
-
 
     boolean isEmpty();
 
@@ -80,8 +78,25 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     long getOldestMessageArrivalTime();
 
-
     boolean isDeleted();
+
+
+    int delete() throws AMQException;
+
+
+    QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
+
+    void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
+
+    void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
+
+
+
+    boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
+
+    
+
+    void addQueueDeleteTask(final Task task);
 
 
     List<QueueEntry> getMessagesOnTheQueue();
@@ -91,7 +106,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     QueueEntry getMessageOnTheQueue(long messageId);
 
 
-
     void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
                                                         StoreContext storeContext);
 
@@ -99,9 +113,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext);
 
-    void quiesce();
 
-    void start();
 
     long getMaximumMessageSize();
 
@@ -132,26 +144,13 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
 
 
-    int delete() throws AMQException;
-
-
-    QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
-
-    void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
-
-    void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
-
-    void deliverAsync();
-
-    void addQueueDeleteTask(final Task task);
-
-    boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
-
     void removeExpiredIfNoSubscribers() throws AMQException;
 
     Set<NotificationCheck> getNotificationChecks();
 
     void flushSubscription(final Subscription sub) throws AMQException;
+
+    void deliverAsync(final Subscription sub);
 
 
     /**

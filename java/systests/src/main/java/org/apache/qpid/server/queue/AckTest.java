@@ -42,6 +42,7 @@ import org.apache.qpid.server.util.NullApplicationRegistry;
 
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.Collections;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -145,7 +146,7 @@ public class AckTest extends TestCase
             // we increment the reference here since we are not delivering the messaging to any queues, which is where
             // the reference is normally incremented. The test is easier to construct if we have direct access to the
             // subscription
-            msg.enqueue(_queue);
+            msg.enqueue(Collections.singleton(_queue));
             msg.routingComplete(_messageStore, factory);
             if(msg.allContentReceived())
             {
