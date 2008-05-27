@@ -71,7 +71,7 @@ if makefile
   rgen_srcs=GenFiles.get.map{ |f| "#{$outdir}/#{f}" }
   rgen_subdirs={}
   rgen_srcs.each { |src|
-    if src.match(%r{./gen/qpid/([^/]+)/})
+    if src.match(%r{#{$outdir}/qpid/([^/]+)/})
       subdir=$1
       rgen_subdirs[subdir] ||= []
       rgen_subdirs[subdir] << src
@@ -102,15 +102,6 @@ dist_#{dir_}_HEADERS = #{make_continue rgen_srcs.grep(regex)}
 
 EOS
     }
-    out << <<EOS
-if GENERATE
-$(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
-	$(rgen_cmd)
-
-# Empty rule in case a generator file is renamed/removed.
-$(rgen_generator):
-endif  
-EOS
   }
 end
 
