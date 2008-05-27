@@ -75,9 +75,9 @@ class SessionBase_0_10 {
      */
     void close();
     
-    /** Synchronize the session: sync() waits until all commands
-     * issued on this session have been completed. It is equivalent to
-     * calling Session::executionSync()
+    /**
+     * Synchronize the session: sync() waits until all commands issued
+     * on this session so far have been completed by the broker.
      *
      * Note sync() is always synchronous, even on an AsyncSession object
      * because that's almost always what you want. You can call

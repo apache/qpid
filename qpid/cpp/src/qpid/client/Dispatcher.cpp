@@ -89,7 +89,7 @@ void Dispatcher::run()
                 }
             }
         }
-        sync(session).sync(); // Make sure all our acks are received before returning.
+        session.sync(); // Make sure all our acks are received before returning.
     }
     catch (const ClosedException&) {} //ignore it and return
     catch (const std::exception& e) {
