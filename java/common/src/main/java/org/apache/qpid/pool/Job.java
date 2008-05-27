@@ -50,7 +50,7 @@ import org.apache.mina.common.IoSession;
  *
  * @todo For better re-usability could make the completion handler optional. Only run it when one is set.
  */
-public class Job implements Runnable
+public class Job implements ReadWriteRunnable
 {
     /** The maximum number of events to process per run of the job. More events than this may be queued in the job. */
     private final int _maxEvents;
@@ -165,6 +165,17 @@ public class Job implements Runnable
     {
         return _readJob;
     }
+
+    public boolean isRead()
+    {
+        return _readJob;
+    }
+
+    public boolean isWrite()
+    {
+        return !_readJob;
+    }
+
 
     /**
      * Another interface for a continuation.
