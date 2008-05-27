@@ -63,6 +63,7 @@ class Range {
     bool operator==(const Range& x) { return begin_ == x.begin_ && end_== x.end_; }
 
     bool operator<(const T& t) const { return end_ < t; }
+    bool operator<(const Range<T>& r) const { return end_ < r.begin_; }
 
     /** touching ranges can be merged into a single range. */
     bool touching(const Range& r) const {
@@ -204,21 +205,21 @@ std::ostream& operator<<(std::ostream& o, const RangeSet<T>& rs) {
 template <class T>
 bool RangeSet<T>::contains(const T& t) const {
     typename Ranges::const_iterator i =
-        std::lower_bound(ranges.begin(), ranges.end(), t);
+        std::lower_bound(ranges.begin(), ranges.end(), Range<T>(t));
     return i != ranges.end() && i->contains(t);
 }
 
 template <class T>
 bool RangeSet<T>::contains(const Range<T>& r) const {
     typename Ranges::const_iterator i =
-        std::lower_bound(ranges.begin(), ranges.end(), r.begin());
+        std::lower_bound(ranges.begin(), ranges.end(), r);
     return i != ranges.end() && i->contains(r);
 }
 
 template <class T> void RangeSet<T>::addRange(const Range<T>& r) {
     if (r.empty()) return;
     typename Ranges::iterator i =
-        std::lower_bound(ranges.begin(), ranges.end(), r.begin());
+        std::lower_bound(ranges.begin(), ranges.end(), r);
     if (i == ranges.end() || !i->touching(r)) 
         ranges.insert(i, r);
     else {
@@ -241,7 +242,7 @@ template <class T> void RangeSet<T>::addSet(const RangeSet<T>& s) {
 template <class T> void RangeSet<T>::removeRange(const Range<T>& r) {
     if (r.empty()) return;
     typename Ranges::iterator i,j;
-    i = std::lower_bound(ranges.begin(), ranges.end(), r.begin());
+    i = std::lower_bound(ranges.begin(), ranges.end(), r);
     if (i == ranges.end() || i->begin() >= r.end())
         return;                 // Outside of set
     if (*i == r)                // Erase i
@@ -304,7 +305,7 @@ template <class T> bool RangeSet<T>::iterator::equal(const iterator& i) const {
 
 template <class T> Range<T> RangeSet<T>::rangeContaining(const T& t) const {
     typename Ranges::const_iterator i =
-        std::lower_bound(ranges.begin(), ranges.end(), t);
+        std::lower_bound(ranges.begin(), ranges.end(), Range<T>(t));
     return (i != ranges.end() && i->contains(t)) ? *i : Range<T>(t,t);
 }
 
