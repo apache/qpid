@@ -30,7 +30,6 @@
 #include "qpid/shared_ptr.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ChannelHandler.h"
-#include "qpid/framing/SessionState.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
