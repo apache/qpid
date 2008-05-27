@@ -42,6 +42,7 @@ void SessionBase_0_10::flush()
 
 void SessionBase_0_10::sync()
 {
+    impl->sendFlush();          // Let the peer know our state.
     ExecutionSyncBody b;
     b.setSync(true);
     impl->send(b).wait(*impl);

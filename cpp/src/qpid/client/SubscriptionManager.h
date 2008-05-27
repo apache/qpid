@@ -48,7 +48,7 @@ class SubscriptionManager : public sys::Runnable
     void subscribeInternal(const std::string& q, const std::string& dest);
     
     qpid::client::Dispatcher dispatcher;
-    qpid::client::Session session;
+    qpid::client::AsyncSession session;
     uint32_t messages;
     uint32_t bytes;
     bool window;
