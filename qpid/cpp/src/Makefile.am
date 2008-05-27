@@ -19,16 +19,26 @@ specs=$(amqp_0_10_xml)
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
-rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate $(srcdir)/gen $(specs) all $(srcdir)/rubygen.mk
+rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate gen $(specs) all $(srcdir)/rubygen.mk
+
+$(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
+rgen.timestamp: $(rgen_generator) $(specs)
+	$(rgen_cmd); touch $@
+$(rgen_generator):
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
 mgen_cmd=$(mgen_dir)/main.py -m $(srcdir)/managementgen.mk \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(top_srcdir)/../specs/management-types.xml \
-	$(mgen_dir)/templates $(srcdir)/gen/qpid/management
+	$(mgen_dir)/templates gen/qpid/management
 
-endif				# GENERATE
+$(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
+mgen.timestamp: $(mgen_generator)
+	$(mgen_cmd); touch $@
+$(mgen_generator):
+
+endif # GENERATE
 
 include $(srcdir)/rubygen.mk
 include $(srcdir)/managementgen.mk
