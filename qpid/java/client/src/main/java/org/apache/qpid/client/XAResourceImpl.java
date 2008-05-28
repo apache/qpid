@@ -73,54 +73,25 @@ public class XAResourceImpl implements XAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("commit ", xid);
+            _logger.debug("commit tx branch with xid:  ", xid);
         }
-        if (xid == null)
-        {
-            throw new XAException(XAException.XAER_PROTO);
-        }
-        Future<XaResult> future;
+        Future<XaResult> future =
+                _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
+
+        // now wait on the future for the result
+        XaResult result = null;
         try
         {
-            future = _xaSession.getQpidSession()
-                    .dtxCommit(XidImpl.convert(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
+            result = future.get();
         }
-        catch (QpidException e)
+        catch (SessionException e)
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
         }
-        // now wait on the future for the result
-        XaResult result = future.get();
-        DtxXaStatus status = result.getStatus();
-        switch (status)
-        {
-            case XA_OK:
-                // do nothing this ok
-                break;
-            case XA_HEURHAZ:
-                throw new XAException(XAException.XA_HEURHAZ);
-            case XA_HEURCOM:
-                throw new XAException(XAException.XA_HEURCOM);
-            case XA_HEURRB:
-                throw new XAException(XAException.XA_HEURRB);
-            case XA_HEURMIX:
-                throw new XAException(XAException.XA_HEURMIX);
-            case XA_RBROLLBACK:
-                throw new XAException(XAException.XA_RBROLLBACK);
-            case XA_RBTIMEOUT:
-                throw new XAException(XAException.XA_RBTIMEOUT);
-            default:
-                // this should not happen
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("got unexpected status value: ", status);
-                }
-                throw new XAException(XAException.XAER_PROTO);
-        }
+        checkStatus(result.getStatus());
     }
 
     /**
@@ -143,49 +114,28 @@ public class XAResourceImpl implements XAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("end ", xid);
+            _logger.debug("end tx branch with xid: ", xid);
         }
-        if (xid == null)
-        {
-            throw new XAException(XAException.XAER_PROTO);
-        }
-        Future<XaResult> future;
+        Future<XaResult> future = _xaSession.getQpidSession()
+                .dtxEnd(convertXid(xid),
+                        flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
+                        flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
+        // now wait on the future for the result
+        XaResult result = null;
         try
         {
-            future = _xaSession.getQpidSession()
-                    .dtxEnd(XidImpl.convert(xid),
-                            flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
-                            flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
+            result = future.get();
         }
-        catch (QpidException e)
+        catch (SessionException e)
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
         }
-        // now wait on the future for the result
-        XaResult result = future.get();
-        DtxXaStatus status = result.getStatus();
-        switch (status)
-        {
-            case XA_OK:
-                // do nothing this ok
-                break;
-            case XA_RBROLLBACK:
-                throw new XAException(XAException.XA_RBROLLBACK);
-            case XA_RBTIMEOUT:
-                throw new XAException(XAException.XA_RBTIMEOUT);
-            default:
-                // this should not happen
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("got unexpected status value: ", status);
-                }
-                throw new XAException(XAException.XAER_PROTO);
-        }
+        checkStatus(result.getStatus());
     }
+
 
     /**
      * Tells the resource manager to forget about a heuristically completed transaction branch.
@@ -198,15 +148,22 @@ public class XAResourceImpl implements XAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("forget ", xid);
+            _logger.debug("forget tx branch with xid: ", xid);
         }
-        if (xid == null)
+        _xaSession.getQpidSession().dtxForget(convertXid(xid));
+        try
         {
-            throw new XAException(XAException.XAER_PROTO);
+            _xaSession.getQpidSession().sync();
         }
-        _xaSession.getQpidSession().dtxForget(new org.apache.qpidity.transport.Xid()
-                                              .setGlobalId((xid.getGlobalTransactionId())));
+        catch (SessionException e)
+        {
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+        }
     }
+
 
     /**
      * Obtains the current transaction timeout value set for this XAResource instance.
@@ -222,19 +179,18 @@ public class XAResourceImpl implements XAResource
         int result = 0;
         if (_xid != null)
         {
+            Future<GetTimeoutResult> future =
+                    _xaSession.getQpidSession().dtxGetTimeout(convertXid(_xid));
             try
             {
-                Future<GetTimeoutResult> future =
-                        _xaSession.getQpidSession().dtxGetTimeout(XidImpl.convert(_xid));
                 result = (int) future.get().getTimeout();
             }
-            catch (QpidException e)
+            catch (SessionException e)
             {
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Cannot convert Xid into String format ", e);
-                }
-                throw new XAException(XAException.XAER_PROTO);
+                // we need to restore the qpidity session that has been closed
+                _xaSession.createSession();
+                // we should get a single exception
+                convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
             }
         }
         return result;
@@ -270,46 +226,30 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("prepare ", xid);
         }
-        if (xid == null)
-        {
-            throw new XAException(XAException.XAER_PROTO);
-        }
-        Future<XaResult> future;
+        Future<XaResult> future = _xaSession.getQpidSession().dtxPrepare(convertXid(xid));
+        XaResult result = null;
         try
         {
-            future = _xaSession.getQpidSession()
-                    .dtxPrepare(XidImpl.convert(xid));
+            result = future.get();
         }
-        catch (QpidException e)
+        catch (SessionException e)
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
         }
-        XaResult result = future.get();
         DtxXaStatus status = result.getStatus();
-        int outcome;
+        int outcome = XAResource.XA_OK;
         switch (status)
         {
             case XA_OK:
-                outcome = XAResource.XA_OK;
                 break;
             case XA_RDONLY:
                 outcome = XAResource.XA_RDONLY;
                 break;
-            case XA_RBROLLBACK:
-                throw new XAException(XAException.XA_RBROLLBACK);
-            case XA_RBTIMEOUT:
-                throw new XAException(XAException.XA_RBTIMEOUT);
             default:
-                // this should not happen
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("got unexpected status value: ", status);
-                }
-                throw new XAException(XAException.XAER_PROTO);
+                checkStatus(status);
         }
         return outcome;
     }
@@ -351,53 +291,26 @@ public class XAResourceImpl implements XAResource
      */
     public void rollback(Xid xid) throws XAException
     {
-        if (xid == null)
+        if (_logger.isDebugEnabled())
         {
-            throw new XAException(XAException.XAER_PROTO);
+            _logger.debug("rollback tx branch with xid: ", xid);
         }
-        //      the flag is ignored
-        Future<XaResult> future;
+
+        Future<XaResult> future = _xaSession.getQpidSession().dtxRollback(convertXid(xid));
+        // now wait on the future for the result
+        XaResult result = null;
         try
         {
-            future = _xaSession.getQpidSession()
-                    .dtxRollback(XidImpl.convert(xid));
+            result = future.get();
         }
-        catch (QpidException e)
+        catch (SessionException e)
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Cannot convert Xid into String format ", e);
-            }
-            throw new XAException(XAException.XAER_PROTO);
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
         }
-        // now wait on the future for the result
-        XaResult result = future.get();
-        DtxXaStatus status = result.getStatus();
-        switch (status)
-        {
-            case XA_OK:
-                // do nothing this ok
-                break;
-            case XA_HEURHAZ:
-                throw new XAException(XAException.XA_HEURHAZ);
-            case XA_HEURCOM:
-                throw new XAException(XAException.XA_HEURCOM);
-            case XA_HEURRB:
-                throw new XAException(XAException.XA_HEURRB);
-            case XA_HEURMIX:
-                throw new XAException(XAException.XA_HEURMIX);
-            case XA_RBROLLBACK:
-                throw new XAException(XAException.XA_RBROLLBACK);
-            case XA_RBTIMEOUT:
-                throw new XAException(XAException.XA_RBTIMEOUT);
-            default:
-                // this should not happen
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("got unexpected status value: ", status);
-                }
-                throw new XAException(XAException.XAER_PROTO);
-        }
+        checkStatus(result.getStatus());
     }
 
     /**
@@ -451,20 +364,131 @@ public class XAResourceImpl implements XAResource
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("start ", xid);
+            _logger.debug("start tx branch with xid: ", xid);
         }
-        if (xid == null)
-        {
-            throw new XAException(XAException.XAER_PROTO);
-        }
-        _xid = xid;
-        Future<XaResult> future;
+        Future<XaResult> future = _xaSession.getQpidSession()
+                .dtxStart(convertXid(xid),
+                        flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
+                        flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
+        // now wait on the future for the result
+        XaResult result = null;
         try
         {
-            future = _xaSession.getQpidSession()
-                    .dtxStart(XidImpl.convert(xid),
-                              flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
-                              flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
+            result = future.get();
+        }
+        catch (SessionException e)
+        {
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            // TODO: The amqp spec does not allow to make the difference
+            // between an already known XID and a wrong arguments (join and resume are set)
+            // TODO: make sure amqp addresses that
+        }
+        checkStatus(result.getStatus());
+        _xid = xid;
+    }
+
+    //------------------------------------------------------------------------
+    // Private methods
+    //------------------------------------------------------------------------
+
+    /**
+     * Check xa method outcome and, when required, convert the status into the corresponding xa exception
+     * @param status method status code
+     * @throws XAException corresponding XA Exception when required
+     */
+    private void checkStatus(DtxXaStatus status) throws XAException
+    {
+        switch (status)
+        {
+            case XA_OK:
+                // Do nothing this ok
+                break;
+            case XA_RBROLLBACK:
+                // The tx has been rolled back for an unspecified reason.
+                throw new XAException(XAException.XA_RBROLLBACK);
+            case XA_RBTIMEOUT:
+                // The transaction branch took too long.
+                throw new XAException(XAException.XA_RBTIMEOUT);
+            case XA_HEURHAZ:
+                // The transaction branch may have been heuristically completed.
+                throw new XAException(XAException.XA_HEURHAZ);
+            case XA_HEURCOM:
+                // The transaction branch has been heuristically committed.
+                throw new XAException(XAException.XA_HEURCOM);
+            case XA_HEURRB:
+                // The transaction branch has been heuristically rolled back.
+                throw new XAException(XAException.XA_HEURRB);
+            case XA_HEURMIX:
+                // The transaction branch has been heuristically committed and rolled back.
+                throw new XAException(XAException.XA_HEURMIX);
+            case XA_RDONLY:
+                // The transaction branch was read-only and has been committed.
+                throw new XAException(XAException.XA_RDONLY);
+            default:
+                // this should not happen
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("got unexpected status value: ", status);
+                }
+                //A resource manager error has occured in the transaction branch.
+                throw new XAException(XAException.XAER_RMERR);
+        }
+    }
+
+    /**
+     * Convert execution error to xa exception.
+     * @param error the execution error code
+     * @throws XAException
+     */
+    private void convertExecutionErrorToXAErr(ExecutionErrorCode error) throws XAException
+    {
+        switch (error)
+        {
+            case NOT_ALLOWED:
+                // The XID already exists.
+                throw new XAException(XAException.XAER_DUPID);
+            case NOT_FOUND:
+                // The XID is not valid.
+                throw new XAException(XAException.XAER_NOTA);
+            case ILLEGAL_STATE:
+                // Routine was invoked in an inproper context.
+                throw new XAException(XAException.XAER_PROTO);
+            case NOT_IMPLEMENTED:
+                // the command is not implemented
+                throw new XAException(XAException.XAER_RMERR);
+            case COMMAND_INVALID:
+                // Invalid call
+                throw new XAException(XAException.XAER_INVAL);
+            default:
+                // this should not happen
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Got unexpected error: " + error);
+                }
+                //A resource manager error has occured in the transaction branch.
+                throw new XAException(XAException.XAER_RMERR);
+        }
+    }
+
+    /**
+     * convert a generic xid into qpid format
+     * @param xid xid to be converted
+     * @return the qpid formated xid
+     * @throws XAException when xid is null or when it cannot be converted. 
+     */
+    private org.apache.qpidity.transport.Xid convertXid(Xid xid) throws XAException
+    {
+        if (xid == null)
+        {
+            // Invalid arguments were given.
+            throw new XAException(XAException.XAER_INVAL);
+        }
+        try
+        {
+            return XidImpl.convert(xid);
         }
         catch (QpidException e)
         {
@@ -472,27 +496,9 @@ public class XAResourceImpl implements XAResource
             {
                 _logger.debug("Cannot convert Xid into String format ", e);
             }
-            throw new XAException(XAException.XAER_PROTO);
-        }
-        // now wait on the future for the result
-        XaResult result = future.get();
-        DtxXaStatus status = result.getStatus();
-        switch (status)
-        {
-            case XA_OK:
-                // do nothing this ok
-                break;
-            case XA_RBROLLBACK:
-                throw new XAException(XAException.XA_RBROLLBACK);
-            case XA_RBTIMEOUT:
-                throw new XAException(XAException.XA_RBTIMEOUT);
-            default:
-                // this should not happen
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("got unexpected status value: ", status);
-                }
-                throw new XAException(XAException.XAER_PROTO);
+            //A resource manager error has occured in the transaction branch.
+            throw new XAException(XAException.XAER_RMERR);
         }
     }
+
 }
