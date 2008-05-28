@@ -359,7 +359,7 @@ public class FaultTest extends AbstractXATestCase
         try
         {
             _xaResource.start(xid, XAResource.TMNOFLAGS);
-            _xaResource.end(xid, XAResource.TMNOFLAGS);
+            _xaResource.end(xid, XAResource.TMSUCCESS);
             _xaResource.commit(xid, false);
             fail("We managed to commit a not prepared xid");
         }
@@ -375,7 +375,7 @@ public class FaultTest extends AbstractXATestCase
         try
         {
             _xaResource.start(xid, XAResource.TMNOFLAGS);
-            _xaResource.end(xid, XAResource.TMNOFLAGS);
+            _xaResource.end(xid, XAResource.TMSUCCESS);
             _xaResource.prepare(xid);
             _xaResource.commit(xid, true);
             fail("We managed to commit a prepared xid");
@@ -444,7 +444,7 @@ public class FaultTest extends AbstractXATestCase
             assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
             _xaResource.setTransactionTimeout(1000);
             assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 1000);
-            _xaResource.end(xid, XAResource.TMNOFLAGS);
+            _xaResource.end(xid, XAResource.TMSUCCESS);
             xid = getNewXid();
             _xaResource.start(xid, XAResource.TMNOFLAGS);
             assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);            
@@ -472,7 +472,7 @@ public class FaultTest extends AbstractXATestCase
             assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
             _xaResource.setTransactionTimeout(10);
             Thread.sleep(1000);
-            _xaResource.end(xid, XAResource.TMNOFLAGS);
+            _xaResource.end(xid, XAResource.TMSUCCESS);
         }
         catch (XAException e)
         {

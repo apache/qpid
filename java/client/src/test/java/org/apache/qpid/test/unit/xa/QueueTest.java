@@ -181,7 +181,7 @@ public class QueueTest extends AbstractXATestCase
             // start the xaResource for xid1
             try
             {
-                _xaResource.start(xid1, XAResource.TMSUCCESS);
+                _xaResource.start(xid1, XAResource.TMNOFLAGS);
             }
             catch (XAException e)
             {
@@ -212,7 +212,7 @@ public class QueueTest extends AbstractXATestCase
             // start the xaResource for xid2
             try
             {
-                _xaResource.start(xid2, XAResource.TMSUCCESS);
+                _xaResource.start(xid2, XAResource.TMNOFLAGS);
             }
             catch (XAException e)
             {
@@ -331,7 +331,7 @@ public class QueueTest extends AbstractXATestCase
             // start the xaResource for xid1
             try
             {
-                _xaResource.start(xid1, XAResource.TMSUCCESS);
+                _xaResource.start(xid1, XAResource.TMNOFLAGS);
             }
             catch (XAException e)
             {
@@ -462,7 +462,7 @@ public class QueueTest extends AbstractXATestCase
             // start the xaResource for xid1
             try
             {
-                _xaResource.start(xid1, XAResource.TMSUCCESS);
+                _xaResource.start(xid1, XAResource.TMNOFLAGS);
             }
             catch (XAException e)
             {
@@ -519,7 +519,7 @@ public class QueueTest extends AbstractXATestCase
             // start the xaResource for xid2
             try
             {
-                _xaResource.start(xid2, XAResource.TMSUCCESS);
+                _xaResource.start(xid2, XAResource.TMNOFLAGS);
             }
             catch (XAException e)
             {
