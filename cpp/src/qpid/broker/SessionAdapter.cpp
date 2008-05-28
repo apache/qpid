@@ -220,17 +220,22 @@ bool SessionAdapter::QueueHandlerImpl::isLocal(const ConnectionToken* t) const
 
 QueueQueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 {
-    Queue::shared_ptr queue = getQueue(name);
-    Exchange::shared_ptr alternateExchange = queue->getAlternateExchange();
+    Queue::shared_ptr queue = session.getBroker().getQueues().find(name);
+    if (queue) {
 
-    return QueueQueryResult(queue->getName(), 
-                            alternateExchange ? alternateExchange->getName() : "", 
-                            queue->isDurable(), 
-                            queue->hasExclusiveOwner(),
-                            queue->isAutoDelete(),
-                            queue->getSettings(),
-                            queue->getMessageCount(),
-                            queue->getConsumerCount());
+        Exchange::shared_ptr alternateExchange = queue->getAlternateExchange();
+        
+        return QueueQueryResult(queue->getName(), 
+                                alternateExchange ? alternateExchange->getName() : "", 
+                                queue->isDurable(), 
+                                queue->hasExclusiveOwner(),
+                                queue->isAutoDelete(),
+                                queue->getSettings(),
+                                queue->getMessageCount(),
+                                queue->getConsumerCount());
+    } else {
+        return QueueQueryResult();
+    }
 }
 
 void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string& alternateExchange,
