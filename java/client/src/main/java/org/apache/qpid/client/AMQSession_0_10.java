@@ -71,6 +71,8 @@ public class AMQSession_0_10 extends AMQSession
     private Object _currentExceptionLock = new Object();
     private QpidException _currentException;
 
+    // a ref on the qpidity connection
+    protected org.apache.qpidity.nclient.Connection _qpidConnection;
     //--- constructors
 
     /**
@@ -92,7 +94,7 @@ public class AMQSession_0_10 extends AMQSession
 
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
-
+        _qpidConnection = qpidConnection;
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = qpidConnection.createSession(0);
         // set the exception listnere for this session

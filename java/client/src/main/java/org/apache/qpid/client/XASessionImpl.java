@@ -54,9 +54,20 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
               Session.AUTO_ACKNOWLEDGE, // the ack mode is transacted
               MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow);
-        _qpidDtxSession = qpidConnection.createDTXSession(0);
+        createSession();
         _xaResource = new XAResourceImpl(this);
     }
+
+    //-- public methods
+
+    /**
+     * Create a qpidity session.
+     */
+    public void createSession()
+    {
+        _qpidDtxSession = _qpidConnection.createDTXSession(0);
+    }
+
 
     //--- javax.njms.XASEssion API
 
