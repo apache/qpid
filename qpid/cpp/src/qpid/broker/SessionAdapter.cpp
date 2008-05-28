@@ -575,7 +575,7 @@ DtxRecoverResult SessionAdapter::DtxHandlerImpl::recover()
 void SessionAdapter::DtxHandlerImpl::forget(const Xid& xid)
 {
     //Currently no heuristic completion is supported, so this should never be used.
-    throw CommandInvalidException(QPID_MSG("Forget is invalid. Branch with xid "  << xid << " not heuristically completed!"));
+    throw NotImplementedException(QPID_MSG("Forget not implemented. Branch with xid "  << xid << " not heuristically completed!"));
 }
 
 DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
