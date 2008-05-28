@@ -27,11 +27,11 @@ import org.apache.qpidity.api.Message;
 
 /**
  * <p>A session is associated with a connection.
- * When created a Session is not attached with an underlying channel.
- * Session is single threaded </p>
+ * When it is created, a session is not associated with an underlying channel.
+ * The session is single threaded. </p>
  * <p/>
- * All the Session commands are asynchronous, synchronous invocation is achieved through invoking the sync method.
- * That is to say that <code>command1</code> will be synchronously invoked using the following sequence:
+ * All the Session commands are asynchronous. Synchronous behavior is achieved through invoking the sync method.
+ * For example, <code>command1</code> will be synchronously invoked by using the following sequence:
  * <ul>
  * <li> <code>session.command1()</code>
  * <li> <code>session.sync()</code>
@@ -58,7 +58,7 @@ public interface Session
     //------------------------------------------------------
 
     /**
-     * Sync method will block until all outstanding commands
+     * Sync method will block the session until all outstanding commands
      * are executed.
      */
     public void sync();
@@ -74,125 +74,102 @@ public interface Session
     //                   Producer
     //------------------------------------------------------
     /**
-     * Transfer the given
-     *
-     *  to a specified exchange.
+     * Transfer a message to a specified exchange.
      * <p/>
-     * <p>This is a convinience method for providing a complete message
-     * using a single method which internaly is mapped to messageTransfer(), headers() followed
-     * by data() and an endData().
-     * <b><i>This method should only be used by small messages</b></i></p>
+     * <p>This transfer provides a complete message
+     * using a single method. The method is internally mapped to messageTransfer() and headers() followed
+     * by data() and endData().
+     * <b><i>This method should only be used by small messages.</b></i></p>
      *
-     * @param destination The exchange the message is being sent.
-     * @param msg         The Message to be sent
+     * @param destination The exchange the message is being sent to.
+     * @param msg         The Message to be sent.
      * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation
-     *                    is not required, once a message has been transferred in pre-acquire
+     *                    is not required. Once a message has been transferred in pre-acquire
      *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
-     *                    transferred
+     *                    transferred.
      *                    <p/>
      *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message
-     *                    (whether acquisition was implicit as in pre-acquire mode or
-     *                    explicit as in no-acquire mode) is not considered transferred until the original
-     *                    transfer is complete (signaled via execution.complete)
+     *                    is not considered transferred until the original
+     *                    transfer is complete. A complete transfer is signaled by execution.complete.
      *                    </ul>
      * @param acquireMode <ul>
      *                    <li> no-acquire  ({@link Session#TRANSFER_ACQUIRE_MODE_NO_ACQUIRE}): the message
-     *                    must be explicitly acquired
+     *                    must be explicitly acquired.
      *                    <li> pre-acquire ({@link Session#TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE}): the message is
-     *                    acquired when the transfer starts
+     *                    acquired when the transfer starts.
      *                    </ul>
-     * @throws java.io.IOException If transferring a message fails due to some internal communication error.
+     * @throws java.io.IOException If transferring a message fails due to some internal communication error, an exception is thrown.
      */
     public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode)
             throws IOException;
 
     /**
-     * <p>This is a convinience method for streaming a message using pull semantics
-     * using a single method as opposed to doing a push using messageTransfer(), headers() followed
-     * by a series of data() and an endData().</p>
-     * <p>Internally data will be pulled from Message object(which wrap's a data stream) using it's read()
-     * and pushed using messageTransfer(), headers() followed by a series of data() and an endData().
+     * <p>This transfer streams a complete message using a single method. 
+     * It uses pull-semantics instead of doing a push.</p>
+     * <p>Data is pulled from a Message object using read()
+     * and pushed using messageTransfer() and headers() followed by data() and endData().
      * <br><b><i>This method should only be used by large messages</b></i><br>
-     * There are two convinience Message classes provided to facilitate this.
+     * There are two convenience Message classes to do this.
      * <ul>
      * <li> <code>{@link org.apache.qpidity.nclient.util.FileMessage}</code>
      * <li> <code>{@link org.apache.qpidity.nclient.util.StreamingMessage}</code>
      * </ul>
-     * You could also implement a the <code>Message</code> interface to and wrap any
-     * data stream you want.
+     * You can also implement a <code>Message</code> interface to wrap any
+     * data stream.
      * </p>
      *
-     * @param destination The exchange the message is being sent.
-     * @param msg         The Message to be sent
+     * @param destination The exchange the message is being sent to.
+     * @param msg         The Message to be sent.
      * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation
-     *                    is not required, once a message has been transferred in pre-acquire
+     *                    is not required. Once a message has been transferred in pre-acquire
      *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
-     *                    transferred
+     *                    transferred.
      *                    <p/>
      *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message
-     *                    (whether acquisition was implicit as in pre-acquire mode or
-     *                    explicit as in no-acquire mode) is not considered transferred until the original
-     *                    transfer is complete (signaled via execution.complete)
+     *                    is not considered transferred until the original
+     *                    transfer is complete. A complete transfer is signaled by execution.complete.
      *                    </ul>
      * @param acquireMode <ul>
      *                    <li> no-acquire  ({@link Session#TRANSFER_ACQUIRE_MODE_NO_ACQUIRE}): the message
-     *                    must be explicitly acquired
+     *                    must be explicitly acquired.
      *                    <li> pre-acquire ({@link Session#TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE}): the message
-     *                    is acquired when the transfer starts
+     *                    is acquired when the transfer starts.
      *                    </ul>
-     * @throws java.io.IOException If transferring a message fails due to some internal communication error.
+     * @throws java.io.IOException If transferring a message fails due to some internal communication error, an exception is thrown.
      */
     public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException;
 
     /**
-     * Declare the beginning of a message transfer operation. This operation must
-     * be followed by {@link Session#header} then followed by any number of {@link Session#data}.
-     * The transfer is ended by {@link Session#endData}.
-     * <p> This way of transferring messages is useful when streaming large messages
-     * <p> In the interval [messageTransfer endData] any attempt to call a method other than
-     * {@link Session#header}, {@link Session#endData} ore {@link Session#sessionClose}
-     * will result in an exception being thrown.
+     * This command transfers a message between two peers.
      *
-     * @param destination The exchange the message is being sent.
-     * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation
-     *                    is not required, once a message has been transferred in pre-acquire
-     *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
-     *                    transferred
-     *                    <p/>
-     *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message
-     *                    (whether acquisition was implicit as in pre-acquire mode or
-     *                    explicit as in no-acquire mode) is not considered transferred until the original
-     *                    transfer is complete (signaled via execution.complete)
-     *                    </ul>
-     * @param acquireMode <ul>
-     *                    <li> no-acquire  ({@link Session#TRANSFER_ACQUIRE_MODE_NO_ACQUIRE}): the message
-     *                    must be explicitly acquired
-     *                    <li> pre-acquire ({@link Session#TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE}): the message
-     *                    is acquired when the transfer starts
-     *                    </ul>
+     * @param destination Specifies the destination to which the message is to be transferred.
+     * @param acceptMode Indicates whether message.accept, session.complete,
+     *                  or nothing at all is required to indicate successful transfer of the message.
+     * 
+     * @param acquireMode Indicates whether or not the transferred message has been acquired.
      */
     public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode);
 
     /**
-     * Add a set of headers the following headers to the message being sent.
+     * Make a set of headers to be sent together with a message
      *
-     * @param headers Are either <code>{@link org.apache.qpidity.transport.DeliveryProperties}</code>
-     *                or <code>{@link org.apache.qpidity.transport.MessageProperties}</code>
+     * @param headers headers to be added
      * @see org.apache.qpidity.transport.DeliveryProperties
      * @see org.apache.qpidity.transport.MessageProperties
+     * @return The added headers.
      */
     public Header header(Struct... headers);
 
     /**
-     * Add the following byte array to the content of the message being sent.
+     * Add a byte array to the content of the message being sent.
      *
      * @param data Data to be added.
      */
     public void data(byte[] data);
 
     /**
-     * Add the following ByteBuffer to the content of the message being sent.
-     * <p> Note that only the data between the buffer current position and the
+     * A Add a ByteBuffer to the content of the message being sent.
+     * <p> Note that only the data between the buffer's current position and the
      * buffer limit is added.
      * It is therefore recommended to flip the buffer before adding it to the message,
      *
@@ -201,7 +178,7 @@ public interface Session
     public void data(ByteBuffer buf);
 
     /**
-     * Add the following String to the content of the message being sent.
+     * Add a string to the content of the message being sent.
      *
      * @param str String to be added.
      */
@@ -219,61 +196,58 @@ public interface Session
 
     /**
      * Associate a message listener with a destination.
-     * <p> The destination is bound to a queue and messages are filtered based
-     * on the provider filter map (message filtering is specific to the provider and may not be handled).
-     * <p> Following are valid options:
+     * <p> The destination is bound to a queue, and messages are filtered based
+     * on the provider filter map (message filtering is specific to the provider and in some cases might not be handled).
+     * <p> The valid options are:
      * <ul>
-     * <li>{@link Option#NO_LOCAL}: <p>If the no-local field is set the server will not send
-     * messages to the connection that
-     * published them.
-     * <li>{@link Option#EXCLUSIVE}: <p> Request exclusive subscription access, meaning only this
-     * ubscription can access the queue.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an �empty� option.
+     * <li>{@link Option#EXCLUSIVE}: <p> Requests exclusive subscription access, so that only this
+     * subscription can access the queue.
+     * <li>{@link Option#NO_OPTION}: <p> This is an empty option, and has no effect.
      * </ul>
      *
-     * @param queue       The queue this receiver is receiving messages from.
-     * @param destination The destination for the subscriber ,a.k.a the delivery tag.
-     * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation is not
-     *                    required, once a message has been transferred in pre-acquire
+     * @param queue       The queue that the receiver is receiving messages from.
+     * @param destination The destination, or delivery tag, for the subscriber.
+     * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation
+     *                    is not required. Once a message has been transferred in pre-acquire
      *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
-     *                    transferred
+     *                    transferred.
      *                    <p/>
-     *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message (whether
-     *                    acquisition was implicit as in pre-acquire mode or
-     *                    explicit as in no-acquire mode) is not considered transferred until the original
-     *                    transfer is complete (signaled via execution.complete)
+     *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message
+     *                    is not considered transferred until the original
+     *                    transfer is complete. A complete transfer is signaled by execution.complete.
      *                    </ul>
      * @param acquireMode <ul>
      *                    <li> no-acquire  ({@link Session#TRANSFER_ACQUIRE_MODE_NO_ACQUIRE}): the message must
-     *                    be explicitly acquired
+     *                    be explicitly acquired.
      *                    <li> pre-acquire ({@link Session#TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE}): the message is
-     *                    acquired when the transfer starts
+     *                    acquired when the transfer starts.
      *                    </ul>
-     * @param listener    The listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link org.apache.qpidity.nclient.MessagePartListener}.
-     * @param options     Set of Options (valid options are {@link Option#NO_LOCAL}, {@link Option#EXCLUSIVE}
-     *                    and {@link Option#NO_OPTION})
-     * @param filter      A set of filters for the subscription. The syntax and semantics of these filters depends
-     *                    on the providers implementation.
+     * @param listener    The listener for this destination. To transfer large messages
+     *                    use a {@link org.apache.qpidity.nclient.MessagePartListener}.
+     * @param options     Set of options. Valid options are {{@link Option#EXCLUSIVE}
+     *                    and {@link Option#NO_OPTION}.
+     * @param filter      A set of filters for the subscription. The syntax and semantics of these filters varies
+     *                    according to the provider's implementation.
      */
     public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode,
                                  MessagePartListener listener, Map<String, Object> filter, Option... options);
 
     /**
-     * This method cancels a consumer. This does not affect already delivered messages, but it does
-     * mean the server will not send any more messages for that destination. The client may receive an
-     * arbitrary number of messages in between sending the cancel method and receiving the
-     * notification of completion of the cancel command.
+     * This method cancels a consumer. The server will not send any more messages to the specified destination. 
+     * This does not affect already delivered messages.
+     * The client may receive a
+     * number of messages in between sending the cancel method and receiving 
+     * notification that the cancellation has been completed.
      *
-     * @param destination The destination for the subscriber used at subscription
+     * @param destination The destination to be cancelled.
      */
     public void messageCancel(String destination);
 
     /**
-     * Associate a message part listener with a destination.
-     * <p> Only one listerner per destination is allowed. This means
-     * that the previous message listener is replaced. This is done gracefully i.e. the message
-     * listener is replaced once it return from the processing of a message.
+     * Associate a message listener with a destination.
+     * <p> Only one listener is permitted for each destination. When a new listener is created,
+     * it replaces the previous message listener. To prevent message loss, this occurs only when the original listener
+     * has completed processing a message.
      *
      * @param destination The destination the listener is associated with.
      * @param listener    The new listener for this destination.
@@ -320,39 +294,39 @@ public interface Session
 
     /**
      * Forces the broker to exhaust its credit supply.
-     * <p> The broker's credit will always be zero when
-     * this method completes.
+     * <p> The credit on the broker will remain at zero once
+     * this method is completed.
      *
-     * @param destination The destination to call flush on.
+     * @param destination The destination on which the credit supply is to be exhausted.
      */
     public void messageFlush(String destination);
 
     /**
-     * On receipt of this method, the brokers MUST set his credit to zero for the given
-     * destination. This obeys the generic semantics of command completion, i.e. when confirmation
-     * is issued credit MUST be zero and no further messages will be sent until such a time as
+     * On receipt of this method, the brokers set credit to zero for a given
+     * destination. When confirmation of this method
+     * is issued credit is set to zero. No further messages will be sent until
      * further credit is received.
      *
-     * @param destination The destination to stop.
+     * @param destination The destination on which to reset credit.
      */
     public void messageStop(String destination);
 
     /**
-     * Acknowledge the receipt of ranges of messages.
-     * <p>Message must have been previously acquired either by receiving them in
+     * Acknowledge the receipt of a range of messages.
+     * <p>Messages must already be acquired, either by receiving them in
      * pre-acquire mode or by explicitly acquiring them.
      *
-     * @param ranges Range of acknowledged messages.
+     * @param ranges Range of messages to be acknowledged.
      */
     public void messageAcknowledge(RangeSet ranges);
 
     /**
-     * Reject ranges of acquired messages.
-     * <p>  The broker MUST deliver rejected messages to the
-     * alternate-exchange on the queue from which it was delivered. If no alternate-exchange is
-     * defined for that queue the broker MAY discard the message.
+     * Reject a range of acquired messages.
+     * <p>The broker will deliver rejected messages to the
+     * alternate-exchange on the queue from which it came. If no alternate-exchange is
+     * defined for that queue the broker will discard the message.
      *
-     * @param ranges Range of rejected messages.
+     * @param ranges Range of messages to be rejected.
      * @param code   The reject code must be one of {@link Session#MESSAGE_REJECT_CODE_GENERIC} or
      *               {@link Session#MESSAGE_REJECT_CODE_IMMEDIATE_DELIVERY_FAILED} (immediate delivery was attempted but
      *               failed).
@@ -385,6 +359,7 @@ public interface Session
      * <p> This method should only be called on non-acquired messages.
      *
      * @param ranges Ranges of messages to be acquired.
+     * @return Indicates the acquired messages
      */
     public Future<Acquired> messageAcquire(RangeSet ranges);
 
@@ -393,6 +368,7 @@ public interface Session
      * <p> Released messages are re-enqueued.
      *
      * @param ranges Ranges of messages to be released.
+     * @param options Valid option is: {@link Option#SET_REDELIVERED})
      */
     public void messageRelease(RangeSet ranges, Option ... options);
 
@@ -405,16 +381,16 @@ public interface Session
     public void txSelect();
 
     /**
-     * Commit the receipt and the delivery of all messages exchanged by this session resources.
+     * Commit the receipt and delivery of all messages exchanged by this session's resources.
      *
-     * @throws IllegalStateException If this session is not transacted.
+     * @throws IllegalStateException If this session is not transacted, an exception will be thrown.
      */
     public void txCommit() throws IllegalStateException;
 
     /**
-     * Rollback the receipt and the delivery of all messages exchanged by this session resources.
+     * Roll back the receipt and delivery of all messages exchanged by this session's resources.
      *
-     * @throws IllegalStateException If this session is not transacted.
+     * @throws IllegalStateException If this session is not transacted, an exception will be thrown.
      */
     public void txRollback() throws IllegalStateException;
 
@@ -544,17 +520,17 @@ public interface Session
     // --------------------------------------
 
     /**
-     * This method creates an exchange if it does not already exist, and if the exchange exists,
-     * verifies that it is of the correct and expected class.
-     * <p> Following are the valid options:
+     * This method creates an exchange. If the exchange already exists,
+     * the method verifies the class and checks the details are correct.
+     * <p>Valid options are:
      * <ul>
-     * <li> {@link Option#AUTO_DELETE}: <p> If set, the exchange is deleted when all queues have finished using it.
-     * <li> {@link Option#DURABLE}: <p> If set when creating a new exchange, the exchange will
+     * <li>{@link Option#AUTO_DELETE}: <p>If set, the exchange is deleted when all queues have finished using it.
+     * <li>{@link Option#DURABLE}: <p>If set, the exchange will
      * be marked as durable. Durable exchanges remain active when a server restarts. Non-durable exchanges (transient
-     * exchanges) are purged if/when a server restarts.
-     * <li> {@link Option#PASSIVE}: <p> If set, the server will not create the exchange.
+     * exchanges) are purged when a server restarts.
+     * <li>{@link Option#PASSIVE}: <p>If set, the server will not create the exchange.
      * The client can use this to check whether an exchange exists without modifying the server state.
-     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an �empty� option.
+     * <li> {@link Option#NO_OPTION}: <p>This option is an empty option, and has no effect.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option</p>
      *
@@ -581,31 +557,31 @@ public interface Session
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the exchange if it has no queue bindings. If the
      * exchange has queue bindings the server does not delete it but raises a channel exception
      * instead.
-     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an �empty� option.
+     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an empty option.
      * </ul>
-     * <p>In the absence of a particular option, the defaul value is false for each option
+     * <p>Note that if an option is not set, it will default to false.
      *
      * @param exchangeName The name of exchange to be deleted.
-     * @param options      Set of options (valid options are:  {@link Option#IF_UNUSED}, {@link Option#NO_OPTION})
+     * @param options      Set of options. Valid options are:  {@link Option#IF_UNUSED}, {@link Option#NO_OPTION}.
      * @see Option
      */
     public void exchangeDelete(String exchangeName, Option... options);
 
 
     /**
-     * This method is used to request information on a particular exchange.
+     * This method is used to request information about a particular exchange.
      *
-     * @param exchangeName The name of the exchange for which information is requested. If not specified explicitly
-     *                     the default exchange is implied.
+     * @param exchangeName The name of the exchange about which information is requested. If not set, the method will
+     *                     return information about the default exchange.
      * @return Information on the specified exchange.
      */
     public Future<ExchangeQueryResult> exchangeQuery(String exchangeName);
 
     /**
      * If the session receives a sessionClosed with an error code it
-     * informs the session's ExceptionListener
+     * informs the session's exceptionListener
      *
-     * @param exceptionListner The execptionListener
+     * @param exceptionListner The exceptionListener
      */
     public void setClosedListener(ClosedListener exceptionListner);
 }
