@@ -436,14 +436,11 @@ framing::MessageResumeResult SessionAdapter::MessageHandlerImpl::resume(const st
     
 
 
-void SessionAdapter::ExecutionHandlerImpl::sync()
-{
-    //TODO
-}
+void SessionAdapter::ExecutionHandlerImpl::sync() {} //essentially a no-op
 
 void SessionAdapter::ExecutionHandlerImpl::result(const SequenceNumber& /*commandId*/, const string& /*value*/)
 {
-    //TODO
+    //TODO: but currently never used client->server
 }
 
 void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t /*errorCode*/,
@@ -454,7 +451,8 @@ void SessionAdapter::ExecutionHandlerImpl::exception(uint16_t /*errorCode*/,
                                                      const std::string& /*description*/,
                                                      const framing::FieldTable& /*errorInfo*/)
 {
-    //TODO
+    //TODO: again, not really used client->server but may be important
+    //for inter-broker links
 }
 
 
