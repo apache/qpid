@@ -212,6 +212,7 @@ void Receiver::received(Message& msg)
     //uint64_t sentAt = msg.getHeaders().getTimestamp("sent-at");// TODO: add support for uint64_t as a field table type
     uint64_t receivedAt = current_time();
 
+    //std::cerr << "Latency: " << (receivedAt - sentAt) << std::endl;
     stats.update(((double) (receivedAt - sentAt)) / TIME_MSEC);
 
     if (!opts.rate && count >= opts.count) {
@@ -274,24 +275,21 @@ void Sender::sendByRate()
         msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
     }
 
-    //calculate metrics required for target rate
-    uint msgsPerMsec = opts.rate / 1000;
+    //calculate interval (in micro secs) between messages to achieve desired rate
+    uint64_t interval = (1000*1000)/opts.rate;
 
     while (true) {
         uint64_t start(current_time());
-        for (uint i = 0; i < msgsPerMsec; i++) {
-            uint64_t sentAt(current_time());
-            msg.getDeliveryProperties().setTimestamp(sentAt);
-            //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
-            async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
-        }
+        msg.getDeliveryProperties().setTimestamp(start);
+        //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
+        async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
+
         uint64_t timeTaken = (current_time() - start) / TIME_USEC;
-        if (timeTaken < 1000) {
-            usleep(1000 - timeTaken);
-        } else if (timeTaken > 1000) {
-            double timeMsecs = (double) timeTaken / 1000;       
-            std::cout << "Could not achieve desired rate. Sent " << msgsPerMsec << " in " 
-                      << (timeMsecs) << "ms (" << ((msgsPerMsec * 1000 * 1000) / timeTaken) << " msgs/s)" << std::endl;
+        if (timeTaken < interval) {
+            usleep(interval - timeTaken);
+        } else if (timeTaken > interval) {
+            std::cout << "Could not achieve desired rate! (Took " << timeTaken 
+                      << " microsecs to send message, aiming for " << interval << " microsecs)" << std::endl;
         }
     }
 }
