@@ -28,20 +28,20 @@ public interface Connection
    /**
     * Establish the connection using the given parameters
     *
-    * @param host
-    * @param port
-    * @param username
-    * @param password
-    * @throws QpidException
+    * @param host  host name
+    * @param port  port number
+    * @param virtualHost the virtual host name
+    * @param username user name
+    * @param password password
+    * @throws QpidException If the communication layer fails to establish the connection.
     */
    public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException;
-
 
    /**
     * Establish the connection with the broker identified by the URL.
     *
-    * @param url The URL of the broker.
-    * @throws QpidException If the communication layer fails to connect with the broker.
+    * @param url Specifies the URL of the broker.
+    * @throws QpidException If the communication layer fails to connect with the broker, an exception is thrown.
     */
    public void connect(String url) throws QpidException;
 
@@ -52,14 +52,14 @@ public interface Connection
      */
     public void close() throws QpidException;
 
-
     /**
      * Create a session for this connection.
-     * <p> The retuned session is suspended
-     * (i.e. this session is not attached with an underlying channel)
+     * <p> The returned session is suspended
+     * (i.e. this session is not attached to an underlying channel)
      *
-     * @param expiryInSeconds Expiry time expressed in seconds, if the value is <= 0 then the session does not expire.
-     * @return A Newly created (suspended) session.
+     * @param expiryInSeconds Expiry time expressed in seconds, if the value is less than
+     * or equal to 0 then the session does not expire.
+     * @return A newly created (suspended) session.
      */
     public Session createSession(long expiryInSeconds);
 
@@ -70,17 +70,17 @@ public interface Connection
      * <p> The retuned DtxSession is suspended
      * (i.e. this session is not attached with an underlying channel)
      *
-     * @param expiryInSeconds Expiry time expressed in seconds, if the value is <= 0 then the session does not expire.
-     * @return A Newly created (suspended) DtxSession.
+     * @param expiryInSeconds Expiry time expressed in seconds, if the value is less than or equal
+     * to 0 then the session does not expire.
+     * @return A newly created (suspended) DtxSession.
      */
     public DtxSession createDTXSession(int expiryInSeconds);
 
     /**
      * If the communication layer detects a serious problem with a connection, it
-     * informs the connection's ExceptionListener
+     * informs the connection's ClosedListener
      *
-     * @param exceptionListner The execptionListener
+     * @param exceptionListner The ClosedListener
      */
-
     public void setClosedListener(ClosedListener exceptionListner);
 }
