@@ -377,8 +377,7 @@ class DtxTests(TestBase010):
             session.dtx_end(xid=tx)
             self.fail("Attempted to end association with unknown xid, expected exception!")
         except SessionException, e:
-            #FYI: this is currently *not* the exception specified, but I think the spec is wrong! Confirming...
-            self.assertEquals(503, e.args[0].error_code)
+            self.assertEquals(409, e.args[0].error_code)
 
     def test_end(self):
         """

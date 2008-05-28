@@ -161,7 +161,7 @@ void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
 void SemanticState::endDtx(const std::string& xid, bool fail)
 {
     if (!dtxBuffer) {
-        throw CommandInvalidException(QPID_MSG("xid " << xid << " not associated with this session"));
+        throw IllegalStateException(QPID_MSG("xid " << xid << " not associated with this session"));
     }
     if (dtxBuffer->getXid() != xid) {
         throw CommandInvalidException(
