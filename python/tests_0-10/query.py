@@ -30,6 +30,11 @@ class QueryTests(TestBase010):
         result = session.queue_query(queue="my-queue")
         self.assertEqual("my-queue", result.queue)
 
+    def test_queue_query_unknown(self):
+        session = self.session
+        result = session.queue_query(queue="I don't exist")
+        self.assert_(not result.queue)
+
     def test_exchange_query(self):
         """
         Test that the exchange_query method works as expected
