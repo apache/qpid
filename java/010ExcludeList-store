@@ -40,5 +40,5 @@ org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFails
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxP2P
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
-// Those tests are failing, they must be removed from this list once QPID-1095 is fixed.
-org.apache.qpid.test.unit.xa.FaultTest#*
+// the 0.10 c++ broker does not implement forget
+org.apache.qpid.test.unit.xa.FaultTest#testForget
