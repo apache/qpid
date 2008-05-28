@@ -23,6 +23,7 @@ import org.apache.qpid.testutil.QpidTestCase;
 import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAResource;
 import javax.jms.*;
+import java.util.Random;
 
 /**
  *
@@ -55,7 +56,7 @@ public abstract  class AbstractXATestCase extends QpidTestCase
      /**
      * xid counter
      */
-    private static int _xidCounter = 0;
+    private static int _xidCounter = (new Random()).nextInt(1000000);
 
 
      protected void setUp() throws Exception
