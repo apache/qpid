@@ -199,7 +199,7 @@ class DtxTests(TestBase010):
         session1.dtx_rollback(xid=tx)
         
         #verification:
-        if failed: self.assertEquals(503, error.args[0].error_code)
+        if failed: self.assertEquals(530, error.args[0].error_code)
         else: self.fail("Xid already known, expected exception!")                    
 
     def test_forget_xid_on_completion(self):
@@ -439,7 +439,7 @@ class DtxTests(TestBase010):
 
         if failed:
             self.session.dtx_rollback(xid=tx)
-            self.assertEquals(503, error.args[0].error_code)
+            self.assertEquals(409, error.args[0].error_code)
         else:
             tester.close()
             other.close()
@@ -449,10 +449,6 @@ class DtxTests(TestBase010):
         """
         Test that a commit with one_phase = False is rejected if the
         transaction in question has not yet been prepared.        
-        """
-        """
-        Test that a commit with one_phase = True is rejected if the
-        transaction in question has already been prepared.        
         """
         other = self.connect()
         tester = other.session("tester", 1)
@@ -471,11 +467,96 @@ class DtxTests(TestBase010):
 
         if failed:
             self.session.dtx_rollback(xid=tx)
-            self.assertEquals(503, error.args[0].error_code)
+            self.assertEquals(409, error.args[0].error_code)
         else:
             tester.close()
             other.close()
             self.fail("Invalid use of one_phase=False, expected exception!")
+
+    def test_invalid_commit_not_ended(self):
+        """
+        Test that a commit fails if the xid is still associated with a session.        
+        """
+        other = self.connect()
+        tester = other.session("tester", 1)
+        self.session.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
+        self.session.dtx_select()
+        tx = self.xid("dummy")
+        self.session.dtx_start(xid=tx)
+        self.session.message_transfer(self.createMessage(tester, "dummy", "dummy", "whatever"))
+
+        failed = False
+        try:
+            tester.dtx_commit(xid=tx, one_phase=False)
+        except SessionException, e:
+            failed = True
+            error = e
+
+        if failed:
+            self.session.dtx_end(xid=tx)
+            self.session.dtx_rollback(xid=tx)
+            self.assertEquals(409, error.args[0].error_code)
+        else:
+            tester.close()
+            other.close()
+            self.fail("Commit should fail as xid is still associated!")
+
+    def test_invalid_rollback_not_ended(self):
+        """
+        Test that a rollback fails if the xid is still associated with a session.        
+        """
+        other = self.connect()
+        tester = other.session("tester", 1)
+        self.session.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
+        self.session.dtx_select()
+        tx = self.xid("dummy")
+        self.session.dtx_start(xid=tx)
+        self.session.message_transfer(self.createMessage(tester, "dummy", "dummy", "whatever"))
+
+        failed = False
+        try:
+            tester.dtx_rollback(xid=tx)
+        except SessionException, e:
+            failed = True
+            error = e
+
+        if failed:
+            self.session.dtx_end(xid=tx)
+            self.session.dtx_rollback(xid=tx)
+            self.assertEquals(409, error.args[0].error_code)
+        else:
+            tester.close()
+            other.close()
+            self.fail("Rollback should fail as xid is still associated!")
+
+
+    def test_invalid_prepare_not_ended(self):
+        """
+        Test that a prepare fails if the xid is still associated with a session.        
+        """
+        other = self.connect()
+        tester = other.session("tester", 1)
+        self.session.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
+        self.session.dtx_select()
+        tx = self.xid("dummy")
+        self.session.dtx_start(xid=tx)
+        self.session.message_transfer(self.createMessage(tester, "dummy", "dummy", "whatever"))
+
+        failed = False
+        try:
+            tester.dtx_prepare(xid=tx)
+        except SessionException, e:
+            failed = True
+            error = e
+
+        if failed:
+            self.session.dtx_end(xid=tx)
+            self.session.dtx_rollback(xid=tx)
+            self.assertEquals(409, error.args[0].error_code)
+        else:
+            tester.close()
+            other.close()
+            self.fail("Rollback should fail as xid is still associated!")
 
     def test_implicit_end(self):
         """
@@ -600,6 +681,34 @@ class DtxTests(TestBase010):
             session.dtx_start(resume=True)
         except SessionException, e:
             self.assertEquals(503, e.args[0].error_code)
+
+    def test_prepare_unknown(self):
+        session = self.session
+        try:
+            session.dtx_prepare(xid=self.xid("unknown"))
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
+
+    def test_commit_unknown(self):
+        session = self.session
+        try:
+            session.dtx_commit(xid=self.xid("unknown"))
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
+
+    def test_rollback_unknown(self):
+        session = self.session
+        try:
+            session.dtx_rollback(xid=self.xid("unknown"))
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
+
+    def test_get_timeout_unknown(self):
+        session = self.session
+        try:
+            session.dtx_get_timeout(xid=self.xid("unknown"))
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
     def xid(self, txid):
         DtxTests.tx_counter += 1

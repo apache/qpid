@@ -93,7 +93,7 @@ DtxWorkRecord* DtxManager::getWork(const std::string& xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
+        throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
     }
     return ptr_map_ptr(i);
 }
@@ -103,7 +103,7 @@ void DtxManager::remove(const std::string& xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
+        throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
     } else {
         work.erase(i);
     }
@@ -114,7 +114,7 @@ DtxWorkRecord* DtxManager::createWork(std::string xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i != work.end()) {
-        throw CommandInvalidException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
+        throw NotAllowedException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
     } else {
       return ptr_map_ptr(work.insert(xid, new DtxWorkRecord(xid, store)).first);
     }
