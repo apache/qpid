@@ -49,7 +49,19 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         /// <summary>Defines the name of the test topic to use with the tests.</summary>
         public const string TEST_ROUTING_KEY = "commitrollbacktestkey";
+        
+        /// <summary>Used to count test messages received so far.</summary>
+        private int messageReceivedCount;
 
+        /// <summary>Used to hold the expected number of messages to receive.</summary>
+        private int expectedMessageCount;
+
+        /// <summary>Monitor used to signal succesfull receipt of all test messages.</summary>
+        AutoResetEvent finishedEvent;
+        
+        /// <summary>Flag used to indicate that all messages really were received, and that the test did not just time out. </summary>
+        private bool allReceived;
+        
         [SetUp]
         public override void Init()
         {
@@ -60,6 +72,12 @@ namespace Apache.Qpid.Integration.Tests.testcases
                           true, false, null);
             SetUpEndPoint(1, true, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
                           true, false, null);
+            
+            // Clear counts
+            messageReceivedCount = 0;
+            expectedMessageCount = 0;
+            finishedEvent = new AutoResetEvent(false);
+            allReceived = false;
         }
 
         [TearDown]
@@ -189,5 +207,55 @@ namespace Apache.Qpid.Integration.Tests.testcases
             ConsumeNMessagesOnly(1, "F", testConsumer[1]);
             
         }
+        
+        [Test]
+        public void TestReceivePrePublished()
+        {
+        	// Send messages
+        	for (int i = 0; i < 10; ++i)
+            {
+	        	testProducer[0].Send(testChannel[0].CreateTextMessage("G"+i));
+	        	testChannel[0].Commit();
+        	}
+        	
+        	for (int i = 0; i < 10; ++i)
+            {
+        		ConsumeNMessages(1, "G"+i, testConsumer[1]);
+        	}
+        	testChannel[1].Commit();
+        }
+        
+        [Test]
+        public void TestReceivePrePublishedOnMessageHandler()
+        {
+        	testConsumer[1].OnMessage += new MessageReceivedDelegate(OnMessage);
+        	// Send messages
+        	for (int i = 0; i < 10; ++i)
+            {
+	        	testProducer[0].Send(testChannel[0].CreateTextMessage("G"+i));
+	        	testChannel[0].Commit();
+        	}
+        	expectedMessageCount = 10;
+        		
+            finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 30), false);
+
+            // Check that all messages really were received.
+            Assert.IsTrue(allReceived, "All messages were not received, only got: " + messageReceivedCount + " but wanted " + expectedMessageCount);
+        
+        	testChannel[1].Commit();
+        }
+        
+        /// <summary> Atomically increments the message count on every message, and signals once all messages in the test are received. </summary>
+        public void OnMessage(IMessage m)
+        {
+            int newCount = Interlocked.Increment(ref messageReceivedCount);
+
+            if (newCount >= expectedMessageCount)
+            {
+                allReceived = true;
+                finishedEvent.Set();
+            }
+        } 
+        
     }
 }
