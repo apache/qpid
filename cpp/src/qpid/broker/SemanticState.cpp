@@ -50,7 +50,6 @@ namespace qpid {
 namespace broker {
 
 using std::mem_fun_ref;
-using std::bind2nd;
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -106,7 +105,7 @@ void SemanticState::cancel(const string& tag){
         consumers.erase(i); 
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
-        for_each(unacked.begin(), unacked.end(), boost::bind(mem_fun_ref(&DeliveryRecord::cancel), _1, tag));
+        for_each(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::cancel, _1, tag));
         
     }
 }
@@ -387,12 +386,12 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 {
     {
         ack_iterator start = cumulative ? unacked.begin() : 
-            find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matchOrAfter), first));
+            find_if(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
         ack_iterator end = start;
         
         if (cumulative || first != last) {
             //need to find end (position it just after the last record in range)
-            end = find_if(start, unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::after), last));
+            end = find_if(start, unacked.end(), boost::bind(&DeliveryRecord::after, _1, last));
         } else if (start != unacked.end()) {
             //just acked single element (move end past it)
             ++end;
@@ -410,12 +409,12 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
                 //unacked and record it against that transaction:
                 TxOp::shared_ptr txAck(new DtxAck(accumulatedAck, unacked));
                 //then remove that slice from the unacked record:
-                unacked.remove_if(bind2nd(mem_fun_ref(&DeliveryRecord::coveredBy), &accumulatedAck));
+                unacked.remove_if(boost::bind(&DeliveryRecord::coveredBy, _1, &accumulatedAck));
                 accumulatedAck.clear();
                 dtxBuffer->enlist(txAck);    
             }
         } else {
-            for_each(start, end, bind2nd(mem_fun_ref(&DeliveryRecord::dequeue), 0));
+            for_each(start, end, boost::bind(&DeliveryRecord::dequeue, _1, (TransactionContext*) 0));
             unacked.erase(start, end);
         }
     }//end of lock scope for delivery lock (TODO this is ugly, make it prettier)
@@ -470,7 +469,7 @@ void SemanticState::recover(bool requeue)
         unacked.clear();
         for_each(copy.rbegin(), copy.rend(), mem_fun_ref(&DeliveryRecord::requeue));
     }else{
-        for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::redeliver), this));        
+        for_each(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::redeliver, _1, this));        
         //unconfirmed messages re redelivered and therefore have their
         //id adjusted, confirmed messages are not and so the ordering
         //w.r.t id is lost
@@ -605,7 +604,7 @@ Queue::shared_ptr SemanticState::getQueue(const string& name) const {
 
 AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
 {    
-    ack_iterator start = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matchOrAfter), first));
+    ack_iterator start = find_if(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
     ack_iterator end = start;
      
     if (start != unacked.end()) {
@@ -614,7 +613,7 @@ AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
             ++end;
         } else {
             //need to find end (position it just after the last record in range)
-            end = find_if(start, unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::after), last));
+            end = find_if(start, unacked.end(), boost::bind(&DeliveryRecord::after, _1, last));
         }
     }
     return AckRange(start, end);
@@ -633,7 +632,7 @@ void SemanticState::release(DeliveryId first, DeliveryId last, bool setRedeliver
     //to release in reverse order to keep the original transfer order
     DeliveryRecords::reverse_iterator start(range.end);
     DeliveryRecords::reverse_iterator end(range.start);
-    for_each(start, end, bind2nd(mem_fun_ref(&DeliveryRecord::release), setRedelivered));
+    for_each(start, end, boost::bind(&DeliveryRecord::release, _1, setRedelivered));
 }
 
 void SemanticState::reject(DeliveryId first, DeliveryId last)
@@ -681,7 +680,7 @@ void SemanticState::accepted(DeliveryId first, DeliveryId last)
 
         }
     } else {
-        for_each(range.start, range.end, bind2nd(mem_fun_ref(&DeliveryRecord::accept), 0));
+        for_each(range.start, range.end, boost::bind(&DeliveryRecord::accept, _1, (TransactionContext*) 0));
         unacked.remove_if(mem_fun_ref(&DeliveryRecord::isRedundant));
     }
 }
