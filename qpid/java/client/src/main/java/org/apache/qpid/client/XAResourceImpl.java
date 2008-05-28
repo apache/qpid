@@ -116,6 +116,17 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("end tx branch with xid: ", xid);
         }
+        switch (flag)
+        {
+            case(XAResource.TMSUCCESS):
+                break;
+            case(XAResource.TMFAIL):
+                break;
+            case(XAResource.TMSUSPEND):
+                break;
+            default:
+                 throw new XAException(XAException.XAER_INVAL);
+        }
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxEnd(convertXid(xid),
                         flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
@@ -270,8 +281,18 @@ public class XAResourceImpl implements XAResource
     {
         // the flag is ignored
         Future<RecoverResult> future = _xaSession.getQpidSession().dtxRecover();
-        RecoverResult res = future.get();
-        // todo make sure that the keys of the returned map are the xids
+        RecoverResult res = null;
+        try
+        {
+            res = future.get();
+        }
+        catch (SessionException e)
+        {
+            // we need to restore the qpidity session that has been closed
+            _xaSession.createSession();
+            // we should get a single exception
+            convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
+        }
         Xid[] result = new Xid[res.getInDoubt().size()];
         int i = 0;
         for (Object obj : res.getInDoubt())
@@ -365,6 +386,17 @@ public class XAResourceImpl implements XAResource
         if (_logger.isDebugEnabled())
         {
             _logger.debug("start tx branch with xid: ", xid);
+        }
+        switch (flag)
+        {
+            case(XAResource.TMNOFLAGS):
+                break;
+            case(XAResource.TMJOIN):
+                break;
+            case(XAResource.TMRESUME):
+                break;
+            default:
+                 throw new XAException(XAException.XAER_INVAL);
         }
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxStart(convertXid(xid),
