@@ -29,7 +29,7 @@ import org.apache.qpidity.transport.Header;
  * <li> n calls to addData
  * <li> messageReceived
  * </ul>
- * This is up to the implementation to assembled the message when the different parts
+ * It is up to the implementation to assemble the message once the different parts
  * are transferred.
  */
 public interface MessagePartListener
@@ -37,22 +37,21 @@ public interface MessagePartListener
     /**
      * Indicates the Message transfer has started.
      * 
-     * @param transferId
+     * @param transferId The message transfer ID. 
      */
     public void messageTransfer(int transferId);
     
     /**
-     * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
-     * or {@link org.apache.qpidity.ApplicationProperties} ) to the message being received.
+     * Add the following a header to the message being received.
      *
-     * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
+     * @param header Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      */
     public void messageHeader(Header header);
 
     /**
      * Add the following byte array to the content of the message being received
      *
-     * @param data Data to be added or streamed.
+     * @param src Data to be added or streamed.
      */
     public void data(ByteBuffer src);
 

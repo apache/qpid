@@ -26,7 +26,7 @@ import org.apache.qpidity.transport.XaResult;
 import org.apache.qpidity.transport.Xid;
 
 /**
- * This session�s resources are control under the scope of a distributed transaction.
+ * The resources for this session are controlled under the scope of a distributed transaction.
  */
 public interface DtxSession extends Session
 {
@@ -47,7 +47,7 @@ public interface DtxSession extends Session
     public Future<XaResult> dtxStart(Xid xid, Option... options);
 
     /**
-     * This method is called when the work done on behalf a transaction branch finishes or needs to
+     * This method is called when the work done on behalf of a transaction branch finishes or needs to
      * be suspended.
      * possible options are:
      * <ul>
@@ -60,21 +60,21 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be ended.
      * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
-     * @return Confirms to the client that the transaction branch is ended or specify the error condition.
+     * @return  Confirms to the client that the transaction branch is ended or specifies the error condition.
      */
     public Future<XaResult> dtxEnd(Xid xid, Option... options);
 
     /**
-     * Commit the work done on behalf a transaction branch. This method commits the work associated
+     * Commit the work done on behalf of a transaction branch. This method commits the work associated
      * with xid. Any produced messages are made available and any consumed messages are discarded.
-     * possible option is:
+     * The only possible option is:
      * <ul>
-     * <li> {@link Option#ONE_PHASE}: When set then one-phase commit optimization is used.
+     * <li> {@link Option#ONE_PHASE}: When set, one-phase commit optimization is used.
      * </ul>
      *
      * @param xid     Specifies the xid of the transaction branch to be committed.
      * @param options Available option is: {@link Option#ONE_PHASE}
-     * @return Confirms to the client that the transaction branch is committed or specify the error condition.
+     * @return Confirms to the client that the transaction branch is committed or specifies the error condition.
      */
     public Future<XaResult> dtxCommit(Xid xid, Option... options);
 
@@ -87,19 +87,19 @@ public interface DtxSession extends Session
 
     /**
      * This method obtains the current transaction timeout value in seconds. If set-timeout was not
-     * used prior to invoking this method, the return value is the default timeout; otherwise, the
+     * used prior to invoking this method, the return value is the default timeout value; otherwise, the
      * value used in the previous set-timeout call is returned.
      *
-     * @param xid Specifies the xid of the transaction branch for getting the timeout.
+     * @param xid Specifies the xid of the transaction branch used for getting the timeout.
      * @return The current transaction timeout value in seconds.
      */
     public Future<GetTimeoutResult> dtxGetTimeout(Xid xid);
 
     /**
-     * This method prepares for commitment any message produced or consumed on behalf of xid.
+     * This method prepares any message produced or consumed on behalf of xid, ready for commitment.
      *
-     * @param xid Specifies the xid of the transaction branch that can be prepared.
-     * @return The status of the prepare operation: can be one of those:
+     * @param xid Specifies the xid of the transaction branch to be prepared.
+     * @return The status of the prepare operation can be any one of:
      *         xa-ok: Normal execution.
      *         <p/>
      *         xa-rdonly: The transaction branch was read-only and has been committed.
@@ -114,17 +114,16 @@ public interface DtxSession extends Session
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
      * heuristically completed state.
-     * Todo The options ahould be removed once the xml is updated
      * @return a array of xids to be recovered.
      */
     public Future<RecoverResult> dtxRecover();
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
-     * any consumed messages are re-enqueued.
+     * any consumed messages are re-queued.
      *
-     * @param xid Specifies the xid of the transaction branch that can be rolled back.
-     * @return Confirms to the client that the transaction branch is rolled back or specify the error condition.
+     * @param xid Specifies the xid of the transaction branch to be rolled back.
+     * @return Confirms to the client that the transaction branch is rolled back or specifies the error condition.
      */
     public Future<XaResult> dtxRollback(Xid xid);
 
