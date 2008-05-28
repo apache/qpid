@@ -193,7 +193,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     _logger.debug("starting tx branch xid1");
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                 }
                 catch (XAException e)
                 {
@@ -224,7 +224,7 @@ public class TopicTest extends AbstractXATestCase
                 _logger.debug("start the xaResource for xid2");
                 try
                 {
-                    _xaResource.start(xid2, XAResource.TMSUCCESS);
+                    _xaResource.start(xid2, XAResource.TMNOFLAGS);
                 }
                 catch (XAException e)
                 {
@@ -366,7 +366,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     _topicConnection.start();
                     _logger.debug("start xid1");
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                     // start the connection
                     _topicConnection.start();
                     _logger.debug("produce a message with sequence number 1");
@@ -388,7 +388,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     _logger.debug("start xid2");
-                    _xaResource.start(xid2, XAResource.TMSUCCESS);
+                    _xaResource.start(xid2, XAResource.TMNOFLAGS);
                     _logger.debug("receive the previously produced message");
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
@@ -430,7 +430,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     _logger.debug("start xid3");
-                    _xaResource.start(xid3, XAResource.TMSUCCESS);
+                    _xaResource.start(xid3, XAResource.TMNOFLAGS);
                     _logger.debug(" receive the previously aborted consumed message");
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
@@ -457,7 +457,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     _logger.debug("start xid4");
-                    _xaResource.start(xid4, XAResource.TMSUCCESS);
+                    _xaResource.start(xid4, XAResource.TMNOFLAGS);
                     _logger.debug("check that topic is empty");
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message != null)
@@ -543,7 +543,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     _logger.debug(" consume 2 messages respectively with tx1, tx2 and tx3");
                     //----- start xid1
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 1; i <= 2; i++)
                     {
@@ -559,7 +559,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     _xaResource.end(xid1, XAResource.TMSUSPEND);
                     //----- start xid2
-                    _xaResource.start(xid2, XAResource.TMSUCCESS);
+                    _xaResource.start(xid2, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 3; i <= 4; i++)
                     {
@@ -575,7 +575,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     _xaResource.end(xid2, XAResource.TMSUSPEND);
                     //----- start xid3
-                    _xaResource.start(xid3, XAResource.TMSUCCESS);
+                    _xaResource.start(xid3, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 5; i <= 6; i++)
                     {
@@ -647,7 +647,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     // consume messages 1 - 4  + 7
                     //----- start xid1
-                    _xaResource.start(xid4, XAResource.TMSUCCESS);
+                    _xaResource.start(xid4, XAResource.TMNOFLAGS);
                     for (int i = 1; i <= 5; i++)
                     {
 
@@ -676,7 +676,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     // start xid6
-                    _xaResource.start(xid6, XAResource.TMSUCCESS);
+                    _xaResource.start(xid6, XAResource.TMNOFLAGS);
                     // should now be empty
                     message = (TextMessage) xaDurSub.receive(1000);
                     if (message != null)
@@ -769,7 +769,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     // consume 2 messages respectively with tx1, tx2 and tx3
                     //----- start xid1
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 1; i <= 2; i++)
                     {
@@ -785,7 +785,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     _xaResource.end(xid1, XAResource.TMSUCCESS);
                     //----- start xid2
-                    _xaResource.start(xid2, XAResource.TMSUCCESS);
+                    _xaResource.start(xid2, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 3; i <= 4; i++)
                     {
@@ -801,7 +801,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     _xaResource.end(xid2, XAResource.TMSUCCESS);
                     //----- start xid3
-                    _xaResource.start(xid3, XAResource.TMSUCCESS);
+                    _xaResource.start(xid3, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 5; i <= 6; i++)
                     {
@@ -863,7 +863,7 @@ public class TopicTest extends AbstractXATestCase
                     // xid1 has been aborted redo the job!
                     // consume 2 messages with tx1
                     //----- start xid1
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                     // receive the 2 first messages
                     for (int i = 1; i <= 2; i++)
                     {
@@ -940,7 +940,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     // consume messages 1 - 4
                     //----- start xid1
-                    _xaResource.start(xid4, XAResource.TMSUCCESS);
+                    _xaResource.start(xid4, XAResource.TMNOFLAGS);
                     for (int i = 1; i <= 4; i++)
                     {
                         message = (TextMessage) xaDurSub.receive(1000);
@@ -955,7 +955,7 @@ public class TopicTest extends AbstractXATestCase
                     }
                     _xaResource.end(xid4, XAResource.TMSUSPEND);
                     // consume messages 8 - 10
-                    _xaResource.start(xid5, XAResource.TMSUCCESS);
+                    _xaResource.start(xid5, XAResource.TMNOFLAGS);
                     for (int i = 7; i <= 10; i++)
                     {
                         message = (TextMessage) xaDurSub.receive(1000);
@@ -1000,7 +1000,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     // start xid6
-                    _xaResource.start(xid6, XAResource.TMSUCCESS);
+                    _xaResource.start(xid6, XAResource.TMNOFLAGS);
                     // should now be empty
                     message = (TextMessage) xaDurSub.receive(1000);
                     if (message != null)
@@ -1061,7 +1061,7 @@ public class TopicTest extends AbstractXATestCase
                 {
                     _topicConnection.start();
                     //----- start xid1
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                     // start the connection
                     _topicConnection.start();
                     // produce a message with sequence number 1
@@ -1083,7 +1083,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     // start xid2
-                    _xaResource.start(xid2, XAResource.TMSUCCESS);
+                    _xaResource.start(xid2, XAResource.TMNOFLAGS);
                     // receive the previously produced message
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
@@ -1166,7 +1166,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     // start xid3
-                    _xaResource.start(xid3, XAResource.TMSUCCESS);
+                    _xaResource.start(xid3, XAResource.TMNOFLAGS);
                     // receive the previously produced message and aborted
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message == null)
@@ -1193,7 +1193,7 @@ public class TopicTest extends AbstractXATestCase
                 try
                 {
                     // start xid4
-                    _xaResource.start(xid4, XAResource.TMSUCCESS);
+                    _xaResource.start(xid4, XAResource.TMNOFLAGS);
                     // should now be empty
                     TextMessage message = (TextMessage) xaDurSub.receive(1000);
                     if (message != null)
@@ -1248,7 +1248,7 @@ public class TopicTest extends AbstractXATestCase
                 // start the xaResource for xid1
                 try
                 {
-                    _xaResource.start(xid1, XAResource.TMSUCCESS);
+                    _xaResource.start(xid1, XAResource.TMNOFLAGS);
                 }
                 catch (XAException e)
                 {
@@ -1428,7 +1428,7 @@ public class TopicTest extends AbstractXATestCase
                 // close the session that deactivates the durable subscriber
                 stSession.close();
                 _logger.debug("migrate the durable subscriber to an xa one");
-                _xaResource.start(xid1, XAResource.TMSUCCESS);
+                _xaResource.start(xid1, XAResource.TMNOFLAGS);
                 durSub = _session.createDurableSubscriber(_topic, durSubName);
                 _logger.debug(" consume the second message with that xa durable subscriber and abort it");
                 message = (TextMessage) durSub.receive(1000);
@@ -1583,7 +1583,7 @@ public class TopicTest extends AbstractXATestCase
                 _logger.debug(" migrate the durable subscriber to an xa one");
                 _session = _topicConnection.createXATopicSession();
                 _xaResource = _session.getXAResource();
-                _xaResource.start(xid2, XAResource.TMSUCCESS);
+                _xaResource.start(xid2, XAResource.TMNOFLAGS);
                 durSub = _session.createDurableSubscriber(_topic, durSubName);
                 lock = new AtomicBoolean();
                 reset();
