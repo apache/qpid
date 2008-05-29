@@ -316,7 +316,8 @@ libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
-  qpid/client/Bounds.cpp		\
+  qpid/client/AckPolicy.cpp			\
+  qpid/client/Bounds.cpp			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/Connection.cpp			\
