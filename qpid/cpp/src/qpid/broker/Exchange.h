@@ -56,7 +56,7 @@ namespace qpid {
                 const framing::FieldTable args;
                 management::Binding::shared_ptr mgmtBinding;
 
-                Binding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent = 0,
+                Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
                         framing::FieldTable args = framing::FieldTable ());
                 ~Binding ();
                 management::ManagementObject::shared_ptr GetManagementObject () const;
