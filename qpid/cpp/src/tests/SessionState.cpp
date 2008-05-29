@@ -127,6 +127,7 @@ using qpid::SessionPoint;
 
 QPID_AUTO_TEST_CASE(testSendGetReplyList) {
     qpid::SessionState s;
+    s.setTimeout(1);
     s.senderGetCommandPoint();
     transfer1(s, "abc");
     transfers(s, "def");
@@ -142,6 +143,7 @@ QPID_AUTO_TEST_CASE(testNeedFlush) {
     // sync after 2 1-byte transfers or equivalent bytes.
     c.replayFlushLimit = 2*(transferFrameSize()+contentFrameSize());
     qpid::SessionState s(SessionId(), c);
+    s.setTimeout(1);
     s.senderGetCommandPoint();
     transfers(s, "a");
     BOOST_CHECK(!s.senderNeedFlush());
@@ -161,6 +163,7 @@ QPID_AUTO_TEST_CASE(testPeerConfirmed) {
     // sync after 2 1-byte transfers or equivalent bytes.
     c.replayFlushLimit = 2*(transferFrameSize()+contentFrameSize());
     qpid::SessionState s(SessionId(), c);
+    s.setTimeout(1);
     s.senderGetCommandPoint();
     transfers(s, "ab");
     BOOST_CHECK(s.senderNeedFlush());
@@ -191,6 +194,7 @@ QPID_AUTO_TEST_CASE(testPeerConfirmed) {
 
 QPID_AUTO_TEST_CASE(testPeerCompleted) {
     qpid::SessionState s;
+    s.setTimeout(1);
     s.senderGetCommandPoint();
     // Completion implies confirmation 
     transfers(s, "abc");
