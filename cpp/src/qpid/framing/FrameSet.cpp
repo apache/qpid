@@ -28,11 +28,12 @@
 using namespace qpid::framing;
 using namespace boost;
 
-FrameSet::FrameSet(const SequenceNumber& _id) : id(_id) {parts.reserve(4);}
+FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true) {parts.reserve(4);}
 
 void FrameSet::append(const AMQFrame& part)
 {
     parts.push_back(part);
+	recalculateSize = true;
 }
 
 bool FrameSet::isComplete() const
@@ -63,9 +64,14 @@ AMQHeaderBody* FrameSet::getHeaders()
 
 uint64_t FrameSet::getContentSize() const
 {
-    SumBodySize sum;
-    map_if(sum, TypeFilter<CONTENT_BODY>());
-    return sum.getSize();
+    if (recalculateSize)
+	{
+	    SumBodySize sum;
+        map_if(sum, TypeFilter<CONTENT_BODY>());
+        contentSize = sum.getSize();
+		recalculateSize = false;
+	}
+	return contentSize;
 }
 
 void FrameSet::getContent(std::string& out) const {
