@@ -22,9 +22,8 @@ package org.apache.qpid.server.subscription;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -66,9 +65,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     
     private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final Lock _stateChangeLock;
-    private final Lock _stateChangeExclusiveLock;
-
-
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -287,9 +283,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _deliveryMethod = deliveryMethod;
         _recordMethod = recordMethod;
 
-        ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-        _stateChangeLock = readWriteLock.readLock();
-        _stateChangeExclusiveLock = readWriteLock.writeLock();
+
+        _stateChangeLock = new ReentrantLock();
+
 
         if (arguments != null)
         {
@@ -445,7 +441,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         boolean closed = false;
         State state = getState();
 
-        _stateChangeExclusiveLock.lock();
+        _stateChangeLock.lock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -464,7 +460,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
         finally
         {
-            _stateChangeExclusiveLock.unlock();
+            _stateChangeLock.unlock();
         }
 
 
@@ -495,10 +491,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return !_creditManager.useCreditForMessage(msg.getMessage());//_channel.wouldSuspend(msg.getMessage());
     }
 
-    public Object getSendLock()
+    public void getSendLock()
     {
         _stateChangeLock.lock();
-        return _deleted;
     }
 
     public void releaseSendLock()

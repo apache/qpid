@@ -86,7 +86,7 @@ public class SubscriptionTestHelper implements Subscription
         //no-op
     }
 
-    public Object getSendLock()
+    public void getSendLock()
     {
         return new Object();
     }

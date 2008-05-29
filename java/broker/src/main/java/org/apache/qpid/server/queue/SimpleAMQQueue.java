@@ -278,7 +278,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
 
-        deliverAsync();
+        deliverAsync(subscription);
 
     }
 
@@ -456,8 +456,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private void deliverToSubscription(final Subscription sub, final QueueEntry entry)
             throws AMQException
     {
-        // the send lock is a read/write lock that prevents the subscription from changing status while we are in this
-        // block
+
         sub.getSendLock();
         try
         {
@@ -772,7 +771,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 _activeSubscriberCount.incrementAndGet();
 
             }
-            deliverAsync();
+            deliverAsync(sub);
         }
     }
 
@@ -1662,7 +1661,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         public void stateChanged(QueueEntry entry, QueueEntry.State oldSate, QueueEntry.State newState)
         {
             entry.removeStateChangeListener(this);
-            deliverAsync();
+            deliverAsync(_sub);
         }
     }
 }

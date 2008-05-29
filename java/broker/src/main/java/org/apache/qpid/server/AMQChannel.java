@@ -831,7 +831,7 @@ public class AMQChannel
                 // may need to deliver queued messages
                 for (Subscription s : _tag2SubscriptionMap.values())
                 {
-                    s.getQueue().deliverAsync();
+                    s.getQueue().deliverAsync(s);
                 }
             }
         }

@@ -73,7 +73,7 @@ public interface Subscription
 
     boolean wouldSuspend(QueueEntry msg);
 
-    Object getSendLock();
+    void getSendLock();
     void releaseSendLock();
 
     void resend(final QueueEntry entry) throws AMQException;
