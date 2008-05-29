@@ -514,7 +514,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
 
         QueueEntry node = sub.getLastSeenEntry();
-        while(node.isAcquired() || node.isDeleted() || !sub.hasInterest(node) )
+        while(node != null && (node.isAcquired() || node.isDeleted() || !sub.hasInterest(node)) )
         {
 
             QueueEntry newNode = _entries.next(node);
@@ -538,7 +538,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         else
         {
             node = sub.getLastSeenEntry();
-            if(entry.compareTo(node) < 0 && sub.hasInterest(entry))
+            if(node != null && entry.compareTo(node) < 0 && sub.hasInterest(entry))
             {
                 do
                 {
@@ -550,7 +550,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     {
                         node = sub.getLastSeenEntry();
                     }
-                } while (entry.compareTo(node) < 0);
+                } while (node != null && entry.compareTo(node) < 0);
             }
             return false;
         }
@@ -570,7 +570,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             if(!sub.isBrowser())
             {
                 QueueEntry subEntry = sub.getLastSeenEntry();
-                while(entry.compareTo(subEntry)<0)
+                while(subEntry != null && entry.compareTo(subEntry)<0)
                 {
                     if(sub.setLastSeenEntry(subEntry,entry))
                     {
@@ -1331,7 +1331,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         QueueEntry node = sub.getLastSeenEntry();
         
-        while(node.isAcquired() || node.isDeleted() || node.expired())
+        while(node != null && (node.isAcquired() || node.isDeleted() || node.expired()))
         {
             if(!node.isAcquired() && !node.isDeleted() && node.expired())
             {
@@ -1396,7 +1396,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     {
                         QueueEntry node = moveSubscriptionToNextNode(sub);
 
-                        if(sub.isActive())
+                        if(node != null && sub.isActive())
                         {
                             boolean advanced = false;
                             boolean subActive = false;
