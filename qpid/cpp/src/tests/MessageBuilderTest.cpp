@@ -216,7 +216,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(store.expectationsMet());
 
         //were the content frames dropped?
-        CPPUNIT_ASSERT_EQUAL((uint64_t) 0, builder.getMessage()->contentSize());
+        CPPUNIT_ASSERT(!builder.getMessage()->isContentLoaded());
     }
 };
 
