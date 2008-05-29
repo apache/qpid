@@ -185,7 +185,6 @@ libqpidcommon_la_SOURCES = \
   qpid/Serializer.h \
   qpid/SessionState.h \
   qpid/SessionState.cpp \
-  qpid/SessionId.h \
   qpid/SessionId.cpp \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
@@ -355,6 +354,7 @@ nobase_include_HEADERS = \
   qpid/ptr_map.h \
   qpid/RangeSet.h \
   qpid/RefCounted.h \
+  qpid/SessionId.h \
   qpid/SharedObject.h \
   qpid/StringUtils.h \
   qpid/Url.h \
