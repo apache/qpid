@@ -115,7 +115,24 @@ struct EnvOptMapper {
         return string();
     }
 
+
+    bool
+    isComment ( string const & str )
+    {
+      size_t i = str.find_first_not_of ( " \t" );
+
+      if ( i == string::npos )
+        return true;
+
+      return str[i] == '#';
+    }
+
+
     string configFileLine (string& line) {
+        
+        if ( isComment ( line ) )
+          return string();
+
         size_t pos = line.find ('=');
         if (pos == string::npos)
             return string();
@@ -126,14 +143,16 @@ struct EnvOptMapper {
             find_if(opts.options().begin(), opts.options().end(), boost::bind(matchCase, key, _1));
         if (i != opts.options().end())
             return string (line) + "\n";
+        else
+          return string();
 #else
-        try {
-            po::option_description desc = opts.find(key.c_str());
-            return string (line) + "\n";
-        }
-        catch (const std::exception& e) {}
+        // Use 'count' to see if this option exists.  Using 'find' will SEGV or hang
+        // if the option has not been defined yet.
+        if ( opts.count(key.c_str()) > 0 )
+          return string ( line ) + "\n";
+        else
+          return string ( );
 #endif
-        return string ();
     }
 
     const Options& opts;
@@ -190,19 +209,19 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
 
       for ( int i = 0; i < argc; ++ i )
       {
-	string s = argv[i];
-	int equals_pos = s.find_first_of ( '=' );
+        string s = argv[i];
+        size_t equals_pos = s.find_first_of ( '=' );
 
-	if ( string::npos == equals_pos )  // There's no equals sign.  This is a token.
-	{
-	  tokenized_argv.push_back(s);
-	}
-	else
-	{
-	  // Two tokens -- before and after the equals position.
-	  tokenized_argv.push_back ( s.substr(0, equals_pos) );
-	  tokenized_argv.push_back ( s.substr(equals_pos+1) );
-	}
+        if ( string::npos == equals_pos )  // There's no equals sign.  This is a token.
+        {
+          tokenized_argv.push_back(s);
+        }
+        else
+        {
+          // Two tokens -- before and after the equals position.
+          tokenized_argv.push_back ( s.substr(0, equals_pos) );
+          tokenized_argv.push_back ( s.substr(equals_pos+1) );
+        }
       }
 
 
@@ -224,35 +243,35 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
       while ( iter < the_end )
       {
        /*
-	* If this is an argument that is registered,
-	* copy it to filtered_argv and also copy all
-	* of its arguments.
-	*/
+        * If this is an argument that is registered,
+        * copy it to filtered_argv and also copy all
+        * of its arguments.
+        */
        if ( is_registered_option ( * iter ) )
        {
-	 // Store this recognized arg.
-	 filtered_argv.push_back ( * iter );
-	 ++ iter;
+         // Store this recognized arg.
+         filtered_argv.push_back ( * iter );
+         ++ iter;
 
-	 // Copy all values for the above arg.
-	 // Args are tokens that do not start with a minus.
-	 while ( (iter < the_end) && ((* iter)[0] != '-') )
-	 {
-	   filtered_argv.push_back ( * iter );
-	   ++ iter;
-	 }
+         // Copy all values for the above arg.
+         // Args are tokens that do not start with a minus.
+         while ( (iter < the_end) && ((* iter)[0] != '-') )
+         {
+           filtered_argv.push_back ( * iter );
+           ++ iter;
+         }
        }
        else
        {
-	 // Skip this unrecognized arg.
-	 ++ iter;
+         // Skip this unrecognized arg.
+         ++ iter;
 
-	 // Copy all values for the above arg.
-	 // Values are tokens that do not start with a minus.
-	 while ( (iter < the_end) && ( '-' != (*iter)[0] ) )
-	 {
-	   ++ iter;
-	 }
+         // Copy all values for the above arg.
+         // Values are tokens that do not start with a minus.
+         while ( (iter < the_end) && ( '-' != (*iter)[0] ) )
+         {
+           ++ iter;
+         }
        }
      }
 
@@ -264,9 +283,9 @@ void Options::parse(int argc, char** argv, const std::string& configFile, bool a
 
      // cout << "NEW ARGV: |";
      for ( iter = filtered_argv.begin();
-	   iter < filtered_argv.end();
-	   ++ iter, ++ i
-	 )
+           iter < filtered_argv.end();
+           ++ iter, ++ i
+         )
      {
        new_argv[i] = strdup( (* iter).c_str() );
        // cout << " " << new_argv[i] ;
