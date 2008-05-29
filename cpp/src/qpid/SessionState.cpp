@@ -110,13 +110,13 @@ void SessionState::senderRecord(const AMQFrame& f) {
     if (isControl(f)) return;   // Ignore control frames.
     QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
     stateful = true;
-    sender.replayList.push_back(f);
+    if (timeout) sender.replayList.push_back(f);
     sender.unflushedSize += f.size();
     sender.replaySize += f.size();
     sender.incomplete += sender.sendPoint.command;
     sender.sendPoint.advance(f);
     if (config.replayHardLimit && config.replayHardLimit < sender.replaySize) 
-        throw ResourceLimitExceededException("Replay bufffer exceeeded hard limit");
+        throw ResourceLimitExceededException("Replay buffer exceeeded hard limit");
 }
 
 bool SessionState::senderNeedFlush() const {
