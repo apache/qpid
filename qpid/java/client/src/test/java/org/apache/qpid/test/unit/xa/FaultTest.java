@@ -388,6 +388,17 @@ public class FaultTest extends AbstractXATestCase
         {
             fail("Caught wrong exception, expected XAException, got: " + ex);
         }
+        finally
+        {
+            try
+            {
+                _xaResource.commit(xid, false);
+            }
+            catch (XAException e)
+            {
+               fail("Cannot commit prepared tx: " + e);
+            }
+        }
     }
 
      /**
