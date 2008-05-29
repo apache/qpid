@@ -245,12 +245,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throw new ExistingExclusiveSubscription();
         }
 
-        if(exclusive && getConsumerCount() != 0)
+        if(exclusive)
         {
-            throw new ExistingSubscriptionPreventsExclusive();
+            if(getConsumerCount() != 0)
+            {
+                throw new ExistingSubscriptionPreventsExclusive();
+            }
+            else
+            {
+                _exclusiveSubscriber = subscription;
+
+            }
         }
 
-        setExclusiveSubscriber(subscription);
 
         _activeSubscriberCount.incrementAndGet();
         subscription.setStateListener(this);
@@ -271,7 +278,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
 
-        deliverAsync(subscription);
+        deliverAsync();
 
     }
 
@@ -765,7 +772,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 _activeSubscriberCount.incrementAndGet();
 
             }
-            deliverAsync(sub);
+            deliverAsync();
         }
     }
 
@@ -1655,7 +1662,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         public void stateChanged(QueueEntry entry, QueueEntry.State oldSate, QueueEntry.State newState)
         {
             entry.removeStateChangeListener(this);
-            deliverAsync(_sub);
+            deliverAsync();
         }
     }
 }

@@ -152,6 +152,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void deliverAsync(final Subscription sub);
 
+    void deliverAsync();
+
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
