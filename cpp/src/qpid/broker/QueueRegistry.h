@@ -48,7 +48,7 @@ class QueueRegistry{
      * was created by this declare call false if it already existed.
      */
     std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, bool autodelete = false, 
-                                               const OwnershipToken* const owner = 0);
+                                               const OwnershipToken* owner = 0);
 
     /**
      * Destroy the named queue.
