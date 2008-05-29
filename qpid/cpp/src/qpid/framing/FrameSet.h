@@ -38,6 +38,8 @@ class FrameSet
     typedef std::vector<AMQFrame> Frames;
     const SequenceNumber id;
     Frames parts;
+	mutable uint64_t contentSize;
+	mutable bool recalculateSize;
 
 public:
     typedef boost::shared_ptr<FrameSet> shared_ptr;
