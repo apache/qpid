@@ -196,6 +196,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
             }
             else
             {
+                // TODO
+
                 int offset;
                 final int queueCount = destinationQueues.size();
                 if(queueCount == 1)

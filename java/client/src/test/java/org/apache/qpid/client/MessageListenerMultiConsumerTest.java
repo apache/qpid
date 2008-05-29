@@ -215,23 +215,26 @@ public class MessageListenerMultiConsumerTest extends TestCase
         {
             _logger.info("Performing Receive only with two consumers on one session ");
 
-            MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
 
-            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
+            int msg;
+            for (msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
 
-                final Message message = _consumer1.receive(100000);
+                final Message message = _consumer1.receive(1000);
                 if(message == null)
                 {
-                    System.out.println("!!!!!!!!   " + msg);
+                    break;
                 }
-                assertTrue(message != null);
+
             }
 
-            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
+            _consumer1.close();
+            _clientSession1.close();
+
+            for (; msg < MSG_COUNT ; msg++)
             {
-                assertTrue(consumer2.receive(10000) != null);
+                assertTrue("Failed at msg id" + msg, _consumer2.receive(1000) != null);
             }
         }
         else

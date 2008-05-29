@@ -461,8 +461,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         try
         {
             if(subscriptionReadyAndHasInterest(sub, entry)
-               && !sub.isSuspended()
-               && sub.isActive())
+               && !sub.isSuspended())
             {
                 if( !sub.wouldSuspend(entry))
                 {
@@ -474,13 +473,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     }
                     else
                     {
-                        // Update the last seen marker for this subscription, if some other process hasn't already
-                        // updated it
-                        QueueEntry queueEntryNode =  sub.getLastSeenEntry();
-                        if(_entries.next(queueEntryNode) == entry)
-                        {
-                            sub.setLastSeenEntry(queueEntryNode,entry);
-                        }
 
                         deliverMessage(sub, entry);
 
@@ -552,7 +544,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             // Otherwise we should try to update the subscription's last seen entry to the entry we got to, providing
             // no-one else has updated it to something furhter on in the list
-            updateLastSeenEntry(sub, entry);
+            //TODO - check
+            //updateLastSeenEntry(sub, entry);
             return false;
         }
 
@@ -1385,7 +1378,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         while(deliveries != 0 && ((previousStateChangeCount != (stateChangeCount = _stateChangeCount.get())) || deliveryIncomplete ) && _asynchronousRunner.compareAndSet(null,runner))
         {
-            // we want to have one extra loop after the every subscription has reached the point where it cannot move
+            // we want to have one extra loop after every subscription has reached the point where it cannot move
             // further, just in case the advance of one subscription in the last loop allows a different subscription to
             // move forward in the next iteration
 
