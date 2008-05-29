@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQChannel
 {
@@ -818,7 +819,6 @@ public class AMQChannel
     }
 
 
-
     public void setSuspended(boolean suspended)
     {
 
@@ -828,16 +828,11 @@ public class AMQChannel
         {
             if (wasSuspended)
             {
-                _log.debug("Unsuspending channel " + this);
                 // may need to deliver queued messages
                 for (Subscription s : _tag2SubscriptionMap.values())
                 {
-                    s.getQueue().deliverAsync();
+                    s.getQueue().deliverAsync(s);
                 }
-            }
-            else
-            {
-                _log.debug("Suspending channel " + this);
             }
         }
     }
