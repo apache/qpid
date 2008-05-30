@@ -189,7 +189,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
                 throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
             }
-            Configurator.configure(instance);
+            Configurator.configure(instance, _configuration);
             _configuredObjects.put(instanceType, instance);
         }
         return instance;
