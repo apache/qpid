@@ -1,8 +1,8 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CFLAGS)  $(APR_CXXFLAGS) -DBOOST_TEST_DYN_LINK
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(CFLAGS)  $(APR_CXXFLAGS) -DBOOST_TEST_DYN_LINK
 INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
 abs_builddir=@abs_builddir@
-extra_libs = $(CPPUNIT_LIBS)
+extra_libs = 
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
@@ -45,7 +45,25 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	StringUtils.cpp \
 	IncompleteMessageList.cpp \
 	RangeSet.cpp \
-	AtomicValue.cpp
+	AtomicValue.cpp \
+	QueueTest.cpp \
+	AccumulatedAckTest.cpp \
+	DtxWorkRecordTest.cpp \
+	DeliveryRecordTest.cpp \
+	ExchangeTest.cpp \
+	HeadersExchangeTest.cpp	\
+	MessageTest.cpp \
+	QueueRegistryTest.cpp \
+	QueuePolicyTest.cpp \
+	FramingTest.cpp \
+	HeaderTest.cpp \
+	SequenceNumberTest.cpp
+	TimerTest.cpp \
+	TopicExchangeTest.cpp \
+	TxAckTest.cpp \
+	TxBufferTest.cpp \
+	TxPublishTest.cpp \
+	MessageBuilderTest.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
@@ -78,54 +96,33 @@ txtest_SOURCES=txtest.cpp  TestOptions.h
 txtest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=latencytest
-latencytest_SOURCES=latencytest.cpp  TestOptions.h
+latencytest_SOURCES=latencytest.cpp TestOptions.h
 latencytest_LDADD=$(lib_client) 
 
-# NB: CppUnit test libraries below will be migrated to boost test programs.
-#
+check_PROGRAMS+=client_test
+client_test_SOURCES=client_test.cpp TestOptions.h
+client_test_LDADD=$(lib_client) 
 
-# cppunit tests
-broker_unit_tests =	\
-  AccumulatedAckTest	\
-  DtxWorkRecordTest     \
-  DeliveryRecordTest    \
-  ExchangeTest		\
-  HeadersExchangeTest	\
-  MessageTest		\
-  QueueRegistryTest	\
-  QueueTest		\
-  QueuePolicyTest	\
-  TimerTest		\
-  TopicExchangeTest	\
-  TxAckTest		\
-  TxBufferTest		\
-  TxPublishTest		\
-  MessageBuilderTest
+check_PROGRAMS+=topic_listener
+topic_listener_SOURCES=topic_listener.cpp TestOptions.h
+topic_listener_LDADD=$(lib_client) 
 
-framing_unit_tests =	\
-  FramingTest		\
-  HeaderTest		\
-  SequenceNumberTest
+check_PROGRAMS+=topic_publisher
+topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h
+topic_publisher_LDADD=$(lib_client) 
 
-unit_tests =		\
-  $(broker_unit_tests)	\
-  $(client_unit_tests)	\
-  $(framing_unit_tests)	\
-  $(misc_unit_tests)
+check_PROGRAMS+=publish
+publish_SOURCES=publish.cpp TestOptions.h
+publish_LDADD=$(lib_client) 
 
-# Executables for client tests
-
-testprogs=		\
-  client_test		\
-  topic_listener	\
-  topic_publisher
-
-check_PROGRAMS += $(testprogs) publish consume
+check_PROGRAMS+=consume
+consume_SOURCES=consume.cpp  TestOptions.h
+consume_LDADD=$(lib_client) 
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest
-TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker run_federation_tests
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -141,32 +138,11 @@ EXTRA_DIST +=								\
   TxMocks.h								\
   qpid_test_plugin.h
 
-include gen.mk
-
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
 libdlclose_noop_la_SOURCES = dlclose_noop.c
 
-gen.mk: Makefile.am
-	(									\
-	  for i in $(testprogs); do						\
-	    echo $${i}_SOURCES = $$i.cpp;					\
-	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)';	\
-	  done;									\
-	  libs=;								\
-	  for i in $(unit_tests); do						\
-	    echo "check_LTLIBRARIES +=$${i}.la";				\
-	    echo $${i}_la_SOURCES = $$i.cpp;					\
-	    echo $${i}_la_LIBADD = '$$(lib_common) $$(lib_client)';		\
-	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';		\
-	    echo $${i}_la_LDFLAGS = "-module -rpath `pwd`";			\
-	  done;									\
-	)					\
-	> $@-t
-	mv $@-t $@
-
 CLEANFILES+=valgrind.out *.log *.vglog dummy_test $(unit_wrappers)
-MAINTAINERCLEANFILES=gen.mk
 
 # FIXME aconway 2008-05-23: Disabled interop_runner because it uses
 # the obsolete Channel class.  Convert to Session and re-enable.
@@ -184,13 +160,6 @@ MAINTAINERCLEANFILES=gen.mk
 #   TestCase.h			\
 #   TestOptions.h
 # interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
-
-publish_SOURCES = publish.cpp
-publish_LDADD = $(lib_client) $(lib_common) $(extra_libs)
-
-consume_SOURCES = consume.cpp
-consume_LDADD = $(lib_client) $(lib_common) $(extra_libs)
-
 
 
 # Longer running stability tests, not run by default check: target.

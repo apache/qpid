@@ -22,7 +22,7 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManager.h"
 #include "qpid/broker/TxAck.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <iostream>
 #include <list>
 #include <vector>
@@ -34,38 +34,29 @@ using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-class TxAckTest : public CppUnit::TestCase  
+
+class TestMessageStore : public NullMessageStore
 {
-
-    class TestMessageStore : public NullMessageStore
+  public:
+    vector<intrusive_ptr<PersistableMessage> > dequeued;
+    
+    void dequeue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& /*queue*/)
     {
-    public:
-        vector<intrusive_ptr<PersistableMessage> > dequeued;
+        dequeued.push_back(msg);
+    }
 
-        void dequeue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& /*queue*/)
-        {
-            dequeued.push_back(msg);
-        }
+    TestMessageStore() : NullMessageStore() {}
+    ~TestMessageStore(){}
+};
 
-        TestMessageStore() : NullMessageStore() {}
-        ~TestMessageStore(){}
-    };
-
-    CPPUNIT_TEST_SUITE(TxAckTest);
-    CPPUNIT_TEST(testPrepare);
-    CPPUNIT_TEST(testCommit);
-    CPPUNIT_TEST_SUITE_END();
-
-
+struct TxAckTest
+{
     AccumulatedAck acked;
     TestMessageStore store;
     Queue::shared_ptr queue;
     vector<intrusive_ptr<Message> > messages;
     list<DeliveryRecord> deliveries;
     TxAck op;
-
-
-public:
 
     TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
     {
@@ -84,31 +75,35 @@ public:
         acked.update(9, 9);
     }      
 
-    void testPrepare()
-    {
-        //ensure acked messages are discarded, i.e. dequeued from store
-        op.prepare(0);
-        CPPUNIT_ASSERT_EQUAL((size_t) 7, store.dequeued.size());
-        CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
-        int dequeued[] = {0, 1, 2, 3, 4, 6, 8};
-        for (int i = 0; i < 7; i++) {
-            CPPUNIT_ASSERT_EQUAL(static_pointer_cast<PersistableMessage>(messages[dequeued[i]]), store.dequeued[i]);
-        }
-    }
-
-    void testCommit()
-    {
-        //emsure acked messages are removed from list
-        op.commit();
-        CPPUNIT_ASSERT_EQUAL((size_t) 3, deliveries.size());
-        list<DeliveryRecord>::iterator i = deliveries.begin();
-        CPPUNIT_ASSERT(i->matches(6));//msg 6
-        CPPUNIT_ASSERT((++i)->matches(8));//msg 8
-        CPPUNIT_ASSERT((++i)->matches(10));//msg 10
-    }
 };
 
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(TxAckTest);
+QPID_AUTO_TEST_SUITE(TxAckTestSuite)
 
+QPID_AUTO_TEST_CASE(testPrepare)
+{
+    TxAckTest t;
+
+    //ensure acked messages are discarded, i.e. dequeued from store
+    t.op.prepare(0);
+    BOOST_CHECK_EQUAL((size_t) 7, t.store.dequeued.size());
+    BOOST_CHECK_EQUAL((size_t) 10, t.deliveries.size());
+    int dequeued[] = {0, 1, 2, 3, 4, 6, 8};
+    for (int i = 0; i < 7; i++) {
+        BOOST_CHECK_EQUAL(static_pointer_cast<PersistableMessage>(t.messages[dequeued[i]]), t.store.dequeued[i]);
+    }
+}
+
+QPID_AUTO_TEST_CASE(testCommit)
+{
+    TxAckTest t;
+
+    //ensure acked messages are removed from list
+    t.op.commit();
+    BOOST_CHECK_EQUAL((size_t) 3, t.deliveries.size());
+    list<DeliveryRecord>::iterator i = t.deliveries.begin();
+    BOOST_CHECK(i->matches(6));//msg 6
+    BOOST_CHECK((++i)->matches(8));//msg 8
+    BOOST_CHECK((++i)->matches(10));//msg 10
+}
+
+QPID_AUTO_TEST_SUITE_END()

@@ -19,71 +19,63 @@
  *
  */
 #include "qpid/broker/QueuePolicy.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-class QueuePolicyTest : public CppUnit::TestCase  
+QPID_AUTO_TEST_SUITE(QueuePolicyTestSuite)
+
+QPID_AUTO_TEST_CASE(testCount)
 {
-    CPPUNIT_TEST_SUITE(QueuePolicyTest);
-    CPPUNIT_TEST(testCount);
-    CPPUNIT_TEST(testSize);
-    CPPUNIT_TEST(testBoth);
-    CPPUNIT_TEST(testSettings);
-    CPPUNIT_TEST_SUITE_END();
+    QueuePolicy policy(5, 0);
+    BOOST_CHECK(!policy.limitExceeded());
+    for (int i = 0; i < 5; i++) policy.enqueued(10);
+    BOOST_CHECK_EQUAL((uint64_t) 0, policy.getMaxSize());
+    BOOST_CHECK_EQUAL((uint32_t) 5, policy.getMaxCount());
+    BOOST_CHECK(!policy.limitExceeded());
+    policy.enqueued(10);
+    BOOST_CHECK(policy.limitExceeded());
+    policy.dequeued(10);
+    BOOST_CHECK(!policy.limitExceeded());
+    policy.enqueued(10);
+    BOOST_CHECK(policy.limitExceeded());        
+}
 
-  public:
-    void testCount(){
-        QueuePolicy policy(5, 0);
-        CPPUNIT_ASSERT(!policy.limitExceeded());
-        for (int i = 0; i < 5; i++) policy.enqueued(10);
-        CPPUNIT_ASSERT_EQUAL((uint64_t) 0, policy.getMaxSize());
-        CPPUNIT_ASSERT_EQUAL((uint32_t) 5, policy.getMaxCount());
-        CPPUNIT_ASSERT(!policy.limitExceeded());
-        policy.enqueued(10);
-        CPPUNIT_ASSERT(policy.limitExceeded());
-        policy.dequeued(10);
-        CPPUNIT_ASSERT(!policy.limitExceeded());
-        policy.enqueued(10);
-        CPPUNIT_ASSERT(policy.limitExceeded());        
-    }
+QPID_AUTO_TEST_CASE(testSize)
+{
+    QueuePolicy policy(0, 50);
+    for (int i = 0; i < 5; i++) policy.enqueued(10);
+    BOOST_CHECK(!policy.limitExceeded());
+    policy.enqueued(10);
+    BOOST_CHECK(policy.limitExceeded());
+    policy.dequeued(10);
+    BOOST_CHECK(!policy.limitExceeded());
+    policy.enqueued(10);
+    BOOST_CHECK(policy.limitExceeded());        
+}
 
-    void testSize(){
-        QueuePolicy policy(0, 50);
-        for (int i = 0; i < 5; i++) policy.enqueued(10);
-        CPPUNIT_ASSERT(!policy.limitExceeded());
-        policy.enqueued(10);
-        CPPUNIT_ASSERT(policy.limitExceeded());
-        policy.dequeued(10);
-        CPPUNIT_ASSERT(!policy.limitExceeded());
-        policy.enqueued(10);
-        CPPUNIT_ASSERT(policy.limitExceeded());        
-    }
+QPID_AUTO_TEST_CASE(testBoth)
+{
+    QueuePolicy policy(5, 50);
+    for (int i = 0; i < 5; i++) policy.enqueued(11);
+    BOOST_CHECK(policy.limitExceeded());
+    policy.dequeued(20);
+    BOOST_CHECK(!policy.limitExceeded());//fails
+    policy.enqueued(5);
+    policy.enqueued(10);
+    BOOST_CHECK(policy.limitExceeded());
+}
 
-    void testBoth(){
-        QueuePolicy policy(5, 50);
-        for (int i = 0; i < 5; i++) policy.enqueued(11);
-        CPPUNIT_ASSERT(policy.limitExceeded());
-        policy.dequeued(20);
-        CPPUNIT_ASSERT(!policy.limitExceeded());//fails
-        policy.enqueued(5);
-        policy.enqueued(10);
-        CPPUNIT_ASSERT(policy.limitExceeded());
-    }
+QPID_AUTO_TEST_CASE(testSettings)
+{
+    //test reading and writing the policy from/to field table
+    FieldTable settings;
+    QueuePolicy a(101, 303);
+    a.update(settings);
+    QueuePolicy b(settings);
+    BOOST_CHECK_EQUAL(a.getMaxCount(), b.getMaxCount());
+    BOOST_CHECK_EQUAL(a.getMaxSize(), b.getMaxSize());
+}
 
-    void testSettings(){
-        //test reading and writing the policy from/to field table
-        FieldTable settings;
-        QueuePolicy a(101, 303);
-        a.update(settings);
-        QueuePolicy b(settings);
-        CPPUNIT_ASSERT_EQUAL(a.getMaxCount(), b.getMaxCount());
-        CPPUNIT_ASSERT_EQUAL(a.getMaxSize(), b.getMaxSize());
-    }
-};
-
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(QueuePolicyTest);
-
+QPID_AUTO_TEST_SUITE_END()

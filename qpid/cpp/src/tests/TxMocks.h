@@ -35,7 +35,7 @@ using std::string;
 template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<T>& actual){
     unsigned int i = 0;
     while(i < expected.size() && i < actual.size()){
-        CPPUNIT_ASSERT_EQUAL(expected[i], actual[i]);
+        BOOST_CHECK_EQUAL(expected[i], actual[i]);
         i++;
     }
     if (i < expected.size()) {
@@ -43,7 +43,7 @@ template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<
     } else if (i < actual.size()) {
         throw qpid::Exception(QPID_MSG("Extra " << actual[i]));
     }
-    CPPUNIT_ASSERT_EQUAL(expected.size(), actual.size());
+    BOOST_CHECK_EQUAL(expected.size(), actual.size());
 }
 
 class TxOpConstants{

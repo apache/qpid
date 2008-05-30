@@ -23,109 +23,93 @@
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-class HeadersExchangeTest : public CppUnit::TestCase
+QPID_AUTO_TEST_SUITE(HeadersExchangeTestSuite)
+    
+QPID_AUTO_TEST_CASE(testMatchAll) 
 {
-    CPPUNIT_TEST_SUITE(HeadersExchangeTest);
-    CPPUNIT_TEST(testMatchAll);
-    CPPUNIT_TEST(testMatchAny);
-    CPPUNIT_TEST(testMatchEmptyValue);
-    CPPUNIT_TEST(testMatchEmptyArgs);
-    CPPUNIT_TEST(testMatchNoXMatch);
-    CPPUNIT_TEST(testBindNoXMatch);
-    CPPUNIT_TEST_SUITE_END();
+    FieldTable b, m, n;
+    b.setString("x-match", "all");
+    b.setString("foo", "FOO");
+    b.setInt("n", 42);
+    m.setString("foo", "FOO");
+    m.setInt("n", 42);
+    BOOST_CHECK(HeadersExchange::match(b, m));
 
-  public:
-
-    void testMatchAll() 
-    {
-        FieldTable b, m, n;
-        b.setString("x-match", "all");
-        b.setString("foo", "FOO");
-        b.setInt("n", 42);
-        m.setString("foo", "FOO");
-        m.setInt("n", 42);
-        CPPUNIT_ASSERT(HeadersExchange::match(b, m));
-
-        // Ignore extras.
-        m.setString("extra", "x");
-        CPPUNIT_ASSERT(HeadersExchange::match(b, m));
+    // Ignore extras.
+    m.setString("extra", "x");
+    BOOST_CHECK(HeadersExchange::match(b, m));
         
-        // Fail mismatch, wrong value.
-        m.setString("foo", "NotFoo");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
+    // Fail mismatch, wrong value.
+    m.setString("foo", "NotFoo");
+    BOOST_CHECK(!HeadersExchange::match(b, m));
 
-        // Fail mismatch, missing value
-        n.setInt("n", 42);
-        n.setString("extra", "x");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, n));
-    }
+    // Fail mismatch, missing value
+    n.setInt("n", 42);
+    n.setString("extra", "x");
+    BOOST_CHECK(!HeadersExchange::match(b, n));
+}
 
-    void testMatchAny() 
-    {
-        FieldTable b, m, n;
-        b.setString("x-match", "any");
-        b.setString("foo", "FOO");
-        b.setInt("n", 42);
-        m.setString("foo", "FOO");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, n));
-        CPPUNIT_ASSERT(HeadersExchange::match(b, m));
-        m.setInt("n", 42);
-        CPPUNIT_ASSERT(HeadersExchange::match(b, m));
-    }
+QPID_AUTO_TEST_CASE(testMatchAny) 
+{
+    FieldTable b, m, n;
+    b.setString("x-match", "any");
+    b.setString("foo", "FOO");
+    b.setInt("n", 42);
+    m.setString("foo", "FOO");
+    BOOST_CHECK(!HeadersExchange::match(b, n));
+    BOOST_CHECK(HeadersExchange::match(b, m));
+    m.setInt("n", 42);
+    BOOST_CHECK(HeadersExchange::match(b, m));
+}
 
-    void testMatchEmptyValue() 
-    {
-        FieldTable b, m;
-        b.setString("x-match", "all");
-        b.set("foo", FieldTable::ValuePtr());
-        b.set("n", FieldTable::ValuePtr());
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
-        m.setString("foo", "blah");
-        m.setInt("n", 123);
-    }
+QPID_AUTO_TEST_CASE(testMatchEmptyValue) 
+{
+    FieldTable b, m;
+    b.setString("x-match", "all");
+    b.set("foo", FieldTable::ValuePtr());
+    b.set("n", FieldTable::ValuePtr());
+    BOOST_CHECK(!HeadersExchange::match(b, m));
+    m.setString("foo", "blah");
+    m.setInt("n", 123);
+}
 
-    void testMatchEmptyArgs()
-    {
-        FieldTable b, m;
-        m.setString("foo", "FOO");
+QPID_AUTO_TEST_CASE(testMatchEmptyArgs)
+{
+    FieldTable b, m;
+    m.setString("foo", "FOO");
         
-        b.setString("x-match", "all");
-        CPPUNIT_ASSERT(HeadersExchange::match(b, m));
-        b.setString("x-match", "any");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
-    }
+    b.setString("x-match", "all");
+    BOOST_CHECK(HeadersExchange::match(b, m));
+    b.setString("x-match", "any");
+    BOOST_CHECK(!HeadersExchange::match(b, m));
+}
     
 
-    void testMatchNoXMatch() 
-    {
-        FieldTable b, m;
-        b.setString("foo", "FOO");
-        m.setString("foo", "FOO");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
+QPID_AUTO_TEST_CASE(testMatchNoXMatch) 
+{
+    FieldTable b, m;
+    b.setString("foo", "FOO");
+    m.setString("foo", "FOO");
+    BOOST_CHECK(!HeadersExchange::match(b, m));
+}
+    
+QPID_AUTO_TEST_CASE(testBindNoXMatch) 
+{
+    HeadersExchange exchange("test");
+    Queue::shared_ptr queue;
+    std::string key;
+    FieldTable args;
+    try {
+        //just checking this doesn't cause assertion etc
+        exchange.bind(queue, key, &args);
+    } catch(qpid::Exception&) {
+        //expected
     }
-    
-    void testBindNoXMatch() 
-    {
-        HeadersExchange exchange("test");
-        Queue::shared_ptr queue;
-        std::string key;
-        FieldTable args;
-        try {
-            //just checking this doesn't cause assertion etc
-            exchange.bind(queue, key, &args);
-        } catch(qpid::Exception&) {
-            //expected
-        }
-    }
-    
-    
-};
-    
-// make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(HeadersExchangeTest);
+}
+
+QPID_AUTO_TEST_SUITE_END()    

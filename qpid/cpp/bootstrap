@@ -4,11 +4,6 @@ aclocal -I m4
 autoheader
 libtoolize --automake
 
-# Generate (for automake) lots of repetitive parts of tests/Makefile.am.
-(cd src/tests && rm -f gen.mk
-  perl -ne '/^(include |if |else|endif)/ or print' Makefile.am \
-      | make -f - abs_srcdir=`dirname $(pwd)` gen.mk > /dev/null )
-
 # Create initial Makefile fragments that will force make to generate
 # the real ones.
 cat > src/rubygen.mk <<EOF
