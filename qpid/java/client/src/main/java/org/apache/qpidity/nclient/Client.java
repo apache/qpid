@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.qpidity.nclient;
 
 import java.util.List;
@@ -25,6 +44,7 @@ import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
+import org.apache.qpidity.transport.network.io.IoHandler;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.network.nio.NioHandler;
 import org.slf4j.Logger;
@@ -52,6 +72,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException
     {
+
         final Condition negotiationComplete = _lock.newCondition();
         closeOk = _lock.newCondition();
         _lock.lock();
@@ -122,7 +143,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
             @Override public void init(Channel ch, ProtocolHeader hdr)
             {
                 // TODO: once the merge is done we'll need to update this code
-                // for handling 0.8 protocol version type i.e. major=8 and minor=0 :( 
+                // for handling 0.8 protocol version type i.e. major=8 and minor=0 :(
                 if (hdr.getMajor() != TransportConstants.getVersionMajor()
                         || hdr.getMinor() != TransportConstants.getVersionMinor())
                 {
@@ -148,19 +169,18 @@ public class Client implements org.apache.qpidity.nclient.Connection
         connectionDelegate.setVirtualHost(virtualHost);
 
         if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
-        {            
-            if( _logger.isDebugEnabled())
-            {
-                _logger.debug("using NIO");
-            }
+        {
+            _logger.info("using NIO Transport");
             _conn = NioHandler.connect(host, port,connectionDelegate);
+        }
+        else if (System.getProperty("transport","mina").equalsIgnoreCase("io"))
+        {
+            _logger.info("using Plain IO Transport");
+            _conn = IoHandler.connect(host, port,connectionDelegate);
         }
         else
         {
-            if( _logger.isDebugEnabled())
-            {
-                _logger.debug("using MINA");
-            }
+            _logger.info("using MINA Transport");
             _conn = MinaHandler.connect(host, port,connectionDelegate);
            // _conn = NativeHandler.connect(host, port,connectionDelegate);
         }
@@ -260,10 +280,19 @@ public class Client implements org.apache.qpidity.nclient.Connection
         ssn.attach(ch);
         ssn.sessionAttach(ssn.getName());
         ssn.sessionRequestTimeout(expiryInSeconds);
-        if (Boolean.getBoolean("batch") && System.getProperty("transport").equalsIgnoreCase("nio"))
+        String transport = System.getProperty("transport","mina");
+
+        try
         {
-            System.out.println("using batching");
-            NioHandler.startBatchingFrames(_conn.getConnectionId());
+            if (Boolean.getBoolean("batch") && ("io".equalsIgnoreCase(transport) || "nio".equalsIgnoreCase(transport)))
+            {
+                _logger.debug("using batch mode in transport " + transport);
+                IoHandler.startBatchingFrames(_conn.getConnectionId());
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
         }
         return ssn;
     }
