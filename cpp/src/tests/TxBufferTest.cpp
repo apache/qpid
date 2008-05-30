@@ -19,7 +19,7 @@
  *
  */
 #include "qpid/broker/TxBuffer.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <iostream>
 #include <vector>
 #include "TxMocks.h"
@@ -27,159 +27,150 @@
 using namespace qpid::broker;
 using boost::static_pointer_cast;
 
-class TxBufferTest : public CppUnit::TestCase  
+QPID_AUTO_TEST_SUITE(TxBufferTestSuite)
+
+QPID_AUTO_TEST_CASE(testCommitLocal)
 {
-    CPPUNIT_TEST_SUITE(TxBufferTest);
-    CPPUNIT_TEST(testCommitLocal);
-    CPPUNIT_TEST(testFailOnCommitLocal);
-    CPPUNIT_TEST(testPrepare);
-    CPPUNIT_TEST(testFailOnPrepare);
-    CPPUNIT_TEST(testRollback);
-    CPPUNIT_TEST(testBufferIsClearedAfterRollback);
-    CPPUNIT_TEST(testBufferIsClearedAfterCommit);
-    CPPUNIT_TEST_SUITE_END();
+    MockTransactionalStore store;
+    store.expectBegin().expectCommit();
 
-  public:
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectCommit();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test relative order
+    MockTxOp::shared_ptr opC(new MockTxOp());
+    opC->expectPrepare().expectCommit();
 
-    void testCommitLocal(){
-        MockTransactionalStore store;
-        store.expectBegin().expectCommit();
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));//opB enlisted twice
+    buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectCommit();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test relative order
-        MockTxOp::shared_ptr opC(new MockTxOp());
-        opC->expectPrepare().expectCommit();
+    BOOST_CHECK(buffer.commitLocal(&store));
+    store.check();
+    BOOST_CHECK(store.isCommitted());
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));//opB enlisted twice
-        buffer.enlist(static_pointer_cast<TxOp>(opC));
+QPID_AUTO_TEST_CASE(testFailOnCommitLocal)
+{
+    MockTransactionalStore store;
+    store.expectBegin().expectAbort();
 
-        CPPUNIT_ASSERT(buffer.commitLocal(&store));
-        store.check();
-        CPPUNIT_ASSERT(store.isCommitted());
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp(true));
+    opB->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
+    opC->expectRollback();
 
-    void testFailOnCommitLocal(){
-        MockTransactionalStore store;
-        store.expectBegin().expectAbort();
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
+    buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp(true));
-        opB->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
-        opC->expectRollback();
+    BOOST_CHECK(!buffer.commitLocal(&store));
+    BOOST_CHECK(store.isAborted());
+    store.check();
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-        buffer.enlist(static_pointer_cast<TxOp>(opC));
+QPID_AUTO_TEST_CASE(testPrepare)
+{
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectPrepare();
+    MockTxOp::shared_ptr opC(new MockTxOp());
+    opC->expectPrepare();
 
-        CPPUNIT_ASSERT(!buffer.commitLocal(&store));
-        CPPUNIT_ASSERT(store.isAborted());
-        store.check();
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
+    buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-    void testPrepare(){
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare();
-        MockTxOp::shared_ptr opC(new MockTxOp());
-        opC->expectPrepare();
+    BOOST_CHECK(buffer.prepare(0));
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-        buffer.enlist(static_pointer_cast<TxOp>(opC));
+QPID_AUTO_TEST_CASE(testFailOnPrepare)
+{
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare();
+    MockTxOp::shared_ptr opB(new MockTxOp(true));
+    opB->expectPrepare();
+    MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
 
-        CPPUNIT_ASSERT(buffer.prepare(0));
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
+    buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-    void testFailOnPrepare(){
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare();
-        MockTxOp::shared_ptr opB(new MockTxOp(true));
-        opB->expectPrepare();
-        MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
+    BOOST_CHECK(!buffer.prepare(0));
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-        buffer.enlist(static_pointer_cast<TxOp>(opC));
+QPID_AUTO_TEST_CASE(testRollback)
+{
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp(true));
+    opB->expectRollback();
+    MockTxOp::shared_ptr opC(new MockTxOp());
+    opC->expectRollback();
 
-        CPPUNIT_ASSERT(!buffer.prepare(0));
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
+    buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-    void testRollback(){
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp(true));
-        opB->expectRollback();
-        MockTxOp::shared_ptr opC(new MockTxOp());
-        opC->expectRollback();
+    buffer.rollback();
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-        buffer.enlist(static_pointer_cast<TxOp>(opC));
+QPID_AUTO_TEST_CASE(testBufferIsClearedAfterRollback)
+{
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectRollback();
 
-        buffer.rollback();
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
 
-    void testBufferIsClearedAfterRollback(){
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectRollback();
+    buffer.rollback();
+    buffer.commit();//second call should not reach ops
+    opA->check();
+    opB->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
+QPID_AUTO_TEST_CASE(testBufferIsClearedAfterCommit)
+{
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectCommit();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectCommit();
 
-        buffer.rollback();
-        buffer.commit();//second call should not reach ops
-        opA->check();
-        opB->check();
-    }
+    TxBuffer buffer;
+    buffer.enlist(static_pointer_cast<TxOp>(opA));
+    buffer.enlist(static_pointer_cast<TxOp>(opB));
 
-    void testBufferIsClearedAfterCommit(){
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectCommit();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectCommit();
+    buffer.commit();
+    buffer.rollback();//second call should not reach ops
+    opA->check();
+    opB->check();
+}
 
-        TxBuffer buffer;
-        buffer.enlist(static_pointer_cast<TxOp>(opA));
-        buffer.enlist(static_pointer_cast<TxOp>(opB));
-
-        buffer.commit();
-        buffer.rollback();//second call should not reach ops
-        opA->check();
-        opB->check();
-    }
-};
-
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(TxBufferTest);
-
+QPID_AUTO_TEST_SUITE_END()
