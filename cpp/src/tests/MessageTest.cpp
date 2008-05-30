@@ -25,7 +25,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
 
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 
 #include <iostream>
 
@@ -33,67 +33,57 @@ using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+QPID_AUTO_TEST_SUITE(MessageTestSuite)
 
-class MessageTest : public CppUnit::TestCase  
+QPID_AUTO_TEST_CASE(testEncodeDecode)
 {
-    CPPUNIT_TEST_SUITE(MessageTest);
-    CPPUNIT_TEST(testEncodeDecode);
-    CPPUNIT_TEST_SUITE_END();
+    string exchange = "MyExchange";
+    string routingKey = "MyRoutingKey";
+    Uuid messageId(true);
+    string data1("abcdefg");
+    string data2("hijklmn");
 
-  public:
+    intrusive_ptr<Message> msg(new Message());
 
-    void testEncodeDecode()
-    {
-        string exchange = "MyExchange";
-        string routingKey = "MyRoutingKey";
-        Uuid messageId(true);
-        string data1("abcdefg");
-        string data2("hijklmn");
+    AMQFrame method(in_place<MessageTransferBody>(
+                        ProtocolVersion(), exchange, 0, 0));
+    AMQFrame header(in_place<AMQHeaderBody>());
+    AMQFrame content1(in_place<AMQContentBody>(data1));
+    AMQFrame content2(in_place<AMQContentBody>(data2));
 
-        intrusive_ptr<Message> msg(new Message());
+    msg->getFrames().append(method);
+    msg->getFrames().append(header);
+    msg->getFrames().append(content1);
+    msg->getFrames().append(content2);
 
-        AMQFrame method(in_place<MessageTransferBody>(
-                            ProtocolVersion(), exchange, 0, 0));
-        AMQFrame header(in_place<AMQHeaderBody>());
-        AMQFrame content1(in_place<AMQContentBody>(data1));
-        AMQFrame content2(in_place<AMQContentBody>(data2));
+    MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
+    mProps->setContentLength(data1.size() + data2.size());        
+    mProps->setMessageId(messageId);
+    FieldTable applicationHeaders;
+    applicationHeaders.setString("abc", "xyz");
+    mProps->setApplicationHeaders(applicationHeaders);
+    DeliveryProperties* dProps = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
+    dProps->setRoutingKey(routingKey);
+    dProps->setDeliveryMode(PERSISTENT);
+    BOOST_CHECK(msg->isPersistent());
 
-        msg->getFrames().append(method);
-        msg->getFrames().append(header);
-        msg->getFrames().append(content1);
-        msg->getFrames().append(content2);
-
-        MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-        mProps->setContentLength(data1.size() + data2.size());        
-        mProps->setMessageId(messageId);
-        FieldTable applicationHeaders;
-        applicationHeaders.setString("abc", "xyz");
-        mProps->setApplicationHeaders(applicationHeaders);
-        DeliveryProperties* dProps = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
-        dProps->setRoutingKey(routingKey);
-        dProps->setDeliveryMode(PERSISTENT);
-        CPPUNIT_ASSERT(msg->isPersistent());
-
-        char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
-        Buffer wbuffer(buff, msg->encodedSize());
-        msg->encode(wbuffer);
+    char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
+    Buffer wbuffer(buff, msg->encodedSize());
+    msg->encode(wbuffer);
         
-        Buffer rbuffer(buff, msg->encodedSize());
-        msg = new Message();
-        msg->decodeHeader(rbuffer);
-        msg->decodeContent(rbuffer);
-        CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchangeName());
-        CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
-        CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
-        CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
-        CPPUNIT_ASSERT_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
-        CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
-        CPPUNIT_ASSERT_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
-        CPPUNIT_ASSERT(msg->isPersistent());
-    }
-};
+    Buffer rbuffer(buff, msg->encodedSize());
+    msg = new Message();
+    msg->decodeHeader(rbuffer);
+    msg->decodeContent(rbuffer);
+    BOOST_CHECK_EQUAL(exchange, msg->getExchangeName());
+    BOOST_CHECK_EQUAL(routingKey, msg->getRoutingKey());
+    BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
+    BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
+    BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
+    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
+    BOOST_CHECK_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
+    BOOST_CHECK(msg->isPersistent());
+}
 
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(MessageTest);
+QPID_AUTO_TEST_SUITE_END()
 

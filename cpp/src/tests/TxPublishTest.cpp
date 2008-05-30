@@ -21,7 +21,7 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManager.h"
 #include "qpid/broker/TxPublish.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <iostream>
 #include <list>
 #include <vector>
@@ -34,39 +34,32 @@ using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-class TxPublishTest : public CppUnit::TestCase  
-{
-    typedef std::pair<string, intrusive_ptr<PersistableMessage> > msg_queue_pair;
+typedef std::pair<string, intrusive_ptr<PersistableMessage> > msg_queue_pair;
 
-    class TestMessageStore : public NullMessageStore
+class TestMessageStore : public NullMessageStore
+{
+  public:
+    vector<msg_queue_pair> enqueued;
+        
+    void enqueue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
     {
-    public:
-        vector<msg_queue_pair> enqueued;
+        msg->enqueueComplete(); 
+        enqueued.push_back(msg_queue_pair(queue.getName(), msg));
+    }
         
-        void enqueue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
-        {
-            msg->enqueueComplete(); 
- 	        enqueued.push_back(msg_queue_pair(queue.getName(), msg));
-        }
-        
-        //dont care about any of the other methods:
-        TestMessageStore() : NullMessageStore(false) {}
-        ~TestMessageStore(){}
-    };
-    
-    CPPUNIT_TEST_SUITE(TxPublishTest);
-    CPPUNIT_TEST(testPrepare);
-    CPPUNIT_TEST(testCommit);
-    CPPUNIT_TEST_SUITE_END();
-    
+    //dont care about any of the other methods:
+    TestMessageStore() : NullMessageStore(false) {}
+    ~TestMessageStore(){}
+};
+
+struct TxPublishTest
+{
     
     TestMessageStore store;
     Queue::shared_ptr queue1;
     Queue::shared_ptr queue2;
     intrusive_ptr<Message> msg;
     TxPublish op;
-    
-public:
     
     TxPublishTest() :
         queue1(new Queue("queue1", false, &store, 0)), 
@@ -78,37 +71,41 @@ public:
         op.deliverTo(queue1);
         op.deliverTo(queue2);
     }      
-
-    void testPrepare()
-    {
-        intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
-        //ensure messages are enqueued in store
-        op.prepare(0);
-        CPPUNIT_ASSERT_EQUAL((size_t) 2, store.enqueued.size());
-        CPPUNIT_ASSERT_EQUAL(string("queue1"), store.enqueued[0].first);
-        CPPUNIT_ASSERT_EQUAL(pmsg, store.enqueued[0].second);
-        CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
-        CPPUNIT_ASSERT_EQUAL(pmsg, store.enqueued[1].second);
-	    CPPUNIT_ASSERT_EQUAL( true, ( static_pointer_cast<PersistableMessage>(msg))->isEnqueueComplete());
-    }
-
-    void testCommit()
-    {
-        //ensure messages are delivered to queue
-        op.prepare(0);
-        op.commit();
-        CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
-	intrusive_ptr<Message> msg_dequeue = queue1->dequeue().payload;
-
- 	CPPUNIT_ASSERT_EQUAL( true, (static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
-        CPPUNIT_ASSERT_EQUAL(msg, msg_dequeue);
-
-        CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue2->getMessageCount());
-        CPPUNIT_ASSERT_EQUAL(msg, queue2->dequeue().payload);            
-    }
 };
 
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(TxPublishTest);
 
+QPID_AUTO_TEST_SUITE(TxPublishTestSuite)
+    
+QPID_AUTO_TEST_CASE(testPrepare)
+{
+    TxPublishTest t;
+
+    intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(t.msg);
+    //ensure messages are enqueued in store
+    t.op.prepare(0);
+    BOOST_CHECK_EQUAL((size_t) 2, t.store.enqueued.size());
+    BOOST_CHECK_EQUAL(string("queue1"), t.store.enqueued[0].first);
+    BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[0].second);
+    BOOST_CHECK_EQUAL(string("queue2"), t.store.enqueued[1].first);
+    BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[1].second);
+    BOOST_CHECK_EQUAL( true, ( static_pointer_cast<PersistableMessage>(t.msg))->isEnqueueComplete());
+}
+
+QPID_AUTO_TEST_CASE(testCommit)
+{
+    TxPublishTest t;
+
+    //ensure messages are delivered to queue
+    t.op.prepare(0);
+    t.op.commit();
+    BOOST_CHECK_EQUAL((uint32_t) 1, t.queue1->getMessageCount());
+    intrusive_ptr<Message> msg_dequeue = t.queue1->dequeue().payload;
+
+    BOOST_CHECK_EQUAL( true, (static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
+    BOOST_CHECK_EQUAL(t.msg, msg_dequeue);
+
+    BOOST_CHECK_EQUAL((uint32_t) 1, t.queue2->getMessageCount());
+    BOOST_CHECK_EQUAL(t.msg, t.queue2->dequeue().payload);            
+}
+
+QPID_AUTO_TEST_SUITE_END()

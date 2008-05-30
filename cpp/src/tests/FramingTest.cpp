@@ -27,7 +27,7 @@
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -49,118 +49,105 @@ std::string tostring(const T& x)
     return out.str();
 }
 
-class FramingTest : public CppUnit::TestCase  
+QPID_AUTO_TEST_SUITE(FramingTestSuite)
+
+QPID_AUTO_TEST_CASE(testMessageTransferBody) 
 {
-    CPPUNIT_TEST_SUITE(FramingTest);
-    CPPUNIT_TEST(testMessageTransferBody); 
-    CPPUNIT_TEST(testConnectionSecureBody); 
-    CPPUNIT_TEST(testConnectionRedirectBody);
-    CPPUNIT_TEST(testQueueDeclareBody);
-    CPPUNIT_TEST(testConnectionRedirectBodyFrame);
-    CPPUNIT_TEST(testMessageCancelBodyFrame);
-    CPPUNIT_TEST_SUITE_END();
-
-  private:
     char buffer[1024];
-    ProtocolVersion version;
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    MessageTransferBody in(version, "my-exchange", 1, 1);
+    in.encode(wbuff);
+
+    Buffer rbuff(buffer, sizeof(buffer));
+    MessageTransferBody out(version);
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
     
-  public:
+QPID_AUTO_TEST_CASE(testConnectionSecureBody) 
+{
+    char buffer[1024];
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    std::string s = "security credential";
+    ConnectionSecureBody in(version, s);
+    in.encode(wbuff);
 
-    FramingTest() : version(highestProtocolVersion) {}
+    Buffer rbuff(buffer, sizeof(buffer));
+    ConnectionSecureBody out(version);
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
 
-    void testMessageTransferBody() 
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        MessageTransferBody in(version, "my-exchange", 1, 1);
-        in.encode(wbuff);
+QPID_AUTO_TEST_CASE(testConnectionRedirectBody)
+{
+    char buffer[1024];
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    std::string a = "hostA";
+    std::string b = "hostB";
+    Array hosts(0x95);
+    hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
+    hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
+        
+    ConnectionRedirectBody in(version, a, hosts);
+    in.encode(wbuff);
+        
+    Buffer rbuff(buffer, sizeof(buffer));
+    ConnectionRedirectBody out(version);
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
 
-        Buffer rbuff(buffer, sizeof(buffer));
-        MessageTransferBody out(version);
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
+QPID_AUTO_TEST_CASE(testQueueDeclareBody)
+{
+    char buffer[1024];
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    QueueDeclareBody in(version, "name", "dlq", true, false, true, false, FieldTable());
+    in.encode(wbuff);
+
+    Buffer rbuff(buffer, sizeof(buffer));
+    QueueDeclareBody out(version);
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
     
-    void testConnectionSecureBody() 
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        std::string s = "security credential";
-        ConnectionSecureBody in(version, s);
-        in.encode(wbuff);
-
-        Buffer rbuff(buffer, sizeof(buffer));
-        ConnectionSecureBody out(version);
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
-
-    void testConnectionRedirectBody()
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        std::string a = "hostA";
-        std::string b = "hostB";
-        Array hosts(0x95);
-        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
-        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
+QPID_AUTO_TEST_CASE(testConnectionRedirectBodyFrame)
+{
+    char buffer[1024];
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    std::string a = "hostA";
+    std::string b = "hostB";
+    Array hosts(0x95);
+    hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
+    hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
         
-        ConnectionRedirectBody in(version, a, hosts);
-        in.encode(wbuff);
-        
-        Buffer rbuff(buffer, sizeof(buffer));
-        ConnectionRedirectBody out(version);
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
+    AMQFrame in(in_place<ConnectionRedirectBody>(version, a, hosts));
+    in.setChannel(999);
+    in.encode(wbuff);
 
-    void testQueueDeclareBody()
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        QueueDeclareBody in(version, "name", "dlq", true, false, true, false, FieldTable());
-        in.encode(wbuff);
+    Buffer rbuff(buffer, sizeof(buffer));
+    AMQFrame out;
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
 
-        Buffer rbuff(buffer, sizeof(buffer));
-        QueueDeclareBody out(version);
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
-    
-    void testConnectionRedirectBodyFrame()
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        std::string a = "hostA";
-        std::string b = "hostB";
-        Array hosts(0x95);
-        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
-        hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
-        
-        AMQFrame in(in_place<ConnectionRedirectBody>(version, a, hosts));
-        in.setChannel(999);
-        in.encode(wbuff);
+QPID_AUTO_TEST_CASE(testMessageCancelBodyFrame)
+{
+    char buffer[1024];
+    ProtocolVersion version(highestProtocolVersion);
+    Buffer wbuff(buffer, sizeof(buffer));
+    AMQFrame in(in_place<MessageCancelBody>(version, "tag"));
+    in.setChannel(999);
+    in.encode(wbuff);
 
-        Buffer rbuff(buffer, sizeof(buffer));
-        AMQFrame out;
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
+    Buffer rbuff(buffer, sizeof(buffer));
+    AMQFrame out;
+    out.decode(rbuff);
+    BOOST_CHECK_EQUAL(tostring(in), tostring(out));
+}
 
-    void testMessageCancelBodyFrame()
-    {
-        Buffer wbuff(buffer, sizeof(buffer));
-        AMQFrame in(in_place<MessageCancelBody>(version, "tag"));
-        in.setChannel(999);
-        in.encode(wbuff);
-
-        Buffer rbuff(buffer, sizeof(buffer));
-        AMQFrame out;
-        out.decode(rbuff);
-        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-    }
-
- };
-
-
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(FramingTest);
-
-
-
+QPID_AUTO_TEST_SUITE_END()
