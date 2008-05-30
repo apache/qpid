@@ -7,7 +7,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        33%{?dist}
+Release:        34%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -18,7 +18,6 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 ExclusiveArch: i386 x86_64
 
 BuildRequires: boost-devel
-BuildRequires: cppunit-devel
 BuildRequires: doxygen
 BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
@@ -181,6 +180,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Fri May 30 2008 Gordon Sim <gsim@redhat.com> - 0.2-34
+- Removed cppunit as a dependency, all tests now use boost framework
+
 * Fri May  9 2008 Matthew Farrellee <mfarrellee@redhat> - 0.2-33
 - Moved qpidd.conf from qpidc package to qpidd package
 - Added BuildRequires xqilla-devel and xerces-c-devel to qpidd for XML Exchange

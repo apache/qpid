@@ -19,7 +19,7 @@
  *
  */
 #include "qpid/broker/DtxWorkRecord.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <iostream>
 #include <vector>
 #include "TxMocks.h"
@@ -27,176 +27,163 @@
 using namespace qpid::broker;
 using boost::static_pointer_cast;
 
-class DtxWorkRecordTest : public CppUnit::TestCase  
-{
-    CPPUNIT_TEST_SUITE(DtxWorkRecordTest);
-    CPPUNIT_TEST(testOnePhaseCommit);
-    CPPUNIT_TEST(testFailOnOnePhaseCommit);
-    CPPUNIT_TEST(testTwoPhaseCommit);
-    CPPUNIT_TEST(testFailOnTwoPhaseCommit);
-    CPPUNIT_TEST(testRollback);
-    CPPUNIT_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE(DtxWorkRecordTestSuite)
 
-  public:
+QPID_AUTO_TEST_CASE(testOnePhaseCommit){
+    MockTransactionalStore store;
+    store.expectBegin().expectCommit();
 
-    void testOnePhaseCommit(){
-        MockTransactionalStore store;
-        store.expectBegin().expectCommit();
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectCommit();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectPrepare().expectCommit();
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectCommit();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare().expectCommit();
-
-        DtxBuffer::shared_ptr bufferA(new DtxBuffer());
-        bufferA->enlist(static_pointer_cast<TxOp>(opA));
-        bufferA->markEnded();
-        DtxBuffer::shared_ptr bufferB(new DtxBuffer());
-        bufferB->enlist(static_pointer_cast<TxOp>(opB));
-        bufferB->markEnded();
+    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    bufferA->enlist(static_pointer_cast<TxOp>(opA));
+    bufferA->markEnded();
+    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    bufferB->enlist(static_pointer_cast<TxOp>(opB));
+    bufferB->markEnded();
         
-        DtxWorkRecord work("my-xid", &store);
-        work.add(bufferA);
-        work.add(bufferB);
+    DtxWorkRecord work("my-xid", &store);
+    work.add(bufferA);
+    work.add(bufferB);
 
-        work.commit(true);
+    work.commit(true);
 
-        store.check();
-        CPPUNIT_ASSERT(store.isCommitted());
-        opA->check();
-        opB->check();
-    }
+    store.check();
+    BOOST_CHECK(store.isCommitted());
+    opA->check();
+    opB->check();
+}
 
-    void testFailOnOnePhaseCommit(){
-        MockTransactionalStore store;
-        store.expectBegin().expectAbort();
+QPID_AUTO_TEST_CASE(testFailOnOnePhaseCommit){
+    MockTransactionalStore store;
+    store.expectBegin().expectAbort();
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp(true));
-        opB->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opC(new MockTxOp());
-        opC->expectRollback();
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp(true));
+    opB->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opC(new MockTxOp());
+    opC->expectRollback();
 
-        DtxBuffer::shared_ptr bufferA(new DtxBuffer());
-        bufferA->enlist(static_pointer_cast<TxOp>(opA));
-        bufferA->markEnded();
-        DtxBuffer::shared_ptr bufferB(new DtxBuffer());
-        bufferB->enlist(static_pointer_cast<TxOp>(opB));
-        bufferB->markEnded();
-        DtxBuffer::shared_ptr bufferC(new DtxBuffer());
-        bufferC->enlist(static_pointer_cast<TxOp>(opC));
-        bufferC->markEnded();
+    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    bufferA->enlist(static_pointer_cast<TxOp>(opA));
+    bufferA->markEnded();
+    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    bufferB->enlist(static_pointer_cast<TxOp>(opB));
+    bufferB->markEnded();
+    DtxBuffer::shared_ptr bufferC(new DtxBuffer());
+    bufferC->enlist(static_pointer_cast<TxOp>(opC));
+    bufferC->markEnded();
         
-        DtxWorkRecord work("my-xid", &store);
-        work.add(bufferA);
-        work.add(bufferB);
-        work.add(bufferC);
+    DtxWorkRecord work("my-xid", &store);
+    work.add(bufferA);
+    work.add(bufferB);
+    work.add(bufferC);
 
-        work.commit(true);
+    work.commit(true);
 
-        CPPUNIT_ASSERT(store.isAborted());
-        store.check();
+    BOOST_CHECK(store.isAborted());
+    store.check();
 
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-    void testTwoPhaseCommit(){
-        MockTransactionalStore store;
-        store.expectBegin2PC().expectPrepare().expectCommit();
+QPID_AUTO_TEST_CASE(testTwoPhaseCommit){
+    MockTransactionalStore store;
+    store.expectBegin2PC().expectPrepare().expectCommit();
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectCommit();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare().expectCommit();
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectCommit();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectPrepare().expectCommit();
 
-        DtxBuffer::shared_ptr bufferA(new DtxBuffer());
-        bufferA->enlist(static_pointer_cast<TxOp>(opA));
-        bufferA->markEnded();
-        DtxBuffer::shared_ptr bufferB(new DtxBuffer());
-        bufferB->enlist(static_pointer_cast<TxOp>(opB));
-        bufferB->markEnded();
+    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    bufferA->enlist(static_pointer_cast<TxOp>(opA));
+    bufferA->markEnded();
+    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    bufferB->enlist(static_pointer_cast<TxOp>(opB));
+    bufferB->markEnded();
         
-        DtxWorkRecord work("my-xid", &store);
-        work.add(bufferA);
-        work.add(bufferB);
+    DtxWorkRecord work("my-xid", &store);
+    work.add(bufferA);
+    work.add(bufferB);
 
-        CPPUNIT_ASSERT(work.prepare());
-        CPPUNIT_ASSERT(store.isPrepared());
-        work.commit(false);
-        store.check();
-        CPPUNIT_ASSERT(store.isCommitted());
-        opA->check();
-        opB->check();
-    }
+    BOOST_CHECK(work.prepare());
+    BOOST_CHECK(store.isPrepared());
+    work.commit(false);
+    store.check();
+    BOOST_CHECK(store.isCommitted());
+    opA->check();
+    opB->check();
+}
 
-    void testFailOnTwoPhaseCommit(){
-        MockTransactionalStore store;
-        store.expectBegin2PC().expectAbort();
+QPID_AUTO_TEST_CASE(testFailOnTwoPhaseCommit){
+    MockTransactionalStore store;
+    store.expectBegin2PC().expectAbort();
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp(true));
-        opB->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opC(new MockTxOp());
-        opC->expectRollback();
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp(true));
+    opB->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opC(new MockTxOp());
+    opC->expectRollback();
 
-        DtxBuffer::shared_ptr bufferA(new DtxBuffer());
-        bufferA->enlist(static_pointer_cast<TxOp>(opA));
-        bufferA->markEnded();
-        DtxBuffer::shared_ptr bufferB(new DtxBuffer());
-        bufferB->enlist(static_pointer_cast<TxOp>(opB));
-        bufferB->markEnded();
-        DtxBuffer::shared_ptr bufferC(new DtxBuffer());
-        bufferC->enlist(static_pointer_cast<TxOp>(opC));
-        bufferC->markEnded();
+    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    bufferA->enlist(static_pointer_cast<TxOp>(opA));
+    bufferA->markEnded();
+    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    bufferB->enlist(static_pointer_cast<TxOp>(opB));
+    bufferB->markEnded();
+    DtxBuffer::shared_ptr bufferC(new DtxBuffer());
+    bufferC->enlist(static_pointer_cast<TxOp>(opC));
+    bufferC->markEnded();
         
-        DtxWorkRecord work("my-xid", &store);
-        work.add(bufferA);
-        work.add(bufferB);
-        work.add(bufferC);
+    DtxWorkRecord work("my-xid", &store);
+    work.add(bufferA);
+    work.add(bufferB);
+    work.add(bufferC);
 
-        CPPUNIT_ASSERT(!work.prepare());
-        CPPUNIT_ASSERT(store.isAborted());
-        store.check();
-        opA->check();
-        opB->check();
-        opC->check();
-    }
+    BOOST_CHECK(!work.prepare());
+    BOOST_CHECK(store.isAborted());
+    store.check();
+    opA->check();
+    opB->check();
+    opC->check();
+}
 
-    void testRollback(){
-        MockTransactionalStore store;
-        store.expectBegin2PC().expectPrepare().expectAbort();
+QPID_AUTO_TEST_CASE(testRollback){
+    MockTransactionalStore store;
+    store.expectBegin2PC().expectPrepare().expectAbort();
 
-        MockTxOp::shared_ptr opA(new MockTxOp());
-        opA->expectPrepare().expectRollback();
-        MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opA(new MockTxOp());
+    opA->expectPrepare().expectRollback();
+    MockTxOp::shared_ptr opB(new MockTxOp());
+    opB->expectPrepare().expectRollback();
 
-        DtxBuffer::shared_ptr bufferA(new DtxBuffer());
-        bufferA->enlist(static_pointer_cast<TxOp>(opA));
-        bufferA->markEnded();
-        DtxBuffer::shared_ptr bufferB(new DtxBuffer());
-        bufferB->enlist(static_pointer_cast<TxOp>(opB));
-        bufferB->markEnded();
+    DtxBuffer::shared_ptr bufferA(new DtxBuffer());
+    bufferA->enlist(static_pointer_cast<TxOp>(opA));
+    bufferA->markEnded();
+    DtxBuffer::shared_ptr bufferB(new DtxBuffer());
+    bufferB->enlist(static_pointer_cast<TxOp>(opB));
+    bufferB->markEnded();
         
-        DtxWorkRecord work("my-xid", &store);
-        work.add(bufferA);
-        work.add(bufferB);
+    DtxWorkRecord work("my-xid", &store);
+    work.add(bufferA);
+    work.add(bufferB);
 
-        CPPUNIT_ASSERT(work.prepare());
-        CPPUNIT_ASSERT(store.isPrepared());
-        work.rollback();
-        store.check();
-        CPPUNIT_ASSERT(store.isAborted());
-        opA->check();
-        opB->check();
-    }
-};
+    BOOST_CHECK(work.prepare());
+    BOOST_CHECK(store.isPrepared());
+    work.rollback();
+    store.check();
+    BOOST_CHECK(store.isAborted());
+    opA->check();
+    opB->check();
+}
 
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(DtxWorkRecordTest);
+QPID_AUTO_TEST_SUITE_END()
 

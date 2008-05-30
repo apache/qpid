@@ -18,78 +18,77 @@
  */
 
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <string>
 
 using namespace qpid::broker;
 
-class QueueRegistryTest : public CppUnit::TestCase 
-{
-    CPPUNIT_TEST_SUITE(QueueRegistryTest);
-    CPPUNIT_TEST(testDeclare);
-    CPPUNIT_TEST(testDeclareTmp);
-    CPPUNIT_TEST(testFind);
-    CPPUNIT_TEST(testDestroy);
-    CPPUNIT_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE(QueueRegistryTest)
 
-  private:
-    std::string foo, bar;
+QPID_AUTO_TEST_CASE(testDeclare)
+{
+    std::string foo("foo");
+    std::string bar("bar");
     QueueRegistry reg;
     std::pair<Queue::shared_ptr,  bool> qc;
+
+    qc = reg.declare(foo, false, 0, 0);
+    Queue::shared_ptr q = qc.first;
+    BOOST_CHECK(q);
+    BOOST_CHECK(qc.second); // New queue
+    BOOST_CHECK_EQUAL(foo, q->getName());
+
+    qc = reg.declare(foo, false, 0, 0);
+    BOOST_CHECK_EQUAL(q, qc.first);
+    BOOST_CHECK(!qc.second);
+
+    qc = reg.declare(bar, false, 0, 0);
+    q = qc.first;
+    BOOST_CHECK(q);
+    BOOST_CHECK_EQUAL(true, qc.second);
+    BOOST_CHECK_EQUAL(bar, q->getName());
+}
+
+QPID_AUTO_TEST_CASE(testDeclareTmp) 
+{
+    QueueRegistry reg;
+    std::pair<Queue::shared_ptr,  bool> qc;
+
+    qc = reg.declare(std::string(), false, 0, 0);
+    BOOST_CHECK(qc.second);
+    BOOST_CHECK_EQUAL(std::string("tmp_1"), qc.first->getName());
+}
     
-  public:
-    void setUp() {
-        foo = "foo";
-        bar = "bar";
-    }
-    
-    void testDeclare() {
-        qc = reg.declare(foo, false, 0, 0);
-        Queue::shared_ptr q = qc.first;
-        CPPUNIT_ASSERT(q);
-        CPPUNIT_ASSERT(qc.second); // New queue
-        CPPUNIT_ASSERT_EQUAL(foo, q->getName());
+QPID_AUTO_TEST_CASE(testFind) 
+{
+    std::string foo("foo");
+    std::string bar("bar");
+    QueueRegistry reg;
+    std::pair<Queue::shared_ptr,  bool> qc;
 
-        qc = reg.declare(foo, false, 0, 0);
-        CPPUNIT_ASSERT_EQUAL(q, qc.first);
-        CPPUNIT_ASSERT(!qc.second);
+    BOOST_CHECK(reg.find(foo) == 0);
 
-        qc = reg.declare(bar, false, 0, 0);
-        q = qc.first;
-        CPPUNIT_ASSERT(q);
-        CPPUNIT_ASSERT_EQUAL(true, qc.second);
-        CPPUNIT_ASSERT_EQUAL(bar, q->getName());
-    }
+    reg.declare(foo, false, 0, 0);
+    reg.declare(bar, false, 0, 0);
+    Queue::shared_ptr q = reg.find(bar);
+    BOOST_CHECK(q);
+    BOOST_CHECK_EQUAL(bar, q->getName());
+}
 
-    void testDeclareTmp() 
-    {
-        qc = reg.declare(std::string(), false, 0, 0);
-        CPPUNIT_ASSERT(qc.second);
-        CPPUNIT_ASSERT_EQUAL(std::string("tmp_1"), qc.first->getName());
-    }
-    
-    void testFind() {
-        CPPUNIT_ASSERT(reg.find(foo) == 0);
+QPID_AUTO_TEST_CASE(testDestroy) 
+{
+    std::string foo("foo");
+    QueueRegistry reg;
+    std::pair<Queue::shared_ptr,  bool> qc;
 
-        reg.declare(foo, false, 0, 0);
-        reg.declare(bar, false, 0, 0);
-        Queue::shared_ptr q = reg.find(bar);
-        CPPUNIT_ASSERT(q);
-        CPPUNIT_ASSERT_EQUAL(bar, q->getName());
-    }
+    qc = reg.declare(foo, false, 0, 0);
+    reg.destroy(foo);
+    // Queue is gone from the registry.
+    BOOST_CHECK(reg.find(foo) == 0);
+    // Queue is not actually destroyed till we drop our reference.
+    BOOST_CHECK_EQUAL(foo, qc.first->getName());
+    // We shoud be the only reference.
+    BOOST_CHECK_EQUAL(1L, qc.first.use_count());
+}
 
-    void testDestroy() {
-        qc = reg.declare(foo, false, 0, 0);
-        reg.destroy(foo);
-        // Queue is gone from the registry.
-        CPPUNIT_ASSERT(reg.find(foo) == 0);
-        // Queue is not actually destroyed till we drop our reference.
-        CPPUNIT_ASSERT_EQUAL(foo, qc.first->getName());
-        // We shoud be the only reference.
-        CPPUNIT_ASSERT_EQUAL(1L, qc.first.use_count());
-    }
-};
-
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(QueueRegistryTest);
+QPID_AUTO_TEST_SUITE_END()

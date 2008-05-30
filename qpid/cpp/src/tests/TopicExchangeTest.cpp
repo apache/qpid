@@ -17,7 +17,8 @@
  * under the License.
  */
 #include "qpid/broker/TopicExchange.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
+#include "test_tools.h"
 
 using namespace qpid::broker;
 
@@ -34,167 +35,133 @@ Tokens makeTokens(const char** begin, const char** end)
 // Convert array to token vector
 #define TOKENS(a) makeTokens(a, a + LEN(a))
 
-// Allow CPPUNIT_EQUALS to print a Tokens.
-CppUnit::OStringStream& operator <<(CppUnit::OStringStream& out, const Tokens& v)
+#define ASSERT_NORMALIZED(expect, pattern)                              \
+    BOOST_CHECK_EQUAL(Tokens(expect), static_cast<Tokens>(TopicPattern(pattern)))
+
+
+QPID_AUTO_TEST_SUITE(TopicExchangeTestSuite)
+
+QPID_AUTO_TEST_CASE(testTokens) 
 {
-    out << "[ ";
-    for (Tokens::const_iterator i = v.begin();
-         i != v.end(); ++i)
-    {
-        out << '"' << *i << '"' << (i+1 == v.end() ? "]" : ", ");
-    }
-    return out;
+    Tokens tokens("hello.world");
+    const char* expect[] = {"hello", "world"};
+    BOOST_CHECK_EQUAL(TOKENS(expect), tokens);
+        
+    tokens = "a.b.c";
+    const char* expect2[] = { "a", "b", "c" };
+    BOOST_CHECK_EQUAL(TOKENS(expect2), tokens);
+
+    tokens = "";
+    BOOST_CHECK(tokens.empty());
+
+    tokens = "x";
+    const char* expect3[] = { "x" };
+    BOOST_CHECK_EQUAL(TOKENS(expect3), tokens);
+
+    tokens = (".x");
+    const char* expect4[] = { "", "x" };
+    BOOST_CHECK_EQUAL(TOKENS(expect4), tokens);
+
+    tokens = ("x.");
+    const char* expect5[] = { "x", "" };
+    BOOST_CHECK_EQUAL(TOKENS(expect5), tokens);
+
+    tokens = (".");
+    const char* expect6[] = { "", "" };
+    BOOST_CHECK_EQUAL(TOKENS(expect6), tokens);        
+
+    tokens = ("..");
+    const char* expect7[] = { "", "", "" };
+    BOOST_CHECK_EQUAL(TOKENS(expect7), tokens);        
+}
+
+QPID_AUTO_TEST_CASE(testNormalize) 
+{
+    BOOST_CHECK(TopicPattern("").empty());
+    ASSERT_NORMALIZED("a.b.c", "a.b.c");
+    ASSERT_NORMALIZED("a.*.c", "a.*.c");
+    ASSERT_NORMALIZED("#", "#");
+    ASSERT_NORMALIZED("#", "#.#.#.#");
+    ASSERT_NORMALIZED("*.*.*.#", "#.*.#.*.#.#.*");
+    ASSERT_NORMALIZED("a.*.*.*.#", "a.*.#.*.#.*.#");
+    ASSERT_NORMALIZED("a.*.*.*.#", "a.*.#.*.#.*");
+}
+    
+QPID_AUTO_TEST_CASE(testPlain) 
+{
+    TopicPattern p("ab.cd.e");
+    BOOST_CHECK(p.match("ab.cd.e"));
+    BOOST_CHECK(!p.match("abx.cd.e"));
+    BOOST_CHECK(!p.match("ab.cd"));
+    BOOST_CHECK(!p.match("ab.cd..e."));
+    BOOST_CHECK(!p.match("ab.cd.e."));
+    BOOST_CHECK(!p.match(".ab.cd.e"));
+
+    p = "";
+    BOOST_CHECK(p.match(""));
+
+    p = ".";
+    BOOST_CHECK(p.match("."));
 }
 
 
-class TokensTest : public CppUnit::TestCase
+QPID_AUTO_TEST_CASE(testStar) 
 {
-    CPPUNIT_TEST_SUITE(TokensTest);
-    CPPUNIT_TEST(testTokens);
-    CPPUNIT_TEST_SUITE_END();
+    TopicPattern p("a.*.b");
+    BOOST_CHECK(p.match("a.xx.b"));
+    BOOST_CHECK(!p.match("a.b"));
 
-  public:
-    void testTokens() 
-    {
-        Tokens tokens("hello.world");
-        const char* expect[] = {"hello", "world"};
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect), tokens);
-        
-        tokens = "a.b.c";
-        const char* expect2[] = { "a", "b", "c" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect2), tokens);
+    p = "*.x";
+    BOOST_CHECK(p.match("y.x"));
+    BOOST_CHECK(p.match(".x"));
+    BOOST_CHECK(!p.match("x"));
 
-        tokens = "";
-        CPPUNIT_ASSERT(tokens.empty());
+    p = "x.x.*";
+    BOOST_CHECK(p.match("x.x.y"));
+    BOOST_CHECK(p.match("x.x."));
+    BOOST_CHECK(!p.match("x.x"));
+    BOOST_CHECK(!p.match("q.x.y"));
+}
 
-        tokens = "x";
-        const char* expect3[] = { "x" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect3), tokens);
-
-        tokens = (".x");
-        const char* expect4[] = { "", "x" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect4), tokens);
-
-        tokens = ("x.");
-        const char* expect5[] = { "x", "" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect5), tokens);
-
-        tokens = (".");
-        const char* expect6[] = { "", "" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect6), tokens);        
-
-        tokens = ("..");
-        const char* expect7[] = { "", "", "" };
-        CPPUNIT_ASSERT_EQUAL(TOKENS(expect7), tokens);        
-    }
-    
-};
-
-#define ASSERT_NORMALIZED(expect, pattern) \
-    CPPUNIT_ASSERT_EQUAL(Tokens(expect), static_cast<Tokens>(TopicPattern(pattern)))
-class TopicPatternTest : public CppUnit::TestCase 
+QPID_AUTO_TEST_CASE(testHash) 
 {
-    CPPUNIT_TEST_SUITE(TopicPatternTest);
-    CPPUNIT_TEST(testNormalize);
-    CPPUNIT_TEST(testPlain);
-    CPPUNIT_TEST(testStar);
-    CPPUNIT_TEST(testHash);
-    CPPUNIT_TEST(testMixed);
-    CPPUNIT_TEST(testCombo);
-    CPPUNIT_TEST_SUITE_END();
+    TopicPattern p("a.#.b");
+    BOOST_CHECK(p.match("a.b"));
+    BOOST_CHECK(p.match("a.x.b"));
+    BOOST_CHECK(p.match("a..x.y.zz.b"));
+    BOOST_CHECK(!p.match("a.b."));
+    BOOST_CHECK(!p.match("q.x.b"));
 
-  public:
+    p = "a.#";
+    BOOST_CHECK(p.match("a"));
+    BOOST_CHECK(p.match("a.b"));
+    BOOST_CHECK(p.match("a.b.c"));
 
-    void testNormalize() 
-    {
-        CPPUNIT_ASSERT(TopicPattern("").empty());
-        ASSERT_NORMALIZED("a.b.c", "a.b.c");
-        ASSERT_NORMALIZED("a.*.c", "a.*.c");
-        ASSERT_NORMALIZED("#", "#");
-        ASSERT_NORMALIZED("#", "#.#.#.#");
-        ASSERT_NORMALIZED("*.*.*.#", "#.*.#.*.#.#.*");
-        ASSERT_NORMALIZED("a.*.*.*.#", "a.*.#.*.#.*.#");
-        ASSERT_NORMALIZED("a.*.*.*.#", "a.*.#.*.#.*");
-    }
-    
-    void testPlain() {
-        TopicPattern p("ab.cd.e");
-        CPPUNIT_ASSERT(p.match("ab.cd.e"));
-        CPPUNIT_ASSERT(!p.match("abx.cd.e"));
-        CPPUNIT_ASSERT(!p.match("ab.cd"));
-        CPPUNIT_ASSERT(!p.match("ab.cd..e."));
-        CPPUNIT_ASSERT(!p.match("ab.cd.e."));
-        CPPUNIT_ASSERT(!p.match(".ab.cd.e"));
+    p = "#.a";
+    BOOST_CHECK(p.match("a"));
+    BOOST_CHECK(p.match("x.y.a"));
+}
 
-        p = "";
-        CPPUNIT_ASSERT(p.match(""));
+QPID_AUTO_TEST_CASE(testMixed) 
+{
+    TopicPattern p("*.x.#.y");
+    BOOST_CHECK(p.match("a.x.y"));
+    BOOST_CHECK(p.match("a.x.p.qq.y"));
+    BOOST_CHECK(!p.match("a.a.x.y"));
+    BOOST_CHECK(!p.match("aa.x.b.c"));
 
-        p = ".";
-        CPPUNIT_ASSERT(p.match("."));
-    }
+    p = "a.#.b.*";
+    BOOST_CHECK(p.match("a.b.x"));
+    BOOST_CHECK(p.match("a.x.x.x.b.x"));
+}
 
+QPID_AUTO_TEST_CASE(testCombo) 
+{
+    TopicPattern p("*.#.#.*.*.#");
+    BOOST_CHECK(p.match("x.y.z"));
+    BOOST_CHECK(p.match("x.y.z.a.b.c"));
+    BOOST_CHECK(!p.match("x.y"));
+    BOOST_CHECK(!p.match("x"));
+}
 
-    void testStar() 
-    {
-        TopicPattern p("a.*.b");
-        CPPUNIT_ASSERT(p.match("a.xx.b"));
-        CPPUNIT_ASSERT(!p.match("a.b"));
-
-        p = "*.x";
-        CPPUNIT_ASSERT(p.match("y.x"));
-        CPPUNIT_ASSERT(p.match(".x"));
-        CPPUNIT_ASSERT(!p.match("x"));
-
-        p = "x.x.*";
-        CPPUNIT_ASSERT(p.match("x.x.y"));
-        CPPUNIT_ASSERT(p.match("x.x."));
-        CPPUNIT_ASSERT(!p.match("x.x"));
-        CPPUNIT_ASSERT(!p.match("q.x.y"));
-    }
-
-    void testHash() 
-    {
-        TopicPattern p("a.#.b");
-        CPPUNIT_ASSERT(p.match("a.b"));
-        CPPUNIT_ASSERT(p.match("a.x.b"));
-        CPPUNIT_ASSERT(p.match("a..x.y.zz.b"));
-        CPPUNIT_ASSERT(!p.match("a.b."));
-        CPPUNIT_ASSERT(!p.match("q.x.b"));
-
-        p = "a.#";
-        CPPUNIT_ASSERT(p.match("a"));
-        CPPUNIT_ASSERT(p.match("a.b"));
-        CPPUNIT_ASSERT(p.match("a.b.c"));
-
-        p = "#.a";
-        CPPUNIT_ASSERT(p.match("a"));
-        CPPUNIT_ASSERT(p.match("x.y.a"));
-    }
-
-    void testMixed() 
-    {
-        TopicPattern p("*.x.#.y");
-        CPPUNIT_ASSERT(p.match("a.x.y"));
-        CPPUNIT_ASSERT(p.match("a.x.p.qq.y"));
-        CPPUNIT_ASSERT(!p.match("a.a.x.y"));
-        CPPUNIT_ASSERT(!p.match("aa.x.b.c"));
-
-        p = "a.#.b.*";
-        CPPUNIT_ASSERT(p.match("a.b.x"));
-        CPPUNIT_ASSERT(p.match("a.x.x.x.b.x"));
-    }
-
-    void testCombo() {
-        TopicPattern p("*.#.#.*.*.#");
-        CPPUNIT_ASSERT(p.match("x.y.z"));
-        CPPUNIT_ASSERT(p.match("x.y.z.a.b.c"));
-        CPPUNIT_ASSERT(!p.match("x.y"));
-        CPPUNIT_ASSERT(!p.match("x"));
-    }
-};
-
-    
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(TopicPatternTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(TokensTest);
+QPID_AUTO_TEST_SUITE_END()

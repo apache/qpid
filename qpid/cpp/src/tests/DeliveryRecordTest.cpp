@@ -20,7 +20,7 @@
  *
  */
 #include "qpid/broker/DeliveryRecord.h"
-#include "qpid_test_plugin.h"
+#include "unit_test.h"
 #include <iostream>
 #include <memory>
 #include <boost/format.hpp>
@@ -31,38 +31,30 @@ using namespace qpid::framing;
 using boost::dynamic_pointer_cast;
 using std::list;
 
-class DeliveryRecordTest : public CppUnit::TestCase  
+QPID_AUTO_TEST_SUITE(DeliveryRecordTestSuite)
+
+QPID_AUTO_TEST_CASE(testSort)
 {
-    CPPUNIT_TEST_SUITE(DeliveryRecordTest);
-    CPPUNIT_TEST(testSort);
-    CPPUNIT_TEST_SUITE_END();
+    list<SequenceNumber> ids;
+    ids.push_back(SequenceNumber(6));
+    ids.push_back(SequenceNumber(2));
+    ids.push_back(SequenceNumber(4));
+    ids.push_back(SequenceNumber(5));
+    ids.push_back(SequenceNumber(1));
+    ids.push_back(SequenceNumber(3));
 
-public:
-
-    void testSort()
-    {
-        list<SequenceNumber> ids;
-        ids.push_back(SequenceNumber(6));
-        ids.push_back(SequenceNumber(2));
-        ids.push_back(SequenceNumber(4));
-        ids.push_back(SequenceNumber(5));
-        ids.push_back(SequenceNumber(1));
-        ids.push_back(SequenceNumber(3));
-
-        list<DeliveryRecord> records;
-        for (list<SequenceNumber>::iterator i = ids.begin(); i != ids.end(); i++) {
-            records.push_back(DeliveryRecord(QueuedMessage(0), Queue::shared_ptr(), "tag", DeliveryToken::shared_ptr(), *i, false, false));
-        }
-        records.sort();
-
-        SequenceNumber expected(0);
-        for (list<DeliveryRecord>::iterator i = records.begin(); i != records.end(); i++) {
-            CPPUNIT_ASSERT(i->matches(++expected));
-        }
+    list<DeliveryRecord> records;
+    for (list<SequenceNumber>::iterator i = ids.begin(); i != ids.end(); i++) {
+        records.push_back(DeliveryRecord(QueuedMessage(0), Queue::shared_ptr(), "tag", DeliveryToken::shared_ptr(), *i, false, false));
     }
-};
+    records.sort();
 
-// Make this test suite a plugin.
-CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(DeliveryRecordTest);
+    SequenceNumber expected(0);
+    for (list<DeliveryRecord>::iterator i = records.begin(); i != records.end(); i++) {
+        BOOST_CHECK(i->matches(++expected));
+    }
+}
+
+
+QPID_AUTO_TEST_SUITE_END()
 
