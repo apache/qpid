@@ -355,7 +355,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
         {
-            _syncPersistence = Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+            _syncPersistence = Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE));
         }
         else
         {
