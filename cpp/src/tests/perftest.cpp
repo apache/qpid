@@ -84,6 +84,7 @@ struct Opts : public TestOptions {
     bool confirm;
     bool durable;
     bool uniqueData;
+    bool syncPub;
 
     // Subscriber
     size_t subs;
@@ -102,7 +103,7 @@ struct Opts : public TestOptions {
     Opts() :
         TestOptions(helpText),
         setup(false), control(false), publish(false), subscribe(false),
-        pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false),
+        pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false), syncPub(false),
         subs(1), ack(0),
         qt(1), iterations(1), mode(SHARED), summary(false),
 		intervalSub(0), intervalPub(0)
@@ -124,6 +125,7 @@ struct Opts : public TestOptions {
             ("pub-confirm", optValue(confirm, "yes|no"), "Publisher use confirm-mode.")
             ("durable", optValue(durable, "yes|no"), "Publish messages as durable.")
             ("unique-data", optValue(uniqueData, "yes|no"), "Make data for each message unique.")
+            ("sync-publish", optValue(syncPub, "yes|no"), "Wait for confirmation of each message before sending the next one.")
 
             ("nsubs", optValue(subs, "N"), "Create N subscribers.")
             ("sub-ack", optValue(ack, "N"), "N>0: Subscriber acks batches of N.\n"
@@ -461,10 +463,17 @@ struct PublishThread : public Client {
                     // any heap allocation.
                     const_cast<std::string&>(msg.getData()).replace(offset, sizeof(uint32_t), 
                                                                     reinterpret_cast<const char*>(&i), sizeof(uint32_t));
-                    session.messageTransfer(
-                        arg::destination=destination,
-                        arg::content=msg,
-                        arg::acceptMode=1);
+                    if (opts.syncPub) {
+                        sync(session).messageTransfer(
+                            arg::destination=destination,
+                            arg::content=msg,
+                            arg::acceptMode=1);
+                    } else {
+                        session.messageTransfer(
+                            arg::destination=destination,
+                            arg::content=msg,
+                            arg::acceptMode=1);
+                    }
                     if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
                 }
                 if (opts.confirm) session.sync();
