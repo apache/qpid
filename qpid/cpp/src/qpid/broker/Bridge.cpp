@@ -39,7 +39,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
                const management::ArgsLinkBridge& _args) : 
     link(_link), id(_id), args(_args),
     mgmtObject(new management::Bridge(this, link, id, args.i_durable, args.i_src, args.i_dest,
-                                      args.i_key, args.i_src_is_queue, args.i_src_is_local,
+                                      args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
                                       args.i_tag, args.i_excludes)),
     listener(l), name(Uuid(true).str()), persistenceId(0)
 {
@@ -61,10 +61,10 @@ void Bridge::create(ConnectionState& c)
     session->attach(name, false);
     session->commandPoint(0,0);
 
-    if (args.i_src_is_local) {
+    if (args.i_srcIsLocal) {
         //TODO: handle 'push' here... simplest way is to create frames and pass them to Connection::received()
     } else {
-        if (args.i_src_is_queue) {
+        if (args.i_srcIsQueue) {
             peer->getMessage().subscribe(args.i_src, args.i_dest, 1, 0, false, "", 0, FieldTable());
             peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
             peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
@@ -79,7 +79,7 @@ void Bridge::create(ConnectionState& c)
                 queueSettings.setString("qpid.trace.exclude", args.i_excludes);
             }
 
-            bool durable = false;//should this be an arg, or would be use src_is_queue for durable queues?
+            bool durable = false;//should this be an arg, or would be use srcIsQueue for durable queues?
             bool autoDelete = !durable;//auto delete transient queues?
             peer->getQueue().declare(queue, "", false, durable, true, autoDelete, queueSettings);
             peer->getExchange().bind(queue, args.i_src, args.i_key, FieldTable());
@@ -150,8 +150,8 @@ void Bridge::encode(Buffer& buffer) const
     buffer.putShortString(args.i_src);
     buffer.putShortString(args.i_dest);
     buffer.putShortString(args.i_key);
-    buffer.putOctet(args.i_src_is_queue ? 1 : 0);
-    buffer.putOctet(args.i_src_is_local ? 1 : 0);
+    buffer.putOctet(args.i_srcIsQueue ? 1 : 0);
+    buffer.putOctet(args.i_srcIsLocal ? 1 : 0);
     buffer.putShortString(args.i_tag);
     buffer.putShortString(args.i_excludes);
 }
@@ -165,8 +165,8 @@ uint32_t Bridge::encodedSize() const
         + args.i_src.size()  + 1
         + args.i_dest.size() + 1
         + args.i_key.size()  + 1
-        + 1                // src_is_queue
-        + 1                // src_is_local
+        + 1                // srcIsQueue
+        + 1                // srcIsLocal
         + args.i_tag.size() + 1
         + args.i_excludes.size() + 1;
 }

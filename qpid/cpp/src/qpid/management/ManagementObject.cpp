@@ -37,3 +37,6 @@ void ManagementObject::writeTimestamps (Buffer& buf)
     buf.putLongLong    (destroyTime);
     buf.putLongLong    (objectId);
 }
+
+void ManagementObject::setReference(uint64_t) {}
+

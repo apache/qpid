@@ -42,7 +42,7 @@
 #include "ConnectionState.h"
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Client.h"
+#include "qpid/management/Connection.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -88,6 +88,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::string getAuthMechanism();
     std::string getAuthCredentials();
     void notifyConnectionForced(const std::string& text);
+    void setUserId(const string& uid);
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
@@ -100,7 +101,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool mgmtClosing;
     const std::string mgmtId;
     boost::function0<void> ioCallback;
-    management::Client::shared_ptr mgmtObject;
+    management::Connection::shared_ptr mgmtObject;
     LinkRegistry& links;
 };
 

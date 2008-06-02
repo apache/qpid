@@ -56,7 +56,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
 
-    void setUserId(const string& uid) {  userId = uid; }
+    virtual void setUserId(const string& uid) {  userId = uid; }
     const string& getUserId() const { return userId; }
     
     Broker& getBroker() { return broker; }

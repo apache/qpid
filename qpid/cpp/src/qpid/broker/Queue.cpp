@@ -130,19 +130,15 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
             push(msg);
             msg->enqueueComplete();
             if (mgmtObject.get() != 0) {
-                sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                 mgmtObject->inc_msgDepth ();
-                mgmtObject->inc_byteDepth (msg->contentSize ());
             }
         }else {
             if (mgmtObject.get() != 0) {
-                sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                 mgmtObject->inc_msgDepth ();
-                mgmtObject->inc_byteDepth (msg->contentSize ());
                 mgmtObject->inc_msgPersistEnqueues ();
                 mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
             }
@@ -157,13 +153,11 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
     push(msg);
     msg->enqueueComplete(); // mark the message as enqueued
     if (mgmtObject.get() != 0) {
-        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgPersistEnqueues ();
         mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
         mgmtObject->inc_msgDepth ();
-        mgmtObject->inc_byteDepth (msg->contentSize ());
     }
 
     if (store && !msg->isContentLoaded()) {
@@ -176,13 +170,11 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
 void Queue::process(boost::intrusive_ptr<Message>& msg){
     push(msg);
     if (mgmtObject.get() != 0) {
-        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgTxnEnqueues ();
         mgmtObject->inc_byteTxnEnqueues (msg->contentSize ());
         mgmtObject->inc_msgDepth ();
-        mgmtObject->inc_byteDepth (msg->contentSize ());
         if (msg->isPersistent ()) {
             mgmtObject->inc_msgPersistEnqueues ();
             mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
@@ -367,8 +359,7 @@ void Queue::consume(Consumer& c, bool requestExclusive){
     consumerCount++;
 
     if (mgmtObject.get() != 0){
-        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
-        mgmtObject->inc_consumers ();
+        mgmtObject->inc_consumerCount ();
     }
 }
 
@@ -378,8 +369,7 @@ void Queue::cancel(Consumer& c){
     consumerCount--;
     if(exclusive) exclusive = 0;
     if (mgmtObject.get() != 0){
-        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
-        mgmtObject->dec_consumers ();
+        mgmtObject->dec_consumerCount ();
     }
 }
 
@@ -409,11 +399,9 @@ void Queue::pop(){
 
     if (policy.get()) policy->dequeued(msg.payload->contentSize());
     if (mgmtObject.get() != 0){
-        sys::Mutex::ScopedLock mutex(mgmtObject->getLock());
         mgmtObject->inc_msgTotalDequeues  ();
         mgmtObject->inc_byteTotalDequeues (msg.payload->contentSize());
         mgmtObject->dec_msgDepth ();
-        mgmtObject->dec_byteDepth (msg.payload->contentSize());
         if (msg.payload->isPersistent ()){
             mgmtObject->inc_msgPersistDequeues ();
             mgmtObject->inc_bytePersistDequeues (msg.payload->contentSize());
@@ -682,7 +670,7 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
     if (inst) {
         ManagementObject::shared_ptr childObj = inst->GetManagementObject();
         if (childObj.get() != 0)
-            mgmtObject->set_storeRef(childObj->getObjectId());
+            childObj->setReference(mgmtObject->getObjectId());
     }
 }
 

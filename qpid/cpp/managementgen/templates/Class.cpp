@@ -75,9 +75,9 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
     buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count
     buf.putShort       (/*MGEN:Class.EventCount*/); // Event Count
 
-    // Config Elements
+    // Properties
 /*MGEN:Class.ConfigElementSchema*/
-    // Inst Elements
+    // Statistics
 /*MGEN:Class.InstElementSchema*/
     // Methods
 /*MGEN:Class.MethodSchema*/
