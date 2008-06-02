@@ -1,0 +1,129 @@
+<html>
+    <head>
+        <title>Apache Qpid : 3rd Party Libraries</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : 3rd Party Libraries
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Mar 10, 2008 by <font color="#0050B2">ritchiem</font>.
+				    </div>
+
+				    <h1><a name="3rdPartyLibraries-QpidPersistenceOptions"></a>Qpid Persistence Options</h1>
+
+<p>There are currently two options for persistence in Qpid, as shown in the table below.</p>
+
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>Persistence Style</th>
+<th class='confluenceTh'>Provider</th>
+<th class='confluenceTh'>Advantages</th>
+<th class='confluenceTh'>Disadvantages</th>
+</tr>
+<tr>
+<td class='confluenceTd'>In-Memory</td>
+<td class='confluenceTd'>Qpid MemoryMessageStore</td>
+<td class='confluenceTd'>Comes as part of the Qpid package</td>
+<td class='confluenceTd'>Not persistent</td>
+</tr>
+<tr>
+<td class='confluenceTd'>Berkeley DB Store</td>
+<td class='confluenceTd'>Berkeley project</td>
+<td class='confluenceTd'>Allows persistence for larger messages/volumes</td>
+<td class='confluenceTd'>Not Apache licensed</td>
+</tr>
+</tbody></table>
+
+<h2><a name="3rdPartyLibraries-UsingInMemoryPersistence"></a>Using In-Memory Persistence</h2>
+
+<p>Using In-Memory persistence is the default when you install Qpid and requires no additional install/configuration.</p>
+
+<h2><a name="3rdPartyLibraries-UsingBerkeleyDBPersistence"></a>Using Berkeley DB Persistence</h2>
+
+<h3><a name="3rdPartyLibraries-InstallBerkeleyDB"></a>Install Berkeley DB</h3>
+
+<p>If you choose to use the Berkeley DB solution for scalability purposes then you should download &amp; install version 3.1 from <a href="http://www.oracle.com/technology/software/products/berkeley-db/je/index.html" title="Visit page outside Confluence">http://www.oracle.com/technology/software/products/berkeley-db/je/index.html</a></p>
+
+<h3><a name="3rdPartyLibraries-AmendyourQpidconfigurationtoswitchBDBon"></a>Amend your Qpid configuration to switch BDB on</h3>
+
+<p>The default Qpid configuration file can be found in the etc directory of your install and is named config.xml. </p>
+
+<p>To use BDB, simply add the following element:</p>
+
+<div class="code"><div class="codeContent">
+<pre class="code-xml"><span class="code-tag">&lt;store&gt;</span>
+    <span class="code-tag">&lt;class&gt;</span>org.apache.qpid.server.store.berkeleydb.BDBMessageStore<span class="code-tag">&lt;/class&gt;</span>
+<span class="code-tag">&lt;/store&gt;</span></pre>
+</div></div>
+
+<p>alternatively an example file is provided named persistent_config.xml</p>
+
+<h3><a name="3rdPartyLibraries-InstalltheQpidbridgemodulesforBerkeleyDB"></a>Install the Qpid bridge modules for Berkeley DB</h3>
+
+<p>You can either build the module from source which is available from the <a href="http://anonsvn.jboss.org/repos/rhmessaging/store/branches/java/" title="Visit page outside Confluence">JBoss Site</a>.</p>
+
+<p>However, as a temporary measure, you can use the bridging modules from this page <a href="http://cwiki.apache.org/confluence/download/attachments/29783/M1-bdbstore.jar?version=1" title="M1-bdbstore.jar attached to 3rd Party Libraries">M1-BDBStore</a> or <a href="http://cwiki.apache.org/confluence/download/attachments/29783/M2-bdbstore.jar?version=1" title="M2-bdbstore.jar attached to 3rd Party Libraries">M2-BDBStore</a>. You should then ensure that this jar is included in the classpath for the broker (see more info below), along with the BDB jar (je-&lt;version&gt;.jar).</p>
+
+<p>This can simply be done by editing the your classpath to add the two jars that you need and then pass an option into qpid-server to use your classpath.</p>
+
+<p>So, first set your classpath to something like this:</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>CLASSPATH=$QPID_HOME/lib/qpid-incubating.jar:$QPID_HOME/lib/bdbstore.jar:$QPID_HOME/lib/je-&lt;version&gt;.jar
+</pre>
+</div></div>
+
+<p>Then, run qpid-server passing the following additional flag:</p>
+<div class="preformatted"><div class="preformattedContent">
+<pre>qpid-server -run:external-classpath=first
+</pre>
+</div></div>
+
+<p>You can check the classpath being used by adding an additional option to output the classpath in use:</p>
+<div class="preformatted"><div class="preformattedContent">
+<pre>qpid-server -run:external-classpath=first -run:print-classpath
+</pre>
+</div></div>
+
+<p>alternatively you can edit the QPID_LIBS variable in the qpid-server script.</p>
+
+<p>We hope to be able to integrate these modules into our Apache project shortly - but pending a discussion about the appropriate way to handle this process.</p>
+
+
+
+				    					    <br/>
+                        <div class="tabletitle">
+                            <a name="attachments">Attachments:</a>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="3rd Party Libraries_attachments/M1-bdbstore.jar">M1-bdbstore.jar</a> (application/x-zip-compressed)
+                                <br/>
+                                                            <img src="icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="3rd Party Libraries_attachments/M2-bdbstore.jar">M2-bdbstore.jar</a> (application/octet-stream)
+                                <br/>
+                                                    </div>
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

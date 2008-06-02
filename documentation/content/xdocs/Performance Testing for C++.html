@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <title>Apache Qpid : Performance Testing for C++</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Performance Testing for C++
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 15, 2008 by <font color="#0050B2">cctrieloff</font>.
+				    </div>
+
+				    <h2><a name="PerformanceTestingforC%2B%2B-Howtomeasureperformanceofmyhardware"></a>How to measure performance of my hardware</h2>
+
+<p> <b>Overview</b></p>
+
+<p>Brief page on how to get perf data for your configuration. Note that per data is affected greatly by hardware, and OS tuning. So tune your OS and baseline your hardware. You should be able to get perftest 'below' to within 5%-8% of the max for the baseline of a well setup config. If you can't  - welcome to mail the list.</p>
+
+<p> <b>Basic tuning</b></p>
+
+<p>Tuning will increase your throughput and increase your determinism. The simple things are turn off cpuspeed, irqbalance etc and set timer resolution for the processors you use.... All the standard stuff.</p>
+
+<p> <b>Sample Data</b></p>
+
+<p>Some sample results running on the out of date lump in the corner, running on current hardware you should easily beat these.</p>
+
+<p> <ins>1K block Size</ins></p>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'> clients </th>
+<th class='confluenceTh'> pubs/sec </th>
+<th class='confluenceTh'> subs/sec </th>
+<th class='confluenceTh'> transfers/sec </th>
+<th class='confluenceTh'> Mbytes/sec </th>
+</tr>
+<tr>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+</tbody></table>
+<p>..</p>
+
+<p>more data. to illustrate point .... TODO</p>
+
+<p>...</p>
+
+<p>Note that there will be two limits, one is the size of the pipe, the other will be how many IO's per-second the hardware can do. On small messages 64bytes or less you will hit the IO limit, on larger messages you will hit the network bandwidth, then scale with more NICs. You can get more 'batch' if you like to get the number up when you hit the IO's per second limit with AMQP-0-10 sync points etc... play with perftest + baseline tools like netperf.</p>
+
+<p>The following tool is including, or can be located in 'cpp/src/tests/' Run with &#45;-help to check the options on the latest version.</p>
+<div class="code"><div class="codeContent">
+<pre class="code-java">$ ./perftest --help
+
+N4qpid7Options9ExceptionE: Test Options:
+  -h [ --host ] HOST (localhost)       Broker host to connect to
+  -b [ --broker ] HOST (localhost)     Broker host to connect to
+  -p [ --port ] PORT (5672)            Broker port to connect to
+  -v [ --virtualhost ] VHOST           virtual host
+  -n [ --clientname ] ID (cpp)         unique client identifier
+  --username USER (guest)              user name <span class="code-keyword">for</span> broker log in.
+  --password USER (guest)              password <span class="code-keyword">for</span> broker log in.
+  --help                               print <span class="code-keyword">this</span> usage statement
+  --setup                              Create shared queues.
+  --control                            Run test, print report.
+  --publish                            Publish messages.
+  --subscribe                          Subscribe <span class="code-keyword">for</span> messages.
+  --mode shared|fanout|topic (shared)  Test mode.
+                                       shared: --qt queues, --npubs publishers
+                                       and --nsubs subscribers per queue.
+
+                                       fanout: --npubs publishers, --nsubs subs
+                                       cribers, fanout exchange.
+                                       topic: --qt topics, --npubs publishers a
+                                       nd --nsubs subscribers per topic.
+
+  --npubs N (1)                        Create N publishers.
+  --count N (500000)                   Each publisher sends N messages.
+  --size BYTES (1024)                  Size of messages in bytes.
+  --pub-confirm yes|no (1)             Publisher use confirm-mode.
+  --durable yes|no (0)                 Publish messages as durable.
+  --unique-data yes|no (0)             Make data <span class="code-keyword">for</span> each message unique.
+  --nsubs N (1)                        Create N subscribers.
+  --sub-ack N (0)                      N&gt;0: Subscriber acks batches of N.
+                                       N==0: Subscriber uses unconfirmed mode
+  --qt N (1)                           Create N queues or topics.
+  --iterations N (1)                   Desired number of iterations of the test
+                                       .
+  -s [ --summary ]                     Summary output: pubs/sec subs/sec transf
+                                       ers/sec Mbytes/sec
+  --queue_max_count N (0)              queue policy: count to trigger 'flow to
+                                       disk'
+  --queue_max_size N (0)               queue policy: accumulated size to trigge
+                                       r 'flow to disk'
+  --interval_sub ms (0)                &gt;=0 delay between msg consume
+  --interval_pub ms (0)                &gt;=0 delay between msg publish
+
+Logging options:
+  --log-output FILE (stderr)  Send log output to FILE. FILE can be a file name
+                              or one of the special values:
+                              stderr, stdout, syslog
+  -t [ --trace ]              Enables all logging
+  --log-enable RULE (error+)  Enables logging <span class="code-keyword">for</span> selected levels and component
+                              s. RULE is in the form 'LEVEL[+][:PATTERN]'
+                              Levels are one of:
+                               trace debug info notice warning error critical
+                              For example:
+                              '--log-enable warning+' logs all warning, error
+                              and critical messages.
+                              '--log-enable debug:framing' logs debug messages
+                              from the framing namespace. This option can be
+                              used multiple times
+  --log-time yes|no (1)       Include time in log messages
+  --log-level yes|no (1)      Include severity level in log messages
+  --log-source yes|no (0)     Include source file:line in log messages
+  --log-thread yes|no (0)     Include thread ID in log messages
+  --log-function yes|no (0)   Include function signature in log messages
+
+
+There are two ways to use perftest: single process or multi-process.
+
+If none of the --setup, --publish, --subscribe or --control options
+are given perftest will run a single-process test.
+For a  multi-process test first run:
+  perftest --setup &lt;other options&gt;
+and wait <span class="code-keyword">for</span> it to complete. The remaining process should run concurrently::
+Run --npubs times: perftest --publish &lt;other options&gt;
+Run --nsubs times: perftest --subscribe &lt;other options&gt;
+Run once:          perftest --control &lt;other options&gt;
+Note the &lt;other options&gt; must be identical <span class="code-keyword">for</span> all processes.</pre>
+</div></div>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

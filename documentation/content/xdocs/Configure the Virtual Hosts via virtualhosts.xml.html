@@ -1,0 +1,113 @@
+<html>
+    <head>
+        <title>Apache Qpid : Configure the Virtual Hosts via virtualhosts.xml</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Configure the Virtual Hosts via virtualhosts.xml
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 06, 2007 by <font color="#0050B2">mmccorma</font>.
+				    </div>
+
+				    <h2><a name="ConfiguretheVirtualHostsviavirtualhosts.xml-virtualhosts.xmlOverview"></a>virtualhosts.xml Overview</h2>
+
+<p>This configuration file contains details of all queues and topics, and associated properties, to be created on broker startup. These details are configured on a per virtual host basis.</p>
+
+<p>Note that if you do not add details of a queue or topic you intend to use to this file, you must first create a consumer on a queue/topic before you can publish to it using Qpid. </p>
+
+<p>Thus most application deployments need a virtualhosts.xml file with at least some minimal detail.</p>
+
+<h3><a name="ConfiguretheVirtualHostsviavirtualhosts.xml-XMLFormatwithComments"></a>XML Format with Comments</h3>
+
+<p>The virtualhosts.xml which currently ships as part of the Qpid distribution is really targeted at development use, and supports various artifacts commonly used by the Qpid development team.</p>
+
+<p>As a result, it is reasonably complex. In the example XML below, I have tried to simplify one example virtual host setup which is possibly more useful for new users of Qpid or development teams looking to simply make use of the Qpid broker in their deployment.</p>
+
+<p>I have also added some inline comments on each section, which should give some extra information on the purpose of the various elements.</p>
+
+<div class="preformatted"><div class="preformattedContent">
+<pre>
+&lt;virtualhosts&gt;
+    &lt;!-- Sets the default virtual host for connections which do not specify a vh --&gt;
+    &lt;default&gt;localhost&lt;/default&gt;
+    &lt;!-- Define a virtual host and all it's config --&gt;
+    &lt;virtualhost&gt;
+        &lt;name&gt;localhost&lt;/name&gt;
+        &lt;localhost&gt;    
+            &lt;!-- Define the types of additional AMQP exchange available for this vh --&gt;   
+            &lt;!-- Always get amq.direct (for queues) and amq.topic (for topics) by default --&gt;     
+            &lt;exchanges&gt;
+                &lt;!-- Example of declaring an additional exchanges type for developer use only --&gt;
+                &lt;exchange&gt;
+                    &lt;type&gt;direct&lt;/type&gt;
+                    &lt;name&gt;test.direct&lt;/name&gt;
+                    &lt;durable&gt;true&lt;/durable&gt;
+                &lt;/exchange&gt;
+            &lt;/exchanges&gt;
+             
+            &lt;!-- Define the set of queues to be created at broker startup --&gt;
+            &lt;queues&gt;
+                &lt;!-- The properties configured here will be applied as defaults to all --&gt;
+                &lt;!-- queues subsequently defined unless explicitly overridden --&gt;
+                &lt;exchange&gt;amq.direct&lt;/exchange&gt;
+                &lt;!-- Set threshold values for queue monitor alerting to log --&gt; 
+                &lt;maximumQueueDepth&gt;4235264&lt;/maximumQueueDepth&gt;  &lt;!-- 4Mb --&gt;
+                &lt;maximumMessageSize&gt;2117632&lt;/maximumMessageSize&gt; &lt;!-- 2Mb --&gt;
+                &lt;maximumMessageAge&gt;600000&lt;/maximumMessageAge&gt;  &lt;!-- 10 mins --&gt;
+
+                &lt;!-- Define a queue with all default settings --&gt;   
+                &lt;queue&gt;
+                    &lt;name&gt;ping&lt;/name&gt;
+                &lt;/queue&gt;
+                &lt;!-- Example definitions of queues with overriden settings --&gt;
+                &lt;queue&gt;
+                    &lt;name&gt;test-queue&lt;/name&gt;
+                    &lt;test-queue&gt;
+                        &lt;exchange&gt;test.direct&lt;/exchange&gt;
+                        &lt;durable&gt;true&lt;/durable&gt;
+                    &lt;/test-queue&gt;
+                &lt;/queue&gt;
+                &lt;queue&gt;
+                    &lt;name&gt;test-ping&lt;/name&gt;
+                    &lt;test-ping&gt;
+                        &lt;exchange&gt;test.direct&lt;/exchange&gt;
+                    &lt;/test-ping&gt;
+                &lt;/queue&gt;
+            &lt;/queues&gt;
+        &lt;/localhost&gt;
+    &lt;/virtualhost&gt;
+&lt;/virtualhosts&gt;
+</pre>
+</div></div>
+
+
+<h3><a name="ConfiguretheVirtualHostsviavirtualhosts.xml-Usingyourownvirtualhosts.xml"></a>Using your own virtualhosts.xml</h3>
+
+<p>Note that the config.xml file shipped as an example (or developer default) in the Qpid distribution contains an element which defines the path to the virtualhosts.xml. </p>
+
+<p>When using your own virtualhosts.xml you must edit this path to point at the location of your file.</p>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

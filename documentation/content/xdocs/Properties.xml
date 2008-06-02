@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD Simplified DocBook XML V1.0//EN"
+"http://www.oasis-open.org/docbook/xml/simple/1.0/sdocbook.dtd">
+<article>
+    <title>Explanation of System properties used in Qpid</title>
+        <para>
+        This page documents the various System Properties that are currently used in the Qpid Java code base.
+        </para>
+        <section>
+            <title>Client Properties</title>
+            <section>
+                <title>STRICT_AMQP</title>
+                <para>Default:FALSE</para>
+                <para>This forces the client to only send AMQP compliant frames. This will disable a number of JMS features.</para>
+                <itemizedlist>
+                    <title>Features disabled by STRICT_AMQP</title>
+                    <listitem><para>Queue Browser</para></listitem>
+                    <listitem><para>Message Selectors</para></listitem>
+                    <listitem><para>Durable Subscriptions</para></listitem>
+                    <listitem><para>Session Recover may result in duplicate message delivery</para></listitem>
+                    <listitem><para>Destination validation, so no InvalidDestinationException will be thrown</para></listitem>
+                </itemizedlist>
+                <para>This is associated with property STRICT_AMQP_FATAL</para>
+            </section>
+
+            <section>
+                <title>STRICT_AMQP_FATAL</title>
+                <para>Default:FALSE</para>
+                <para>This will cause any attempt to utilise an enhanced feature to throw and UnsupportedOperationException. When set to false then the exception will not occur but the feature will be disabled.</para>
+                <example>
+                    <para>The Queue Browser will always show no messages.</para>
+                    <para>Any message selector will be removed.</para>
+                </example>
+            </section>
+
+            <section>
+                <title>IMMEDIATE_PREFETCH</title>
+                <para>Default:FALSE</para>
+                <para>The default with AMQP is to start prefetching messages. However, with certain 3rd party Java tools, such as Mule this can cause a problem. Mule will create a consumer but never consume from it so any any prefetched messages will be stuck until that session is closed. This property is used to re-instate the default AMQP behaviour. The default Qpid behaviour is to prevent prefetch occurring, by starting the connection Flow Controlled, until a request for a message is made on the consumer either via a receive() or setting a message listener.</para>
+            </section>
+
+
+            <section>
+                <title>amq.dynamicsaslregistrar.properties</title>
+                <para>The name of the SASL configuration properties file.</para>
+            </section>
+
+            <section>
+                <title>amqj.heartbeat.timeoutFactor</title>
+                <para>Float</para>
+                <para>The factor used to get the timeout from the delay between heartbeats</para>
+            </section>
+
+            <section>
+                <title>amqj.tcpNoDelay</title>
+                <para>Default:TRUE</para>
+                <para>Disable Nagle's algorithm on the TCP connection.</para>
+            </section>
+
+            <section>
+                <title>amqj.sendBufferSize</title>
+                <para>DEFAULT_BUFFER_SIZE = 32k</para>
+                <para>This is the default buffer sized created by Mina.</para>
+            </section>
+
+            <section>
+                <title>amqj.receiveBufferSize</title>
+                <para>DEFAULT_BUFFER_SIZE = 32k</para>
+                <para>This is the default buffer sized created by Mina.</para>
+            </section>
+
+            <section>
+                <title>amqj.protocolprovider.class</title>
+                <para>DEFAULT:org.apache.qpid.server.protocol.AMQPFastProtocolHandler</para>
+                <para>This specifies the default IoHandlerAdapter that represents the InVM broker. The IoHandlerAdapter must have a constructor that takes a single Integer that represents the InVM port number.</para>
+            </section>
+
+            <section>
+                <title>jboss.host</title>
+                <para>Used by the JBossConnectionFactoryInitialiser to specify the host to connect to perform JNDI lookups.</para>
+            </section>
+
+            <section>
+                <title>jboss.port</title>
+                <para>Used by the JBossConnectionFactoryInitialiser to specify the port to connect to perform JNDI lookups.</para>
+            </section>
+
+        </section>
+
+
+        <section>
+            <title>Management Properties</title>
+
+            <section>
+                <title>security</title>
+                <para>Default: null</para>
+                <para>String representing the Security level to be used to on the connection to the broker. The null default results in no security or PLAIN. When used with jmxconnector 'javax.management.remote.jmxmp.JMXMPConnector' a security value of 'CRAM-MD5' will result in all communication to the broker being encrypted.</para>
+            </section>
+
+            <section>
+                <title>jmxconnector</title>
+                <para>Default: null</para>
+                <para>String representing the JMXConnector class used to perform the connection to the broker. The null default results in the standard JMX connector. Utilising 'javax.management.remote.jmxmp.JMXMPConnector' and security 'CRAM-MD5' will result in all communication to the broker being encrypted.</para>
+            </section>
+
+            <section>
+                <title>timeout</title>
+                <para>Default: 5000</para>
+                <para>Long value representing the milli seconds before connection to the broker should timeout.</para>
+            </section>
+        </section>
+
+
+        <section>
+            <title>Properties used in Examples</title>
+
+            <section>
+                <title>archivepath</title>
+                <para>Used in : FileMessageDispatcher</para>
+                <para>This property specifies the archive directory to move payload file(s) after a successful transfer.</para>
+            </section>
+        </section>
+        
+</article>

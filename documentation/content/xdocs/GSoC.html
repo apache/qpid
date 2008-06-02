@@ -1,0 +1,182 @@
+<html>
+    <head>
+        <title>Apache Qpid : GSoC</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : GSoC
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 02, 2008 by <font color="#0050B2">mmccorma</font>.
+				    </div>
+
+				    <h2><a name="GSoC-GSoCProjectsandwhoisdoingwhat%3A"></a>GSoC Projects and who is doing what: </h2>
+
+
+<h3><a name="GSoC-QpidDemotwoprojects%28oneforAMQP09andoneforAMQP010%29"></a>Qpid Demo - two projects (one for AMQP 0-9 and one for AMQP 0-10)</h3>
+
+<p>Candidates: Senaka Fernando, Buddika Laknath</p>
+
+<p>Project Goal: Create a multi language Demo for Qpid, and use the demo as source to create the Qpid getting Started pages</p>
+
+<p>Mentor: Carl/Rajith </p>
+
+<p>Project Description:  </p>
+
+<p>    The Qpid project likes to have an enterprise grade demo that reflects the messaging capabilities of the AMQP (www.amqp.org) protocol that uses brokers written in Java and C++ and the clients written in Java/JMS, c++, python, ruby, .NET</p>
+
+<p>The Demo ca use any client server problem (like bank, stock, render farm, travel site etc) to illustrate the capabilities of the Qpid.</p>
+
+
+
+
+<h3><a name="GSoC-AMQPmgmtBridgeJMX"></a>AMQP mgmt Bridge - JMX </h3>
+
+<p>Candidates: Le Duc Bao,Lahiru Gunathilaka</p>
+
+<p>Project Goal: Create a dynamic bridge from AMQP-mgmt protocol to JMX to facilitate std management console integration</p>
+
+<p>Mentor: Marnie/Aidan/Arnaud ?</p>
+
+<p>Project Description:</p>
+
+<p>    Project is to create a process will receive management Data through the AMQP mgmt protocol and translate those into JMX.     This will allow the C++ broker to also be hooked into a JMX allow for all the instrumentation data to be read from JMX, all the methods to be invoked, and the configuration to be updated through standard JMX consoles.</p>
+
+<p>Note that all the schema is dynamic, so the bridge need to configure itself at runtime, so this service should derive it's behavior from the schema provided to it.</p>
+
+<p>AMQP mgmt side protocol can be found here:    <a href="http://cwiki.apache.org/qpid/management-design-notes.html" title="Visit page outside Confluence">http://cwiki.apache.org/qpid/management-design-notes.html</a></p>
+
+<p>To play with it, build the C++ broker<br/>
+./bootstrap<br/>
+./configure<br/>
+make</p>
+
+<p>on linux, the to run the cmd line mgmt set the PYTHONPATH and run it from mgnt-cli</p>
+
+<p>You should pretty quickly see how the objects get dynamically build and how they are layed out, these can then quite simple be dynamically mapped to JMX. </p>
+
+<p>Implementation language is Java</p>
+
+<h3><a name="GSoC-AMQPmgmtBridgeWSDM"></a>AMQP mgmt Bridge - WS-DM</h3>
+
+<p>Candidates: Rahul Mehta</p>
+
+<p>Project Goal: Create a bridge between AMQP-JMX and WS-DM</p>
+
+<p>Mentor: Arnaud</p>
+
+<p>Project Description:</p>
+
+<p> Project is to to expose the AMQP JMX-instrumented applications (Java broker and JMX/C++ management bridge) using MS-DM interfaces. Referring to the JMX architecture, this mapping should be addressed through a JMX-WS-DM connector. This will allow any qpid broker to be hooked into industry standard management product line like BMC, Tivoli, etc.</p>
+
+<p>current qpid Java broker JMX can be found here:    <a href="http://cwiki.apache.org/qpid/jmx-management-console.html" title="Visit page outside Confluence">http://cwiki.apache.org/qpid/jmx-management-console.html</a></p>
+
+<p>To play with it, you should build the Java broker</p>
+
+<p>Implementation language is Java. </p>
+
+<h3><a name="GSoC-JMXCli"></a>JMX Cli</h3>
+
+<p>Candidates: Lahiru Gunathilaka, Ruchira Wageesha </p>
+
+<p>Project Goal: Provide the ability to access Java Broker mgmt info from cmd line.</p>
+
+<p>Secondary Goal: Integrate with AMQP mgnt protocol ??</p>
+
+<p>Mentor: Adian/Marnie/Martin</p>
+
+<p>Project Description:</p>
+
+<p>    Design and implement a simple solution, runnable from the command line, for extracting useful JMX information from the Qpid Java Broker. Solution should be configurable at runtime to allow users to decide which bits of info they're interested in and when. Might be nice to see the information extracted in a report format</p>
+
+<p>More info:</p>
+
+<p>Currently, the Qpid Java broker provides several JMX methods to all users/applications to extract information about queues etc on the broker. We have used this information for two purposes: exposing management details in the existing Eclipse RCP Management Console UI and also to provide alerting in the broker log when certain configurable thresholds are reached e.g. maximum queue size etc.</p>
+
+<p>However, some of our users have expressed an interest in being able to extract JMX information more simply i.e. without the constraints our existing confgurable alerting brings with it and also independently of the UI.</p>
+
+<p>Thus, an application which could be called from the command line on Windows, Unix (Solaris) and Linux would be invaluable for our user projects. </p>
+
+<p>Ideally this CLI would expose all the JMX calls in a simple wrapper and perhaps allow the user to dump the results to an XML file or a web page.</p>
+
+<p>This is not intended to be too heavily prescriptive and is really intended as a starter for ten !</p>
+
+<h3><a name="GSoC-Qpidjavabrokerconfig"></a>Qpid-java-broker-config</h3>
+
+<p>Candidates: Sachith Danushka.</p>
+
+<p>Project Goal: Rationalize the configuration in the Java Broker to get it more consistent</p>
+
+<p>Mentor: Adian/Marnie/Martin</p>
+
+<p>Project Description:</p>
+
+<p>     Refactor Qpid Java Broker configuration into a more elegant xml schema, with xsd, covering all existing configuration options and allowing for extension. Additionally implement a module to validate broker configuration files, which could be run standalone i.e. before starting a broker, to check that they're well formed and validate against the xsd.</p>
+
+<p>More info:</p>
+
+<p>Currently the broker configuration for the Qpid Java Broker is a little untidy. There's the bulk of the core broker configuration, much of which the majority of our end users won't want to change much, in the default config.xml files that we ship. On top of that we have a set of properties for the virtualhosts (which includes the ability to define per host some queues which will always exist on broker startup etc) in a separate file. </p>
+
+<p>At the moment, if you edit the config.xml file you're using and accidentally damage or remove an important section the broker will blow up in an unexpected fashion. Creating an xsd and validating the config.xml at startup (probably as a switch on/off-able option !) would help to avoid this possibility. </p>
+
+<p>We could also provide more information about what the config file contains in a self-documenting way. I'd suggest we need to restructure the config set up too - the virtualhosts file is at the very least badly named, but probably not really fit for purpose. </p>
+
+<h3><a name="GSoC-qpidandroiddemo"></a>qpid-android-demo</h3>
+
+<p>Project Goal:<br/>
+Implement a simple demo on Android using the Qpid client to send messages to and from a broker, such as stock price information and trade orders</p>
+
+<p>Contact person: Aidan Skinner &lt;aidan AT apache DOT org&gt;</p>
+
+<p>Project Description:</p>
+
+<p>    Android is hot, Qpid is hot, porting the Qpid client to Android and getting it to pull some information and publish some would be hot. </p>
+
+<h3><a name="GSoC-DBusoverQpid"></a>DBus over Qpid</h3>
+
+<p>Project Goal:<br/>
+Implement an AMQP transport for DBus using Qpid.</p>
+
+<p>Contact Person: Aidan Skinner &lt;aidan AT apache DOT org&gt;</p>
+
+<p>Project Description:<br/>
+   Running DBus over AMQP would allow some interesting use cases, such as home automation, automatic synchronisation and the like, turning it into a true network bus. </p>
+
+<p>   You would need to be familiar with C, C++, Python or Java, and would ideally have experience working with disparate Free Software communities.</p>
+
+
+<h3><a name="GSoC-ApacheDerbyDatastore"></a>Apache Derby Datastore</h3>
+
+<p>Project Goal:<br/>
+Implement a datastore backed by Hibernate or Apache Derby</p>
+
+<p>Contact Person: Aidan Skinner &lt;aidan AT apache DOT org&gt;</p>
+
+<p>Project Description:</p>
+
+<p>   Create a persistent datastore for Qpid that uses JDBC to connect to a database and which uses Apache Derby as a default backend. Bonus points for implementing it using hibernate so it's easily portable across different databases.</p>
+
+<p>   You would need to be familiar with Java, JDBC, Hibernate and SQL.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

@@ -1,0 +1,105 @@
+<html>
+    <head>
+        <title>Apache Qpid : Configuring Qpid Management Console</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Apache Qpid : Configuring Qpid Management Console
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Jun 29, 2007 by <font color="#0050B2">ritchiem</font>.
+				    </div>
+
+				    <h2><a name="ConfiguringQpidManagementConsole-ConfiguringQpidManagementConsole"></a>Configuring Qpid Management Console</h2>
+
+<p>QPID&nbsp;has a management interface that exposes . By default the management interface is enabled but it can also be disabled by modifying the management element in config.xml.</p>
+
+<p>When starting the broker, the following system properties need to be set by setting the environment variable QPID_OPTS:</p>
+<div class="panel"><div class="panelContent">
+<p>QPID_OPTS="-Dcom.sun.management.jmxremote &#45;Dcom.sun.management.jmxremote.port=8999 &#45;Dcom.sun.management.jmxremote.authenticate=false &#45;Dcom.sun.management.jmxremote.ssl=false"</p>
+</div></div>
+
+<p>Note that you should only use these settings for non-production systems. For production deployments you should use authentication !</p>
+
+<p>You can find out more about the features exposed by the Qpid JMS interfaces <a href="https://confluence.uk.jpmorgan.com/confluence/display/IBTAMQ/QPID+Management+Features" title="Visit page outside Confluence">here</a>.</p>
+
+<h2><a name="ConfiguringQpidManagementConsole-UsingEclipseRCP"></a>Using Eclipse RCP</h2>
+
+
+<h3><a name="ConfiguringQpidManagementConsole-InstallingtheQpidManagementConsole%28eclipseRCP%29"></a>Installing the Qpid Management Console (eclipse RCP)</h3>
+
+<p>Unzip the management eclipse plugin zip for windows in a dir (eg C:/). A&nbsp;dir with name qpidmc (eg C:/qpidmc) will get created.</p>
+
+<p>To run the RCP from command prompt, set the environment variable QPIDMC_HOME to installation dir (eg. QPIDMC_HOME=C:/qpidmc)&nbsp; and include $QPIDMC_HOME/bin in your PATH.</p>
+
+<h3><a name="ConfiguringQpidManagementConsole-RunningtheQpidManagementConsole%28eclipseRCP%29"></a>Running the Qpid Management Console (eclipse RCP)</h3>
+
+<p>To run this application on windows, run any of these scripts&#45;</p>
+
+<p>qpidmc.bat (windows command prompt)</p>
+
+<p>qpidmc.sh&nbsp; (cygwin)&nbsp;</p>
+
+<p>For running on unix, use the scritps for particular windowing system<br/>
+qpidmc_&lt;windowing system&gt;.sh (eg. qpidmc_motif.sh)</p>
+
+<h3><a name="ConfiguringQpidManagementConsole-UsingtheQpidManagementConsole%28eclipseRCP%29"></a>Using the Qpid Management Console (eclipse RCP)</h3>
+
+<p>Please see <span class="error">&#91;attachment |^Qpid_Management_Console.doc&#93;</span>&nbsp;for using this Eclipse RCP.&nbsp; Attchment contains some of the screenshots of Qpid Management Console (Eclipse RCP) .</p>
+
+<h2><a name="ConfiguringQpidManagementConsole-UsingJConsole"></a>Using JConsole</h2>
+
+<p>JConsole is a management tool that comes with the Java Runtime Environment and provides a very simple view of managed beans. It requires no special configuration to be used with QPID.</p>
+
+<p>To attach to a running&nbsp;broker simply enter the host and port details on the JConsole connect dialog. The port should be the same as the one specified in the system property <tt>com.sun.management.jmxremote.port</tt>.</p>
+
+<p>Once you are connected expand the tree nodes marked "org.apache".</p>
+
+<p>Please see attachment for some of the&nbsp;<span class="error">&#91;screenshots|^Qpid_using_jconsole.doc&#93;</span> of using jconsole for Qpid.</p>
+
+<h2><a name="ConfiguringQpidManagementConsole-UsingHermesJMS"></a>Using HermesJMS</h2>
+
+<p>HermesJMS also offers integration with the Qpid management interfaces. You can get instructions and more information from <a href="http://wiki.apache.org/qpid/HermesJMS" title="Visit page outside Confluence">http://wiki.apache.org/qpid/HermesJMS</a>.</p>
+
+<h2><a name="ConfiguringQpidManagementConsole-UsingMC4J"></a>Using MC4J</h2>
+
+<p><a href="http://www.mc4j.org" title="Visit page outside Confluence">MC4J</a> is an alternative management tool. It provide a richer "dashboard" that can customise the raw MBeans.</p>
+
+<h4><a name="ConfiguringQpidManagementConsole-Installation"></a>Installation</h4>
+
+<ul>
+	<li>First download and install MC4J for your platform. Version 1.2 beta 9 is the latest version that has been tested.</li>
+	<li>Copy the directory <tt>blaze/java/management/mc4j</tt> into the directory <tt>&lt;MC4J-Installation&gt;/dashboards</tt></li>
+</ul>
+
+
+<h4><a name="ConfiguringQpidManagementConsole-Configuration"></a>Configuration</h4>
+
+<p>You should create a connection the JVM to be managed. Using the <tt>Management-&gt;Create Server Connection</tt> menu option. The connection URL should be of the form: <tt>service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi</tt> making the appropriate host and post changes.</p>
+
+<h4><a name="ConfiguringQpidManagementConsole-Operation"></a>Operation</h4>
+
+<p>You can view tabular summaries of the queues, exchanges and connections using the Global Dashboards-&gt;QPID tree view. To drill down on individual beans you can right click on the bean. This will show any available graphs too.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="border/border_bottom.gif"><img src="border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Apr 22, 2008 02:47</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
