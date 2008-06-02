@@ -25,6 +25,7 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/type_traits/remove_const.hpp>
 
 namespace qpid {
 
@@ -35,21 +36,20 @@ namespace qpid {
  * iterators should use ptr_map_ptr(i) to get the pointer from
  * boost::ptr_map::iterator i.
  *
- * Can be removed when we no longer support platforms on 1.33.
- *
  * @see http://www.boost.org/libs/ptr_container/doc/ptr_container.html#upgrading-from-boost-v-1-33
  */
 
 
-typedef boost::is_same<boost::ptr_map<int, int>::iterator::value_type,
-                       int> IsOldPtrMap;
+typedef boost::is_same<boost::ptr_map<int, int>::iterator::value_type, int> IsOldPtrMap;
 
 template <class Iter>
 typename boost::enable_if<IsOldPtrMap, typename Iter::value_type*>::type
 ptr_map_ptr(const Iter& i) { return &*i; }
 
 template <class Iter>
-typename boost::disable_if<IsOldPtrMap, typename Iter::value_type::second_type>::type
+typename boost::disable_if<IsOldPtrMap,
+                           typename boost::remove_const<typename Iter::value_type::second_type>::type
+                           >::type
 ptr_map_ptr(const Iter& i) { return i->second; }
 
 } // namespace qpid
