@@ -38,7 +38,7 @@ class BasicP2PTest : public SimpleTestCaseBase
 {
     class Receiver;
 public:
-    void assign(const std::string& role, framing::FieldTable& params, ConnectionSettings& options);
+    void assign(const std::string& role, framing::FieldTable& params, ConnectionOptions& options);
 };
 
 }

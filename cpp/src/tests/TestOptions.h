@@ -26,7 +26,7 @@
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/ConnectionSettings.h"
+#include "ConnectionOptions.h"
 
 #include <iostream>
 #include <exception>
@@ -35,12 +35,14 @@ namespace qpid {
 
 struct TestOptions : public qpid::Options
 {
-    TestOptions(const std::string& helpText_=std::string()) :
-        Options("Test Options"), help(false), helpText(helpText_)
+    TestOptions(const std::string& helpText_=std::string(),
+                const std::string& argv0=std::string())
+        : Options("Test Options"), help(false), log(argv0), helpText(helpText_)
     {
         addOptions()
             ("help", optValue(help), "print this usage statement");
         add(con);
+        add(log);
     }
 
     /** As well as parsing, throw help message if requested. */
@@ -52,7 +54,7 @@ struct TestOptions : public qpid::Options
             msg << *this << std::endl << std::endl << e.what() << std::endl;
             throw qpid::Options::Exception(msg.str());
         }
-        qpid::log::Logger::instance().configure(con.log);
+        qpid::log::Logger::instance().configure(log);
         if (help) {
             std::ostringstream msg;
             msg << *this << std::endl << std::endl << helpText << std::endl;
@@ -67,7 +69,8 @@ struct TestOptions : public qpid::Options
 
     
     bool help;
-    client::ConnectionSettings con;
+    ConnectionOptions con;
+    qpid::log::Options log;
     std::string helpText;
 };
 

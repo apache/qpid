@@ -34,24 +34,17 @@ namespace qpid {
 namespace client {
 
 /**
- * Used to hold seetings for a connection (and parse these from
- * command line options etc if desired).
+ * Settings for a Connection.
  */
-struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration {
-    // FIXME aconway 2008-06-02: separate option parsing from settings as subclass.
-    ConnectionSettings(const std::string& argv0=std::string());
+struct ConnectionSettings : public sys::Socket::Configuration {
+
+    ConnectionSettings();
     virtual ~ConnectionSettings();
 
     /**
      * Applies any tcp specific options to the sockets file descriptor
      */
     virtual void configurePosixTcpSocket(int fd) const;
-
-    /** 
-     * Parse options from command line arguments (will throw exception
-     * if arguments cannot be parsed).
-     */
-    void parse(int argc, char** argv);
 
     /**
      * The host (or ip address) to connect to (defaults to 'localhost').
@@ -110,11 +103,6 @@ struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration {
      * If true, TCP_NODELAY will be set for the connection.
      */
     bool tcpNoDelay;
-
-    /**
-     * Logging settings to use.
-     */
-    log::Options log;
 };
 
 }} // namespace qpid::client
