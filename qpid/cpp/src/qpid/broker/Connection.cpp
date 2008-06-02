@@ -149,7 +149,8 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
-    mgmtObject->set_authIdentity(userId);
+    if (mgmtObject.get() != 0)
+        mgmtObject->set_authIdentity(userId);
 }
 
 void Connection::close(
