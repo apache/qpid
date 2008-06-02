@@ -47,7 +47,7 @@ void SimpleTestCaseBase::report(client::Message& report)
     }
 }
 
-SimpleTestCaseBase::Sender::Sender(ConnectionSettings& options, 
+SimpleTestCaseBase::Sender::Sender(ConnectionOptions& options, 
                                    const Exchange& _exchange, 
                                    const std::string& _key, 
                                    const int _messages) 
@@ -67,7 +67,7 @@ void SimpleTestCaseBase::Sender::start(){
     stop();
 }
 
-SimpleTestCaseBase::Worker::Worker(ConnectionSettings& options, const int _messages) : 
+SimpleTestCaseBase::Worker::Worker(ConnectionOptions& options, const int _messages) : 
     messages(_messages), count(0)
 {
     connection.open(options.host, options.port);

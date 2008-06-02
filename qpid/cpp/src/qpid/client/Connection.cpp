@@ -53,8 +53,7 @@ void Connection::open(
     const std::string& vhost,
     uint16_t maxFrameSize)
 {
-    // FIXME aconway 2008-06-02: refactor ConnectionSettings to separate out command line parsing.
-    ConnectionSettings settings(""); 
+    ConnectionSettings settings; 
     settings.host = host;
     settings.port = port;
     settings.username = uid;
