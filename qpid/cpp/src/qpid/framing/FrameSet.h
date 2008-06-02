@@ -19,7 +19,7 @@
  *
  */
 #include <string>
-#include <vector>
+#include "qpid/InlineVector.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -35,7 +35,7 @@ namespace framing {
  */
 class FrameSet
 {
-    typedef std::vector<AMQFrame> Frames;
+    typedef InlineVector<AMQFrame, 4> Frames;
     const SequenceNumber id;
     Frames parts;
 	mutable uint64_t contentSize;
