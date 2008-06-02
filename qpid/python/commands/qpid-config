@@ -145,7 +145,7 @@ class BrokerManager:
         print "======================================================="
         for ex in exchanges:
             if self.match (ex.name, filter):
-                print "%4c      %-10s%5d     %s" % (YN (ex.durable), ex.type, ex.bindings, ex.name)
+                print "%4c      %-10s%5d     %s" % (YN (ex.durable), ex.type, ex.bindingCount, ex.name)
 
     def ExchangeListRecurse (self, filter):
         self.ConnectToBroker ()
@@ -185,12 +185,12 @@ class BrokerManager:
                     fc = int (args[FILECOUNT])
                     print "%4c%9c%7c%10d%11dx%-14d%s" % \
                         (YN (q.durable), YN (q.autoDelete),
-                         YN (q.exclusive), q.bindings, fc, fs, q.name)
+                         YN (q.exclusive), q.bindingCount, fc, fs, q.name)
                 else:
                     if not _durable:
                         print "%4c%9c%7c%10d                          %s" % \
                             (YN (q.durable), YN (q.autoDelete),
-                             YN (q.exclusive), q.bindings, q.name)
+                             YN (q.exclusive), q.bindingCount, q.name)
 
     def QueueListRecurse (self, filter):
         self.ConnectToBroker ()

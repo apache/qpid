@@ -97,7 +97,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
             QPID_LOG(trace, "Bound successfully with query: " << queryText );
 
             if (mgmtExchange.get() != 0) {
-                mgmtExchange->inc_bindings ();
+                mgmtExchange->inc_bindingCount();
             }
             return true;
         } else{
@@ -128,7 +128,7 @@ bool XmlExchange::unbind(Queue::shared_ptr queue, const string& routingKey, cons
             bindingsMap.erase(routingKey);
         }
         if (mgmtExchange.get() != 0) {
-            mgmtExchange->dec_bindings ();
+            mgmtExchange->dec_bindingCount();
         }
         return true;
     } else {

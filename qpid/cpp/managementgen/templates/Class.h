@@ -26,6 +26,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/AtomicCount.h"
 
 namespace qpid {
 namespace management {
@@ -38,9 +39,9 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     static std::string className;
     static uint8_t     md5Sum[16];
 
-    // Configuration Elements
+    // Properties
 /*MGEN:Class.ConfigDeclarations*/
-    // Instrumentation Elements
+    // Statistics
 /*MGEN:Class.InstDeclarations*/
     // Private Methods
     static void writeSchema   (qpid::framing::Buffer& buf);
@@ -61,6 +62,8 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     /*MGEN:Class.NameCap*/ (Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);
 
+    /*MGEN:Class.SetGeneralReferenceDeclaration*/
+
     std::string getPackageName (void) { return packageName; }
     std::string getClassName   (void) { return className; }
     uint8_t*    getMd5Sum      (void) { return md5Sum; }
@@ -72,6 +75,5 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 };
 
 }}
-            
 
 #endif  /*!_MANAGEMENT_/*MGEN:Class.NameUpper*/_*/

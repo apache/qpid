@@ -201,14 +201,14 @@ class RouteManager:
         if _verbose:
             print "Creating inter-broker binding..."
         bridgeArgs = {}
-        bridgeArgs["durable"]      = _durable
-        bridgeArgs["src"]          = exchange
-        bridgeArgs["dest"]         = exchange
-        bridgeArgs["key"]          = routingKey
-        bridgeArgs["tag"]          = id
-        bridgeArgs["excludes"]     = excludes
-        bridgeArgs["src_is_queue"] = 0
-        bridgeArgs["src_is_local"] = 0
+        bridgeArgs["durable"]    = _durable
+        bridgeArgs["src"]        = exchange
+        bridgeArgs["dest"]       = exchange
+        bridgeArgs["key"]        = routingKey
+        bridgeArgs["tag"]        = id
+        bridgeArgs["excludes"]   = excludes
+        bridgeArgs["srcIsQueue"] = 0
+        bridgeArgs["srcIsLocal"] = 0
         res = mc.syncCallMethod (self.mch, link.id, link.classKey, "bridge", bridgeArgs)
         if res.status == 4:
             print "Can't create a durable route on a non-durable link"

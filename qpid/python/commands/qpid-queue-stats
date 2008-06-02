@@ -126,14 +126,14 @@ class BrokerManager:
         deltaTime   = float (obj.timestamps[0] - lastSample.timestamps[0])
         enqueueRate = float (obj.msgTotalEnqueues - lastSample.msgTotalEnqueues) / (deltaTime / 1000000000.0)
         dequeueRate = float (obj.msgTotalDequeues - lastSample.msgTotalDequeues) / (deltaTime / 1000000000.0)
-        print "%-41s%10.2f%10d..%-10d%13.2f%13.2f" % \
-            (name, deltaTime / 1000000000, obj.msgDepthLow, obj.msgDepthHigh, enqueueRate, dequeueRate)
+        print "%-41s%10.2f%11d%13.2f%13.2f" % \
+            (name, deltaTime / 1000000000, obj.msgDepth, enqueueRate, dequeueRate)
 
 
     def Display (self):
         self.ConnectToBroker ()
-        print "Queue Name                                     Sec       Depth Range          Enq Rate     Deq Rate"
-        print "==================================================================================================="
+        print "Queue Name                                     Sec       Depth     Enq Rate     Deq Rate"
+        print "========================================================================================"
         try:
             while True:
                 sleep (1)

@@ -138,8 +138,8 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
         Binding::shared_ptr binding (new Binding (routingKey, queue, this));
         bindings[routingPattern].push_back(binding);
         if (mgmtExchange.get() != 0) {
-            mgmtExchange->inc_bindings ();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindings();
+            mgmtExchange->inc_bindingCount();
+            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     }
@@ -159,8 +159,8 @@ bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, co
     qv.erase(q);
     if(qv.empty()) bindings.erase(bi);
     if (mgmtExchange.get() != 0) {
-        mgmtExchange->dec_bindings ();
-        dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindings();
+        mgmtExchange->dec_bindingCount();
+        dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindingCount();
     }
     return true;
 }

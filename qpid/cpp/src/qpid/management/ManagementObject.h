@@ -92,6 +92,7 @@ class ManagementObject
     virtual void doMethod             (std::string            methodName,
                                        qpid::framing::Buffer& inBuf,
                                        qpid::framing::Buffer& outBuf) = 0;
+    virtual void setReference(uint64_t objectId);
 
     virtual std::string  getClassName   (void) = 0;
     virtual std::string  getPackageName (void) = 0;

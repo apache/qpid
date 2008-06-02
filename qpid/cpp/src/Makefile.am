@@ -528,6 +528,7 @@ nobase_include_HEADERS = \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AsynchIOHandler.h \
+  qpid/sys/AtomicCount.h \
   qpid/sys/AtomicValue.h \
   qpid/sys/AtomicValue_gcc.h \
   qpid/sys/AtomicValue_mutex.h \

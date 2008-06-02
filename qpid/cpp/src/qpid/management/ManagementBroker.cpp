@@ -630,7 +630,7 @@ void ManagementBroker::handleAttachRequestLH (Buffer& inBuffer, string replyToKe
     agent->mgmtObject->set_sessionId    (sessionId);
     agent->mgmtObject->set_label        (label);
     agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());
-    agent->mgmtObject->set_sysId        (systemId);
+    agent->mgmtObject->set_systemId     (systemId);
     addObject (agent->mgmtObject);
 
     remoteAgents[sessionId] = agent;
