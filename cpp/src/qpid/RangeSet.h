@@ -169,6 +169,9 @@ class RangeSet
     RangeIterator rangesEnd() const { return ranges.end(); }
     size_t rangesSize() const { return ranges.size(); }
 
+    // The difference between the start and end of this range set
+    uint32_t span() const;
+
     bool empty() const { return ranges.empty(); }
     void clear() { ranges.clear(); }
     
@@ -307,6 +310,11 @@ template <class T> Range<T> RangeSet<T>::rangeContaining(const T& t) const {
     typename Ranges::const_iterator i =
         std::lower_bound(ranges.begin(), ranges.end(), Range<T>(t));
     return (i != ranges.end() && i->contains(t)) ? *i : Range<T>(t,t);
+}
+
+template <class T> uint32_t RangeSet<T>::span() const {
+    if (ranges.empty()) return 0;
+    return ranges.back().last() - ranges.front().first();
 }
 
 
