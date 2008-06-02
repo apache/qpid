@@ -535,7 +535,7 @@ void SessionImpl::sendFlush()
 
 void SessionImpl::sendCompletionImpl()
 {
-    proxy.completed(completedIn, true);
+    proxy.completed(completedIn, completedIn.span() > 1000);
 }
 
 void SessionImpl::gap(const framing::SequenceSet& /*commands*/)
