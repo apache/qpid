@@ -184,7 +184,7 @@ void Listener::report(){
     msg.getHeaders().setString("TYPE", "REPORT");
     session.messageTransfer(arg::destination="amq.direct", arg::content=msg, arg::acceptMode=1);
     if(transactional){
-        session.txCommit();
+        sync(session).txCommit();
     }
 }
 

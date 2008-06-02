@@ -171,7 +171,7 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
     session.messageTransfer(arg::content=reportRequest, arg::destination="amq.topic", arg::acceptMode=1);
     if(transactional){
-        session.txCommit();
+        sync(session).txCommit();
     }    
     //wait for a response from each listener (TODO, could log these)
     for (int i = 0; i < listeners; i++) {
@@ -179,7 +179,7 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     }
 
     if(transactional){
-        session.txCommit();
+        sync(session).txCommit();
     }    
 
     AbsTime finish = now();

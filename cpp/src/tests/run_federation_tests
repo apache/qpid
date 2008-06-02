@@ -6,9 +6,9 @@ PYTHON_DIR=${MY_DIR}/../../../python
 trap stop_brokers EXIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
     REMOTE_PORT=`cat qpidd.port`
 }
 
