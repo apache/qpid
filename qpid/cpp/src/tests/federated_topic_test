@@ -27,11 +27,11 @@ PYTHON_DIR=${MY_DIR}/../../../python
 trap stop_brokers EXIT
 
 start_brokers() {
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
     PORT_A=`cat qpidd.port`
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
     PORT_B=`cat qpidd.port`
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-data-dir --auth no > qpidd.port
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
     PORT_C=`cat qpidd.port`
 }
 
@@ -64,16 +64,16 @@ setup_routes() {
     BROKER_C="localhost:$PORT_C"
     export PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
     echo "Establishing routes for topic..."
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_A amq.topic topic_control B B
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_C $BROKER_B amq.topic topic_control C C
+    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_A amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route add $BROKER_C $BROKER_B amq.topic topic_control C C
     echo "linked A->B->C"        
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_C amq.topic topic_control B B
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_A $BROKER_B amq.topic topic_control A A
+    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_C amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route add $BROKER_A $BROKER_B amq.topic topic_control A A
     echo "linked C->B->A"        
 
     echo "Establishing routes for response queue..."
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_B $BROKER_C amq.direct response B B 
-    $PYTHON_DIR/commands/qpid-route -s ~/qpid/trunk/qpid/specs/amqp.0-10.xml add $BROKER_A $BROKER_B amq.direct response A A
+    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_C amq.direct response B B 
+    $PYTHON_DIR/commands/qpid-route add $BROKER_A $BROKER_B amq.direct response A A
     echo "linked C->B->A"        
 }
 
