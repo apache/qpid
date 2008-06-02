@@ -28,7 +28,7 @@
 using namespace qpid::framing;
 using namespace boost;
 
-FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true) {parts.reserve(4);}
+FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true) { }
 
 void FrameSet::append(const AMQFrame& part)
 {
