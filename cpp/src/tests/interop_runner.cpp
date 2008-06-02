@@ -24,7 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/ConnectionOptions.h"
 #include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
@@ -54,7 +54,7 @@ class DummyRun : public TestCase
 {
 public:
     DummyRun() {}
-    void assign(const string&, FieldTable&, ConnectionSettings&) {}
+    void assign(const string&, FieldTable&, ConnectionOptions&) {}
     void start() {}
     void stop() {}
     void report(qpid::client::Message&) {}
@@ -68,7 +68,7 @@ class Listener : public MessageListener, private Runnable{
     typedef boost::ptr_map<string, TestCase> TestMap;
 
     Channel& channel;
-    ConnectionSettings& options;
+    ConnectionOptions& options;
     TestMap tests;
     const string name;
     const string topic;
@@ -86,13 +86,13 @@ class Listener : public MessageListener, private Runnable{
     void sendSimpleResponse(const string& type, Message& request);
     void sendReport();
 public:
-    Listener(Channel& channel, ConnectionSettings& options);
+    Listener(Channel& channel, ConnectionOptions& options);
     void received(Message& msg);
     void bindAndConsume();
     void registerTest(string name, TestCase* test);
 };
 
-struct TestSettings : ConnectionSettings
+struct TestSettings : ConnectionOptions
 {
     bool help;
 
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     }
 }
 
-Listener::Listener(Channel& _channel, ConnectionSettings& _options) : channel(_channel), options(_options), name(options.clientid), topic("iop.control." + name)
+Listener::Listener(Channel& _channel, ConnectionOptions& _options) : channel(_channel), options(_options), name(options.clientid), topic("iop.control." + name)
 {}
 
 void Listener::registerTest(string name, TestCase* test)
