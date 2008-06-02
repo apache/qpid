@@ -25,7 +25,6 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_const.hpp>
 
 namespace qpid {
 
@@ -50,10 +49,7 @@ typename boost::enable_if<IsOldPtrMap, typename Iter::value_type*>::type
 ptr_map_ptr(const Iter& i) { return &*i; }
 
 template <class Iter>
-struct PtrMapValueType : public boost::remove_const<typename Iter::value_type::second_type> {};
-
-template <class Iter>
-typename boost::disable_if<IsOldPtrMap, typename PtrMapValueType<Iter>::type >::type
+typename boost::disable_if<IsOldPtrMap, typename Iter::value_type::second_type>::type
 ptr_map_ptr(const Iter& i) { return i->second; }
 
 } // namespace qpid
