@@ -377,7 +377,9 @@ public class AMQSession_0_10 extends AMQSession
         boolean preAcquire;
         try
         {
-            preAcquire = ( ! consumer.isNoConsume()  && consumer.getMessageSelector() == null) || !(consumer.getDestination() instanceof AMQQueue);
+            preAcquire = ( ! consumer.isNoConsume()  &&
+                    (consumer.getMessageSelector() == null || consumer.getMessageSelector().equals("")) )
+                    || !(consumer.getDestination() instanceof AMQQueue);
             getQpidSession().messageSubscribe(queueName.toString(), tag.toString(),
                                               getAcknowledgeMode() == NO_ACKNOWLEDGE ? Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED:Session.TRANSFER_CONFIRM_MODE_REQUIRED,
                                               preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
