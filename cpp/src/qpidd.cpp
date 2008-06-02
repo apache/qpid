@@ -60,11 +60,13 @@ struct DaemonOptions : public qpid::Options {
     bool quit;
     bool check;
     int wait;
+    std::string piddir;
 
-    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
+    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10), piddir("/tmp")
     {
         addOptions()
             ("daemon,d", optValue(daemon), "Run as a daemon.")
+            ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
             ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
             ("check,c", optValue(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
             ("quit,q", optValue(quit), "Tells the daemon to shut down");
@@ -127,6 +129,8 @@ void shutdownHandler(int /*signal*/){
 }
 
 struct QpiddDaemon : public Daemon {
+    QpiddDaemon(std::string pidDir) : Daemon(pidDir) {}
+
     /** Code for parent process */
     void parent() {
         uint16_t port = wait(options->daemon.wait);
@@ -216,7 +220,7 @@ int main(int argc, char* argv[])
 
         // Options that affect a running daemon.
         if (options->daemon.check || options->daemon.quit) {
-            pid_t pid = Daemon::getPid(options->broker.port);
+            pid_t pid = Daemon::getPid(options->daemon.piddir, options->broker.port);
             if (pid < 0) 
                 return 1;
             if (options->daemon.check)
@@ -240,7 +244,7 @@ int main(int argc, char* argv[])
             
         if (options->daemon.daemon) {
             // Fork the daemon
-            QpiddDaemon d;
+            QpiddDaemon d(options->daemon.piddir);
             d.fork();
         } 
         else {                  // Non-daemon broker.
