@@ -265,7 +265,7 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
         "--log-thread", "true",
         "--log-function", "YES"
     };
-    qpid::log::Options opts;
+    qpid::log::Options opts("");
     opts.parse(ARGC(argv), const_cast<char**>(argv));
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
@@ -278,7 +278,7 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
 }
 
 QPID_AUTO_TEST_CASE(testOptionsDefault) {
-    Options opts;
+    Options opts("");
     vector<string> expect=list_of("stderr");
     BOOST_CHECK_EQUAL(expect, opts.outputs);
     expect=list_of("error+");
@@ -294,7 +294,7 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
         "--log-enable", "debug:bar",
         "--log-enable", "info"
     };
-    qpid::log::Options opts;
+    qpid::log::Options opts("");
     opts.parse(ARGC(argv), const_cast<char**>(argv));
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
@@ -309,7 +309,7 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
 QPID_AUTO_TEST_CASE(testOptionsFormat) {
     Logger l;
     {
-        Options opts;
+        Options opts("");
         BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
         const char* argv[]={
             0,
@@ -323,7 +323,7 @@ QPID_AUTO_TEST_CASE(testOptionsFormat) {
             Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
     }
     {
-        Options opts;           // Clear.
+        Options opts("");           // Clear.
         const char* argv[]={
             0,
             "--log-level", "no",
@@ -341,7 +341,7 @@ QPID_AUTO_TEST_CASE(testOptionsFormat) {
 QPID_AUTO_TEST_CASE(testLoggerConfigure) {
     Logger& l=Logger::instance();
     l.clear();
-    Options opts;
+    Options opts("test");
     const char* argv[]={
         0,
         "--log-time", "no", 
@@ -350,7 +350,7 @@ QPID_AUTO_TEST_CASE(testLoggerConfigure) {
         "--log-enable", "critical"
     };
     opts.parse(ARGC(argv), const_cast<char**>(argv));
-    l.configure(opts, "test");
+    l.configure(opts);
     QPID_LOG(critical, "foo"); int srcline=__LINE__;
     ifstream log("logging.tmp");
     string line;
@@ -364,11 +364,11 @@ QPID_AUTO_TEST_CASE(testLoggerConfigure) {
 QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
     l.clear();
-    Options opts;
+    Options opts("test");
     opts.outputs.clear();
     opts.outputs.push_back("logging.tmp");
     opts.time=false;
-    l.configure(opts, "test");
+    l.configure(opts);
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
     QPID_LOG(critical, str); 

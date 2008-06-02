@@ -62,7 +62,7 @@ class Logger : private boost::noncopyable {
     int format(const Options&);
 
     /** Configure logger from Options */
-    void configure(const Options& o, const std::string& progname);
+    void configure(const Options& o);
 
     /** Add a statement. */
     void add(Statement& s);
@@ -79,13 +79,13 @@ class Logger : private boost::noncopyable {
     void output(std::ostream&);
 
     /** Add syslog to outputs. */
-    void syslog(const std::string& programName);
+    void syslog(const Options&);
 
     /** Add an output.
      *@param name a file name or one of the special tokens:
      *stdout, stderr, syslog.
      */
-    void output(const std::string& name);
+    void output(const std::string& name, const Options&);
 
     /** Add an output destination for messages */
     void output(std::auto_ptr<Output> out); 
@@ -100,7 +100,6 @@ class Logger : private boost::noncopyable {
     sys::Mutex lock;
     inline void enable_unlocked(Statement* s);
 
-    std::string syslogName;
     Statements statements;
     Outputs outputs;
     Selector selector;

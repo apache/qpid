@@ -79,7 +79,7 @@ struct QpiddOptions : public qpid::Options {
     DaemonOptions daemon;
     qpid::log::Options log;
     
-    QpiddOptions() : qpid::Options("Options"), common("", "/etc/qpidd.conf") {
+    QpiddOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
         add(common);
         add(module);
         add(broker);
@@ -109,7 +109,7 @@ struct BootstrapOptions : public qpid::Options {
     ModuleOptions module;
     qpid::log::Options log;
 
-    BootstrapOptions() : qpid::Options("Options"), common("", "/etc/qpidd.conf") {
+    BootstrapOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
         add(common);
         add(module);
         add(log);
@@ -181,14 +181,13 @@ int main(int argc, char* argv[])
     try
     {
         {
-            BootstrapOptions bootOptions;
+            BootstrapOptions bootOptions(argv[0]);
             string           defaultPath (bootOptions.module.loadDir);
-
             // Parse only the common, load, and log options to see which modules need
             // to be loaded.  Once the modules are loaded, the command line will
             // be re-parsed with all of the module-supplied options.
             bootOptions.parse (argc, argv, bootOptions.common.config, true);
-            qpid::log::Logger::instance().configure(bootOptions.log, argv[0]);
+            qpid::log::Logger::instance().configure(bootOptions.log);
 
             for (vector<string>::iterator iter = bootOptions.module.load.begin();
                  iter != bootOptions.module.load.end();
@@ -202,7 +201,7 @@ int main(int argc, char* argv[])
         }
 
         // Parse options
-        options.reset(new QpiddOptions());
+        options.reset(new QpiddOptions(argv[0]));
         options->parse(argc, argv, options->common.config);
 
         // Options that just print information.
