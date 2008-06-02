@@ -81,8 +81,8 @@ namespace broker {
                     std::string& src,
                     std::string& dest,
                     std::string& key,
-                    bool         is_queue,
-                    bool         is_local,
+                    bool         isQueue,
+                    bool         isLocal,
                     std::string& id,
                     std::string& excludes);
 
@@ -113,6 +113,7 @@ namespace broker {
         void notifyConnectionForced    (const std::string& key, const std::string& text);
         std::string getAuthMechanism   (const std::string& key);
         std::string getAuthCredentials (const std::string& key);
+        std::string getAuthIdentity    (const std::string& key);
     };
 }
 }

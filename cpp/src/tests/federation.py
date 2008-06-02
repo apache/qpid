@@ -172,7 +172,7 @@ class FederationTests(TestBase010):
         link = mgmt.get_object("link")
 
         mgmt.call_method(link, "bridge", {"durable":0, "src":"my-bridge-queue", "dest":"amq.fanout",
-                                          "key":"", "tag":"", "excludes":"", "src_is_queue":1})
+                                          "key":"", "tag":"", "excludes":"", "srcIsQueue":1})
         sleep(6)
         bridge = mgmt.get_object("bridge")
 

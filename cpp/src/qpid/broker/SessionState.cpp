@@ -111,7 +111,7 @@ void SessionState::attach(SessionHandler& h) {
         if (mgmtObject.get() != 0)
         {
             mgmtObject->set_attached (1);
-            mgmtObject->set_clientRef (h.getConnection().GetManagementObject()->getObjectId());
+            mgmtObject->set_connectionRef (h.getConnection().GetManagementObject()->getObjectId());
             mgmtObject->set_channelId (h.getChannel());
         }
     }
