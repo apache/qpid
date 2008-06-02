@@ -21,13 +21,16 @@
 package org.apache.qpid.test;
 
 import junit.framework.TestCase;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.testutil.BrokerStartupException;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -37,6 +40,7 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -60,14 +64,7 @@ public class VMTestCase extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (Exception e)
-        {
-            fail("Unable to create broker: " + e);
-        }
+        startVMBroker(1);
 
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
@@ -118,9 +115,7 @@ public class VMTestCase extends TestCase
         //Disabled
 //        checkQueuesClean();
 
-        TransportConnection.killVMBroker(1);
-        ApplicationRegistry.remove(1);
-
+        stopVMBroker(1);
         super.tearDown();
     }
 
@@ -161,4 +156,58 @@ public class VMTestCase extends TestCase
         return ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(_virtualhost.substring(1))
                 .getQueueRegistry().getQueue(new AMQShortString(queueName)).getMessageCount();
     }
+
+    public void startVMBroker(int vmID) throws Exception
+    {
+        startVMBroker(vmID, null);
+    }
+
+    /** FIXME: for now vmID must be unique client is responsible for this. */
+    public void startVMBroker(int vmID, File configFile)
+    {
+        //If we have configuration file then load that
+        if (configFile != null)
+        {
+            if (!configFile.exists())
+            {
+                System.err.println("Configuration file not found:" + configFile);
+                fail("Configuration file not found:" + configFile);
+            }
+
+            if (System.getProperty("QPID_HOME") == null)
+            {
+                fail("QPID_HOME not set");
+            }
+
+            try
+            {
+                ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
+
+                //For now disable management on all configured inVM broker.
+                config.getConfiguration().setProperty("management.enabled", "false");
+
+                ApplicationRegistry.initialise(config, vmID);
+            }
+            catch (Exception e)
+            {
+                throw new BrokerStartupException("Unable to configure broker:" + vmID + " With file:" + configFile, e);
+            }
+        }
+
+        try
+        {
+            TransportConnection.createVMBroker(vmID);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            throw new BrokerStartupException("Unable to start broker:" + vmID, e);
+        }
+    }
+
+    public void stopVMBroker(int inVMid)
+    {
+        TransportConnection.killVMBroker(inVMid);
+        ApplicationRegistry.remove(inVMid);
+    }
+
 }
