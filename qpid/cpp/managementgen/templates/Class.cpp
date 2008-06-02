@@ -98,6 +98,7 @@ void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf, bool skipHeaders
 {
     sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
+/*MGEN:Class.Assign*/
 
     if (!skipHeaders)
         writeTimestamps (buf);
