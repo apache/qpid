@@ -324,10 +324,11 @@ class SchemaConfig:
 #=====================================================================================
 class SchemaInst:
   def __init__ (self, node, typespec):
-    self.name = None
-    self.type = None
-    self.unit = None
-    self.desc = None
+    self.name   = None
+    self.type   = None
+    self.unit   = None
+    self.desc   = None
+    self.assign = None
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -344,6 +345,9 @@ class SchemaInst:
         
       elif key == 'desc':
         self.desc = val
+        
+      elif key == 'assign':
+        self.assign = val
         
       else:
         raise ValueError ("Unknown attribute in statistic '%s'" % key)
@@ -409,6 +413,10 @@ class SchemaInst:
       self.genSchemaText (stream, self.name + "Min",     descMin)
       self.genSchemaText (stream, self.name + "Max",     descMax)
       self.genSchemaText (stream, self.name + "Average", descAverage)
+
+  def genAssign (self, stream):
+    if self.assign != None:
+      stream.write ("    " + self.name + " = (" + self.type.type.cpp + ") (" + self.assign + ");\n")
 
   def genWrite (self, stream):
     self.type.type.genWrite (stream, self.name)
@@ -874,13 +882,17 @@ class SchemaClass:
         stream.write (",")
       stream.write (hex (ord (sum[idx])))
 
+  def genAssign (self, stream, variables):
+    for inst in self.statistics:
+      inst.genAssign (stream)
+
   def genWriteConfig (self, stream, variables):
     for config in self.properties:
-      config.genWrite (stream);
+      config.genWrite (stream)
 
   def genWriteInst (self, stream, variables):
     for inst in self.statistics:
-      inst.genWrite (stream);
+      inst.genWrite (stream)
 
 
 
