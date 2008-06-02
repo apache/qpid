@@ -139,7 +139,8 @@
     <statistic name="msgPersistEnqueues"  type="count64"  unit="message"     desc="Persistent messages enqueued"/>
     <statistic name="msgPersistDequeues"  type="count64"  unit="message"     desc="Persistent messages dequeued"/>
     <statistic name="msgDepth"            type="atomic32" unit="message"     desc="Current size of queue in messages"/>
-    <statistic name="byteDepth"           type="count32"  unit="octet"       desc="Current size of queue in bytes"/>
+    <statistic name="byteDepth"           type="count32"  unit="octet"
+               assign="byteTotalEnqueues - byteTotalDequeues"                desc="Current size of queue in bytes"/>
     <statistic name="byteTotalEnqueues"   type="count64"  unit="octet"       desc="Total messages enqueued"/>
     <statistic name="byteTotalDequeues"   type="count64"  unit="octet"       desc="Total messages dequeued"/>
     <statistic name="byteTxnEnqueues"     type="count64"  unit="octet"       desc="Transactional messages enqueued"/>
