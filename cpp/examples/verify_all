@@ -9,7 +9,7 @@ exclude_regexp=$3
 python=${QPID_PYTHON_DIR:-$topsrcdir/python}
 
 trap "$qpidd -q" exit
-export QPID_PORT=`$qpidd -dp0 --data-dir "" --auth no` || { echo "Can't run qpidd" ; exit 1; }
+export QPID_PORT=`$qpidd -dp0 --no-module-dir --data-dir "" --auth no` || { echo "Can't run qpidd" ; exit 1; }
 export PYTHON_EXAMPLES=$python/examples
 export PYTHONPATH=$python:$PYTHONPATH
 
