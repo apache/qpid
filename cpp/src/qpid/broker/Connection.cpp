@@ -55,34 +55,34 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     mgmtId(mgmtId_),
     links(broker_.getLinks())
 {
-    Manageable* parent = broker.GetVhostObject ();
+    Manageable* parent = broker.GetVhostObject();
 
     if (isLink)
-        links.notifyConnection (mgmtId, this);
+        links.notifyConnection(mgmtId, this);
 
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
 
-        if (agent.get () != 0)
-            mgmtObject = management::Client::shared_ptr (new management::Client(this, parent, mgmtId, !isLink));
-        agent->addObject (mgmtObject);
+        if (agent.get() != 0)
+            mgmtObject = management::Connection::shared_ptr(new management::Connection(this, parent, mgmtId, !isLink));
+        agent->addObject(mgmtObject);
     }
 }
 
-void Connection::requestIOProcessing (boost::function0<void> callback)
+void Connection::requestIOProcessing(boost::function0<void> callback)
 {
     ioCallback = callback;
     out->activateOutput();
 }
 
 
-Connection::~Connection ()
+Connection::~Connection()
 {
     if (mgmtObject.get() != 0)
         mgmtObject->resourceDestroy();
     if (isLink)
-        links.notifyClosed (mgmtId);
+        links.notifyClosed(mgmtId);
 }
 
 void Connection::received(framing::AMQFrame& frame){
@@ -98,21 +98,21 @@ void Connection::received(framing::AMQFrame& frame){
         recordFromClient(frame);
 }
 
-void Connection::recordFromServer (framing::AMQFrame& frame)
+void Connection::recordFromServer(framing::AMQFrame& frame)
 {
-    if (mgmtObject.get () != 0)
+    if (mgmtObject.get() != 0)
     {
-        mgmtObject->inc_framesToClient ();
-        mgmtObject->inc_bytesToClient (frame.size ());
+        mgmtObject->inc_framesToClient();
+        mgmtObject->inc_bytesToClient(frame.size());
     }
 }
 
-void Connection::recordFromClient (framing::AMQFrame& frame)
+void Connection::recordFromClient(framing::AMQFrame& frame)
 {
-    if (mgmtObject.get () != 0)
+    if (mgmtObject.get() != 0)
     {
-        mgmtObject->inc_framesFromClient ();
-        mgmtObject->inc_bytesFromClient (frame.size ());
+        mgmtObject->inc_framesFromClient();
+        mgmtObject->inc_bytesFromClient(frame.size());
     }
 }
 
@@ -129,6 +129,14 @@ string Connection::getAuthCredentials()
     if (!isLink)
         return string();
 
+    if (mgmtObject.get() != 0)
+    {
+        if (links.getAuthMechanism(mgmtId) == "ANONYMOUS")
+            mgmtObject->set_authIdentity("anonymous");
+        else
+            mgmtObject->set_authIdentity(links.getAuthIdentity(mgmtId));
+    }
+
     return links.getAuthCredentials(mgmtId);
 }
 
@@ -136,6 +144,12 @@ void Connection::notifyConnectionForced(const string& text)
 {
     if (isLink)
         links.notifyConnectionForced(mgmtId, text);
+}
+
+void Connection::setUserId(const string& userId)
+{
+    ConnectionState::setUserId(userId);
+    mgmtObject->set_authIdentity(userId);
 }
 
 void Connection::close(
@@ -177,7 +191,7 @@ bool Connection::doOutput()
         ioCallback = 0;
 
         if (mgmtClosing)
-            close (403, "Closed by Management Request", 0, 0);
+            close(403, "Closed by Management Request", 0, 0);
         else
             //then do other output as needed:
             return outputTasks.doOutput();
@@ -202,20 +216,20 @@ SessionHandler& Connection::getChannel(ChannelId id) {
     return *ptr_map_ptr(i);
 }
 
-ManagementObject::shared_ptr Connection::GetManagementObject (void) const
+ManagementObject::shared_ptr Connection::GetManagementObject(void) const
 {
     return dynamic_pointer_cast<ManagementObject>(mgmtObject);
 }
 
-Manageable::status_t Connection::ManagementMethod (uint32_t methodId, Args&)
+Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
-    QPID_LOG (debug, "Connection::ManagementMethod [id=" << methodId << "]");
+    QPID_LOG(debug, "Connection::ManagementMethod [id=" << methodId << "]");
 
     switch (methodId)
     {
-    case management::Client::METHOD_CLOSE :
+    case management::Connection::METHOD_CLOSE :
         mgmtClosing = true;
         if (mgmtObject.get()) mgmtObject->set_closing(1);
         out->activateOutput();

@@ -87,8 +87,8 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
                                                      std::string& src,
                                                      std::string& dest,
                                                      std::string& key,
-                                                     bool         is_queue,
-                                                     bool         is_local,
+                                                     bool         isQueue,
+                                                     bool         isLocal,
                                                      std::string& tag,
                                                      std::string& excludes)
 {
@@ -110,14 +110,14 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
         management::ArgsLinkBridge args;
         Bridge::shared_ptr bridge;
 
-        args.i_durable      = durable;
-        args.i_src          = src;
-        args.i_dest         = dest;
-        args.i_key          = key;
-        args.i_src_is_queue = is_queue;
-        args.i_src_is_local = is_local;
-        args.i_tag          = tag;
-        args.i_excludes     = excludes;
+        args.i_durable    = durable;
+        args.i_src        = src;
+        args.i_dest       = dest;
+        args.i_key        = key;
+        args.i_srcIsQueue = isQueue;
+        args.i_srcIsLocal = isLocal;
+        args.i_tag        = tag;
+        args.i_excludes   = excludes;
 
         bridge = Bridge::shared_ptr
             (new Bridge (l->second.get(), l->second->nextChannel(),
@@ -235,6 +235,16 @@ std::string LinkRegistry::getAuthCredentials(const std::string& key)
     result += l->second->getPassword();
 
     return result;
+}
+
+std::string LinkRegistry::getAuthIdentity(const std::string& key)
+{
+    Mutex::ScopedLock locker(lock);
+    LinkMap::iterator l = links.find(key);
+    if (l == links.end())
+        return string();
+
+    return l->second->getUsername();
 }
 
 

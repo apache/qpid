@@ -94,9 +94,23 @@ class SchemaType:
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
+    elif self.accessor == "counterByOne":
+      stream.write ("    inline void inc_" + varName + " (){\n");
+      stream.write ("        ++" + varName + ";\n")
+      if changeFlag != None:
+        stream.write ("        " + changeFlag + " = true;\n")
+      stream.write ("    }\n");
+      stream.write ("    inline void dec_" + varName + " (){\n");
+      stream.write ("        --" + varName + ";\n")
+      if changeFlag != None:
+        stream.write ("        " + changeFlag + " = true;\n")
+      stream.write ("    }\n");
     elif self.accessor == "counter":
       stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1){\n");
-      stream.write ("        " + varName + " += by;\n")
+      stream.write ("        if (by == 1)\n")
+      stream.write ("            ++" + varName + ";\n")
+      stream.write ("        else\n")
+      stream.write ("            " + varName + " += by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "High < " + varName + ")\n")
         stream.write ("            " + varName + "High = " + varName + ";\n")
@@ -104,7 +118,10 @@ class SchemaType:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
       stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1){\n");
-      stream.write ("        " + varName + " -= by;\n")
+      stream.write ("        if (by == 1)\n")
+      stream.write ("            " + varName + "--;\n")
+      stream.write ("        else\n")
+      stream.write ("            " + varName + " -= by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low > " + varName + ")\n")
         stream.write ("            " + varName + "Low = " + varName + ";\n")
@@ -196,16 +213,18 @@ class Type:
 #=====================================================================================
 class SchemaConfig:
   def __init__ (self, node, typespec):
-    self.name        = None
-    self.type        = None
-    self.access      = "RO"
-    self.isIndex     = 0
-    self.isParentRef = 0
-    self.unit        = None
-    self.min         = None
-    self.max         = None
-    self.maxLen      = None
-    self.desc        = None
+    self.name         = None
+    self.type         = None
+    self.ref          = None
+    self.access       = "RO"
+    self.isIndex      = 0
+    self.isParentRef  = 0
+    self.isGeneralRef = 0
+    self.unit         = None
+    self.min          = None
+    self.max          = None
+    self.maxLen       = None
+    self.desc         = None
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -216,6 +235,9 @@ class SchemaConfig:
 
       elif key == 'type':
         self.type = Type (val, typespec)
+
+      elif key == 'references':
+        self.ref = val
         
       elif key == 'access':
         self.access = val
@@ -229,6 +251,11 @@ class SchemaConfig:
         if val != 'y':
           raise ValueError ("Expected 'y' in parentRef attribute")
         self.isParentRef = 1
+        
+      elif key == 'isGeneralReference':
+        if val != 'y':
+          raise ValueError ("Expected 'y' in isGeneralReference attribute")
+        self.isGeneralRef = 1
         
       elif key == 'unit':
         self.unit = val
@@ -246,12 +273,12 @@ class SchemaConfig:
         self.desc = val
         
       else:
-        raise ValueError ("Unknown attribute in configElement '%s'" % key)
+        raise ValueError ("Unknown attribute in property '%s'" % key)
 
     if self.name == None:
-      raise ValueError ("Missing 'name' attribute in configElement")
+      raise ValueError ("Missing 'name' attribute in property")
     if self.type == None:
-      raise ValueError ("Missing 'type' attribute in configElement")
+      raise ValueError ("Missing 'type' attribute in property")
 
   def getName (self):
     return self.name
@@ -319,12 +346,12 @@ class SchemaInst:
         self.desc = val
         
       else:
-        raise ValueError ("Unknown attribute in instElement '%s'" % key)
+        raise ValueError ("Unknown attribute in statistic '%s'" % key)
 
     if self.name == None:
-      raise ValueError ("Missing 'name' attribute in instElement")
+      raise ValueError ("Missing 'name' attribute in statistic")
     if self.type == None:
-      raise ValueError ("Missing 'type' attribute in instElement")
+      raise ValueError ("Missing 'type' attribute in statistic")
 
   def getName (self):
     return self.name
@@ -388,6 +415,8 @@ class SchemaInst:
 
   def genInitialize (self, stream):
     val = self.type.type.init
+    if self.type.type.accessor == "counterByOne":
+      return
     if self.type.type.style != "mma":
       stream.write ("    " + self.name + " = " + val + ";\n")
     if self.type.type.style == "wm":
@@ -589,13 +618,13 @@ class SchemaEvent:
 
 class SchemaClass:
   def __init__ (self, package, node, typespec, fragments, options):
-    self.packageName    = package
-    self.configElements = []
-    self.instElements   = []
-    self.methods        = []
-    self.events         = []
-    self.options        = options
-    self.md5Sum         = md5.new ()
+    self.packageName = package
+    self.properties  = []
+    self.statistics  = []
+    self.methods     = []
+    self.events      = []
+    self.options     = options
+    self.md5Sum      = md5.new ()
 
     self.hash (node)
 
@@ -605,13 +634,13 @@ class SchemaClass:
     children = node.childNodes
     for child in children:
       if child.nodeType == Node.ELEMENT_NODE:
-        if   child.nodeName == 'configElement':
+        if   child.nodeName == 'property':
           sub = SchemaConfig (child, typespec)
-          self.configElements.append (sub)
+          self.properties.append (sub)
 
-        elif child.nodeName == 'instElement':
+        elif child.nodeName == 'statistic':
           sub = SchemaInst (child, typespec)
-          self.instElements.append (sub)
+          self.statistics.append (sub)
 
         elif child.nodeName == 'method':
           sub = SchemaMethod (self, child, typespec)
@@ -644,10 +673,10 @@ class SchemaClass:
     name  = attrs['name'].nodeValue
     for fragment in fragments:
       if fragment.name == name:
-        for config in fragment.configElements:
-          self.configElements.append (config)
-        for inst   in fragment.instElements:
-          self.instElements.append (inst)
+        for config in fragment.properties:
+          self.properties.append (config)
+        for inst   in fragment.statistics:
+          self.statistics.append (inst)
         for method in fragment.methods:
           self.methods.append (method)
         for event  in fragment.events:
@@ -675,33 +704,33 @@ class SchemaClass:
   # match the substitution keywords in the template files.
   #===================================================================================
   def genAccessorMethods (self, stream, variables):
-    for config in self.configElements:
+    for config in self.properties:
       if config.access != "RC":
         config.genAccessor (stream)
-    for inst in self.instElements:
+    for inst in self.statistics:
       inst.genAccessor (stream)
 
   def genConfigCount (self, stream, variables):
-    stream.write ("%d" % len (self.configElements))
+    stream.write ("%d" % len (self.properties))
 
   def genConfigDeclarations (self, stream, variables):
-    for element in self.configElements:
+    for element in self.properties:
       element.genDeclaration (stream)
 
   def genConfigElementSchema (self, stream, variables):
-    for config in self.configElements:
+    for config in self.properties:
       config.genSchema (stream)
 
   def genConstructorArgs (self, stream, variables):
     # Constructor args are config elements with read-create access
     result = ""
-    for element in self.configElements:
+    for element in self.properties:
       if element.isConstructorArg ():
         stream.write (", ")
         element.genFormalParam (stream)
 
   def genConstructorInits (self, stream, variables):
-    for element in self.configElements:
+    for element in self.properties:
       if element.isConstructorArg ():
         stream.write ("," + element.getName () + "(_" + element.getName () + ")")
 
@@ -729,21 +758,21 @@ class SchemaClass:
     pass ###########################################################################
 
   def genHiLoStatResets (self, stream, variables):
-    for inst in self.instElements:
+    for inst in self.statistics:
       inst.genHiLoStatResets (stream)
 
   def genInitializeElements (self, stream, variables):
-    for inst in self.instElements:
+    for inst in self.statistics:
       inst.genInitialize (stream)
 
   def genInstChangedStub (self, stream, variables):
-    if len (self.instElements) == 0:
+    if len (self.statistics) == 0:
       stream.write ("    // Stub for getInstChanged.  There are no inst elements\n")
       stream.write ("    bool getInstChanged (void) { return false; }\n")
 
   def genInstCount (self, stream, variables):
     count = 0
-    for inst in self.instElements:
+    for inst in self.statistics:
       count = count + 1
       if inst.type.type.style == "wm":
         count = count + 2
@@ -752,11 +781,11 @@ class SchemaClass:
     stream.write ("%d" % count)
 
   def genInstDeclarations (self, stream, variables):
-    for element in self.instElements:
+    for element in self.statistics:
       element.genDeclaration (stream)
 
   def genInstElementSchema (self, stream, variables):
-    for inst in self.instElements:
+    for inst in self.statistics:
       inst.genSchema (stream)
 
   def genMethodArgIncludes (self, stream, variables):
@@ -794,6 +823,10 @@ class SchemaClass:
                                                     arg.name, "outBuf") + ";\n")
       stream.write ("        return;\n    }\n")
 
+  def genSetGeneralReferenceDeclaration (self, stream, variables):
+    for prop in self.properties:
+      if prop.isGeneralRef:
+        stream.write ("void setReference(uint64_t objectId) { " + prop.name + " = objectId; }\n")
 
   def genMethodIdDeclarations (self, stream, variables):
     number = 1
@@ -822,13 +855,13 @@ class SchemaClass:
     stream.write (self.name.upper ())
 
   def genParentArg (self, stream, variables):
-    for config in self.configElements:
+    for config in self.properties:
       if config.isParentRef == 1:
         stream.write (", Manageable* _parent")
         return
 
   def genParentRefAssignment (self, stream, variables):
-    for config in self.configElements:
+    for config in self.properties:
       if config.isParentRef == 1:
         stream.write (config.getName () + \
                       " = _parent->GetManagementObject ()->getObjectId ();")
@@ -842,11 +875,11 @@ class SchemaClass:
       stream.write (hex (ord (sum[idx])))
 
   def genWriteConfig (self, stream, variables):
-    for config in self.configElements:
+    for config in self.properties:
       config.genWrite (stream);
 
   def genWriteInst (self, stream, variables):
-    for inst in self.instElements:
+    for inst in self.statistics:
       inst.genWrite (stream);
 
 

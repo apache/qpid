@@ -33,7 +33,7 @@
            RC => Read/Create, can be set at create time only, read-only thereafter
            RW => Read/Write
 
-           If access rights are omitted for a configElement, they are assumed to be RO.
+           If access rights are omitted for a property, they are assumed to be RO.
 
   -->
 
@@ -44,14 +44,14 @@
   System
   ===============================================================
   -->
-  <class name="system">
-    <configElement name="sysId" index="y" type="uuid" access="RC"/>
+  <class name="System">
+    <property name="systemId" index="y" type="uuid" access="RC"/>
 
-    <configElement name="osName"   type="sstr" access="RO" desc="Operating System Name"/>
-    <configElement name="nodeName" type="sstr" access="RO" desc="Node Name"/>
-    <configElement name="release"  type="sstr" access="RO"/>
-    <configElement name="version"  type="sstr" access="RO"/>
-    <configElement name="machine"  type="sstr" access="RO"/>
+    <property name="osName"   type="sstr" access="RO" desc="Operating System Name"/>
+    <property name="nodeName" type="sstr" access="RO" desc="Node Name"/>
+    <property name="release"  type="sstr" access="RO"/>
+    <property name="version"  type="sstr" access="RO"/>
+    <property name="machine"  type="sstr" access="RO"/>
 
   </class>
 
@@ -60,19 +60,19 @@
   Broker
   ===============================================================
   -->
-  <class name="broker">
-    <configElement name="systemRef"            type="objId"  access="RC" index="y" desc="System ID" parentRef="y"/>
-    <configElement name="port"                 type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
-    <configElement name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
-    <configElement name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
-    <configElement name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
-    <configElement name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
-    <configElement name="mgmtPubInterval"      type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
-    <configElement name="clusterName"          type="sstr"   access="RO"
+  <class name="Broker">
+    <property name="systemRef"            type="objId"  references="System" access="RC" index="y" desc="System ID" parentRef="y"/>
+    <property name="port"                 type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
+    <property name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
+    <property name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
+    <property name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
+    <property name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <property name="mgmtPubInterval"      type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
+    <property name="clusterName"          type="sstr"   access="RO"
                    desc="Name of cluster this server is a member of"/>
-    <configElement name="version"              type="sstr"   access="RO" desc="Running software version"/>
-    <configElement name="dataDirEnabled"       type="bool"   access="RO" desc="Persistent configuration storage enabled"/>
-    <configElement name="dataDir"              type="sstr"   access="RO" desc="Persistent configuration storage location"/>
+    <property name="version"              type="sstr"   access="RO" desc="Running software version"/>
+    <property name="dataDirEnabled"       type="bool"   access="RO" desc="Persistent configuration storage enabled"/>
+    <property name="dataDir"              type="sstr"   access="RO" desc="Persistent configuration storage location"/>
 
     <method name="joinCluster">
       <arg name="clusterName" dir="I" type="sstr"/>
@@ -101,11 +101,11 @@
   Management Agent
   ===============================================================
   -->
-  <class name="agent">
-    <configElement name="sessionId"    type="uuid"  access="RO" index="y" desc="Session ID for Agent"/>
-    <configElement name="label"        type="sstr"  access="RO"           desc="Label for agent"/>
-    <configElement name="registeredTo" type="objId" access="RO"           desc="Broker agent is registered to"/>
-    <configElement name="sysId"        type="uuid"  access="RO"           desc="Identifier of system where agent resides"/>
+  <class name="Agent">
+    <property name="sessionId"    type="uuid"  access="RO" index="y" desc="Session ID for Agent"/>
+    <property name="label"        type="sstr"  access="RO"           desc="Label for agent"/>
+    <property name="registeredTo" type="objId" references="Broker" access="RO" desc="Broker agent is registered to"/>
+    <property name="systemId"     type="uuid"  access="RO"           desc="Identifier of system where agent resides"/>
   </class>
 
   <!--
@@ -113,9 +113,9 @@
   Virtual Host
   ===============================================================
   -->
-  <class name="vhost">
-    <configElement name="brokerRef" type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="name"      type="sstr"   access="RC" index="y"/>
+  <class name="Vhost">
+    <property name="brokerRef" type="objId" references="Broker" access="RC" index="y" parentRef="y"/>
+    <property name="name"      type="sstr"  access="RC" index="y"/>
   </class>
 
   <!--
@@ -123,42 +123,40 @@
   Queue
   ===============================================================
   -->
-  <class name="queue">
-    <configElement name="vhostRef"        type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="name"            type="sstr"   access="RC" index="y"/>
+  <class name="Queue">
+    <property name="vhostRef"        type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="name"            type="sstr"   access="RC" index="y"/>
 
-    <configElement name="durable"         type="bool"   access="RC"/>
-    <configElement name="autoDelete"      type="bool"   access="RC"/>
-    <configElement name="exclusive"       type="bool"   access="RC"/>
-    <configElement name="arguments"       type="ftable" access="RO" desc="Arguments supplied in queue.declare"/>
-    <configElement name="storeRef"        type="objId"  access="RO" desc="Reference to persistent queue (if durable)"/>
+    <property name="durable"         type="bool"   access="RC"/>
+    <property name="autoDelete"      type="bool"   access="RC"/>
+    <property name="exclusive"       type="bool"   access="RC"/>
+    <property name="arguments"       type="ftable" access="RO" desc="Arguments supplied in queue.declare"/>
 
-    <instElement name="msgTotalEnqueues"    type="count64" unit="message"     desc="Total messages enqueued"/>
-    <instElement name="msgTotalDequeues"    type="count64" unit="message"     desc="Total messages dequeued"/>
-    <instElement name="msgTxnEnqueues"      type="count64" unit="message"     desc="Transactional messages enqueued"/>
-    <instElement name="msgTxnDequeues"      type="count64" unit="message"     desc="Transactional messages dequeued"/>
-    <instElement name="msgPersistEnqueues"  type="count64" unit="message"     desc="Persistent messages enqueued"/>
-    <instElement name="msgPersistDequeues"  type="count64" unit="message"     desc="Persistent messages dequeued"/>
-    <instElement name="msgDepth"            type="hilo32"  unit="message"     desc="Current size of queue in messages"/>
-    <instElement name="byteTotalEnqueues"   type="count64" unit="octet"       desc="Total messages enqueued"/>
-    <instElement name="byteTotalDequeues"   type="count64" unit="octet"       desc="Total messages dequeued"/>
-    <instElement name="byteTxnEnqueues"     type="count64" unit="octet"       desc="Transactional messages enqueued"/>
-    <instElement name="byteTxnDequeues"     type="count64" unit="octet"       desc="Transactional messages dequeued"/>
-    <instElement name="bytePersistEnqueues" type="count64" unit="octet"       desc="Persistent messages enqueued"/>
-    <instElement name="bytePersistDequeues" type="count64" unit="octet"       desc="Persistent messages dequeued"/>
-    <instElement name="byteDepth"           type="hilo32"  unit="octet"       desc="Current size of queue in bytes"/>
-    <instElement name="enqueueTxnStarts"    type="count64" unit="transaction" desc="Total enqueue transactions started "/>
-    <instElement name="enqueueTxnCommits"   type="count64" unit="transaction" desc="Total enqueue transactions committed"/>
-    <instElement name="enqueueTxnRejects"   type="count64" unit="transaction" desc="Total enqueue transactions rejected"/>
-    <instElement name="enqueueTxnCount"     type="hilo32"  unit="transaction" desc="Current pending enqueue transactions"/>
-    <instElement name="dequeueTxnStarts"    type="count64" unit="transaction" desc="Total dequeue transactions started"/>
-    <instElement name="dequeueTxnCommits"   type="count64" unit="transaction" desc="Total dequeue transactions committed"/>
-    <instElement name="dequeueTxnRejects"   type="count64" unit="transaction" desc="Total dequeue transactions rejected"/>
-    <instElement name="dequeueTxnCount"     type="hilo32"  unit="transaction" desc="Current pending dequeue transactions"/>
-    <instElement name="consumers"           type="hilo32"  unit="consumer"    desc="Current consumers on queue"/>
-    <instElement name="bindings"            type="hilo32"  unit="binding"     desc="Current bindings"/>
-    <instElement name="unackedMessages"     type="hilo32"  unit="message"     desc="Messages consumed but not yet acked"/>
-    <instElement name="messageLatency"      type="mmaTime" unit="nanosecond"  desc="Broker latency through this queue"/>
+    <statistic name="msgTotalEnqueues"    type="count64"  unit="message"     desc="Total messages enqueued"/>
+    <statistic name="msgTotalDequeues"    type="count64"  unit="message"     desc="Total messages dequeued"/>
+    <statistic name="msgTxnEnqueues"      type="count64"  unit="message"     desc="Transactional messages enqueued"/>
+    <statistic name="msgTxnDequeues"      type="count64"  unit="message"     desc="Transactional messages dequeued"/>
+    <statistic name="msgPersistEnqueues"  type="count64"  unit="message"     desc="Persistent messages enqueued"/>
+    <statistic name="msgPersistDequeues"  type="count64"  unit="message"     desc="Persistent messages dequeued"/>
+    <statistic name="msgDepth"            type="atomic32" unit="message"     desc="Current size of queue in messages"/>
+    <statistic name="byteTotalEnqueues"   type="count64"  unit="octet"       desc="Total messages enqueued"/>
+    <statistic name="byteTotalDequeues"   type="count64"  unit="octet"       desc="Total messages dequeued"/>
+    <statistic name="byteTxnEnqueues"     type="count64"  unit="octet"       desc="Transactional messages enqueued"/>
+    <statistic name="byteTxnDequeues"     type="count64"  unit="octet"       desc="Transactional messages dequeued"/>
+    <statistic name="bytePersistEnqueues" type="count64"  unit="octet"       desc="Persistent messages enqueued"/>
+    <statistic name="bytePersistDequeues" type="count64"  unit="octet"       desc="Persistent messages dequeued"/>
+    <statistic name="enqueueTxnStarts"    type="count64"  unit="transaction" desc="Total enqueue transactions started "/>
+    <statistic name="enqueueTxnCommits"   type="count64"  unit="transaction" desc="Total enqueue transactions committed"/>
+    <statistic name="enqueueTxnRejects"   type="count64"  unit="transaction" desc="Total enqueue transactions rejected"/>
+    <statistic name="enqueueTxnCount"     type="hilo32"   unit="transaction" desc="Current pending enqueue transactions"/>
+    <statistic name="dequeueTxnStarts"    type="count64"  unit="transaction" desc="Total dequeue transactions started"/>
+    <statistic name="dequeueTxnCommits"   type="count64"  unit="transaction" desc="Total dequeue transactions committed"/>
+    <statistic name="dequeueTxnRejects"   type="count64"  unit="transaction" desc="Total dequeue transactions rejected"/>
+    <statistic name="dequeueTxnCount"     type="hilo32"   unit="transaction" desc="Current pending dequeue transactions"/>
+    <statistic name="consumerCount"       type="hilo32"   unit="consumer"    desc="Current consumers on queue"/>
+    <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
+    <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
+    <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
 
     <method name="purge" desc="Discard all messages on queue"/>
   </class>
@@ -168,20 +166,20 @@
   Exchange
   ===============================================================
   -->
-  <class name="exchange">
-    <configElement name="vhostRef"   type="objId" access="RC" index="y" parentRef="y"/>
-    <configElement name="name"       type="sstr"  access="RC" index="y"/>
-    <configElement name="type"       type="sstr"  access="RO"/>
-    <configElement name="durable"    type="bool"  access="RC"/>
+  <class name="Exchange">
+    <property name="vhostRef"   type="objId" references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="name"       type="sstr"  access="RC" index="y"/>
+    <property name="type"       type="sstr"  access="RO"/>
+    <property name="durable"    type="bool"  access="RC"/>
 
-    <instElement name="producers"    type="hilo32"  desc="Current producers on exchange"/>
-    <instElement name="bindings"     type="hilo32"  desc="Current bindings"/>
-    <instElement name="msgReceives"  type="count64" desc="Total messages received"/>
-    <instElement name="msgDrops"     type="count64" desc="Total messages dropped (no matching key)"/>
-    <instElement name="msgRoutes"    type="count64" desc="Total routed messages"/>
-    <instElement name="byteReceives" type="count64" desc="Total bytes received"/>
-    <instElement name="byteDrops"    type="count64" desc="Total bytes dropped (no matching key)"/>
-    <instElement name="byteRoutes"   type="count64" desc="Total routed bytes"/>
+    <statistic name="producerCount" type="hilo32"  desc="Current producers on exchange"/>
+    <statistic name="bindingCount"  type="hilo32"  desc="Current bindings"/>
+    <statistic name="msgReceives"   type="count64" desc="Total messages received"/>
+    <statistic name="msgDrops"      type="count64" desc="Total messages dropped (no matching key)"/>
+    <statistic name="msgRoutes"     type="count64" desc="Total routed messages"/>
+    <statistic name="byteReceives"  type="count64" desc="Total bytes received"/>
+    <statistic name="byteDrops"     type="count64" desc="Total bytes dropped (no matching key)"/>
+    <statistic name="byteRoutes"    type="count64" desc="Total routed bytes"/>
   </class>
 
   <!--
@@ -189,13 +187,13 @@
   Binding
   ===============================================================
   -->
-  <class name="binding">
-    <configElement name="exchangeRef" type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="queueRef"    type="objId"  access="RC" index="y"/>
-    <configElement name="bindingKey"  type="sstr"   access="RC" index="y"/>
-    <configElement name="arguments"   type="ftable" access="RC"/>
+  <class name="Binding">
+    <property name="exchangeRef" type="objId"  references="Exchange" access="RC" index="y" parentRef="y"/>
+    <property name="queueRef"    type="objId"  references="Queue"    access="RC" index="y"/>
+    <property name="bindingKey"  type="sstr"   access="RC" index="y"/>
+    <property name="arguments"   type="ftable" access="RC"/>
 
-    <instElement name="msgMatched" type="count64"/>
+    <statistic name="msgMatched" type="count64"/>
   </class>
   
   <!--
@@ -203,17 +201,17 @@
   Client
   ===============================================================
   -->
-  <class name="client">
-    <configElement name="vhostRef" type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="address"  type="sstr"   access="RC" index="y"/>
-    <configElement name="incoming" type="bool"   access="RC"/>
+  <class name="Connection">
+    <property name="vhostRef" type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="address"  type="sstr"   access="RC" index="y"/>
+    <property name="incoming" type="bool"   access="RC"/>
 
-    <instElement name="closing"          type="bool" desc="This client is closing by management request"/>
-    <instElement name="authIdentity"     type="sstr"/>
-    <instElement name="framesFromClient" type="count64"/>
-    <instElement name="framesToClient"   type="count64"/>
-    <instElement name="bytesFromClient"  type="count64"/>
-    <instElement name="bytesToClient"    type="count64"/>
+    <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
+    <statistic name="authIdentity"     type="sstr"/>
+    <statistic name="framesFromClient" type="count64"/>
+    <statistic name="framesToClient"   type="count64"/>
+    <statistic name="bytesFromClient"  type="count64"/>
+    <statistic name="bytesToClient"    type="count64"/>
 
     <method name="close"/> 
   </class>
@@ -223,30 +221,30 @@
   Link
   ===============================================================
   -->
-  <class name="link">
+  <class name="Link">
 
     This class represents an inter-broker connection.
 
-    <configElement name="vhostRef"  type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="host"      type="sstr"   access="RC" index="y"/>
-    <configElement name="port"      type="uint16" access="RC" index="y"/>
-    <configElement name="useSsl"    type="bool"   access="RC"/>
-    <configElement name="durable"   type="bool"   access="RC"/>
+    <property name="vhostRef"  type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="host"      type="sstr"   access="RC" index="y"/>
+    <property name="port"      type="uint16" access="RC" index="y"/>
+    <property name="useSsl"    type="bool"   access="RC"/>
+    <property name="durable"   type="bool"   access="RC"/>
 
-    <instElement name="state"       type="sstr" desc="Operational state of the link"/>
-    <instElement name="lastError"   type="sstr" desc="Reason link is not operational"/>
+    <statistic name="state"       type="sstr" desc="Operational state of the link"/>
+    <statistic name="lastError"   type="sstr" desc="Reason link is not operational"/>
 
     <method name="close"/> 
 
     <method name="bridge" desc="Bridge messages over the link">
-      <arg name="durable"       dir="I" type="bool"/>
-      <arg name="src"           dir="I" type="sstr"/>
-      <arg name="dest"          dir="I" type="sstr"/>
-      <arg name="key"           dir="I" type="sstr" default=""/>
-      <arg name="tag"           dir="I" type="sstr" default=""/>
-      <arg name="excludes"      dir="I" type="sstr" default=""/>
-      <arg name="src_is_queue"  dir="I" type="bool" default="0"/>
-      <arg name="src_is_local"  dir="I" type="bool" default="0"/>
+      <arg name="durable"     dir="I" type="bool"/>
+      <arg name="src"         dir="I" type="sstr"/>
+      <arg name="dest"        dir="I" type="sstr"/>
+      <arg name="key"         dir="I" type="sstr" default=""/>
+      <arg name="tag"         dir="I" type="sstr" default=""/>
+      <arg name="excludes"    dir="I" type="sstr" default=""/>
+      <arg name="srcIsQueue"  dir="I" type="bool" default="0"/>
+      <arg name="srcIsLocal"  dir="I" type="bool" default="0"/>
     </method>
   </class>
 
@@ -256,17 +254,17 @@
   Bridge
   ===============================================================
   -->
-  <class name="bridge">
-    <configElement name="linkRef"       type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="channelId"     type="uint16" access="RC" index="y"/>
-    <configElement name="durable"       type="bool"   access="RC"/>
-    <configElement name="src"           type="sstr"   access="RC"/>
-    <configElement name="dest"          type="sstr"   access="RC"/>
-    <configElement name="key"           type="sstr"   access="RC"/>
-    <configElement name="src_is_queue"  type="bool"   access="RC"/>
-    <configElement name="src_is_local"  type="bool"   access="RC"/>
-    <configElement name="tag"           type="sstr"   access="RC"/>
-    <configElement name="excludes"      type="sstr"   access="RC"/>
+  <class name="Bridge">
+    <property name="linkRef"     type="objId"  references="Link" access="RC" index="y" parentRef="y"/>
+    <property name="channelId"   type="uint16" access="RC" index="y"/>
+    <property name="durable"     type="bool"   access="RC"/>
+    <property name="src"         type="sstr"   access="RC"/>
+    <property name="dest"        type="sstr"   access="RC"/>
+    <property name="key"         type="sstr"   access="RC"/>
+    <property name="srcIsQueue"  type="bool"   access="RC"/>
+    <property name="srcIsLocal"  type="bool"   access="RC"/>
+    <property name="tag"         type="sstr"   access="RC"/>
+    <property name="excludes"    type="sstr"   access="RC"/>
     <method name="close"/> 
   </class>
 
@@ -276,71 +274,20 @@
   Session
   ===============================================================
   -->
-  <class name="session">
-    <configElement name="vhostRef"         type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="name"             type="sstr"   access="RC" index="y"/>
-    <configElement name="channelId"        type="uint16" access="RO"/>
-    <configElement name="clientRef"        type="objId"  access="RO"/>
-    <configElement name="detachedLifespan" type="uint32" access="RO" unit="second"/>
+  <class name="Session">
+    <property name="vhostRef"         type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="name"             type="sstr"   access="RC" index="y"/>
+    <property name="channelId"        type="uint16" access="RO"/>
+    <property name="connectionRef"    type="objId"  references="Connection" access="RO"/>
+    <property name="detachedLifespan" type="uint32" access="RO" unit="second"/>
 
-    <instElement name="attached"          type="bool"/>
-    <instElement name="expireTime"        type="absTime"/>
-    <instElement name="framesOutstanding" type="count32"/>
+    <statistic name="attached"          type="bool"/>
+    <statistic name="expireTime"        type="absTime"/>
+    <statistic name="framesOutstanding" type="count32"/>
 
     <method name="solicitAck"/>
     <method name="detach"/>
     <method name="resetLifespan"/>
-    <method name="close"/>
-  </class>
-
-  <!--
-  ===============================================================
-  Destination
-  ===============================================================
-  -->
-  <class name="destination">
-    <configElement name="sessionRef" type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="name"       type="sstr"   access="RC" index="y"/>
-
-    <instElement name="flowMode"       type="uint8"/>
-    <instElement name="maxMsgCredits"  type="uint32"/>
-    <instElement name="maxByteCredits" type="uint32"/>
-    <instElement name="msgCredits"     type="uint32"/>
-    <instElement name="byteCredits"    type="uint32"/>
-
-    <method name="throttle" desc="Apply extra rate limiting to destination: 0 = Normal, 10 = Maximum">
-      <arg name="strength" type="uint8" dir="I" min="0" max="10"/> 
-    </method>
-    <method name="stop"/>
-    <method name="start"/>
-  </class>
-
-  <!--
-  ===============================================================
-  Producer
-  ===============================================================
-  -->
-  <class name="producer">
-    <configElement name="destinationRef" access="RC" type="objId" index="y"/>
-    <configElement name="exchangeRef"    access="RC" type="objId" index="y"/>
-
-    <instElement name="msgsProduced"  type="count64"/>
-    <instElement name="bytesProduced" type="count64"/>
-  </class>
-
-  <!--
-  ===============================================================
-  Consumer
-  ===============================================================
-  -->
-  <class name="consumer">
-    <configElement name="destinationRef" access="RC" type="objId" index="y"/>
-    <configElement name="queueRef"       access="RC" type="objId" index="y"/>
-
-    <instElement name="msgsConsumed"    type="count64"/>
-    <instElement name="bytesConsumed"   type="count64"/>
-    <instElement name="unackedMessages" type="hilo32" desc="Messages consumed but not yet acked"/>
-
     <method name="close"/>
   </class>
 </schema>
