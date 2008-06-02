@@ -39,7 +39,7 @@ start() {
 	if [ $RETVAL = 0 ]; then
 	    touch $pidfile
 	    chown qpidd.qpidd $pidfile
-	    runuser -s /bin/sh qpidd -c "qpidd -c > $pidfile"
+	    runuser -s /bin/sh qpidd -c "/usr/sbin/$prog --check > $pidfile"
 	fi
 	return $RETVAL
 }

@@ -71,18 +71,14 @@ struct LockFile {
 
 } // namespace
 
-Daemon::Daemon() {
+Daemon::Daemon(std::string _pidDir) : pidDir(_pidDir) {
     pid = -1;
     pipeFds[0] = pipeFds[1] = -1;
 }
 
-string Daemon::dir() {
-    return (getuid() == 0 ? "/var/run" : "/tmp");
-}
-
-string Daemon::pidFile(uint16_t port) {
+string Daemon::pidFile(string pidDir, uint16_t port) {
     ostringstream path;
-    path << dir() << "/qpidd." << port << ".pid";
+    path << pidDir << "/qpidd." << port << ".pid";
     return path.str();
 }
 
@@ -110,7 +106,7 @@ void Daemon::fork()
 
             // Misc
             throwIf(setsid()<0, "Cannot set session ID");
-            throwIf(chdir(dir().c_str()) < 0, "Cannot change directory to "+dir());
+            throwIf(chdir(pidDir.c_str()) < 0, "Cannot change directory to "+pidDir);
             umask(027);
 
             // Child behavior
@@ -197,7 +193,7 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
  * hears the good news, it ill exit.
  */
 void Daemon::ready(uint16_t port) { // child
-    lockFile = pidFile(port);
+    lockFile = pidFile(pidDir, port);
     LockFile lf(lockFile, true);
 
     /*
@@ -228,8 +224,8 @@ void Daemon::ready(uint16_t port) { // child
  * The parent process reads the child's pid
  * from the lockfile.
  */
-pid_t Daemon::getPid(uint16_t port) {
-    string name = pidFile(port);
+pid_t Daemon::getPid(string _pidDir, uint16_t port) {
+    string name = pidFile(_pidDir, port);
     LockFile lf(name, false);
     pid_t pid;
 

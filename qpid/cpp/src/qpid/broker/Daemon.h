@@ -35,9 +35,9 @@ class Daemon : private boost::noncopyable
 {
   public:
     /** Check daemon is running on port, throw exception if not */
-    static pid_t getPid(uint16_t port);
+    static pid_t getPid(std::string pidDir, uint16_t port);
 
-    Daemon();
+    Daemon(std::string pidDir);
 
     virtual ~Daemon();
 
@@ -68,12 +68,12 @@ class Daemon : private boost::noncopyable
     void ready(uint16_t port);
     
   private:
-    static std::string dir();
-    static std::string pidFile(uint16_t port);
+    static std::string pidFile(std::string pidDir, uint16_t port);
 
     pid_t pid;
     int pipeFds[2];
     std::string lockFile;
+    std::string pidDir;
 };
 
 }} // namespace qpid::broker
