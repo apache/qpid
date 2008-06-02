@@ -43,7 +43,7 @@ class BasicPubSubTest : public SimpleTestCaseBase
     class Receiver;
     class MultiReceiver;
 public:
-    void assign(const std::string& role, framing::FieldTable& params, ConnectionSettings& options);
+    void assign(const std::string& role, framing::FieldTable& params, ConnectionOptions& options);
 };
 
 }
