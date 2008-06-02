@@ -52,7 +52,7 @@ struct TestOptions : public qpid::Options
             msg << *this << std::endl << std::endl << e.what() << std::endl;
             throw qpid::Options::Exception(msg.str());
         }
-        qpid::log::Logger::instance().configure(con.log, argv[0]);
+        qpid::log::Logger::instance().configure(con.log);
         if (help) {
             std::ostringstream msg;
             msg << *this << std::endl << std::endl << helpText << std::endl;

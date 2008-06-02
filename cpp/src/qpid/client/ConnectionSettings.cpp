@@ -29,7 +29,7 @@
 namespace qpid {
 namespace client {
 
-ConnectionSettings::ConnectionSettings() :
+ConnectionSettings::ConnectionSettings(const std::string& argv0) :
     Options("Connection Settings"),
     host("localhost"), 
     port(TcpAddress::DEFAULT_PORT),
@@ -42,7 +42,8 @@ ConnectionSettings::ConnectionSettings() :
     maxChannels(32767),
     maxFrameSize(65535),
     bounds(2),
-    tcpNoDelay(false)
+    tcpNoDelay(false),
+    log(argv0)
 {
     addOptions()
         ("broker,b", optValue(host, "HOST"), "Broker host to connect to") 
@@ -65,7 +66,7 @@ ConnectionSettings::~ConnectionSettings() {}
 void ConnectionSettings::parse(int argc, char** argv) 
 {
     qpid::Options::parse(argc, argv);
-    qpid::log::Logger::instance().configure(log, argv[0]);
+    qpid::log::Logger::instance().configure(log);
 }
 
 

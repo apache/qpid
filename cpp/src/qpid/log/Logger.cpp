@@ -63,8 +63,8 @@ struct OstreamOutput : public Logger::Output {
 };
 
 struct SyslogOutput : public Logger::Output {
-    SyslogOutput(const std::string& name, int facility_=LOG_USER)
-        : progName(name), facility(facility_)
+    SyslogOutput(const Options& opts)
+        : name(opts.syslogName), facility(opts.syslogFacility.value)
     {
         ::openlog(name.c_str(), LOG_PID, facility);
     }
@@ -78,7 +78,7 @@ struct SyslogOutput : public Logger::Output {
         syslog(LevelTraits::priority(s.level), "%s", m.c_str());
     }
     
-    std::string progName;
+    std::string name;
     int facility;
 };
 
@@ -90,9 +90,9 @@ Logger::Logger() : flags(0) {
     // Initialize myself from env variables so all programs
     // (e.g. tests) can use logging even if they don't parse
     // command line args.
-    Options opts;
+    Options opts("");
     opts.parse(0, 0);           
-    configure(opts,"");
+    configure(opts);
 }
 
 Logger::~Logger() {}
@@ -161,17 +161,17 @@ void Logger::output(std::ostream& out) {
     output(make_auto_ptr<Output>(new OstreamOutput(out)));
 }
 
-void Logger::syslog(const std::string& progName) {
-    output(make_auto_ptr<Output>(new SyslogOutput(progName)));
+void Logger::syslog(const Options& opts) {
+    output(make_auto_ptr<Output>(new SyslogOutput(opts)));
 }
 
-void Logger::output(const std::string& name) {
+void Logger::output(const std::string& name, const Options& opts) {
     if (name=="stderr")
         output(clog);
     else if (name=="stdout")
         output(cout);
     else if (name=="syslog")
-        syslog(syslogName);
+        syslog(opts);
     else 
         output(make_auto_ptr<Output>(new OstreamOutput(name)));
 }
@@ -209,21 +209,16 @@ void Logger::add(Statement& s) {
     statements.insert(&s);
 }
 
-void Logger::configure(const Options& opts, const std::string& prog)
-{
+void Logger::configure(const Options& opts) {
     clear();
     Options o(opts);
     if (o.trace)
         o.selectors.push_back("trace+");
-    {
-        ScopedLock l(lock);
-        syslogName=prog;
-    }
     format(o); 
     select(Selector(o));
-    void (Logger::* outputFn)(const std::string&) = &Logger::output;
+    void (Logger::* outputFn)(const std::string&, const Options&) = &Logger::output;
     for_each(o.outputs.begin(), o.outputs.end(),
-             boost::bind(outputFn, this, _1));
+             boost::bind(outputFn, this, _1, boost::cref(o)));
 }
 
 }} // namespace qpid::log
