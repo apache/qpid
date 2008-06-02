@@ -37,9 +37,9 @@ namespace client {
  * Used to hold seetings for a connection (and parse these from
  * command line options etc if desired).
  */
-struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration
-{
-    ConnectionSettings();
+struct ConnectionSettings : qpid::Options, qpid::sys::Socket::Configuration {
+    // FIXME aconway 2008-06-02: separate option parsing from settings as subclass.
+    ConnectionSettings(const std::string& argv0=std::string());
     virtual ~ConnectionSettings();
 
     /**

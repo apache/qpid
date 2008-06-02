@@ -19,19 +19,32 @@
  *
  */
 #include "qpid/Options.h"
-
+#include <iosfwd>
 
 namespace qpid {
 namespace log {
 
+/** Provides << and >> operators to convert syslog facility values to/from strings. */
+struct SyslogFacility {
+    int value;
+    SyslogFacility(int i=0) : value(i) {}
+};
+
+std::ostream& operator<<(std::ostream&, const SyslogFacility&);
+std::istream& operator>>(std::istream&, SyslogFacility&);
+
 /** Logging options for config parser. */
 struct Options : public qpid::Options {
-    Options(const std::string& name="Logging options");
+    /** Pass argv[0] for use in syslog output */
+    Options(const std::string& argv0,
+            const std::string& name="Logging options");
 
     std::vector<std::string> selectors;
     std::vector<std::string> outputs;
     bool time, level, thread, source, function;
     bool trace;
+    std::string syslogName;
+    SyslogFacility syslogFacility;
 };
 
 
