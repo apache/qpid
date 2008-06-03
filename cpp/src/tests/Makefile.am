@@ -89,35 +89,35 @@ include cluster.mk
 # Other test programs
 #
 check_PROGRAMS+=perftest
-perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h
+perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 perftest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=txtest
-txtest_SOURCES=txtest.cpp  TestOptions.h
+txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
 txtest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=latencytest
-latencytest_SOURCES=latencytest.cpp TestOptions.h
+latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
 latencytest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=client_test
-client_test_SOURCES=client_test.cpp TestOptions.h
+client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
 client_test_LDADD=$(lib_client) 
 
 check_PROGRAMS+=topic_listener
-topic_listener_SOURCES=topic_listener.cpp TestOptions.h
+topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
 topic_listener_LDADD=$(lib_client) 
 
 check_PROGRAMS+=topic_publisher
-topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h
+topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
 topic_publisher_LDADD=$(lib_client) 
 
 check_PROGRAMS+=publish
-publish_SOURCES=publish.cpp TestOptions.h
+publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
 publish_LDADD=$(lib_client) 
 
 check_PROGRAMS+=consume
-consume_SOURCES=consume.cpp  TestOptions.h
+consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 consume_LDADD=$(lib_client) 
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
@@ -159,7 +159,7 @@ CLEANFILES+=valgrind.out *.log *.vglog dummy_test $(unit_wrappers)
 #   BasicP2PTest.h		\
 #   BasicPubSubTest.h		\
 #   TestCase.h			\
-#   TestOptions.h
+#   TestOptions.h ConnectionOptions.h
 # interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
 
 
