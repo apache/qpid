@@ -59,14 +59,17 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         super(name);
     }
 
-    public void messageAcknowledge(RangeSet ranges)
+    public void messageAcknowledge(RangeSet ranges, boolean accept)
     {
         for (Range range : ranges)
         {
             super.processed(range);
         }
         super.flushProcessed();
-        messageAccept(ranges);
+        if( accept )
+        {
+            messageAccept(ranges);
+        }
     }
 
     public void messageSubscribe(String queue, String destination, short acceptMode, short acquireMode, MessagePartListener listener, Map<String, Object> filter, Option... options)
@@ -103,11 +106,6 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     {
         super.sync();
         _currentDataSizeNotSynced = 0;
-    }
-
-    public void sessionCompleted(RangeSet commands, Option ... options)
-    {
-        super.sessionCompleted(commands, options);
     }
 
     /* -------------------------
