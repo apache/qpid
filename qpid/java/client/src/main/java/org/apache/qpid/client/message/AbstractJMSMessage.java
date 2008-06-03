@@ -168,14 +168,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getJMSMessageID() throws JMSException
     {
-        if (getContentHeaderProperties().getMessageIdAsString() == null)
-        {
-            StringBuilder b = new StringBuilder(39);
-            b.append("ID:");
-            b.append(UUID.randomUUID());
-            getContentHeaderProperties().setMessageId(b.toString());
-        }
-
         return getContentHeaderProperties().getMessageIdAsString();
     }
 
