@@ -72,8 +72,18 @@ struct LockFile {
 } // namespace
 
 Daemon::Daemon(std::string _pidDir) : pidDir(_pidDir) {
+    struct stat s;
     pid = -1;
     pipeFds[0] = pipeFds[1] = -1;
+
+    if (::stat(pidDir.c_str(), &s)) {
+        if (errno == ENOENT) {
+            if (::mkdir(pidDir.c_str(), 0755))
+                throw Exception ("Can't create PID directory: " + pidDir);
+        }
+        else
+            throw Exception ("PID directory not found: " + pidDir);
+    }
 }
 
 string Daemon::pidFile(string pidDir, uint16_t port) {
