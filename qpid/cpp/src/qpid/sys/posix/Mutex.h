@@ -79,7 +79,6 @@ protected:
  */
 namespace {
 	pthread_once_t  onceControl = PTHREAD_ONCE_INIT;
-	pthread_rwlockattr_t rwlockattr;
 	pthread_mutexattr_t mutexattr;
 	
 	void initMutexattr()  {
@@ -87,10 +86,6 @@ namespace {
 		pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
 	}
 
-	void initRWlockattr()  {
-		pthread_rwlockattr_init(&rwlockattr);
-	}
-	
 	struct RecursiveMutexattr {
 		RecursiveMutexattr() {
 			pthread_once(&onceControl, initMutexattr);
@@ -100,21 +95,8 @@ namespace {
 			return &mutexattr;
 		}
 	};
-	struct RecursiveRWlockattr {
-		RecursiveRWlockattr() {
-			pthread_once(&onceControl, initRWlockattr);
-		}
-		
-		operator const pthread_rwlockattr_t*() const {
-			return &rwlockattr;
-		}
-	};
-	
+  
 	RecursiveMutexattr recursiveMutexattr;
-	RecursiveRWlockattr recursiveRWlockattr;
-	
-	
-	
 }
 
 /**
@@ -169,7 +151,7 @@ bool Mutex::trylock() {
 
 
 RWlock::RWlock() {
-    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_init(&rwlock, recursiveRWlockattr));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_init(&rwlock, NULL));
 }
 
 RWlock::~RWlock(){
