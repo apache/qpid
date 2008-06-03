@@ -37,7 +37,6 @@ import org.apache.qpidity.transport.Struct;
 public interface Decoder
 {
 
-    boolean readBit();
     short readUint8();
     int readUint16();
     long readUint32();

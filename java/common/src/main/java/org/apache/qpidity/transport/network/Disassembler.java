@@ -164,7 +164,6 @@ public class Disassembler implements Sender<ConnectionEvent>,
             }
         }
         method.write(enc);
-        enc.flush();
         buf.flip();
 
         byte flags = FIRST_SEG;
@@ -193,7 +192,6 @@ public class Disassembler implements Sender<ConnectionEvent>,
             for (Struct st : header.getStructs())
             {
                 enc.writeStruct32(st);
-                enc.flush();
             }
             header.setBuf(buf);
         }

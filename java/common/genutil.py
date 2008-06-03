@@ -11,11 +11,11 @@ def dromedary(s):
 def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
 
-def num(x):
+def num(x, default=None):
   if x is not None and x != "":
     return int(x, 0)
   else:
-    return None
+    return default
 
 def klass(nd):
   parent = nd.parent
@@ -53,24 +53,35 @@ def qname(nd):
   else:
     return name
 
+RESOLVED = {}
+
 def resolve(node, name):
-  spec = root(node)
-  cls = klass(node)
-  if cls:
-    for nd in cls.query["#tag"]:
-      if nd["@name"] == name:
+  key = (node, name)
+  if RESOLVED.has_key(key):
+    return RESOLVED[key]
+  else:
+    spec = root(node)
+    cls = klass(node)
+    if cls:
+      for nd in cls.query["#tag"]:
+        if nd["@name"] == name:
+          RESOLVED[key] = nd
+          return nd
+    for nd in spec.query["amqp/#tag"] + spec.query["amqp/class/#tag"]:
+      if name == qname(nd):
+        RESOLVED[key] = nd
         return nd
-  for nd in spec.query["amqp/#tag"] + spec.query["amqp/class/#tag"]:
-    if name == qname(nd):
-      return nd
-  raise Exception("unresolved name: %s" % name)
+    raise Exception("unresolved name: %s" % name)
 
 def resolve_type(nd):
-  name = nd["@type"]
-  type = resolve(nd, name)
-  if type.name == "domain" and not type["enum"]:
-    return resolve_type(type)
+  if hasattr(nd, "_resolved_type"):
+    return nd._resolved_type
   else:
+    name = nd["@type"]
+    type = resolve(nd, name)
+    if type.name == "domain" and not type["enum"]:
+      type = resolve_type(type)
+    nd._resolved_type = type
     return type
 
 TYPES = {
@@ -148,6 +159,13 @@ class Field:
     self.index = index
     self.name = camel(1, nd["@name"])
     self.type_node = resolve_type(nd)
+    if self.type_node.name == "domain":
+      self.prim_type = resolve_type(self.type_node)
+    else:
+      self.prim_type = self.type_node
+    self.variable_width = num(self.prim_type["@variable-width"], 0)
+    self.fixed_width = num(self.prim_type["@fixed-width"], 0)
+    self.empty = self.variable_width == 0 and self.fixed_width == 0 and self.prim_type.name != "struct"
     tname = cname(self.type_node)
     if self.type_node.name == "struct":
       self.read = "(%s) dec.readStruct(%s.TYPE)" % (tname, tname)
@@ -155,7 +173,7 @@ class Field:
       self.check = ""
       self.coder = "Struct"
     elif self.type_node.name == "domain":
-      self.coder = camel(0, resolve_type(self.type_node)["@name"])
+      self.coder = camel(0, self.prim_type["@name"])
       self.read = "%s.get(dec.read%s())" % (tname, self.coder)
       self.write = "enc.write%s(check(struct).%s.getValue())" % (self.coder, self.name)
       self.check = ""
@@ -174,6 +192,11 @@ class Field:
       self.option = scream(nd["@name"])
     else:
       self.option = None
+
+  def flag_mask(self, pack):
+    flag = pack * 8 - 8 - (self.index/8)*8 + (self.index % 8)
+    return 1 << flag
+
 
 def get_fields(nd):
   fields = []

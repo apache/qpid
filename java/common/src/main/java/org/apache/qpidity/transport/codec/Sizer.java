@@ -38,9 +38,6 @@ public interface Sizer extends Encoder
 
     public static final Sizer NULL = new Sizer()
     {
-        public void flush() {}
-
-        public void writeBit(boolean b) {}
         public void writeUint8(short b) {}
         public void writeUint16(int s) {}
         public void writeUint32(long i) {}
