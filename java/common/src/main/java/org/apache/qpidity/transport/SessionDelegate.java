@@ -74,6 +74,19 @@ public abstract class SessionDelegate
                 ssn.complete(range.getLower(), range.getUpper());
             }
         }
+        if (cmp.getTimelyReply())
+        {
+            ssn.sessionKnownCompleted(ranges);
+        }
+    }
+
+    @Override public void sessionKnownCompleted(Session ssn, SessionKnownCompleted kcmp)
+    {
+        RangeSet kc = kcmp.getCommands();
+        if (kc != null)
+        {
+            ssn.knownComplete(kc);
+        }
     }
 
     @Override public void sessionFlush(Session ssn, SessionFlush flush)

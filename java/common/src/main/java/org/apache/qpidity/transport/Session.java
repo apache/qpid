@@ -72,7 +72,8 @@ public class Session extends Invoker
     // incoming command count
     int commandsIn = 0;
     // completed incoming commands
-    private final RangeSet processed = new RangeSet();
+    private final Object processedLock = new Object();
+    private RangeSet processed = new RangeSet();
     private Range syncPoint = null;
 
     // outgoing command count
@@ -112,11 +113,6 @@ public class Session extends Invoker
         return commandsIn++;
     }
 
-    public RangeSet getProcessed()
-    {
-        return processed;
-    }
-
     public void processed(Method command)
     {
         processed(command.getId());
@@ -138,7 +134,7 @@ public class Session extends Invoker
         log.debug("%s processed(%s)", this, range);
 
         boolean flush;
-        synchronized (processed)
+        synchronized (processedLock)
         {
             processed.add(range);
             flush = syncPoint != null && processed.includes(syncPoint);
@@ -152,11 +148,31 @@ public class Session extends Invoker
    public void flushProcessed()
     {
         RangeSet copy;
-        synchronized (processed)
+        synchronized (processedLock)
         {
             copy = processed.copy();
         }
         sessionCompleted(copy);
+    }
+
+    void knownComplete(RangeSet kc)
+    {
+        synchronized (processedLock)
+        {
+            RangeSet newProcessed = new RangeSet();
+            OUTER: for (Range r : processed)
+            {
+                for (Range kr : kc)
+                {
+                    if (kr.includes(r))
+                    {
+                        continue OUTER;
+                    }
+                }
+                newProcessed.add(r);
+            }
+            this.processed = newProcessed;
+        }
     }
 
     void syncPoint()
@@ -165,7 +181,7 @@ public class Session extends Invoker
         log.debug("%s synced to %d", this, id);
         Range range = new Range(0, id - 1);
         boolean flush;
-        synchronized (processed)
+        synchronized (processedLock)
         {
             flush = processed.includes(range);
             if (!flush)
