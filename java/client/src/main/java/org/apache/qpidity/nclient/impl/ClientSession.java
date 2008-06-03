@@ -105,6 +105,11 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         _currentDataSizeNotSynced = 0;
     }
 
+    public void sessionCompleted(RangeSet commands, Option ... options)
+    {
+        super.sessionCompleted(commands, options);
+    }
+
     /* -------------------------
      * Data methods
      * ------------------------*/

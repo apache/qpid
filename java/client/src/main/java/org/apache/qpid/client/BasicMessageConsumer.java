@@ -38,7 +38,6 @@ import javax.jms.MessageListener;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -116,7 +115,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
      * implementation.
      */
-    private final int _acknowledgeMode;
+    protected final int _acknowledgeMode;
 
     /**
      * Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
