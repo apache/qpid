@@ -23,6 +23,9 @@ package org.apache.qpidity.transport.codec;
 import java.nio.ByteBuffer;
 
 import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpidity.transport.RangeSet;
 
 
 /**
@@ -59,7 +62,6 @@ public class SizeEncoder extends AbstractEncoder implements Sizer
 
     public int size()
     {
-        flush();
         return getSize();
     }
 
@@ -72,5 +74,61 @@ public class SizeEncoder extends AbstractEncoder implements Sizer
     {
         size += src.remaining();
     }
+
+    public void writeUint8(short b)
+    {
+        size += 1;
+    }
+
+    public void writeUint16(int s)
+    {
+        size += 2;
+    }
+
+    public void writeUint32(long i)
+    {
+        size += 4;
+    }
+
+    public void writeUint64(long l)
+    {
+        size += 8;
+    }
+
+    public void writeDatetime(long l)
+    {
+        size += 8;
+    }
+
+    public void writeUuid(UUID uuid)
+    {
+        size += 16;
+    }
+
+    public void writeSequenceNo(int s)
+    {
+        size += 4;
+    }
+
+    public void writeSequenceSet(RangeSet ranges)
+    {
+        size += 2 + 8*ranges.size();
+    }
+
+    //void writeByteRanges(RangeSet ranges); // XXX 
+
+    //void writeStr8(String s);
+    //void writeStr16(String s);
+
+    //void writeVbin8(byte[] bytes);
+    //void writeVbin16(byte[] bytes);
+    //void writeVbin32(byte[] bytes);
+
+    //void writeStruct32(Struct s);
+    //void writeMap(Map<String,Object> map);
+    //void writeList(List<Object> list);
+    //void writeArray(List<Object> array);
+
+    //void writeStruct(int type, Struct s);
 
 }

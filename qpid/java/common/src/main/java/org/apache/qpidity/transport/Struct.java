@@ -21,6 +21,7 @@
 package org.apache.qpidity.transport;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.qpidity.transport.codec.Decoder;
 import org.apache.qpidity.transport.codec.Encodable;
@@ -54,8 +55,6 @@ public abstract class Struct implements Encodable
     }
 
     public abstract int getStructType();
-
-    public abstract List<Field<?,?>> getFields();
 
     public abstract int getSizeWidth();
 
@@ -112,6 +111,8 @@ public abstract class Struct implements Encodable
 
     public abstract void write(Encoder enc);
 
+    public abstract Map<String,Object> getFields();
+
     public String toString()
     {
         StringBuilder str = new StringBuilder();
@@ -119,16 +120,8 @@ public abstract class Struct implements Encodable
 
         str.append("(");
         boolean first = true;
-        for (Field<?,?> f : getFields())
+        for (Map.Entry<String,Object> me : getFields().entrySet())
         {
-            if (packed())
-            {
-                if (!f.has(this))
-                {
-                    continue;
-                }
-            }
-
             if (first)
             {
                 first = false;
@@ -137,9 +130,9 @@ public abstract class Struct implements Encodable
             {
                 str.append(", ");
             }
-            str.append(f.getName());
+            str.append(me.getKey());
             str.append("=");
-            str.append(f.get(this));
+            str.append(me.getValue());
         }
         str.append(")");
 

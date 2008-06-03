@@ -37,9 +37,6 @@ import org.apache.qpidity.transport.Struct;
 public interface Encoder
 {
 
-    void flush();
-
-    void writeBit(boolean b);
     void writeUint8(short b);
     void writeUint16(int s);
     void writeUint32(long i);
