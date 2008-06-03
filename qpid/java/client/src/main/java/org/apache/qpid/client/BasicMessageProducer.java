@@ -459,24 +459,10 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
         else
         {
-            if (message.getJMSMessageID() == null)
-            {
-                message.setJMSMessageID(UUID.randomUUID().toString());
-            }
-        }
-
-        int type;
-        if (destination instanceof Topic)
-        {
-            type = AMQDestination.TOPIC_TYPE;
-        }
-        else if (destination instanceof Queue)
-        {
-            type = AMQDestination.QUEUE_TYPE;
-        }
-        else
-        {
-            type = AMQDestination.UNKNOWN_TYPE;
+            StringBuilder b = new StringBuilder(39);
+            b.append("ID:");
+            b.append(UUID.randomUUID());
+            message.setJMSMessageID(b.toString());
         }
 
         sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
