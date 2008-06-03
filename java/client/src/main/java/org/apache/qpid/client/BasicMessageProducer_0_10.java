@@ -135,17 +135,6 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setRoutingKey(routingKey);
         }
 
-        if (message != origMessage)
-        {
-             _logger.debug("Updating original message");
-            origMessage.setJMSPriority(message.getJMSPriority());
-            origMessage.setJMSTimestamp(message.getJMSTimestamp());
-            _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
-            origMessage.setJMSExpiration(message.getJMSExpiration());
-            origMessage.setJMSMessageID(message.getJMSMessageID());
-            origMessage.setJMSDeliveryMode(deliveryMode);
-        }
-
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         if (contentHeaderProperties.reset())
         {
@@ -155,7 +144,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
             // XXX: fixme
             String mid = message.getJMSMessageID();
-            messageProps.setMessageId(UUID.fromString(mid.substring(3)));
+            if( mid != null )
+            {
+                messageProps.setMessageId(UUID.fromString(mid.substring(3)));
+            }
 
             AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
             if (correlationID != null)
