@@ -160,7 +160,7 @@ public class AMQSession_0_10 extends AMQSession
             ranges.add((int) deliveryTag);
             _unacknowledgedMessageTags.remove(deliveryTag);
         }
-        getQpidSession().messageAcknowledge(ranges);
+        getQpidSession().messageAcknowledge(ranges, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
     }
 
     /**

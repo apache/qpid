@@ -65,16 +65,6 @@ public interface Session
 
     public void sessionDetach(byte[] name);
 
-    /**
-     * This control is sent by the receiver of commands, and handled by the sender
-     * of commands. It informs the sender of all commands completed by the receiver.
-     * This excludes commands known by the receiver to be considered complete at the sender.
-     *
-     * @param commands completed commands.
-     * @param options  {@link Option#TIMELY_REPLY} If set, the sender is no longer free to delay the known-completed reply.
-     */
-    public void sessionCompleted(RangeSet commands, Option... options);
-
     public void sessionRequestTimeout(long expiry);
 
     public byte[] getName();
@@ -328,8 +318,9 @@ public interface Session
      * pre-acquire mode or by explicitly acquiring them.
      *
      * @param ranges Range of messages to be acknowledged.
+     * @param accept pecify whether to send a message accept to the broker
      */
-    public void messageAcknowledge(RangeSet ranges);
+    public void messageAcknowledge(RangeSet ranges, boolean accept);
 
     /**
      * Reject a range of acquired messages.
