@@ -62,8 +62,16 @@ struct DaemonOptions : public qpid::Options {
     int wait;
     std::string piddir;
 
-    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10), piddir("/tmp")
+    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
     {
+        char *home = ::getenv("HOME");
+
+        if (home == 0)
+            home = "/tmp";
+
+        piddir += home;
+        piddir += "/.qpidd";
+
         addOptions()
             ("daemon,d", optValue(daemon), "Run as a daemon.")
             ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
