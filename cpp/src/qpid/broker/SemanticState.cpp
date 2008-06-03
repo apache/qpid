@@ -127,6 +127,8 @@ void SemanticState::commit(MessageStore* const store, bool completeOnCommit)
     txBuffer->enlist(txAck);
     if (txBuffer->commitLocal(store)) {
         accumulatedAck.clear();
+    } else {
+        throw InternalErrorException(QPID_MSG("Commit failed"));
     }
 }
 
