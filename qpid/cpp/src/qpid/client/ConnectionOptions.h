@@ -22,9 +22,11 @@
  *
  */
 
-#include "ConnectionOptions.h"
 #include "qpid/Options.h"
+#include "qpid/client/ConnectionSettings.h"
 
+namespace qpid {
+namespace client {
 /**
  * Options parser for ConnectionOptions.
  */
@@ -49,5 +51,7 @@ struct  ConnectionOptions : public qpid::Options,
              "bound size of write queue (as a multiple of the max frame size).");
     }
 };
+
+}}
 
 #endif  /*!QPID_CLIENT_CONNECTIONOPTIONS_H*/
