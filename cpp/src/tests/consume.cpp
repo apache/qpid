@@ -48,7 +48,7 @@ struct Args : public qpid::TestOptions {
         addOptions()
             ("count", optValue(count, "N"), "number of messages to publish")
             ("ack-frequency", optValue(ack, "N"), "ack every N messages (0 means use no-ack mode)")
-            ("queue", optValue(queue, "<exchange name>"), "queue to consume from");
+            ("queue", optValue(queue, "<queue name>"), "queue to consume from");
     }
 };
 
