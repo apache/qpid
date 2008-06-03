@@ -41,8 +41,14 @@ DataDir::DataDir (std::string path) :
     const  char *cpath = dirPath.c_str ();
     struct stat  s;
 
-    if (::stat (cpath, &s))
-        throw Exception ("Data directory not found: " + path);
+    if (::stat(cpath, &s)) {
+        if (errno == ENOENT) {
+            if (::mkdir(cpath, 0755))
+                throw Exception ("Can't create data directory: " + path);
+        }
+        else
+            throw Exception ("Data directory not found: " + path);
+    }
 
     std::string lockFile (path);
     lockFile = lockFile + "/lock";
@@ -51,9 +57,9 @@ DataDir::DataDir (std::string path) :
     if (fd == -1)
     {
         if (errno == EEXIST)
-            throw Exception ("Data directory is locked by another process");
+            throw Exception ("Data directory is locked by another process: " + path);
         if (errno == EACCES)
-            throw Exception ("Insufficient privileges for data directory");
+            throw Exception ("Insufficient privileges for data directory: " + path);
         throw Exception(
             QPID_MSG("Error locking " << lockFile << ": " << strError(errno)));
     }
