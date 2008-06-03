@@ -108,7 +108,7 @@ public class BasicInteropTest implements ClosedListener
                                         System.out.println("--------/Message Received--------");
                                         RangeSet ack = new RangeSet();
                                         ack.add(message.getMessageTransferId(),message.getMessageTransferId());
-                                        session.messageAcknowledge(ack);
+                                        session.messageAcknowledge(ack, true);
                                     }
 
                                  }),
