@@ -88,7 +88,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
     public String toBodyString() throws JMSException
     {
-        return toString(_data);
+        return String.valueOf(getObject());
     }
 
     public AMQShortString getMimeTypeAsShortString()
@@ -171,27 +171,5 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         }
         catch (IOException ignore)
         { }
-    }
-
-    private static String toString(ByteBuffer data)
-    {
-        if (data == null)
-        {
-            return null;
-        }
-
-        int pos = data.position();
-        try
-        {
-            return data.getString(Charset.forName("UTF8").newDecoder());
-        }
-        catch (CharacterCodingException e)
-        {
-            return null;
-        }
-        finally
-        {
-            data.position(pos);
-        }
     }
 }
