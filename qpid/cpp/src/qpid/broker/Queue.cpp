@@ -578,11 +578,17 @@ uint64_t Queue::getPersistenceId() const
 }
 
 void Queue::setPersistenceId(uint64_t _persistenceId) const
-{ 
-    if (mgmtObject != 0 && persistenceId == 0)
+{
+    if (mgmtObject.get() != 0 && persistenceId == 0)
     {
         ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
         agent->addObject (mgmtObject, _persistenceId, 3);
+
+        if (externalQueueStore) {
+            ManagementObject::shared_ptr childObj = externalQueueStore->GetManagementObject();
+            if (childObj.get() != 0)
+                childObj->setReference(mgmtObject->getObjectId());
+        }
     }
     persistenceId = _persistenceId;
 }
@@ -669,7 +675,7 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
 
     if (inst) {
         ManagementObject::shared_ptr childObj = inst->GetManagementObject();
-        if (childObj.get() != 0)
+        if (childObj.get() != 0 && mgmtObject.get() != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
 }

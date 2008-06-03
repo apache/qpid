@@ -62,6 +62,7 @@ SessionState::SessionState(
             mgmtObject = management::Session::shared_ptr
                 (new management::Session (this, parent, getId().getName()));
             mgmtObject->set_attached (0);
+            mgmtObject->set_detachedLifespan (0);
             agent->addObject (mgmtObject);
         }
     }
