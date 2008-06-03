@@ -30,10 +30,12 @@ bool TxPublish::prepare(TransactionContext* ctxt) throw(){
     try{
         for_each(queues.begin(), queues.end(), Prepare(ctxt, msg));
         return true;
+    }catch(const std::exception& e){
+        QPID_LOG(error, "Failed to prepare: " << e.what());
     }catch(...){
-        QPID_LOG(error, "Failed to prepare");
-        return false;
+        QPID_LOG(error, "Failed to prepare (unknown error)");
     }
+    return false;
 }
 
 void TxPublish::commit() throw(){
