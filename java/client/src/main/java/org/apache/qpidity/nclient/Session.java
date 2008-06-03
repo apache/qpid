@@ -65,6 +65,16 @@ public interface Session
 
     public void sessionDetach(byte[] name);
 
+    /**
+     * This control is sent by the receiver of commands, and handled by the sender
+     * of commands. It informs the sender of all commands completed by the receiver.
+     * This excludes commands known by the receiver to be considered complete at the sender.
+     *
+     * @param commands completed commands.
+     * @param options  {@link Option#TIMELY_REPLY} If set, the sender is no longer free to delay the known-completed reply.
+     */
+    public void sessionCompleted(RangeSet commands, Option... options);
+
     public void sessionRequestTimeout(long expiry);
 
     public byte[] getName();
@@ -102,6 +112,7 @@ public interface Session
      */
     public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode)
             throws IOException;
+
 
     /**
      * <p>This transfer streams a complete message using a single method. 
