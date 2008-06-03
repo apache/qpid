@@ -77,6 +77,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
 
+    /**
+     * Used for no-ack mode so to send session completion command
+     */
+    private int _numberReceivedMessages = 0;
+    private int _firstMessageToComplete;
+
     //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
@@ -115,7 +121,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * message listener or to the sync consumer queue.
      *
      * @param jmsMessage this message has already been processed so can't redo preDeliver
-     * @param channelId
      */
     @Override public void notifyMessage(AbstractJMSMessage jmsMessage)
     {
@@ -160,6 +165,25 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     public void onMessage(Message message)
     {
+        /**
+         * For no-ack mode
+         */
+        if( _acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE )
+        {
+            _numberReceivedMessages++;
+            if(_numberReceivedMessages == 1)
+            {
+                _firstMessageToComplete = message.getMessageTransferId();
+            }
+           if(_numberReceivedMessages >= getSession().getAMQConnection().getMaxPrefetch() )
+            {
+                RangeSet r = new RangeSet();
+                r.add(_firstMessageToComplete, message.getMessageTransferId());
+                _0_10session.getQpidSession().sessionCompleted(r, Option.TIMELY_REPLY);
+                _numberReceivedMessages = 0;
+            }
+        }
+
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         AMQShortString consumerTag = getConsumerTag();
