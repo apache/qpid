@@ -26,7 +26,7 @@
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/ConnectionOptions.h"
+#include "ConnectionOptions.h"
 
 #include <iostream>
 #include <exception>
@@ -69,7 +69,7 @@ struct TestOptions : public qpid::Options
 
     
     bool help;
-    qpid::client::ConnectionOptions con;
+    ConnectionOptions con;
     qpid::log::Options log;
     std::string helpText;
 };
