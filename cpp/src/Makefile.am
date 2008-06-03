@@ -443,6 +443,7 @@ nobase_include_HEADERS = \
   qpid/client/ConnectionHandler.h \
   qpid/client/ConnectionImpl.h \
   qpid/client/ConnectionSettings.h \
+  qpid/client/ConnectionOptions.h \
   qpid/client/Connector.h \
   qpid/client/ChainableFrameHandler.h	\
   qpid/client/Demux.h \
