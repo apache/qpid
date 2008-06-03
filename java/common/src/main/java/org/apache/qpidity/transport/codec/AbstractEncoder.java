@@ -75,52 +75,17 @@ abstract class AbstractEncoder implements Encoder
 
     protected void put(byte b)
     {
-        flushBits();
         doPut(b);
     }
 
     protected void put(ByteBuffer src)
     {
-        flushBits();
         doPut(src);
     }
 
     protected void put(byte[] bytes)
     {
         put(ByteBuffer.wrap(bytes));
-    }
-
-    private byte bits = 0x0;
-    private byte nbits = 0;
-
-    public void writeBit(boolean b)
-    {
-        if (b)
-        {
-            bits |= 1 << nbits;
-        }
-
-        nbits += 1;
-
-        if (nbits == 8)
-        {
-            flushBits();
-        }
-    }
-
-    private void flushBits()
-    {
-        if (nbits > 0)
-        {
-            doPut(bits);
-            bits = 0x0;
-            nbits = 0;
-        }
-    }
-
-    public void flush()
-    {
-        flushBits();
     }
 
     public void writeUint8(short b)
@@ -406,6 +371,7 @@ abstract class AbstractEncoder implements Encoder
         sizer.writeList(list);
         // XXX: - 4
         writeUint32(sizer.size() - 4);
+        writeUint32(list.size());
         writeListEntries(list);
     }
 

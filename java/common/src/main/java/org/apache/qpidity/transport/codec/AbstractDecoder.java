@@ -45,61 +45,23 @@ import static org.apache.qpidity.transport.util.Functions.*;
 abstract class AbstractDecoder implements Decoder
 {
 
-    private int count;
-
-    protected AbstractDecoder()
-    {
-        this.count = 0;
-    }
-
     protected abstract byte doGet();
 
     protected abstract void doGet(byte[] bytes);
 
     protected byte get()
     {
-        clearBits();
-        byte b = doGet();
-        count += 1;
-        return b;
+        return doGet();
     }
 
     protected void get(byte[] bytes)
     {
-        clearBits();
         doGet(bytes);
-        count += bytes.length;
     }
 
     protected short uget()
     {
         return (short) (0xFF & get());
-    }
-
-    private byte bits = 0x0;
-    private byte nbits = 0;
-
-    public boolean readBit()
-    {
-        if (nbits == 0)
-        {
-            bits = get();
-        }
-
-        boolean result = (bits & (1 << nbits++)) != 0;
-
-        if (nbits == 8)
-        {
-            clearBits();
-        }
-
-        return result;
-    }
-
-    private void clearBits()
-    {
-        bits = 0x0;
-        nbits = 0;
     }
 
     public short readUint8()
@@ -271,10 +233,9 @@ abstract class AbstractDecoder implements Decoder
     public Map<String,Object> readMap()
     {
         long size = readUint32();
-        int start = count;
-        long fieldCount = readUint32();
+        long count = readUint32();
         Map<String,Object> result = new LinkedHashMap();
-        while (count < start + size)
+        for (int i = 0; i < count; i++)
         {
             String key = readStr8();
             byte code = get();
@@ -288,9 +249,9 @@ abstract class AbstractDecoder implements Decoder
     public List<Object> readList()
     {
         long size = readUint32();
-        int start = count;
+        long count = readUint32();
         List<Object> result = new ArrayList();
-        while (count < start + size)
+        for (int i = 0; i < count; i++)
         {
             byte code = get();
             Type t = getType(code);

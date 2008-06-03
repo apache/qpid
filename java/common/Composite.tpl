@@ -1,6 +1,7 @@
 package org.apache.qpidity.transport;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,9 +37,15 @@ if type.name in ("control", "command"):
 else:
   base = "Struct"
   size = type["@size"]
-  pack = type["@pack"]
+  pack = num(type["@pack"])
   payload = "false"
   track = "-1"
+
+PACK_TYPES = {
+  1: "byte",
+  2: "short",
+  4: "int"
+}
 
 typecode = code(type)
 }
@@ -67,17 +74,18 @@ public class $name extends $base {
         return $track;
     }
 
-    private static final List<Field<?,?>> FIELDS = new ArrayList<Field<?,?>>();
-    public List<Field<?,?>> getFields() { return FIELDS; }
-
 ${
+
+if pack > 0:
+  out("    private $(PACK_TYPES[pack]) packing_flags = 0;\n");
+
 fields = get_fields(type)
 params = get_parameters(fields)
 options = get_options(fields)
 
 for f in fields:
-  out("    private boolean has_$(f.name);\n")
-  out("    private $(f.type) $(f.name);\n")
+  if not f.empty:
+    out("    private $(f.type) $(f.name);\n")
 }
 
 ${
@@ -91,9 +99,6 @@ for f in fields:
   if f.option: continue
   out("        $(f.set)($(f.name));\n")
 
-for f in options:
-  out("        boolean _$(f.name) = false;\n")
-
 if options:
   out("""
         for (int i=0; i < _options.length; i++) {
@@ -101,16 +106,13 @@ if options:
 """)
 
   for f in options:
-    out("            case $(f.option): _$(f.name) = true; break;\n")
+    out("            case $(f.option): packing_flags |= $(f.flag_mask(pack)); break;\n")
 
   out("""            case NO_OPTION: break;
             default: throw new IllegalArgumentException("invalid option: " + _options[i]);
             }
         }
 """)
-
-for f in options:
-  out("        $(f.set)(_$(f.name));\n")
 }
     }
 
@@ -120,57 +122,49 @@ for f in options:
 
 ${
 for f in fields:
-  out("""
+  if pack > 0:
+    out("""
     public final boolean $(f.has)() {
-        return has_$(f.name);
+        return (packing_flags & $(f.flag_mask(pack))) != 0;
     }
 
     public final $name $(f.clear)() {
-        this.has_$(f.name) = false;
-        this.$(f.name) = $(f.default);
+        packing_flags &= ~$(f.flag_mask(pack));
+${
+if not f.empty:
+  out("        this.$(f.name) = $(f.default);")
+}
         this.dirty = true;
         return this;
     }
+""")
 
+  out("""
     public final $(f.type) $(f.get)() {
-        return $(f.name);
+${
+if f.empty:
+  out("        return $(f.has)();")
+else:
+  out("        return $(f.name);")
+}
     }
 
     public final $name $(f.set)($(f.type) value) {
         $(f.check)
-        this.$(f.name) = value;
-        this.has_$(f.name) = true;
+${
+if not f.empty:
+  out("        this.$(f.name) = value;")
+}
+${
+if pack > 0:
+  out("        packing_flags |= $(f.flag_mask(pack));")
+}
         this.dirty = true;
         return this;
     }
 
     public final $name $(f.name)($(f.type) value) {
-        $(f.check)
-        this.$(f.name) = value;
-        this.has_$(f.name) = true;
-        this.dirty = true;
-        return this;
-    }
-
-    static {
-        FIELDS.add(new Field<$name,$(jref(jclass(f.type)))>($name.class, $(jref(jclass(f.type))).class, "$(f.name)", $(f.index)) {
-            public boolean has(Object struct) {
-                return check(struct).has_$(f.name);
-            }
-            public void has(Object struct, boolean value) {
-                check(struct).has_$(f.name) = value;
-            }
-            public $(jref(f.type)) get(Object struct) {
-                return check(struct).$(f.get)();
-            }
-            public void read(Decoder dec, Object struct) {
-                check(struct).$(f.name) = $(f.read);
-                check(struct).dirty = true;
-            }
-            public void write(Encoder enc, Object struct) {
-               $(f.write);
-            }
-        });
+        return $(f.set)(value);
     }
 """)
 }
@@ -178,23 +172,14 @@ for f in fields:
     public void write(Encoder enc)
     {
 ${
-flag_count = 8*int(pack)
-reserved_count = flag_count - len(fields)
-
 if pack > 0:
-  for f in fields:
-    if f.type == "boolean":
-      out("        enc.writeBit(this.$(f.name));\n")
-    else:
-      out("        enc.writeBit(this.has_$(f.name));\n")
-  for i in range(reserved_count):
-    out("        enc.writeBit(false);\n")
+  out("        enc.writeUint%s(packing_flags);\n" % (pack*8));
 
 for f in fields:
-  if f.type == "boolean":
+  if f.empty:
     continue
   if pack > 0:
-    out("        if (this.has_$(f.name))\n    ")
+    out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
   pre = ""
   post = ""
   if f.type_node.name == "struct":
@@ -209,19 +194,13 @@ for f in fields:
     {
 ${
 if pack > 0:
-  for f in fields:
-    if f.type == "boolean":
-      out("        this.$(f.name) = dec.readBit();\n")
-    else:
-      out("        this.has_$(f.name) = dec.readBit();\n")
-  for i in range(reserved_count):
-    out("        dec.readBit();\n")
+   out("        packing_flags = ($(PACK_TYPES[pack])) dec.readUint%s();\n" % (pack*8));
 
 for f in fields:
-  if f.type == "boolean":
+  if f.empty:
     continue
   if pack > 0:
-    out("        if (this.has_$(f.name))\n    ")
+    out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
   pre = ""
   post = ""
   arg = ""
@@ -233,6 +212,20 @@ for f in fields:
     post = ")"
   out("        this.$(f.name) = $(pre)dec.read$(f.coder)($(arg))$(post);\n")
 }
+    }
+
+    public Map<String,Object> getFields()
+    {
+        Map<String,Object> result = new LinkedHashMap<String,Object>();
+
+${
+for f in fields:
+  if pack > 0:
+    out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+  out('        result.put("$(f.name)", $(f.get)());\n')
+}
+
+        return result;
     }
 
 }
