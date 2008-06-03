@@ -24,10 +24,12 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.*;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.transport.*;
+import org.apache.qpidity.transport.Session;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
@@ -76,12 +78,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * Specify whether this consumer is performing a sync receive
      */
     private final AtomicBoolean _syncReceive = new AtomicBoolean(false);
-
-    /**
-     * Used for no-ack mode so to send session completion command
-     */
-    private int _numberReceivedMessages = 0;
-    private int _firstMessageToComplete;
 
     //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
@@ -165,25 +161,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     public void onMessage(Message message)
     {
-        /**
-         * For no-ack mode
-         */
-        if( _acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE )
-        {
-            _numberReceivedMessages++;
-            if(_numberReceivedMessages == 1)
-            {
-                _firstMessageToComplete = message.getMessageTransferId();
-            }
-           if(_numberReceivedMessages >= getSession().getAMQConnection().getMaxPrefetch() )
-            {
-                RangeSet r = new RangeSet();
-                r.add(_firstMessageToComplete, message.getMessageTransferId());
-                _0_10session.getQpidSession().sessionCompleted(r, Option.TIMELY_REPLY);
-                _numberReceivedMessages = 0;
-            }
-        }
-
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         AMQShortString consumerTag = getConsumerTag();
@@ -383,7 +360,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             RangeSet ranges = new RangeSet();
             ranges.add((int) message.getDeliveryTag());
-            _0_10session.getQpidSession().messageAcknowledge(ranges);
+            _0_10session.getQpidSession().messageAcknowledge(ranges,
+                    _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE );
             _0_10session.getCurrentException();
         }
     }
@@ -498,5 +476,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             _syncReceive.set(false);
         }
         return o;
+    }
+
+    void postDeliver(AbstractJMSMessage msg) throws JMSException
+    {
+        super.postDeliver(msg);
+        if(_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
+        {
+          _session.acknowledgeMessage(msg.getDeliveryTag(), false);                
+        }               
     }
 }
