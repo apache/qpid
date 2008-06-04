@@ -92,7 +92,7 @@ bool SessionPoint::operator==(const SessionPoint& x) const {
 
 SessionState::SendState::SendState() : unflushedSize(), replaySize(), bytesSinceKnownCompleted() {}
 
-SessionState::ReceiveState::ReceiveState() {}
+SessionState::ReceiveState::ReceiveState() : bytesSinceKnownCompleted() {}
 
 SessionPoint SessionState::senderGetCommandPoint() { return sender.sendPoint; }
 SequenceSet  SessionState::senderGetIncomplete() const { return sender.incomplete; }
