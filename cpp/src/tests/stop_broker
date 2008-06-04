@@ -13,8 +13,8 @@ grep -a 'warning\|error\|critical' qpidd.log && {
 
 # Check valgrind log.
 if test -n "$VALGRIND"; then
-    source `dirname $0`/vg_check
-    vg_check qpidd.vglog
+    source `dirname $0`/vg_check $VG_LOG*
+    vg_check qpidd.vglog*
 fi
 
 exit $ERROR
