@@ -754,7 +754,6 @@ public class AMQSession_0_10 extends AMQSession
         {
            // send completed so consumer credits don't dry up
            getQpidSession().messageAcknowledge(_txRangeSet, false);
-           _txSize = 0;
         }
     }
 
