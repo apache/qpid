@@ -299,11 +299,11 @@ void ManagementBroker::PeriodicProcessing (void)
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
             EncodeHeader (msgBuffer, 'c');
-            object->writeConfig (msgBuffer);
+            object->writeProperties(msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt." + uuid.str() + ".config." + object->getClassName ();
+            routingKey = "mgmt." + uuid.str() + ".prop." + object->getClassName ();
             SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
@@ -311,11 +311,11 @@ void ManagementBroker::PeriodicProcessing (void)
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
             EncodeHeader (msgBuffer, 'i');
-            object->writeInstrumentation (msgBuffer);
+            object->writeStatistics(msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt." + uuid.str () + ".inst." + object->getClassName ();
+            routingKey = "mgmt." + uuid.str () + ".stat." + object->getClassName ();
             SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
@@ -681,8 +681,8 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
             uint32_t outLen;
 
             EncodeHeader (outBuffer, 'g', sequence);
-            object->writeConfig (outBuffer);
-            object->writeInstrumentation (outBuffer, true);
+            object->writeProperties(outBuffer);
+            object->writeStatistics(outBuffer, true);
             outLen = MA_BUFFER_SIZE - outBuffer.available ();
             outBuffer.reset ();
             SendBuffer (outBuffer, outLen, dExchange, replyToKey);

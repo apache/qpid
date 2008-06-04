@@ -44,13 +44,13 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     // Statistics
 /*MGEN:Class.InstDeclarations*/
     // Private Methods
-    static void writeSchema   (qpid::framing::Buffer& buf);
-    void writeConfig          (qpid::framing::Buffer& buf);
-    void writeInstrumentation (qpid::framing::Buffer& buf,
-                               bool skipHeaders = false);
-    void doMethod             (std::string            methodName,
-                               qpid::framing::Buffer& inBuf,
-                               qpid::framing::Buffer& outBuf);
+    static void writeSchema (qpid::framing::Buffer& buf);
+    void writeProperties    (qpid::framing::Buffer& buf);
+    void writeStatistics    (qpid::framing::Buffer& buf,
+                             bool skipHeaders = false);
+    void doMethod           (std::string            methodName,
+                             qpid::framing::Buffer& inBuf,
+                             qpid::framing::Buffer& outBuf);
     writeSchemaCall_t getWriteSchemaCall (void) { return writeSchema; }
 
 /*MGEN:Class.InstChangedStub*/
