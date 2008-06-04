@@ -78,7 +78,7 @@ class SessionState {
     typedef boost::iterator_range<ReplayList::iterator> ReplayRange;
 
     struct Configuration {
-        Configuration(size_t flush=0, size_t hard=0);
+        Configuration(size_t flush=1024*1024, size_t hard=0);
         size_t replayFlushLimit; // Flush when the replay list >= N bytes. 0 disables.
         size_t replayHardLimit; // Kill session if replay list > N bytes. 0 disables.
     };
@@ -108,6 +108,12 @@ class SessionState {
     /** Called when flush for confirmed and completed commands is sent to peer. */
     virtual void senderRecordFlush();
 
+    /** True if we should reply to the next incoming completed command */
+    virtual bool senderNeedKnownCompleted() const;
+
+    /** Called when knownCompleted is sent to peer. */
+    virtual void senderRecordKnownCompleted();
+
     /** Called when the peer confirms up to comfirmed. */
     virtual void senderConfirmed(const SessionPoint& confirmed);
 
@@ -127,7 +133,6 @@ class SessionState {
         virtual *@return Range of frames to be replayed.
     */
     virtual ReplayRange senderExpected(const SessionPoint& expected);
-
 
     // ==== Functions for receiver state
 
@@ -161,7 +166,7 @@ class SessionState {
   private:
 
     struct SendState {
-        SendState() : unflushedSize(), replaySize() {}
+        SendState();
         // invariant: replayPoint <= flushPoint <= sendPoint
         SessionPoint replayPoint;   // Can replay from this point
         SessionPoint flushPoint;    // Point of last flush
@@ -170,16 +175,15 @@ class SessionState {
         size_t unflushedSize;       // Un-flushed bytes in replay list.
         size_t replaySize;          // Total bytes in replay list.
         SequenceSet incomplete;     // Commands sent and not yet completed.
+        size_t bytesSinceKnownCompleted; // Bytes sent since we last issued a knownCompleted.
     } sender;
 
     struct ReceiveState {
-        ReceiveState() {}
+        ReceiveState();
         SessionPoint expected;  // Expected from here
         SessionPoint received; // Received to here. Invariant: expected <= received.
         SequenceSet unknownCompleted; // Received & completed, may not  not known-complete by peer.
         SequenceSet incomplete;       // Incomplete received commands.
-        int segmentType;
-        
     } receiver;
 
     SessionId id;

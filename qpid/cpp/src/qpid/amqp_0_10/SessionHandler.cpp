@@ -196,11 +196,13 @@ void SessionHandler::confirmed(const SequenceSet& commands, const Array& /*fragm
         getState()->senderConfirmed(commands.rangesBegin()->last());
 }
 
-void SessionHandler::completed(const SequenceSet& commands, bool /*timelyReply*/) {
+void SessionHandler::completed(const SequenceSet& commands, bool timelyReply) {
     checkAttached();
     getState()->senderCompleted(commands);
-    if (!commands.empty())
-        peer.knownCompleted(commands);    // Always send a timely reply
+    if (getState()->senderNeedKnownCompleted() || timelyReply) {
+        peer.knownCompleted(commands);
+        getState()->senderRecordKnownCompleted();
+    }
 }
 
 void SessionHandler::knownCompleted(const SequenceSet& commands) {
