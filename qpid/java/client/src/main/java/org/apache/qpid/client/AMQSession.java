@@ -1919,7 +1919,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    private void checkTransacted() throws JMSException
+    protected void checkTransacted() throws JMSException
     {
         if (!getTransacted())
         {
