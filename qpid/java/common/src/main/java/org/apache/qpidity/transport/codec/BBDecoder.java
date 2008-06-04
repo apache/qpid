@@ -21,6 +21,7 @@
 package org.apache.qpidity.transport.codec;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 
 /**
@@ -29,7 +30,7 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-public class BBDecoder extends AbstractDecoder
+public final class BBDecoder extends AbstractDecoder
 {
 
     private final ByteBuffer in;
@@ -37,6 +38,7 @@ public class BBDecoder extends AbstractDecoder
     public BBDecoder(ByteBuffer in)
     {
         this.in = in;
+        this.in.order(ByteOrder.BIG_ENDIAN);
     }
 
     protected byte doGet()
@@ -47,6 +49,31 @@ public class BBDecoder extends AbstractDecoder
     protected void doGet(byte[] bytes)
     {
         in.get(bytes);
+    }
+
+    public boolean hasRemaining()
+    {
+        return in.hasRemaining();
+    }
+
+    public short readUint8()
+    {
+        return (short) (0xFF & in.get());
+    }
+
+    public int readUint16()
+    {
+        return 0xFFFF & in.getShort();
+    }
+
+    public long readUint32()
+    {
+        return 0xFFFFFFFFL & in.getInt();
+    }
+
+    public long readUint64()
+    {
+        return in.getLong();
     }
 
 }
