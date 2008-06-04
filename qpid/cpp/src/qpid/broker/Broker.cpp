@@ -92,9 +92,9 @@ Broker::Options::Options(const std::string& name) :
     char *home = ::getenv("HOME");
 
     if (home == 0)
-        home = "/tmp";
-
-    dataDir += home;
+        dataDir += "/tmp";
+    else
+        dataDir += home;
     dataDir += "/.qpidd";
 
     addOptions()
