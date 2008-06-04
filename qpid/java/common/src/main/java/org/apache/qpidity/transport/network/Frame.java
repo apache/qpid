@@ -38,8 +38,7 @@ import static org.apache.qpidity.transport.util.Functions.*;
  * @author Rafael H. Schloming
  */
 
-// RA: changed it to public until we sort the package issues
-public class Frame implements NetworkEvent, Iterable<ByteBuffer>
+public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
 {
     public static final int HEADER_SIZE = 12;
 

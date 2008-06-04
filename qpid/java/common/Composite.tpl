@@ -50,7 +50,7 @@ PACK_TYPES = {
 typecode = code(type)
 }
 
-public class $name extends $base {
+public final class $name extends $base {
 
     public static final int TYPE = $typecode;
 
