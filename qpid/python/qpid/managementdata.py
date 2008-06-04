@@ -467,7 +467,7 @@ class ManagementData:
       for eIdx in range (len (config)):
         key = config[eIdx][0]
         if key != "id":
-          row   = ("config", key)
+          row   = ("property", key)
           for id in ids:
             if timestamp == None or \
                timestamp < self.tables[classKey][id][0][0]:
@@ -480,7 +480,7 @@ class ManagementData:
       for eIdx in range (len (inst)):
         key = inst[eIdx][0]
         if key != "id":
-          row = ("inst", key)
+          row = ("statistic", key)
           for id in ids:
             (key, value) = self.tables[classKey][id][2][eIdx]
             row = row + (self.valueDisplay (classKey, key, value),)
@@ -511,7 +511,7 @@ class ManagementData:
         row = (className, len (tuple[0]), len (tuple[1]), len (tuple[2]), len (tuple[3]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",
-                       ("Class", "ConfigElements", "InstElements", "Methods", "Events"),
+                       ("Class", "Properties", "Statistics", "Methods", "Events"),
                        rows)
     finally:
       self.lock.release ()
