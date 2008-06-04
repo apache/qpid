@@ -243,7 +243,7 @@ void SessionHandler::sendDetach()
 void SessionHandler::sendCompletion() {
     checkAttached();
     const SequenceSet& c = getState()->receiverGetUnknownComplete();
-    peer.completed(c, c.span() > 1000);
+    peer.completed(c, getState()->receiverNeedKnownCompleted());
 }
 
 void SessionHandler::sendAttach(bool force) {
