@@ -90,6 +90,10 @@ bool SessionPoint::operator==(const SessionPoint& x) const {
 }
 
 
+SessionState::SendState::SendState() : unflushedSize(), replaySize(), bytesSinceKnownCompleted() {}
+
+SessionState::ReceiveState::ReceiveState() {}
+
 SessionPoint SessionState::senderGetCommandPoint() { return sender.sendPoint; }
 SequenceSet  SessionState::senderGetIncomplete() const { return sender.incomplete; }
 SessionPoint SessionState::senderGetReplayPoint() const { return sender.replayPoint; }
@@ -112,6 +116,7 @@ void SessionState::senderRecord(const AMQFrame& f) {
     stateful = true;
     if (timeout) sender.replayList.push_back(f);
     sender.unflushedSize += f.size();
+    sender.bytesSinceKnownCompleted += f.size();
     sender.replaySize += f.size();
     sender.incomplete += sender.sendPoint.command;
     sender.sendPoint.advance(f);
@@ -127,6 +132,18 @@ void SessionState::senderRecordFlush() {
     assert(sender.flushPoint <= sender.sendPoint);
     sender.flushPoint = sender.sendPoint;
     sender.unflushedSize = 0;
+}
+
+bool SessionState::senderNeedKnownCompleted() const {
+    // FIXME aconway 2008-06-04: this is unpleasant - replayFlushLimit == 0
+    // means never send spontaneous flush, but sends a knownCompleted for
+    // every completed. Need separate configuration?
+    // 
+    return sender.bytesSinceKnownCompleted >= config.replayFlushLimit;
+}
+
+void SessionState::senderRecordKnownCompleted() {
+    sender.bytesSinceKnownCompleted = 0;
 }
 
 void SessionState::senderConfirmed(const SessionPoint& confirmed) {
@@ -213,7 +230,8 @@ SequenceNumber SessionState::receiverGetCurrent() const {
 SessionState::Configuration::Configuration(size_t flush, size_t hard) :
     replayFlushLimit(flush), replayHardLimit(hard) {}
 
-SessionState::SessionState(const SessionId& i, const Configuration& c) : id(i), timeout(), config(c), stateful()
+SessionState::SessionState(const SessionId& i, const Configuration& c)
+  : id(i), timeout(), config(c), stateful()
 {
     QPID_LOG(debug, "SessionState::SessionState " << id << ": " << this);
 }

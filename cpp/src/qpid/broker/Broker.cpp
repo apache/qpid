@@ -84,7 +84,7 @@ Broker::Options::Options(const std::string& name) :
     enableMgmt(1),
     mgmtPubInterval(10),
     auth(AUTH_DEFAULT),
-    replayFlushLimit(64),
+    replayFlushLimit(1024),
     replayHardLimit(0)
 {
     int c = sys::SystemInfo::concurrency();
