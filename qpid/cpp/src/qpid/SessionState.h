@@ -148,6 +148,11 @@ class SessionState {
     /** Peer has indicated commands are known completed */
     virtual void receiverKnownCompleted(const SequenceSet& commands);
 
+    /** True if the next completed control should set the timely-reply argument
+     * to request a knonw-completed response.
+     */
+    virtual bool receiverNeedKnownCompleted() const;
+
     /** Get the incoming command point */
     virtual const SessionPoint& receiverGetExpected() const;
 
@@ -184,6 +189,7 @@ class SessionState {
         SessionPoint received; // Received to here. Invariant: expected <= received.
         SequenceSet unknownCompleted; // Received & completed, may not  not known-complete by peer.
         SequenceSet incomplete;       // Incomplete received commands.
+        size_t bytesSinceKnownCompleted; // Bytes sent since we last issued a knownCompleted.
     } receiver;
 
     SessionId id;
