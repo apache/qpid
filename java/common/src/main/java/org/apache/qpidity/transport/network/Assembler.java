@@ -27,6 +27,8 @@ import java.util.Map;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpidity.transport.codec.BBDecoder;
+import org.apache.qpidity.transport.codec.Decoder;
 import org.apache.qpidity.transport.codec.FragmentDecoder;
 
 import org.apache.qpidity.transport.ConnectionEvent;
@@ -161,7 +163,15 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 
     private ProtocolEvent decode(Frame frame, SegmentType type, List<ByteBuffer> segment)
     {
-        FragmentDecoder dec = new FragmentDecoder(segment.iterator());
+        Decoder dec;
+        if (segment.size() == 1)
+        {
+            dec = new BBDecoder(segment.get(0));
+        }
+        else
+        {
+            dec = new FragmentDecoder(segment.iterator());
+        }
 
         switch (type)
         {
