@@ -67,9 +67,9 @@ struct DaemonOptions : public qpid::Options {
         char *home = ::getenv("HOME");
 
         if (home == 0)
-            home = "/tmp";
-
-        piddir += home;
+            piddir += "/tmp";
+        else
+            piddir += home;
         piddir += "/.qpidd";
 
         addOptions()
