@@ -135,10 +135,6 @@ void SessionState::senderRecordFlush() {
 }
 
 bool SessionState::senderNeedKnownCompleted() const {
-    // FIXME aconway 2008-06-04: this is unpleasant - replayFlushLimit == 0
-    // means never send spontaneous flush, but sends a knownCompleted for
-    // every completed. Need separate configuration?
-    // 
     return sender.bytesSinceKnownCompleted >= config.replayFlushLimit;
 }
 
@@ -187,6 +183,7 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
     if (isControl(f)) return true; // Ignore control frames.
     stateful = true;
     receiver.expected.advance(f);
+    receiver.bytesSinceKnownCompleted += f.size();
     bool firstTime = receiver.expected > receiver.received;
     if (firstTime) {
         receiver.received = receiver.expected;
@@ -211,10 +208,15 @@ void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
 void SessionState::receiverKnownCompleted(const SequenceSet& commands) {
     if (!commands.empty() && commands.back() > receiver.received.command)
         throw InvalidArgumentException(QPID_MSG(getId() << ": Known-completed has invalid commands."));
+    receiver.bytesSinceKnownCompleted=0;
     receiver.unknownCompleted -= commands;
     QPID_LOG(debug, getId() << ": receiver known completed: " << commands << " unknown: " << receiver.unknownCompleted);
 }
 
+bool SessionState::receiverNeedKnownCompleted() const {
+    return receiver.bytesSinceKnownCompleted >= config.replayFlushLimit;
+}
+        
 const SessionPoint& SessionState::receiverGetExpected() const { return receiver.expected; }
 const SessionPoint& SessionState::receiverGetReceived() const { return receiver.received; }
 const SequenceSet& SessionState::receiverGetUnknownComplete() const { return receiver.unknownCompleted; }
