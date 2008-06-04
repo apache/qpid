@@ -39,7 +39,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineAllocator.cpp \
 	InlineVector.cpp \
-	ISList.cpp IList.cpp \
 	ClientSessionTest.cpp \
 	SequenceSet.cpp \
 	StringUtils.cpp \
