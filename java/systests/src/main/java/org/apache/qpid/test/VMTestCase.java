@@ -21,6 +21,8 @@
 package org.apache.qpid.test;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -46,6 +48,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class VMTestCase extends TestCase
 {
@@ -60,6 +64,16 @@ public class VMTestCase extends TestCase
     protected final Map<String, String> _connections = new HashMap<String, String>();
     protected final Map<String, String> _queues = new HashMap<String, String>();
     protected final Map<String, String> _topics = new HashMap<String, String>();
+
+    protected static final String ALL = "org.apache.qpid";
+    protected static final String BROKER = "org.apache.qpid.server";
+    protected static final String CLIENT = "org.apache.qpid.client";
+    protected static final String COMMON = "org.apache.qpid.common";
+    protected static final String FRAMING = "org.apache.qpid.framing";
+    protected static final String TEST = "org.apache.qpid.test";
+
+    private LinkedList<LogState> _logStates = new LinkedList<LogState>();
+    private Map<String, String> _setProperties = new HashMap<String, String>();
 
     protected void setUp() throws Exception
     {
@@ -116,6 +130,11 @@ public class VMTestCase extends TestCase
 //        checkQueuesClean();
 
         stopVMBroker(1);
+
+        revertLogging();
+
+        revertSystemProperties();
+
         super.tearDown();
     }
 
@@ -159,7 +178,7 @@ public class VMTestCase extends TestCase
 
     public void startVMBroker(int vmID) throws Exception
     {
-        startVMBroker(vmID, null);
+        startVMBroker(vmID, (File) null);
     }
 
     /** FIXME: for now vmID must be unique client is responsible for this. */
@@ -204,10 +223,85 @@ public class VMTestCase extends TestCase
         }
     }
 
+    public void startVMBroker(int vmID, ConfigurationFileApplicationRegistry config) throws Exception
+    {
+        ApplicationRegistry.initialise(config, vmID);
+        startVMBroker(vmID);
+    }
+
     public void stopVMBroker(int inVMid)
     {
         TransportConnection.killVMBroker(inVMid);
         ApplicationRegistry.remove(inVMid);
+    }
+
+    protected void setLoggingLevel(String loggerName, Level level)
+    {
+        Logger logger = Logger.getLogger(loggerName);
+
+        Level currentLevel = logger.getLevel();
+
+        _logStates.push(new LogState(logger, currentLevel));
+
+        logger.setLevel(level);
+    }
+
+    protected void revertLogging()
+    {
+        for (LogState state : _logStates)
+        {
+            state.getLogger().setLevel(state.getLevel());
+        }
+
+        _logStates.clear();
+    }
+
+    protected class LogState
+    {
+        private Logger _logger;
+        private Level _level;
+
+        public LogState(Logger logger, Level level)
+        {
+            _logger = logger;
+            _level = level;
+        }
+
+        public Logger getLogger()
+        {
+            return _logger;
+        }
+
+        public Level getLevel()
+        {
+            return _level;
+        }
+    }
+
+    protected void setSystemProperty(String property, String value)
+    {
+        if (!_setProperties.containsKey(property))
+        {
+            _setProperties.put(property, System.getProperty(property));
+        }
+
+        System.setProperty(property, value);
+    }
+
+    protected void revertSystemProperties()
+    {
+        for (String key : _setProperties.keySet())
+        {
+            String value = _setProperties.get(key);
+            if (value != null)
+            {
+                System.setProperty(key, value);
+            }
+            else
+            {
+                System.clearProperty(key);
+            }
+        }
     }
 
 }
