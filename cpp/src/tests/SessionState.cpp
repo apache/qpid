@@ -260,4 +260,41 @@ QPID_AUTO_TEST_CASE(testCompleted) {
     // TODO aconway 2008-04-30: missing tests for known-completed.
 }
 
+QPID_AUTO_TEST_CASE(testNeedKnownCompleted) {
+    size_t flushInterval= 2*(transferFrameSize()+contentFrameSize())+1;
+    qpid::SessionState::Configuration c(flushInterval);
+    qpid::SessionState s(qpid::SessionId(), c);
+    s.senderGetCommandPoint();
+    transfers(s, "a");
+    SequenceSet set(SequenceSet() + 0);
+    s.senderCompleted(set);
+    BOOST_CHECK(!s.senderNeedKnownCompleted());
+
+    transfers(s, "b");
+    set += 1;
+    s.senderCompleted(set);
+    BOOST_CHECK(!s.senderNeedKnownCompleted());
+
+    transfers(s, "c");
+    set += 2;
+    s.senderCompleted(set);
+    BOOST_CHECK(s.senderNeedKnownCompleted());
+    s.senderRecordKnownCompleted();
+    BOOST_CHECK(!s.senderNeedKnownCompleted());
+
+    transfers(s, "de");
+    set += 3;
+    set += 4;
+    s.senderCompleted(set);
+    BOOST_CHECK(!s.senderNeedKnownCompleted());
+
+    transfers(s, "f");
+    set += 2;
+    s.senderCompleted(set);
+    BOOST_CHECK(s.senderNeedKnownCompleted());
+    s.senderRecordKnownCompleted();
+    BOOST_CHECK(!s.senderNeedKnownCompleted());
+}
+
+
 QPID_AUTO_TEST_SUITE_END()
