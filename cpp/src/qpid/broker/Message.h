@@ -119,6 +119,7 @@ public:
      * be reloaded.
      */
     void releaseContent(MessageStore* store);
+    void destroy();
 
     void sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
     void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
