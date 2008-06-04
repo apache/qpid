@@ -85,7 +85,7 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 /*MGEN:Class.EventSchema*/
 }
 
-void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
+void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
 {
     sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
@@ -94,7 +94,7 @@ void /*MGEN:Class.NameCap*/::writeConfig (Buffer& buf)
 /*MGEN:Class.WriteConfig*/
 }
 
-void /*MGEN:Class.NameCap*/::writeInstrumentation (Buffer& buf, bool skipHeaders)
+void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
 {
     sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
