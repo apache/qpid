@@ -57,8 +57,14 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         {
             mgmtExchange = management::Exchange::shared_ptr
                 (new management::Exchange (this, parent, _name, durable));
-            if (!durable)
-                agent->addObject (mgmtExchange);
+            if (!durable) {
+                if (name == "")
+                    agent->addObject (mgmtExchange, 4, 1);  // Special default exchange ID
+                else if (name == "qpid.management")
+                    agent->addObject (mgmtExchange, 5, 1);  // Special management exchange ID
+                else
+                    agent->addObject (mgmtExchange);
+            }
         }
     }
 }

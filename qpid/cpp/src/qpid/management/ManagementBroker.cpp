@@ -333,7 +333,7 @@ void ManagementBroker::PeriodicProcessing (void)
 }
 
 void ManagementBroker::sendCommandComplete (string replyToKey, uint32_t sequence,
-                                           uint32_t code, string text)
+                                            uint32_t code, string text)
 {
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
@@ -347,8 +347,8 @@ void ManagementBroker::sendCommandComplete (string replyToKey, uint32_t sequence
 }
 
 void ManagementBroker::dispatchCommand (Deliverable&      deliverable,
-                                       const string&     routingKey,
-                                       const FieldTable* /*args*/)
+                                        const string&     routingKey,
+                                        const FieldTable* /*args*/)
 {
     Mutex::ScopedLock lock (userLock);
     Message&  msg = ((DeliverableMessage&) deliverable).getMessage ();
@@ -368,8 +368,8 @@ void ManagementBroker::dispatchCommand (Deliverable&      deliverable,
 }
 
 void ManagementBroker::dispatchMethodLH (Message&      msg,
-                                        const string& routingKey,
-                                        size_t        first)
+                                         const string& routingKey,
+                                         size_t        first)
 {
     size_t    pos, start = first;
     uint32_t  contentSize;
@@ -411,6 +411,12 @@ void ManagementBroker::dispatchMethodLH (Message&      msg,
     uint32_t outLen, sequence;
     uint8_t  opcode;
 
+    if (msg.encodedSize() > MA_BUFFER_SIZE) {
+        QPID_LOG(debug, "ManagementBroker::dispatchMethodLH: Message too large: " <<
+                 msg.encodedSize());
+        return;
+    }
+
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
 
@@ -426,8 +432,8 @@ void ManagementBroker::dispatchMethodLH (Message&      msg,
         return;
     }
 
-    uint64_t   objId = inBuffer.getLongLong ();
-    string     replyToKey;
+    uint64_t objId = inBuffer.getLongLong ();
+    string   replyToKey;
 
     const framing::MessageProperties* p =
         msg.getFrames().getHeaders()->get<framing::MessageProperties>();
@@ -492,12 +498,8 @@ void ManagementBroker::handlePackageQueryLH (Buffer&, string replyToKey, uint32_
     sendCommandComplete (replyToKey, sequence);
 }
 
-void ManagementBroker::handlePackageIndLH (Buffer& inBuffer, string /*replyToKey*/, uint32_t /*sequence*/)
+void ManagementBroker::handlePackageIndLH (Buffer& /*inBuffer*/, string /*replyToKey*/, uint32_t /*sequence*/)
 {
-    std::string packageName;
-
-    inBuffer.getShortString (packageName);
-    FindOrAddPackage (packageName);
 }
 
 void ManagementBroker::handleClassQueryLH (Buffer& inBuffer, string replyToKey, uint32_t sequence)
@@ -570,8 +572,14 @@ void ManagementBroker::handleSchemaRequestLH (Buffer& inBuffer, string replyToKe
                 outBuffer.reset ();
                 SendBuffer (outBuffer, outLen, dExchange, replyToKey);
             }
+            else
+                sendCommandComplete (replyToKey, sequence, 1, "Schema not available");
         }
+        else
+            sendCommandComplete (replyToKey, sequence, 1, "Class key not found");
     }
+    else
+        sendCommandComplete (replyToKey, sequence, 1, "Package not found");
 }
 
 bool ManagementBroker::bankInUse (uint32_t bank)
@@ -652,15 +660,15 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
 
     moveNewObjectsLH();
 
-    ft.decode (inBuffer);
-    value = ft.get ("_class");
-    if (value->empty () || !value->convertsTo<string> ())
+    ft.decode(inBuffer);
+    value = ft.get("_class");
+    if (value.get() == 0 || !value->convertsTo<string>())
     {
         // TODO: Send completion with an error code
         return;
     }
 
-    string className (value->get<string> ());
+    string className (value->get<string>());
 
     for (ManagementObjectMap::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
@@ -701,6 +709,12 @@ void ManagementBroker::dispatchAgentCommandLH (Message& msg)
     else
         return;
 
+    if (msg.encodedSize() > MA_BUFFER_SIZE) {
+        QPID_LOG(debug, "ManagementBroker::dispatchAgentCommandLH: Message too large: " <<
+                 msg.encodedSize());
+        return;
+    }
+
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
 
@@ -712,7 +726,7 @@ void ManagementBroker::dispatchAgentCommandLH (Message& msg)
     else if (opcode == 'p') handlePackageIndLH    (inBuffer, replyToKey, sequence);
     else if (opcode == 'Q') handleClassQueryLH    (inBuffer, replyToKey, sequence);
     else if (opcode == 'S') handleSchemaRequestLH (inBuffer, replyToKey, sequence);
-    else if (opcode == 'A') handleAttachRequestLH (inBuffer, replyToKey, sequence);
+  //else if (opcode == 'A') handleAttachRequestLH (inBuffer, replyToKey, sequence);
     else if (opcode == 'G') handleGetQueryLH      (inBuffer, replyToKey, sequence);
 }
 
@@ -741,9 +755,9 @@ ManagementBroker::PackageMap::iterator ManagementBroker::FindOrAddPackage (std::
 }
 
 void ManagementBroker::AddClassLocal (PackageMap::iterator  pIter,
-                                     string                className,
-                                     uint8_t*              md5Sum,
-                                     ManagementObject::writeSchemaCall_t schemaCall)
+                                      string                className,
+                                      uint8_t*              md5Sum,
+                                      ManagementObject::writeSchemaCall_t schemaCall)
 {
     SchemaClassKey key;
     ClassMap&      cMap = pIter->second;
@@ -767,14 +781,14 @@ void ManagementBroker::AddClassLocal (PackageMap::iterator  pIter,
 }
 
 void ManagementBroker::EncodePackageIndication (Buffer&              buf,
-                                               PackageMap::iterator pIter)
+                                                PackageMap::iterator pIter)
 {
     buf.putShortString ((*pIter).first);
 }
 
 void ManagementBroker::EncodeClassIndication (Buffer&              buf,
-                                             PackageMap::iterator pIter,
-                                             ClassMap::iterator   cIter)
+                                              PackageMap::iterator pIter,
+                                              ClassMap::iterator   cIter)
 {
     SchemaClassKey key = (*cIter).first;
 
