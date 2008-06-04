@@ -370,6 +370,9 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
         if (cacheExchange->getAlternate()) {
             cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
         }
+        if (!strategy.delivered) {
+            msg->destroy();
+        }
     }
 
 }
