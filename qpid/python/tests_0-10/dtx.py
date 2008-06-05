@@ -653,22 +653,19 @@ class DtxTests(TestBase010):
                 session.dtx_rollback(xid=tx)
 
         xids = session.dtx_recover().in_doubt
-        print "xids=%s" % xids
         
         #rollback the prepared transactions returned by recover
         for x in xids:
             session.dtx_rollback(xid=x)            
 
         #validate against the expected list of prepared transactions
-        actual = set(xids)
-        expected = set(prepared)
+        actual = set([x.global_id for x in xids]) #TODO: come up with nicer way to test these
+        expected = set([x.global_id for x in prepared])
         intersection = actual.intersection(expected)
         
         if intersection != expected:
             missing = expected.difference(actual)
             extra = actual.difference(expected)
-            for x in missing:
-                session.dtx_rollback(xid=x)            
             self.fail("Recovered xids not as expected. missing: %s; extra: %s" % (missing, extra))
 
     def test_bad_resume(self):
