@@ -387,7 +387,15 @@ QueuedMessage Queue::dequeue(){
 uint32_t Queue::purge(){
     Mutex::ScopedLock locker(messageLock);
     int count = messages.size();
-    while(!messages.empty()) pop();
+    while(!messages.empty()) {
+        QueuedMessage& msg = messages.front();
+        if (store && msg.payload->isPersistent()) {
+            boost::intrusive_ptr<PersistableMessage> pmsg =
+                boost::static_pointer_cast<PersistableMessage>(msg.payload);
+            store->dequeue(0, pmsg, *this);
+        }
+        pop();
+    }
     return count;
 }
 
