@@ -33,6 +33,7 @@
 #include <fstream>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/utsname.h>
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -47,6 +48,12 @@ struct ModuleOptions : public qpid::Options {
     bool           noLoad;
     ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
     {
+        struct utsname _uname;
+        if (::uname(&_uname) == 0) {
+            if (string(_uname.machine) == "x86_64")
+                loadDir = "/usr/lib64/qpidd";
+        }
+
         addOptions()
             ("module-dir",    optValue(loadDir, "DIR"),  "Load all .so modules in this directory")
             ("load-module",   optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
