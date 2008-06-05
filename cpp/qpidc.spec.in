@@ -102,7 +102,7 @@ rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
 install -d -m0755 %{buildroot}%{_libdir}/qpidd
-install -Dp -m600 etc/qpidd.sasldb %{buildroot}%{_libdir}/qpidd
+install -Dp -m600 etc/qpidd.sasldb %{buildroot}/var/lib/qpidd
 install -d -m0755 %{buildroot}/var/run/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
@@ -149,7 +149,7 @@ make check
 %{_initrddir}/%{qpidd}
 %attr(755, qpidd, qpidd) %_libdir/qpidd
 %attr(755, qpidd, qpidd) /var/run/qpidd
-%attr(600, qpidd, qpidd) %config(noreplace) %_libdir/qpidd/qpidd.sasldb
+%attr(600, qpidd, qpidd) %config(noreplace) /var/lib/qpidd/qpidd.sasldb
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
