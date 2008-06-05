@@ -50,13 +50,13 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	DtxWorkRecordTest.cpp \
 	DeliveryRecordTest.cpp \
 	ExchangeTest.cpp \
-	HeadersExchangeTest.cpp	\
+	HeadersExchangeTest.cpp \
 	MessageTest.cpp \
 	QueueRegistryTest.cpp \
 	QueuePolicyTest.cpp \
 	FramingTest.cpp \
 	HeaderTest.cpp \
-	SequenceNumberTest.cpp
+	SequenceNumberTest.cpp \
 	TimerTest.cpp \
 	TopicExchangeTest.cpp \
 	TxAckTest.cpp \
@@ -134,6 +134,7 @@ EXTRA_DIST +=								\
   .valgrind.supp							\
   .valgrindrc								\
   MessageUtils.h							\
+  TestMessageStore.h							\
   MockConnectionInputHandler.h						\
   TxMocks.h								\
   qpid_test_plugin.h
