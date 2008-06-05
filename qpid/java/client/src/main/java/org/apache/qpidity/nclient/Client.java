@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.client.url.URLParser_0_10;
 import org.apache.qpid.jms.BrokerDetails;
@@ -255,15 +256,24 @@ public class Client implements org.apache.qpidity.nclient.Connection
         _lock.lock();
         try
         {
-            try {
-                while (!closed)
+            try
+            {
+                long timeout = 60000;
+                long start = System.currentTimeMillis();
+                long elapsed = 0;
+                while (!closed && elapsed < timeout)
                 {
-                    closeOk.await();
+                    closeOk.await(timeout - elapsed, TimeUnit.MILLISECONDS);
+                    elapsed = System.currentTimeMillis() - start;
+                }
+                if(! closed )
+                {
+                    throw new QpidException("Timed out when closing connection", ErrorCode.CONNECTION_ERROR, null);
                 }
             }
             catch (InterruptedException e)
             {
-                // do nothing
+                 throw new QpidException("Interrupted when closing connection", ErrorCode.CONNECTION_ERROR, null);
             }
         }
         finally
