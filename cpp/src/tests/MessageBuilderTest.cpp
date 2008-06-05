@@ -177,7 +177,7 @@ QPID_AUTO_TEST_CASE(test2ContentFrames)
     BOOST_CHECK(builder.getMessage());
     BOOST_CHECK(builder.getMessage()->getFrames().isComplete());
 }
-/*
+
 QPID_AUTO_TEST_CASE(testStaging)
 {
     MockMessageStore store;
@@ -212,6 +212,5 @@ QPID_AUTO_TEST_CASE(testStaging)
     //were the content frames dropped?
     BOOST_CHECK(!builder.getMessage()->isContentLoaded());
 }
-*/
 
 QPID_AUTO_TEST_SUITE_END()
