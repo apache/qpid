@@ -148,7 +148,7 @@ make check
 %{_initrddir}/%{qpidd}
 %attr(755, qpidd, qpidd) %_libdir/qpidd
 %attr(755, qpidd, qpidd) /var/run/qpidd
-%attr(600, qpidd, qpidd) %config(noreplace) %_localstatedir/lib/qpidd/qpidd.sasldb
+%attr(600, qpidd, qpidd) %config(noreplace) %_libdir/qpidd/qpidd.sasldb
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
