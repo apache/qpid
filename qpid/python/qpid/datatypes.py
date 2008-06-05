@@ -168,9 +168,15 @@ class Range:
 
   def __contains__(self, n):
     return self.lower <= n and n <= self.upper
+    
+  def __iter__(self):
+    i = self.lower
+    while i <= self.upper:
+      yield i
+      i += 1
 
   def touches(self, r):
-    # XXX
+    # XXX: are we doing more checks than we need?
     return (self.lower - 1 in r or
             self.upper + 1 in r or
             r.lower - 1 in self or
@@ -223,6 +229,9 @@ class RangedSet:
 
   def add(self, lower, upper = None):
     self.add_range(Range(lower, upper))
+    
+  def __iter__(self):
+    return iter(self.ranges)
 
   def __repr__(self):
     return str(self.ranges)
