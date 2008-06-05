@@ -22,6 +22,7 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManager.h"
 #include "qpid/broker/TxAck.h"
+#include "TestMessageStore.h"
 #include "unit_test.h"
 #include <iostream>
 #include <list>
@@ -34,20 +35,7 @@ using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-
-class TestMessageStore : public NullMessageStore
-{
-  public:
-    vector<intrusive_ptr<PersistableMessage> > dequeued;
-    
-    void dequeue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& /*queue*/)
-    {
-        dequeued.push_back(msg);
-    }
-
-    TestMessageStore() : NullMessageStore() {}
-    ~TestMessageStore(){}
-};
+QPID_AUTO_TEST_SUITE(TxAckTestSuite)
 
 struct TxAckTest
 {
@@ -76,8 +64,6 @@ struct TxAckTest
     }      
 
 };
-
-QPID_AUTO_TEST_SUITE(TxAckTestSuite)
 
 QPID_AUTO_TEST_CASE(testPrepare)
 {
