@@ -35,11 +35,11 @@
   </appender>
 
   <logger name="org.apache.qpid">
-    <level value="warn"/>
+    <level value="debug"/>
   </logger>
 
   <root>
-    <level value="warn"/>
+    <level value="debug"/>
     <appender-ref ref="console" />
   </root>
 </log4j:configuration>

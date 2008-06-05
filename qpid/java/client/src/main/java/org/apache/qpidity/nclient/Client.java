@@ -21,6 +21,7 @@ package org.apache.qpidity.nclient;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -266,7 +267,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
                     closeOk.await(timeout - elapsed, TimeUnit.MILLISECONDS);
                     elapsed = System.currentTimeMillis() - start;
                 }
-                if(! closed )
+                if(!closed)
                 {
                     throw new QpidException("Timed out when closing connection", ErrorCode.CONNECTION_ERROR, null);
                 }

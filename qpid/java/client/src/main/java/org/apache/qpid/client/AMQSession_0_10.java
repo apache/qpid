@@ -210,8 +210,7 @@ public class AMQSession_0_10 extends AMQSession
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
         getQpidSession().sync();
-        getQpidSession().sessionRequestTimeout(0);
-        getQpidSession().sessionDetach(getQpidSession().getName());
+        getQpidSession().close();
         getCurrentException();
     }
 
