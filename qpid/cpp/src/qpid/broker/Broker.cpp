@@ -84,6 +84,7 @@ Broker::Options::Options(const std::string& name) :
     enableMgmt(1),
     mgmtPubInterval(10),
     auth(AUTH_DEFAULT),
+    realm("QPID"),
     replayFlushLimit(1024),
     replayHardLimit(0)
 {
@@ -108,6 +109,7 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
+        ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")         
         ("replay-flush-limit", optValue(replayFlushLimit, "KB"), "Send flush request when the replay buffer reaches this limit. 0 means no limit.")
         ("replay-hard-limit", optValue(replayHardLimit, "KB"), "Kill a session if its replay buffer exceeds this limit. 0 means no limit.");
 }
