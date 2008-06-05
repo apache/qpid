@@ -459,7 +459,23 @@ public class Session extends Invoker
     {
         sessionRequestTimeout(0);
         sessionDetach(name);
-        // XXX: channel.close();
+        synchronized (commands)
+        {
+            long start = System.currentTimeMillis();
+            long elapsed = 0;
+            try
+            {
+                while (!closed.get() && elapsed < timeout)
+                {
+                    commands.wait(timeout - elapsed);
+                    elapsed = System.currentTimeMillis() - start;
+                }
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void exception(Throwable t)
@@ -484,6 +500,9 @@ public class Session extends Invoker
                 }
             }
         }
+        channel.close();
+        channel.setSession(null);
+        channel = null;
     }
 
     public String toString()
