@@ -83,7 +83,7 @@ Qpid broker daemon.
 %pre
 getent group qpidd >/dev/null || groupadd -r qpidd
 getent passwd qpidd >/dev/null || \
-  useradd -r -m -g qpidd -d %{_localstatedir}/lib/qpidd -s /sbin/nologin \
+  useradd -r -m -g qpidd -d %{_libdir}/qpidd -s /sbin/nologin \
     -c "Owner of Qpidd Daemons" qpidd
 exit 0
 
@@ -101,7 +101,7 @@ rm docs/api/html/installdox
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 install -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
-install -d -m0755 %{buildroot}%{_localstatedir}/lib/qpidd
+install -d -m0755 %{buildroot}%{_libdir}/qpidd
 install -d -m0755 %{buildroot}/var/run/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
@@ -146,7 +146,7 @@ make check
 %config(noreplace) %_sysconfdir/qpidd.conf
 %config(noreplace) %_sysconfdir/sasl2/qpidd.conf
 %{_initrddir}/%{qpidd}
-%attr(755, qpidd, qpidd) %_localstatedir/lib/qpidd
+%attr(755, qpidd, qpidd) %_libdir/qpidd
 %attr(755, qpidd, qpidd) /var/run/qpidd
 %attr(600, qpidd, qpidd) %config(noreplace) %_localstatedir/lib/qpidd/qpidd.sasldb
 %doc %_mandir/man1/%{qpidd}.*
