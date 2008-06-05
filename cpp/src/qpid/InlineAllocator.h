@@ -23,9 +23,9 @@
  */
 
 #include <memory>
-#include <boost/type_traits/aligned_storage.hpp>
-#include <boost/type_traits/alignment_of.hpp>
 #include <assert.h>
+#include <boost/type_traits/type_with_alignment.hpp>
+#include <boost/type_traits/alignment_of.hpp>
 
 namespace qpid {
 
@@ -46,14 +46,14 @@ class InlineAllocator : public BaseAllocator {
     pointer allocate(size_type n) {
         if (n <= Max && !allocated) {
             allocated=true;
-            return reinterpret_cast<value_type*>(store.address());
+            return reinterpret_cast<value_type*>(address());
         }
         else 
             return BaseAllocator::allocate(n, 0);
     }
 
     void deallocate(pointer p, size_type n) {
-        if (p == store.address()) {
+        if (p == address()) {
             assert(allocated);
             allocated=false;
         }
@@ -68,10 +68,14 @@ class InlineAllocator : public BaseAllocator {
     };
 
   private:
-    boost::aligned_storage<
-      sizeof(value_type)*Max,
-      boost::alignment_of<value_type>::value
-      > store;
+    // POD object with alignment and size to hold Max value_types.
+    static const size_t ALIGNMENT=boost::alignment_of<value_type>::value;
+    typedef typename boost::type_with_alignment<ALIGNMENT>::type Aligner;
+    union Store {
+      Aligner aligner_;
+      char sizer_[sizeof(value_type)*Max];
+    } store;
+    value_type* address() { return reinterpret_cast<value_type*>(&store); }
     bool allocated;
 };
 
