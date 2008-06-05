@@ -42,9 +42,6 @@ class ChannelDelegate extends MethodDelegate<Channel>
     public @Override void sessionDetached(Channel channel, SessionDetached closed)
     {
         channel.getSession().closed();
-        // XXX: should we remove the channel from the connection? It
-        // could have an external reference to it. Maybe we need a
-        // weak hash map in connection.
     }
 
     public @Override void sessionDetach(Channel channel, SessionDetach dtc)

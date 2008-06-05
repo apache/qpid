@@ -63,6 +63,8 @@ public interface Session
      */
     public void sync();
 
+    public void close();
+
     public void sessionDetach(byte[] name);
 
     public void sessionRequestTimeout(long expiry);
