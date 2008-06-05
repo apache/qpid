@@ -26,6 +26,7 @@
 #include <list>
 #include <vector>
 #include "MessageUtils.h"
+#include "TestMessageStore.h"
 
 using std::list;
 using std::pair;
@@ -33,24 +34,6 @@ using std::vector;
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
-
-typedef std::pair<string, intrusive_ptr<PersistableMessage> > msg_queue_pair;
-
-class TestMessageStore : public NullMessageStore
-{
-  public:
-    vector<msg_queue_pair> enqueued;
-        
-    void enqueue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
-    {
-        msg->enqueueComplete(); 
-        enqueued.push_back(msg_queue_pair(queue.getName(), msg));
-    }
-        
-    //dont care about any of the other methods:
-    TestMessageStore() : NullMessageStore(false) {}
-    ~TestMessageStore(){}
-};
 
 struct TxPublishTest
 {
