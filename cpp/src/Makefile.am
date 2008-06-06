@@ -353,6 +353,7 @@ nobase_include_HEADERS = \
   qpid/RangeSet.h \
   qpid/RefCounted.h \
   qpid/SessionId.h \
+  qpid/SessionState.h \
   qpid/SharedObject.h \
   qpid/StringUtils.h \
   qpid/Url.h \
