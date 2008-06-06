@@ -77,14 +77,11 @@ namespace Apache.Qpid.Sasl.Mechanisms
 
         string s = System.Text.UTF8Encoding.UTF8.GetString(challenge);
         
-        Console.WriteLine("Connection Username = " + username + ", Challenge = " + s + " Secret length - " + passwd.Length + ", Hashed secret - " + ToHex(pwdCB.HashedText));
-
         using ( HMAC hmac = new HMACMD5(passwd) )
          {
             byte[] value = hmac.ComputeHash(challenge);
             string encoded = ToHex(value);
             SetComplete();
-            Console.WriteLine(username + " " + encoded);
             return Encoding.UTF8.GetBytes(username + " " + encoded);
          }
       }
