@@ -112,8 +112,8 @@ class ManagementObject
         destroyTime = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
         deleted     = true;
     }
-    bool isDeleted (void) { return deleted; }
-    sys::Mutex& getLock() { return accessLock; }
+    inline bool isDeleted (void) { return deleted; }
+    inline sys::Mutex& getLock() { return accessLock; }
 };
 
 typedef std::map<uint64_t,ManagementObject::shared_ptr> ManagementObjectMap;
