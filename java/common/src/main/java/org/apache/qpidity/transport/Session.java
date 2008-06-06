@@ -65,6 +65,7 @@ public class Session extends Invoker
 
     private byte[] name;
     private long timeout = 60000;
+    private boolean autoSync = false;
 
     // channel may be null
     Channel channel;
@@ -80,6 +81,7 @@ public class Session extends Invoker
     private int commandsOut = 0;
     private Map<Integer,Method> commands = new HashMap<Integer,Method>();
     private int maxComplete = commandsOut - 1;
+    private boolean needSync = false;
 
     private AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -91,6 +93,14 @@ public class Session extends Invoker
     public byte[] getName()
     {
         return name;
+    }
+
+    public void setAutoSync(boolean value)
+    {
+        synchronized (commands)
+        {
+            this.autoSync = value;
+        }
     }
 
     public Map<Integer,Method> getOutstandingCommands()
@@ -242,7 +252,16 @@ public class Session extends Invoker
                 {
                     commands.put(next, m);
                 }
+                if (autoSync)
+                {
+                    m.setSync(true);
+                }
+                needSync = !m.isSync();
                 channel.method(m);
+                if (autoSync && !m.hasPayload())
+                {
+                    sync();
+                }
             }
         }
         else
@@ -286,6 +305,13 @@ public class Session extends Invoker
     public void endData()
     {
         channel.end();
+        synchronized (commands)
+        {
+            if (autoSync)
+            {
+                sync();
+            }
+        }
     }
 
     public void sync()
@@ -300,7 +326,7 @@ public class Session extends Invoker
         {
             int point = commandsOut - 1;
 
-            if (lt(maxComplete, point))
+            if (needSync && lt(maxComplete, point))
             {
                 ExecutionSync sync = new ExecutionSync();
                 sync.setSync(true);

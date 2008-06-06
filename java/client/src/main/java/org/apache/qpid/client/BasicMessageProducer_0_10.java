@@ -206,16 +206,24 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         // send the message
         try
         {
-            ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),
-                    message.get010Message(),
-                    org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                    org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-            if(deliveryMode == DeliveryMode.PERSISTENT && getSession().getAMQConnection().getSyncPersistence())
-            {
-                // we need to sync the delivery of this message
-                ((AMQSession_0_10) getSession()).getQpidSession().sync();
-            }
+            org.apache.qpidity.nclient.Session ssn = ((AMQSession_0_10) getSession()).getQpidSession();
 
+            // if true, we need to sync the delivery of this message
+            boolean sync = (deliveryMode == DeliveryMode.PERSISTENT &&
+                            getSession().getAMQConnection().getSyncPersistence());
+
+            if(sync)
+            {
+                ssn.setAutoSync(true);
+            }
+            ssn.messageTransfer(destination.getExchangeName().toString(),
+                                message.get010Message(),
+                                ssn.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                ssn.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+            if (sync)
+            {
+                ssn.setAutoSync(false);
+            }
         }
         catch (IOException e)
         {
