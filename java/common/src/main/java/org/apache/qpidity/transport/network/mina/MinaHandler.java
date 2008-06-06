@@ -46,6 +46,8 @@ import org.apache.qpidity.transport.network.Disassembler;
 import org.apache.qpidity.transport.network.InputHandler;
 import org.apache.qpidity.transport.network.OutputHandler;
 
+import static org.apache.qpidity.transport.util.Functions.*;
+
 /**
  * MinaHandler
  *
@@ -74,12 +76,19 @@ public class MinaHandler<E> implements IoHandler
         this.binding = binding;
     }
 
-
     public void messageReceived(IoSession ssn, Object obj)
     {
         Attachment<E> attachment = (Attachment<E>) ssn.getAttachment();
         ByteBuffer buf = (ByteBuffer) obj;
-        attachment.receiver.received(buf.buf());
+        try
+        {
+            attachment.receiver.received(buf.buf());
+        }
+        catch (Throwable t)
+        {
+            log.error(t, "exception handling buffer %s", str(buf.buf()));
+            throw new RuntimeException(t);
+        }
     }
 
     public void messageSent(IoSession ssn, Object obj)
