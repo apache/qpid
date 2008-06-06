@@ -21,8 +21,8 @@
  *
  */
 
-#include "Monitor.h"
-
+#include "qpid/sys/Monitor.h"
+#include "qpid/sys/ExceptionHolder.h"
 #include <assert.h>
 
 namespace qpid {
@@ -31,14 +31,18 @@ namespace sys {
 /**
  * A monitor that keeps track of waiting threads.  Threads declare a
  * ScopedWait around wait() inside a ScopedLock to be considered
- * waiters.
+ * waiters. 
+ *
+ * Allows waiting threads to be interrupted by an exception. 
  */
 class Waitable : public Monitor {
   public:
     Waitable() : waiters(0) {}
 
+    ~Waitable() { assert(waiters == 0); }
+
     /** Use this inside a scoped lock around the
-     * call to Monitor::wait to be counted as a waiter
+     * call to wait() to be counted as a waiter.
      */
     struct ScopedWait {
         Waitable& w;
@@ -46,22 +50,55 @@ class Waitable : public Monitor {
         ~ScopedWait() { if (--w.waiters==0) w.notifyAll(); }
     };
 
-    /** Block till there are no more ScopedWaits.
+    /** Block till there are no more waiters in ScopedWaits.
+     * waitWaiters() does not raise an exception even if waiters
+     * were interrupted by one.
      *@pre Must be called inside a ScopedLock but NOT a ScopedWait.
      */
     void waitWaiters() {
         while (waiters != 0) 
-            wait();
+            Monitor::wait();
     }
 
     /** Returns the number of outstanding ScopedWaits.
      * Must be called with the lock held.
      */
-    size_t hasWaiters() { return waiters; }
-    
+    size_t hasWaiters() const {
+        return waiters;
+    }
+
+    /** Set an execption to interrupt waiters in ScopedWait.
+     * Must be called with the lock held.
+     */
+    void setException(const ExceptionHolder& e) {
+        exception = e;
+        notifyAll();
+        
+    }
+
+    /** Throws an exception if one is set before or during the wait. */
+    void wait() {
+        ExCheck e(exception);
+        Monitor::wait();
+    }
+
+    /** Throws an exception if one is set before or during the wait. */
+    bool wait(const AbsTime& absoluteTime) {
+        ExCheck e(exception);
+        return Monitor::wait(absoluteTime);
+    }
+
+    ExceptionHolder exception;
+
   private:
-  friend struct ScopedWait;
+    struct ExCheck {
+        const ExceptionHolder& exception;
+        ExCheck(const ExceptionHolder& e) : exception(e) { e.raise(); }
+        ~ExCheck() { exception.raise(); }
+    };
+        
     size_t waiters;
+  friend struct ScopedWait;
 };
 
 }} // namespace qpid::sys
