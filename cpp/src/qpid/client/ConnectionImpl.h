@@ -49,7 +49,6 @@ class ConnectionImpl : public Bounds,
 
 {
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
-    typedef std::vector<boost::shared_ptr<SessionImpl> > SessionVector;
 
     SessionMap sessions; 
     ConnectionHandler handler;
@@ -59,9 +58,8 @@ class ConnectionImpl : public Bounds,
     bool isClosed;
     bool isClosing;
 
-    template <class F> void detachAll(const F&);
+    template <class F> void closeInternal(const F&);
 
-    SessionVector closeInternal(const sys::Mutex::ScopedLock&);
     void incoming(framing::AMQFrame& frame);    
     void closed(uint16_t, const std::string&);
     void idleOut();

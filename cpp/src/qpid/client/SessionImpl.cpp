@@ -69,12 +69,14 @@ SessionImpl::SessionImpl(const std::string& name,
 }
 
 SessionImpl::~SessionImpl() {
-    Lock l(state);
-    if (state != DETACHED) {
-        QPID_LOG(warning, "Detaching deleted session");
-        setState(DETACHED);
-        handleClosed();
-        state.waitWaiters();
+    {
+        Lock l(state);
+        if (state != DETACHED) {
+            QPID_LOG(warning, "Detaching deleted session");
+            setState(DETACHED);
+            handleClosed();
+            state.waitWaiters();
+        }
     }
     connection->erase(channel);
 }

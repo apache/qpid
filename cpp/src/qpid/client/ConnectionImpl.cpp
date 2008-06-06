@@ -119,41 +119,32 @@ void ConnectionImpl::close()
     closed(NORMAL, "Closed by client");
 }
 
-// Set closed flags and erase the sessions map, but keep the contents
-// so sessions can be updated outside the lock.
-ConnectionImpl::SessionVector ConnectionImpl::closeInternal(const Mutex::ScopedLock&) {
+
+template <class F> void ConnectionImpl::closeInternal(const F& f) {
     isClosed = true;
     connector.close();
-    SessionVector save;
-    for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
+    for (SessionMap::iterator i=sessions.begin(); i != sessions.end(); ++i) {
         boost::shared_ptr<SessionImpl> s = i->second.lock();
-        if (s) save.push_back(s);
+        if (s) f(s);
     }
     sessions.clear();
-    return save;
 }
 
-void ConnectionImpl::closed(uint16_t code, const std::string& text) 
-{ 
-    SessionVector save;
-    {
-        Mutex::ScopedLock l(lock);
-        save = closeInternal(l);
-    }
-    std::for_each(save.begin(), save.end(), boost::bind(&SessionImpl::connectionClosed, _1, code, text));
+void ConnectionImpl::closed(uint16_t code, const std::string& text) { 
+    Mutex::ScopedLock l(lock);
+    setException(new ConnectionException(code, text));
+    closeInternal(boost::bind(&SessionImpl::connectionClosed, _1, code, text));
 }
 
 static const std::string CONN_CLOSED("Connection closed by broker");
 
-void ConnectionImpl::shutdown() 
-{
+void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
+    // FIXME aconway 2008-06-06: exception use, connection-forced is incorrect here.
+    setException(new ConnectionException(CONNECTION_FORCED, CONN_CLOSED));
     if (isClosed) return;
-    SessionVector save(closeInternal(l));
     handler.fail(CONN_CLOSED);
-    Mutex::ScopedUnlock u(lock);
-    std::for_each(save.begin(), save.end(),
-                  boost::bind(&SessionImpl::connectionBroke, _1, CONNECTION_FORCED, CONN_CLOSED));
+    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONNECTION_FORCED, CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

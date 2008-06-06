@@ -344,7 +344,7 @@ nobase_include_HEADERS = \
   qpid/assert.h \
   qpid/DataDir.h \
   qpid/Exception.h \
-  qpid/ExceptionHolder.h \
+  qpid/sys/ExceptionHolder.h \
   qpid/amqp_0_10/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \

@@ -34,18 +34,22 @@ std::string strError(int err) {
 }
 
 Exception::Exception(const std::string& msg) throw() : message(msg) {
-    QPID_LOG(debug, "Exception: " << message);
+    QPID_LOG(debug, "Exception constructed: " << message);
 }
 
 Exception::~Exception() throw() {}
 
-std::string Exception::getPrefix() const { return "Exception"; }
+std::string Exception::getPrefix() const { return ""; }
 
 std::string Exception::getMessage() const { return message; }
 
 const char* Exception::what() const throw() {
-    if (whatStr.empty())
-        whatStr = getPrefix() +  ": " + message;    
+    // Construct the what string the first time it is needed.
+    if (whatStr.empty()) {
+        whatStr = getPrefix();
+        if (!whatStr.empty()) whatStr +=  ": ";
+        whatStr += message;
+    }
     return whatStr.c_str();
 }
 
