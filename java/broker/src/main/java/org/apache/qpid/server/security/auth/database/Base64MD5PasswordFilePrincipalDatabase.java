@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.EncoderException;
@@ -80,6 +81,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         CRAMMD5HashedInitialiser cram = new CRAMMD5HashedInitialiser();
         cram.initialise(this);
         _saslServers.put(cram.getMechanismName(), cram);
+
+        //Add the Hex initialiser
+        CRAMMD5HexInitialiser cramHex = new CRAMMD5HexInitialiser();
+        cramHex.initialise(this);
+        _saslServers.put(cramHex.getMechanismName(), cramHex);
 
         //fixme The PDs should setup a PD Mangement MBean
 //        try
@@ -284,7 +290,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return true;
     }
 
-
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
@@ -324,7 +329,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return user.getPassword();
         }
     }
-
 
     private void loadPasswordFile() throws IOException
     {
@@ -552,7 +556,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             _modified = true;
             _encodedPassword = null;
         }
-
 
         byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
         {
