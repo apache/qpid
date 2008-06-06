@@ -21,6 +21,8 @@
 
 using System;
 using System.Text;
+using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Apache.Qpid.Sasl
 {
@@ -87,6 +89,37 @@ namespace Apache.Qpid.Sasl
          : base("password:", "", "")
       {
       }
+
+      public byte[] HashedText
+      {
+          get
+          {
+            string _text = this.Text;
+            System.Security.Cryptography.MD5CryptoServiceProvider x = new System.Security.Cryptography.MD5CryptoServiceProvider();
+            byte[] bs = x.ComputeHash(Encoding.UTF8.GetBytes(_text));
+            return bs;
+          }
+
+      }
+   } // class PasswordCallback
+
+   public class HashedPasswordCallback : TextSaslCallback
+   {
+       public HashedPasswordCallback()
+           : base("password:", "", "")
+       {
+       }
+
+       public byte[] HashedText
+       {
+        get {
+               string _text = this.Text;
+               System.Security.Cryptography.MD5CryptoServiceProvider x = new System.Security.Cryptography.MD5CryptoServiceProvider();
+               _text = _text.PadRight(16, '\0');
+               byte[] bs = x.ComputeHash(Encoding.UTF8.GetBytes(_text));
+               return bs;
+        }
+       }
    } // class PasswordCallback
 
    public class RealmCallback : TextSaslCallback
