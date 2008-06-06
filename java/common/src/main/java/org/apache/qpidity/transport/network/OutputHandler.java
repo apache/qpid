@@ -22,6 +22,9 @@ package org.apache.qpidity.transport.network;
 
 import java.nio.ByteBuffer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.qpidity.transport.Constant;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
@@ -40,6 +43,8 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
 
     private Sender<ByteBuffer> sender;
     private Object lock = new Object();
+    private int bytes = 0;
+    private List<Frame> frames = new ArrayList<Frame>();
 
     public OutputHandler(Sender<ByteBuffer> sender)
     {
@@ -69,24 +74,37 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
 
     public void frame(Frame frame)
     {
-        ByteBuffer buf = ByteBuffer.allocate(HEADER_SIZE + frame.getSize());
-        buf.put(frame.getFlags());
-        buf.put((byte) frame.getType().getValue());
-        buf.putShort((short) (frame.getSize() + HEADER_SIZE));
-        // RESERVED
-        buf.put(RESERVED);
-        buf.put(frame.getTrack());
-        buf.putShort((short) frame.getChannel());
-        // RESERVED
-        buf.putInt(0);
-        for(ByteBuffer frg : frame)
-        {
-            buf.put(frg);
-        }
-        buf.flip();
         synchronized (lock)
         {
-            sender.send(buf);
+            frames.add(frame);
+            bytes += HEADER_SIZE + frame.getSize();
+
+            if (frame.isLastFrame() && frame.isLastSegment() || bytes > 64*1024)
+            {
+                ByteBuffer buf = ByteBuffer.allocate(bytes);
+                for (Frame f : frames)
+                {
+                    buf.put(f.getFlags());
+                    buf.put((byte) f.getType().getValue());
+                    buf.putShort((short) (f.getSize() + HEADER_SIZE));
+                    // RESERVED
+                    buf.put(RESERVED);
+                    buf.put(f.getTrack());
+                    buf.putShort((short) f.getChannel());
+                    // RESERVED
+                    buf.putInt(0);
+                    for(ByteBuffer frg : f)
+                    {
+                        buf.put(frg);
+                    }
+                }
+                buf.flip();
+
+                frames.clear();
+                bytes = 0;
+
+                sender.send(buf);
+            }
         }
     }
 
