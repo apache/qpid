@@ -57,7 +57,7 @@ public class ClientSessionDelegate extends SessionDelegate
     @Override public void messageTransfer(Session session, MessageTransfer currentTransfer)
     {
         _currentTransfer = currentTransfer;
-        _currentMessageListener = ((ClientSession)session).getMessageListerners().get(currentTransfer.getDestination());
+        _currentMessageListener = ((ClientSession)session).getMessageListeners().get(currentTransfer.getDestination());
         _currentMessageListener.messageTransfer(currentTransfer.getId());
     }
     
