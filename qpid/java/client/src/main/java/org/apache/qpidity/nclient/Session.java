@@ -71,6 +71,8 @@ public interface Session
 
     public byte[] getName();
 
+    public void setAutoSync(boolean value);
+
     //------------------------------------------------------
     //                 Messaging methods
     //                   Producer
