@@ -197,7 +197,7 @@ bool Connection::doOutput()
             //then do other output as needed:
             return outputTasks.doOutput();
     }catch(ConnectionException& e){
-        close(e.code, e.what(), 0, 0);
+        close(e.code, e.getMessage(), 0, 0);
     }catch(std::exception& e){
         close(541/*internal error*/, e.what(), 0, 0);
     }

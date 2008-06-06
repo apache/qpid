@@ -62,14 +62,14 @@ class ConstantsGen < CppGen
   def reply_exceptions_h()
     h_file("#{@dir}/reply_exceptions") {
       include "qpid/Exception"
-      include "qpid/ExceptionHolder"
+      include "qpid/sys/ExceptionHolder"
       namespace(@namespace) {
         define_exceptions_for("execution", "error-code", "SessionException")
         define_exceptions_for("connection", "close-code", "ConnectionException")
         define_exceptions_for("session", "detach-code", "ChannelException")
         genl
         genl "void throwExecutionException(int code, const std::string& text);"
-        genl "void setExecutionException(ExceptionHolder& holder, int code, const std::string& text);"
+        genl "void setExecutionException(sys::ExceptionHolder& holder, int code, const std::string& text);"
       }
     }
   end
@@ -81,11 +81,11 @@ class ConstantsGen < CppGen
       include "<assert.h>"
       namespace("qpid::framing") {
         scope("void throwExecutionException(int code, const std::string& text) {"){
-          genl "ExceptionHolder h;"
+          genl "sys::ExceptionHolder h;"
           genl "setExecutionException(h, code, text);"
           genl "h.raise();"
         }
-        scope("void setExecutionException(ExceptionHolder& holder, int code, const std::string& text) {"){        
+        scope("void setExecutionException(sys::ExceptionHolder& holder, int code, const std::string& text) {"){        
           scope("switch (code) {") {
             enum = @amqp.class_("execution").domain("error-code").enum
             enum.choices.each { |c| 

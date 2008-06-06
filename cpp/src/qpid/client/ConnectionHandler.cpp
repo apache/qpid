@@ -83,11 +83,10 @@ void ConnectionHandler::incoming(AMQFrame& frame)
 
 void ConnectionHandler::outgoing(AMQFrame& frame)
 {
-    if (getState() == OPEN) {
+    if (getState() == OPEN) 
         out(frame);
-    } else {
-        throw Exception("Connection is not open.");
-    }
+    else
+        throw Exception(errorText.empty() ? "Connection is not open." : errorText);
 }
 
 void ConnectionHandler::waitForOpen()
