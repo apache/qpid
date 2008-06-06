@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
@@ -48,7 +49,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     private static  long MAX_NOT_SYNC_DATA_LENGH;
     private static  long MAX_NOT_FLUSH_DATA_LENGH;
 
-    private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
+    private Map<String,MessagePartListener> _messageListeners = new ConcurrentHashMap<String,MessagePartListener>();
     private ClosedListener _exceptionListner;
     private RangeSet _rejectedMessages;
     private long _currentDataSizeNotSynced;
@@ -196,7 +197,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         _exceptionListner.onClosed(null, null, null);
     }
 
-    Map<String,MessagePartListener> getMessageListerners()
+    Map<String,MessagePartListener> getMessageListeners()
     {
         return _messageListeners;
     }
