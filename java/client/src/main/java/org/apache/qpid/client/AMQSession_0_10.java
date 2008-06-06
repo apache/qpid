@@ -220,9 +220,10 @@ public class AMQSession_0_10 extends AMQSession
      */
     public void sendCommit() throws AMQException, FailoverException
     {
+        getQpidSession().setAutoSync(true);
         getQpidSession().txCommit();
+        getQpidSession().setAutoSync(false);
         // We need to sync so that we get notify of an error.
-        getQpidSession().sync();
         getCurrentException();
     }
 
