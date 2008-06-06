@@ -20,7 +20,7 @@
  * under the License.
  *
  */
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Waitable.h"
 
 namespace qpid{
 namespace client{
@@ -32,10 +32,11 @@ class Bounds
     bool expand(size_t, bool block);
     void reduce(size_t);
     size_t getCurrentSize();
-
+    void setException(const sys::ExceptionHolder&);
+    
   private:
     friend std::ostream& operator<<(std::ostream&, const Bounds&);
-    sys::Monitor lock;
+    sys::Waitable lock;
     const size_t max;
     size_t current;
 };

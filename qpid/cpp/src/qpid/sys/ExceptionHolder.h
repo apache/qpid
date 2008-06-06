@@ -23,9 +23,11 @@
  */
 
 #include "qpid/memory.h"
-#include <memory>
+#include <boost/shared_ptr.hpp>
+
 
 namespace qpid {
+namespace sys {
 
 struct Raisable {
     virtual ~Raisable() {};
@@ -40,14 +42,14 @@ struct Raisable {
 class ExceptionHolder : public Raisable {
   public:
     ExceptionHolder() {}
-    ExceptionHolder(ExceptionHolder& ex) : Raisable(), wrapper(ex.wrapper) {}
+    // Use default copy & assign.
+    
     /** Take ownership of ex */
     template <class Ex> ExceptionHolder(Ex* ex) { wrap(ex); }
-    template <class Ex> ExceptionHolder(const std::auto_ptr<Ex>& ex) { wrap(ex.release()); }
+    template <class Ex> ExceptionHolder(const boost::shared_ptr<Ex>& ex) { wrap(ex.release()); }
 
-    ExceptionHolder& operator=(ExceptionHolder& ex) { wrapper=ex.wrapper; return *this; }
     template <class Ex> ExceptionHolder& operator=(Ex* ex) { wrap(ex); return *this; }
-    template <class Ex> ExceptionHolder& operator=(std::auto_ptr<Ex> ex) { wrap(ex.release()); return *this; }
+    template <class Ex> ExceptionHolder& operator=(boost::shared_ptr<Ex> ex) { wrap(ex.release()); return *this; }
         
     void raise() const { if (wrapper.get()) wrapper->raise() ; }
     std::string what() const { return wrapper->what(); }
@@ -60,14 +62,14 @@ class ExceptionHolder : public Raisable {
         Wrapper(Ex* ptr) : exception(ptr) {}
         void raise() const { throw *exception; }
         std::string what() const { return exception->what(); }
-        std::auto_ptr<Ex> exception;
+        boost::shared_ptr<Ex> exception;
     };
     template <class Ex> void wrap(Ex* ex) { wrapper.reset(new Wrapper<Ex>(ex)); }
-    std::auto_ptr<Raisable> wrapper;
-    
+    boost::shared_ptr<Raisable> wrapper;
 };
     
 
-} // namespace qpid
+}} // namespace qpid::sys
+
 
 #endif  /*!QPID_EXCEPTIONHOLDER_H*/
