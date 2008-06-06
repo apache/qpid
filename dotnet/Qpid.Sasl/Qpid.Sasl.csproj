@@ -38,6 +38,7 @@
     <Compile Include="Configuration\SaslConfiguration.cs" />
     <Compile Include="Configuration\SaslConfigurationSectionHandler.cs" />
     <Compile Include="MD5HMAC.cs" />
+    <Compile Include="Mechanisms\CramMD5HexSaslClient.cs" />
     <Compile Include="Mechanisms\ExternalSaslClient.cs" />
     <Compile Include="SaslException.cs" />
     <Compile Include="Mechanisms\AnonymousSaslClient.cs" />
