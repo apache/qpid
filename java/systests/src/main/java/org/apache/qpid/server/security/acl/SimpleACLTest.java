@@ -575,6 +575,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         catch (JMSException e)
         {
             Throwable cause = e.getLinkedException();
+            cause.printStackTrace();
             assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }

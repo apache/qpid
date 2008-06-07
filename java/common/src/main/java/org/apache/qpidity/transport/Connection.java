@@ -22,8 +22,9 @@ package org.apache.qpidity.transport;
 
 import org.apache.qpidity.transport.util.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import java.nio.ByteBuffer;
@@ -48,6 +49,7 @@ public class Connection
 
     final private Sender<ConnectionEvent> sender;
     final private ConnectionDelegate delegate;
+    private int channelMax = 1;
     // want to make this final
     private int _connectionId;
 
@@ -88,6 +90,32 @@ public class Connection
         sender.send(event);
     }
 
+    public int getChannelMax()
+    {
+        return channelMax;
+    }
+
+    void setChannelMax(int max)
+    {
+        channelMax = max;
+    }
+
+    public Channel getChannel()
+    {
+        synchronized (channels)
+        {
+            for (int i = 0; i < getChannelMax(); i++)
+            {
+                if (!channels.containsKey(i))
+                {
+                    return getChannel(i);
+                }
+            }
+
+            throw new RuntimeException("no more channels available");
+        }
+    }
+
     public Channel getChannel(int number)
     {
         synchronized (channels)
@@ -120,11 +148,10 @@ public class Connection
         log.debug("connection closed: %s", this);
         synchronized (channels)
         {
-            for (Iterator<Channel> it = channels.values().iterator();
-                 it.hasNext(); )
+            List<Channel> values = new ArrayList<Channel>(channels.values());
+            for (Channel ch : values)
             {
-                it.next().closed();
-                it.remove();
+                ch.closed();
             }
         }
         delegate.closed();

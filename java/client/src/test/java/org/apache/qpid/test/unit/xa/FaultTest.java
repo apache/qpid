@@ -75,15 +75,8 @@ public class FaultTest extends AbstractXATestCase
     {
         if (!isBroker08())
         {
-            try
-            {
-                _xaqueueConnection.close();
-                _queueConnection.close();
-            }
-            catch (Exception e)
-            {
-                fail("Exception thrown when cleaning standard connection: " + e);
-            }
+            _xaqueueConnection.close();
+            _queueConnection.close();
         }
         super.tearDown();
     }
@@ -91,57 +84,16 @@ public class FaultTest extends AbstractXATestCase
     /**
      * Initialize standard actors
      */
-    public void init()
+    public void init() throws Exception
     {
         if (!isBroker08())
         {
-            // lookup test queue
-            try
-            {
-                _queue = (Queue) getInitialContext().lookup(QUEUENAME);
-            }
-            catch (Exception e)
-            {
-                fail("cannot lookup test queue " + e.getMessage());
-            }
-            // lookup connection factory
-            try
-            {
-                _queueFactory = getConnectionFactory();
-            }
-            catch (Exception e)
-            {
-                fail("enable to lookup connection factory ");
-            }
-            // create standard connection
-            try
-            {
-                _xaqueueConnection = _queueFactory.createXAQueueConnection("guest", "guest");
-            }
-            catch (JMSException e)
-            {
-                fail("cannot create queue connection: " + e.getMessage());
-            }
-            // create xa session
-            XAQueueSession session = null;
-            try
-            {
-                session = _xaqueueConnection.createXAQueueSession();
-            }
-            catch (JMSException e)
-            {
-                fail("cannot create queue session: " + e.getMessage());
-            }
-            // create a standard session
-            try
-            {
-                _queueConnection = _queueFactory.createQueueConnection();
-                _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
-            }
-            catch (JMSException e)
-            {
-                fail("cannot create queue session: " + e.getMessage());
-            }
+            _queue = (Queue) getInitialContext().lookup(QUEUENAME);
+            _queueFactory = getConnectionFactory();
+            _xaqueueConnection = _queueFactory.createXAQueueConnection("guest", "guest");
+            XAQueueSession session = _xaqueueConnection.createXAQueueSession();
+            _queueConnection = _queueFactory.createQueueConnection();
+            _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
             init(session, _queue);
         }
     }
@@ -156,18 +108,10 @@ public class FaultTest extends AbstractXATestCase
      * Check that the second
      * invocation is throwing the expected XA exception.
      */
-    public void testSameXID()
+    public void testSameXID() throws Exception
     {
-        _logger.debug("running testSameXID");
         Xid xid = getNewXid();
-        try
-        {
-            _xaResource.start(xid, XAResource.TMNOFLAGS);
-        }
-        catch (XAException e)
-        {
-            fail("cannot start the transaction with xid: " + e.getMessage());
-        }
+        _xaResource.start(xid, XAResource.TMNOFLAGS);
         // we now exepct this operation to fail
         try
         {
@@ -178,10 +122,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_DUPID, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
 
     /**
@@ -191,7 +131,6 @@ public class FaultTest extends AbstractXATestCase
      */
     public void testWrongStartFlag()
     {
-        _logger.debug("running testWrongStartFlag");
         Xid xid = getNewXid();
         try
         {
@@ -202,10 +141,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_INVAL, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
 
     /**
@@ -215,7 +150,6 @@ public class FaultTest extends AbstractXATestCase
      */
     public void testEnd()
     {
-        _logger.debug("running testEnd");
         Xid xid = getNewXid();
         try
         {
@@ -225,10 +159,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
     }
 
@@ -243,7 +173,6 @@ public class FaultTest extends AbstractXATestCase
      */
     public void testForget()
     {
-        _logger.debug("running testForget");
         Xid xid = getNewXid();
         try
         {
@@ -253,10 +182,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             // assertEquals("Wrong error code: ", XAException.XAER_NOTA, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
         xid = getNewXid();
         try
@@ -269,10 +194,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
 
     /**
@@ -283,7 +204,6 @@ public class FaultTest extends AbstractXATestCase
      */
     public void testPrepare()
     {
-        _logger.debug("running testPrepare");
         Xid xid = getNewXid();
         try
         {
@@ -293,10 +213,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XAER_NOTA, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
         xid = getNewXid();
         try
@@ -309,10 +225,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
 
     /**
@@ -323,9 +235,8 @@ public class FaultTest extends AbstractXATestCase
      * A non prepared xid is committed with one phase set to false.
      * A prepared xid is committed with one phase set to true.
      */
-    public void testCommit()
+    public void testCommit() throws Exception
     {
-        _logger.debug("running testCommit");
         Xid xid = getNewXid();
         try
         {
@@ -335,10 +246,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XAER_NOTA, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
         xid = getNewXid();
         try
@@ -351,10 +258,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
         xid = getNewXid();
         try
         {
@@ -366,10 +269,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
         xid = getNewXid();
         try
@@ -384,20 +283,9 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
         finally
         {
-            try
-            {
-                _xaResource.commit(xid, false);
-            }
-            catch (XAException e)
-            {
-               fail("Cannot commit prepared tx: " + e);
-            }
+            _xaResource.commit(xid, false);
         }
     }
 
@@ -409,7 +297,6 @@ public class FaultTest extends AbstractXATestCase
      */
     public void testRollback()
     {
-        _logger.debug("running testRollback");
         Xid xid = getNewXid();
         try
         {
@@ -419,10 +306,6 @@ public class FaultTest extends AbstractXATestCase
         catch (XAException e)
         {
             assertEquals("Wrong error code: ", XAException.XAER_NOTA, e.errorCode);
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
         }
         xid = getNewXid();
         try
@@ -435,35 +318,23 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XAER_PROTO, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
 
     /**
      * Strategy:
      * Check that the timeout is set correctly
      */
-    public void testTransactionTimeoutvalue()
+    public void testTransactionTimeoutvalue() throws Exception
     {
-        _logger.debug("running testRollback");
         Xid xid = getNewXid();
-        try
-        {
-            _xaResource.start(xid, XAResource.TMNOFLAGS);
-            assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
-            _xaResource.setTransactionTimeout(1000);
-            assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 1000);
-            _xaResource.end(xid, XAResource.TMSUCCESS);
-            xid = getNewXid();
-            _xaResource.start(xid, XAResource.TMNOFLAGS);
-            assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);            
-        }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
+        _xaResource.start(xid, XAResource.TMNOFLAGS);
+        assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
+        _xaResource.setTransactionTimeout(1000);
+        assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 1000);
+        _xaResource.end(xid, XAResource.TMSUCCESS);
+        xid = getNewXid();
+        _xaResource.start(xid, XAResource.TMNOFLAGS);
+        assertEquals("Wrong timeout", _xaResource.getTransactionTimeout(), 0);
     }
 
     /**
@@ -471,11 +342,10 @@ public class FaultTest extends AbstractXATestCase
      * Check that a transaction timeout as expected
      * - set timeout to 10ms
      * - sleep 1000ms
-     * - call end and check that the expected exception is thrown   
+     * - call end and check that the expected exception is thrown
      */
-    public void testTransactionTimeout()
+    public void testTransactionTimeout() throws Exception
     {
-        _logger.debug("running testRollback");
         Xid xid = getNewXid();
         try
         {
@@ -489,9 +359,6 @@ public class FaultTest extends AbstractXATestCase
         {
             assertEquals("Wrong error code: ", XAException.XA_RBTIMEOUT, e.errorCode);
         }
-        catch (Exception ex)
-        {
-            fail("Caught wrong exception, expected XAException, got: " + ex);
-        }
     }
+
 }

@@ -65,7 +65,7 @@ public abstract  class AbstractXATestCase extends QpidTestCase
         init();
     }
 
-    public abstract  void init();
+    public abstract  void init() throws Exception;
 
 
     
