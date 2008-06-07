@@ -22,7 +22,6 @@ package org.apache.qpidity.nclient;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,7 +54,6 @@ import org.slf4j.LoggerFactory;
 
 public class Client implements org.apache.qpidity.nclient.Connection
 {
-    private AtomicInteger _channelNo = new AtomicInteger();
     private Connection _conn;
     private ClosedListener _closedListner;
     private final Lock _lock = new ReentrantLock();
@@ -286,7 +284,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public Session createSession(long expiryInSeconds)
     {
-        Channel ch = _conn.getChannel(_channelNo.incrementAndGet());
+        Channel ch = _conn.getChannel();
         ClientSession ssn = new ClientSession(UUID.randomUUID().toString().getBytes());
         ssn.attach(ch);
         ssn.sessionAttach(ssn.getName());
