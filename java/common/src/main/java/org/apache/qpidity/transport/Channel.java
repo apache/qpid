@@ -131,10 +131,6 @@ public class Channel extends Invoker
         {
             session.closed();
         }
-    }
-
-    public void close()
-    {
         connection.removeChannel(channel);
     }
 

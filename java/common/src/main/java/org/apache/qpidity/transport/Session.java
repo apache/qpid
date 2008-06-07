@@ -526,7 +526,6 @@ public class Session extends Invoker
                 }
             }
         }
-        channel.close();
         channel.setSession(null);
         channel = null;
     }
