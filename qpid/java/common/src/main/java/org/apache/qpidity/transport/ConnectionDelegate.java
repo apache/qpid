@@ -152,7 +152,7 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     @Override public void connectionTune(Channel context, ConnectionTune struct)
     {
-        // should update the channel max given by the broker.
+        context.getConnection().setChannelMax(struct.getChannelMax());
         context.connectionTuneOk(struct.getChannelMax(), struct.getMaxFrameSize(), struct.getHeartbeatMax());
         context.connectionOpen(_virtualHost, null, Option.INSIST);
     }

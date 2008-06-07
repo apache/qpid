@@ -41,12 +41,14 @@ class ChannelDelegate extends MethodDelegate<Channel>
 
     public @Override void sessionDetached(Channel channel, SessionDetached closed)
     {
-        channel.getSession().closed();
+        channel.closed();
     }
 
     public @Override void sessionDetach(Channel channel, SessionDetach dtc)
     {
         channel.getSession().closed();
+        channel.sessionDetached(dtc.getName(), SessionDetachCode.NORMAL);
+        channel.closed();
     }
 
 }
