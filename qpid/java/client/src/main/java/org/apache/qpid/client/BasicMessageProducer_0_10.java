@@ -212,17 +212,23 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             boolean sync = (deliveryMode == DeliveryMode.PERSISTENT &&
                             getSession().getAMQConnection().getSyncPersistence());
 
-            if(sync)
+            if (sync)
             {
                 ssn.setAutoSync(true);
             }
-            ssn.messageTransfer(destination.getExchangeName().toString(),
-                                message.get010Message(),
-                                ssn.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                ssn.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-            if (sync)
+            try
             {
-                ssn.setAutoSync(false);
+                ssn.messageTransfer(destination.getExchangeName().toString(),
+                                    message.get010Message(),
+                                    ssn.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                    ssn.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+            }
+            finally
+            {
+                if (sync)
+                {
+                    ssn.setAutoSync(false);
+                }
             }
         }
         catch (IOException e)
