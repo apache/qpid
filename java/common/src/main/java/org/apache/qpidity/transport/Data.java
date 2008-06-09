@@ -83,6 +83,7 @@ public class Data implements ProtocolEvent
         StringBuffer str = new StringBuffer();
         str.append("Data(");
         boolean first = true;
+        int left = 64;
         for (ByteBuffer buf : getFragments())
         {
             if (first)
@@ -93,7 +94,12 @@ public class Data implements ProtocolEvent
             {
                 str.append(" | ");
             }
-            str.append(str(buf));
+            str.append(str(buf, left));
+            left -= buf.remaining();
+            if (left < 0)
+            {
+                break;
+            }
         }
         str.append(")");
         return str.toString();
