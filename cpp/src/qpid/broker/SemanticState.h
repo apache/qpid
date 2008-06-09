@@ -34,7 +34,7 @@
 #include "TxBuffer.h"
 
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/AccumulatedAck.h"
+#include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/shared_ptr.h"
@@ -115,7 +115,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
     DtxBufferMap suspendedXids;
-    framing::AccumulatedAck accumulatedAck;
+    framing::SequenceSet accumulatedAck;
     bool flowActive;
     boost::shared_ptr<Exchange> cacheExchange;
     sys::AggregateOutput outputTasks;
@@ -125,7 +125,6 @@ class SemanticState : public framing::FrameHandler::Chains,
     bool checkPrefetch(boost::intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
-    void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
     void complete(DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
@@ -168,7 +167,7 @@ class SemanticState : public framing::FrameHandler::Chains,
 
     bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void startTx();
-    void commit(MessageStore* const store, bool completeOnCommit);
+    void commit(MessageStore* const store);
     void rollback();
     void selectDtx();
     void startDtx(const std::string& xid, DtxManager& mgr, bool join);
@@ -183,10 +182,6 @@ class SemanticState : public framing::FrameHandler::Chains,
     void reject(DeliveryId first, DeliveryId last);
     void handle(boost::intrusive_ptr<Message> msg);
     bool doOutput() { return outputTasks.doOutput(); }
-
-    //preview only (completed == ack):
-    void ackCumulative(DeliveryId deliveryTag);
-    void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
 
     //final 0-10 spec (completed and accepted are distinct):
     void completed(DeliveryId deliveryTag, DeliveryId endTag);

@@ -32,7 +32,6 @@ namespace client {
 ConnectionSettings::ConnectionSettings() :
     host("localhost"), 
     port(TcpAddress::DEFAULT_PORT),
-    clientid("cpp"), 
     username("guest"), 
     password("guest"),
     mechanism("PLAIN"),

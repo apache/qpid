@@ -38,7 +38,6 @@ struct  ConnectionOptions : public qpid::Options,
             ("broker,b", optValue(host, "HOST"), "Broker host to connect to") 
             ("port,p", optValue(port, "PORT"), "Broker port to connect to")
             ("virtualhost,v", optValue(virtualhost, "VHOST"), "virtual host")
-            ("clientname,n", optValue(clientid, "ID"), "unique client identifier")
             ("username", optValue(username, "USER"), "user name for broker log in.")
             ("password", optValue(password, "PASSWORD"), "password for broker log in.")
             ("mechanism", optValue(mechanism, "MECH"), "SASL mechanism to use when authenticating.")

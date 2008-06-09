@@ -60,7 +60,6 @@ struct ConnectionSettings : public sys::Socket::Configuration {
      */
     std::string virtualhost;
 
-    std::string clientid;
     /**
      * The username to use when authenticating the connection.
      */

@@ -25,7 +25,7 @@
 #include <list>
 #include <vector>
 #include <ostream>
-#include "qpid/framing/AccumulatedAck.h"
+#include "qpid/framing/SequenceSet.h"
 #include "Queue.h"
 #include "Consumer.h"
 #include "DeliveryId.h"
@@ -63,7 +63,7 @@ class DeliveryRecord{
     bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
-    bool coveredBy(const framing::AccumulatedAck* const range) const;
+    bool coveredBy(const framing::SequenceSet* const range) const;
 
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
