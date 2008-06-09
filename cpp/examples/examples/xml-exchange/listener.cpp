@@ -24,7 +24,6 @@
  *  the broker using a message listener.
  */
 
-#include <qpid/client/Dispatcher.h>
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>

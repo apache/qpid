@@ -31,6 +31,7 @@ namespace client {
 
 class FutureResult;
 
+///@internal
 class Results
 {
 public:

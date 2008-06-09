@@ -321,14 +321,12 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ConnectionSettings.cpp		\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
-  qpid/client/Exchange.cpp			\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
-  qpid/client/Queue.cpp				\
   qpid/client/Results.cpp			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10.h		\
@@ -444,7 +442,6 @@ nobase_include_HEADERS = \
   qpid/client/ChainableFrameHandler.h	\
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
-  qpid/client/Exchange.h \
   qpid/client/Execution.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
@@ -453,7 +450,6 @@ nobase_include_HEADERS = \
   qpid/client/Message.h \
   qpid/client/MessageListener.h \
   qpid/client/MessageQueue.h \
-  qpid/client/Queue.h \
   qpid/client/Results.h \
   qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \
