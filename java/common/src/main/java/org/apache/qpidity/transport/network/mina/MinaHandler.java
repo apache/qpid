@@ -67,6 +67,7 @@ public class MinaHandler<E> implements IoHandler
     static
     {
         ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
+        ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
     }
 
     private final Binding<E,java.nio.ByteBuffer> binding;
