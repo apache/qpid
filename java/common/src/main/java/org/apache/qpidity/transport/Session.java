@@ -123,6 +123,12 @@ public class Session extends Invoker
         return commandsIn++;
     }
 
+    void identify(Method cmd)
+    {
+        cmd.setId(nextCommandId());
+        log.debug("ID: [%s] %s", this.channel, cmd);
+    }
+
     public void processed(Method command)
     {
         processed(command.getId());
@@ -155,7 +161,7 @@ public class Session extends Invoker
         }
     }
 
-   public void flushProcessed()
+    public void flushProcessed()
     {
         RangeSet copy;
         synchronized (processedLock)
@@ -244,6 +250,7 @@ public class Session extends Invoker
             synchronized (commands)
             {
                 int next = commandsOut++;
+                m.setId(next);
                 if (next == 0)
                 {
                     sessionCommandPoint(0, 0);
@@ -357,7 +364,9 @@ public class Session extends Invoker
                 }
                 else
                 {
-                    throw new RuntimeException("timed out waiting for sync");
+                    throw new RuntimeException
+                        (String.format
+                         ("timed out waiting for sync: complete = %s, point = %s", maxComplete, point));
                 }
             }
         }
