@@ -40,6 +40,7 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     // XXX: command subclass?
     private int id;
+    private boolean idSet = false;
     private boolean sync = false;
 
     public final int getId()
@@ -50,6 +51,7 @@ public abstract class Method extends Struct implements ProtocolEvent
     void setId(int id)
     {
         this.id = id;
+        this.idSet = true;
     }
 
     public final boolean isSync()
@@ -78,6 +80,38 @@ public abstract class Method extends Struct implements ProtocolEvent
         {
             delegate.control(context, this);
         }
+    }
+
+    public String toString()
+    {
+        if (getEncodedTrack() != Frame.L4)
+        {
+            return super.toString();
+        }
+
+        StringBuilder str = new StringBuilder();
+
+        if (idSet)
+        {
+            str.append("id=");
+            str.append(id);
+        }
+
+        if (sync)
+        {
+            if (str.length() > 0)
+            {
+                str.append(" ");
+            }
+            str.append(" [sync]");
+        }
+
+        if (str.length() > 0)
+        {
+            str.append(" ");
+        }
+        str.append(super.toString());
+        return str.toString();
     }
 
 }

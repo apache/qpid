@@ -40,7 +40,7 @@ public abstract class SessionDelegate
     }
 
     public void command(Session ssn, Method method) {
-        method.setId(ssn.nextCommandId());
+        ssn.identify(method);
         method.dispatch(ssn, this);
         if (!method.hasPayload())
         {
