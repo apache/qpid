@@ -83,8 +83,8 @@ bool DeliveryRecord::after(DeliveryId tag) const{
     return id > tag;
 }
 
-bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const{
-    return range->covers(id);
+bool DeliveryRecord::coveredBy(const framing::SequenceSet* const range) const{
+    return range->contains(id);
 }
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
@@ -118,6 +118,8 @@ void DeliveryRecord::release(bool setRedelivered)
         queue->requeue(msg);
         acquired = false;
         setEnded();
+    } else {
+        QPID_LOG(debug, "Ignoring release for " << id << " acquired=" << acquired << ", ended =" << ended);
     }
 }
 
@@ -130,6 +132,7 @@ void DeliveryRecord::accept(TransactionContext* ctxt) {
     if (acquired && !ended) {
         queue->dequeue(ctxt, msg.payload);
         setEnded();
+        QPID_LOG(debug, "Accepted " << id);
     }
 }
 
