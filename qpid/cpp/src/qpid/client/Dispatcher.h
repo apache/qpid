@@ -35,6 +35,7 @@
 namespace qpid {
 namespace client {
 
+///@internal
 class Subscriber : public MessageListener
 {
     AsyncSession session;
@@ -48,8 +49,10 @@ public:
     
 };
 
+///@internal
 typedef framing::Handler<framing::FrameSet> FrameSetHandler;
 
+///@internal
 class Dispatcher : public sys::Runnable
 {
     typedef std::map<std::string, Subscriber::shared_ptr> Listeners;

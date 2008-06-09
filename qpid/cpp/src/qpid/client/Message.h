@@ -30,26 +30,48 @@ namespace qpid {
 namespace client {
 
 /**
- * A representation of messages sent or received through the
- * client api.
+ * A message sent to or received from the broker.
  *
  * \ingroup clientapi
  */
 class Message : public framing::TransferContent 
 {
 public:
+    /** Create a Message.
+     *@param data Data for the message body.
+     *@param routingKey Passed to the exchange that routes the message.
+     *@param exchange Name of the exchange that should route the message.
+     */
     Message(const std::string& data=std::string(),
             const std::string& routingKey=std::string(),
             const std::string& exchange=std::string());
+
+    /** The destination of messages sent to the broker is the exchange
+     * name.  The destination of messages received from the broker is
+     * the delivery tag identifyig the local subscription (often this
+     * is the name of the subscribed queue.)
+     */
     std::string getDestination() const;
+
+    /** Check the redelivered flag. */
     bool isRedelivered() const;
+    /** Set the redelivered flag. */
     void setRedelivered(bool redelivered);
+
+    /** Get a modifyable reference to the message headers. */
     framing::FieldTable& getHeaders();
+
+    /** Get a non-modifyable reference to the message headers. */
+    const framing::FieldTable& getHeaders() const;
+
+    ///@internal
     const framing::MessageTransferBody& getMethod() const;
+    ///@internal
     const framing::SequenceNumber& getId() const;
 
     /**@internal for incoming messages */
     Message(const framing::FrameSet& frameset);
+    
 private:
     //method and id are only set for received messages:
     framing::MessageTransferBody method;

@@ -31,6 +31,7 @@ namespace client {
 
 class SessionImpl;
 
+///@internal
 class FutureResult : public FutureCompletion 
 {
     std::string result;

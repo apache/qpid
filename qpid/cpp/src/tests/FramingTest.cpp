@@ -18,8 +18,6 @@
  * under the License.
  *
  */
-#include "qpid/client/Exchange.h"
-#include "qpid/client/Queue.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Connector.h"
 #include "qpid/framing/AMQP_HighestVersion.h"

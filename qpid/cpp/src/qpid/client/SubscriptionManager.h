@@ -36,7 +36,10 @@ namespace qpid {
 namespace client {
 
 /**
- * Utility to assist with creating subscriptions.
+ * A class to help create and manage subscriptions.
+ * 
+ * Set up your subscriptions, then call run() to have messages
+ * delivered.
  *  
  * \ingroup clientapi
  */
@@ -58,10 +61,14 @@ class SubscriptionManager : public sys::Runnable
     bool autoStop;
     
   public:
+    /** Create a new SubscriptionManager associated with a session */
     SubscriptionManager(const Session& session);
     
     /**
      * Subscribe a MessagesListener to receive messages from queue.
+     *
+     * Provide your own subclass of MessagesListener to process
+     * incoming messages. It will be called for each message received.
      * 
      *@param listener Listener object to receive messages.
      *@param queue Name of the queue to subscribe to.
@@ -69,11 +76,13 @@ class SubscriptionManager : public sys::Runnable
      * If not specified, the queue name is used.
      */
     void subscribe(MessageListener& listener,
-                         const std::string& queue,
-                         const std::string& tag=std::string());
+                   const std::string& queue,
+                   const std::string& tag=std::string());
 
     /**
      * Subscribe a LocalQueue to receive messages from queue.
+     * 
+     * Incoming messages are stored in the queue for you to retrieve.
      * 
      *@param queue Name of the queue to subscribe to.
      *@param tag Unique destination tag for the listener.

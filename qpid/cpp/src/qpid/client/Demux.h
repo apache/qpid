@@ -32,6 +32,7 @@
 namespace qpid {
 namespace client {
 
+///@internal
 class ByTransferDest
 {
     const std::string dest;
@@ -40,6 +41,7 @@ public:
     bool operator()(const framing::FrameSet& frameset) const;
 };
 
+///@internal
 class Demux
 {
 public:
