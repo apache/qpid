@@ -34,6 +34,7 @@
 namespace qpid {
 namespace client {
 
+/**@internal */
 class Future : private framing::StructHelper
 {
     framing::SequenceNumber command;

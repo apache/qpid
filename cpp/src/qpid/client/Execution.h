@@ -27,7 +27,8 @@
 namespace qpid {
 namespace client {
 
-/**
+/**@internal
+ * 
  * Provides access to more detailed aspects of the session
  * implementation.
  */

@@ -25,27 +25,16 @@
 #include <string>
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
-#include "qpid/framing/AMQP_HighestVersion.h"
 
 namespace qpid {
-
-/**
- * The client namespace contains all classes that make up a client
- * implementation of the AMQP protocol. The key classes that form
- * the basis of the client API to be used by applications are
- * Connection and Channel.
- */
 namespace client {
 
 class ConnectionSettings;
-/**
- * \defgroup clientapi Application API for an AMQP client.
- */
 
 /**
  * Represents a connection to an AMQP broker. All communication is
- * initiated by establishing a connection, then opening one or
- * more Channels over that connection.
+ * initiated by establishing a connection, then creating one or more
+ * Session objecst using the connection. @see newSession()
  * 
  * \ingroup clientapi
  */
@@ -60,12 +49,10 @@ class Connection
 
   public:
     /**
-     * Creates a connection object, but does not open the
-     * connection.  
-     * 
-     * @param _version the version of the protocol to connect with.
+     * Creates a connection object, but does not open the connection.
+     * @see open()
      */
-    Connection(framing::ProtocolVersion=framing::highestProtocolVersion);
+    Connection();
     ~Connection();
 
     /**

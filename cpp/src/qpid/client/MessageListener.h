@@ -29,16 +29,20 @@ namespace qpid {
 namespace client {
 
     /**
-     * An interface through which asynchronously delivered messages
-     * can be received by an application. 
-     * 
-     * @see Channel::consume()
+     * Implement a subclass of MessageListener and subscribe it using
+     * the SubscriptionManager to receive messages.
+     *
+     * Another way to receive messages is by using a LocalQueue.
      * 
      * \ingroup clientapi
      */
     class MessageListener{
     public:
         virtual ~MessageListener();
+
+        /** Called for each message arriving from the broker. Override
+         * in your own subclass to process messages.
+         */
 	virtual void received(Message& msg) = 0;
     };
 

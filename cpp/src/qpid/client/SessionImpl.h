@@ -53,6 +53,7 @@ namespace client {
 class Future;
 class ConnectionImpl;
 
+///@internal
 class SessionImpl : public framing::FrameHandler::InOutHandler,
                     public Execution,
                     private framing::AMQP_ClientOperations::SessionHandler,

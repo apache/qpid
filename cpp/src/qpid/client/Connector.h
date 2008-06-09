@@ -48,6 +48,7 @@ class Bounds;
 class ConnectionSettings;
 class ConnectionImpl;
 
+///@internal
 class Connector : public framing::OutputHandler, 
                   private sys::Runnable
 {
