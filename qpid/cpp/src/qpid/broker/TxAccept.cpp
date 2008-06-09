@@ -25,9 +25,9 @@ using std::bind1st;
 using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
-using qpid::framing::AccumulatedAck;
+using qpid::framing::SequenceSet;
 
-TxAccept::TxAccept(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked) : 
+TxAccept::TxAccept(SequenceSet& _acked, std::list<DeliveryRecord>& _unacked) : 
     acked(_acked), unacked(_unacked) {}
 
 bool TxAccept::prepare(TransactionContext* ctxt) throw()

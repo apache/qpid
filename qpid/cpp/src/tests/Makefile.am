@@ -59,7 +59,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SequenceNumberTest.cpp \
 	TimerTest.cpp \
 	TopicExchangeTest.cpp \
-	TxAckTest.cpp \
 	TxBufferTest.cpp \
 	TxPublishTest.cpp \
 	MessageBuilderTest.cpp \

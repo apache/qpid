@@ -26,7 +26,7 @@ using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
 
-DtxAck::DtxAck(const framing::AccumulatedAck& acked, std::list<DeliveryRecord>& unacked)
+DtxAck::DtxAck(const framing::SequenceSet& acked, std::list<DeliveryRecord>& unacked)
 {
     remove_copy_if(unacked.begin(), unacked.end(), inserter(pending, pending.end()), 
                    not1(bind2nd(mem_fun_ref(&DeliveryRecord::coveredBy), &acked)));
