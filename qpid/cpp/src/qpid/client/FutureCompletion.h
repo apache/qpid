@@ -28,6 +28,7 @@
 namespace qpid {
 namespace client {
 
+///@internal
 class FutureCompletion 
 {
 protected:

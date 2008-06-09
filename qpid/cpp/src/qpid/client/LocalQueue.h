@@ -30,23 +30,45 @@ namespace qpid {
 namespace client {
 
 /**
- * Local representation of a remote queue.
+ * A local queue to collect messages retrieved from a remote broker
+ * queue. Create a queue and subscribe it using the SubscriptionManager.
+ * Messages from the remote queue on the broker will be stored in the
+ * local queue until you retrieve them.
  *
  * \ingroup clientapi
  */
 class LocalQueue
 {
   public:
-    LocalQueue(AckPolicy=AckPolicy());
+    /** Create a local queue. Subscribe the local queue to a remote broker
+     * queue with a SubscriptionManager.
+     * 
+     * LocalQueue is an alternative to implementing a MessageListener.
+     * 
+     *@param ackPolicy Policy for acknowledging messages. @see AckPolicy.
+     */
+    LocalQueue(AckPolicy ackPolicy=AckPolicy());
+
     ~LocalQueue();
 
-    /** Pop the next message off the queue.
+    /** Pop the next message off the local queue.
      *@exception ClosedException if subscription has been closed.
      */
     Message pop();
+
+    /** Synonym for get(). */
+    Message get() { return pop(); }
+    
+    /** Return true if local queue is empty. */
     bool empty() const;
+
+    /** Number of messages on the local queue */
     size_t size() const;
+
+    /** Set the message acknowledgement policy. @see AckPolicy. */
     void setAckPolicy(AckPolicy);
+
+    /** Get the message acknowledgement policy. @see AckPolicy. */
     AckPolicy& getAckPolicy();
 
   private:

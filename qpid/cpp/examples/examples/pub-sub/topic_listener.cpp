@@ -44,7 +44,6 @@
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
-#include <qpid/client/Queue.h>
 #include <qpid/client/SubscriptionManager.h>
 
 #include <unistd.h>

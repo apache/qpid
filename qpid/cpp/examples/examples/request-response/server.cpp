@@ -39,8 +39,9 @@
 
 
 #include <qpid/client/Connection.h>
-#include <qpid/client/Dispatcher.h>
+#include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/Session.h>
+#include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
 
@@ -59,102 +60,79 @@ using std::stringstream;
 using std::string;
 
 class Listener : public MessageListener{
-private:
-  std::string destination_name;
-  Dispatcher dispatcher;
-  Session session;
-public:
-  Listener(Session& session, string destination_name): 
-    destination_name(destination_name),
-    dispatcher(session),
-    session(session)
-  {};
-
-  virtual void listen();
-  virtual void received(Message& message);
-  virtual void wait();
-  ~Listener() { };
+  private:
+    SubscriptionManager& subscriptions;
+    AsyncSession asyncSession;
+  public:
+    Listener(SubscriptionManager& subscriptions, Session& session);
+    virtual void received(Message& message);
 };
 
-
-void Listener::listen() {
-  std::cout << "Activating request queue listener for: " <<destination_name << std::endl;
-
-  session.messageSubscribe(arg::queue=destination_name, arg::destination=destination_name);
-
-  session.messageFlow(arg::destination=destination_name, arg::unit=MESSAGE_CREDIT, arg::value=1);
-  session.messageFlow(arg::destination=destination_name, arg::unit=BYTE_CREDIT, arg::value=UNLIMITED_CREDIT);
-
-  dispatcher.listen(destination_name, this);
-}
-
-
-void Listener::wait() {
-  std::cout << "Waiting for requests" << std::endl;
-  dispatcher.run();
-}
-
+Listener::Listener(SubscriptionManager& subs, Session& session)
+    : subscriptions(subs), asyncSession(session)
+{}
 
 void Listener::received(Message& request) {
+    Message response;
 
-  Message response;
+    // Get routing key for response from the request's replyTo property
+    string routingKey;
 
-  // Get routing key for response from the request's replyTo property
+    if (request.getMessageProperties().hasReplyTo()) {
+        routingKey = request.getMessageProperties().getReplyTo().getRoutingKey();
+    } else {
+        std::cout << "Error: " << "No routing key for request (" << request.getData() << ")" << std::endl;
+        return;
+    } 
 
-  string routingKey;
+    std::cout << "Request: " << request.getData() << "  (" <<routingKey << ")" << std::endl;
 
-  if (request.getMessageProperties().hasReplyTo()) {
-    routingKey = request.getMessageProperties().getReplyTo().getRoutingKey();
-  } else {
-    std::cout << "Error: " << "No routing key for request (" << request.getData() << ")" << std::endl;
-    return;
-  } 
+    // Transform message content to upper case
+    std::string s = request.getData();
+    std::transform (s.begin(), s.end(), s.begin(), toupper);
+    response.setData(s);
 
-  std::cout << "Request: " << request.getData() << "  (" <<routingKey << ")" << std::endl;
+    // Send it back to the user
+    response.getDeliveryProperties().setRoutingKey(routingKey);
 
-  // Transform message content to upper case
-  std::string s = request.getData();
-  std::transform (s.begin(), s.end(), s.begin(), toupper);
-  response.setData(s);
-
-  // Send it back to the user
-  response.getDeliveryProperties().setRoutingKey(routingKey);
-
-  // Asynchronous transfer sends messages as quickly as
-  // possible without waiting for confirmation.
-  async(session).messageTransfer(arg::content=response, arg::destination="amq.direct");
+    // Asynchronous transfer sends messages as quickly as
+    // possible without waiting for confirmation.
+    asyncSession.messageTransfer(arg::content=response, arg::destination="amq.direct");
 }
 
 
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
-  Connection connection;
+    Connection connection;
     Message message;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
 
-  //--------- Main body of program --------------------------------------------
+        //--------- Main body of program --------------------------------------------
+
 
 	// Create a request queue for clients to use when making
 	// requests.
-
 	string request_queue = "request";
 
         // Use the name of the request queue as the routing key
-
 	session.queueDeclare(arg::queue=request_queue);
         session.exchangeBind(arg::exchange="amq.direct", arg::queue=request_queue, arg::bindingKey=request_queue);
 
-	// Create a listener for the request queue and start listening.
+        // Create a listener and subscribe it to the request_queue
+        std::cout << "Activating request queue listener for: " << request_queue << std::endl;
+        SubscriptionManager subscriptions(session);
+        Listener listener(subscriptions, session);
+        subscriptions.subscribe(listener, request_queue);
+        // Deliver messages until the subscription is cancelled
+        // by Listener::received()
 
-	Listener listener(session, request_queue);
-	listener.listen();
-	listener.wait();
+        std::cout << "Waiting for requests" << std::endl;
+        subscriptions.run();
 
-
-  //-----------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------
 
         connection.close();
         return 0;

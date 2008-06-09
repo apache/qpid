@@ -27,6 +27,7 @@
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
 #include "qpid/shared_ptr.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 
 #include <algorithm>
 #include <iostream>
@@ -42,8 +43,7 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-Connection::Connection(framing::ProtocolVersion _version) : 
-    channelIdCounter(0), version(_version) {}
+Connection::Connection() : channelIdCounter(0), version(framing::highestProtocolVersion) {}
 
 Connection::~Connection(){ }
 

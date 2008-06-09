@@ -30,6 +30,7 @@
 namespace qpid {
 namespace framing {
 
+/** Message content */
 class TransferContent : public MethodContent
 {
     AMQHeaderBody header;
@@ -39,19 +40,24 @@ public:
                     const std::string& routingKey = std::string(),
                     const std::string& exchange = std::string());
 
+    ///@internal
     AMQHeaderBody getHeader() const;
-    void setData(const std::string&);
-    void appendData(const std::string&);
-    MessageProperties& getMessageProperties();
-    DeliveryProperties& getDeliveryProperties();
 
+    void setData(const std::string&);
     const std::string& getData() const;
     std::string& getData();
-    const MessageProperties& getMessageProperties() const;
-    const DeliveryProperties& getDeliveryProperties() const;
-    bool hasMessageProperties() const;
-    bool hasDeliveryProperties() const;
 
+    void appendData(const std::string&);
+
+    bool hasMessageProperties() const;
+    MessageProperties& getMessageProperties();
+    const MessageProperties& getMessageProperties() const;
+
+    bool hasDeliveryProperties() const;
+    DeliveryProperties& getDeliveryProperties();
+    const DeliveryProperties& getDeliveryProperties() const;
+
+    ///@internal
     void populate(const FrameSet& frameset);
 };
 

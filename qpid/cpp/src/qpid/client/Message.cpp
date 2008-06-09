@@ -24,45 +24,50 @@
 namespace qpid {
 namespace client {
 
-    Message::Message(const std::string& data_,
-                     const std::string& routingKey,
-                     const std::string& exchange) : TransferContent(data_, routingKey, exchange) {}
+Message::Message(const std::string& data_,
+                 const std::string& routingKey,
+                 const std::string& exchange) : TransferContent(data_, routingKey, exchange) {}
 
-    std::string Message::getDestination() const 
-    { 
-        return method.getDestination(); 
-    }
+std::string Message::getDestination() const 
+{ 
+    return method.getDestination(); 
+}
 
-    bool Message::isRedelivered() const 
-    { 
-        return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
-    }
+bool Message::isRedelivered() const 
+{ 
+    return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
+}
 
-    void Message::setRedelivered(bool redelivered) 
-    { 
-        getDeliveryProperties().setRedelivered(redelivered); 
-    }
+void Message::setRedelivered(bool redelivered) 
+{ 
+    getDeliveryProperties().setRedelivered(redelivered); 
+}
 
-    framing::FieldTable& Message::getHeaders() 
-    { 
-        return getMessageProperties().getApplicationHeaders(); 
-    }
+framing::FieldTable& Message::getHeaders() 
+{ 
+    return getMessageProperties().getApplicationHeaders(); 
+}
 
-    const framing::MessageTransferBody& Message::getMethod() const
-    {
-        return method;
-    }
+const framing::FieldTable& Message::getHeaders() const
+{ 
+    return getMessageProperties().getApplicationHeaders(); 
+}
 
-    const framing::SequenceNumber& Message::getId() const
-    {
-        return id;
-    }
+const framing::MessageTransferBody& Message::getMethod() const
+{
+    return method;
+}
 
-    /**@internal for incoming messages */
-    Message::Message(const framing::FrameSet& frameset) :
-        method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
-    {
-        populate(frameset);
-    }
+const framing::SequenceNumber& Message::getId() const
+{
+    return id;
+}
+
+/**@internal for incoming messages */
+Message::Message(const framing::FrameSet& frameset) :
+    method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
+{
+    populate(frameset);
+}
 
 }}

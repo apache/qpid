@@ -27,6 +27,7 @@
 namespace qpid {
 namespace client {
 
+///@internal
 class StateManager
 {
     int state;

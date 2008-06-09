@@ -30,7 +30,7 @@ namespace client {
 /**
  * Returned by asynchronous commands that return a result.
  * You can use get() to wait for completion and get the result value.
- * \clientapi
+ * \ingroup clientapi
  */
 template <class T> class TypedResult : public Completion
 {
@@ -38,9 +38,17 @@ template <class T> class TypedResult : public Completion
     bool decoded;
 
 public:
+    ///@internal
     TypedResult(Future f, shared_ptr<SessionImpl> s) : Completion(f, s), decoded(false) {}
 
-    /** Wait for command to complete and return the result */
+    /**
+     * Wait for the asynchronous command that returned this TypedResult to complete
+     * and return its result.
+     * 
+     *@return The result returned by the command.
+     *@exception If the command returns an error, get() throws an exception.
+     *
+     */
     T& get() 
     {
         if (!decoded) {
