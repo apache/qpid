@@ -81,7 +81,10 @@ void  SessionManager::detach(std::auto_ptr<SessionState> session) {
 }
 }
 
-void SessionManager::forget(const SessionId& id) { attached.erase(id); }
+void SessionManager::forget(const SessionId& id) {
+    Mutex::ScopedLock l(lock);
+    attached.erase(id);
+}
 
 void SessionManager::eraseExpired() {
     // Called with lock held.
