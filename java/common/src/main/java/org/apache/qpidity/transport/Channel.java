@@ -212,4 +212,9 @@ public class Channel extends Invoker
         throw new UnsupportedOperationException();
     }
 
+    public String toString()
+    {
+        return String.format("%s:%s", connection, channel);
+    }
+
 }
