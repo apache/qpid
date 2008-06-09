@@ -70,6 +70,11 @@ public class Functions
 
         str.append('"');
 
+        if (limit < buf.remaining())
+        {
+            str.append("...");
+        }
+
         return str.toString();
     }
 

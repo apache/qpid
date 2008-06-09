@@ -123,10 +123,11 @@ public class Session extends Invoker
         return commandsIn++;
     }
 
-    void identify(Method cmd)
+    final void identify(Method cmd)
     {
-        cmd.setId(nextCommandId());
-        log.debug("ID: [%s] %s", this.channel, cmd);
+        int id = nextCommandId();
+        cmd.setId(id);
+        log.debug("ID: [%s] %s", this.channel, id);
     }
 
     public void processed(Method command)
