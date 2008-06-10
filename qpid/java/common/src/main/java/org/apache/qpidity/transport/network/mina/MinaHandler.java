@@ -61,6 +61,7 @@ public class MinaHandler<E> implements IoHandler
     private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
     /** Default buffer size for pending messages writes */
     private static final String DEFAULT_WRITE_BUFFER_LIMIT = "262144";
+    private static final int MAX_RCVBUF = 64*1024;
 
     private static final Logger log = Logger.get(MinaHandler.class);
 
@@ -226,7 +227,11 @@ public class MinaHandler<E> implements IoHandler
         if (receiveBufferSize != null && receiveBufferSize > 0)
         {
             scfg.setReceiveBufferSize(receiveBufferSize);
-        }       
+        }
+        else if (scfg.getReceiveBufferSize() > MAX_RCVBUF)
+        {
+            scfg.setReceiveBufferSize(MAX_RCVBUF);
+        }
         connector.setWorkerTimeout(0);
         ConnectFuture cf = connector.connect(address, handler);
         cf.join();
