@@ -19,6 +19,7 @@
  *
  */
 #include "TxBuffer.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/mem_fn.hpp>
 using boost::mem_fn;
@@ -53,15 +54,22 @@ void TxBuffer::enlist(TxOp::shared_ptr op)
 
 bool TxBuffer::commitLocal(TransactionalStore* const store)
 {
-    std::auto_ptr<TransactionContext> ctxt;
-    if(store) ctxt = store->begin();
-    if (prepare(ctxt.get())) {
-        if(store) store->commit(*ctxt);
-        commit();
-        return true;
-    } else {
-        if(store) store->abort(*ctxt);
-        rollback();
-        return false;
+    if (!store) return false;
+    try {
+        std::auto_ptr<TransactionContext> ctxt = store->begin();
+        if (prepare(ctxt.get())) {
+            store->commit(*ctxt);
+            commit();
+            return true;
+        } else {
+            store->abort(*ctxt);
+            rollback();
+            return false;
+        }
+    } catch (std::exception& e) {
+        QPID_LOG(error, "Commit failed with exception: " << e.what());
+    } catch (...) {
+        QPID_LOG(error, "Commit failed with unknown exception");
     }
+    return false;
 }
