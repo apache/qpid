@@ -261,7 +261,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
     @Override protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-        _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
+        if (!_session.getTransacted())
+        {
+            _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
+        }
         _session.setInRecovery(false);
     }
 
