@@ -14,17 +14,19 @@ ssn.queue_declare("test-queue")
 # publish a message
 dp = ssn.delivery_properties(routing_key="test-queue")
 mp = ssn.message_properties(content_type="text/plain")
-msg = Message(dp, "Hello World!")
+msg = Message(dp, mp, "Hello World!")
 ssn.message_transfer(message=msg)
 
 # subscribe to a queue
-ssn.message_subscribe(queue="test-queue", destination="messages")
+ssn.message_subscribe(destination="messages", queue="test-queue",
+                      accept_mode=ssn.accept_mode.none)
 incoming = ssn.incoming("messages")
 
 # start incoming message flow
 incoming.start()
 
 # grab a message from the queue
+
 print incoming.get(timeout=10)
 
 # cancel the subscription and close the session and connection
