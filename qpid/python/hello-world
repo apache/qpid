@@ -1,25 +1,33 @@
 #!/usr/bin/env python
-import qpid
-from qpid.client import Client
-from qpid.content import Content
+from qpid.connection import Connection
+from qpid.util import connect
+from qpid.datatypes import uuid4, Message
 
-client = Client("127.0.0.1", 5672)
-client.start({"LOGIN": "guest", "PASSWORD": "guest"})
-ssn = client.session()
-ssn.open()
-ssn.queue_declare(queue="test")
-ssn.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
-#print ssn.queue_query(queue="test")
-ssn.message_subscribe(queue="test", destination="amq.direct")
-ssn.message_flow("amq.direct", 0, 0xFFFFFFFF)
-ssn.message_flow("amq.direct", 1, 0xFFFFFFFF)
-msg = Content("hello world")
-msg["content_type"] = "text/plain"
-msg["routing_key"] = "test"
-msg["reply_to"] = client.structs.reply_to("asdf", "fdsa")
-msg["application_headers"] = {"x": 1, "y": 2, "z": "zee"}
-ssn.message_transfer(destination="amq.direct", content=msg)
-queue = client.queue("amq.direct")
-msg = queue.get(timeout=10)
-print msg
+# connect to the server and start a session
+conn = Connection(connect("127.0.0.1", 5672))
+conn.start()
+ssn = conn.session(str(uuid4()))
+
+# create a queue
+ssn.queue_declare("test-queue")
+
+# publish a message
+dp = ssn.delivery_properties(routing_key="test-queue")
+mp = ssn.message_properties(content_type="text/plain")
+msg = Message(dp, "Hello World!")
+ssn.message_transfer(message=msg)
+
+# subscribe to a queue
+ssn.message_subscribe(queue="test-queue", destination="messages")
+incoming = ssn.incoming("messages")
+
+# start incoming message flow
+incoming.start()
+
+# grab a message from the queue
+print incoming.get(timeout=10)
+
+# cancel the subscription and close the session and connection
+ssn.message_cancel(destination="messages")
 ssn.close()
+conn.close()
