@@ -81,8 +81,7 @@ queue = session.incoming(local_queue_name)
 # available.
 
 session.message_subscribe(queue=reply_to, destination=local_queue_name)
-session.message_flow(local_queue_name, session.credit_unit.message, 0xFFFFFFFF)
-session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF) 
+queue.start()
 
 # Send some messages to the server's request queue
 
