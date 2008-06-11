@@ -51,12 +51,11 @@ session.exchange_bind(queue=server_queue_name, exchange="amq.fanout")
 local_queue_name = "local_queue"
 local_queue = session.incoming(local_queue_name)
 
-# Call message_consume() to tell the server to deliver messages
+# Call message_subscribe() to tell the server to deliver messages
 # from the AMQP queue to this local client queue. 
 
 session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
-session.message_flow(local_queue_name,  session.credit_unit.message, 0xFFFFFFFF) 
-session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF) 
+local_queue.start()
 
 print "Subscribed to queue " + server_queue_name
 sys.stdout.flush()

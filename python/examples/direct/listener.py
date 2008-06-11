@@ -74,8 +74,7 @@ queue = session.incoming(local_queue_name)
 # start delivering messages as soon as message_subscribe() is called.
 
 session.message_subscribe(queue="message_queue", destination=local_queue_name)
-session.message_flow(local_queue_name,  session.credit_unit.message, 0xFFFFFFFF)  
-session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)  
+queue.start()
 
 receiver = Receiver()
 queue.listen (receiver.Handler)
