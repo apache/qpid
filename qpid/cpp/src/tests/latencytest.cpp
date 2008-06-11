@@ -48,10 +48,12 @@ struct Args : public qpid::TestOptions {
     uint queues;
     uint prefetch;
     uint ack;
+    bool cumulative;
+    bool csv;
     bool durable;
     string base;
 
-    Args() : size(256), count(1000), rate(0), reportFrequency(1), queues(1), 
+    Args() : size(256), count(1000), rate(0), reportFrequency(100), queues(1), 
              prefetch(100), ack(0),
              durable(false), base("latency-test")
     {
@@ -62,18 +64,20 @@ struct Args : public qpid::TestOptions {
             ("count", optValue(count, "N"), "number of messages to send")
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
             ("report-frequency", optValue(reportFrequency, "N"), 
-             "number of seconds to wait between reports (ignored unless rate specified)")
+             "number of milliseconds to wait between reports (ignored unless rate specified)")
             ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)")
             ("ack", optValue(ack, "N"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("durable", optValue(durable, "yes|no"), "use durable messages")
-            ("queue-base-name", optValue(base, "<name>"), "base name for queues")
-            ("tcp-nodelay", optValue(con.tcpNoDelay), "Turn on tcp-nodelay");
+            ("csv", optValue(csv), "print stats in csv format (rate,min,max,avg)")
+            ("cumulative", optValue(cumulative), "cumulative stats in csv format")
+            ("queue-base-name", optValue(base, "<name>"), "base name for queues");
     }
 };
 
 const std::string chars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 Args opts;
+double c_min, c_avg, c_max;
 
 uint64_t current_time()
 {
@@ -233,8 +237,38 @@ Stats::Stats() : count(0), minLatency(0), maxLatency(0), totalLatency(0) {}
 
 void Stats::print()
 {
+    static bool already_have_stats = false;
+    uint value;
+    double aux_avg = (totalLatency / count);
+
+    if (opts.rate)
+        value = opts.rate;
+    else
+        value = opts.count;
     Mutex::ScopedLock l(lock);
-    std::cout << "Latency(ms): min=" << minLatency << ", max=" << maxLatency << ", avg=" << (totalLatency / count); 
+    if (!opts.cumulative) {
+        if (!opts.csv) {
+            std::cout << "Latency(ms): min=" << minLatency << ", max=" <<
+	                 maxLatency << ", avg=" << aux_avg; 
+        } else {
+  	    std::cout << value << "," << minLatency << "," << maxLatency <<
+    				     "," << aux_avg;
+        }
+    } else {
+	if (already_have_stats) {
+            c_avg = (c_min + aux_avg) / 2;
+            if (c_min > minLatency) c_min = minLatency;
+            if (c_max < maxLatency) c_max = maxLatency;
+        } else {
+            c_avg = aux_avg;
+            c_min = minLatency;
+            c_max = maxLatency;
+            already_have_stats = true;
+        }
+  	std::cout << value << "," << c_min << "," << c_max <<
+    				 "," << c_avg;
+    }
+        
 }
 
 void Stats::reset()
@@ -287,7 +321,8 @@ void Sender::sendByRate()
         uint64_t timeTaken = (current_time() - start) / TIME_USEC;
         if (timeTaken < interval) {
             usleep(interval - timeTaken);
-        } else if (timeTaken > interval) {
+        } else if (timeTaken > interval &&
+                   !opts.csv && !opts.cumulative) { // Don't be so verbose in this case, we're piping the results to another program
             std::cout << "Could not achieve desired rate! (Took " << timeTaken 
                       << " microsecs to send message, aiming for " << interval << " microsecs)" << std::endl;
         }
@@ -322,8 +357,10 @@ void Test::join()
     AbsTime end = now();
     Duration time(begin, end);
     double msecs(time / TIME_MSEC);
-    std::cout << "Sent " << opts.count << " msgs through " << queue 
-              << " in " << msecs << "ms (" << (opts.count * 1000 / msecs) << " msgs/s) ";
+    if (!opts.csv) {
+        std::cout << "Sent " << opts.count << " msgs through " << queue 
+                  << " in " << msecs << "ms (" << (opts.count * 1000 / msecs) << " msgs/s) ";
+    }
     stats.print();
     std::cout << std::endl;
 }
@@ -339,6 +376,8 @@ int main(int argc, char** argv)
 {
     try {
         opts.parse(argc, argv);
+        if (opts.cumulative)
+            opts.csv = true;
         boost::ptr_vector<Test> tests(opts.queues);
         for (uint i = 0; i < opts.queues; i++) {
             std::ostringstream out;
@@ -350,7 +389,7 @@ int main(int argc, char** argv)
         }
         if (opts.rate) {
             while (true) {
-                usleep(opts.reportFrequency * 1000 * 1000);
+                usleep(opts.reportFrequency * 1000);
                 //print latency report:
                 for (boost::ptr_vector<Test>::iterator i = tests.begin(); i != tests.end(); i++) {
                     i->report();
