@@ -45,7 +45,8 @@ struct  ConnectionOptions : public qpid::Options,
             ("max-channels", optValue(maxChannels, "N"), "the maximum number of channels the client requires.")
             ("max-frame-size", optValue(maxFrameSize, "N"), "the maximum frame size to request.")
             ("bounds-multiplier", optValue(bounds, "N"), 
-             "bound size of write queue (as a multiple of the max frame size).");
+             "bound size of write queue (as a multiple of the max frame size).")
+            ("tcp-nodelay", optValue(tcpNoDelay), "Turn on tcp-nodelay");
     }
 };
 
