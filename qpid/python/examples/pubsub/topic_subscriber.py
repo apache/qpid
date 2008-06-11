@@ -41,8 +41,7 @@ def subscribe_queue(server_queue_name, local_queue_name):
   queue = session.incoming(local_queue_name)
 
   session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
-  session.message_flow(local_queue_name, session.credit_unit.message, 0xFFFFFFFF)
-  session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)
+  queue.start()
 
   return queue
 
