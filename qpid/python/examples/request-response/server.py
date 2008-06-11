@@ -60,9 +60,9 @@ session.exchange_bind(exchange="amq.direct", queue="request", binding_key="reque
 local_queue_name = "local_queue"
 
 session.message_subscribe(queue="request", destination=local_queue_name)
-session.message_flow(local_queue_name, session.credit_unit.message, 0xFFFFFFFF)
-session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)
 
+queue = session.incoming(local_queue_name)
+queue.start()
 
 # Remind the user to start the client program
 
@@ -71,8 +71,6 @@ print "(Times out after 100 seconds ...)"
 sys.stdout.flush()
 
 # Respond to each request
-
-queue = session.incoming(local_queue_name)
 
 # If we get a message, send it back to the user (as indicated in the
 # ReplyTo property)

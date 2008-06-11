@@ -51,11 +51,10 @@ queue = session.incoming(local_queue_name)
 # Call message_subscribe() to tell the broker to deliver messages
 # from the AMQP queue to this local client queue. The broker will
 # start delivering messages as soon as credit is allocated using
-# session.message_flow().
+# queue.start().
 
 session.message_subscribe(queue="message_queue", destination=local_queue_name)
-session.message_flow(local_queue_name,  session.credit_unit.message, 0xFFFFFFFF)  
-session.message_flow(local_queue_name, session.credit_unit.byte, 0xFFFFFFFF)  
+queue.start()
 
 #  Initialize 'final' and 'content', variables used to identify the last message.
 
