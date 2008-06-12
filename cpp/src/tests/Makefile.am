@@ -1,4 +1,4 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(CFLAGS)  $(APR_CXXFLAGS) -DBOOST_TEST_DYN_LINK
+AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK
 INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
 abs_builddir=@abs_builddir@

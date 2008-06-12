@@ -53,7 +53,7 @@ public:
     ~Demux();
     
     void handle(framing::FrameSet::shared_ptr);
-    void close();
+    void close(const sys::ExceptionHolder& ex);
     void open();
 
     QueuePtr add(const std::string& name, Condition);

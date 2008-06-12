@@ -79,13 +79,14 @@ public:
     }
 
     /**
-     * Close the queue. Throws ClosedException in threads waiting in pop().
-     * Blocks till all waiting threads have been notified.
+     * Close the queue.
+     *@ex exception to throw to waiting threads. ClosedException by default.
      */ 
-    void close()
+    void close(const ExceptionHolder& ex=ExceptionHolder(new ClosedException()))
     {
         Waitable::ScopedLock l(lock);
         if (!closed) {
+            lock.setException(ex);
             closed = true;
             lock.notifyAll();
             lock.waitWaiters(); // Ensure no threads are still waiting.
