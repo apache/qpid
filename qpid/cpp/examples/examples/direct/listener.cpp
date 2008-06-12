@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
       // Create a listener and subscribe it to the queue named "message_queue"
       Listener listener(subscriptions);
       subscriptions.subscribe(listener, "message_queue");
-      // Deliver messages until the subscription is cancelled
+      // Receive messages until the subscription is cancelled
       // by Listener::received()
       subscriptions.run();
 
