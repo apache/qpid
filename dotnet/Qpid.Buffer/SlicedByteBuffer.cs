@@ -27,6 +27,7 @@ namespace Apache.Qpid.Buffer
       private ByteBuffer _buffer;
       private int _capacity;
       private int _startPos;
+      private byte[] _array = null;
 
       public override int Capacity
       {
@@ -35,7 +36,17 @@ namespace Apache.Qpid.Buffer
 
       public override byte[] Array
       {
-         get { return _buffer.Array; }
+      	get 
+      	{
+      		if (_array == null)
+      		{
+      			// FIXME: this creates an unnecessary copy of the data, 
+      			// which is expensive and gross. A sliced clone() would be better
+      			_array = new byte[Limit];
+      			_buffer.GetBytes(_startPos, _array, 0, Limit);
+      		}
+      		return _array;
+      	}
       }
 
       /// <summary>

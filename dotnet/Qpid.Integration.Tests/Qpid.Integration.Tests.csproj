@@ -40,6 +40,7 @@
     <Compile Include="interop\TestCases\TestCase1DummyRun.cs" />
     <Compile Include="interop\TestCases\TestCase3BasicPubSub.cs" />
     <Compile Include="testcases\BaseMessagingTestFixture.cs" />
+    <Compile Include="testcases\ByteMessageTest.cs" />
     <Compile Include="testcases\ChannelQueueTest.cs" />
     <Compile Include="testcases\CommitRollbackTest.cs" />
     <Compile Include="testcases\ConnectionTest.cs" />
