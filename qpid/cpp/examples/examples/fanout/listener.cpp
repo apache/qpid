@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
         Listener listener(subscriptions);
         subscriptions.subscribe(listener, myQueue);
 
-        // Deliver messages until the subscription is cancelled
+        // Receive messages until the subscription is cancelled
         // by Listener::received()
         std::cout << "Listening" << std::endl;
         subscriptions.run();
