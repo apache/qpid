@@ -28,6 +28,9 @@
 
 QPID_AUTO_TEST_SUITE(exception_test)
 
+// FIXME aconway 2008-06-12: need to update our exception handling to
+// 0-10 handling and extend this test to provoke all the exceptional
+// conditions we know of and verify the correct exception is thrown.
 
 using namespace std;
 using namespace qpid;
@@ -51,10 +54,10 @@ struct Catcher : public Runnable {
         try { f(); }
         catch(const Ex& e) {
             caught=true;
-            BOOST_MESSAGE(string("Caught expected exception: ")+e.what());
+            BOOST_MESSAGE(string("Caught expected exception: ")+e.what()+"["+typeid(e).name()+"]");
         }
         catch(const std::exception& e) {
-            BOOST_ERROR(string("Bad exception: ")+e.what());
+            BOOST_ERROR(string("Bad exception: ")+e.what()+"["+typeid(e).name()+"] expected: "+typeid(Ex).name());
         }
         catch(...) {
             BOOST_ERROR(string("Bad exception: unknown"));
@@ -75,7 +78,7 @@ QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxyConnection c(fix.broker->getPort());
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
-    Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
+    Catcher<Exception> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
     fix.connection.proxy.close();
     BOOST_CHECK(pop.join());
 }
