@@ -4,3 +4,8 @@
 .settings
 target
 workspace
+generated
+obj
+dotnet/bin/
+velocity.log
+
