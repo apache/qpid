@@ -47,7 +47,7 @@ ScopedDivert::~ScopedDivert()
 
 Demux::Demux() : defaultQueue(new Queue()) {}
 
-Demux::~Demux() { close(); }
+Demux::~Demux() { close(sys::ExceptionHolder(new ClosedException())); }
 
 Demux::QueuePtr ScopedDivert::getQueue()
 {
@@ -69,13 +69,13 @@ void Demux::handle(framing::FrameSet::shared_ptr frameset)
     }
 }
 
-void Demux::close()
+void Demux::close(const sys::ExceptionHolder& ex)
 {
     sys::Mutex::ScopedLock l(lock);
     for (iterator i = records.begin(); i != records.end(); i++) {
-        i->queue->close();
+        i->queue->close(ex);
     }
-    defaultQueue->close();
+    defaultQueue->close(ex);
 }
 
 void Demux::open()
