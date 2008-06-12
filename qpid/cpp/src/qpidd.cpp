@@ -80,7 +80,7 @@ struct DaemonOptions : public qpid::Options {
         piddir += "/.qpidd";
 
         addOptions()
-            ("daemon,d", optValue(daemon), "Run as a daemon.")
+            ("daemon,d", optValue(daemon), "Run as a daemon. --log-output defaults to syslog in this mode.")
             ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
             ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
             ("check,c", optValue(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
@@ -124,7 +124,7 @@ struct QpiddOptions : public qpid::Options {
 struct BootstrapOptions : public qpid::Options {
     CommonOptions common;
     ModuleOptions module;
-    qpid::log::Options log;
+    qpid::log::Options log;     
 
     BootstrapOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
         add(common);
@@ -258,6 +258,11 @@ int main(int argc, char* argv[])
         signal(SIGTTIN,SIG_IGN);
             
         if (options->daemon.daemon) {
+            // For daemon mode replace default stderr with syslog.
+            if (options->log.outputs.size() == 1 && options->log.outputs[0] == "stderr") {
+                options->log.outputs[0] = "syslog";
+                qpid::log::Logger::instance().configure(options->log);
+            }
             // Fork the daemon
             QpiddDaemon d(options->daemon.piddir);
             d.fork();
