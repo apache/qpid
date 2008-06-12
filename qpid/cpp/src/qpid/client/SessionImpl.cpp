@@ -616,7 +616,9 @@ void SessionImpl::assertOpen() const
 
 void SessionImpl::handleClosed()
 {
-    demux.close();
+    // FIXME aconway 2008-06-12: needs to be set to the correct exception type.
+    // 
+    demux.close(sys::ExceptionHolder(text.empty() ? new ClosedException() : new Exception(text)));
     results.close();
 }
 
