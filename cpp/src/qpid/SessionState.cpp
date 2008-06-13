@@ -99,6 +99,8 @@ SequenceSet  SessionState::senderGetIncomplete() const { return sender.incomplet
 SessionPoint SessionState::senderGetReplayPoint() const { return sender.replayPoint; }
 
 SessionState::ReplayRange SessionState::senderExpected(const SessionPoint& expect) {
+    if (timeout == 0)
+        return SessionState::ReplayRange();
     if (expect < sender.replayPoint || sender.sendPoint < expect)
         throw InvalidArgumentException(QPID_MSG(getId() << ": expected command-point out of range."));
     QPID_LOG(debug, getId() << ": sender expected point moved to " << expect);
@@ -114,22 +116,24 @@ void SessionState::senderRecord(const AMQFrame& f) {
     if (isControl(f)) return;   // Ignore control frames.
     QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
     stateful = true;
-    if (timeout) sender.replayList.push_back(f);
-    sender.unflushedSize += f.size();
+    if (timeout) {
+        sender.replayList.push_back(f);
+        sender.replaySize += f.size();
+        sender.unflushedSize += f.size();
+        if (config.replayHardLimit && config.replayHardLimit < sender.replaySize) 
+            throw ResourceLimitExceededException("Replay buffer exceeeded hard limit");
+    }
     sender.bytesSinceKnownCompleted += f.size();
-    sender.replaySize += f.size();
     sender.incomplete += sender.sendPoint.command;
     sender.sendPoint.advance(f);
-    if (config.replayHardLimit && config.replayHardLimit < sender.replaySize) 
-        throw ResourceLimitExceededException("Replay buffer exceeeded hard limit");
 }
 
 bool SessionState::senderNeedFlush() const {
-    return config.replayFlushLimit && sender.unflushedSize >= config.replayFlushLimit;
+    return timeout != 0 && config.replayFlushLimit && sender.unflushedSize >= config.replayFlushLimit;
 }
 
 void SessionState::senderRecordFlush() {
-    assert(sender.flushPoint <= sender.sendPoint);
+    if (timeout == 0) return;
     sender.flushPoint = sender.sendPoint;
     sender.unflushedSize = 0;
 }
@@ -143,6 +147,7 @@ void SessionState::senderRecordKnownCompleted() {
 }
 
 void SessionState::senderConfirmed(const SessionPoint& confirmed) {
+    if (timeout == 0) return;
     if (confirmed > sender.sendPoint)
         throw InvalidArgumentException(QPID_MSG(getId() << "Confirmed commands not yet sent."));
     QPID_LOG(debug, getId() << ": sender confirmed point moved to " << confirmed);
@@ -158,7 +163,6 @@ void SessionState::senderConfirmed(const SessionPoint& confirmed) {
     if (sender.replayPoint > sender.flushPoint)
         sender.flushPoint = sender.replayPoint;
     sender.replayList.erase(sender.replayList.begin(), i);
-    assert(sender.replayPoint.offset == 0);
 }
 
 void SessionState::senderCompleted(const SequenceSet& commands) {
