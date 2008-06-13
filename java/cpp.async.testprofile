@@ -1,5 +1,5 @@
 broker.version=0-10
-broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --load-module /opt/workspace/rhmessaging/cpp/lib/.libs/libbdbstore.so --auth no
+broker=${project.root}/../cpp/src/qpidd --data-dir ${build.data} -t --load-module ${project.root}/../../cppStore/cpp/lib/.libs/libbdbstore.so --auth no
 broker.clean=${project.root}/clean-dir ${build.data}
 broker.ready=Listening on TCP port
 java.naming.provider.url=${project.root}/test-provider.properties
