@@ -67,16 +67,27 @@ public abstract class SessionDelegate
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
     {
         RangeSet ranges = cmp.getCommands();
+        RangeSet known = null;
+        if (cmp.getTimelyReply())
+        {
+            known = new RangeSet();
+        }
+
         if (ranges != null)
         {
             for (Range range : ranges)
             {
-                ssn.complete(range.getLower(), range.getUpper());
+                boolean advanced = ssn.complete(range.getLower(), range.getUpper());
+                if (advanced && known != null)
+                {
+                    known.add(range);
+                }
             }
         }
-        if (cmp.getTimelyReply())
+
+        if (known != null)
         {
-            ssn.sessionKnownCompleted(ranges);
+            ssn.sessionKnownCompleted(known);
         }
     }
 
