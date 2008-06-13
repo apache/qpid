@@ -20,6 +20,9 @@
  */
 package org.apache.qpidity.transport;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.apache.qpid.util.Serial.*;
 
 
@@ -75,6 +78,42 @@ public class Range
     public Range span(Range range)
     {
         return new Range(min(lower, range.lower), max(upper, range.upper));
+    }
+
+    public List<Range> subtract(Range range)
+    {
+        List<Range> result = new ArrayList<Range>();
+
+        if (includes(range.lower) && le(lower, range.lower - 1))
+        {
+            result.add(new Range(lower, range.lower - 1));
+        }
+
+        if (includes(range.upper) && le(range.upper + 1, upper))
+        {
+            result.add(new Range(range.upper + 1, upper));
+        }
+
+        if (result.isEmpty() && !range.includes(this))
+        {
+            result.add(this);
+        }
+
+        return result;
+    }
+
+    public Range intersect(Range range)
+    {
+        int l = max(lower, range.lower);
+        int r = min(upper, range.upper);
+        if (gt(l, r))
+        {
+            return null;
+        }
+        else
+        {
+            return new Range(l, r);
+        }
     }
 
     public String toString()
