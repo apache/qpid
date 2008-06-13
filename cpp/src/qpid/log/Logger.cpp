@@ -48,7 +48,8 @@ struct OstreamOutput : public Logger::Output {
     OstreamOutput(std::ostream& o) : out(&o) {}
 
     OstreamOutput(const string& file)
-        : out(new ofstream(file.c_str())), mine(out)
+        : out(new ofstream(file.c_str(), ios_base::out | ios_base::app)),
+          mine(out)
     {
         if (!out->good())
             throw std::runtime_error("Can't open log file: "+file);
