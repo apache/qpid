@@ -270,6 +270,13 @@ public class Session extends Invoker
                 {
                     sync();
                 }
+
+                // flush every 64K commands to avoid ambiguity on
+                // wraparound
+                if ((next % 65536) == 0)
+                {
+                    sessionFlush(COMPLETED);
+                }
             }
         }
         else
