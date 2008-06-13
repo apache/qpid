@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.store.StoreContext;
 
 public interface UnacknowledgedMessageMap
 {
@@ -55,7 +56,7 @@ public interface UnacknowledgedMessageMap
 
     UnacknowledgedMessage remove(long deliveryTag);
 
-    void drainTo(Collection<UnacknowledgedMessage> destination, long deliveryTag) throws AMQException;
+    public void drainTo(long deliveryTag, StoreContext storeContext) throws AMQException;
 
     Collection<UnacknowledgedMessage> cancelAllMessages();
 

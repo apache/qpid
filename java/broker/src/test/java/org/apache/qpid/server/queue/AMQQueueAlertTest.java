@@ -32,7 +32,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.protocol.TestMinaProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -171,7 +171,7 @@ public class AMQQueueAlertTest extends TestCase
     */
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
-        protocolSession = new TestMinaProtocolSession();
+        protocolSession = new InternalTestProtocolSession();
         AMQChannel channel = new AMQChannel(protocolSession, 2, _messageStore);
         protocolSession.addChannel(channel);
 
