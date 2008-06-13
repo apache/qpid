@@ -226,11 +226,12 @@ public class Session extends Invoker
         }
     }
 
-    void complete(int lower, int upper)
+    boolean complete(int lower, int upper)
     {
         log.debug("%s complete(%d, %d)", this, lower, upper);
         synchronized (commands)
         {
+            int old = maxComplete;
             for (int id = max(maxComplete, lower); le(id, upper); id++)
             {
                 commands.remove(id);
@@ -239,8 +240,9 @@ public class Session extends Invoker
             {
                 maxComplete = max(maxComplete, upper);
             }
-            commands.notifyAll();
             log.debug("%s   commands remaining: %s", this, commands);
+            commands.notifyAll();
+            return gt(maxComplete, old);
         }
     }
 
