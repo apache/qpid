@@ -75,6 +75,8 @@ void SessionHandler::handleIn(AMQFrame& f) {
                 throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to receive data"));
             if (!getState()->receiverRecord(f))
                 return; // Ignore duplicates.
+            if (getState()->receiverNeedKnownCompleted())
+                sendCompletion();
             getInHandler()->handle(f);
         }
     }
@@ -94,13 +96,22 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
 }
 
+namespace {
+bool isControl(const AMQFrame& f) {
+    return f.getMethod() && f.getMethod()->type() == framing::CONTROL;
+}
+bool isCommand(const AMQFrame& f) {
+    return f.getMethod() && f.getMethod()->type() == framing::COMMAND;
+}
+} // namespace
+
 void SessionHandler::handleOut(AMQFrame& f) {
     checkAttached();
     if (!sendReady)
         throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to send data"));
     getState()->senderRecord(f); 
-    if (getState()->senderNeedFlush()) {
-        peer.flush(false, true, true); 
+    if (isCommand(f) && getState()->senderNeedFlush()) {
+        peer.flush(false, false, true); 
         getState()->senderRecordFlush();
     }
     channel.handle(f);

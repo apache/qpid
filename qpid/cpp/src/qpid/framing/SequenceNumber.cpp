@@ -26,7 +26,7 @@
 using qpid::framing::SequenceNumber;
 using qpid::framing::Buffer;
 
-SequenceNumber::SequenceNumber() : value(0 - 1) {}
+SequenceNumber::SequenceNumber() : value(0) {}
 
 SequenceNumber::SequenceNumber(uint32_t v) : value((int32_t) v) {}
 

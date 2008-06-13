@@ -124,18 +124,20 @@ void SessionState::senderRecord(const AMQFrame& f) {
         throw ResourceLimitExceededException("Replay buffer exceeeded hard limit");
 }
 
+static const uint32_t SPONTANEOUS_REQUEST_INTERVAL = 65536; 
+
 bool SessionState::senderNeedFlush() const {
-    return config.replayFlushLimit && sender.unflushedSize >= config.replayFlushLimit;
+    return (sender.sendPoint.command % SPONTANEOUS_REQUEST_INTERVAL == 0) ||
+        (config.replayFlushLimit && sender.unflushedSize >= config.replayFlushLimit);
 }
 
 void SessionState::senderRecordFlush() {
-    assert(sender.flushPoint <= sender.sendPoint);
     sender.flushPoint = sender.sendPoint;
     sender.unflushedSize = 0;
 }
 
 bool SessionState::senderNeedKnownCompleted() const {
-    return sender.bytesSinceKnownCompleted >= config.replayFlushLimit;
+    return config.replayFlushLimit && sender.bytesSinceKnownCompleted >= config.replayFlushLimit;
 }
 
 void SessionState::senderRecordKnownCompleted() {
@@ -214,7 +216,8 @@ void SessionState::receiverKnownCompleted(const SequenceSet& commands) {
 }
 
 bool SessionState::receiverNeedKnownCompleted() const {
-    return receiver.bytesSinceKnownCompleted >= config.replayFlushLimit;
+    return (receiver.expected.command % SPONTANEOUS_REQUEST_INTERVAL == 0) ||
+        (config.replayFlushLimit && receiver.bytesSinceKnownCompleted >= config.replayFlushLimit);
 }
         
 const SessionPoint& SessionState::receiverGetExpected() const { return receiver.expected; }
