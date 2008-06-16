@@ -26,8 +26,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpidity.transport.Connection;
@@ -54,8 +52,7 @@ public class IoHandler implements Runnable
     private Receiver<ByteBuffer> _receiver;
     private Socket _socket;
     private byte[] _readBuf;
-    private static Map<Integer,IoSender> _handlers = new ConcurrentHashMap<Integer,IoSender>();
-    private AtomicInteger _count = new AtomicInteger();
+    private static AtomicInteger _count = new AtomicInteger();
     private int _readBufferSize;
     private int _writeBufferSize;
 
@@ -105,11 +102,11 @@ public class IoHandler implements Runnable
         }
         catch (SocketException e)
         {
-            log.error(e,"Error connecting to broker");
+            throw new RuntimeException("Error connecting to broker",e);
         }
         catch (IOException e)
         {
-            log.error(e,"Error connecting to broker");
+            throw new RuntimeException("Error connecting to broker",e);
         }
 
         IoSender sender = new IoSender(_socket);
@@ -118,8 +115,6 @@ public class IoHandler implements Runnable
              delegate);
 
         con.setConnectionId(_count.incrementAndGet());
-        _handlers.put(con.getConnectionId(),sender);
-
         _receiver = new InputHandler(new Assembler(con), InputHandler.State.PROTO_HDR);
 
         Thread t = new Thread(this);
@@ -131,7 +126,7 @@ public class IoHandler implements Runnable
 
     public void run()
     {
-        // I set the read buffer size simillar to SO_RCVBUF
+        // I set the read_buffer size simillar to SO_RCVBUF
         // Haven't tested with a lower value to see its better or worse
         _readBuf = new byte[_readBufferSize];
         try
@@ -148,9 +143,6 @@ public class IoHandler implements Runnable
                         ByteBuffer b = ByteBuffer.allocate(read);
                         b.put(_readBuf,0,read);
                         b.flip();
-                        //byte[] temp = new byte[read];
-                        //System.arraycopy(_readBuf, 0,temp, 0, read);
-                        //ByteBuffer b = ByteBuffer.wrap(temp);
                         _receiver.received(b);
                     }
                 }
@@ -177,10 +169,12 @@ public class IoHandler implements Runnable
         }
     }
 
+    /**
+     * Will experiment in a future version with batching
+     */
     public static void startBatchingFrames(int connectionId)
     {
-        IoSender sender = _handlers.get(connectionId);
-        sender.setStartBatching();
+
     }
 
 
