@@ -1,5 +1,7 @@
 package org.apache.qpid.util;
 
+import java.util.Comparator;
+
 import org.apache.qpid.SerialException;
 
 /**
@@ -9,6 +11,14 @@ import org.apache.qpid.SerialException;
 
 public class Serial
 {
+
+    public static final Comparator<Integer> COMPARATOR = new Comparator<Integer>()
+    {
+        public int compare(Integer s1, Integer s2)
+        {
+            return Serial.compare(s1, s2);
+        }
+    };
 
     /**
      * Compares two numbers using serial arithmetic.

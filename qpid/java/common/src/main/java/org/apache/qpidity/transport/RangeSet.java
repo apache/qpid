@@ -20,7 +20,6 @@
  */
 package org.apache.qpidity.transport;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
@@ -33,7 +32,7 @@ import static org.apache.qpid.util.Serial.*;
  * @author Rafael H. Schloming
  */
 
-public class RangeSet implements Iterable<Range>
+public final class RangeSet implements Iterable<Range>
 {
 
     private LinkedList<Range> ranges = new LinkedList<Range>();
@@ -53,6 +52,19 @@ public class RangeSet implements Iterable<Range>
         for (Range r : this)
         {
             if (r.includes(range))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean includes(int n)
+    {
+        for (Range r : this)
+        {
+            if (r.includes(n))
             {
                 return true;
             }
@@ -125,23 +137,6 @@ public class RangeSet implements Iterable<Range>
         }
         str.append("}");
         return str.toString();
-    }
-
-    public static final void main(String[] args)
-    {
-        RangeSet ranges = new RangeSet();
-        ranges.add(5, 10);
-        System.out.println(ranges);
-        ranges.add(15, 20);
-        System.out.println(ranges);
-        ranges.add(23, 25);
-        System.out.println(ranges);
-        ranges.add(12, 14);
-        System.out.println(ranges);
-        ranges.add(0, 1);
-        System.out.println(ranges);
-        ranges.add(3, 11);
-        System.out.println(ranges);
     }
 
 }
