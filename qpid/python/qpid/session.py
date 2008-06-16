@@ -91,10 +91,11 @@ class Session(Invoker):
       return tuple(exc)
 
   def sync(self, timeout=None):
-    if currentThread() == self.channel.connection.thread:
+    ch = self.channel
+    if ch is not None and currentThread() == ch.connection.thread:
       raise SessionException("deadlock detected")
     if not self.auto_sync:
-      self.execution_sync()
+      self.execution_sync(sync=True)
     last = self.sender.next_id - 1
     if not wait(self.condition, lambda:
                   last in self.sender._completed or self.exceptions,
@@ -174,10 +175,11 @@ class Session(Invoker):
     else:
       message = None
 
+    hdr = Struct(self.spec["session.header"])
+    hdr.sync = self.auto_sync or kwargs.pop("sync", False)
+
     cmd = type.new(args, kwargs)
     sc = StringCodec(self.spec)
-    hdr = Struct(self.spec["session.header"])
-    hdr.sync = self.auto_sync
     sc.write_command(hdr, cmd)
 
     seg = Segment(True, (message == None or
