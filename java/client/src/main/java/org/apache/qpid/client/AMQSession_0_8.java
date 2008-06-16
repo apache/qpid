@@ -40,7 +40,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AMQSession_0_8 extends AMQSession
+public final class AMQSession_0_8 extends AMQSession
 {
 
     /** Used for debugging. */
@@ -451,6 +451,16 @@ public class AMQSession_0_8 extends AMQSession
         QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
         getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
         return okHandler._messageCount;
+    }
+
+    final boolean tagLE(long tag1, long tag2)
+    {
+        return tag1 <= tag2;
+    }
+
+    final boolean updateRollbackMark(long currentMark, long deliveryTag)
+    {
+        return false;
     }
 
 }

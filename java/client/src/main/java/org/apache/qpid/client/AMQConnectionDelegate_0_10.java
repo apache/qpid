@@ -63,6 +63,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
         }
         catch (Exception e)
         {
+            _logger.error("exception creating session:", e);
             throw new JMSAMQException("cannot create session", e);
         }
         return session;
