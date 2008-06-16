@@ -80,6 +80,9 @@ class Delegate:
   def session_detached(self, ch, d):
     self.connection.detach(d.name, ch)
 
+  def session_request_timeout(self, ch, rt):
+    ch.session_timeout(rt.timeout);
+
   def session_command_point(self, ch, cp):
     ssn = ch.session
     ssn.receiver.next_id = cp.command_id
@@ -112,10 +115,10 @@ class Server(Delegate):
   def start(self):
     self.connection.read_header()
     self.connection.write_header(self.spec.major, self.spec.minor)
-    connection.Channel(self.connection, 0).connection_start()
+    connection.Channel(self.connection, 0).connection_start(mechanisms=["ANONYMOUS"])
 
   def connection_start_ok(self, ch, start_ok):
-    ch.connection_tune()
+    ch.connection_tune(channel_max=65535)
 
   def connection_tune_ok(self, ch, tune_ok):
     pass
