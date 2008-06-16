@@ -73,6 +73,10 @@ module Codec
       long(lower)
     end
 
+    def timestamp(l)
+      longlong(l)
+    end
+
     def shortstr(s)
       # shortstr is actually octetstr
       octet(s.length)
@@ -198,6 +202,10 @@ module Codec
       upper = long()
       lower = long()
       return upper << 32 | lower
+    end
+
+    def timestamp()
+      return longlong()
     end
 
     def shortstr()
