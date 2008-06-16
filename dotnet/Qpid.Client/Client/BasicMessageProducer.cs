@@ -88,6 +88,8 @@ namespace Apache.Qpid.Client
       /// </summary>
       private AmqChannel _channel;
 
+      public IChannel Channel { get {return _channel;}}
+      
       public BasicMessageProducer(string exchangeName, string routingKey,
           bool transacted,
           ushort channelId,

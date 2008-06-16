@@ -297,5 +297,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
             
             return buf.ToString();
         }
+        
+        protected void SendMessages(int count, IMessagePublisher pub)
+        {
+        	for (int i = 0; i < count; i++) 
+        	{
+        		pub.Send(pub.Channel.CreateTextMessage("Test message "+i));
+        	}
+        	
+        }
     }
 }

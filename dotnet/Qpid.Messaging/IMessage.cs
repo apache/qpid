@@ -92,6 +92,7 @@ namespace Apache.Qpid.Messaging
         string ClusterId { get; set; }
         
         void Acknowledge();
+        void Acknowledge(bool ackprevious);
         void ClearBody();
     }
 }

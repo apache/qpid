@@ -314,13 +314,18 @@ namespace Apache.Qpid.Client.Message
 
         public void Acknowledge()
         {
+        	// we set multiple to true here since acknowledgement implies acknowledge of all messages
+            // received on the session. That's a bit JMSy though. 
+        	Acknowledge(true);
+        }
+        
+        public void Acknowledge(bool ackprevious)
+        {
             // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
             // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
             if (_channel != null)
             {
-                // we set multiple to true here since acknowledgement implies acknowledge of all count messages
-                // received on the session
-                _channel.AcknowledgeMessage((ulong)DeliveryTag, true);
+                _channel.AcknowledgeMessage((ulong)DeliveryTag, ackprevious);
             }
 
         }

@@ -76,6 +76,11 @@ namespace Apache.Qpid.Messaging
       string Encoding { get; set; }
 
       /// <summary>
+      /// Get the channel this producer is on
+      /// </summary>        
+      IChannel Channel { get; }
+
+      /// <summary>
       /// Publish a message, using any default values configured
       /// </summary>
       /// <param name="msg">Message to publish</param>
