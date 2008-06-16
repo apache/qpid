@@ -140,7 +140,7 @@ class Mcli (Cmd):
     self.dataObject.close ()
 
 def Usage ():
-  print "Usage:", sys.argv[0], "[OPTIONS] [<target-host[:<tcp-port>]]"
+  print "Usage:  qpid-tool [<target-host[:<tcp-port>]]"
   print
   sys.exit (1)
 
@@ -150,11 +150,13 @@ def Usage ():
 
 # Get host name and port if specified on the command line
 cargs = sys.argv[1:]
-
-_host     = "localhost"
+_host = "localhost"
 
 if len (cargs) > 0:
   _host = cargs[0]
+
+if _host[0] == '-':
+  Usage()
 
 disp = Display ()
 
