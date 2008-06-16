@@ -21,20 +21,14 @@ package org.apache.qpidity.transport.network.io;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
 import org.apache.qpidity.transport.Sender;
-import org.apache.qpidity.transport.util.Logger;
 
 public class IoSender implements Sender<java.nio.ByteBuffer>
 {
     private final Object lock = new Object();
     private Socket _socket;
     private OutputStream _outStream;
-    private boolean _batch =  false;
-    private ByteBuffer _buffer;
-
-    private static final Logger log = Logger.get(IoHandler.class);
 
     public IoSender(Socket socket)
     {
@@ -92,26 +86,17 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
 
     /*
      * Haven't used this, but the intention is
-     * to experiment with it yet.
+     * to experiment with it in the future.
      * Also need to make sure the buffer size
      * is configurable
      */
     public void setStartBatching()
     {
-        _batch = true;
-        try
-        {
-            _buffer = ByteBuffer.allocate(2048);
-        }
-        catch(Exception e)
-        {
-            throw new RuntimeException("Unable to set SO_SNDBUF due to socket error",e);
-        }
     }
 
     public void close()
     {
-          synchronized (lock)
+        synchronized (lock)
         {
             try
             {
