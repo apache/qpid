@@ -107,9 +107,9 @@
         <exclude name="${qpid.jar.name}"/>
       </fileset>
     </path>
-    <pathconvert property="qpid.jar.classpath" pathsep=":" dirsep="/">
+    <pathconvert property="qpid.jar.classpath" pathsep=" " dirsep="/">
       <path refid="class.path"/>
-      <map from="${basedir}" to="lib/"/>
+      <globmapper from="${build.lib}/*" to="*"/>
     </pathconvert>
 
     <jar destfile="${qpid.jar}">
