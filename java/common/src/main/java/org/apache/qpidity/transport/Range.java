@@ -32,7 +32,7 @@ import static org.apache.qpid.util.Serial.*;
  * @author Rafael H. Schloming
  */
 
-public class Range
+public final class Range
 {
     private final int lower;
     private final int upper;
@@ -71,7 +71,8 @@ public class Range
 
     public boolean touches(Range range)
     {
-        return (includes(range.upper + 1) || includes(range.lower - 1) ||
+        return (intersects(range) ||
+                includes(range.upper + 1) || includes(range.lower - 1) ||
                 range.includes(upper + 1) || range.includes(lower - 1));
     }
 
