@@ -2745,6 +2745,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             {
                 while (!_closed.get() && ((message = (UnprocessedMessage) _queue.take()) != null))
                 {
+                    long deliveryTag = message.getDeliveryTag();
+
                     synchronized (_lock)
                     {
 
@@ -2753,27 +2755,24 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                             _lock.wait();
                         }
 
-                        if (message.getDeliveryTag() <= _rollbackMark.get())
+                        if (tagLE(deliveryTag, _rollbackMark.get()))
                         {
                             rejectMessage(message, true);
                         }
                         else
                         {
-                            if (message.getDeliveryTag() <= _rollbackMark.get())
+                            synchronized (_messageDeliveryLock)
                             {
-                                rejectMessage(message, true);
-                            }
-                            else
-                            {
-                                synchronized (_messageDeliveryLock)
-                                {
-                                    dispatchMessage(message);
-                                }
+                                dispatchMessage(message);
                             }
                         }
-
                     }
 
+                    long current = _rollbackMark.get();
+                    if (updateRollbackMark(current, deliveryTag))
+                    {
+                        _rollbackMark.compareAndSet(current, deliveryTag);
+                    }
                 }
             }
             catch (InterruptedException e)
@@ -2850,6 +2849,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         }
     }
+
+    abstract boolean tagLE(long tag1, long tag2);
+
+    abstract boolean updateRollbackMark(long current, long deliveryTag);
 
     /*public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write,
         boolean read) throws AMQException
