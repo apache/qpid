@@ -27,6 +27,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.util.Serial;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.ErrorCode;
@@ -785,4 +786,15 @@ public class AMQSession_0_10 extends AMQSession
             throw new JMSAMQException("Fail-over interrupted commit. Status of the commit is uncertain.", e);
         }
     }
+
+    final boolean tagLE(long tag1, long tag2)
+    {
+        return Serial.le((int) tag1, (int) tag2);
+    }
+
+    final boolean updateRollbackMark(long currentMark, long deliveryTag)
+    {
+        return Serial.lt((int) currentMark, (int) deliveryTag);
+    }
+
 }
