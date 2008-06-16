@@ -37,6 +37,7 @@ class FramerTest(TestCase):
           while True:
             frame = conn.read_frame()
             conn.write_frame(frame)
+            conn.flush()
         except Closed:
           pass
 
@@ -60,6 +61,7 @@ class FramerTest(TestCase):
     c.write_frame(Frame(0, 1, 2, 3, "IS"))
     c.write_frame(Frame(0, 1, 2, 3, "A"))
     c.write_frame(Frame(LAST_FRM, 1, 2, 3, "TEST"))
+    c.flush()
 
     f = c.read_frame()
     assert f.flags & FIRST_FRM
