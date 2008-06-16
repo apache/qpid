@@ -48,6 +48,9 @@ class TestSession(Delegate):
     self.session = session
     self.queue = queue
 
+  def execution_sync(self, es):
+    pass
+
   def queue_query(self, qq):
     return qq._type.result.type.new((qq.queue,), {})
 
@@ -90,8 +93,11 @@ class ConnectionTest(TestCase):
     connect("0.0.0.0", PORT).close()
     self.server.join(3)
 
+  def connect(self):
+    return Connection(connect("0.0.0.0", PORT), self.spec)
+
   def test(self):
-    c = Connection(connect("0.0.0.0", PORT), self.spec)
+    c = self.connect()
     c.start(10)
 
     ssn1 = c.session("test1", timeout=10)
@@ -144,7 +150,7 @@ class ConnectionTest(TestCase):
     c.close(5)
 
   def testCloseGet(self):
-    c = Connection(connect("0.0.0.0", PORT), self.spec)
+    c = self.connect()
     c.start(10)
     ssn = c.session("test", timeout=10)
     echos = ssn.incoming("echo")
@@ -166,7 +172,7 @@ class ConnectionTest(TestCase):
       pass
 
   def testCloseListen(self):
-    c = Connection(connect("0.0.0.0", PORT), self.spec)
+    c = self.connect()
     c.start(10)
     ssn = c.session("test", timeout=10)
     echos = ssn.incoming("echo")
@@ -198,3 +204,11 @@ class ConnectionTest(TestCase):
       assert m.body == "test%d" % i
 
     assert len(exceptions) == 1
+
+  def testSync(self):
+    c = self.connect()
+    c.start(10)
+    s = c.session("test")
+    s.auto_sync = False
+    s.message_transfer("echo", message=Message("test"))
+    s.sync(10)
