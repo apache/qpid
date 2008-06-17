@@ -9,12 +9,13 @@ SUBSCRIBERS=10
 MESSAGES=2000
 BATCHES=10
 
-while getopts "s:m:b:h:" opt ; do
+while getopts "s:m:b:h:t" opt ; do
     case $opt in
 	s) SUBSCRIBERS=$OPTARG ;;
 	m) MESSAGES=$OPTARG ;;
 	b) BATCHES=$OPTARG ;;
 	h) HOST=-h$OPTARG ;;
+        t) TRANSACTIONAL="--transactional --durable" ;;
 	?)
 	    echo "Usage: %0 [-s <subscribers>] [-m <messages.] [-b <batches>]"
 	    exit 1
@@ -25,11 +26,11 @@ done
 subscribe() {
     echo Start subscriber $1
     LOG="subscriber_$1.log"
-    ./topic_listener > $LOG 2>&1 && rm -f $LOG 
+    ./topic_listener $TRANSACTIONAL > $LOG 2>&1 && rm -f $LOG 
 }
 
 publish() {
-    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS $HOST
+    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS $HOST $TRANSACTIONAL
 }
 
 for ((i=$SUBSCRIBERS ; i--; )); do
