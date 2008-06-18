@@ -46,9 +46,6 @@ AC_ARG_WITH([doxygen],
    esac])
 AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 
-# Check for use of CPG
-AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
-
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings   turn on lots of compiler warnings (recommended)],
 [case "${enableval}" in
@@ -152,10 +149,8 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
 
 # Check for optional CPG requirement.
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
-
-
 AC_ARG_WITH([cpg],  
-  [AS_HELP_STRING([--with-cpg], [Build with CPG support])],
+  [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
   [case "${withval}" in
     yes)			# yes - enable
     with_CPG=yes
@@ -167,8 +162,8 @@ AC_ARG_WITH([cpg],
     ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
-   [ # not specified - GS 24-APR-2008 temporarily disabled - (enable if libs/headers available).
-    with_CPG=no
+   [		   # not specified - enable if libs/headers available.
+    with_CPG=yes
     AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
     AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
    ]

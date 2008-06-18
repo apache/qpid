@@ -33,9 +33,6 @@ using namespace qpid::broker;
 using boost::dynamic_pointer_cast;
 using boost::intrusive_ptr;
 
-static const uint8_t BASIC = 1;
-static const uint8_t MESSAGE = 2;
-
 RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, LinkRegistry& _links,
                                          DtxManager& _dtxMgr, uint64_t _stagingThreshold) 
     : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr), stagingThreshold(_stagingThreshold) {}

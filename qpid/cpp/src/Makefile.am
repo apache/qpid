@@ -15,7 +15,7 @@ if GENERATE
 
 # AMQP_FINAL_XML is defined in ../configure.ac
 amqp_0_10_xml=@AMQP_FINAL_XML@
-specs=$(amqp_0_10_xml)
+specs=$(amqp_0_10_xml) $(top_srcdir)/xml/cluster.xml
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
@@ -439,7 +439,6 @@ nobase_include_HEADERS = \
   qpid/client/ConnectionImpl.h \
   qpid/client/ConnectionSettings.h \
   qpid/client/Connector.h \
-  qpid/client/ChainableFrameHandler.h	\
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/Execution.h \

@@ -288,7 +288,6 @@ bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message> msg)
 
 bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
 {
-    //TODO: remove the now redundant checks (channel.flow & basic|message.qos removed):
     blocked = !(filter(msg) && checkCredit(msg) && parent->flowActive && (!ackExpected || parent->checkPrefetch(msg)));
     return !blocked;
 }
