@@ -71,28 +71,23 @@ struct ClusterDeliverHandler : public FrameHandler {
     
     void handle(AMQFrame& f) {
         next->handle(f);
-        Mutex::ScopedLock l(senderLock);
-        senderBusy=false;
-        senderLock.notify();
+        // FIXME aconway 2008-06-16: solve overtaking problem - async completion of commands.
+        // Mutex::ScopedLock l(lock);
+        // senderBusy=false;
+        // senderLock.notify();
     }
 };
-
-// FIXME aconway 2008-01-29: IList
-void insert(FrameHandler::Chain& c, FrameHandler* h) {
-    h->next = c.next;
-    c.next = h;
-}
 
 struct SessionObserver : public broker::SessionManager::Observer {
     Cluster& cluster;
     SessionObserver(Cluster& c) : cluster(c) {}
     
     void opened(SessionState& s) {
-        // FIXME aconway 2008-01-29: IList for memory management.
+        // FIXME aconway 2008-06-16: clean up chaining and observers.
         ClusterSendHandler* sender=new ClusterSendHandler(s, cluster);
         ClusterDeliverHandler* deliverer=new ClusterDeliverHandler(*sender, cluster);
-        insert(s.in, deliverer);
-        insert(s.in, sender);
+        s.getInChain().insert(deliverer);
+        s.getOutChain().insert(sender);
     }
 };
 }

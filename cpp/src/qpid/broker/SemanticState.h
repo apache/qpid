@@ -54,8 +54,7 @@ class SessionContext;
  * SemanticState holds the L3 and L4 state of an open session, whether
  * attached to a channel or suspended. 
  */
-class SemanticState : public framing::FrameHandler::Chains,
-                      public sys::OutputTask,
+class SemanticState : public sys::OutputTask,
                       private boost::noncopyable
 {
     class ConsumerImpl : public Consumer, public sys::OutputTask

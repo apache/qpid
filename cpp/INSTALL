@@ -59,9 +59,6 @@ Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)                                  
  * xerces-c <http://xerces.apache.org/xerces-c/>        (2.7.0)  
 
-Running qpid test suite requires:
- * cppunit <http://cppunit.sourceforge.net> 		(1.11.4)
-
 Qpid has been built using the GNU C++ compiler:
  * gcc     <http://gcc.gnu.org/>            		(3.2.3)
 
@@ -88,7 +85,7 @@ NOTE: make sure to install the related '-devel' packages also!
 =====================================
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
-  # yum install boost-devel e2fsprogs-devel pkgconfig openais-devel cppunit-devel
+  # yum install boost-devel e2fsprogs-devel pkgconfig openais-devel 
   # yum install gcc-c++ make autoconf automake help2man libtool doxygen graphviz ruby
 
 Follow the manual installation instruction below for any packages not

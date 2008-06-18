@@ -2,7 +2,7 @@
 # Check for requirements, run AIS tests if found.
 #
 
-id -nG | grep '\<ais\>' || \
+id -nG | grep '\<ais\>' >/dev/null || \
     NOGROUP="You are not a member of the ais group."
 ps -u root | grep aisexec >/dev/null || \
     NOAISEXEC="The aisexec daemon is not running as root"
@@ -24,4 +24,4 @@ EOF
     exit 0;			# A warning, not a failure.
 fi
 
-echo ./ais_run | newgrp ais
+echo `dirname $0`/ais_run | newgrp ais
