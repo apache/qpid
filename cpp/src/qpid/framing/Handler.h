@@ -46,22 +46,21 @@ struct Handler {
     /** Pointer to next handler in a linked list. */
     Handler<T>* next;
 
-    /** A Chain is a handler that forwards to a modifiable
-     * linked list of handlers.
+    /** A Chain is a handler holding a linked list of sub-handlers.
+     * Chain::next is invoked after the full, it is not itself part of the chain.
+     * Handlers inserted into the chain are deleted by the Chain dtor.
      */
-    struct Chain : public Handler<T> {
-        Chain(Handler<T>* first=0) : Handler(first) {}
-        void operator=(Handler<T>* h) { next = h; }
-        void handle(T t) { next->handle(t); }
-        // TODO aconway 2007-08-29: chain modifier ops here.
-    };
+    class Chain : public Handler<T> {
+      public:
+        Chain(Handler<T>& next_) : Handler(&next_), first(&next_) {}
+        ~Chain() { while (first != next) pop(); }
+        void handle(T t) { first->handle(t); }
+        void insert(Handler<T>* h) { h->next = first; first = h; }
+        bool empty() { return first == next; }
 
-    /** In/out pair of handler chains. */
-    struct Chains {
-        Chains(Handler<T>* in_=0, Handler<T>* out_=0) : in(in_), out(out_) {}
-        void reset(Handler<T>* in_=0, Handler<T>* out_=0) { in = in_; out = out_; }
-        Chain in;
-        Chain out;
+      private:
+        void pop() { Handler<T>* p=first; first=first->next; delete p; }
+        Handler<T>* first;
     };
 
     /** Adapt any void(T) functor as a Handler.

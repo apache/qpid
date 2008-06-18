@@ -69,7 +69,7 @@ struct ClusterPlugin : public Plugin {
             cluster = boost::in_place(options.name,
                                       options.getUrl(broker->getPort()),
                                       boost::ref(*broker));
-            broker->getPreviewSessionManager().add(cluster->getObserver());	
+            broker->getSessionManager().add(cluster->getObserver());	
         }
     }
 };
