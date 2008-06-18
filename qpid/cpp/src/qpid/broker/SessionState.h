@@ -62,10 +62,10 @@ class SessionManager;
  * themselves have state. 
  */
 class SessionState : public qpid::SessionState, 
-    public SessionContext,
-    public DeliveryAdapter,
+                     public SessionContext,
+                     public DeliveryAdapter,
                      public management::Manageable,
-                     public framing::FrameHandler
+                     public framing::FrameHandler::InOutHandler
 {
   public:
     SessionState(Broker&, SessionHandler&, const SessionId&, const SessionState::Configuration&);
@@ -87,8 +87,6 @@ class SessionState : public qpid::SessionState,
     /** OutputControl **/
     void activateOutput();
 
-    void handle(framing::AMQFrame& frame);
-
     void senderCompleted(const framing::SequenceSet& ranges);
     
     void sendCompletion();
@@ -99,11 +97,25 @@ class SessionState : public qpid::SessionState,
     // Manageable entry points
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
     management::Manageable::status_t
-        ManagementMethod (uint32_t methodId, management::Args& args);
+    ManagementMethod (uint32_t methodId, management::Args& args);
 
     void readyToSend();
 
+    framing::FrameHandler::Chain& getInChain(); 
+    framing::FrameHandler::Chain& getOutChain(); 
+
   private:
+
+    void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
+    void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
+    void enqueued(boost::intrusive_ptr<Message> msg);
+
+    void handleIn(framing::AMQFrame& frame);
+    void handleOut(framing::AMQFrame& frame);
+
+    // End of the input & output chains.
+    void handleInLast(framing::AMQFrame& frame);
+    void handleOutLast(framing::AMQFrame& frame);
 
     Broker& broker;
     SessionHandler* handler;    
@@ -111,20 +123,17 @@ class SessionState : public qpid::SessionState,
     sys::Mutex lock;
     bool ignoring;
     std::string name;
-
     SemanticState semanticState;
     SessionAdapter adapter;
     MessageBuilder msgBuilder;
     IncompleteMessageList incomplete;
-
     IncompleteMessageList::CompletionListener enqueuedOp;
-
     management::Session::shared_ptr mgmtObject;
-    void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
-    void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
-    void enqueued(boost::intrusive_ptr<Message> msg);
+    framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleInLast> inLastHandler;
+    framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleOutLast> outLastHandler;
+    framing::FrameHandler::Chain inChain, outChain;
 
-    friend class SessionManager;
+  friend class SessionManager;
 };
 
 

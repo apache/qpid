@@ -41,11 +41,11 @@ struct ClassifierHandler::Visitor : public FrameDefaultVisitor {
     using framing::FrameDefaultVisitor::visit;
     using framing::FrameDefaultVisitor::defaultVisit;
 
-    FrameHandler::Chain chosen;
+    FrameHandler* chosen;
     AMQFrame& frame;
     ClassifierHandler& classifier;
 };
 
-void ClassifierHandler::handle(AMQFrame& f) { Visitor(f, *this).chosen(f); }
+void ClassifierHandler::handle(AMQFrame& f) { Visitor(f, *this).chosen->handle(f); }
 
 }} // namespace qpid::cluster

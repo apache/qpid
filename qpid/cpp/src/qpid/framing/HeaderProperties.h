@@ -27,8 +27,6 @@
 namespace qpid {
 namespace framing {
 
-    enum header_classes{BASIC = 60};
-
     class HeaderProperties
     {
 	
