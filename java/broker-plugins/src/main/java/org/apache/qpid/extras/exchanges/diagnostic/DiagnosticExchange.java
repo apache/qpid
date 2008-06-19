@@ -22,6 +22,8 @@ package org.apache.qpid.extras.exchanges.diagnostic;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.management.JMException;
 import javax.management.openmbean.OpenDataException;
@@ -34,7 +36,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import org.apache.qpid.junit.extensions.util.SizeOf;
@@ -191,7 +193,7 @@ public class DiagnosticExchange extends AbstractExchange
         return false;
     }
 
-    public void route(AMQMessage payload) throws AMQException
+    public void route(IncomingMessage payload) throws AMQException
     {
         
         Long value = new Long(SizeOf.getUsedMemory());
@@ -201,17 +203,14 @@ public class DiagnosticExchange extends AbstractExchange
         headers.put(key, value);
         ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).setHeaders(headers);
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
-        
-        payload.enqueue(q);
+
+        Collection<AMQQueue> queues =  new ArrayList<AMQQueue>();
+        queues.add(q);
+        payload.enqueue(queues);
         
     }
 
-	@Override
-	public Map<AMQShortString, List<AMQQueue>> getBindings() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 	public boolean isBound(AMQShortString routingKey, FieldTable arguments,
 			AMQQueue queue) {
 		// TODO Auto-generated method stub

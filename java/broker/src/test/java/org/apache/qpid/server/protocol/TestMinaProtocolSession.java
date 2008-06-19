@@ -30,9 +30,11 @@ public class TestMinaProtocolSession extends AMQMinaProtocolSession
 {
     public TestMinaProtocolSession() throws AMQException
     {
+
         super(new TestIoSession(),
               ApplicationRegistry.getInstance().getVirtualHostRegistry(),
               new AMQCodecFactory(true));
+
     }
 
     public ProtocolOutputConverter getProtocolOutputConverter()

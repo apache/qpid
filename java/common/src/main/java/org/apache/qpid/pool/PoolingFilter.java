@@ -60,24 +60,6 @@ import java.util.concurrent.ExecutorService;
  *     <td> {@link Job}, {@link Job.JobCompletionHandler}
  * </table>
  *
- * @todo This seems a bit bizarre. ReadWriteThreadModel creates seperate pooling filters for read and write events.
- *       The pooling filters themselves batch read and write events into jobs, but hand these jobs to a common thread
- *       pool for execution. So the same thread pool ends up handling read and write events, albeit with many threads
- *       so there is concurrency. But why go to the trouble of seperating out the read and write events in that case?
- *       Why not just batch them into jobs together? Perhaps its so that seperate thread pools could be used for these
- *       stages.
- *
- * @todo Why set an event limit of 10 on the Job? This also seems bizarre, as the job can have more than 10 events in
- *       it. Its just that it runs them 10 at a time, but the completion hander here checks if there are more to run
- *       and trips off another batch of 10 until they are all done. Why not just have a straight forward
- *       consumer/producer queue scenario without the batches of 10? So instead of having many jobs with batches of 10
- *       in them, just have one queue of events and worker threads taking the next event. There will be coordination
- *       between worker threads and new events arriving on the job anyway, so the simpler scenario may have the same
- *       amount of contention. I can see that the batches of 10 is done, so that no job is allowed to hog the worker
- *       pool for too long. I'm not convinced this fairly complex scheme will actually add anything, and it might be
- *       better to encapsulate it under a Queue interface anyway, so that different queue implementations can easily
- *       be substituted in.
- *
  * @todo The static helper methods are pointless. Could just call new.
  */
 public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionHandler
@@ -96,17 +78,20 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
 
     private final int _maxEvents;
 
+    private final boolean _readFilter;
+
     /**
      * Creates a named pooling filter, on the specified shared thread pool.
      *
      * @param refCountingPool The thread pool reference.
      * @param name            The identifying name of the filter type.
      */
-    public PoolingFilter(ReferenceCountingExecutorService refCountingPool, String name, int maxEvents)
+    public PoolingFilter(ReferenceCountingExecutorService refCountingPool, String name, int maxEvents, boolean readFilter)
     {
         _poolReference = refCountingPool;
         _name = name;
         _maxEvents = maxEvents;
+        _readFilter = readFilter;
     }
 
     /**
@@ -167,7 +152,6 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
     void fireAsynchEvent(Job job, Event event)
     {
 
-        // job.acquire(); //prevents this job being removed from _jobs
         job.add(event);
 
         final ExecutorService pool = _poolReference.getPool();
@@ -201,7 +185,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      */
     public void createNewJobForSession(IoSession session)
     {
-        Job job = new Job(session, this, MAX_JOB_EVENTS);
+        Job job = new Job(session, this, MAX_JOB_EVENTS,_readFilter);
         session.setAttribute(_name, job);
     }
 
@@ -433,7 +417,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public AsynchReadPoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
         {
-            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_read_events", MAX_JOB_EVENTS));
+            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_read_events", MAX_JOB_EVENTS),true);
         }
 
         /**
@@ -476,7 +460,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
          */
         public AsynchWritePoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
         {
-            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_write_events", MAX_JOB_EVENTS));
+            super(refCountingPool, name, Integer.getInteger("amqj.server.read_write_pool.max_write_events", MAX_JOB_EVENTS),false);
         }
 
         /**

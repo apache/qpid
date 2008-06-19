@@ -109,9 +109,9 @@ class ExchangeBindings
     }
 
 
-    public void remove(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
+    public boolean remove(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments));
+        return _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments));
     }
 
 

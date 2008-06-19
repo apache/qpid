@@ -78,9 +78,9 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
-        final Long messageId = message.getMessageId();
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext,messageId);
+
+        final int bodyCount = messageHandle.getBodyCount(storeContext);
 
         if(bodyCount == 0)
         {
@@ -97,7 +97,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
+            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -109,7 +109,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext,messageId, i);
+                cb = messageHandle.getContentChunk(storeContext, i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
@@ -125,7 +125,6 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
-        final long messageId = message.getMessageId();
 
         AMQDataBlock deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
 
@@ -133,7 +132,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext,messageId);
+        final int bodyCount = messageHandle.getBodyCount(storeContext);
         if(bodyCount == 0)
         {
             SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
@@ -148,7 +147,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
+            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -160,7 +159,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, messageId, i);
+                cb = messageHandle.getContentChunk(storeContext, i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 

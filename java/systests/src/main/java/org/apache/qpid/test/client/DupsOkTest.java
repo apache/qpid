@@ -110,13 +110,10 @@ public class DupsOkTest extends QpidTestCase
                         {
                             try
                             {
-                                long remainingMessages = ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue);
-                                fail("The queue should have 0 msgs left, seen " + _msgCount + " messages, left: "
-                                        + remainingMessages);
-                            }
-                            catch (AMQException e)
-                            {
-                                fail("Got AMQException" + e.getMessage());
+                                if(_msgCount != MSG_COUNT)
+                                {
+                                    assertEquals("Wrong number of messages seen.", MSG_COUNT, _msgCount);
+                                }
                             }
                             finally
                             {
@@ -124,7 +121,6 @@ public class DupsOkTest extends QpidTestCase
                                 _awaitCompletion.countDown();
                             }
                         }
-
                     }
                     catch (JMSException e)
                     {
@@ -147,6 +143,11 @@ public class DupsOkTest extends QpidTestCase
             fail("Unable to wait for test completion");
             throw e;
         }
+
+
+        // wait for the ack to get back
+        Thread.sleep(1000);
+
         assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
     }
 

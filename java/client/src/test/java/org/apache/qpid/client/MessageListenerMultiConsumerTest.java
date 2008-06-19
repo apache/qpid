@@ -206,16 +206,27 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
 
             MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
 
-            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
+            int msg;
+            for (msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-                assertTrue(_consumer1.receive(3000) != null);
+
+                final Message message = _consumer1.receive(1000);
+                if(message == null)
+                {
+                    break;
+                }
+
             }
 
-            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
+            _consumer1.close();
+            _clientSession1.close();
+
+            for (; msg < MSG_COUNT ; msg++)
             {
-                assertTrue(consumer2.receive(3000) != null);
+                assertTrue("Failed at msg id" + msg, _consumer2.receive(1000) != null);
             }
+
         }
         else
         {

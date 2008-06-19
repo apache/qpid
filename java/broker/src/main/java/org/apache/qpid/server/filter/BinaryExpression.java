@@ -23,23 +23,23 @@ package org.apache.qpid.server.filter;
 /**
  * An expression which performs an operation on two expression values.
  */
-public abstract class BinaryExpression implements Expression
+public abstract class BinaryExpression<E extends Exception> implements Expression<E>
 {
-    protected Expression left;
-    protected Expression right;
+    protected Expression<E> left;
+    protected Expression<E> right;
 
-    public BinaryExpression(Expression left, Expression right)
+    public BinaryExpression(Expression<E> left, Expression<E> right)
     {
         this.left = left;
         this.right = right;
     }
 
-    public Expression getLeft()
+    public Expression<E> getLeft()
     {
         return left;
     }
 
-    public Expression getRight()
+    public Expression<E> getRight()
     {
         return right;
     }
@@ -90,7 +90,7 @@ public abstract class BinaryExpression implements Expression
     /**
      * @param expression
      */
-    public void setRight(Expression expression)
+    public void setRight(Expression<E> expression)
     {
         right = expression;
     }
@@ -98,7 +98,7 @@ public abstract class BinaryExpression implements Expression
     /**
      * @param expression
      */
-    public void setLeft(Expression expression)
+    public void setLeft(Expression<E> expression)
     {
         left = expression;
     }

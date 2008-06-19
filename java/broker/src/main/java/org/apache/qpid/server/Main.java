@@ -279,6 +279,12 @@ public class Main
             ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
         }
 
+
+        if(connectorConfig.useBiasedWrites)
+        {
+            System.setProperty("org.apache.qpid.use_write_biased_pool","true");
+        }
+
         int port = connectorConfig.port;
 
         String portStr = commandLine.getOptionValue("p");

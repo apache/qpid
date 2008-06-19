@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.common;
 
+import org.apache.qpid.framing.AMQShortString;
+
 /**
  * Specifies the available client property types that different clients can use to identify themselves with.
  *
@@ -30,8 +32,21 @@ package org.apache.qpid.common;
  */
 public enum ClientProperties
 {
-    instance,
-    product,
-    version,
-    platform
+    instance("instance"),
+    product("product"),
+    version("version"),
+    platform("platform");
+
+    private final AMQShortString _amqShortString;
+
+    private ClientProperties(String name)
+    {
+        _amqShortString = new AMQShortString(name);
+    }
+
+
+    public AMQShortString toAMQShortString()
+    {
+        return _amqShortString;
+    }
 }
