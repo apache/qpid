@@ -25,6 +25,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoreContext;
 
 /**
@@ -106,18 +107,26 @@ public interface TransactionalContext
     void rollback() throws AMQException;
 
     /**
-     * Delivers the specified message to the specified queue. A 'deliverFirst' flag may be set if the message is a
-     * redelivery, and should be placed on the front of the queue.
+     * Delivers the specified message to the specified queue.
      *
      * <p/>This is an 'enqueue' operation.
      *
-     * @param entry        The message to deliver, and the queue to deliver to.
-     * @param deliverFirst <tt>true</tt> to place the message on the front of the queue for redelivery, <tt>false</tt>
-     *                     for normal FIFO message ordering.
-     *
+     * @param queue
+     * @param message      The message to deliver
      * @throws AMQException If the message cannot be delivered for any reason.
      */
-    void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException;
+    void deliver(final AMQQueue queue, AMQMessage message) throws AMQException;
+
+    /**
+         * Requeues the specified message entry (message queue pair)
+         *
+         *
+         * @param queueEntry      The message,queue pair
+         *
+         * @throws AMQException If the message cannot be delivered for any reason.
+         */
+    void requeue(QueueEntry queueEntry) throws AMQException;
+
 
     /**
      * Acknowledges a message or many messages as delivered. All messages up to a specified one, may be acknowledged by

@@ -111,7 +111,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
                 try
                 {
-                    AMQShortString consumerTag = channel.subscribeToQueue(consumerTagName, queue, session, !body.getNoAck(),
+                    AMQShortString consumerTag = channel.subscribeToQueue(consumerTagName, queue, !body.getNoAck(),
                                                                           body.getArguments(), body.getNoLocal(), body.getExclusive());
                     if (!body.getNowait())
                     {
@@ -121,8 +121,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
                     }
 
-                    //now allow queue to start async processing of any backlog of messages
-                    queue.deliverAsync();
+                    
                 }
                 catch (org.apache.qpid.AMQInvalidArgumentException ise)
                 {

@@ -1014,6 +1014,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
+
     /**
      * Declares the named queue.
      *
@@ -1031,18 +1032,40 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
                             final boolean exclusive) throws AMQException
     {
+        createQueue(name, autoDelete, durable, exclusive, null);
+    }
+
+
+    /**
+     * Declares the named queue.
+     *
+     * <p/>Note that this operation automatically retries in the event of fail-over.
+     *
+     * @param name       The name of the queue to declare.
+     * @param autoDelete
+     * @param durable    Flag to indicate that the queue is durable.
+     * @param exclusive  Flag to indicate that the queue is exclusive to this client.
+     * @param arguments  Arguments used to set special properties of the queue
+     *
+     * @throws AMQException If the queue cannot be declared for any reason.
+     *
+     * @todo Be aware of possible changes to parameter order as versions change.
+     */
+    public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
+                            final boolean exclusive, final Map<String, Object> arguments) throws AMQException
+    {
         new FailoverRetrySupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
         {
             public Object execute() throws AMQException, FailoverException
             {
-                sendCreateQueue(name, autoDelete, durable, exclusive);
+                sendCreateQueue(name, autoDelete, durable, exclusive, arguments);
                 return null;
             }
         }, _connection).execute();
     }
 
     public abstract void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable,
-            final boolean exclusive)throws AMQException, FailoverException;
+            final boolean exclusive, final Map<String, Object> arguments)throws AMQException, FailoverException;
     /**
      * Creates a QueueReceiver
      *

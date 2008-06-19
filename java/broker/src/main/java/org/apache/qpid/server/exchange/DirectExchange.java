@@ -38,23 +38,22 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class DestNameExchange extends AbstractExchange
+public class DirectExchange extends AbstractExchange
 {
-    private static final Logger _logger = Logger.getLogger(DestNameExchange.class);
+    private static final Logger _logger = Logger.getLogger(DirectExchange.class);
 
     /**
      * Maps from queue name to queue instances
      */
     private final Index _index = new Index();
 
-    public static final ExchangeType<DestNameExchange> TYPE = new ExchangeType<DestNameExchange>()
+    public static final ExchangeType<DirectExchange> TYPE = new ExchangeType<DirectExchange>()
     {
 
         public AMQShortString getName()
@@ -62,18 +61,18 @@ public class DestNameExchange extends AbstractExchange
             return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
         }
 
-        public Class<DestNameExchange> getExchangeClass()
+        public Class<DirectExchange> getExchangeClass()
         {
-            return DestNameExchange.class;
+            return DirectExchange.class;
         }
 
-        public DestNameExchange newInstance(VirtualHost host,
+        public DirectExchange newInstance(VirtualHost host,
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
                                             boolean autoDelete) throws AMQException
         {
-            DestNameExchange exch = new DestNameExchange();
+            DirectExchange exch = new DirectExchange();
             exch.initialise(host,name,durable,ticket,autoDelete);
             return exch;
         }
@@ -88,10 +87,10 @@ public class DestNameExchange extends AbstractExchange
      * MBean class implementing the management interfaces.
      */
     @MBeanDescription("Management Bean for Direct Exchange")
-    private final class DestNameExchangeMBean extends ExchangeMBean
+    private final class DirectExchangeMBean extends ExchangeMBean
     {
         @MBeanConstructor("Creates an MBean for AMQ direct exchange")
-        public DestNameExchangeMBean()  throws JMException
+        public DirectExchangeMBean()  throws JMException
         {
             super();
             _exchangeType = "direct";
@@ -132,7 +131,7 @@ public class DestNameExchange extends AbstractExchange
 
             try
             {
-                queue.bind(new AMQShortString(binding), null, DestNameExchange.this);
+                queue.bind(DirectExchange.this, new AMQShortString(binding), null);
             }
             catch (AMQException ex)
             {
@@ -147,7 +146,7 @@ public class DestNameExchange extends AbstractExchange
     {
         try
         {
-            return new DestNameExchangeMBean();
+            return new DirectExchangeMBean();
         }
         catch (JMException ex)
         {
@@ -187,35 +186,21 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public void route(AMQMessage payload) throws AMQException
+    public void route(IncomingMessage payload) throws AMQException
     {
-        final MessagePublishInfo info = payload.getMessagePublishInfo();
-        final AMQShortString routingKey = info.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : info.getRoutingKey();
+
+        final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : payload.getRoutingKey();
+
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
-        if (queues == null || queues.isEmpty())
+
+        if (_logger.isDebugEnabled())
         {
-            String msg = "Routing key " + routingKey + " is not known to " + this;
-            if (info.isMandatory() || info.isImmediate())
-            {
-                throw new NoRouteException(msg, payload);
-            }
-            else
-            {
-                _logger.error("MESSAGE LOSS: Message should be sent on a Dead Letter Queue");                
-                _logger.warn(msg);
-            }
+            _logger.debug("Publishing message to queue " + queues);
         }
-        else
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Publishing message to queue " + queues);
-            }
 
             payload.enqueue(queues);
 
 
-        }
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)

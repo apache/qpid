@@ -22,19 +22,20 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A BooleanExpression is an expression that always
  * produces a Boolean result.
  */
-public interface BooleanExpression extends Expression
+public interface BooleanExpression<E extends Exception> extends Expression<E>
 {
 
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
-     * @throws AMQException
+     * @throws E
      */
-    public boolean matches(AMQMessage message) throws AMQException;
+    public boolean matches(Filterable<E> message) throws E;
 
 }
