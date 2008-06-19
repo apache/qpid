@@ -27,8 +27,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -138,33 +138,30 @@ public interface MessageStore
     /**
      * Removes the specified queue from the persistent store.
      *
-     * @param name The queue to remove.
-     *
+     * @param queue The queue to remove.
      * @throws AMQException If the operation fails for any reason.
      */
-    void removeQueue(AMQShortString name) throws AMQException;
+    void removeQueue(final AMQQueue queue) throws AMQException;
 
     /**
      * Places a message onto a specified queue, in a given transactional context.
      *
      * @param context   The transactional context for the operation.
-     * @param name      The name of the queue to place the message on.
+     * @param queue     The queue to place the message on.
      * @param messageId The message to enqueue.
-     *
      * @throws AMQException If the operation fails for any reason.
      */
-    void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException;
 
     /**
      * Extracts a message from a specified queue, in a given transactional context.
      *
      * @param context   The transactional context for the operation.
-     * @param name      The name of the queue to take the message from.
+     * @param queue     The queue to place the message on.
      * @param messageId The message to dequeue.
-     *
      * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
      */
-    void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException;
+    void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException;
 
     /**
      * Begins a transactional context.

@@ -26,23 +26,23 @@ package org.apache.qpid.server.filter;
 import java.math.BigDecimal;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * Represents a constant expression
  */
-public class ConstantExpression implements Expression
+public class ConstantExpression<E extends Exception> implements Expression<E>
 {
 
-    static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression
+    static class BooleanConstantExpression<E extends Exception> extends ConstantExpression<E> implements BooleanExpression<E>
     {
         public BooleanConstantExpression(Object value)
         {
             super(value);
         }
 
-        public boolean matches(AMQMessage message) throws AMQException
+        public boolean matches(Filterable<E> message) throws E
         {
             Object object = evaluate(message);
 
@@ -121,7 +121,7 @@ public class ConstantExpression implements Expression
         this.value = value;
     }
 
-    public Object evaluate(AMQMessage message) throws AMQException
+    public Object evaluate(Filterable<E> message) throws E
     {
         return value;
     }
@@ -130,12 +130,6 @@ public class ConstantExpression implements Expression
     {
         return value;
     }
-
-    public void setValue(final Object value)
-    {
-        this.value = value;
-    }
-
 
     /**
      * @see java.lang.Object#toString()

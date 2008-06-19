@@ -113,6 +113,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
+    private ProtocolSessionIdentifier _sessionIdentifier;
 
     public ManagedObject getManagedObject()
     {
@@ -198,7 +199,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     private void frameReceived(AMQFrame frame) throws AMQException
-    {
+    {        
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
@@ -373,7 +374,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         AMQChannel channel = getAndAssertChannel(channelId);
 
-        channel.publishContentHeader(body, this);
+        channel.publishContentHeader(body);
 
     }
 
@@ -381,7 +382,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         AMQChannel channel = getAndAssertChannel(channelId);
 
-        channel.publishContentBody(body, this);
+        channel.publishContentBody(body);
     }
 
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body)
@@ -443,7 +444,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public boolean channelAwaitingClosure(int channelId)
     {
-        return _closingChannelsList.contains(channelId);
+        return !_closingChannelsList.isEmpty() && _closingChannelsList.contains(channelId);
     }
 
     public void addChannel(AMQChannel channel) throws AMQException
@@ -536,7 +537,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             try
             {
-                channel.close(this);
+                channel.close();
                 markChannelAwaitingCloseOk(channelId);
             }
             finally
@@ -602,7 +603,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         for (AMQChannel channel : _channelMap.values())
         {
-            channel.close(this);
+            channel.close();
         }
 
         _channelMap.clear();
@@ -633,7 +634,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public String toString()
     {
-        return "AMQProtocolSession(" + _minaProtocolSession.getRemoteAddress() + ")";
+        return _minaProtocolSession.getRemoteAddress() + "("+(getAuthorizedID() == null ? "?" : getAuthorizedID().getName()+")");
     }
 
     public String dump()
@@ -702,6 +703,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                 _clientVersion = new AMQShortString(_clientProperties.getString(ClientProperties.version.toString()));
             }
         }
+        _sessionIdentifier = new ProtocolSessionIdentifier(this);
     }
 
     private void setProtocolVersion(ProtocolVersion pv)
@@ -739,7 +741,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public Object getClientIdentifier()
     {
-        return _minaProtocolSession.getRemoteAddress();
+        return (_minaProtocolSession != null) ? _minaProtocolSession.getRemoteAddress() : null;
     }
 
     public VirtualHost getVirtualHost()
@@ -787,6 +789,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public MethodDispatcher getMethodDispatcher()
     {
         return _dispatcher;
+    }
+
+    public ProtocolSessionIdentifier getSessionIdentifier()
+    {
+        return _sessionIdentifier;
     }
 
     public String getClientVersion()

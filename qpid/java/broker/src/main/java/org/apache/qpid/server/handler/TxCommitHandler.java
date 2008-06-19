@@ -23,10 +23,8 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxCommitBody;
-import org.apache.qpid.framing.TxCommitOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -70,7 +68,7 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
             AMQMethodBody responseBody = methodRegistry.createTxCommitOkBody();
             session.writeFrame(responseBody.generateFrame(channelId));
             
-            channel.processReturns(session);
+            channel.processReturns();
         }
         catch (AMQException e)
         {

@@ -22,19 +22,14 @@ package org.apache.qpid.server.txn;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.NoConsumersException;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
@@ -49,18 +44,14 @@ public class NonTransactionalContext implements TransactionalContext
     /** Where to put undeliverable messages */
     private final List<RequiredDeliveryException> _returnMessages;
 
+
+
     private final MessageStore _messageStore;
 
     private final StoreContext _storeContext;
 
     /** Whether we are in a transaction */
     private boolean _inTran;
-
-    public NonTransactionalContext(MessageStore messageStore, StoreContext storeContext, AMQChannel channel,
-                                   List<RequiredDeliveryException> returnMessages, Set<Long> browsedAcks)
-    {
-        this(messageStore,storeContext,channel,returnMessages);
-    }
 
     public NonTransactionalContext(MessageStore messageStore, StoreContext storeContext, AMQChannel channel,
                                    List<RequiredDeliveryException> returnMessages)
@@ -97,19 +88,22 @@ public class NonTransactionalContext implements TransactionalContext
         // Does not apply to this context
     }
 
-    public void deliver(QueueEntry entry, boolean deliverFirst) throws AMQException
+    public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
-        try
+        QueueEntry entry = queue.enqueue(_storeContext, message);
+        
+        //following check implements the functionality
+        //required by the 'immediate' flag:
+        if(entry.immediateAndNotDelivered())
         {
-            entry.process(_storeContext, deliverFirst);
-            //following check implements the functionality
-            //required by the 'immediate' flag:
-            entry.checkDeliveredToConsumer();
+            _returnMessages.add(new NoConsumersException(entry.getMessage()));
         }
-        catch (NoConsumersException e)
-        {
-            _returnMessages.add(e);
-        }
+
+    }
+
+    public void requeue(QueueEntry entry) throws AMQException
+    {
+        entry.requeue(_storeContext);
     }
 
     public void acknowledgeMessage(final long deliveryTag, long lastDeliveryTag,
@@ -118,7 +112,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
 
         final boolean debug = _log.isDebugEnabled();
-
+        ;
         if (multiple)
         {
             if (deliveryTag == 0)
@@ -130,7 +124,7 @@ public class NonTransactionalContext implements TransactionalContext
                           unacknowledgedMessageMap.size());
                 unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
                 {
-                    public boolean callback(UnacknowledgedMessage message) throws AMQException
+                    public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
                     {
                         if (debug)
                         {
@@ -140,6 +134,7 @@ public class NonTransactionalContext implements TransactionalContext
                         {
                             beginTranIfNecessary();
                         }
+                        message.restoreCredit();
                         //Message has been ack so discard it. This will dequeue and decrement the reference.
                         message.discard(_storeContext);
 
@@ -159,27 +154,27 @@ public class NonTransactionalContext implements TransactionalContext
                     throw new AMQException("Multiple ack on delivery tag " + deliveryTag + " not known for channel");
                 }
 
-                LinkedList<UnacknowledgedMessage> acked = new LinkedList<UnacknowledgedMessage>();
+                LinkedList<QueueEntry> acked = new LinkedList<QueueEntry>();
                 unacknowledgedMessageMap.drainTo(acked, deliveryTag);
-                for (UnacknowledgedMessage msg : acked)
+                for (QueueEntry msg : acked)
                 {
-                    if (debug)
-                    {
-                        _log.debug("Discarding message: " + msg.getMessage().getMessageId());
-                    }
-                    if(msg.getMessage().isPersistent())
-                    {
-                        beginTranIfNecessary();
-                    }
+                        if (debug)
+                        {
+                            _log.debug("Discarding message: " + msg.getMessage().getMessageId());
+                        }
+                        if(msg.getMessage().isPersistent())
+                        {
+                            beginTranIfNecessary();
+                        }
 
-                    //Message has been ack so discard it. This will dequeue and decrement the reference.
-                    msg.discard(_storeContext);
+                        //Message has been ack so discard it. This will dequeue and decrement the reference.
+                        msg.discard(_storeContext);
                 }
             }
         }
         else
         {
-            UnacknowledgedMessage msg;
+            QueueEntry msg;
             msg = unacknowledgedMessageMap.remove(deliveryTag);
 
             if (msg == null)
@@ -208,13 +203,11 @@ public class NonTransactionalContext implements TransactionalContext
                            msg.getMessage().getMessageId());
             }
         }
-
         if(_inTran)
         {
             _messageStore.commitTran(_storeContext);
             _inTran = false;
         }
-
     }
 
     public void messageFullyReceived(boolean persistent) throws AMQException
@@ -228,6 +221,6 @@ public class NonTransactionalContext implements TransactionalContext
 
     public void messageProcessed(AMQProtocolSession protocolSession) throws AMQException
     {
-        _channel.processReturns(protocolSession);
+        _channel.processReturns();
     }
 }

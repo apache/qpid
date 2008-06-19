@@ -215,6 +215,11 @@ public class MockProtocolSession implements AMQProtocolSession
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public ProtocolSessionIdentifier getSessionIdentifier()
+    {
+        return null;
+    }
+
     public byte getProtocolMajorVersion()
     {
         return getProtocolVersion().getMajorVersion();

@@ -25,32 +25,33 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
-public class SimpleFilterManager implements FilterManager
+public class SimpleFilterManager implements FilterManager<AMQException>
 {
     private final Logger _logger = Logger.getLogger(SimpleFilterManager.class);
 
-    private final ConcurrentLinkedQueue<MessageFilter> _filters;
+    private final ConcurrentLinkedQueue<MessageFilter<AMQException>> _filters;
 
     public SimpleFilterManager()
     {
         _logger.debug("Creating SimpleFilterManager");
-        _filters = new ConcurrentLinkedQueue<MessageFilter>();
+        _filters = new ConcurrentLinkedQueue<MessageFilter<AMQException>>();
     }
 
-    public void add(MessageFilter filter)
+    public void add(MessageFilter<AMQException> filter)
     {
         _filters.add(filter);
     }
 
-    public void remove(MessageFilter filter)
+    public void remove(MessageFilter<AMQException> filter)
     {
         _filters.remove(filter);
     }
 
-    public boolean allAllow(AMQMessage msg)
+    public boolean allAllow(Filterable<AMQException> msg)
     {
-        for (MessageFilter filter : _filters)
+        for (MessageFilter<AMQException> filter : _filters)
         {
             try
             {

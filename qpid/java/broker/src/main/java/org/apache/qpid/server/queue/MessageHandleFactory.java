@@ -36,11 +36,11 @@ public class MessageHandleFactory
         // just hardcoded for now
         if (persistent)
         {
-            return new WeakReferenceMessageHandle(store);
+            return new WeakReferenceMessageHandle(messageId, store);
         }
         else
         {
-            return new InMemoryMessageHandle();
+            return new InMemoryMessageHandle(messageId);
         }
     }
 }

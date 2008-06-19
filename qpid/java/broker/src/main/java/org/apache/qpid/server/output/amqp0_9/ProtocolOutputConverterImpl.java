@@ -1,23 +1,3 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
 package org.apache.qpid.server.output.amqp0_9;
 
 import org.apache.mina.common.ByteBuffer;
@@ -76,9 +56,9 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
-        final Long messageId = message.getMessageId();
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext,messageId);
+
+        final int bodyCount = messageHandle.getBodyCount(storeContext);
 
         if(bodyCount == 0)
         {
@@ -95,7 +75,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
+            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
 
             AMQBody firstContentBody = PROTOCOL_METHOD_CONVERTER.convertToBody(cb);
 
@@ -107,14 +87,13 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext,messageId, i);
+                cb = messageHandle.getContentChunk(storeContext, i);
                 writeFrame(new AMQFrame(channelId, PROTOCOL_METHOD_CONVERTER.convertToBody(cb)));
             }
 
 
         }
-
-
+        
     }
 
     private AMQDataBlock createContentHeaderBlock(final int channelId, final ContentHeaderBody contentHeaderBody)
@@ -131,14 +110,13 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
-        final long messageId = message.getMessageId();
 
         AMQFrame deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
 
 
         AMQDataBlock contentHeader = createContentHeaderBlock(channelId, message.getContentHeaderBody());
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext,messageId);
+        final int bodyCount = messageHandle.getBodyCount(storeContext);
         if(bodyCount == 0)
         {
             SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
@@ -153,7 +131,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext,messageId, 0);
+            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, PROTOCOL_METHOD_CONVERTER.convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -165,7 +143,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, messageId, i);
+                cb = messageHandle.getContentChunk(storeContext, i);
                 writeFrame(new AMQFrame(channelId, PROTOCOL_METHOD_CONVERTER.convertToBody(cb)));
             }
 
@@ -179,21 +157,16 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     private AMQBody createEncodedDeliverFrame(AMQMessage message, final int channelId, final long deliveryTag, final AMQShortString consumerTag)
             throws AMQException
     {
-
-
         final MessagePublishInfo pb = message.getMessagePublishInfo();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
 
 
+        final boolean isRedelivered = messageHandle.isRedelivered();
+        final AMQShortString exchangeName = pb.getExchange();
+        final AMQShortString routingKey = pb.getRoutingKey();
+
         final AMQBody returnBlock = new AMQBody()
         {
-
-
-
-            private final boolean _isRedelivered = messageHandle.isRedelivered();
-            private final AMQShortString _exchangeName = pb.getExchange();
-            private final AMQShortString _routingKey = pb.getRoutingKey();
-
 
             public AMQBody _underlyingBody;
 
@@ -201,9 +174,9 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             {
                 return METHOD_REGISTRY.createBasicDeliverBody(consumerTag,
                                                               deliveryTag,
-                                                              _isRedelivered,
-                                                              _exchangeName,
-                                                              _routingKey);
+                                                              isRedelivered,
+                                                              exchangeName,
+                                                              routingKey);
 
 
 

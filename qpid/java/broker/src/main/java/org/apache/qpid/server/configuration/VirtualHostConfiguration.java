@@ -30,11 +30,13 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -176,11 +178,22 @@ public class VirtualHostConfiguration
                 boolean durable = queueConfiguration.getBoolean("durable" ,false);
                 boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
                 String owner = queueConfiguration.getString("owner", null);
+                FieldTable arguments = null;
+                Integer priorities = queueConfiguration.getInteger("priorities", null);
+                if(priorities != null && priorities.intValue() > 1)
+                {
+                    if(arguments == null)
+                    {
+                        arguments = new FieldTable();
+                    }
+                    arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
+                }
 
-                queue = new AMQQueue(queueName,
+
+                queue = AMQQueueFactory.createAMQQueueImpl(queueName,
                         durable,
                         owner == null ? null : new AMQShortString(owner) /* These queues will have no owner */,
-                        autodelete /* Therefore autodelete makes no sence */, virtualHost);
+                        autodelete /* Therefore autodelete makes no sence */, virtualHost, arguments);
 
                 if (queue.isDurable())
                 {
@@ -221,7 +234,7 @@ public class VirtualHostConfiguration
                     AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
                     
 
-                    queue.bind(routingKey, null, exchange);
+                    queue.bind(exchange, routingKey, null);
 
 
                     _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + exchangeName + " RK:'" + routingKey + "'");
@@ -229,7 +242,7 @@ public class VirtualHostConfiguration
 
                 if(exchange != virtualHost.getExchangeRegistry().getDefaultExchange())
                 {
-                    queue.bind(queue.getName(), null, virtualHost.getExchangeRegistry().getDefaultExchange());                    
+                    queue.bind(virtualHost.getExchangeRegistry().getDefaultExchange(), queue.getName(), null);
                 }
             }
 
