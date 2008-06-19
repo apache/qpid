@@ -40,6 +40,8 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public final class AMQSession_0_8 extends AMQSession
 {
 
@@ -125,10 +127,19 @@ public final class AMQSession_0_8 extends AMQSession
         handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitBody().generateFrame(_channelId), TxCommitOkBody.class);
     }
 
-    public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive) throws AMQException,
+    public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive, final Map<String, Object> arguments) throws AMQException,
             FailoverException
     {
-        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,null);
+        FieldTable table = null;
+        if(arguments != null && !arguments.isEmpty())
+        {
+            table = new FieldTable();
+            for(Map.Entry<String, Object> entry : arguments.entrySet())
+            {
+                table.setObject(entry.getKey(), entry.getValue());
+            }
+        }
+        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,table);
         AMQFrame queueDeclare = body.generateFrame(_channelId);
         getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
     }
@@ -410,6 +421,28 @@ public final class AMQSession_0_8 extends AMQSession
         _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
 
         return subscriber;
+    }
+
+
+
+
+    public void setPrefecthLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    {
+        new FailoverRetrySupport<Object, AMQException>(
+                new FailoverProtectedOperation<Object, AMQException>()
+                {
+                    public Object execute() throws AMQException, FailoverException
+                    {
+
+                        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
+
+                        // todo send low water mark when protocol allows.
+                        // todo Be aware of possible changes to parameter order as versions change.
+                        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
+                  
+                        return null;
+                    }
+                 }, _connection).execute();
     }
 
     class QueueDeclareOkHandler extends SpecificMethodFrameListener

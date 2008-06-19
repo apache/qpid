@@ -23,45 +23,30 @@ package org.apache.qpid.server.filter;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.filter.jms.selector.SelectorParser;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 
-
-public class JMSSelectorFilter implements MessageFilter
+public class JMSSelectorFilter<E extends Exception> implements MessageFilter<E>
 {
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
 
     private String _selector;
-    private BooleanExpression _matcher;
+    private BooleanExpression<E> _matcher;
 
     public JMSSelectorFilter(String selector) throws AMQException
     {
         _selector = selector;
-        _logger.info("Created JMSSelectorFilter with selector:" + _selector);
-
-
         _matcher = new SelectorParser().parse(selector);
-
-
     }
 
-    public boolean matches(AMQMessage message)
+    public boolean matches(Filterable<E> message) throws E
     {
-        try
+        boolean match = _matcher.matches(message);
+        if(_logger.isDebugEnabled())
         {
-            boolean match = _matcher.matches(message);
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
-            }
-            return match;
+            _logger.debug(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
         }
-        catch (AMQException e)
-        {
-            //fixme this needs to be sorted.. it shouldn't happen
-            e.printStackTrace();  
-        }
-        return false;
+        return match;
     }
 
     public String getSelector()

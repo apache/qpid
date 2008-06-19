@@ -94,7 +94,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         try
         {
-            _instanceMap.get(instanceID).close();
+            IApplicationRegistry instance = _instanceMap.get(instanceID);
+            if(instance != null)
+            {
+                instance.close();
+            }
         }
         catch (Exception e)
         {

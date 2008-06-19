@@ -243,13 +243,14 @@ public class AMQSession_0_10 extends AMQSession
      * @param durable    If set when creating a new queue,
      *                   the queue will be marked as durable.
      * @param exclusive  Exclusive queues can only be used from one connection at a time.
+     * @param arguments  Exclusive queues can only be used from one connection at a time.
      * @throws AMQException
      * @throws FailoverException
      */
     public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable,
-                                final boolean exclusive) throws AMQException, FailoverException
+                                final boolean exclusive, Map<String, Object> arguments) throws AMQException, FailoverException
     {
-        getQpidSession().queueDeclare(name.toString(), null, null, durable ? Option.DURABLE : Option.NO_OPTION,
+        getQpidSession().queueDeclare(name.toString(), null, arguments, durable ? Option.DURABLE : Option.NO_OPTION,
                                       autoDelete ? Option.AUTO_DELETE : Option.NO_OPTION,
                                       exclusive ? Option.EXCLUSIVE : Option.NO_OPTION);
         // We need to sync so that we get notify of an error.
@@ -594,7 +595,7 @@ public class AMQSession_0_10 extends AMQSession
         try
         {
             // this is done so that we can produce to a temporary queue beofre we create a consumer
-            sendCreateQueue(result.getRoutingKey(), result.isAutoDelete(), result.isDurable(), result.isExclusive());
+            sendCreateQueue(result.getRoutingKey(), result.isAutoDelete(), result.isDurable(), result.isExclusive(),null);
             sendQueueBind(result.getRoutingKey(), result.getRoutingKey(), new FieldTable(), result.getExchangeName(),result);
             result.setQueueName(result.getRoutingKey());
         }

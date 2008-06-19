@@ -24,6 +24,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
@@ -255,7 +256,7 @@ public class Dump extends Show
                                     String title, boolean routing, boolean headers, boolean messageHeaders)
     {
         List<QueueEntry> single = new LinkedList<QueueEntry>();
-        single.add(new QueueEntry(null,msg));
+        single.add(new QueueEntryImpl(null,msg, Long.MIN_VALUE));
 
         List<List> routingData = super.createMessageData(null, single, headers, routing, messageHeaders);
 

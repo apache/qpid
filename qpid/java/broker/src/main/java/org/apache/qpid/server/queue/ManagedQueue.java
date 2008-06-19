@@ -126,7 +126,7 @@ public interface ManagedQueue
      * @param age  maximum age of message.
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value for message age on thr broker")
+    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value for message age on the broker")
     void setMaximumMessageAge(Long age) throws IOException;
 
     /**

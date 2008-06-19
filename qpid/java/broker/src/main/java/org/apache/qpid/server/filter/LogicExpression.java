@@ -22,71 +22,22 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A filter performing a comparison of two objects
  */
-public abstract class LogicExpression extends BinaryExpression implements BooleanExpression
+public abstract class LogicExpression<E extends Exception> extends BinaryExpression<E> implements BooleanExpression<E>
 {
 
-    public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue)
+    public static<E extends Exception> BooleanExpression createOR(BooleanExpression<E> lvalue, BooleanExpression<E> rvalue)
     {
-        return new LogicExpression(lvalue, rvalue)
-            {
-
-                public Object evaluate(AMQMessage message) throws AMQException
-                {
-
-                    Boolean lv = (Boolean) left.evaluate(message);
-                    // Can we do an OR shortcut??
-                    if ((lv != null) && lv.booleanValue())
-                    {
-                        return Boolean.TRUE;
-                    }
-
-                    Boolean rv = (Boolean) right.evaluate(message);
-
-                    return (rv == null) ? null : rv;
-                }
-
-                public String getExpressionSymbol()
-                {
-                    return "OR";
-                }
-            };
+        return new OrExpression(lvalue, rvalue);
     }
 
-    public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue)
+    public static<E extends Exception> BooleanExpression createAND(BooleanExpression<E> lvalue, BooleanExpression<E> rvalue)
     {
-        return new LogicExpression(lvalue, rvalue)
-            {
-
-                public Object evaluate(AMQMessage message) throws AMQException
-                {
-
-                    Boolean lv = (Boolean) left.evaluate(message);
-
-                    // Can we do an AND shortcut??
-                    if (lv == null)
-                    {
-                        return null;
-                    }
-
-                    if (!lv.booleanValue())
-                    {
-                        return Boolean.FALSE;
-                    }
-
-                    Boolean rv = (Boolean) right.evaluate(message);
-
-                    return (rv == null) ? null : rv;
-                }
-
-                public String getExpressionSymbol()
-                {
-                    return "AND";
-                }
-            };
+        return new AndExpression(lvalue, rvalue);
     }
 
     /**
@@ -98,13 +49,74 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         super(left, right);
     }
 
-    public abstract Object evaluate(AMQMessage message) throws AMQException;
+    public abstract Object evaluate(Filterable<E> message) throws E;
 
-    public boolean matches(AMQMessage message) throws AMQException
+    public boolean matches(Filterable<E> message) throws E
     {
         Object object = evaluate(message);
 
         return (object != null) && (object == Boolean.TRUE);
     }
 
+    private static class OrExpression<E extends Exception> extends LogicExpression<E>
+    {
+        public OrExpression(final BooleanExpression<E> lvalue, final BooleanExpression<E> rvalue)
+        {
+            super(lvalue, rvalue);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+
+            Boolean lv = (Boolean) left.evaluate(message);
+            // Can we do an OR shortcut??
+            if ((lv != null) && lv.booleanValue())
+            {
+                return Boolean.TRUE;
+            }
+
+            Boolean rv = (Boolean) right.evaluate(message);
+
+            return (rv == null) ? null : rv;
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "OR";
+        }
+    }
+
+    private static class AndExpression<E extends Exception> extends LogicExpression<E>
+    {
+        public AndExpression(final BooleanExpression<E> lvalue, final BooleanExpression<E> rvalue)
+        {
+            super(lvalue, rvalue);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+
+            Boolean lv = (Boolean) left.evaluate(message);
+
+            // Can we do an AND shortcut??
+            if (lv == null)
+            {
+                return null;
+            }
+
+            if (!lv.booleanValue())
+            {
+                return Boolean.FALSE;
+            }
+
+            Boolean rv = (Boolean) right.evaluate(message);
+
+            return (rv == null) ? null : rv;
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "AND";
+        }
+    }
 }

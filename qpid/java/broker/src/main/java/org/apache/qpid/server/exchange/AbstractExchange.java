@@ -191,9 +191,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         {
             _exchangeMbean.unregister();
         }
-    }
-
-    abstract public Map<AMQShortString, List<AMQQueue>> getBindings();
+    }    
 
     public String toString()
     {
