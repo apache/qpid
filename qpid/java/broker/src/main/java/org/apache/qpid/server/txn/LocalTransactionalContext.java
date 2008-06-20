@@ -93,11 +93,19 @@ public class LocalTransactionalContext implements TransactionalContext
         public void process() throws AMQException
         {
 
-            QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
-
-            if(entry.immediateAndNotDelivered())
+            _message.incrementReference();
+            try
             {
-                getReturnMessages().add(new NoConsumersException(_message));
+                QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
+
+                if(entry.immediateAndNotDelivered())
+                {
+                    getReturnMessages().add(new NoConsumersException(_message));
+                }
+            }
+            finally
+            {
+                _message.decrementReference(getStoreContext());
             }
         }
     }
