@@ -273,6 +273,11 @@ AC_CONFIG_FILES([
   qpidc.spec
   Makefile
   examples/Makefile
+  examples/direct/Makefile
+  examples/fanout/Makefile
+  examples/pub-sub/Makefile
+  examples/request-response/Makefile
+  examples/xml-exchange/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile
