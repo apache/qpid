@@ -318,7 +318,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Connector.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
-  qpid/client/ChainableFrameHandler.h		\
   qpid/client/ConnectionSettings.cpp		\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
@@ -434,6 +433,7 @@ nobase_include_HEADERS = \
   qpid/client/AckMode.h \
   qpid/client/AckPolicy.h			\
   qpid/client/Bounds.h \
+  qpid/client/ChainableFrameHandler.h		\
   qpid/client/Completion.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
