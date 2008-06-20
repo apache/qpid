@@ -8,7 +8,8 @@
 # If $QPID_HOST or $QPID_PORT are set, use them to connect.
 #
 
-export QPID_DATA_DIR=
+QPID_DATA_DIR=
+export QPID_DATA_DIR
 
 cleanup() {
     test -n "$QPIDD" &&  $QPIDD -q # Private broker
