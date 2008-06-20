@@ -131,7 +131,6 @@ EXTRA_DIST +=								\
   topictest								\
   run_federation_tests							\
   .valgrind.supp							\
-  .valgrindrc								\
   MessageUtils.h							\
   TestMessageStore.h							\
   MockConnectionInputHandler.h						\
