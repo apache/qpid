@@ -27,6 +27,7 @@
 #include <boost/utility/typed_in_place_factory.hpp>
 #include <boost/type_traits/is_base_and_derived.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/version.hpp>
 
 #include <new>
 
@@ -39,7 +40,8 @@ namespace framing {
 using boost::in_place;          
 using boost::typed_in_place_factory_base;
 
-/** 0-arg typed_in_place_factory, missing in boost. */
+/** 0-arg typed_in_place_factory, missing in pre-1.35 boost. */
+#if (BOOST_VERSION < 103500)
 template <class T>
 struct typed_in_place_factory0 : public typed_in_place_factory_base {
     typedef T value_type ; 
@@ -49,6 +51,7 @@ struct typed_in_place_factory0 : public typed_in_place_factory_base {
 /** 0-arg in_place<T>() function, missing from boost. */
 template<class T>
 typed_in_place_factory0<T> in_place() { return typed_in_place_factory0<T>(); }
+#endif
 
 template <class T, class R=void>
 struct EnableInPlace
