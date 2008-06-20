@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -44,15 +45,15 @@ class Index
         List<AMQQueue> queues = _index.get(key);
         if(queues == null)
         {
-            queues = new CopyOnWriteArrayList<AMQQueue>();
-            //next call is atomic, so there is no race to create the list
-            List<AMQQueue> active = _index.putIfAbsent(key, queues);
-            if(active != null)
-            {
-                //someone added the new one in faster than we did, so use theirs
-                queues = active;
-            }
+            queues = new ArrayList<AMQQueue>();
         }
+        else
+        {
+            queues = new ArrayList<AMQQueue>(queues);
+        }
+        //next call is atomic, so there is no race to create the list
+        _index.put(key, queues);
+
         if(queues.contains(queue))
         {
             return false;
@@ -68,10 +69,18 @@ class Index
         List<AMQQueue> queues = _index.get(key);
         if (queues != null)
         {
+            queues = new ArrayList<AMQQueue>(queues);
             boolean removed = queues.remove(queue);
-            if (queues.size() == 0)
+            if(removed)
             {
-                _index.remove(key);
+                if (queues.size() == 0)
+                {
+                    _index.remove(key);
+                }
+                else
+                {
+                    _index.put(key, queues);
+                }
             }
             return removed;
         }
