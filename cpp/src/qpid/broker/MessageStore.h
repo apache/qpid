@@ -43,17 +43,15 @@ namespace broker {
  * are valid only for the duration of the call).
  */
 class MessageStore : public TransactionalStore, public Recoverable {
-public:
+  public:
 
     /**
      * init the store, call before any other call. If not called, store 
      * is free to pick any defaults
      * 
-     * @param dir the directory to create logs/db's
-     * @param async true, enable async, false, enable sync
-     * @param force true, delete data on mode change, false, error on mode change
-	 */
-	virtual bool init(const Options* options) = 0;
+     * @param options Options object provided by concrete store plug in.
+     */
+    virtual bool init(const Options* options) = 0;
 
     /**
      * Record the existence of a durable queue
@@ -105,15 +103,8 @@ public:
      * store the headers as well as any content passed in. A
      * persistence id will be set on the message which can be
      * used to load the content or to append to it. 
-	 * 
-	 * TODO ::If it is know
-	 * which queue the message is to be staged/ release to in cases
-	 * of flowing tmp messages to disk for memory conservation set
-	 * the queue ptr. This allows the store to optimize the read/writes
-	 * for that queue and avoid searching based on id. Set queue = 0 for
-	 * large message staging when the queue is not known.
      */
-    virtual void stage(boost::intrusive_ptr<PersistableMessage>& msg) = 0;
+    virtual void stage(const boost::intrusive_ptr<PersistableMessage>& msg) = 0;
             
     /**
      * Destroys a previously staged message. This only needs
@@ -126,7 +117,7 @@ public:
     /**
      * Appends content to a previously staged message
      */
-    virtual void appendContent(boost::intrusive_ptr<const PersistableMessage>& msg,
+    virtual void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
                                const std::string& data) = 0;
     
     /**
@@ -138,7 +129,7 @@ public:
      * meta-data).
      */
     virtual void loadContent(const qpid::broker::PersistableQueue& queue, 
-	                         boost::intrusive_ptr<const PersistableMessage>& msg,
+                             const boost::intrusive_ptr<const PersistableMessage>& msg,
                              std::string& data, uint64_t offset, uint32_t length) = 0;
     
     /**
@@ -155,7 +146,8 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void enqueue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    virtual void enqueue(TransactionContext* ctxt,
+                         const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue) = 0;
     
     /**
@@ -172,7 +164,8 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void dequeue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    virtual void dequeue(TransactionContext* ctxt,
+                         const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue) = 0;
 
     /**
@@ -185,7 +178,7 @@ public:
      */
     virtual void flush(const qpid::broker::PersistableQueue& queue)=0;
 
-   /**
+    /**
      * Returns the number of outstanding AIO's for a given queue
      * 
      * If 0, than all the enqueue / dequeues have been stored 

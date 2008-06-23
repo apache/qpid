@@ -36,12 +36,16 @@ class TestMessageStore : public NullMessageStore
     std::vector<boost::intrusive_ptr<PersistableMessage> > dequeued;
     std::vector<msg_queue_pair> enqueued;
     
-    void dequeue(TransactionContext*, boost::intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& /*queue*/)
+    void dequeue(TransactionContext*,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
+                 const PersistableQueue& /*queue*/)
     {
         dequeued.push_back(msg);
     }
 
-    void enqueue(TransactionContext*, boost::intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
+    void enqueue(TransactionContext*,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
+                 const PersistableQueue& queue)
     {
         msg->enqueueComplete(); 
         enqueued.push_back(msg_queue_pair(queue.getName(), msg));

@@ -94,7 +94,7 @@ void NullMessageStore::recover(RecoveryManager&)
     QPID_LOG(info, "Persistence not enabled, no recovery attempted.");
 }
 
-void NullMessageStore::stage(intrusive_ptr<PersistableMessage>&)
+void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&)
 {
     QPID_LOG(info, "Can't stage message. Persistence not enabled.");
 }
@@ -103,23 +103,29 @@ void NullMessageStore::destroy(PersistableMessage&)
 {
 }
 
-void NullMessageStore::appendContent(intrusive_ptr<const PersistableMessage>&, const string&)
+void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&)
 {
     QPID_LOG(info, "Can't append content. Persistence not enabled.");
 }
 
-void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&, intrusive_ptr<const PersistableMessage>&, string&, uint64_t, uint32_t)
+void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
+                                   const intrusive_ptr<const PersistableMessage>&,
+                                   string&, uint64_t, uint32_t)
 {
     QPID_LOG(info, "Can't load content. Persistence not enabled.");
 }
 
-void NullMessageStore::enqueue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
+void NullMessageStore::enqueue(TransactionContext*,
+                               const intrusive_ptr<PersistableMessage>& msg,
+                               const PersistableQueue& queue)
 {
     msg->enqueueComplete(); 
     QPID_LOG(info, "Message is not durably recorded on '" << queue.getName() << "'. Persistence not enabled.");
 }
 
-void NullMessageStore::dequeue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue&)
+void NullMessageStore::dequeue(TransactionContext*,
+                               const intrusive_ptr<PersistableMessage>& msg,
+                               const PersistableQueue&)
 {
     msg->dequeueComplete();
 }

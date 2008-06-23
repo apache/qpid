@@ -38,10 +38,10 @@ namespace broker {
 class MessageStoreModule : public MessageStore
 {
     MessageStore* store;
-public:
+  public:
     MessageStoreModule(MessageStore* store);
 
-	bool init(const Options* options);
+    bool init(const Options* options);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);
@@ -60,16 +60,18 @@ public:
     void create(const PersistableConfig& config);
     void destroy(const PersistableConfig& config);
     void recover(RecoveryManager& queues);
-    void stage(boost::intrusive_ptr<PersistableMessage>& msg);
+    void stage(const boost::intrusive_ptr<PersistableMessage>& msg);
     void destroy(PersistableMessage& msg);
-    void appendContent(boost::intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
+    void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
     void loadContent(const qpid::broker::PersistableQueue& queue, 
-	          boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
-              uint64_t offset, uint32_t length);
+                     const boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
+                     uint64_t offset, uint32_t length);
 
-    void enqueue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    void enqueue(TransactionContext* ctxt,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& queue);
-    void dequeue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    void dequeue(TransactionContext* ctxt,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& queue);
     u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);

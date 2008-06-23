@@ -85,7 +85,7 @@ void MessageStoreModule::recover(RecoveryManager& registry)
     TRANSFER_EXCEPTION(store->recover(registry));
 }
 
-void MessageStoreModule::stage( intrusive_ptr<PersistableMessage>& msg)
+void MessageStoreModule::stage(const intrusive_ptr<PersistableMessage>& msg)
 {
     TRANSFER_EXCEPTION(store->stage(msg));
 }
@@ -95,23 +95,30 @@ void MessageStoreModule::destroy(PersistableMessage& msg)
     TRANSFER_EXCEPTION(store->destroy(msg));
 }
 
-void MessageStoreModule::appendContent(intrusive_ptr<const PersistableMessage>& msg, const std::string& data)
+void MessageStoreModule::appendContent(const intrusive_ptr<const PersistableMessage>& msg,
+                                       const std::string& data)
 {
     TRANSFER_EXCEPTION(store->appendContent(msg, data));
 }
 
-void MessageStoreModule::loadContent(const qpid::broker::PersistableQueue& queue, 
-     intrusive_ptr<const PersistableMessage>& msg, string& data, uint64_t offset, uint32_t length)
+void MessageStoreModule::loadContent(
+    const qpid::broker::PersistableQueue& queue, 
+    const intrusive_ptr<const PersistableMessage>& msg,
+    string& data, uint64_t offset, uint32_t length)
 {
     TRANSFER_EXCEPTION(store->loadContent(queue, msg, data, offset, length));
 }
 
-void MessageStoreModule::enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
+void MessageStoreModule::enqueue(TransactionContext* ctxt,
+                                 const intrusive_ptr<PersistableMessage>& msg,
+                                 const PersistableQueue& queue)
 {
     TRANSFER_EXCEPTION(store->enqueue(ctxt, msg, queue));
 }
 
-void MessageStoreModule::dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
+void MessageStoreModule::dequeue(TransactionContext* ctxt,
+                                 const intrusive_ptr<PersistableMessage>& msg,
+                                 const PersistableQueue& queue)
 {
     TRANSFER_EXCEPTION(store->dequeue(ctxt, msg, queue));
 }
