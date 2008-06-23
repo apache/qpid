@@ -15,7 +15,7 @@ PYTHONPATH=$python:$PYTHONPATH
 export QPID_PORT PYTHON_EXAMPLES PYTHONPATH
 
 test -d $PYTHON_EXAMPLES || echo "WARNING: No python examples. $PYTHON_EXAMPLES not found."
-find="find examples"
+find="find"
 test -d $PYTHON_EXAMPLES && find="$find $PYTHON_EXAMPLES"
 find="$find -name verify"
 test -d $PYTHON_EXAMPLES && \
