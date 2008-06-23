@@ -37,8 +37,7 @@ namespace broker {
 class MessageStore;
 
 /**
- * The interface messages must expose to the MessageStore in order to
- * be persistable.
+ * Base class for persistable messages.
  */
 class PersistableMessage : public Persistable
 {
@@ -122,7 +121,6 @@ public:
                     PersistableQueue::shared_ptr q(i->lock());
                     if (q) q->notifyDurableIOComplete();
                 } 
-                //synclist.clear();
             }            
         }
     }
