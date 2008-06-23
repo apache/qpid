@@ -202,6 +202,9 @@ SUBMAKE = '	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done'
 examplesdir = $(pkgdatadir)/examples
 examples_DATA = README $(MAKEDIST)
 EXTRA_DIST = $(examples_DATA) README.verify verify verify_all 
+
+# For older versions of automake
+abs_top_srcdir = /home/aconway/qpid/cpp/examples/..
 all: all-recursive
 
 .SUFFIXES:
@@ -542,7 +545,7 @@ $(MAKEDIST): Makefile
 
 # Verify the examples in the buid tree.
 check-local: 
-	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(abs_top_builddir)/src/qpidd $(exclude_examples_regexp)
+	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(top_builddir)/src/qpidd $(exclude_examples_regexp)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
