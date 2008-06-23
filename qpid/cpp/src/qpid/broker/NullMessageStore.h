@@ -38,7 +38,7 @@ class NullMessageStore : public MessageStore
     std::set<std::string> prepared;
     const bool warn;
     uint64_t nextPersistenceId;
-public:
+  public:
     NullMessageStore(bool warn = false);
 
     virtual bool init(const Options* options);
@@ -61,16 +61,18 @@ public:
     virtual void create(const PersistableConfig& config);
     virtual void destroy(const PersistableConfig& config);
     virtual void recover(RecoveryManager& queues);
-    virtual void stage(boost::intrusive_ptr<PersistableMessage>& msg);
+    virtual void stage(const boost::intrusive_ptr<PersistableMessage>& msg);
     virtual void destroy(PersistableMessage& msg);
-    virtual void appendContent(boost::intrusive_ptr<const PersistableMessage>& msg,
+    virtual void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
                                const std::string& data);
     virtual void loadContent(const qpid::broker::PersistableQueue& queue,
-                             boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
+                             const boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
                              uint64_t offset, uint32_t length);
-    virtual void enqueue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    virtual void enqueue(TransactionContext* ctxt,
+                         const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue);
-    virtual void dequeue(TransactionContext* ctxt, boost::intrusive_ptr<PersistableMessage>& msg,
+    virtual void dequeue(TransactionContext* ctxt,
+                         const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue);
     virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     virtual void flush(const qpid::broker::PersistableQueue& queue);
