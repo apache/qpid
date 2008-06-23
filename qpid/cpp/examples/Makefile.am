@@ -6,7 +6,7 @@ endif
 MAKEDIST=.libs/Makefile
 SUBMAKE='	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done'
 $(MAKEDIST): Makefile
-	@$(MKDIR_P) .libs
+	mkdir -p .libs
 	@$(ECHO) all: 		        > $(MAKEDIST)
 	@$(ECHO) $(SUBMAKE)             >> $(MAKEDIST)
 	@$(ECHO) clean:                 >> $(MAKEDIST)
