@@ -605,7 +605,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 }
                 else
                 {
-                    _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8);
+                	StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+                    _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
                 }
             }
         }
