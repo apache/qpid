@@ -109,7 +109,7 @@
     </path>
     <pathconvert property="qpid.jar.classpath" pathsep=" " dirsep="/">
       <path refid="class.path"/>
-      <globmapper from="${build.lib}/*" to="*"/>
+      <globmapper from="${build.lib}${file.separator}*" to="*"/>
     </pathconvert>
 
     <jar destfile="${qpid.jar}">
