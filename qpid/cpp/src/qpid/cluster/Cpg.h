@@ -149,19 +149,19 @@ class Cpg : public Dispatchable {
     }
 
     static void globalDeliver(
-        cpg_handle_t /*handle*/,
+        cpg_handle_t handle,
         struct cpg_name *group,
-        uint32_t /*nodeid*/,
-        uint32_t /*pid*/,
-        void* /*msg*/,
-        int /*msg_len*/);
+        uint32_t nodeid,
+        uint32_t pid,
+        void* msg,
+        int msg_len);
 
     static void globalConfigChange(
-        cpg_handle_t /*handle*/,
-        struct cpg_name */*group*/,
-        struct cpg_address */*members*/, int /*nMembers*/,
-        struct cpg_address */*left*/, int /*nLeft*/,
-        struct cpg_address */*joined*/, int /*nJoined*/
+        cpg_handle_t handle,
+        struct cpg_name *group,
+        struct cpg_address *members, int nMembers,
+        struct cpg_address *left, int nLeft,
+        struct cpg_address *joined, int nJoined
     );
 
     static Handles handles;
