@@ -2,6 +2,9 @@ SUBDIRS = direct fanout pub-sub request-response
 if HAVE_XML
   SUBDIRS += xml-exchange
 endif
+if !HAVE_XML
+  exclude_examples_regexp="xml"	# Exclude XML examples.
+endif
 
 MAKEDIST=.libs/Makefile
 SUBMAKE='	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done'
