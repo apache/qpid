@@ -62,14 +62,14 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
     ClusterConnections cluster;
     BOOST_REQUIRE(cluster.size() > 1);
 
-    Session broker0 = cluster[0]->newSession(ASYNC);
+    Session broker0 = cluster[0]->newSession();
     broker0.exchangeDeclare(exchange="ex");
     broker0.queueDeclare(queue="q");
     broker0.queueBind(exchange="ex", queue="q", routingKey="key");
     broker0.close();
     
     for (size_t i = 1; i < cluster.size(); ++i) {
-        Session s = cluster[i]->newSession(ASYNC);
+        Session s = cluster[i]->newSession();
         s.messageTransfer(content=TransferContent("data", "key", "ex"));
         s.messageSubscribe(queue="q", destination="q");
         s.messageFlow(destination="q", unit=0, value=1);//messages
@@ -80,5 +80,29 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
         cluster[i]->close();
     }    
 }
+
+QPID_AUTO_TEST_CASE(testMessageReplication) {
+    // Enqueue on one broker, dequeue on another.
+    ClusterConnections cluster;
+    BOOST_REQUIRE(cluster.size() > 1);
+
+    Session broker0 = cluster[0]->newSession();
+    broker0.queueDeclare(queue="q");
+    broker0.messageTransfer(content=TransferContent("data", "q"));
+    broker0.close();
+    
+    Session broker1 = cluster[1]->newSession();
+    broker1.
+        s.messageSubscribe(queue="q", destination="q");
+        s.messageFlow(destination="q", unit=0, value=1);//messages
+        FrameSet::shared_ptr msg = s.get();
+        BOOST_CHECK(msg->isA<MessageTransferBody>());
+        BOOST_CHECK_EQUAL(string("data"), msg->getContent());
+        s.getExecution().completed(msg->getId(), true, true);
+        cluster[i]->close();
+    }    
+}
+
+// TODO aconway 2008-06-25: dequeue replication, exactly once delivery, failover.
 
 QPID_AUTO_TEST_SUITE_END()

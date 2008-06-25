@@ -11,7 +11,7 @@ lib_cluster = $(abs_builddir)/../libqpidcluster.la
 
 # ais_check checks conditions for AIS tests and runs if ok.
 TESTS+=ais_check
-EXTRA_DIST+=ais_check ais_run start_cluster stop_cluster
+EXTRA_DIST+=ais_check start_cluster stop_cluster
 
 check_PROGRAMS+=ais_test
 ais_test_SOURCES=ais_test.cpp Cpg.cpp 

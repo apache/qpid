@@ -56,7 +56,7 @@ class LocalQueue
      */
     Message pop();
 
-    /** Synonym for get(). */
+    /** Synonym for pop(). */
     Message get() { return pop(); }
     
     /** Return true if local queue is empty. */

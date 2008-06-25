@@ -1,7 +1,6 @@
 #!/bin/sh
-# Check for requirements, run AIS tests if found.
-#
 
+# Check AIS requirements tests if found.
 id -nG | grep '\<ais\>' >/dev/null || \
     NOGROUP="You are not a member of the ais group."
 ps -u root | grep aisexec >/dev/null || \
@@ -24,4 +23,11 @@ EOF
     exit 0;			# A warning, not a failure.
 fi
 
-echo `dirname $0`/ais_run | newgrp ais
+# Run the tests
+srcdir=`dirname $0`
+$srcdir/start_cluster 4
+./ais_test
+ret=$?
+$srcdir/stop_cluster 
+exit $ret
+
