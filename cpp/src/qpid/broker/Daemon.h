@@ -72,6 +72,7 @@ class Daemon : private boost::noncopyable
 
     pid_t pid;
     int pipeFds[2];
+    int lockFileFd;
     std::string lockFile;
     std::string pidDir;
 };

@@ -76,7 +76,8 @@ posix_plat_src = \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
-  qpid/sys/posix/Shlib.cpp
+  qpid/sys/posix/Shlib.cpp \
+  qpid/sys/posix/Mutex.cpp
 
 posix_plat_hdr = \
   qpid/sys/posix/check.h \

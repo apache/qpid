@@ -34,6 +34,7 @@ class Condition;
  */
 class Mutex : private boost::noncopyable {
     friend class Condition;
+    static const pthread_mutexattr_t* getAttribute();
 
 public:
     typedef ::qpid::sys::ScopedLock<Mutex> ScopedLock;
@@ -74,32 +75,6 @@ protected:
 
 
 /**
- * Initialise a recursive mutex attr for use in creating mutexes later
- * (we use pthread_once to make sure it is initialised exactly once)
- */
-namespace {
-	pthread_once_t  onceControl = PTHREAD_ONCE_INIT;
-	pthread_mutexattr_t mutexattr;
-	
-	void initMutexattr()  {
-		pthread_mutexattr_init(&mutexattr);
-		pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
-	}
-
-	struct RecursiveMutexattr {
-		RecursiveMutexattr() {
-			pthread_once(&onceControl, initMutexattr);
-		}
-		
-		operator const pthread_mutexattr_t*() const {
-			return &mutexattr;
-		}
-	};
-  
-	RecursiveMutexattr recursiveMutexattr;
-}
-
-/**
  * PODMutex is a POD, can be static-initialized with
  * PODMutex m = QPID_PODMUTEX_INITIALIZER
  */
@@ -130,7 +105,7 @@ bool PODMutex::trylock() {
 }
 
 Mutex::Mutex() {
-    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_init(&mutex, recursiveMutexattr));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_init(&mutex, getAttribute()));
 }
 
 Mutex::~Mutex(){
