@@ -203,7 +203,7 @@ QPID_AUTO_TEST_CASE(testSendToSelf) {
     ClientSessionFixture fix;
     SimpleListener mylistener;
     fix.session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
-    fix.subs.subscribe(mylistener, "myq", "myq");
+    fix.subs.subscribe(mylistener, "myq");
     sys::Thread runner(fix.subs);//start dispatcher thread
     string data("msg");
     Message msg(data, "myq");
@@ -222,5 +222,30 @@ QPID_AUTO_TEST_CASE(testSendToSelf) {
     }
 }
 
+QPID_AUTO_TEST_CASE(testLocalQueue) {
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(queue="lq", exclusive=true, autoDelete=true);
+    LocalQueue lq;
+    fix.subs.subscribe(lq, "lq", FlowControl(2, FlowControl::UNLIMITED, false));
+    fix.session.messageTransfer(content=Message("foo0", "lq"));
+    fix.session.messageTransfer(content=Message("foo1", "lq"));
+    fix.session.messageTransfer(content=Message("foo2", "lq"));
+    BOOST_CHECK_EQUAL("foo0", lq.pop().getData());
+    BOOST_CHECK_EQUAL("foo1", lq.pop().getData());
+    BOOST_CHECK(lq.empty());    // Credit exhausted.
+    fix.subs.setFlowControl("lq", FlowControl::unlimited());
+    BOOST_CHECK_EQUAL("foo2", lq.pop().getData());    
+}
+
+QPID_AUTO_TEST_CASE(testGet) {
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(queue="getq", exclusive=true, autoDelete=true);
+    fix.session.messageTransfer(content=Message("foo0", "getq"));
+    fix.session.messageTransfer(content=Message("foo1", "getq"));
+    BOOST_CHECK_EQUAL("foo0", fix.subs.get("getq").getData());
+    BOOST_CHECK_EQUAL("foo1", fix.subs.get("getq").getData());
+}
+
 QPID_AUTO_TEST_SUITE_END()
+
 

@@ -444,6 +444,7 @@ nobase_include_HEADERS = \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/Execution.h \
+  qpid/client/FlowControl.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
