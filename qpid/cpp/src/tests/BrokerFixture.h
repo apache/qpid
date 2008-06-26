@@ -29,19 +29,19 @@
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
+#include <boost/noncopyable.hpp>
 
 /**
  * A fixture with an in-process broker.
  */
-struct  BrokerFixture {
+struct  BrokerFixture : private boost::noncopyable {
     typedef qpid::broker::Broker Broker;
     typedef boost::shared_ptr<Broker> BrokerPtr;
 
     BrokerPtr broker;
     qpid::sys::Thread brokerThread;
 
-    BrokerFixture() {
-        Broker::Options opts;
+    BrokerFixture(Broker::Options opts=Broker::Options()) {
         opts.port=0;
         // Management doesn't play well with multiple in-process brokers.
         opts.enableMgmt=false;  
@@ -65,8 +65,11 @@ struct  BrokerFixture {
     void open(qpid::client::Connection& c) {
         c.open("localhost", broker->getPort());
     }
+
+    uint16_t getPort() { return broker->getPort(); }
 };
 
+/** Connection that opens in its constructor */
 struct LocalConnection : public qpid::client::Connection {
     LocalConnection(uint16_t port) { open("localhost", port); }
 };
@@ -80,25 +83,36 @@ struct ProxyConnection : public qpid::client::Connection {
     ~ProxyConnection() { close(); }
 };
 
-/**
- * A BrokerFixture with open Connection, Session and
- * SubscriptionManager and LocalQueue for convenience.
+/** Convenience class to create and open a connection and session
+ * and some related useful objects.
  */
-template <class ConnectionType>
-struct  SessionFixtureT : BrokerFixture {
+template <class ConnectionType=ProxyConnection, class SessionType=qpid::client::Session>
+struct ClientT {
     ConnectionType connection;
-    qpid::client::Session session;
+    SessionType session;
     qpid::client::SubscriptionManager subs;
     qpid::client::LocalQueue lq;
-
-    SessionFixtureT() : connection(broker->getPort()),
-                        session(connection.newSession("SessionFixture")),
-                        subs(session)
+    ClientT(uint16_t port) : connection(port),
+                            session(connection.newSession("Client")),
+                            subs(session)
     {}
 
-    ~SessionFixtureT() {
-        connection.close();
-    }
+    ~ClientT() { connection.close(); }
+};
+
+typedef ClientT<> Client;
+
+/**
+ * A BrokerFixture and ready-connected BrokerFixture::Client all in one.
+ */
+template <class ConnectionType, class SessionType=qpid::client::Session>
+struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
+
+    SessionFixtureT(Broker::Options opts=Broker::Options()) :
+        BrokerFixture(opts),
+        ClientT<ConnectionType,SessionType>(broker->getPort())
+    {}
+
 };
 
 typedef SessionFixtureT<LocalConnection> SessionFixture;
