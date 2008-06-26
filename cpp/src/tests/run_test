@@ -13,7 +13,7 @@
 #
 
 srcdir=`dirname $0`
-source $srcdir/vg_check
+. $srcdir/vg_check
 
 # Export variables from makefile.
 export VALGRIND srcdir
