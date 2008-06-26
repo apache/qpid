@@ -53,22 +53,20 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
                      bool isClient);
 };
 
-// Static instance to initialise plugin
-static class TCPIOPlugin : public Plugin {
-    void earlyInitialize(Target&) {
+struct TCPIOPlugin : public PluginT<broker::Broker> {
+    void initializeT(broker::Broker& broker) {
+        const broker::Broker::Options& opts = broker.getOptions();
+        ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog));
+        QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
+        broker.registerProtocolFactory(protocol);
     }
-    
-    void initialize(Target& target) {
-        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        // Only provide to a Broker
-        if (broker) {
-            const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog));
-            QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
-            broker->registerProtocolFactory(protocol);
-        }
+};
+
+static struct TCPIOPluginFactory : public Plugin::FactoryT<broker::Broker> {
+    boost::shared_ptr<Plugin> createT(broker::Broker&) {
+        return make_shared_ptr(new TCPIOPlugin());
     }
-} tcpPlugin;
+} theTCPIOPluginFactory;   // Static plugin factory instance.
 
 AsynchIOProtocolFactory::AsynchIOProtocolFactory(int16_t port, int backlog) :
     listeningPort(listener.listen(port, backlog))

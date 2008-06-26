@@ -104,9 +104,8 @@ Cpg::~Cpg() {
 }
 
 void Cpg::shutdown() {
-    QPID_LOG(debug, "Shutdown CPG handle " << handle);
     if (handles.get(handle)) {
-        QPID_LOG(debug, "Finalize CPG handle " << handle);
+        QPID_LOG(debug, "Finalize CPG handle " << std::hex << handle);
         handles.put(handle, 0);
         check(cpg_finalize(handle), "Error in shutdown of CPG");
     }

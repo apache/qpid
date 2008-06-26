@@ -166,13 +166,7 @@ Broker::Broker(const Broker::Options& conf) :
         links.setParent     (vhost);
     }
 
-    // Early-Initialize plugins
-    const Plugin::Plugins& plugins=Plugin::getPlugins();
-    for (Plugin::Plugins::const_iterator i = plugins.begin();
-         i != plugins.end();
-         i++)
-        (*i)->earlyInitialize(*this);
-
+    createPlugins();
     // If no plugin store module registered itself, set up the null store.
     if (store == 0)
         setStore (new NullMessageStore (false));
@@ -223,11 +217,7 @@ Broker::Broker(const Broker::Options& conf) :
 #endif
     }
 
-    // Initialize plugins
-    for (Plugin::Plugins::const_iterator i = plugins.begin();
-         i != plugins.end();
-         i++)
-        (*i)->initialize(*this);
+    initializePlugins();
 }
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
