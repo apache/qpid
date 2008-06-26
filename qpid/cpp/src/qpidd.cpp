@@ -102,13 +102,7 @@ struct QpiddOptions : public qpid::Options {
         add(broker);
         add(daemon);
         add(log);
-        const Plugin::Plugins& plugins=
-            Plugin::getPlugins();
-        for (Plugin::Plugins::const_iterator i = plugins.begin();
-             i != plugins.end();
-             ++i)
-            if ((*i)->getOptions() != 0)
-                add(*(*i)->getOptions());
+        Plugin::addOptions(*this);
     }
 
     void usage() const {
