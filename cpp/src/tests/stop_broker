@@ -4,7 +4,7 @@
 export QPID_PORT=`cat qpidd.port`
 rm -f qpidd.port
 
-../qpidd --quit || ERROR=$?
+../qpidd --quit || ERROR=1
 
 # Check qpidd.log.
 grep -a 'warning\|error\|critical' qpidd.log && {
@@ -14,7 +14,7 @@ grep -a 'warning\|error\|critical' qpidd.log && {
 # Check valgrind log.
 if test -n "$VALGRIND"; then
     source `dirname $0`/vg_check $VG_LOG*
-    vg_check qpidd.vglog*
+    vg_check qpidd.vglog* || ERROR=1
 fi
 
 exit $ERROR
