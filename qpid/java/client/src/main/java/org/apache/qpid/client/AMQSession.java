@@ -802,6 +802,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
                         deregisterConsumer(consumer);
                     }
+                    else
+                    {
+                        _queue.add(new UnprocessedMessage.CloseConsumerMessage(consumer));
+                    }
                 }
             }
         }
@@ -1150,6 +1154,13 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public StreamMessage createStreamMessage() throws JMSException
     {
+        // This method needs to be improved. Throwables only arrive here from the mina : exceptionRecived
+        // calls through connection.closeAllSessions which is also called by the public connection.close()
+        // with a null cause
+        // When we are closing the Session due to a protocol session error we simply create a new AMQException
+        // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
+        // We need to determin here if the connection should be
+
         synchronized (_connection.getFailoverMutex())
         {
             checkNotClosed();
@@ -1599,7 +1610,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
                 deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             }
-            else
+            else // Queue Browser
             {
 
                 if (isQueueBound(getDefaultTopicExchangeName(), AMQTopic.getDurableTopicQueueName(name, _connection)))
@@ -2778,7 +2789,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                             _lock.wait();
                         }
 
-                        if (tagLE(deliveryTag, _rollbackMark.get()))
+                        if (!(message instanceof UnprocessedMessage.CloseConsumerMessage)
+                            && tagLE(deliveryTag, _rollbackMark.get()))
                         {
                             rejectMessage(message, true);
                         }

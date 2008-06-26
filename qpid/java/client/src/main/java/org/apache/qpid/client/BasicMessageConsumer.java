@@ -507,6 +507,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
             throw e;
         }
+        else if (o instanceof UnprocessedMessage.CloseConsumerMessage)
+        {
+            _closed.set(true);
+            deregisterConsumer();
+            return null;
+        }
         else
         {
             return (AbstractJMSMessage) o;
@@ -561,6 +567,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
             else
             {
+            	// FIXME: wow this is ugly
                 // //fixme this probably is not right
                 // if (!isNoConsume())
                 { // done in BasicCancelOK Handler but not sending one so just deregister.
@@ -615,6 +622,36 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     }
 
     /**
+     * @param closeMessage
+     *            this message signals that we should close the browser
+     */
+    public void notifyCloseMessage(UnprocessedMessage.CloseConsumerMessage closeMessage)
+    {
+        if (isMessageListenerSet())
+        {
+            // Currently only possible to get this msg type with a browser.
+            // If we get the message here then we should probably just close
+            // this consumer.
+            // Though an AutoClose consumer with message listener is quite odd..
+            // Just log out the fact so we know where we are
+            _logger.warn("Using an AutoCloseconsumer with message listener is not supported.");
+        }
+        else
+        {
+            try
+            {
+                _synchronousQueue.put(closeMessage);
+            }
+            catch (InterruptedException e)
+            {
+                _logger.info(" SynchronousQueue.put interupted. Usually result of connection closing,"
+                        + "but we shouldn't have close yet");
+            }
+        }
+    }
+
+    
+    /**
      * Called from the AMQSession when a message has arrived for this consumer. This methods handles both the case of a
      * message listener or a synchronous receive() caller.
      *
@@ -622,6 +659,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      */
     void notifyMessage(UnprocessedMessage messageFrame)
     {
+        if (messageFrame instanceof UnprocessedMessage.CloseConsumerMessage)
+        {
+            notifyCloseMessage((UnprocessedMessage.CloseConsumerMessage) messageFrame);
+            return;
+        }
+
         final boolean debug = _logger.isDebugEnabled();
 
         if (debug)
