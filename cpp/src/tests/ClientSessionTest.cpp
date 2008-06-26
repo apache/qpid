@@ -246,6 +246,21 @@ QPID_AUTO_TEST_CASE(testGet) {
     BOOST_CHECK_EQUAL("foo1", fix.subs.get("getq").getData());
 }
 
+QPID_AUTO_TEST_CASE(testOpenFailure) {
+    BrokerFixture b;
+    Connection c;
+    string host("unknowable-host");
+    try {
+        c.open(host);
+    } catch (const Exception&) {
+        BOOST_CHECK(!c.isOpen());
+    }
+    b.open(c);
+    BOOST_CHECK(c.isOpen());
+    c.close();
+    BOOST_CHECK(!c.isOpen());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 
