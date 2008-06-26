@@ -86,7 +86,7 @@ public class TestRunnerImprovedErrorHandling extends TestRunner
      *
      * @throws Exception Any exceptions falling through the tests are wrapped in Exception and rethrown.
      */
-    protected TestResult start(String[] args) throws Exception
+    public TestResult start(String[] args) throws Exception
     {
         String testCase = "";
         boolean wait = false;
