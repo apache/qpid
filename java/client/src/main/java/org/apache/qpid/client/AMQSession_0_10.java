@@ -758,10 +758,11 @@ public class AMQSession_0_10 extends AMQSession
         _txRangeSet.add((int) id);
         _txSize++;
         // this is a heuristic, we may want to have that configurable 
-        if( _connection.getMaxPrefetch() != 0 && _txSize % (_connection.getMaxPrefetch() / 2) == 0 )
+        if (_connection.getMaxPrefetch() == 1 ||
+                _connection.getMaxPrefetch() != 0 && _txSize % (_connection.getMaxPrefetch() / 2) == 0)
         {
-           // send completed so consumer credits don't dry up
-           getQpidSession().messageAcknowledge(_txRangeSet, false);
+            // send completed so consumer credits don't dry up
+            getQpidSession().messageAcknowledge(_txRangeSet, false);
         }
     }
 
