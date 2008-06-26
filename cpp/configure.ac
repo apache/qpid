@@ -148,6 +148,7 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
 # Check for optional CPG requirement.
+tmp_LIBS=$LIBS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
 AC_ARG_WITH([cpg],  
   [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
@@ -168,6 +169,8 @@ AC_ARG_WITH([cpg],
     AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
    ]
 )
+# Remove from LIBS, we will link it explicitly in make files.
+LIBS=$tmp_LIBS
 AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 if test x$with_CPG = xyes; then
   CPPFLAGS+=" -DCPG"
@@ -192,7 +195,10 @@ AS_IF([test "x$WANT_SASL" != xno],
   # will give you some useful default behavior, e.g. setup LDFLAGS, if
   # you do not give it a second argument, so try not to
   [AC_CHECK_HEADER([sasl/sasl.h], , [HAVE_SASL_H=no])
+   tmp_LIBS=$LIBS
    AC_CHECK_LIB([sasl2], [sasl_checkpass], , [HAVE_SASL_LIB=no])
+   # Remove from LIBS, we will link it explicitly in make files.
+   LIBS=$tmp_LIBS
    # If any of the tests failed
    AS_IF([test "x$HAVE_SASL_H" = xno -o \
                "x$HAVE_SASL_LIB" = xno],
@@ -224,11 +230,14 @@ test $want_xml = no && use_xml=no
 # If the user doesn't say not to use XML, see if it's available.
 if test $use_xml != no; then
   # Then see if XQilla is available
+  tmp_LIBS=$LIBS
   AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
   AC_CHECK_HEADER([xercesc/framework/MemBufInputSource.hpp], , [use_xml=no])
   AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
   AC_CHECK_LIB([xqilla], [canonicalCombiningClassTable], , [use_xml=no])
-  
+  # Remove from LIBS, we will link it explicitly in make files.
+  LIBS=$tmp_LIBS
+
   # If XQilla is not available, yet specifically requested, die.
   test $use_xml:$want_xml = no:yes &&
     AC_MSG_ERROR([XML Exchange requested, but XQilla or Xerces-C not available])
@@ -241,6 +250,7 @@ fi
 AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
 
 # Setup --with-rdma/--without-rdma as arguments to configure
+tmp_LIBS=$LIBS
 AC_ARG_WITH([rdma],
   [AS_HELP_STRING([--with-rdma], [Build with support for Remote DMA protocols])],
   [case ${withval} in
@@ -266,6 +276,8 @@ AC_ARG_WITH([rdma],
    AC_CHECK_HEADERS([rdma/rdma_cma.h],,[with_RDMA=no])
   ]
 )
+# Remove from LIBS, we will link it explicitly in make files.
+LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
 
 # Files to generate	

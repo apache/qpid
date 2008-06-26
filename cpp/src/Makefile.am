@@ -236,7 +236,9 @@ libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 if HAVE_XML
 libqpidbroker_la_LIBADD += -lxerces-c -lxqilla
 endif
-
+if HAVE_SASL
+libqpidbroker_la_LIBADD += -lsasl2
+endif
 
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
