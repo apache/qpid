@@ -1,0 +1,6 @@
+*.class
+*.pyc
+*.iml
+*.ipr
+*.iws
+target
