@@ -10,3 +10,6 @@ generated/
 target/
 *.rej
 *.orig
+*.iml
+*.ipr
+*.iws
