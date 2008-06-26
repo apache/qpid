@@ -1,4 +1,4 @@
 #!/bin/sh
-rm -f qpidd.vglog* qpidd.log
-test -n "$VALGRIND" && VALGRIND="$VALGRIND --log-file=qpidd.vglog --"
-exec libtool --mode=execute $VALGRIND ../qpidd --auth no --no-module-dir --daemon --port 0 --log-output qpidd.log "$@" > qpidd.port
+# Start a test broker.
+srcdir=`dirname $0`
+exec $srcdir/run_test ../qpidd --auth=no --no-module-dir --daemon --port=0 --log-output qpidd.log "$@" > qpidd.port
