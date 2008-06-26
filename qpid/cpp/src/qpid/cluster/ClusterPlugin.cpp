@@ -33,18 +33,11 @@ namespace qpid {
 namespace cluster {
 
 using namespace std;
+using broker::Broker;
 
-struct ClusterOptions : public Options {
+struct OptionValues {
     string name;
     string url;
-
-    ClusterOptions() : Options("Cluster Options") {
-        addOptions()
-            ("cluster-name", optValue(name, "NAME"), "Name of cluster to join")
-            ("cluster-url", optValue(url,"URL"),
-             "URL of this broker, advertized to the cluster.\n"
-             "Defaults to a URL listing all the local IP addresses\n");
-    }
 
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
@@ -52,28 +45,52 @@ struct ClusterOptions : public Options {
     }
 };
 
-struct ClusterPlugin : public Plugin {
+// Note we update the values in a separate struct.
+// This is to work around boost::program_options differences,
+// older versions took a reference to the options, newer
+// ones take a copy (or require a shared_ptr)
+//
+struct ClusterOptions : public Options {
 
-    ClusterOptions options;
-    boost::optional<Cluster> cluster;
-
-    Options* getOptions() { return &options; }
-
-    void earlyInitialize(Plugin::Target&) {}
-
-    void initialize(Plugin::Target& target) {
-        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        // Only provide to a Broker, and only if the --cluster config is set.
-        if (broker && !options.name.empty()) {
-            assert(!cluster); // A process can only belong to one cluster.
-            cluster = boost::in_place(options.name,
-                                      options.getUrl(broker->getPort()),
-                                      boost::ref(*broker));
-            broker->getSessionManager().add(cluster->getObserver());	
-        }
+    ClusterOptions(OptionValues* v) : Options("Cluster Options") {
+        addOptions()
+            ("cluster-name", optValue(v->name, "NAME"), "Name of cluster to join")
+            ("cluster-url", optValue(v->url,"URL"),
+             "URL of this broker, advertized to the cluster.\n"
+             "Defaults to a URL listing all the local IP addresses\n");
     }
 };
 
-static ClusterPlugin instance; // Static initialization.
+struct ClusterPlugin : public PluginT<Broker> {
+    OptionValues values;
+    boost::optional<Cluster> cluster;
+
+    ClusterPlugin(const OptionValues& v) : values(v) {}
+    
+    void initializeT(Broker& broker) {
+        cluster = boost::in_place(values.name, values.getUrl(broker.getPort()), boost::ref(broker));
+        broker.getSessionManager().add(cluster->getObserver());	
+    }
+};
+
+struct PluginFactory : public Plugin::FactoryT<Broker> {
+
+    OptionValues values;
+    ClusterOptions options;
+
+    PluginFactory() : options(&values) {}
+
+    Options* getOptions() { return &options; }
+
+    boost::shared_ptr<Plugin> createT(Broker&) {
+        // Only provide to a Broker, and only if the --cluster config is set.
+        if (values.name.empty())
+            return boost::shared_ptr<Plugin>();
+        else
+            return make_shared_ptr(new ClusterPlugin(values));
+    }
+};
+
+static PluginFactory instance; // Static initialization.
     
 }} // namespace qpid::cluster

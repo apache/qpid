@@ -15,6 +15,6 @@ EXTRA_DIST+=ais_check
 
 check_PROGRAMS+=cluster_test
 cluster_test_SOURCES=unit_test.cpp cluster_test.cpp
-cluster_test_LDADD=$(lib_client) $(lib_cluster) -lboost_unit_test_framework
+cluster_test_LDADD=$(lib_client) $(lib_cluster) $(lib_broker) -lboost_unit_test_framework
 
 endif
