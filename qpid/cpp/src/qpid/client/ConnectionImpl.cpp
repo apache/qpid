@@ -40,7 +40,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
       handler(settings, v),
       connector(v, settings, this), 
       version(v), 
-      isClosed(false), 
+      isClosed(true),//closed until successfully opened 
       isClosing(false)
 {
     QPID_LOG(debug, "ConnectionImpl created for " << version);
@@ -88,12 +88,20 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
     s->in(frame);
 }
 
+bool ConnectionImpl::isOpen() const 
+{ 
+    return !isClosed && !isClosing; 
+}
+
+
 void ConnectionImpl::open(const std::string& host, int port)
 {
     QPID_LOG(info, "Connecting to " << host << ":" << port);
     connector.connect(host, port);
     connector.init();
-    handler.waitForOpen();
+    handler.waitForOpen();    
+    Mutex::ScopedLock l(lock);
+    isClosed = false;
 }
 
 void ConnectionImpl::idleIn()

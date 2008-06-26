@@ -72,7 +72,7 @@ class ConnectionImpl : public Bounds,
     ~ConnectionImpl();
     
     void open(const std::string& host, int port);
-    bool isOpen() const { return !isClosed && !isClosing; }
+    bool isOpen() const;
 
     void addSession(const boost::shared_ptr<SessionImpl>&);
         
