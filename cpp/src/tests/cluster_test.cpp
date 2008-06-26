@@ -157,14 +157,16 @@ struct ClusterFixture : public ptr_vector<BrokerFixture> {
 void ClusterFixture::add() {
     qpid::broker::Broker::Options opts;
     // Assumes the cluster plugin is loaded.
-    qpid::Plugin::addOptions(opts);
-    const char* argv[] = { "--cluster-name=$CLUSTER" };
+    qpid::Plugin::Factory::addOptions(opts);
+    const char* argv[] = { "--cluster-name", ::getenv("USERNAME") };
     // FIXME aconway 2008-06-26: fix parse() signature, should not need cast.
     opts.parse(sizeof(argv)/sizeof(*argv), const_cast<char**>(argv));
     push_back(new BrokerFixture(opts));
 }
 
 #if 0                           // FIXME aconway 2008-06-26: TODO
+
+
 QPID_AUTO_TEST_CASE(testWiringReplication) {
     const size_t SIZE=3;
     ClusterFixture cluster(SIZE);
@@ -175,14 +177,12 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
     c0.session.exchangeDeclare("ex", arg::type="direct");
     BOOST_CHECK_EQUAL("q", c0.session.queueQuery("q").getQueue());
     BOOST_CHECK_EQUAL("direct", c0.session.exchangeQuery("ex").getType());
-    c0.close();
 
     // Verify all brokers get wiring update.
     for (size_t i = 1; i < cluster.size(); ++i) {
         Client c(cluster[i].getPort());
         BOOST_CHECK_EQUAL("q", c.session.queueQuery("q").getQueue());
         BOOST_CHECK_EQUAL("direct", c.session.exchangeQuery("ex").getType());
-        c.close();
     }    
 }
 
