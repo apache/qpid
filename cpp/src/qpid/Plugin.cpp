@@ -19,16 +19,16 @@
  */
 
 #include "Plugin.h"
+#include "qpid/Options.h"
 
 namespace qpid {
 
 namespace {
-// This is a single threaded singleton implementation so
-// it is important to be sure that the first use of this
-// singleton is when the program is still single threaded
 Plugin::Plugins& thePlugins() {
+    // This is a single threaded singleton implementation so
+    // it is important to be sure that the first use of this
+    // singleton is when the program is still single threaded
     static Plugin::Plugins plugins;
-
     return plugins;
 }
 }
@@ -42,8 +42,13 @@ Plugin::~Plugin() {}
 
 Options*  Plugin::getOptions() { return 0; }
 
-const Plugin::Plugins& Plugin::getPlugins() {
-    return thePlugins();
+const Plugin::Plugins& Plugin::getPlugins() { return thePlugins(); }
+
+void Plugin::addOptions(Options& opts) {
+    for (Plugins::const_iterator i = getPlugins().begin(); i != getPlugins().end(); ++i) {
+        if ((*i)->getOptions())
+            opts.add(*(*i)->getOptions());
+    }
 }
 
 } // namespace qpid

@@ -92,7 +92,7 @@ Cpg::Cpg(Handler& h) : handler(h) {
     cpg_callbacks_t callbacks = { &globalDeliver, &globalConfigChange };
     check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
     handles.put(handle, &handler);
-    QPID_LOG(debug, "Initialize CPG handle " << handle);
+    QPID_LOG(debug, "Initialize CPG handle 0x" << std::hex << handle);
 }
 
 Cpg::~Cpg() {
