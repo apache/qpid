@@ -95,29 +95,35 @@ public class DurationTestDecorator extends WrappedSuiteTestDecorator implements 
     {
         log.debug("public void run(TestResult testResult): called");
 
-        // Cast the test result to expose it as a TKTestResult if the test is running under the TKTestRunner.
-        TKTestResult tkTestResult = null;
+// Removing the durationTimer as this addition prevents this TestDecorator being wrapped with a Scaled Test Decorator.
+        // This change will cause the tests to run for at least the specified duration
+        // If we need the test to stop much closer to the specified duration then we need to
+        // ensure that the solution doesn't prevent this Decorator being wrapped with other Decorators.
 
-        if (testResult instanceof TKTestResult)
-        {
-            tkTestResult = (TKTestResult) testResult;
-        }
+//        // Cast the test result to expose it as a TKTestResult if the test is running under the TKTestRunner.
+//        TKTestResult tkTestResult = null;
+//
+//        if (testResult instanceof TKTestResult)
+//        {
+//            tkTestResult = (TKTestResult) testResult;
+//        }
+//
+//        // If running under the TKTestRunner, set up a timer to notify the test framework when the test reaches its
+//        // completion time.
+//        Timer durationTimer = null;
+//
+//        if (tkTestResult != null)
+//        {
+//            log.debug("Creating duration timer.");
+//
+//            durationTimer = new Timer();
+//            durationTimer.schedule(new DurationTimerTask((TKTestResult) testResult), duration);
+//        }
+
 
         // Work out when the test should end.
         long now = System.nanoTime();
         long end = (duration * 1000000) + now;
-
-        // If running under the TKTestRunner, set up a timer to notify the test framework when the test reaches its
-        // completion time.
-        Timer durationTimer = null;
-
-        if (tkTestResult != null)
-        {
-            log.debug("Creating duration timer.");
-
-            durationTimer = new Timer();
-            durationTimer.schedule(new DurationTimerTask((TKTestResult) testResult), duration);
-        }
 
         // Run the test until the duration times out or the shutdown flag is set. The test method may not exit until
         // interrupted in some cases, in which case the timer will do the interrupting.
@@ -128,13 +134,13 @@ public class DurationTestDecorator extends WrappedSuiteTestDecorator implements 
             now = System.nanoTime();
         }
 
-        // Clean up any timer that was used.
-        if (durationTimer != null)
-        {
-            log.debug("Cancelling duration timer.");
-
-            durationTimer.cancel();
-        }
+//        // Clean up any timer that was used.
+//        if (durationTimer != null)
+//        {
+//            log.debug("Cancelling duration timer.");
+//
+//            durationTimer.cancel();
+//        }
     }
 
     /**
@@ -157,43 +163,43 @@ public class DurationTestDecorator extends WrappedSuiteTestDecorator implements 
                 });
     }
 
-    /**
-     * DurationTimerTask is a timer task that is configured, upon expiry of its timer, to invoke
-     * {@link TKTestResult#shutdownNow()}, for the test result object on which it is set. It also sets
-     * the {@link DurationTestDecorator#shutdown} flag to indicate that no new tests should be run.
-     *
-     * <p/>The test loop implemented by DurationTestDecorator checks that the duration has not expired, on each
-     * test case that it runs. However, it is possible to write test cases that never return until explicitly
-     * interrupted by the test framework. This timer task exists to notify the test framework
-     */
-    private class DurationTimerTask extends TimerTask
-    {
-        /** Used for debugging purposes. */
-        private final Logger log = Logger.getLogger(DurationTimerTask.class);
-
-        /** Holds the test result for the test to which a duration limit is being applied. */
-        TKTestResult testResult;
-
-        /**
-         * Creates a duration limit timer which will notify the specified test result when the duration has
-         * expired.
-         *
-         * @param testResult The test result to notify upon expiry of the test duration.
-         */
-        public DurationTimerTask(TKTestResult testResult)
-        {
-            this.testResult = testResult;
-        }
-
-        /**
-         * The action to be performed by this timer task.
-         */
-        public void run()
-        {
-            log.debug("public void run(): called");
-
-            shutdown = true;
-            testResult.shutdownNow();
-        }
-    }
+//    /**
+//     * DurationTimerTask is a timer task that is configured, upon expiry of its timer, to invoke
+//     * {@link TKTestResult#shutdownNow()}, for the test result object on which it is set. It also sets
+//     * the {@link DurationTestDecorator#shutdown} flag to indicate that no new tests should be run.
+//     *
+//     * <p/>The test loop implemented by DurationTestDecorator checks that the duration has not expired, on each
+//     * test case that it runs. However, it is possible to write test cases that never return until explicitly
+//     * interrupted by the test framework. This timer task exists to notify the test framework
+//     */
+//    private class DurationTimerTask extends TimerTask
+//    {
+//        /** Used for debugging purposes. */
+//        private final Logger log = Logger.getLogger(DurationTimerTask.class);
+//
+//        /** Holds the test result for the test to which a duration limit is being applied. */
+//        TKTestResult testResult;
+//
+//        /**
+//         * Creates a duration limit timer which will notify the specified test result when the duration has
+//         * expired.
+//         *
+//         * @param testResult The test result to notify upon expiry of the test duration.
+//         */
+//        public DurationTimerTask(TKTestResult testResult)
+//        {
+//            this.testResult = testResult;
+//        }
+//
+//        /**
+//         * The action to be performed by this timer task.
+//         */
+//        public void run()
+//        {
+//            log.debug("public void run(): called");
+//
+//            shutdown = true;
+//            testResult.shutdownNow();
+//        }
+//    }
 }
