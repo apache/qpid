@@ -1,6 +1,7 @@
 *.class
 velocity.log
 qpid/java/build
+qpid/java/release
 *.pyc
 *.o
 .classpath
