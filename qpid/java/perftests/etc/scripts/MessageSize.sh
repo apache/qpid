@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,4 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-find . -regex '.*R-Qpid-0[1-2].*\.sh' -exec  {} -o results-Reliability/ --csv \; && for i in `seq 1 6` ; do find . -regex '.*R-Qpid-0[3-8].*\.sh' -exec  {} -o results-Reliability/ --csv  \; ; done
+find . -regex '.*M-Qpid-.*\.sh' -exec {} -o results-messageSize/ --csv $* \;
