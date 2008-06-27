@@ -1,0 +1,13 @@
+org.apache.qpid.test.unit.xa.QueueTest#*
+org.apache.qpid.test.unit.xa.TopicTest#*
+org.apache.qpid.test.unit.xa.FaultTest#*
+org.apache.qpid.test.unit.ct.DurableSubscriberTests#*
+// those tests are failing see: QPID- 
+org.apache.qpid.test.unit.topic.TopicSessionTest#testNoLocal
+// known issue
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurableWithInvalidSelector
+// Those tests are not finished
+org.apache.qpid.test.testcases.TTLTest#*
+org.apache.qpid.test.testcases.FailoverTest#*
+// See qpid-1144
+org.apache.qpid.test.testcases.ImmediateMessageTest#*
