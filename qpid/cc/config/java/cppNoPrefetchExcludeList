@@ -1,0 +1,18 @@
+// those tests use 0.8 semantics
+org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
+org.apache.qpid.client.ResetMessageListenerTest#*
+org.apache.qpid.test.unit.transacted.TransactedTest#testRollback
+// those tests need durable subscribe states to be persisted
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
+org.apache.qpid.test.unit.ct.DurableSubscriberTest#testDurSubRestoresMessageSelector
+// This test is not finished
+org.apache.qpid.test.testcases.TTLTest#*
+// the 0.10 c++ broker does not implement forget
+org.apache.qpid.test.unit.xa.FaultTest#testForget
+// See Bug 443031 
+org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
+// removed because of bug 445500
+// org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityAUTOACK
+// org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityNOACKSessionPerConnection
+// trace sent to Gordon 
+// org.apache.qpid.test.unit.basic.SelectorTest#*
