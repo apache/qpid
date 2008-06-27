@@ -1,0 +1,15 @@
+org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
+org.apache.qpid.client.ResetMessageListenerTest#*
+// those tests should be run with prefetch off
+org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
+org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
+org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
+org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
+// those tests need durable subscribe states to be persisted
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
+org.apache.qpid.test.unit.ct.DurableSubscriberTest#testDurSubRestoresMessageSelector
+// the 0.10 c++ broker does not implement forget
+org.apache.qpid.test.unit.xa.FaultTest#testForget
+// removed because of bug 445500
+// org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityAUTOACK
+// org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityNOACKSessionPerConnection
