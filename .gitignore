@@ -11,6 +11,7 @@ generated/
 target/
 *.rej
 *.orig
+# Intellij Project files
 *.iml
 *.ipr
 *.iws
