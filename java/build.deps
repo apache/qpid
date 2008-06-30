@@ -42,6 +42,7 @@ perftests.libs=${systests.libs}
 integrationtests.libs=${systests.libs}
 
 client-example.libs=${client.libs}
+testkit.libs=${client.libs}
 
 ibm-icu=lib/com.ibm.icu-3.4.4.jar
 ecl-core-jface=lib/org.eclipse.jface-3.2.0.jar
