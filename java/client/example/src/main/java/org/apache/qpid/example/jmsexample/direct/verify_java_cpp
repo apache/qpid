@@ -2,7 +2,7 @@
 cpp=$CPP/direct
 
 direct_producer_java(){
-java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
 }
 
 clients $cpp/declare_queues direct_producer_java $cpp/listener

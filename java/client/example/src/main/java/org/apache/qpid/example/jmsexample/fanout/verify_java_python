@@ -1,9 +1,9 @@
 # See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
 # The JMS producer doesn't create qeueues so utilising the c++ declare_queues
-py=$PYTHON/fanout
+py=$PYTHON_EXAMPLES/fanout
 
 fanout_producer_java(){
-java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.fanout.Producer
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.fanout.Producer
 }
 
 background "Subscribed" $py/fanout_consumer.py
