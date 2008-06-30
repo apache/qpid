@@ -1,8 +1,8 @@
 # See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
-py=$PYTHON/pubsub
+py=$PYTHON_EXAMPLES/pubsub
 
 topic_publisher_java(){
-java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Publisher
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Publisher
 }
 
 background "Queues created" $py/topic_subscriber.py

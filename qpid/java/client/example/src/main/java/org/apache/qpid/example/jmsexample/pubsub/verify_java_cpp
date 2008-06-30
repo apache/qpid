@@ -2,7 +2,7 @@
 cpp=$CPP/pub-sub
 
 topic_publisher_java(){
-java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Publisher
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Publisher
 }
 
 background "Listening" $cpp/topic_listener
