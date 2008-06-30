@@ -105,6 +105,7 @@ class managementChannel:
     self.reqsOutstanding = 0
     self.brokerInfo  = None
 
+    ssn.auto_sync = False
     ssn.queue_declare (queue=self.topicName, exclusive=True, auto_delete=True)
     ssn.queue_declare (queue=self.replyName, exclusive=True, auto_delete=True)
 
