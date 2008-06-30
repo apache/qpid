@@ -30,39 +30,62 @@ class Template:
   Expandable File Template - This class is instantiated each time a
   template is to be expanded.  It is instantiated with the "filename"
   which is the full path to the template file and the "handler" which
-  is an object that is responsible for storing variables (setVariable)
-  and expanding tags (substHandler).
+  is an object that is responsible for storing variables (setVariable),
+  checking conditions (testCondition), and expanding tags (substHandler).
   """
   def __init__ (self, filename, handler):
     self.filename = filename
     self.handler  = handler
     self.handler.initExpansion ()
+    self.writing  = True
 
   def expandLine (self, line, stream, object):
     cursor = 0
     while 1:
       sub = line.find ("/*MGEN:", cursor)
       if sub == -1:
-        stream.write (line[cursor:len (line)])
+        if self.writing:
+          stream.write (line[cursor:len (line)])
         return
 
       subend = line.find("*/", sub)
-      stream.write (line[cursor:sub])
+      if self.writing:
+        stream.write (line[cursor:sub])
       cursor = subend + 2
 
-      tag      = line[sub:subend]
-      equalPos = tag.find ("=")
-      if equalPos == -1:
-        dotPos = tag.find (".")
+      tag = line[sub:subend]
+
+      if tag[7:10] == "IF(":
+        close = tag.find(")")
+        if close == -1:
+          raise ValueError ("Missing ')' on condition")
+        cond = tag[10:close]
+        dotPos = cond.find (".")
         if dotPos == -1:
-          raise ValueError ("Invalid tag: %s" % tag)
-        tagObject = tag[7:dotPos]
-        tagName   = tag[dotPos + 1:len (tag)]
-        self.handler.substHandler (object, stream, tagObject, tagName)
+          raise ValueError ("Invalid condition tag: %s" % cond)
+        tagObject = cond[0:dotPos]
+        tagName   = cond[dotPos + 1 : len(cond)]
+        if not self.handler.testCondition(object, tagObject, tagName):
+          self.writing = False
+
+      elif tag[7:12] == "ENDIF":
+        self.writing = True
+
       else:
-        tagKey = tag[7:equalPos]
-        tagVal = tag[equalPos + 1:len (tag)]
-        self.handler.setVariable (tagKey, tagVal)
+        equalPos = tag.find ("=")
+        if equalPos == -1:
+          dotPos = tag.find (".")
+          if dotPos == -1:
+            raise ValueError ("Invalid tag: %s" % tag)
+          tagObject = tag[7:dotPos]
+          tagName   = tag[dotPos + 1:len (tag)]
+          if self.writing:
+            self.handler.substHandler (object, stream, tagObject, tagName)
+        else:
+          tagKey = tag[7:equalPos]
+          tagVal = tag[equalPos + 1:len (tag)]
+          if self.writing:
+            self.handler.setVariable (tagKey, tagVal)
 
   def expand (self, object):
     fd     = open (self.filename)
@@ -223,6 +246,15 @@ class Generator:
 
     call = obj + ".gen" + tag + "(stream, self.variables)"
     eval (call)
+
+  def testCondition (self, object, tagObject, tag):
+    if tagObject == "Root":
+      obj = "self"
+    else:
+      obj = "object"  # MUST be the same as the 2nd formal parameter
+
+    call = obj + ".test" + tag + "(self.variables)"
+    return eval (call)
 
   def setVariable (self, key, value):
     self.variables[key] = value

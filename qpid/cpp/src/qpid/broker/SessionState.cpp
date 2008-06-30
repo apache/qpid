@@ -64,7 +64,7 @@ SessionState::SessionState(
         ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
         if (agent.get () != 0) {
             mgmtObject = management::Session::shared_ptr
-                (new management::Session (this, parent, getId().getName()));
+                (new management::Session (agent.get(), this, parent, getId().getName()));
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             agent->addObject (mgmtObject);
