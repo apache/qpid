@@ -32,19 +32,22 @@ namespace qpid {
 namespace management {
 
 class Manageable;
+class ManagementAgent;
 
 class ManagementObject
 {
   protected:
     
-    uint64_t    createTime;
-    uint64_t    destroyTime;
-    uint64_t    objectId;
-    bool        configChanged;
-    bool        instChanged;
-    bool        deleted;
-    Manageable* coreObject;
-    sys::Mutex  accessLock;
+    uint64_t         createTime;
+    uint64_t         destroyTime;
+    uint64_t         objectId;
+    bool             configChanged;
+    bool             instChanged;
+    bool             deleted;
+    Manageable*      coreObject;
+    sys::Mutex       accessLock;
+    ManagementAgent* agent;
+    int              maxThreads;
 
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;
@@ -73,15 +76,18 @@ class ManagementObject
     static const uint8_t FLAG_INDEX  = 0x02;
     static const uint8_t FLAG_END    = 0x80;
 
+    static       int nextThreadIndex;
+        
+    int  getThreadIndex();
     void writeTimestamps (qpid::framing::Buffer& buf);
 
   public:
     typedef boost::shared_ptr<ManagementObject> shared_ptr;
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
-    ManagementObject (Manageable* _core) :
+    ManagementObject (ManagementAgent* _agent, Manageable* _core) :
         destroyTime(0), objectId (0), configChanged(true),
-        instChanged(true), deleted(false), coreObject(_core)
+        instChanged(true), deleted(false), coreObject(_core), agent(_agent)
     { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
     virtual ~ManagementObject () {}
 
@@ -102,8 +108,7 @@ class ManagementObject
     uint64_t     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
     virtual bool getInstChanged   (void) { return instChanged; }
-    inline  void setAllChanged    (void)
-    {
+    inline  void setAllChanged    (void) {
         configChanged = true;
         instChanged   = true;
     }

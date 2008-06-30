@@ -41,19 +41,21 @@ class ManagementBroker : public ManagementAgent
 {
   private:
 
-    ManagementBroker (std::string dataDir, uint16_t interval, Manageable* broker);
+    ManagementBroker (std::string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize);
+    int threadPoolSize;
 
   public:
 
     virtual ~ManagementBroker ();
 
-    static void       enableManagement (std::string dataDir, uint16_t interval, Manageable* broker);
+    static void       enableManagement (std::string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize);
     static shared_ptr getAgent (void);
     static void       shutdown (void);
 
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
                           broker::Exchange::shared_ptr directExchange);
+    int  getMaxThreads   () { return threadPoolSize; }
     void RegisterClass   (std::string packageName,
                           std::string className,
                           uint8_t*    md5Sum,

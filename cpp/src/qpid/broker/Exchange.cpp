@@ -40,7 +40,7 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
         if (agent.get () != 0)
         {
             mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (this, parent, _name, durable));
+                (new management::Exchange (agent.get(), this, parent, _name, durable));
             agent->addObject (mgmtExchange);
         }
     }
@@ -56,7 +56,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         if (agent.get () != 0)
         {
             mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (this, parent, _name, durable));
+                (new management::Exchange (agent.get(), this, parent, _name, durable));
             if (!durable) {
                 if (name == "")
                     agent->addObject (mgmtExchange, 4, 1);  // Special default exchange ID
@@ -134,7 +134,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
             {
                 uint64_t queueId = mo->getObjectId();
                 mgmtBinding = management::Binding::shared_ptr
-                    (new management::Binding (this, (Manageable*) parent, queueId, key, args));
+                    (new management::Binding (agent.get(), this, (Manageable*) parent, queueId, key, args));
                 agent->addObject (mgmtBinding);
             }
         }

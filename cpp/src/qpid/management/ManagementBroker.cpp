@@ -47,8 +47,8 @@ ManagementBroker::RemoteAgent::~RemoteAgent ()
         mgmtObject->resourceDestroy ();
 }
 
-ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Manageable* _broker) :
-    dataDir (_dataDir), interval (_interval), broker (_broker)
+ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Manageable* _broker, int _threads) :
+    threadPoolSize(_threads), dataDir(_dataDir), interval(_interval), broker(_broker)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
     localBank      = 5;
@@ -105,11 +105,11 @@ void ManagementBroker::writeData ()
     }
 }
 
-void ManagementBroker::enableManagement (string dataDir, uint16_t interval, Manageable* broker)
+void ManagementBroker::enableManagement (string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize)
 {
     enabled = 1;
     if (agent.get () == 0)
-        agent = shared_ptr (new ManagementBroker (dataDir, interval, broker));
+        agent = shared_ptr (new ManagementBroker (dataDir, interval, broker, threadPoolSize));
 }
 
 ManagementAgent::shared_ptr ManagementAgent::getAgent (void)
@@ -634,7 +634,7 @@ void ManagementBroker::handleAttachRequestLH (Buffer& inBuffer, string replyToKe
     RemoteAgent* agent = new RemoteAgent;
     agent->objIdBank  = assignedBank;
     agent->mgmtObject = management::Agent::shared_ptr
-        (new management::Agent (agent));
+        (new management::Agent (this, agent));
     agent->mgmtObject->set_sessionId    (sessionId);
     agent->mgmtObject->set_label        (label);
     agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());

@@ -38,13 +38,17 @@ namespace broker {
 Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
                const management::ArgsLinkBridge& _args) : 
     link(_link), id(_id), args(_args),
-    mgmtObject(new management::Bridge(this, link, id, args.i_durable, args.i_src, args.i_dest,
-                                      args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
-                                      args.i_tag, args.i_excludes)),
     listener(l), name(Uuid(true).str()), persistenceId(0)
 {
-    if (!args.i_durable)
-        management::ManagementAgent::getAgent()->addObject(mgmtObject);
+    ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
+    if (agent.get() != 0) {
+        mgmtObject = management::Bridge::shared_ptr
+            (new management::Bridge(agent.get(), this, link, id, args.i_durable, args.i_src, args.i_dest,
+                                    args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
+                                    args.i_tag, args.i_excludes));
+        if (!args.i_durable)
+            agent->addObject(mgmtObject);
+    }
 }
 
 Bridge::~Bridge() 

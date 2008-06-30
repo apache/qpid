@@ -63,7 +63,7 @@ Link::Link(LinkRegistry*  _links,
         if (agent.get() != 0)
         {
             mgmtObject = management::Link::shared_ptr
-                (new management::Link(this, parent, _host, _port, _useSsl, _durable));
+                (new management::Link(agent.get(), this, parent, _host, _port, _useSsl, _durable));
             if (!durable)
                 agent->addObject(mgmtObject);
         }
@@ -109,7 +109,8 @@ void Link::startConnectionLH ()
                          boost::bind (&Link::closed, this, _1, _2));
     } catch(std::exception& e) {
         setStateLH(STATE_WAITING);
-        mgmtObject->set_lastError (e.what());
+        if (mgmtObject.get() != 0)
+            mgmtObject->set_lastError (e.what());
     }
 }
 
@@ -141,7 +142,8 @@ void Link::closed (int, std::string text)
     if (state != STATE_FAILED)
     {
         setStateLH(STATE_WAITING);
-        mgmtObject->set_lastError (text);
+        if (mgmtObject.get() != 0)
+            mgmtObject->set_lastError (text);
     }
 
     if (closing)
@@ -257,7 +259,8 @@ void Link::notifyConnectionForced(const string text)
     Mutex::ScopedLock mutex(lock);
 
     setStateLH(STATE_FAILED);
-    mgmtObject->set_lastError(text);
+    if (mgmtObject.get() != 0)
+        mgmtObject->set_lastError(text);
 }
 
 void Link::setPersistenceId(uint64_t id) const

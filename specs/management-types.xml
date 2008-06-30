@@ -32,30 +32,21 @@
 <type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat (#)"       decode="# = @.getFloat ()"     accessor="direct" init="0."/>
 <type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble (#)"      decode="# = @.getDouble ()"    accessor="direct" init="0."/>
 <type name="uuid"      base="UUID"      cpp="framing::Uuid" encode="#.encode (@)"         decode="#.decode (@)"          accessor="direct"/>
-<type name="ftable"    base="FTABLE"    cpp="framing::FieldTable" encode="#.encode (@)"   decode="#.decode (@)"          accessor="direct"/>
+<type name="map"       base="FTABLE"    cpp="framing::FieldTable" encode="#.encode (@)"   decode="#.decode (@)"          accessor="direct"/>
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet (#)"    decode="# = @.getOctet ()"    style="wm" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort (#)"    decode="# = @.getShort ()"    style="wm" accessor="counter" init="0"/>
 <type name="hilo32"  base="U32"  cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     style="wm" accessor="counter" init="0"/>
 <type name="hilo64"  base="U64"  cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="wm" accessor="counter" init="0"/>
 
-<type name="count8"  base="U8"   cpp="uint8_t"  encode="@.putOctet (#)"    decode="# = @.getOctet ()"    accessor="counter" init="0"/>
-<type name="count16" base="U16"  cpp="uint16_t" encode="@.putShort (#)"    decode="# = @.getShort ()"    accessor="counter" init="0"/>
-<type name="count32" base="U32"  cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     accessor="counter" init="0"/>
-<type name="count64" base="U64"  cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" accessor="counter" init="0"/>
-
-<type name="atomic32" base="U32" cpp="qpid::sys::AtomicCount" encode="@.putLong(#)" decode="" accessor="counterByOne"/>
+<type name="count8"  base="U8"   cpp="uint8_t"  encode="@.putOctet (#)"    decode="# = @.getOctet ()"    accessor="counter" init="0" perThread="y"/>
+<type name="count16" base="U16"  cpp="uint16_t" encode="@.putShort (#)"    decode="# = @.getShort ()"    accessor="counter" init="0" perThread="y"/>
+<type name="count32" base="U32"  cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     accessor="counter" init="0" perThread="y"/>
+<type name="count64" base="U64"  cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" accessor="counter" init="0" perThread="y"/>
 
 <!-- Min/Max/Average statistics -->
-<type name="mma32"   base="U32"       cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     style="mma" accessor="direct" init="0"/>
-<type name="mma64"   base="U64"       cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="mma" accessor="direct" init="0"/>
-<type name="mmaTime" base="DELTATIME" cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="mma" accessor="direct" init="0"/>
-
-<!-- Some Proposed Syntax for User-Defined Types:
-<enum name="enumeratedType" base="U8">
-  <item name="value-name1" value="1"/>
-  <item name="value-name2" value="2"/>
-</enum>
--->
+<type name="mma32"   base="U32"       cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     style="mma" accessor="direct" init="0" perThread="y"/>
+<type name="mma64"   base="U64"       cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="mma" accessor="direct" init="0" perThread="y"/>
+<type name="mmaTime" base="DELTATIME" cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="mma" accessor="direct" init="0" perThread="y"/>
 
 </schema-types>

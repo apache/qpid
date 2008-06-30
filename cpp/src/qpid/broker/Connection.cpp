@@ -65,7 +65,8 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
         ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
 
         if (agent.get() != 0)
-            mgmtObject = management::Connection::shared_ptr(new management::Connection(this, parent, mgmtId, !isLink));
+            mgmtObject = management::Connection::shared_ptr
+                (new management::Connection(agent.get(), this, parent, mgmtId, !isLink));
         agent->addObject(mgmtObject);
     }
 }

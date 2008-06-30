@@ -26,14 +26,15 @@ import md5
 #=====================================================================================
 class SchemaType:
   def __init__ (self, node):
-    self.name     = None
-    self.base     = None
-    self.cpp      = None
-    self.encode   = None
-    self.decode   = None
-    self.style    = "normal"
-    self.accessor = None
-    self.init     = "0"
+    self.name      = None
+    self.base      = None
+    self.cpp       = None
+    self.encode    = None
+    self.decode    = None
+    self.style     = "normal"
+    self.accessor  = None
+    self.init      = "0"
+    self.perThread = False
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -63,6 +64,11 @@ class SchemaType:
       elif key == 'init':
         self.init = val
 
+      elif key == 'perThread':
+        if val != 'y':
+          raise ValueError ("Expected 'y' in perThread attribute")
+        self.perThread = True
+
       else:
         raise ValueError ("Unknown attribute in type '%s'" % key)
 
@@ -74,43 +80,38 @@ class SchemaType:
     return self.name
 
   def genAccessor (self, stream, varName, changeFlag = None):
+    if self.perThread:
+      prefix = "getThreadStats()->"
+      if self.style == "wm":
+        raise ValueError ("'wm' style types can't be per-thread")
+    else:
+      prefix = ""
     if self.accessor == "direct":
       stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
-      stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+      if not self.perThread:
+        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
       if self.style != "mma":
-        stream.write ("        " + varName + " = val;\n");
+        stream.write ("        " + prefix + varName + " = val;\n");
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low  > val)\n")
         stream.write ("            " + varName + "Low  = val;\n")
         stream.write ("        if (" + varName + "High < val)\n")
         stream.write ("            " + varName + "High = val;\n")
       if self.style == "mma":
-        stream.write ("        " + varName + "Count++;\n")
-        stream.write ("        " + varName + "Total += val;\n")
-        stream.write ("        if (" + varName + "Min > val)\n")
-        stream.write ("            " + varName + "Min = val;\n")
-        stream.write ("        if (" + varName + "Max < val)\n")
-        stream.write ("            " + varName + "Max = val;\n")
-      if changeFlag != None:
-        stream.write ("        " + changeFlag + " = true;\n")
-      stream.write ("    }\n");
-    elif self.accessor == "counterByOne":
-      stream.write ("    inline void inc_" + varName + " (){\n");
-      stream.write ("        ++" + varName + ";\n")
-      if changeFlag != None:
-        stream.write ("        " + changeFlag + " = true;\n")
-      stream.write ("    }\n");
-      stream.write ("    inline void dec_" + varName + " (){\n");
-      stream.write ("        --" + varName + ";\n")
+        stream.write ("        " + prefix + varName + "Count++;\n")
+        stream.write ("        " + prefix + varName + "Total += val;\n")
+        stream.write ("        if (" + prefix + varName + "Min > val)\n")
+        stream.write ("            " + prefix + varName + "Min = val;\n")
+        stream.write ("        if (" + prefix + varName + "Max < val)\n")
+        stream.write ("            " + prefix + varName + "Max = val;\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
     elif self.accessor == "counter":
       stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1){\n");
-      stream.write ("        if (by == 1)\n")
-      stream.write ("            ++" + varName + ";\n")
-      stream.write ("        else\n")
-      stream.write ("            " + varName + " += by;\n")
+      if not self.perThread:
+        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+      stream.write ("        " + prefix + varName + " += by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "High < " + varName + ")\n")
         stream.write ("            " + varName + "High = " + varName + ";\n")
@@ -118,24 +119,12 @@ class SchemaType:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
       stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1){\n");
-      stream.write ("        if (by == 1)\n")
-      stream.write ("            " + varName + "--;\n")
-      stream.write ("        else\n")
-      stream.write ("            " + varName + " -= by;\n")
+      if not self.perThread:
+        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+      stream.write ("        " + prefix + varName + " -= by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low > " + varName + ")\n")
         stream.write ("            " + varName + "Low = " + varName + ";\n")
-      if changeFlag != None:
-        stream.write ("        " + changeFlag + " = true;\n")
-      stream.write ("    }\n");
-      stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
-      stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
-      stream.write ("        " + varName + " = val;\n");
-      if self.style == "wm":
-        stream.write ("        if (" + varName + "Low  > val)\n")
-        stream.write ("            " + varName + "Low  = val;\n")
-        stream.write ("        if (" + varName + "High < val)\n")
-        stream.write ("            " + varName + "High = val;\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
@@ -149,6 +138,13 @@ class SchemaType:
       stream.write ("    " + varName + "Total = 0;\n")
       stream.write ("    " + varName + "Min   = -1;\n")
       stream.write ("    " + varName + "Max   = 0;\n")
+
+  def genPerThreadHiLoStatResets (self, stream, varName):
+    if self.style == "mma":
+      stream.write ("        threadStats->" + varName + "Count = 0;\n")
+      stream.write ("        threadStats->" + varName + "Total = 0;\n")
+      stream.write ("        threadStats->" + varName + "Min   = -1;\n")
+      stream.write ("        threadStats->" + varName + "Max   = 0;\n")
 
   def genWrite (self, stream, varName):
     if self.style != "mma":
@@ -235,6 +231,8 @@ class SchemaConfig:
 
       elif key == 'type':
         self.type = Type (val, typespec)
+        if self.type.type.accessor != 'direct':
+          raise ValueError ("Class properties must have a type with a direct accessor")
 
       elif key == 'references':
         self.ref = val
@@ -288,8 +286,8 @@ class SchemaConfig:
       return 1
     return 0
 
-  def genDeclaration (self, stream):
-    stream.write ("    " + self.type.type.cpp + " " + self.name + ";\n")
+  def genDeclaration (self, stream, prefix="    "):
+    stream.write (prefix + self.type.type.cpp + " " + self.name + ";\n")
 
   def genFormalParam (self, stream):
     stream.write (self.type.type.cpp + " _" + self.name)
@@ -360,23 +358,26 @@ class SchemaInst:
   def getName (self):
     return self.name
 
-  def genDeclaration (self, stream):
+  def genDeclaration (self, stream, prefix="    "):
     if self.type.type.style != "mma":
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + ";\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + ";\n")
     if self.type.type.style == 'wm':
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + "High;\n")
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Low;\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + "High;\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + "Low;\n")
     if self.type.type.style == "mma":
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Count;\n")
-      stream.write ("    uint64_t  " + self.name + "Total;\n")
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Min;\n")
-      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Max;\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + "Count;\n")
+      stream.write (prefix + "uint64_t  " + self.name + "Total;\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + "Min;\n")
+      stream.write (prefix + self.type.type.cpp + "  " + self.name + "Max;\n")
 
   def genAccessor (self, stream):
     self.type.type.genAccessor (stream, self.name, "instChanged")
 
   def genHiLoStatResets (self, stream):
     self.type.type.genHiLoStatResets (stream, self.name)
+
+  def genPerThreadHiLoStatResets (self, stream):
+    self.type.type.genPerThreadHiLoStatResets (stream, self.name)
 
   def genSchemaText (self, stream, name, desc):
     stream.write ("    ft = FieldTable ();\n")
@@ -416,26 +417,51 @@ class SchemaInst:
 
   def genAssign (self, stream):
     if self.assign != None:
-      stream.write ("    " + self.name + " = (" + self.type.type.cpp + ") (" + self.assign + ");\n")
+      if self.type.type.perThread:
+        prefix = "    threadStats->"
+      else:
+        prefix = ""
+      stream.write ("    " + prefix + self.name + " = (" + self.type.type.cpp +
+                    ") (" + self.assign + ");\n")
 
   def genWrite (self, stream):
-    self.type.type.genWrite (stream, self.name)
+    if self.type.type.perThread:
+      self.type.type.genWrite (stream, "totals." + self.name)
+    else:
+      self.type.type.genWrite (stream, self.name)
 
-  def genInitialize (self, stream):
+  def genInitialize (self, stream, prefix="", indent="    "):
     val = self.type.type.init
-    if self.type.type.accessor == "counterByOne":
-      return
     if self.type.type.style != "mma":
-      stream.write ("    " + self.name + " = " + val + ";\n")
+      stream.write (indent + prefix + self.name + " = " + val + ";\n")
     if self.type.type.style == "wm":
-      stream.write ("    " + self.name + "High = " + val + ";\n")
-      stream.write ("    " + self.name + "Low  = " + val + ";\n")
+      stream.write (indent + prefix + self.name + "High = " + val + ";\n")
+      stream.write (indent + prefix + self.name + "Low  = " + val + ";\n")
     if self.type.type.style == "mma":
-      stream.write ("    " + self.name + "Count = 0;\n")
-      stream.write ("    " + self.name + "Min   = -1;\n")
-      stream.write ("    " + self.name + "Max   = 0;\n")
-      stream.write ("    " + self.name + "Total = 0;\n")
+      stream.write (indent + prefix + self.name + "Count = 0;\n")
+      stream.write (indent + prefix + self.name + "Min   = -1;\n")
+      stream.write (indent + prefix + self.name + "Max   = 0;\n")
+      stream.write (indent + prefix + self.name + "Total = 0;\n")
 
+  def genInitializeTotalPerThreadStats (self, stream):
+    if self.type.type.style == "mma":
+      stream.write ("    totals->" + self.name + "Count = 0;\n")
+      stream.write ("    totals->" + self.name + "Min   = -1;\n")
+      stream.write ("    totals->" + self.name + "Max   = 0;\n")
+      stream.write ("    totals->" + self.name + "Total = 0;\n")
+    else:
+      stream.write ("    totals->" + self.name + " = 0;\n")
+
+  def genAggregatePerThreadStats (self, stream):
+    if self.type.type.style == "mma":
+      stream.write ("            totals->%sCount += threadStats->%sCount;\n" % (self.name, self.name))
+      stream.write ("            if (totals->%sMin > threadStats->%sMin)\n" % (self.name, self.name))
+      stream.write ("                totals->%sMin = threadStats->%sMin;\n" % (self.name, self.name))
+      stream.write ("            if (totals->%sMax < threadStats->%sMax)\n" % (self.name, self.name))
+      stream.write ("                totals->%sMax = threadStats->%sMax;\n" % (self.name, self.name))
+      stream.write ("            totals->%sTotal += threadStats->%sTotal;\n" % (self.name, self.name))
+    else:
+      stream.write ("            totals->%s += threadStats->%s;\n" % (self.name, self.name))
 
 #=====================================================================================
 #
@@ -664,6 +690,26 @@ class SchemaClass:
         else:
           raise ValueError ("Unknown class tag '%s'" % child.nodeName)
 
+    # Adjust the 'assign' attributes for each statistic
+    for stat in self.statistics:
+      if stat.assign != None and stat.type.type.perThread:
+        stat.assign = self.adjust (stat.assign, self.statistics)
+
+  def adjust (self, text, statistics):
+    result = text
+    start  = 0
+    while True:
+      next = None
+      for stat in statistics:
+        pos = result.find (stat.name, start)
+        if pos != -1 and (next == None or pos < next[0]):
+          next = (pos, stat.name)
+      if next == None:
+        return result
+      pos = next[0]
+      result = result[0:pos] + "threadStats->" + result[pos:]
+      start = pos + 9 + len(next[1])
+
   def hash (self, node):
     attrs = node.attributes
     self.md5Sum.update (node.nodeName)
@@ -711,12 +757,34 @@ class SchemaClass:
   # Code Generation Functions.  The names of these functions (minus the leading "gen")
   # match the substitution keywords in the template files.
   #===================================================================================
+  def testExistPerThreadStats (self, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        return True
+    return False
+
+  def testExistPerThreadAssign (self, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread and inst.assign != None:
+        return True
+    return False
+
+  def testExistPerThreadResets (self, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread and inst.type.type.style == "mma":
+        return True
+    return False
+
+  def testNoStatistics (self, variables):
+    return len (self.statistics) == 0
+
   def genAccessorMethods (self, stream, variables):
     for config in self.properties:
       if config.access != "RC":
         config.genAccessor (stream)
     for inst in self.statistics:
-      inst.genAccessor (stream)
+      if inst.assign == None:
+        inst.genAccessor (stream)
 
   def genConfigCount (self, stream, variables):
     stream.write ("%d" % len (self.properties))
@@ -767,16 +835,33 @@ class SchemaClass:
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
-      inst.genHiLoStatResets (stream)
+      if not inst.type.type.perThread:
+        inst.genHiLoStatResets (stream)
+
+  def genPerThreadHiLoStatResets (self, stream, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        inst.genPerThreadHiLoStatResets (stream)
 
   def genInitializeElements (self, stream, variables):
     for inst in self.statistics:
-      inst.genInitialize (stream)
+      if not inst.type.type.perThread:
+        inst.genInitialize (stream)
 
-  def genInstChangedStub (self, stream, variables):
-    if len (self.statistics) == 0:
-      stream.write ("    // Stub for getInstChanged.  There are no inst elements\n")
-      stream.write ("    bool getInstChanged (void) { return false; }\n")
+  def genInitializePerThreadElements (self, stream, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        inst.genInitialize (stream, "threadStats->", "            ")
+
+  def genInitializeTotalPerThreadStats (self, stream, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        inst.genInitializeTotalPerThreadStats (stream)
+
+  def genAggregatePerThreadStats (self, stream, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        inst.genAggregatePerThreadStats (stream)
 
   def genInstCount (self, stream, variables):
     count = 0
@@ -790,7 +875,13 @@ class SchemaClass:
 
   def genInstDeclarations (self, stream, variables):
     for element in self.statistics:
-      element.genDeclaration (stream)
+      if not element.type.type.perThread:
+        element.genDeclaration (stream)
+
+  def genPerThreadDeclarations (self, stream, variables):
+    for element in self.statistics:
+      if element.type.type.perThread:
+        element.genDeclaration (stream, "        ")
 
   def genInstElementSchema (self, stream, variables):
     for inst in self.statistics:
@@ -884,7 +975,13 @@ class SchemaClass:
 
   def genAssign (self, stream, variables):
     for inst in self.statistics:
-      inst.genAssign (stream)
+      if not inst.type.type.perThread:
+        inst.genAssign (stream)
+
+  def genPerThreadAssign (self, stream, variables):
+    for inst in self.statistics:
+      if inst.type.type.perThread:
+        inst.genAssign (stream)
 
   def genWriteConfig (self, stream, variables):
     for config in self.properties:
