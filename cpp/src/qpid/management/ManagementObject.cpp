@@ -21,11 +21,14 @@
  
 #include "Manageable.h"
 #include "ManagementObject.h"
+#include "ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::sys;
+
+int ManagementObject::nextThreadIndex = 0;
 
 void ManagementObject::writeTimestamps (Buffer& buf)
 {
@@ -39,4 +42,15 @@ void ManagementObject::writeTimestamps (Buffer& buf)
 }
 
 void ManagementObject::setReference(uint64_t) {}
+
+int ManagementObject::getThreadIndex() {
+    static __thread int thisIndex = -1;
+    if (thisIndex == -1) {
+        sys::Mutex::ScopedLock mutex(accessLock);
+        thisIndex = nextThreadIndex;
+        if (nextThreadIndex < agent->getMaxThreads() - 1)
+            nextThreadIndex++;
+    }
+    return thisIndex;
+}
 

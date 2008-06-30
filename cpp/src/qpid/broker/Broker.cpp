@@ -135,7 +135,7 @@ Broker::Broker(const Broker::Options& conf) :
     if(conf.enableMgmt){
         QPID_LOG(info, "Management enabled");
         ManagementBroker::enableManagement (dataDir.isEnabled () ? dataDir.getPath () : string (),
-                                            conf.mgmtPubInterval, this);
+                                            conf.mgmtPubInterval, this, conf.workerThreads + 3);
         managementAgent = management::ManagementAgent::getAgent ();
         ((ManagementBroker*) managementAgent.get())->setInterval (conf.mgmtPubInterval);
         qpid::management::PackageQpid packageInitializer (managementAgent);
@@ -143,7 +143,7 @@ Broker::Broker(const Broker::Options& conf) :
         System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
         systemObject = System::shared_ptr (system);
 
-        mgmtObject = management::Broker::shared_ptr (new management::Broker (this, system, conf.port));
+        mgmtObject = management::Broker::shared_ptr (new management::Broker (managementAgent.get(), this, system, conf.port));
         mgmtObject->set_workerThreads    (conf.workerThreads);
         mgmtObject->set_maxConns         (conf.maxConnections);
         mgmtObject->set_connBacklog      (conf.connectionBacklog);

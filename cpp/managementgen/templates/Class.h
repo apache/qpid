@@ -26,7 +26,6 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
-#include "qpid/sys/AtomicCount.h"
 
 namespace qpid {
 namespace management {
@@ -43,6 +42,27 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 /*MGEN:Class.ConfigDeclarations*/
     // Statistics
 /*MGEN:Class.InstDeclarations*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    // Per-Thread Statistics
+    struct PerThreadStats {
+/*MGEN:Class.PerThreadDeclarations*/
+    };
+
+    struct PerThreadStats** perThreadStatsArray;
+
+    inline struct PerThreadStats* getThreadStats() {
+        int index = getThreadIndex();
+        struct PerThreadStats* threadStats = perThreadStatsArray[index];
+        if (threadStats == 0) {
+            threadStats = new(PerThreadStats);
+            perThreadStatsArray[index] = threadStats;
+/*MGEN:Class.InitializePerThreadElements*/
+        }
+        return threadStats;
+    }
+
+    void aggregatePerThreadStats(struct PerThreadStats*);
+/*MGEN:ENDIF*/
     // Private Methods
     static void writeSchema (qpid::framing::Buffer& buf);
     void writeProperties    (qpid::framing::Buffer& buf);
@@ -51,15 +71,18 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     void doMethod           (std::string            methodName,
                              qpid::framing::Buffer& inBuf,
                              qpid::framing::Buffer& outBuf);
-    writeSchemaCall_t getWriteSchemaCall (void) { return writeSchema; }
-
-/*MGEN:Class.InstChangedStub*/
+    writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
+/*MGEN:IF(Class.NoStatistics)*/
+    // Stub for getInstChanged.  There are no statistics in this class.
+    bool getInstChanged (void) { return false; }
+/*MGEN:ENDIF*/
   public:
 
     friend class Package/*MGEN:Class.NamePackageCap*/;
     typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
 
-    /*MGEN:Class.NameCap*/ (Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
+    /*MGEN:Class.NameCap*/ (ManagementAgent* agent,
+                            Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
