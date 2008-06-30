@@ -35,7 +35,7 @@ def Usage ():
     print "        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>"
     print "        qpid-route [OPTIONS] link list [<dest-broker>]"
     print
-    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [id] [exclude-list]"
+    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list]"
     print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
     print "        qpid-route [OPTIONS] route list  [<dest-broker>]"
     print "        qpid-route [OPTIONS] route flush [<dest-broker>]"
@@ -154,7 +154,7 @@ class RouteManager:
             for link in links:
                 print "%-16s%-8d   %c     %-18s%s" % (link.host, link.port, YN(link.durable), link.state, link.lastError)
 
-    def AddRoute (self, srcBroker, exchange, routingKey, id, excludes):
+    def AddRoute (self, srcBroker, exchange, routingKey, tag, excludes):
         self.src  = Broker (srcBroker)
         mc = self.mclient
 
@@ -205,7 +205,7 @@ class RouteManager:
         bridgeArgs["src"]        = exchange
         bridgeArgs["dest"]       = exchange
         bridgeArgs["key"]        = routingKey
-        bridgeArgs["tag"]        = id
+        bridgeArgs["tag"]        = tag
         bridgeArgs["excludes"]   = excludes
         bridgeArgs["srcIsQueue"] = 0
         bridgeArgs["srcIsLocal"] = 0
@@ -351,11 +351,11 @@ elif group == "route":
         if nargs < 6 or nargs > 8:
             Usage ()
 
-        id = ""
+        tag = ""
         excludes = ""
-        if nargs > 6: id = cargs[6]     
+        if nargs > 6: tag = cargs[6]     
         if nargs > 7: excludes = cargs[7]     
-        rm.AddRoute (cargs[3], cargs[4], cargs[5], id, excludes)
+        rm.AddRoute (cargs[3], cargs[4], cargs[5], tag, excludes)
     elif cmd == "del":
         if nargs != 6:
             Usage ()
