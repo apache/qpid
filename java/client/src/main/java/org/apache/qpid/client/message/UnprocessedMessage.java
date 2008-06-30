@@ -125,136 +125,115 @@ public abstract class UnprocessedMessage<H,B>
         }
 
         public BasicDeliverBody getDeliverBody()
-             {
-                 return new BasicDeliverBody()
-                  {
-    
-                     public AMQShortString getConsumerTag()
-                     {
-                         return _consumerTag;
-                     }
+        {
+            return new BasicDeliverBody()
+            {
 
-                    @Override
-                    public long getDeliveryTag()
-                    {
-                        return 0;
-                    }
+                public AMQShortString getConsumerTag()
+                {
+                    return _consumerTag;
+                }
 
-                    @Override
-                    public AMQShortString getExchange()
-                    {
-                        return null;
-                    }
+                public long getDeliveryTag()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public boolean getRedelivered()
-                    {
-                        return false;
-                    }
+                public AMQShortString getExchange()
+                {
+                    return null;
+                }
 
-                    @Override
-                    public AMQShortString getRoutingKey()
-                    {
-                        return null;
-                    }
+                public boolean getRedelivered()
+                {
+                    return false;
+                }
 
-                    @Override
-                    public boolean execute(MethodDispatcher methodDispatcher, int channelId) throws AMQException
-                    {
-                        return false;
-                    }
+                public AMQShortString getRoutingKey()
+                {
+                    return null;
+                }
 
-                    @Override
-                    public AMQFrame generateFrame(int channelId)
-                    {
-                        return null;
-                    }
+                public boolean execute(MethodDispatcher methodDispatcher, int channelId) throws AMQException
+                {
+                    return false;
+                }
 
-                    @Override
-                    public AMQChannelException getChannelException(AMQConstant code, String message)
-                    {
-                        return null;
-                    }
+                public AMQFrame generateFrame(int channelId)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
-                    {
-                        return null;
-                    }
+                public AMQChannelException getChannelException(AMQConstant code, String message)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public AMQChannelException getChannelNotFoundException(int channelId)
-                    {
-                        return null;
-                    }
+                public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public int getClazz()
-                    {
-                        return 0;
-                    }
+                public AMQChannelException getChannelNotFoundException(int channelId)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public AMQConnectionException getConnectionException(AMQConstant code, String message)
-                    {
-                        return null;
-                    }
+                public int getClazz()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public AMQConnectionException getConnectionException(AMQConstant code, String message,
-                            Throwable cause)
-                    {
-                        return null;
-                    }
+                public AMQConnectionException getConnectionException(AMQConstant code, String message)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public byte getMajor()
-                    {
-                        return 0;
-                    }
+                public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)
+                {
+                    return null;
+                }
 
-                    @Override
-                    public int getMethod()
-                    {
-                        return 0;
-                    }
+                public byte getMajor()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public byte getMinor()
-                    {
-                        return 0;
-                    }
+                public int getMethod()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public int getSize()
-                    {
-                        return 0;
-                    }
+                public byte getMinor()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public void writeMethodPayload(ByteBuffer buffer)
-                    {
-                    }
+                public int getSize()
+                {
+                    return 0;
+                }
 
-                    @Override
-                    public void writePayload(ByteBuffer buffer)
-                    {
-                    }
+                public void writeMethodPayload(ByteBuffer buffer)
+                {
+                }
 
-                    @Override
-                    public byte getFrameType()
-                    {
-                        return 0;
-                    }
+                public void writePayload(ByteBuffer buffer)
+                {
+                }
 
-                    @Override
-                    public void handle(int channelId, AMQVersionAwareProtocolSession amqMinaProtocolSession)
-                            throws AMQException
-                    {
-                        
-                    }
-                  };
-             }
+                public byte getFrameType()
+                {
+                    return 0;
+                }
+
+                public void handle(int channelId, AMQVersionAwareProtocolSession amqMinaProtocolSession)
+                        throws AMQException
+                {
+
+                }
+            };
+        }
 
         @Override
         public List getBodies()
