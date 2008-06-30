@@ -63,7 +63,7 @@ System::System (string _dataDir)
         }
 
         mgmtObject = management::System::shared_ptr
-            (new management::System (this, systemId));
+            (new management::System (agent.get(), this, systemId));
         struct utsname _uname;
         if (uname (&_uname) == 0)
         {

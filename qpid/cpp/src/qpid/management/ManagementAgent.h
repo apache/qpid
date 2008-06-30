@@ -37,6 +37,8 @@ class ManagementAgent
 
     static shared_ptr getAgent (void);
 
+    virtual int  getMaxThreads() = 0;
+
     virtual void RegisterClass (std::string packageName,
                                 std::string className,
                                 uint8_t*    md5Sum,

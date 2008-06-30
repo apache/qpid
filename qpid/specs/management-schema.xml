@@ -124,13 +124,13 @@
   ===============================================================
   -->
   <class name="Queue">
-    <property name="vhostRef"        type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
-    <property name="name"            type="sstr"   access="RC" index="y"/>
+    <property name="vhostRef"   type="objId" references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="name"       type="sstr"  access="RC" index="y"/>
 
-    <property name="durable"         type="bool"   access="RC"/>
-    <property name="autoDelete"      type="bool"   access="RC"/>
-    <property name="exclusive"       type="bool"   access="RC"/>
-    <property name="arguments"       type="ftable" access="RO" desc="Arguments supplied in queue.declare"/>
+    <property name="durable"    type="bool"  access="RC"/>
+    <property name="autoDelete" type="bool"  access="RC"/>
+    <property name="exclusive"  type="bool"  access="RC"/>
+    <property name="arguments"  type="map"   access="RO" desc="Arguments supplied in queue.declare"/>
 
     <statistic name="msgTotalEnqueues"    type="count64"  unit="message"     desc="Total messages enqueued"/>
     <statistic name="msgTotalDequeues"    type="count64"  unit="message"     desc="Total messages dequeued"/>
@@ -138,9 +138,8 @@
     <statistic name="msgTxnDequeues"      type="count64"  unit="message"     desc="Transactional messages dequeued"/>
     <statistic name="msgPersistEnqueues"  type="count64"  unit="message"     desc="Persistent messages enqueued"/>
     <statistic name="msgPersistDequeues"  type="count64"  unit="message"     desc="Persistent messages dequeued"/>
-    <statistic name="msgDepth"            type="atomic32" unit="message"     desc="Current size of queue in messages"/>
-    <statistic name="byteDepth"           type="count32"  unit="octet"
-               assign="byteTotalEnqueues - byteTotalDequeues"                desc="Current size of queue in bytes"/>
+    <statistic name="msgDepth"            type="count32"  unit="message"     desc="Current size of queue in messages" assign="msgTotalEnqueues - msgTotalDequeues"/>
+    <statistic name="byteDepth"           type="count32"  unit="octet"       desc="Current size of queue in bytes"    assign="byteTotalEnqueues - byteTotalDequeues"/>
     <statistic name="byteTotalEnqueues"   type="count64"  unit="octet"       desc="Total messages enqueued"/>
     <statistic name="byteTotalDequeues"   type="count64"  unit="octet"       desc="Total messages dequeued"/>
     <statistic name="byteTxnEnqueues"     type="count64"  unit="octet"       desc="Transactional messages enqueued"/>
@@ -150,11 +149,11 @@
     <statistic name="enqueueTxnStarts"    type="count64"  unit="transaction" desc="Total enqueue transactions started "/>
     <statistic name="enqueueTxnCommits"   type="count64"  unit="transaction" desc="Total enqueue transactions committed"/>
     <statistic name="enqueueTxnRejects"   type="count64"  unit="transaction" desc="Total enqueue transactions rejected"/>
-    <statistic name="enqueueTxnCount"     type="hilo32"   unit="transaction" desc="Current pending enqueue transactions"/>
+    <statistic name="enqueueTxnCount"     type="count32"  unit="transaction" desc="Current pending enqueue transactions"/>
     <statistic name="dequeueTxnStarts"    type="count64"  unit="transaction" desc="Total dequeue transactions started"/>
     <statistic name="dequeueTxnCommits"   type="count64"  unit="transaction" desc="Total dequeue transactions committed"/>
     <statistic name="dequeueTxnRejects"   type="count64"  unit="transaction" desc="Total dequeue transactions rejected"/>
-    <statistic name="dequeueTxnCount"     type="hilo32"   unit="transaction" desc="Current pending dequeue transactions"/>
+    <statistic name="dequeueTxnCount"     type="count32"  unit="transaction" desc="Current pending dequeue transactions"/>
     <statistic name="consumerCount"       type="hilo32"   unit="consumer"    desc="Current consumers on queue"/>
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
@@ -190,10 +189,10 @@
   ===============================================================
   -->
   <class name="Binding">
-    <property name="exchangeRef" type="objId"  references="Exchange" access="RC" index="y" parentRef="y"/>
-    <property name="queueRef"    type="objId"  references="Queue"    access="RC" index="y"/>
-    <property name="bindingKey"  type="sstr"   access="RC" index="y"/>
-    <property name="arguments"   type="ftable" access="RC"/>
+    <property name="exchangeRef" type="objId" references="Exchange" access="RC" index="y" parentRef="y"/>
+    <property name="queueRef"    type="objId" references="Queue"    access="RC" index="y"/>
+    <property name="bindingKey"  type="sstr"  access="RC" index="y"/>
+    <property name="arguments"   type="map"   access="RC"/>
 
     <statistic name="msgMatched" type="count64"/>
   </class>

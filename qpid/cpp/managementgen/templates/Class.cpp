@@ -23,6 +23,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
+#include "qpid/management/ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 
@@ -36,15 +37,28 @@ string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/
 uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
     {/*MGEN:Class.SchemaMD5*/};
 
-/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
-    ManagementObject(_core)
-    /*MGEN:Class.ConstructorInits*/
+/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (ManagementAgent* _agent, Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
+    ManagementObject(_agent, _core)/*MGEN:Class.ConstructorInits*/
 {
     /*MGEN:Class.ParentRefAssignment*/
 /*MGEN:Class.InitializeElements*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    maxThreads = agent->getMaxThreads();
+    perThreadStatsArray = new struct PerThreadStats*[maxThreads];
+    for (int idx = 0; idx < maxThreads; idx++)
+        perThreadStatsArray[idx] = 0;
+/*MGEN:ENDIF*/
 }
 
-/*MGEN:Class.NameCap*/::~/*MGEN:Class.NameCap*/ () {}
+/*MGEN:Class.NameCap*/::~/*MGEN:Class.NameCap*/ ()
+{
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    for (int idx = 0; idx < maxThreads; idx++)
+        if (perThreadStatsArray[idx] != 0)
+            delete perThreadStatsArray[idx];
+    delete perThreadStatsArray;
+/*MGEN:ENDIF*/
+}
 
 namespace {
     const string NAME("name");
@@ -85,6 +99,19 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 /*MGEN:Class.EventSchema*/
 }
 
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* totals)
+{
+/*MGEN:Class.InitializeTotalPerThreadStats*/
+    for (int idx = 0; idx < maxThreads; idx++) {
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+        if (threadStats != 0) {
+/*MGEN:Class.AggregatePerThreadStats*/
+        }
+    }
+}
+/*MGEN:ENDIF*/
+
 void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
 {
     sys::Mutex::ScopedLock mutex(accessLock);
@@ -98,14 +125,33 @@ void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
 {
     sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
+/*MGEN:IF(Class.ExistPerThreadAssign)*/
+    for (int idx = 0; idx < maxThreads; idx++) {
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+        if (threadStats != 0) {
+/*MGEN:Class.PerThreadAssign*/
+        }
+    }
+/*MGEN:ENDIF*/
+/*MGEN:IF(Class.ExistPerThreadStats)*/
+    struct PerThreadStats totals;
+    aggregatePerThreadStats(&totals);
+/*MGEN:ENDIF*/
 /*MGEN:Class.Assign*/
-
     if (!skipHeaders)
         writeTimestamps (buf);
 /*MGEN:Class.WriteInst*/
 
     // Maintenance of hi-lo statistics
 /*MGEN:Class.HiLoStatResets*/
+/*MGEN:IF(Class.ExistPerThreadResets)*/
+    for (int idx = 0; idx < maxThreads; idx++) {
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
+        if (threadStats != 0) {
+/*MGEN:Class.PerThreadHiLoStatResets*/
+        }
+    }
+/*MGEN:ENDIF*/
 }
 
 void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
