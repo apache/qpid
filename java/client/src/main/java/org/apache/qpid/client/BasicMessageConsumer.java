@@ -290,6 +290,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
         
         _session.setInRecovery(false);
+        preDeliver(jmsMsg);
     }
 
     /**
@@ -686,7 +687,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 // if (!_closed.get())
                 {
 
-                    preDeliver(jmsMessage);
+                    //preDeliver(jmsMessage);
 
                     notifyMessage(jmsMessage);
                 }
@@ -768,6 +769,17 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 // to send out the appropriate frame
                 msg.setAMQSession(_session);
                 break;
+            case Session.SESSION_TRANSACTED:
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                else
+                {
+                    _session.addDeliveredMessage(msg.getDeliveryTag());
+                }
+
+                break;
         }
     }
 
@@ -791,17 +803,6 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 if (!_session.isInRecovery())
                 {
                     _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-
-                break;
-            case Session.SESSION_TRANSACTED:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                else
-                {
-                    _session.addDeliveredMessage(msg.getDeliveryTag());
                 }
 
                 break;
