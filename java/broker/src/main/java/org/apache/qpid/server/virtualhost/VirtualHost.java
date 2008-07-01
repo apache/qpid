@@ -71,7 +71,7 @@ public class VirtualHost implements Accessable
 
     private ACLPlugin _accessManager;
 
-    private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
+    private final Timer _houseKeepingTimer;
      
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     
@@ -146,6 +146,7 @@ public class VirtualHost implements Accessable
         // This isn't needed to be registered
         //_virtualHostMBean.register();
 
+        _houseKeepingTimer = new Timer("Queue-housekeeping-"+name, true);
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
         _exchangeFactory.initialise(hostConfig);
