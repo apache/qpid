@@ -76,6 +76,12 @@ class Waitable : public Monitor {
         
     }
 
+    /** True if the waitable has an exception */
+    bool hasException() const { return exception; }
+
+    /** Clear the exception if any */
+    void resetException() { exception.reset(); }
+
     /** Throws an exception if one is set before or during the wait. */
     void wait() {
         ExCheck e(exception);
@@ -88,8 +94,6 @@ class Waitable : public Monitor {
         return Monitor::wait(absoluteTime);
     }
 
-    ExceptionHolder exception;
-
   private:
     struct ExCheck {
         const ExceptionHolder& exception;
@@ -98,6 +102,8 @@ class Waitable : public Monitor {
     };
         
     size_t waiters;
+    ExceptionHolder exception;
+
   friend struct ScopedWait;
 };
 

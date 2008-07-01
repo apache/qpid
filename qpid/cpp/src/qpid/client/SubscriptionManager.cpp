@@ -129,10 +129,13 @@ void SubscriptionManager::stop()
     dispatcher.stop();
 }
 
-Message SubscriptionManager::get(const std::string& queue) {
+bool SubscriptionManager::get(Message& result, const std::string& queue, sys::Duration timeout) {
     LocalQueue lq;
-    subscribe(lq, queue, FlowControl::messageCredit(1), framing::Uuid(true).str());
-    return lq.get();
+    std::string unique = framing::Uuid(true).str();
+    subscribe(lq, queue, FlowControl::messageCredit(1), unique);
+    AutoCancel ac(*this, unique);
+    sync(session).messageFlush(unique);
+    return lq.get(result, timeout);
 }
 
 }} // namespace qpid::client

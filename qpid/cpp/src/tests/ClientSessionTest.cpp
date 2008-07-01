@@ -41,6 +41,7 @@ using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
 using qpid::sys::Monitor;
+using qpid::sys::TIME_SEC;
 using std::string;
 using std::cout;
 using std::endl;
@@ -242,8 +243,11 @@ QPID_AUTO_TEST_CASE(testGet) {
     fix.session.queueDeclare(queue="getq", exclusive=true, autoDelete=true);
     fix.session.messageTransfer(content=Message("foo0", "getq"));
     fix.session.messageTransfer(content=Message("foo1", "getq"));
-    BOOST_CHECK_EQUAL("foo0", fix.subs.get("getq").getData());
-    BOOST_CHECK_EQUAL("foo1", fix.subs.get("getq").getData());
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, "getq", TIME_SEC));
+    BOOST_CHECK_EQUAL("foo0", got.getData());
+    BOOST_CHECK(fix.subs.get(got, "getq", TIME_SEC));
+    BOOST_CHECK_EQUAL("foo1", got.getData());
 }
 
 QPID_AUTO_TEST_CASE(testOpenFailure) {
