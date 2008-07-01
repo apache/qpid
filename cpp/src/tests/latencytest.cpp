@@ -45,6 +45,7 @@ struct Args : public qpid::TestOptions {
     uint count;
     uint rate;
     uint reportFrequency;
+    uint timeLimit;
     uint queues;
     uint prefetch;
     uint ack;
@@ -53,7 +54,8 @@ struct Args : public qpid::TestOptions {
     bool durable;
     string base;
 
-    Args() : size(256), count(1000), rate(0), reportFrequency(100), queues(1), 
+    Args() : size(256), count(1000), rate(0), reportFrequency(100),
+    	     timeLimit(0), queues(1), 
              prefetch(100), ack(0),
              durable(false), base("latency-test")
     {
@@ -65,6 +67,8 @@ struct Args : public qpid::TestOptions {
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
             ("report-frequency", optValue(reportFrequency, "N"), 
              "number of milliseconds to wait between reports (ignored unless rate specified)")
+            ("time-limit", optValue(timeLimit, "N"), 
+             "test duration, in seconds")
             ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)")
             ("ack", optValue(ack, "N"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("durable", optValue(durable, "yes|no"), "use durable messages")
@@ -128,6 +132,8 @@ public:
     void test();
     void received(Message& msg);
     Stats getStats();
+    uint getCount() { return count; }
+    void stop() {  mgr.stop(); mgr.cancel(queue); }
 };
 
 
@@ -136,8 +142,9 @@ class Sender : public Client
     string generateData(uint size);
     void sendByRate();
     void sendByCount();
+    Receiver& receiver;
 public:
-    Sender(const string& queue);
+    Sender(const string& queue, Receiver& receiver);
     void test();
 };
 
@@ -151,7 +158,7 @@ class Test
     AbsTime begin;
     
 public:
-    Test(const string& q) : queue(q), receiver(queue, stats), sender(queue), begin(now()) {}
+    Test(const string& q) : queue(q), receiver(queue, stats), sender(queue, receiver), begin(now()) {}
     void start();
     void join();
     void report();
@@ -278,7 +285,7 @@ void Stats::reset()
     totalLatency = maxLatency = minLatency = 0;           
 }
 
-Sender::Sender(const string& q) : Client(q) {}
+Sender::Sender(const string& q, Receiver& receiver) : Client(q), receiver(receiver) {}
 
 void Sender::test()
 {
@@ -311,14 +318,24 @@ void Sender::sendByRate()
 
     //calculate interval (in micro secs) between messages to achieve desired rate
     uint64_t interval = (1000*1000)/opts.rate;
+    uint64_t timeLimit(opts.timeLimit * TIME_SEC);
+    uint64_t start(current_time());
 
     while (true) {
-        uint64_t start(current_time());
-        msg.getDeliveryProperties().setTimestamp(start);
+        uint64_t start_msg(current_time());
+        msg.getDeliveryProperties().setTimestamp(start_msg);
         //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
 
-        uint64_t timeTaken = (current_time() - start) / TIME_USEC;
+	uint64_t now = current_time();
+
+	if (timeLimit != 0 && (now - start) > timeLimit) {
+		session.sync();
+		receiver.stop();
+		break;
+	}
+
+        uint64_t timeTaken = (now - start_msg) / TIME_USEC;
         if (timeTaken < interval) {
             usleep(interval - timeTaken);
         } else if (timeTaken > interval &&
@@ -358,8 +375,8 @@ void Test::join()
     Duration time(begin, end);
     double msecs(time / TIME_MSEC);
     if (!opts.csv) {
-        std::cout << "Sent " << opts.count << " msgs through " << queue 
-                  << " in " << msecs << "ms (" << (opts.count * 1000 / msecs) << " msgs/s) ";
+        std::cout << "Sent " << receiver.getCount() << " msgs through " << queue 
+                  << " in " << msecs << "ms (" << (receiver.getCount() * 1000 / msecs) << " msgs/s) ";
     }
     stats.print();
     std::cout << std::endl;
@@ -387,7 +404,7 @@ int main(int argc, char** argv)
         for (boost::ptr_vector<Test>::iterator i = tests.begin(); i != tests.end(); i++) {
             i->start();
         }
-        if (opts.rate) {
+        if (opts.rate && !opts.timeLimit) {
             while (true) {
                 usleep(opts.reportFrequency * 1000);
                 //print latency report:
