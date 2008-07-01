@@ -164,22 +164,18 @@ void ClusterFixture::add() {
     push_back(new BrokerFixture(opts));
 }
 
-#if 0                           // FIXME aconway 2008-06-26: TODO
-
-
+#if 0
 QPID_AUTO_TEST_CASE(testWiringReplication) {
-    const size_t SIZE=3;
-    ClusterFixture cluster(SIZE);
+    ClusterFixture cluster(3);
     Client c0(cluster[0].getPort());
     BOOST_CHECK(c0.session.queueQuery("q").getQueue().empty());
     BOOST_CHECK(c0.session.exchangeQuery("ex").getType().empty()); 
     c0.session.queueDeclare("q");
     c0.session.exchangeDeclare("ex", arg::type="direct");
-    BOOST_CHECK_EQUAL("q", c0.session.queueQuery("q").getQueue());
-    BOOST_CHECK_EQUAL("direct", c0.session.exchangeQuery("ex").getType());
-
+    c0.session.close();
     // Verify all brokers get wiring update.
-    for (size_t i = 1; i < cluster.size(); ++i) {
+    for (size_t i = 0; i < cluster.size(); ++i) {
+        BOOST_MESSAGE("i == "<< i);
         Client c(cluster[i].getPort());
         BOOST_CHECK_EQUAL("q", c.session.queueQuery("q").getQueue());
         BOOST_CHECK_EQUAL("direct", c.session.exchangeQuery("ex").getType());
@@ -188,24 +184,15 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
 
 QPID_AUTO_TEST_CASE(testMessageReplication) {
     // Enqueue on one broker, dequeue on another.
-    ClusterConnections cluster;
-    BOOST_REQUIRE(cluster.size() > 1);
-
-    Session broker0 = cluster[0]->newSession();
-    broker0.queueDeclare(queue="q");
-    broker0.messageTransfer(content=TransferContent("data", "q"));
-    broker0.close();
-    
-    Session broker1 = cluster[1]->newSession();
-    broker1.
-        c.session.messageSubscribe(queue="q", destination="q");
-        c.session.messageFlow(destination="q", unit=0, value=1);//messages
-        FrameSet::shared_ptr msg = c.session.get();
-        BOOST_CHECK(msg->isA<MessageTransferBody>());
-        BOOST_CHECK_EQUAL(string("data"), msg->getContent());
-        c.session.getExecution().completed(msg->getId(), true, true);
-        cluster[i]->close();
-    }    
+    ClusterFixture cluster(2);
+    Client c0(cluster[0].getPort());
+    c0.session.queueDeclare("q");
+    c0.session.messageTransfer(arg::content=TransferContent("data", "q"));
+    c0.session.close();
+    Client c1(cluster[1].getPort());
+    Message msg;
+    BOOST_CHECK(c1.subs.get(msg, "q", qpid::sys::TIME_SEC));
+    BOOST_CHECK_EQUAL(string("data"), msg.getData());
 }
 
 // TODO aconway 2008-06-25: dequeue replication, exactly once delivery, failover.

@@ -31,14 +31,25 @@ using namespace framing;
 LocalQueue::LocalQueue(AckPolicy a) : autoAck(a) {}
 LocalQueue::~LocalQueue() {}
 
-Message LocalQueue::pop() {
+Message LocalQueue::pop() { return get(); }
+
+Message LocalQueue::get() {
+    Message result;
+    bool ok = get(result, sys::TIME_INFINITE);
+    assert(ok); (void) ok;
+    return result;
+}
+
+bool LocalQueue::get(Message& result, sys::Duration timeout) {
     if (!queue)
         throw ClosedException();
-    FrameSet::shared_ptr content = queue->pop();
+    FrameSet::shared_ptr content;
+    bool ok = queue->pop(content, timeout);
+    if (!ok) return false;
     if (content->isA<MessageTransferBody>()) {
-        Message m(*content);
-        autoAck.ack(m, session);
-        return m;
+        result = Message(*content);
+        autoAck.ack(result, session);
+        return true;
     }
     else
         throw CommandInvalidException(
