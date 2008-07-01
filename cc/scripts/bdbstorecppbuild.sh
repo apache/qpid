@@ -21,6 +21,4 @@
 if [ -f Makefile ]; then
   make distclean
 fi
- ./bootstrap && \
- ./configure CXXFLAGS="-O3 -DNDEBUG" --with-qpid-checkout=$CC_HOME && \ 
- make
+ ./bootstrap && ./configure CXXFLAGS="-O3 -DNDEBUG" --with-qpid-checkout=$CC_HOME && make

@@ -33,7 +33,7 @@ under the License.
         </bootstrappers>
 
         <modificationset quietperiod="30">
-            <buildstatus logdir="/logs/qpid-cpp-trunk/"/>
+            <buildstatus logdir="${env.CC_HOME}/cc/logs/qpid-cpp-trunk/"/>
             <svn localWorkingCopy="${env.CPPSTORE_HOME}"/>
         </modificationset>
 
