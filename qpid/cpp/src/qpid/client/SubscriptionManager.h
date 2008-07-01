@@ -122,10 +122,14 @@ class SubscriptionManager : public sys::Runnable
                    const std::string& queue,
                    const std::string& tag=std::string());
 
-    /**
-     * Get a single message from a queue.
+
+    /** Get a single message from a queue.
+     *@param result is set to the message from the queue.
+     *@
+     *@param timeout wait up this timeout for a message to appear. 
+     *@return true if result was set, false if no message available after timeout.
      */
-    Message get(const std::string& queue);
+    bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
 
     /** Cancel a subscription. */
     void cancel(const std::string tag);
@@ -191,6 +195,15 @@ class SubscriptionManager : public sys::Runnable
      AckPolicy& getAckPolicy();
 };
 
+/** AutoCancel cancels a subscription in its destructor */
+class AutoCancel {
+  public:
+    AutoCancel(SubscriptionManager& sm_, const std::string& tag_) : sm(sm_), tag(tag_) {}
+    ~AutoCancel() { sm.cancel(tag); }
+  private:
+    SubscriptionManager& sm;
+    std::string tag;
+};
 
 }} // namespace qpid::client
 
