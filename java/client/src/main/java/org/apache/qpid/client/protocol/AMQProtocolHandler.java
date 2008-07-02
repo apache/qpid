@@ -559,7 +559,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
           _frameListeners.remove(listener);
       }
      */
-    public void attainState(AMQState s) throws Exception
+    public void attainState(AMQState s) throws AMQException
     {
         getStateManager().attainState(s);
     }
