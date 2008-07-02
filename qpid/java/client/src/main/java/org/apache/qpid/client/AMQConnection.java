@@ -368,7 +368,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         BrokerDetails brokerDetails = _failoverPolicy.getNextBrokerDetails();
         if (brokerDetails.getTransport().equals(BrokerDetails.VM))
         {
-            _delegate = new AMQConnectionDelegate_0_8(this);
+            _delegate = new AMQConnectionDelegate_8_0(this);
         }
         else
         {
