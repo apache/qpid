@@ -134,6 +134,7 @@ public class ConnectionTest extends TestCase
         }
         catch (AMQException amqe)
         {
+            assertNotNull("No cause set", amqe.getCause());
             if (amqe.getCause().getClass() == Exception.class)
             {
                 System.err.println("QPID-594 : WARNING RACE CONDITION. Unable to determine cause of Connection Failure.");
