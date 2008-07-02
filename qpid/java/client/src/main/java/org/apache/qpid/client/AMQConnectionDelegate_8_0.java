@@ -49,9 +49,9 @@ import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
+public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {
-    private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_8.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_8_0.class);
     private AMQConnection _conn;
 
 
@@ -61,7 +61,7 @@ public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
 
     }
 
-    public AMQConnectionDelegate_0_8(AMQConnection conn)
+    public AMQConnectionDelegate_8_0(AMQConnection conn)
     {
         _conn = conn;
     }
