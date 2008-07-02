@@ -26,7 +26,6 @@ import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
@@ -235,7 +234,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /*
      * The last error code that occured on the connection. Used to return the correct exception to the client
      */
-    protected Exception _lastException = null;
+    protected AMQException _lastAMQException = null;
 
     /*
      * The connection meta data
@@ -379,20 +378,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
+        final ArrayList<JMSException> exceptions = new ArrayList<JMSException>();
+
         class Listener implements ExceptionListener
         {
             public void onException(JMSException e)
             {
-                _lastException = e;
-                try
-                {
-                    getProtocolHandler().getStateManager().changeState(AMQState.CONNECTION_CLOSED);
-                    
-                }
-                catch (AMQException e1)
-                {
-                    // Wow, badness
-                }
+                exceptions.add(e);
             }
         }
 
@@ -451,6 +443,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // We are not currently connected
         _connected = false;
 
+        Exception lastException = new Exception();
+        lastException.initCause(new ConnectException());
+
         // TMG FIXME this seems... wrong...
         boolean retryAllowed = true;
         while (!_connected && retryAllowed )
@@ -458,6 +453,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             try
             {
                 makeBrokerConnection(brokerDetails);
+                lastException = null;
+                _connected = true;
             }
             catch (AMQProtocolException pe)
             {
@@ -473,14 +470,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             catch (Exception e)
             {
-                _lastException = e;
-            }
-            if (_lastException != null)
-            {
+                lastException = e;
+
                 if (_logger.isInfoEnabled())
                 {
                     _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(),
-                            _lastException.getCause());
+                            e.getCause());
                 }
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
@@ -503,16 +498,31 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 // Eat it, we've hopefully got all the exceptions if this happened
             }
-            
-            if (_lastException != null)
+            if (exceptions.size() > 0)
             {
-                if (_lastException.getCause() != null)
+                JMSException e = exceptions.get(0);
+                int code = -1;
+                try
                 {
-                    message = _lastException.getCause().getMessage();
+                    code = new Integer(e.getErrorCode()).intValue();
+                }
+                catch (NumberFormatException nfe)
+                {
+                    // Ignore this, we have some error codes and messages swapped around
+                }
+
+                throw new AMQConnectionFailureException(AMQConstant.getConstant(code),
+                                                        e.getMessage(), e);
+            }
+            else if (lastException != null)
+            {
+                if (lastException.getCause() != null)
+                {
+                    message = lastException.getCause().getMessage();
                 }
                 else
                 {
-                    message = _lastException.getMessage();
+                    message = lastException.getMessage();
                 }
             }
 
@@ -524,19 +534,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
                 else // can only be "" if getMessage() returned it therfore lastException != null
                 {
-                    message = "Unable to Connect:" + _lastException.getClass();
+                    message = "Unable to Connect:" + lastException.getClass();
                 }
             }
 
-            AMQException e = new AMQConnectionFailureException(message, _lastException);
+            AMQException e = new AMQConnectionFailureException(message, null);
 
-            if (_lastException != null)
+            if (lastException != null)
             {
-                if (_lastException instanceof UnresolvedAddressException)
+                if (lastException instanceof UnresolvedAddressException)
                 {
                     e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString(),
                                                           null);
                 }
+
+                if (e.getCause() != null)
+                {
+                    e.initCause(lastException);
+	        }
             }
 
             throw e;
@@ -1491,15 +1506,5 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public boolean getSyncPersistence()
     {
         return _syncPersistence;
-    }
-
-    public Exception getLastException()
-    {
-        return _lastException;
-    }
-
-    public void setLastException(Exception exception)
-    {
-        _lastException = exception;
     }
 }
