@@ -25,11 +25,14 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.jms.JMSException;
 import javax.jms.XASession;
 
+import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -76,23 +79,20 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
     }
 
-    public void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
+    public void makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
     {
-        try
-        {
-            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
-            // this blocks until the connection has been set up or when an error
-            // has prevented the connection being set up
-            _conn._protocolHandler.attainState(AMQState.CONNECTION_OPEN);
-            _conn._failoverPolicy.attainedConnection();
+        final Set<AMQState> openOrClosedStates =
+                EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
 
-            // Again this should be changed to a suitable notify
-            _conn._connected = true;
-        }
-        catch (AMQException e)
+        TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+        // this blocks until the connection has been set up or when an error
+        // has prevented the connection being set up
+
+        AMQState state = _conn._protocolHandler.attainState(openOrClosedStates);
+        if(state == AMQState.CONNECTION_OPEN)
         {
-            _conn._lastAMQException = e;
-            throw e;
+            _conn._failoverPolicy.attainedConnection();
+            _conn._connected = true;
         }
     }
 
