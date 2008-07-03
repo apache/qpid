@@ -56,7 +56,7 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
     for (int idx = 0; idx < maxThreads; idx++)
         if (perThreadStatsArray[idx] != 0)
             delete perThreadStatsArray[idx];
-    delete perThreadStatsArray;
+    delete[] perThreadStatsArray;
 /*MGEN:ENDIF*/
 }
 
