@@ -102,7 +102,7 @@ public class AMQStateManager
     }
 
 
-    public void attainState(final AMQState s) throws AMQException
+    public void attainState(final AMQState s) throws Exception
     {
         synchronized (_stateLock)
         {
@@ -118,6 +118,11 @@ public class AMQStateManager
                 catch (InterruptedException e)
                 {
                     _logger.warn("Thread interrupted");
+                    if (_protocolSession.getAMQConnection().getLastException() != null)
+                    {
+                        throw _protocolSession.getAMQConnection().getLastException();
+                    }
+
                 }
 
                 if (_currentState != s)
@@ -169,6 +174,11 @@ public class AMQStateManager
                 catch (InterruptedException e)
                 {
                     _logger.warn("Thread interrupted");
+                    if (_protocolSession.getAMQConnection().getLastException() != null)
+                    {
+                        throw new AMQException(null, "Could not attain state due to exception",
+                                _protocolSession.getAMQConnection().getLastException());
+                    }
                 }
 
                 if (!stateSet.contains(_currentState))
