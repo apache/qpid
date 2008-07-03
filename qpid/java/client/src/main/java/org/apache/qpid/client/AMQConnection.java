@@ -26,6 +26,7 @@ import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
@@ -75,6 +76,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         private final LinkedHashMap<Integer, AMQSession> _slowAccessSessions = new LinkedHashMap<Integer, AMQSession>();
         private int _size = 0;
         private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
+        
 
         public AMQSession get(int channelId)
         {
@@ -232,11 +234,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected boolean _connected;
 
     /*
-     * The last error code that occured on the connection. Used to return the correct exception to the client
-     */
-    protected AMQException _lastAMQException = null;
-
-    /*
      * The connection meta data
      */
     private QpidConnectionMetaData _connectionMetaData;
@@ -261,6 +258,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     //Indicates whether persistent messages are synchronized
     private boolean _syncPersistence;
+    
+    /** used to hold a list of all exceptions that have been thrown during connection construction. gross */
+    final ArrayList<Exception> _exceptions = new ArrayList<Exception>();
 
     /**
      * @param broker      brokerdetails
@@ -378,13 +378,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
-        final ArrayList<JMSException> exceptions = new ArrayList<JMSException>();
-
+       
         class Listener implements ExceptionListener
         {
             public void onException(JMSException e)
             {
-                exceptions.add(e);
+                _exceptions.add(e);
             }
         }
 
@@ -443,9 +442,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // We are not currently connected
         _connected = false;
 
-        Exception lastException = new Exception();
-        lastException.initCause(new ConnectException());
-
         // TMG FIXME this seems... wrong...
         boolean retryAllowed = true;
         while (!_connected && retryAllowed )
@@ -453,8 +449,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             try
             {
                 makeBrokerConnection(brokerDetails);
-                lastException = null;
-                _connected = true;
             }
             catch (AMQProtocolException pe)
             {
@@ -470,16 +464,28 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             catch (Exception e)
             {
-                lastException = e;
-
+                _exceptions.add(e);
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(),
-                            e.getCause());
+                    _logger.info("Unable to connect to broker at " + 
+                                _failoverPolicy.getCurrentBrokerDetails(),
+                                e);
                 }
+            }
+            
+            if (!_connected)
+            {
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
             }
+        }
+        try
+        {
+            setExceptionListener(null);
+        }
+        catch (JMSException e1)
+        {
+            // Can't happen
         }
 
         if (_logger.isDebugEnabled())
@@ -498,24 +504,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 // Eat it, we've hopefully got all the exceptions if this happened
             }
-            if (exceptions.size() > 0)
+            
+            Exception lastException = null;
+            if (_exceptions.size() > 0)
             {
-                JMSException e = exceptions.get(0);
-                int code = -1;
-                try
-                {
-                    code = new Integer(e.getErrorCode()).intValue();
-                }
-                catch (NumberFormatException nfe)
-                {
-                    // Ignore this, we have some error codes and messages swapped around
-                }
-
-                throw new AMQConnectionFailureException(AMQConstant.getConstant(code),
-                                                        e.getMessage(), e);
-            }
-            else if (lastException != null)
-            {
+                lastException = _exceptions.get(_exceptions.size() - 1);
                 if (lastException.getCause() != null)
                 {
                     message = lastException.getCause().getMessage();
@@ -538,8 +531,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-            AMQException e = new AMQConnectionFailureException(message, null);
-
+            AMQException e = new AMQConnectionFailureException(message, _exceptions);
+                        
             if (lastException != null)
             {
                 if (lastException instanceof UnresolvedAddressException)
@@ -547,13 +540,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString(),
                                                           null);
                 }
-
-                if (e.getCause() != null)
-                {
-                    e.initCause(lastException);
-	        }
+                
             }
-
             throw e;
         }
 
@@ -1507,4 +1495,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _syncPersistence;
     }
+
+    public Exception getLastException()
+    {
+        if (_exceptions.size() > 0)
+        {
+            return _exceptions.get(_exceptions.size() - 1);
+        }
+        return null;
+    }
+
 }
