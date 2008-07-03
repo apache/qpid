@@ -206,6 +206,13 @@ class AmqpField
     /^(int|uint|char|boolean|bit)/ === type_ ? fqtypename : "const #{fqtypename}&"
   end
   def param_default() "=#{fqtypename}()"  end
+
+  # Default value is normally the C++ default but over-ridden for specific types.
+  def default_value()
+    defval = cpptype.default_value;
+    if type_ == "accept-mode" then defval = "1";  end
+    return defval
+  end
 end
 
 class AmqpMethod
