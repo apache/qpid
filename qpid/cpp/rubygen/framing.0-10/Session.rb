@@ -61,8 +61,8 @@ class ContentField               # For extra content parameters
 end
 
 class AmqpField
-  def unpack() "p[arg::#{cppname}|#{cpptype.default_value}]"; end
-  def sig_default() signature+"="+cpptype.default_value; end
+  def unpack() "p[arg::#{cppname}|#{default_value}]"; end
+  def sig_default() signature+"="+default_value; end
 end
 
 class AmqpMethod
