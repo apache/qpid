@@ -207,10 +207,10 @@ class AmqpField
   end
   def param_default() "=#{fqtypename}()"  end
 
-  # Default value is normally the C++ default but over-ridden for specific types.
+  # Default value is normally the C++ default but over-ridden in specific cases
   def default_value()
     defval = cpptype.default_value;
-    if type_ == "accept-mode" then defval = "1";  end
+    if name == "accept-mode" and parent.name == "transfer" then defval = "1";  end
     return defval
   end
 end
