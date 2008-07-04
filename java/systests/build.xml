@@ -23,7 +23,7 @@ nn - or more contributor license agreements.  See the NOTICE file
     <property name="module.depends" value="client broker common junit-toolkit"/>
     <property name="module.test.src" location="src/main/java"/>
     <property name="module.test.excludes"
-              value="**/TTLTest.java,**/DropInTest.java,**/TestClientControlledTest.java"/>
+              value="**/TTLTest.java,**/DropInTest.java,**/TestClientControlledTest.java,**/SimpleACLTest.java"/>
 
     <import file="../module.xml"/>
 
