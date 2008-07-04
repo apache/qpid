@@ -147,8 +147,6 @@ void Logger::log(const Statement& s, const std::string& msg) {
         os << " ";
     os << msg << endl;
     std::string formatted=os.str();
-    std::cout << "FORMATTED: " << formatted << std::endl; // FIXME aconway 2008-07-04: 
-
     {
         ScopedLock l(lock);
         std::for_each(outputs.begin(), outputs.end(),
