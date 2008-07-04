@@ -35,15 +35,6 @@ namespace cluster {
 using namespace std;
 using broker::Broker;
 
-struct OptionValues {
-    string name;
-    string url;
-
-    Url getUrl(uint16_t port) const {
-        if (url.empty()) return Url::getIpAddressesUrl(port);
-        return Url(url);
-    }
-};
 
 // Note we update the values in a separate struct.
 // This is to work around boost::program_options differences,
@@ -51,43 +42,44 @@ struct OptionValues {
 // ones take a copy (or require a shared_ptr)
 //
 struct ClusterOptions : public Options {
+    std::string name;
+    std::string url;
 
-    ClusterOptions(OptionValues* v) : Options("Cluster Options") {
+    ClusterOptions() : Options("Cluster Options") {
         addOptions()
-            ("cluster-name", optValue(v->name, "NAME"), "Name of cluster to join")
-            ("cluster-url", optValue(v->url,"URL"),
+            ("cluster-name", optValue(name,""), "Cluster identifier")
+            ("cluster-url", optValue(url,"URL"),
              "URL of this broker, advertized to the cluster.\n"
-             "Defaults to a URL listing all the local IP addresses\n");
+             "Defaults to a URL listing all the local IP addresses\n")
+            ;
     }
 };
 
 struct ClusterPlugin : public PluginT<Broker> {
-    OptionValues values;
+    ClusterOptions options;
     boost::optional<Cluster> cluster;
 
-    ClusterPlugin(const OptionValues& v) : values(v) {}
+    ClusterPlugin(const ClusterOptions& opts) : options(opts) {}
     
-    void initializeT(Broker& broker) {
-        cluster = boost::in_place(values.name, values.getUrl(broker.getPort()), boost::ref(broker));
-        broker.getSessionManager().add(cluster->getObserver());	
+    void initializeT(Broker& broker) { // FIXME aconway 2008-07-01: drop T suffix.
+        Url url = options.url.empty() ? Url::getIpAddressesUrl(broker.getPort()) : Url(options.url);
+        cluster = boost::in_place(options.name, url, boost::ref(broker));
+        broker.getConnectionManager().add(cluster->getObserver());	// FIXME aconway 2008-07-01: to Cluster ctor
     }
 };
 
 struct PluginFactory : public Plugin::FactoryT<Broker> {
 
-    OptionValues values;
     ClusterOptions options;
-
-    PluginFactory() : options(&values) {}
 
     Options* getOptions() { return &options; }
 
     boost::shared_ptr<Plugin> createT(Broker&) {
-        // Only provide to a Broker, and only if the --cluster config is set.
-        if (values.name.empty())
+        if (options.name.empty()) { // No cluster name, don't initialize cluster.
             return boost::shared_ptr<Plugin>();
+        }
         else
-            return make_shared_ptr(new ClusterPlugin(values));
+            return make_shared_ptr(new ClusterPlugin(options));
     }
 };
 

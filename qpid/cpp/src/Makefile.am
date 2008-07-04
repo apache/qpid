@@ -77,14 +77,16 @@ posix_plat_src = \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
-  qpid/sys/posix/Mutex.cpp
+  qpid/sys/posix/Mutex.cpp \
+  qpid/sys/posix/Fork.cpp
 
 posix_plat_hdr = \
   qpid/sys/posix/check.h \
   qpid/sys/posix/Condition.h \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
-  qpid/sys/posix/Thread.h
+  qpid/sys/posix/Thread.h \
+  qpid/sys/posix/Fork.h
 
 platform_src = $(posix_plat_src)
 platform_hdr = $(posix_plat_hdr)
@@ -246,6 +248,8 @@ libqpidbroker_la_SOURCES = \
   qpid/amqp_0_10/Connection.cpp \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerSingleton.cpp \
+  qpid/broker/ConnectionManager.h \
+  qpid/broker/ConnectionManager.cpp \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/PersistableMessage.cpp \
@@ -290,9 +294,11 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.cpp \
   qpid/broker/SessionManager.h \
   qpid/broker/SessionManager.cpp \
-  qpid/broker/SessionHandler.h \
   qpid/broker/SessionContext.h \
+  qpid/broker/SessionHandler.h \
   qpid/broker/SessionHandler.cpp \
+  qpid/broker/SignalHandler.h \
+  qpid/broker/SignalHandler.cpp \
   qpid/broker/System.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
@@ -546,6 +552,7 @@ nobase_include_HEADERS = \
   qpid/sys/Poller.h \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
+  qpid/sys/Fork.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
   qpid/sys/Serializer.h \
