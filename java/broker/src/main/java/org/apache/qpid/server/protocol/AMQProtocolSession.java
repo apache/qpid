@@ -25,6 +25,7 @@ import javax.security.sasl.SaslServer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -149,6 +150,10 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     void closeSession() throws AMQException;
+
+    /** This must be called to close the session in order to free up any resources managed by the session. */
+    void closeConnection(int channelId, AMQConnectionException e, boolean closeProtocolSession) throws AMQException;
+
 
     /** @return a key that uniquely identifies this session */
     Object getKey();

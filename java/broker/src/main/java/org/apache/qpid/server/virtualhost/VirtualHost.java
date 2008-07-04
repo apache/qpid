@@ -26,6 +26,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.connection.ConnectionRegistry;
+import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
@@ -55,6 +57,8 @@ public class VirtualHost implements Accessable
 
     private final String _name;
 
+    private ConnectionRegistry _connectionRegistry;
+
     private QueueRegistry _queueRegistry;
 
     private ExchangeRegistry _exchangeRegistry;
@@ -74,7 +78,8 @@ public class VirtualHost implements Accessable
     private final Timer _houseKeepingTimer;
      
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    
+
+
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -86,6 +91,10 @@ public class VirtualHost implements Accessable
         return _name;
     }
 
+    public IConnectionRegistry getConnectionRegistry()
+    {
+        return _connectionRegistry;
+    }
 
     /**
      * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
@@ -143,8 +152,8 @@ public class VirtualHost implements Accessable
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
-        // This isn't needed to be registered
-        //_virtualHostMBean.register();
+
+        _connectionRegistry = new ConnectionRegistry(this);
 
         _houseKeepingTimer = new Timer("Queue-housekeeping-"+name, true);
         _queueRegistry = new DefaultQueueRegistry(this);
@@ -283,14 +292,20 @@ public class VirtualHost implements Accessable
     public ACLPlugin getAccessManager()
     {
         return _accessManager;
-    }
+    }                                                                   
 
     public void close() throws Exception
     {
+        //Stop Housekeeping
         if (_houseKeepingTimer != null)
         {
             _houseKeepingTimer.cancel();
         }
+
+        //Stop Connections
+        _connectionRegistry.close();
+
+        //Close MessageStore
         if (_messageStore != null)
         {
             _messageStore.close();
