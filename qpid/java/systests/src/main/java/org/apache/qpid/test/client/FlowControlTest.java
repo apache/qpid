@@ -20,18 +20,16 @@
 */
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.test.VMTestCase;
-import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.test.FailoverBaseCase;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
-import javax.naming.NamingException;
-import java.util.Enumeration;
 
-public class FlowControlTest extends VMTestCase
+
+
+public class FlowControlTest extends FailoverBaseCase
 {
     private static final Logger _logger = Logger.getLogger(FlowControlTest.class);
 
@@ -50,12 +48,12 @@ public class FlowControlTest extends VMTestCase
     /**
      * Simply
      */
-    public void testBasicBytesFlowControl() throws JMSException, NamingException, AMQException
+    public void testBasicBytesFlowControl() throws Exception
     {
          _queue = new AMQQueue("amq.direct","testqueue");//(Queue) _context.lookup("queue");
 
         //Create Client
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection();
 
         _clientConnection.start();
 
@@ -64,7 +62,7 @@ public class FlowControlTest extends VMTestCase
         //Ensure _queue is created
         _clientSession.createConsumer(_queue).close();
 
-        Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
@@ -89,7 +87,7 @@ public class FlowControlTest extends VMTestCase
         producerConnection.close();
 
 
-        Connection consumerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection consumerConnection = getConnection();
         Session consumerSession = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         ((AMQSession_0_8)consumerSession).setPrefecthLimits(0,256);
         MessageConsumer recv = consumerSession.createConsumer(_queue);
@@ -125,12 +123,12 @@ public class FlowControlTest extends VMTestCase
 
     }
 
-    public void testTwoConsumersBytesFlowControl() throws JMSException, NamingException, AMQException
+    public void testTwoConsumersBytesFlowControl() throws Exception
     {
          _queue = new AMQQueue("amq.direct","testqueue1");//(Queue) _context.lookup("queue");
 
         //Create Client
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection();
 
         _clientConnection.start();
 
@@ -139,7 +137,7 @@ public class FlowControlTest extends VMTestCase
         //Ensure _queue is created
         _clientSession.createConsumer(_queue).close();
 
-        Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
@@ -164,7 +162,7 @@ public class FlowControlTest extends VMTestCase
         producerConnection.close();
 
 
-        Connection consumerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection consumerConnection = getConnection();
         Session consumerSession1 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         ((AMQSession_0_8)consumerSession1).setPrefecthLimits(0,256);
         MessageConsumer recv1 = consumerSession1.createConsumer(_queue);

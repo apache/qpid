@@ -40,6 +40,7 @@ org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFails
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxP2P
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
+org.apache.qpid.test.client.FlowControlTest#*
 // the 0.10 c++ broker does not implement forget
 org.apache.qpid.test.unit.xa.FaultTest#testForget
 // the 0-10 c++ broker does not implement priority / this test depends on a Java broker extension for queue creation
