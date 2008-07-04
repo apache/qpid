@@ -22,6 +22,7 @@ import junit.framework.TestResult;
 
 import javax.jms.Connection;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ public class QpidTestCase extends TestCase
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
     /**
-     * Some tests are excluded when the property test.excludes is set to true. 
+     * Some tests are excluded when the property test.excludes is set to true.
      * An exclusion list is either a file (prop test.excludesfile) which contains one test name
      * to be excluded per line or a String (prop test.excludeslist) where tests to be excluded are
      * separated by " ". Excluded tests are specified following the format:
@@ -55,6 +55,8 @@ public class QpidTestCase extends TestCase
      * excluded and testName is the name of the test to be excluded.
      * className#* excludes all the tests of the specified class.
      */
+    private static final String DEFAULT_INITIAL_CONTEXT = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
+
     static
     {
         if (Boolean.getBoolean("test.excludes"))
@@ -62,7 +64,7 @@ public class QpidTestCase extends TestCase
             _logger.info("Some tests should be excluded, building the exclude list");
             String exclusionListURI = System.getProperties().getProperty("test.excludesfile", "");
             String exclusionListString = System.getProperties().getProperty("test.excludeslist", "");
-            File file=new File(exclusionListURI);
+            File file = new File(exclusionListURI);
             List<String> exclusionList = new ArrayList<String>();
             if (file.exists())
             {
@@ -83,7 +85,7 @@ public class QpidTestCase extends TestCase
                     _logger.warn("Exception when reading exclusion list", e);
                 }
             }
-            else if( ! exclusionListString.equals(""))
+            else if (!exclusionListString.equals(""))
             {
                 _logger.info("Using excludeslist: " + exclusionListString);
                 // the exclusion list may be specified as a string
@@ -99,6 +101,13 @@ public class QpidTestCase extends TestCase
             }
             _exclusionList = exclusionList;
         }
+
+        String initialContext = System.getProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+
+        if (initialContext == null || initialContext.isEmpty())
+        {
+            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
+        }
     }
 
     private static List<String> _exclusionList;
@@ -106,7 +115,7 @@ public class QpidTestCase extends TestCase
     // system properties
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
-    private static final String BROKER_VERSION  = "broker.version";
+    private static final String BROKER_VERSION = "broker.version";
     private static final String BROKER_READY = "broker.ready";
 
     // values
@@ -134,9 +143,9 @@ public class QpidTestCase extends TestCase
     }
 
     public QpidTestCase()
-       {
-           super("QpidTestCase");
-       }
+    {
+        super("QpidTestCase");
+    }
 
     public void runBare() throws Throwable
     {
@@ -163,8 +172,8 @@ public class QpidTestCase extends TestCase
 
     public void run(TestResult testResult)
     {
-        if( _exclusionList != null && (_exclusionList.contains( getClass().getName() + "#*") ||
-                _exclusionList.contains( getClass().getName() + "#" + getName())))
+        if (_exclusionList != null && (_exclusionList.contains(getClass().getName() + "#*") ||
+                                       _exclusionList.contains(getClass().getName() + "#" + getName())))
         {
             _logger.info("Test: " + getName() + " is excluded");
             testResult.endTest(this);
@@ -174,7 +183,6 @@ public class QpidTestCase extends TestCase
             super.run(testResult);
         }
     }
-
 
     private static final class Piper extends Thread
     {
@@ -331,7 +339,8 @@ public class QpidTestCase extends TestCase
 
     /**
      * Check whether the broker is an 0.8
-     * @return true if the broker is an 0_8 version, false otherwise. 
+     *
+     * @return true if the broker is an 0_8 version, false otherwise.
      */
     public boolean isBroker08()
     {
@@ -348,15 +357,17 @@ public class QpidTestCase extends TestCase
         stopBroker();
         startBroker();
     }
+
     /**
      * we assume that the environment is correctly set
      * i.e. -Djava.naming.provider.url="..//example010.properties"
      * TODO should be a way of setting that through maven
      *
      * @return an initial context
+     *
      * @throws Exception if there is an error getting the context
      */
-    public InitialContext getInitialContext() throws Exception
+    public InitialContext getInitialContext() throws NamingException
     {
         _logger.info("get InitialContext");
         if (_initialContext == null)
@@ -371,21 +382,22 @@ public class QpidTestCase extends TestCase
      * Default factory is "local"
      *
      * @return A conection factory
+     *
      * @throws Exception if there is an error getting the tactory
      */
-    public AMQConnectionFactory getConnectionFactory() throws Exception
+    public AMQConnectionFactory getConnectionFactory() throws NamingException
     {
         _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
-             if (_broker.equals(VM))
-             {
+            if (_broker.equals(VM))
+            {
                 _connectionFactory = getConnectionFactory("vm");
-             }
-             else
-             {
+            }
+            else
+            {
                 _connectionFactory = getConnectionFactory("local");
-             }
+            }
         }
         return _connectionFactory;
     }
@@ -393,11 +405,13 @@ public class QpidTestCase extends TestCase
     /**
      * Get a connection factory for the currently used broker
      *
-     * @param factoryName  The factory name
+     * @param factoryName The factory name
+     *
      * @return A conection factory
+     *
      * @throws Exception if there is an error getting the tactory
      */
-    public AMQConnectionFactory getConnectionFactory(String factoryName) throws Exception
+    public AMQConnectionFactory getConnectionFactory(String factoryName) throws NamingException
     {
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
@@ -412,13 +426,15 @@ public class QpidTestCase extends TestCase
      *
      * @param username The user name
      * @param password The user password
+     *
      * @return a newly created connection
+     *
      * @throws Exception if there is an error getting the connection
      */
     public Connection getConnection(String username, String password) throws Exception
     {
         _logger.info("get Connection");
-        Connection con = getConnectionFactory().createConnection(username, password);        
+        Connection con = getConnectionFactory().createConnection(username, password);
         //add the connection in the lis of connections
         _connections.add(con);
         return con;
@@ -436,7 +452,7 @@ public class QpidTestCase extends TestCase
         {
             con = getConnectionFactory().createConnection(username, password);
         }
-         //add the connection in the lis of connections
+        //add the connection in the lis of connections
         _connections.add(con);
         return con;
     }
