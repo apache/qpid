@@ -111,6 +111,8 @@ Logger::Output::~Output() {}
 void Logger::log(const Statement& s, const std::string& msg) {
     // Format the message outside the lock.
     std::ostringstream os;
+    if (!prefix.empty())
+        os << prefix << ": ";
     if (flags&TIME) 
     {
         const char * month_abbrevs[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
@@ -134,7 +136,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
-        os << "[" << qpid::sys::Thread::logId() << "] ";
+        os << "[0x" << hex << qpid::sys::Thread::logId() << "] ";
     if (flags&FILE)
         os << s.file << ":";
     if (flags&LINE)
@@ -145,6 +147,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
         os << " ";
     os << msg << endl;
     std::string formatted=os.str();
+    std::cout << "FORMATTED: " << formatted << std::endl; // FIXME aconway 2008-07-04: 
 
     {
         ScopedLock l(lock);
@@ -220,6 +223,9 @@ void Logger::configure(const Options& opts) {
     void (Logger::* outputFn)(const std::string&, const Options&) = &Logger::output;
     for_each(o.outputs.begin(), o.outputs.end(),
              boost::bind(outputFn, this, _1, boost::cref(o)));
+    setPrefix(opts.prefix);
 }
+
+void Logger::setPrefix(const std::string& p) { prefix = p; }
 
 }} // namespace qpid::log

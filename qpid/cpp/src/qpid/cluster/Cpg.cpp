@@ -144,24 +144,20 @@ std::string Cpg::cantMcastMsg(const Name& group) {
     return "Cannot mcast to CPG group "+group.str();
 }
 
+Cpg::Id Cpg::self() const {
+    unsigned int nodeid;
+    check(cpg_local_get(handle, &nodeid), "Cannot get local CPG identity");
+    return Id(nodeid, getpid());
+}
+
 ostream& operator<<(ostream& o, std::pair<cpg_address*,int> a) {
     ostream_iterator<Cpg::Id> i(o, " ");
     std::copy(a.first, a.first+a.second, i);
     return o;
 }
 
-static int popbyte(uint32_t& n) {
-    uint8_t b=n&0xff;
-    n>>=8;
-    return b;
-}
-
 ostream& operator <<(ostream& out, const Cpg::Id& id) {
-    uint32_t node=id.nodeId();
-    out << popbyte(node);
-    for (int i = 0; i < 3; i++)
-        out << "." << popbyte(node);
-    return out << ":" << id.pid();
+    return out << id.getNodeId() << "-" << id.getPid();
 }
 
 ostream& operator <<(ostream& out, const cpg_name& name) {

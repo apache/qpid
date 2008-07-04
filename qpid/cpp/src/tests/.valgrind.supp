@@ -192,3 +192,10 @@
    fun:_ZN4qpid7Options5parseEiPPcRKSsb
 }
 
+{
+  CPG related errors - seem benign but should invesgitate.
+   Memcheck:Param
+   socketcall.sendmsg(msg.msg_iov[i])
+   fun:sendmsg
+   obj:/usr/lib/openais/libcpg.so.2.0.0
+}

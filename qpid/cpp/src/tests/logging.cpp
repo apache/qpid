@@ -374,8 +374,8 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     QPID_LOG(critical, str); 
     ifstream log("logging.tmp");
     string line;
-    getline(log, line);
-    string expect="critical null\\00tab\\09space newline\\0Aret\\0D\\80\\99\\FF\\00";
+    getline(log, line, '\0');
+    string expect="critical null\\x00tab\tspace newline\nret\r\\x80\\x99\\xFF\\x00\n";
     BOOST_CHECK_EQUAL(expect, line);
     log.close();
     unlink("logging.tmp");

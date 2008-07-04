@@ -47,7 +47,7 @@ public:
     /** Set socket non blocking */
     void setNonblocking() const;
 
-    void connect(const std::string& host, int port) const;
+    void connect(const std::string& host, uint16_t port) const;
 
     void close() const;
 
@@ -67,7 +67,7 @@ public:
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    int listen(int port = 0, int backlog = 10) const;
+    int listen(uint16_t port = 0, int backlog = 10) const;
     
     /** Returns the "socket name" ie the address bound to 
      * the near end of the socket

@@ -47,7 +47,7 @@ struct Handler {
     Handler<T>* next;
 
     /** A Chain is a handler holding a linked list of sub-handlers.
-     * Chain::next is invoked after the full, it is not itself part of the chain.
+     * Chain::next is invoked after the full chain, it is not itself part of the chain.
      * Handlers inserted into the chain are deleted by the Chain dtor.
      */
     class Chain : public Handler<T> {
