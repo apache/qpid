@@ -23,6 +23,7 @@ package org.apache.qpid.test.unit.client.connection;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -36,24 +37,34 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
+import javax.naming.NamingException;
 
-public class ConnectionTest extends TestCase
+public class ConnectionTest extends QpidTestCase
 {
 
-    String _broker = "vm://:1";
     String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
-
-    protected void setUp() throws Exception
+    public String getBroker()
     {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-    }
+        try
+        {
+            if (getConnectionFactory().getConnectionURL().getBrokerCount() > 0)
+            {
+                return getConnectionFactory().getConnectionURL().getBrokerDetails(0).toString();
+            }
+            else
+            {
+                fail("No broker details are available.");
+            }
+        }
+        catch (NamingException e)
+        {
+            fail(e.getMessage());
+        }
 
-    protected void tearDown() throws Exception
-    {
-        TransportConnection.killVMBroker(1);
+        //keep compiler happy 
+        return null;
     }
 
     public void testSimpleConnection() throws Exception
@@ -61,11 +72,11 @@ public class ConnectionTest extends TestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            conn = new AMQConnection(getBroker(), "guest", "guest", "fred", "test");
         }
         catch (Exception e)
         {
-            fail("Connection to " + _broker + " should succeed. Reason: " + e);
+            fail("Connection to " + getBroker() + " should succeed. Reason: " + e);
         }
         finally
         {
@@ -73,18 +84,17 @@ public class ConnectionTest extends TestCase
         }
     }
 
-
     public void testDefaultExchanges() throws Exception
     {
         AMQConnection conn = null;
         try
         {
             conn = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='"
-                                                   + _broker
-                                                   + "?retries='1''&defaultQueueExchange='test.direct'"
-                                                   + "&defaultTopicExchange='test.topic'"
-                                                   + "&temporaryQueueExchange='tmp.direct'"
-                                                   + "&temporaryTopicExchange='tmp.topic'");
+                                     + getBroker()
+                                     + "?retries='1''&defaultQueueExchange='test.direct'"
+                                     + "&defaultTopicExchange='test.topic'"
+                                     + "&temporaryQueueExchange='tmp.direct'"
+                                     + "&temporaryTopicExchange='tmp.topic'");
 
             QueueSession queueSession = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -96,9 +106,7 @@ public class ConnectionTest extends TestCase
 
             assertEquals(tempQueue.getExchangeName().toString(), "tmp.direct");
 
-
             queueSession.close();
-
 
             TopicSession topicSession = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -115,7 +123,7 @@ public class ConnectionTest extends TestCase
         }
         catch (Exception e)
         {
-            fail("Connection to " + _broker + " should succeed. Reason: " + e);
+            fail("Connection to " + getBroker() + " should succeed. Reason: " + e);
         }
         finally
         {
@@ -129,7 +137,7 @@ public class ConnectionTest extends TestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + _broker + "?retries='1''");
+            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + getBroker() + "?retries='1''");
             fail("Connection should not be established password is wrong.");
         }
         catch (AMQException amqe)
@@ -209,7 +217,7 @@ public class ConnectionTest extends TestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + _broker + "?retries='0''");
+            conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + getBroker() + "?retries='0''");
             fail("Connection should not be established");
         }
         catch (AMQException amqe)
@@ -230,7 +238,7 @@ public class ConnectionTest extends TestCase
 
     public void testClientIdCannotBeChanged() throws Exception
     {
-        Connection connection = new AMQConnection(_broker, "guest", "guest",
+        Connection connection = new AMQConnection(getBroker(), "guest", "guest",
                                                   "fred", "test");
         try
         {
@@ -252,7 +260,7 @@ public class ConnectionTest extends TestCase
 
     public void testClientIdIsPopulatedAutomatically() throws Exception
     {
-        Connection connection = new AMQConnection(_broker, "guest", "guest",
+        Connection connection = new AMQConnection(getBroker(), "guest", "guest",
                                                   null, "test");
         try
         {
