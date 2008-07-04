@@ -23,4 +23,5 @@ under the License.
   <include.projects file="./config/bdbstore-cpp-trunk.xml"/>
   <include.projects file="./config/cpp-trunk-perftests.xml"/>
   <include.projects file="./config/example-automation.xml"/>
+  <include.projects file="./config/java-perftests.xml"/>
 </cruisecontrol>
