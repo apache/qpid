@@ -52,3 +52,6 @@ org.apache.qpid.test.unit.xa.FaultTest#testForget
 org.apache.qpid.server.queue.PriorityTest
 //this test checks explicitly for 0-8 flow control semantics
 org.apache.qpid.test.client.FlowControlTest
+// Client Race Condition
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
+
