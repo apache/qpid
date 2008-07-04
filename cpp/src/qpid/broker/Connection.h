@@ -56,6 +56,7 @@ class Connection : public sys::ConnectionInputHandler,
 {
   public:
     typedef boost::shared_ptr<Connection> shared_ptr;
+
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~Connection ();
 
@@ -90,9 +91,14 @@ class Connection : public sys::ConnectionInputHandler,
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
 
+    framing::FrameHandler::Chain& getInChain() { return inChain; } 
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
+
+    // End of the received handler chain.
+    void receivedLast(framing::AMQFrame& frame);
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;
@@ -103,6 +109,9 @@ class Connection : public sys::ConnectionInputHandler,
     boost::function0<void> ioCallback;
     management::Connection::shared_ptr mgmtObject;
     LinkRegistry& links;
+    framing::FrameHandler::MemFunRef<Connection, &Connection::receivedLast> lastInHandler;
+    framing::FrameHandler::Chain inChain;
+
 };
 
 }}

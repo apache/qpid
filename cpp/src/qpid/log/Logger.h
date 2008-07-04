@@ -90,8 +90,12 @@ class Logger : private boost::noncopyable {
     /** Add an output destination for messages */
     void output(std::auto_ptr<Output> out); 
 
+    /** Set a prefix for all messages */
+    void setPrefix(const std::string& prefix);
+    
     /** Reset the logger to it's original state. */
     void clear();
+    
 
   private:
     typedef boost::ptr_vector<Output> Outputs;
@@ -104,6 +108,7 @@ class Logger : private boost::noncopyable {
     Outputs outputs;
     Selector selector;
     int flags;
+    std::string prefix;
 };
 
 }} // namespace qpid::log

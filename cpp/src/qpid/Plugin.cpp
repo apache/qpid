@@ -61,8 +61,8 @@ const std::vector<Plugin::Factory*>& Plugin::Factory::getList() {
 void Plugin::Factory::addOptions(Options& opts) {
     typedef std::vector<Plugin::Factory*>::const_iterator Iter; 
     for (Iter i = Factory::getList().begin(); i != Factory::getList().end(); ++i) {
-        if ((**i).getOptions())
-            opts.add(*(**i).getOptions());
+        Options* opt=(**i).getOptions();
+        if (opt) opts.add(*opt);
     }
 }
 

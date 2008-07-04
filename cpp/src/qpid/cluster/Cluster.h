@@ -19,7 +19,8 @@
  *
  */
 
-#include "Cpg.h"
+#include "qpid/cluster/Cpg.h"
+#include "qpid/cluster/ShadowConnectionOutputHandler.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
@@ -36,7 +37,8 @@
 #include <map>
 #include <vector>
 
-namespace qpid { namespace cluster {
+namespace qpid {
+namespace cluster {
 
 /**
  * Connection to the cluster.
@@ -63,7 +65,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     virtual ~Cluster();
 
     // FIXME aconway 2008-01-29: 
-    boost::intrusive_ptr<broker::SessionManager::Observer> getObserver() { return observer; }
+    boost::intrusive_ptr<broker::ConnectionManager::Observer> getObserver() { return observer; }
     
     /** Get the current cluster membership. */
     MemberList getMembers() const;
@@ -82,11 +84,13 @@ class Cluster : private sys::Runnable, private Cpg::Handler
               sys::Duration timeout=sys::TIME_INFINITE) const;
 
     /** Send frame to the cluster */
-    void send(framing::AMQFrame&, framing::FrameHandler*);
+    void send(framing::AMQFrame&, void* connection, framing::FrameHandler*);
     
   private:
     typedef Cpg::Id Id;
     typedef std::map<Id, Member>  MemberMap;
+    typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
+    typedef std::map<ShadowConnectionId, boost::shared_ptr<broker::Connection> > ShadowConnectionMap;
     
     void notify();              ///< Notify cluster of my details.
 
@@ -107,17 +111,24 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     );
 
     void run();
+    
     void handleClusterFrame(Id from, framing::AMQFrame&);
 
+    boost::shared_ptr<broker::Connection> getShadowConnection(const Cpg::Id&, void*);
+
     mutable sys::Monitor lock;
+    broker::Broker& broker;
     Cpg cpg;
     Cpg::Name name;
     Url url;
-    Id self;
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    boost::intrusive_ptr<broker::SessionManager::Observer> observer;
+    boost::intrusive_ptr<broker::ConnectionManager::Observer> observer;
+    Id self;
+    ShadowConnectionMap shadowConnectionMap;
+    ShadowConnectionOutputHandler shadowOut;
+    char buffer[64*1024];       // FIXME aconway 2008-07-04: buffer management.
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

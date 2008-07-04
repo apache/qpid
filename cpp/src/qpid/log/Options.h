@@ -45,6 +45,7 @@ struct Options : public qpid::Options {
     bool trace;
     std::string syslogName;
     SyslogFacility syslogFacility;
+    std::string prefix;
 };
 
 

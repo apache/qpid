@@ -86,16 +86,13 @@ struct ProxyConnection : public qpid::client::Connection {
 /** Convenience class to create and open a connection and session
  * and some related useful objects.
  */
-template <class ConnectionType=ProxyConnection, class SessionType=qpid::client::Session>
+template <class ConnectionType=LocalConnection, class SessionType=qpid::client::Session>
 struct ClientT {
     ConnectionType connection;
     SessionType session;
     qpid::client::SubscriptionManager subs;
     qpid::client::LocalQueue lq;
-    ClientT(uint16_t port) : connection(port),
-                            session(connection.newSession("Client")),
-                            subs(session)
-    {}
+    ClientT(uint16_t port) : connection(port), session(connection.newSession()), subs(session) {}
 
     ~ClientT() { connection.close(); }
 };

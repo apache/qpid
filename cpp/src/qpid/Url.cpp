@@ -163,7 +163,8 @@ void Url::parseNoThrow(const char* url) {
 }
 
 void Url::throwIfEmpty() const {
-    throw InvalidUrl("URL contains no addresses");
+    if (empty())
+        throw InvalidUrl("URL contains no addresses");
 }
 
 std::istream& operator>>(std::istream& is, Url& url) {
