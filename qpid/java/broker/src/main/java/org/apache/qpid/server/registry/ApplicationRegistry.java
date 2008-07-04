@@ -24,9 +24,17 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.mina.common.IoAcceptor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.net.InetSocketAddress;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -48,6 +56,21 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
     public static String _APPLICATION_REGISTRY = DEFAULT_APPLICATION_REGISTRY;
 
+    protected final Map<InetSocketAddress, IoAcceptor> _acceptors = new HashMap<InetSocketAddress, IoAcceptor>();
+
+    protected ManagedObjectRegistry _managedObjectRegistry;
+
+    protected AuthenticationManager _authenticationManager;
+
+    protected VirtualHostRegistry _virtualHostRegistry;
+
+    protected ACLPlugin _accessManager;
+
+    protected PrincipalDatabaseManager _databaseManager;
+
+    protected PluginManager _pluginManager;
+
+
     static
     {
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
@@ -57,7 +80,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         public void run()
         {
-            _logger.info("Shutting down application registries...");
             removeAll();
         }
     }
@@ -90,6 +112,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    /**
+     * Method to cleanly shutdown specified registry running in this JVM
+     *
+     * @param instanceID the instance to shutdown
+     */
+
     public static void remove(int instanceID)
     {
         try
@@ -111,8 +139,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    /** Method to cleanly shutdown all registries currently running in this JVM */
     public static void removeAll()
-    {
+    {        
         Object[] keys = _instanceMap.keySet().toArray();
         for (Object k : keys)
         {
@@ -162,6 +191,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void close() throws Exception
     {
+        //Stop incomming connections
+        unbind();
+
+        //Shutdown virtualhosts
         for (VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
         {
             virtualHost.close();
@@ -174,9 +207,29 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    private void unbind()
+    {
+        synchronized (_acceptors)
+        {
+            for (InetSocketAddress bindAddress : _acceptors.keySet())
+            {
+                IoAcceptor acceptor = _acceptors.get(bindAddress);
+                acceptor.unbind(bindAddress);
+            }
+        }
+    }
+
     public Configuration getConfiguration()
     {
         return _configuration;
+    }
+
+    public void addAcceptor(InetSocketAddress bindAddress, IoAcceptor acceptor)
+    {
+        synchronized (_acceptors)
+        {
+            _acceptors.put(bindAddress, acceptor);
+        }
     }
 
     public <T> T getConfiguredObject(Class<T> instanceType)
@@ -204,4 +257,35 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         _APPLICATION_REGISTRY = clazz;
     }
+
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return _virtualHostRegistry;
+    }
+
+    public ACLPlugin getAccessManager()
+    {
+        return _accessManager;
+    }
+
+    public ManagedObjectRegistry getManagedObjectRegistry()
+    {
+        return _managedObjectRegistry;
+    }
+
+    public PrincipalDatabaseManager getDatabaseManager()
+    {
+        return _databaseManager;
+    }
+
+    public AuthenticationManager getAuthenticationManager()
+    {
+        return _authenticationManager;
+    }
+
+    public PluginManager getPluginManager()
+    {
+        return _pluginManager;
+    }
+
 }

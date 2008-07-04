@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.common.CloseFuture;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 
 import org.apache.qpid.AMQChannelException;
@@ -99,7 +100,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private Object _lastSent;
 
-    private boolean _closed;
+    protected boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
 
@@ -115,13 +116,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
 
+    private static final long LAST_WRITE_FUTURE_JOIN_TIMEOUT = 60000L;
+    private org.apache.mina.common.WriteFuture _lastWriteFuture;
+
     public ManagedObject getManagedObject()
     {
         return _managedObject;
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory)
-        throws AMQException
+            throws AMQException
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _minaProtocolSession = session;
@@ -145,7 +149,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
-        AMQStateManager stateManager) throws AMQException
+                                  AMQStateManager stateManager) throws AMQException
     {
         _stateManager = stateManager;
         _minaProtocolSession = session;
@@ -199,7 +203,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     private void frameReceived(AMQFrame frame) throws AMQException
-    {        
+    {
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
@@ -222,14 +226,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
+                    _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
                 }
 
+                closeProtocolSession();
                 return;
             }
         }
-
-
 
         try
         {
@@ -258,14 +261,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
             String locales = "en_US";
 
-
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
                                                                                        (short) getProtocolMinorVersion(),
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
             _minaProtocolSession.write(responseBody.generateFrame(0));
-
 
         }
         catch (AMQException e)
@@ -332,27 +333,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                         _logger.info("Closing connection due to: " + e.getMessage());
                     }
 
-                    closeSession();
-
                     AMQConnectionException ce =
-                        evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
-                            AMQConstant.CHANNEL_ERROR.getName().toString());
+                            evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
+                                                                   AMQConstant.CHANNEL_ERROR.getName().toString());
 
-                    _stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                    writeFrame(ce.getCloseFrame(channelId));
+                    closeConnection(channelId, ce, false);
                 }
             }
             catch (AMQConnectionException e)
             {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Closing connection due to: " + e.getMessage());
-                }
-
-                markChannelAwaitingCloseOk(channelId);
-                closeSession();
-                _stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                writeFrame(e.getCloseFrame(channelId));
+                closeConnection(channelId, e, false);
             }
         }
         catch (Exception e)
@@ -365,7 +355,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
             _logger.error("Unexpected exception while processing frame.  Closing connection.", e);
 
-            _minaProtocolSession.close();
+            closeProtocolSession();
         }
     }
 
@@ -399,7 +389,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public void writeFrame(AMQDataBlock frame)
     {
         _lastSent = frame;
-        _minaProtocolSession.write(frame);
+
+        _lastWriteFuture = _minaProtocolSession.write(frame);
     }
 
     public AMQShortString getContextKey()
@@ -431,7 +422,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public AMQChannel getChannel(int channelId) throws AMQException
     {
         final AMQChannel channel =
-            ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
+                ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
         if ((channel == null) || channel.isClosing())
         {
             return null;
@@ -464,8 +455,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         if (_channelMap.size() == _maxNoOfChannels)
         {
             String errorMessage =
-                toString() + ": maximum number of channels has been reached (" + _maxNoOfChannels
-                + "); can't create channel";
+                    toString() + ": maximum number of channels has been reached (" + _maxNoOfChannels
+                    + "); can't create channel";
             _logger.error(errorMessage);
             throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage);
         }
@@ -619,6 +610,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         if (!_closed)
         {
             _closed = true;
+
+            if (_virtualHost != null)
+            {
+                _virtualHost.getConnectionRegistry().deregisterConnection(this);
+            }
+
             closeAllChannels();
             if (_managedObject != null)
             {
@@ -632,9 +629,54 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
+    public void closeConnection(int channelId, AMQConnectionException e, boolean closeProtocolSession) throws AMQException
+    {
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Closing connection due to: " + e.getMessage());
+        }
+
+        markChannelAwaitingCloseOk(channelId);
+        closeSession();
+        _stateManager.changeState(AMQState.CONNECTION_CLOSING);
+        writeFrame(e.getCloseFrame(channelId));
+
+        if (closeProtocolSession)
+        {
+            closeProtocolSession();
+        }
+    }
+
+    public void closeProtocolSession()
+    {
+        closeProtocolSession(true);
+    }
+
+    public void closeProtocolSession(boolean waitLast)
+    {
+        _logger.debug("Waiting for last write to join.");
+        if (waitLast && (_lastWriteFuture != null))
+        {
+            _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
+        }
+
+        _logger.debug("REALLY Closing protocol session:" + _minaProtocolSession);
+        final CloseFuture future = _minaProtocolSession.close();
+        future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
+
+        try
+        {
+            _stateManager.changeState(AMQState.CONNECTION_CLOSED);
+        }
+        catch (AMQException e)
+        {
+            _logger.info(e.getMessage());
+        }
+    }
+
     public String toString()
     {
-        return _minaProtocolSession.getRemoteAddress() + "("+(getAuthorizedID() == null ? "?" : getAuthorizedID().getName()+")");
+        return _minaProtocolSession.getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
     }
 
     public String dump()
@@ -752,6 +794,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public void setVirtualHost(VirtualHost virtualHost) throws AMQException
     {
         _virtualHost = virtualHost;
+
+        _virtualHost.getConnectionRegistry().registerConnection(this);
+
         _managedObject = createMBean();
         _managedObject.register();
     }

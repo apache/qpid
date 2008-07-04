@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -115,6 +116,10 @@ public class MockProtocolSession implements AMQProtocolSession
 
     public void closeSession() throws AMQException
     {
+    }
+
+    public void closeConnection(int channelId, AMQConnectionException e, boolean closeIoSession) throws AMQException
+    {        
     }
 
     public Object getKey()
