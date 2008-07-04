@@ -9,8 +9,10 @@ lib_cluster = $(abs_builddir)/../libqpidcluster.la
 # You should do "newgrp ais" before running the tests to run these.
 # 
 
-# ais_check checks conditions for AIS tests and runs if ok.
-TESTS+=ais_check
+
+# FIXME aconway 2008-07-04: disabled till process leak is plugged.
+# ais_check checks conditions for cluster tests and run them if ok.
+#TESTS+=ais_check
 EXTRA_DIST+=ais_check
 
 check_PROGRAMS+=cluster_test
