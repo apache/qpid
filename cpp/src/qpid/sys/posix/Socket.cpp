@@ -137,7 +137,7 @@ const char* h_errstr(int e) {
 }
 }
 
-void Socket::connect(const std::string& host, int port) const
+void Socket::connect(const std::string& host, uint16_t port) const
 {
     std::stringstream namestream;
     namestream << host << ":" << port;
@@ -192,7 +192,7 @@ Socket::recv(void* data, size_t size) const
     return received;
 }
 
-int Socket::listen(int port, int backlog) const
+int Socket::listen(uint16_t port, int backlog) const
 {
     const int& socket = impl->fd;
     int yes=1;
@@ -202,9 +202,9 @@ int Socket::listen(int port, int backlog) const
     name.sin_port = htons(port);
     name.sin_addr.s_addr = 0;
     if (::bind(socket, (struct sockaddr*)&name, sizeof(name)) < 0)
-        throw QPID_POSIX_ERROR(errno);
+        throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
-        throw QPID_POSIX_ERROR(errno);
+        throw Exception(QPID_MSG("Can't listen on port " << port << ": " << strError(errno)));
     
     socklen_t namelen = sizeof(name);
     if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)

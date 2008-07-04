@@ -142,6 +142,7 @@ Options::Options(const std::string& argv0, const std::string& name) :
         ("log-source", optValue(source,"yes|no"), "Include source file:line in log messages")
         ("log-thread", optValue(thread,"yes|no"), "Include thread ID in log messages")
         ("log-function", optValue(function,"yes|no"), "Include function signature in log messages")
+        ("log-prefix", optValue(prefix,"STRING"), "Prefix to append to all log messages")
         ("syslog-name", optValue(syslogName, "NAME"), "Name to use in syslog messages")
         ("syslog-facility", optValue(syslogFacility,"LOG_XXX"), "Facility to use in syslog messages")
         ;

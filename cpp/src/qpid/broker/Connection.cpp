@@ -53,7 +53,9 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     isLink(isLink_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
-    links(broker_.getLinks())
+    links(broker_.getLinks()),
+    lastInHandler(*this),
+    inChain(lastInHandler)
 {
     Manageable* parent = broker.GetVhostObject();
 
@@ -86,7 +88,9 @@ Connection::~Connection()
         links.notifyClosed(mgmtId);
 }
 
-void Connection::received(framing::AMQFrame& frame){
+void Connection::received(framing::AMQFrame& frame){ inChain(frame); }
+    
+void Connection::receivedLast(framing::AMQFrame& frame){
     if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {

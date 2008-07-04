@@ -27,6 +27,7 @@
 #include "Connection.h"
 #include "qpid/broker/Connection.h"
 #include <queue>
+#include <memory>
 
 namespace qpid {
 namespace broker { class Broker; }
@@ -40,7 +41,7 @@ class Connection  : public sys::ConnectionCodec,
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
-    broker::Connection connection; // FIXME aconway 2008-03-18: 
+    std::auto_ptr<broker::Connection> connection; // FIXME aconway 2008-03-18: 
     std::string identifier;
     bool initialized;
     bool isClient;
