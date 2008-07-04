@@ -48,7 +48,7 @@ class StructGen < CppGen
 
   def default_initialisation(s)
     params = s.fields.select {|f| ValueTypes.include?(f.cpptype.name) || (!is_packed(s) && f.type_ == "bit")}
-    strings = params.collect {|f| "#{f.cppname}(0)"}   
+    strings = params.collect {|f| "#{f.cppname}(#{f.default_value})"}   
     strings << "flags(0)" if (is_packed(s))
     if strings.empty?
       return ""
