@@ -20,29 +20,30 @@
  */
 package org.apache.qpid.server.util;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.MapConfiguration;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.MapConfiguration;
 
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Properties;
+import java.util.Arrays;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
@@ -55,6 +56,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     private MessageStore _messageStore;
 
     private VirtualHost _vHost;
+
 
     public TestApplicationRegistry()
     {
@@ -73,14 +75,19 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _managedObjectRegistry = appRegistry.getManagedObjectRegistry();
-        _vHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
+        _managedObjectRegistry = new NoopManagedObjectRegistry();
+
+        _messageStore = new TestableMemoryMessageStore();
+
+        _virtualHostRegistry = new VirtualHostRegistry();
+
+        _vHost = new VirtualHost("test", _messageStore);
+
+        _virtualHostRegistry.registerVirtualHost(_vHost);
+
         _queueRegistry = _vHost.getQueueRegistry();
         _exchangeFactory = _vHost.getExchangeFactory();
         _exchangeRegistry = _vHost.getExchangeRegistry();
-
-        _messageStore = new TestableMemoryMessageStore();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
     }
@@ -102,12 +109,8 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     public Collection<String> getVirtualHostNames()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        String[] hosts = {"test"};
+        return Arrays.asList(hosts);
     }
 
     public void setAccessManager(ACLPlugin newManager)
@@ -120,10 +123,6 @@ public class TestApplicationRegistry extends ApplicationRegistry
         return _messageStore;
     }
 
-    public PluginManager getPluginManager()
-    {
-        return null;
-    }
 }
 
 

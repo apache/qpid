@@ -34,7 +34,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoAcceptor;
-import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.common.FixedSizeByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
@@ -421,7 +420,8 @@ public class Main
                     bindAddress = new InetSocketAddress(InetAddress.getByAddress(parseIP(bindAddr)), port);
                 }
 
-                acceptor.bind(bindAddress, handler, sconfig);
+                bind(acceptor, bindAddress, handler, sconfig);
+
                 //fixme  qpid.AMQP should be using qpidproperties to get value
                 _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
@@ -432,7 +432,8 @@ public class Main
                 try
                 {
 
-                    acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+                    bind(acceptor, new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+
                     //fixme  qpid.AMQP should be using qpidproperties to get value
                     _brokerLogger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
 
@@ -453,6 +454,23 @@ public class Main
             //fixme this need tidying up
             throw new BindException(e.getMessage());
         }
+    }
+
+    /**
+     * Ensure that any bound Acceptors are recorded in the registry so they can be closed later.
+     *
+     * @param acceptor
+     * @param bindAddress
+     * @param handler
+     * @param sconfig
+     *
+     * @throws IOException from the acceptor.bind command
+     */
+    private void bind(IoAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
+    {
+        acceptor.bind(bindAddress, handler, sconfig);
+
+        ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
 
     public static void main(String[] args)

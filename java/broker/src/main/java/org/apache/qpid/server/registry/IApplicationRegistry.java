@@ -21,6 +21,7 @@
 package org.apache.qpid.server.registry;
 
 import java.util.Collection;
+import java.net.InetSocketAddress;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
@@ -29,6 +30,7 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.mina.common.IoAcceptor;
 
 public interface IApplicationRegistry
 {
@@ -39,6 +41,10 @@ public interface IApplicationRegistry
      */
     void initialise() throws Exception;
 
+    /**
+     * Shutdown this Registry
+     * @throws Exception - //fixme needs to be made more specific
+     */
     void close() throws Exception;
 
     /**
@@ -71,5 +77,12 @@ public interface IApplicationRegistry
     ACLPlugin getAccessManager();
 
     PluginManager getPluginManager();
-    
+
+    /**
+     * Register any acceptors for this registry
+     * @param bindAddress The address that the acceptor has been bound with
+     * @param acceptor The acceptor in use
+     */
+    void addAcceptor(InetSocketAddress bindAddress, IoAcceptor acceptor);
+
 }
