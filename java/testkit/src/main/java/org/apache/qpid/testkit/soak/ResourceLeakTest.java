@@ -103,6 +103,7 @@ public class ResourceLeakTest extends BaseTest
                       j++;
                     }
                 }
+                System.out.println(df.format(System.currentTimeMillis()));
                 Thread.sleep(connection_idle_time);
 
                 try

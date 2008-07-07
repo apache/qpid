@@ -18,9 +18,9 @@
 # under the License.
 #
 
-# Helper script to set classpath for running Qpid example classes
-# NB: You must add the Qpid client and common jars to your CLASSPATH
-# before running this script
+# This will run the 8 use cases defined below and produce
+# a report in tabular format. Refer to the documentation
+# for more details.
 
 SUB_MEM=-Xmx1024M
 PUB_MEM=-Xmx1024M

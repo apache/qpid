@@ -109,7 +109,7 @@ public class SimpleProducer extends BaseTest
                 for (int i = 0; i < msg_count - 1; i++)
                 {
                     Message msg = getNextMessage();
-                    msg.setJMSMessageID("ID:" + UUID.randomUUID());
+                    msg.setJMSTimestamp(System.currentTimeMillis());
                     prods[prod_pointer].send(msg);
                     if (multi_session)
                     {
@@ -122,10 +122,9 @@ public class SimpleProducer extends BaseTest
                 }
 
                 TextMessage m = sessions[0].createTextMessage("End");
-                m.setJMSMessageID("ID:" + UUID.randomUUID());
                 m.setJMSReplyTo(feedbackQueue);
                 prods[prod_pointer].send(m);
-                System.out.println(m.getJMSMessageID() + "," + System.currentTimeMillis());
+                System.out.println(df.format(System.currentTimeMillis()));
                 feedbackConsumer.receive();
                 Thread.sleep(1000);
             }
