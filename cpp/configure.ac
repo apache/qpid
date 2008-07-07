@@ -155,18 +155,16 @@ AC_ARG_WITH([cpg],
   [case "${withval}" in
     yes)			# yes - enable
     with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_initialize],,[AC_MSG_ERROR([libcpg not found, install openais])])
+    AC_CHECK_LIB([cpg],[cpg_local_get],,[AC_MSG_ERROR([libcpg not found, install openais])])
     AC_CHECK_HEADERS([openais/cpg.h],,[AC_MSG_ERROR([openais/cpg.h not found, install openais-devel])])
     ;;
-    no)				# no -disable
-    with_CPG=no
-    ;; 
+    no) with_CPG=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
    [		   # not specified - enable if libs/headers available.
     with_CPG=yes
+    AC_CHECK_LIB([cpg],[cpg_local_get],,[with_CPG=no])
     AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
-    AC_CHECK_LIB([cpg],[cpg_initialize],,[with_CPG=no])
    ]
 )
 # Remove from LIBS, we will link it explicitly in make files.
