@@ -53,6 +53,9 @@ public class SimpleConsumer extends BaseTest
     public SimpleConsumer()
     {
         super();
+        //needed only to calculate throughput.
+        // If msg_count is different set it via -Dmsg_count
+        msg_count = 10;
     }
 
     public void test()
@@ -69,14 +72,34 @@ public class SimpleConsumer extends BaseTest
                 cons[i].setMessageListener(new MessageListener()
                 {
 
+                    private boolean startIteration = true;
+                    private long startTime = 0;
+
                     public void onMessage(Message m)
                     {
                         try
                         {
-                            String payload = ((TextMessage) m).getText();
-                            if (payload.equals("End"))
+                            long now = System.currentTimeMillis();
+                            if (startIteration)
                             {
-                                System.out.println(m.getJMSMessageID() + "," + System.currentTimeMillis());
+                                startTime = m.getJMSTimestamp();
+                                startIteration = false;
+                            }
+
+                            if (m instanceof TextMessage && ((TextMessage) m).getText().equals("End"))
+                            {
+
+                                long totalIterationTime = now - startTime;
+                                startIteration = true;
+                                double throughput = ((double)msg_count/(double)totalIterationTime) * 1000;
+                                long latencySample = now - m.getJMSTimestamp();
+
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(m.getJMSMessageID()).append(",").
+                                append(nf.format(throughput)).append(",").append(latencySample);
+
+                                System.out.println(sb.toString());
+
                                 MessageProducer temp = sessions[0].createProducer(m.getJMSReplyTo());
                                 Message controlMsg = sessions[0].createTextMessage();
                                 temp.send(controlMsg);
