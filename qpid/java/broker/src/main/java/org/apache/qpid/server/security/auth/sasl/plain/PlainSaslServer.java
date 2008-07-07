@@ -72,17 +72,19 @@ public class PlainSaslServer implements SaslServer
 
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", authzid);
-            // we do not care about the prompt but it throws if null
             PasswordCallback passwordCb = new PasswordCallback("prompt", false);
             // TODO: should not get pwd as a String but as a char array...
             int passwordLen = response.length - authcidNullPosition - 1;
             String pwd = new String(response, authcidNullPosition + 1, passwordLen, "utf8");
-            passwordCb.setPassword(pwd.toCharArray());
             AuthorizeCallback authzCb = new AuthorizeCallback(authzid, authzid);
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);
-            _complete = true;
-            if (authzCb.isAuthorized())
+            String storedPwd = new String(passwordCb.getPassword());
+            if (storedPwd.equals(pwd))
+            {
+                _complete = true;
+            }
+            if (authzCb.isAuthorized() && _complete)
             {
                 _authorizationId = authzCb.getAuthenticationID();
                 return null;
