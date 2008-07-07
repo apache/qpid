@@ -130,12 +130,12 @@ print_system_stats()
 
 cleanup()
 {
-  kill -9 `ps aux | grep soak_client | awk '{ print $2 }'`
+  kill -9 `ps aux | grep soak | awk '{ print $2 }'`
 }
 
 print_results()
 {  
-  printf "\n======================================================= \n"
+  printf "\n======================================================= \n" 
   print_rates MultiThreadedConsumer_1.log
   printf "\nConsumer process stats "
   printf "\n----------------------- \n"

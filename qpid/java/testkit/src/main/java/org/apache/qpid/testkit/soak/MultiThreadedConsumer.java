@@ -80,6 +80,7 @@ public class MultiThreadedConsumer extends BaseTest
 
                                 private boolean startIteration = true;
                                 private long startTime = 0;
+                                private long iterations = 0;
 
                                 public void onMessage(Message m)
                                 {
@@ -98,9 +99,10 @@ public class MultiThreadedConsumer extends BaseTest
                                             long totalIterationTime = now - startTime;
                                             double throughput = ((double)msg_count/(double)totalIterationTime) * 1000;
                                             long latencySample = now - m.getJMSTimestamp();
+                                            iterations++;
 
                                             StringBuilder sb = new StringBuilder();
-                                            sb.append(m.getJMSMessageID()).append(",").
+                                            sb.append(iterations).append(",").
                                             append(nf.format(throughput)).append(",").append(latencySample);
 
                                             System.out.println(sb.toString());
