@@ -54,6 +54,8 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
     std::string prefix;
 
   public:
+    struct ChildExit {};   // Thrown in child processes.
+
     ForkedBroker(const qpid::broker::Broker::Options& opts_, const std::string& prefix_=std::string())
         : childPid(0), port(0), opts(opts_), prefix(prefix_) { fork(); } 
 
@@ -62,7 +64,7 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
     void stop() {
         if (childPid > 0) {
             ::kill(childPid, SIGINT);
-                                //FIXME aconway 2008-07-04: ::waitpid(childPid, 0, 0);
+            ::waitpid(childPid, 0, 0);
         }
     }
 
@@ -83,6 +85,10 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
         ready(boost::lexical_cast<std::string>(broker->getPort())); // Notify parent.
         broker->run();
         QPID_LOG(notice, "ForkedBroker exiting.");
+
+        // Force exit in the child process, otherwise we will try to
+        // carry with parent tests.
+        exit(0);
     }
 
     uint16_t getPort() { return port; }
