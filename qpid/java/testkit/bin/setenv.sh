@@ -1,4 +1,4 @@
-#!/bin/sh -xv
+#!/bin/sh
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -36,7 +36,6 @@ fi
 
 # VENDOR_LIB path needs to be set
 # for Qpid set this to {qpid_checkout}/java/build/lib
-VENDOR_LIB=""
 if [ "$VENDOR_LIB" = "" ] ; then
     echo "ERROR: Please set VENDOR_LIB path in the script ...."
     exit 1
@@ -46,7 +45,7 @@ fi
 [ -d $QPID_TEST_HOME/classes ] || mkdir $QPID_TEST_HOME/classes
 
 CLASSPATH=`find $VENDOR_LIB -name *.jar* | tr '\n' ":"`
-javac -cp $CLASSPATH -d $QPID_TEST_HOME/classes -sourcepath $QPID_TEST_HOME/src `find $QPID_TEST_HOME/src -name '*.java'`
+$JAVA_HOME/bin/javac -cp $CLASSPATH -d $QPID_TEST_HOME/classes -sourcepath $QPID_TEST_HOME/src `find $QPID_TEST_HOME/src -name '*.java'`
 
 export CLASSPATH=$QPID_TEST_HOME/classes:$CLASSPATH
 
