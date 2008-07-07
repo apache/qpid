@@ -18,9 +18,7 @@
 # under the License.
 #
 
-# Helper script to set classpath for running Qpid example classes
-# NB: You must add the Qpid client and common jars to your CLASSPATH
-# before running this script
+# Compiles the test classes and sets the CLASSPATH
 
 # check for QPID_TEST_HOME
 if [ "$QPID_TEST_HOME" = "" ] ; then
