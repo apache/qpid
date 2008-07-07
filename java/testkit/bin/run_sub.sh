@@ -22,7 +22,7 @@
 # NB: You must add the Qpid client and common jars to your CLASSPATH
 # before running this script
 
-. setenv.sh
+. $QPID_TEST_HOME/bin/setenv.sh
 
 echo "$@"
 $JAVA_HOME/bin/java -cp $CLASSPATH $@ org.apache.qpid.testkit.perf.PerfConsumer
