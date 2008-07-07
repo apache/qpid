@@ -117,7 +117,6 @@ public class MultiThreadedProducer extends SimpleProducer
                                 }
 
                                 TextMessage m = session.createTextMessage("End");
-                                m.setJMSMessageID("ID:" + UUID.randomUUID());
                                 m.setJMSReplyTo(feedbackQueue);
                                 prod.send(m);
 
@@ -126,7 +125,7 @@ public class MultiThreadedProducer extends SimpleProducer
                                     session.commit();
                                 }
 
-                                System.out.println(m.getJMSMessageID() + "," + System.currentTimeMillis());
+                                System.out.println(df.format(System.currentTimeMillis()));
                                 feedbackConsumer.receive();
                                 if (transacted)
                                 {

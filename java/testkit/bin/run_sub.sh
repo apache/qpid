@@ -18,10 +18,6 @@
 # under the License.
 #
 
-# Helper script to set classpath for running Qpid example classes
-# NB: You must add the Qpid client and common jars to your CLASSPATH
-# before running this script
-
 . $QPID_TEST_HOME/bin/setenv.sh
 
 echo "$@"
