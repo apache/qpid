@@ -54,4 +54,7 @@ org.apache.qpid.server.queue.PriorityTest
 org.apache.qpid.test.client.FlowControlTest
 // Client Race Condition
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
+// 0-10 c++ broker doesn't implement virtual hosts, or those wackhy exchanges
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnresolvedVirtualHostFailure
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
 
