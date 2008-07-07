@@ -21,7 +21,7 @@ log4j.rootLogger=${root.logging.level}
 log4j.logger.org.apache.qpid=ERROR, console
 log4j.additivity.org.apache.qpid=false
 
-log4j.logger.org.apache.qpidity=ERROR, console
+log4j.logger.org.apache.qpidity=TRACE, console
 log4j.additivity.org.apache.qpidity=false
 
 log4j.appender.console=org.apache.log4j.ConsoleAppender
