@@ -285,6 +285,7 @@ Broker::~Broker() {
         sasl_done();
 #endif
     }
+    QPID_LOG(notice, "Shut down");
 }
 
 ManagementObject::shared_ptr Broker::GetManagementObject(void) const
