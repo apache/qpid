@@ -1,4 +1,4 @@
-#!/bin/sh -xv
+#!/bin/sh
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -24,8 +24,5 @@
 
 . setenv.sh
 
-MAX_MEM=1024M
-
 echo "$@"
-java -cp $CLASSPATH -Xmx$MAX_MEM $@ org.apache.qpid.testkit.perf.PerfProducer
-
+$JAVA_HOME/bin/java -cp $CLASSPATH $@ org.apache.qpid.testkit.perf.PerfProducer
