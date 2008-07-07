@@ -1,4 +1,4 @@
-#!/bin/sh -xv
+#!/bin/sh
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -22,8 +22,9 @@
 # NB: You must add the Qpid client and common jars to your CLASSPATH
 # before running this script
 
-MAX_SUB_MEM=1024M
-MAX_PUB_MEM=1024M
+SUB_MEM=-Xmx1024M
+PUB_MEM=-Xmx1024M
+LOG_CONFIG=-Dlog4j.configuration="$QPID_TEST_HOME/etc/test.log4j"
 
 . setenv.sh
 
@@ -42,23 +43,13 @@ cleanup()
 # $3 producer options
 run_testcase()
 {
-  sh run_sub.sh $2 > sub.out &
+  sh run_sub.sh $LOG_CONFIG $SUB_MEM $2 > sub.out &
   waitfor sub.out "Warming up"
-  sh run_pub.sh $3 > pub.out &
+  sh run_pub.sh $LOG_CONFIG $PUB_MEM $3 > pub.out &
   waitfor sub.out "Completed the test"
   waitfor pub.out "Consumer has completed the test"
   sleep 2 #give a grace period to shutdown
   print_result $1  
-}
-
-run_sub()
-{
-  java -cp $CLASSPATH -Xmx$MAX_SUB_MEM $@ org.apache.qpid.testkit.perf.PerfConsumer
-}
-
-run_pub()
-{
-  java -cp $CLASSPATH -Xmx$MAX_PUB_MEM $@ org.apache.qpid.testkit.perf.PerfProducer
 }
 
 print_result()
@@ -91,19 +82,19 @@ run_testcase "Dura_Queue" "-Ddurable=true" "-Ddurable=true -Dwarmup_count=1 -Dms
 run_testcase "Dura_Queue_Sync" "-Ddurable=true" "-Ddurable=true -Dwarmup_count=1 -Dmsg_count=10 -Dsync_persistence=true"
 
 # Test 4 Topic
-#run_testcase "Topic" "-DtransDest=transientTopic" "-DtransDest=transientTopic -Dwarmup_count=1 -Dmsg_count=10"
+run_testcase "Topic" "-DtransDest=transientTopic" "-DtransDest=transientTopic -Dwarmup_count=1 -Dmsg_count=10"
 
 # Test 5 Durable Topic
-run_testcase "Dura_Topic" "-Ddurable=true -DtransDest=durableTopic" "-Ddurable=true -DtransDest=durableTopic -Dwarmup_count=1 -Dmsg_count=10"
+#run_testcase "Dura_Topic" "-Ddurable=true -DtransDest=durableTopic" "-Ddurable=true -DtransDest=durableTopic -Dwarmup_count=1 -Dmsg_count=10"
 
 # Test 6 Fanout
 run_testcase "Fanout" "-DtransDest=fanoutQueue" "-DtransDest=fanoutQueue -Dwarmup_count=1 -Dmsg_count=10"
 
 # Test 7 Small TX
-#run_testcase "Small_Txs_2" "-Ddurable=true -Dtransacted=true -Dtrans_size=1" \
-# "-Ddurable=true -Dwarmup_count=1 -Dmsg_count=10 -Dtransacted=true -Dtrans_size=1"
+run_testcase "Small_Txs_2" "-Ddurable=true -Dtransacted=true -Dtrans_size=1" \
+ "-Ddurable=true -Dwarmup_count=1 -Dmsg_count=10 -Dtransacted=true -Dtrans_size=1"
 
 # Test 8 Large TX
-#run_testcase "Large_Txs_1000" "-Ddurable=true -Dtransacted=true -Dtrans_size-10" \
-# "-Ddurable=true -Dwarmup_count=1 -Dmsg_count=10 -Dtransacted=true -Dtrans_size=10"
+run_testcase "Large_Txs_1000" "-Ddurable=true -Dtransacted=true -Dtrans_size=10" \
+ "-Ddurable=true -Dwarmup_count=1 -Dmsg_count=10 -Dtransacted=true -Dtrans_size=10"
 
