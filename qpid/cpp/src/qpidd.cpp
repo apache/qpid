@@ -19,7 +19,6 @@
  *
  */
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/SignalHandler.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/broker/Daemon.h"
 #include "qpid/log/Statement.h"
@@ -132,6 +131,12 @@ struct BootstrapOptions : public qpid::Options {
 shared_ptr<Broker> brokerPtr;
 auto_ptr<QpiddOptions> options;
 
+void shutdownHandler(int /*signal*/){
+    // Note: do not call any async-signal unsafe functions here.
+    // Do any extra shutdown actions in main() after broker->run()
+    brokerPtr->shutdown();
+}
+
 struct QpiddDaemon : public Daemon {
     QpiddDaemon(std::string pidDir) : Daemon(pidDir) {}
 
@@ -148,6 +153,7 @@ struct QpiddDaemon : public Daemon {
         uint16_t port=brokerPtr->getPort();
         ready(port);            // Notify parent.
         brokerPtr->run();
+        brokerPtr.reset();
     }
 };
 
@@ -234,7 +240,17 @@ int main(int argc, char* argv[])
         }
 
         // Starting the broker.
-        broker::SignalHandler::setBroker(brokerPtr); // Set up signal handling.
+
+        // Signal handling
+        signal(SIGINT,shutdownHandler); 
+        signal(SIGTERM,shutdownHandler);
+        signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
+
+        signal(SIGCHLD,SIG_IGN); 
+        signal(SIGTSTP,SIG_IGN); 
+        signal(SIGTTOU,SIG_IGN);
+        signal(SIGTTIN,SIG_IGN);
+            
         if (options->daemon.daemon) {
             // For daemon mode replace default stderr with syslog.
             if (options->log.outputs.size() == 1 && options->log.outputs[0] == "stderr") {
