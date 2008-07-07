@@ -104,7 +104,7 @@ public class QpidTestCase extends TestCase
 
         String initialContext = System.getProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
 
-        if (initialContext == null || initialContext.isEmpty())
+        if (initialContext == null || initialContext.length() == 0)
         {
             System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
         }
