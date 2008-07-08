@@ -23,7 +23,6 @@
 #include "ManagementObject.h"
 #include "Args.h"
 #include <string>
-#include <boost/shared_ptr.hpp>
 
 namespace qpid { 
 namespace management {
@@ -50,9 +49,9 @@ class Manageable
     //  management object.  This object is always of a class derived from
     //  the pure-virtual "ManagementObject".
     //
-    //  This accessor function returns a shared_ptr to the management object.
+    //  This accessor function returns a pointer to the management object.
     //
-    virtual ManagementObject::shared_ptr GetManagementObject (void) const = 0;
+    virtual ManagementObject* GetManagementObject (void) const = 0;
 
     //  Every "Manageable" object must implement ManagementMethod.  This
     //  function is called when a remote management client invokes a method

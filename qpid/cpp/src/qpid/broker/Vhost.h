@@ -31,7 +31,7 @@ class Vhost : public management::Manageable
 {
   private:
 
-    management::Vhost::shared_ptr mgmtObject;
+    management::Vhost* mgmtObject;
 
   public:
 
@@ -39,7 +39,7 @@ class Vhost : public management::Manageable
 
     Vhost (management::Manageable* parentBroker);
 
-    management::ManagementObject::shared_ptr GetManagementObject (void) const
+    management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }
 
     management::Manageable::status_t ManagementMethod (uint32_t, management::Args&)

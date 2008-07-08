@@ -28,7 +28,7 @@ using namespace qpid::sys;
 FanOutExchange::FanOutExchange(const std::string& _name, Manageable* _parent) :
     Exchange(_name, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -36,7 +36,7 @@ FanOutExchange::FanOutExchange(const std::string& _name, bool _durable,
                                const FieldTable& _args, Manageable* _parent) :
     Exchange(_name, _durable, _args, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -52,9 +52,9 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/,
     if (i == bindings.end()) {
         Binding::shared_ptr binding (new Binding ("", queue, this));
         bindings.push_back(binding);
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindingCount();
+            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     } else {
@@ -72,9 +72,9 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
 
     if (i != bindings.end()) {
         bindings.erase(i);
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindingCount();
+            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {
@@ -88,11 +88,11 @@ void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const
 
     for(std::vector<Binding::shared_ptr>::iterator i = bindings.begin(); i != bindings.end(); ++i, count++){
         msg.deliverTo((*i)->queue);
-        if ((*i)->mgmtBinding.get() != 0)
+        if ((*i)->mgmtBinding != 0)
             (*i)->mgmtBinding->inc_msgMatched ();
     }
 
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
     {
         mgmtExchange->inc_msgReceives  ();
         mgmtExchange->inc_byteReceives (msg.contentSize ());

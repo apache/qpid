@@ -29,7 +29,7 @@ using qpid::management::Manageable;
 
 DirectExchange::DirectExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -37,7 +37,7 @@ DirectExchange::DirectExchange(const std::string& _name, bool _durable,
                                const FieldTable& _args, Manageable* _parent) :
     Exchange(_name, _durable, _args, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -53,9 +53,9 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
     if (i == queues.end()) {
         Binding::shared_ptr binding (new Binding (routingKey, queue, this));
         bindings[routingKey].push_back(binding);
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindingCount();
+            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     } else{
@@ -77,9 +77,9 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
         if (queues.empty()) {
             bindings.erase(routingKey);
         }
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindingCount();
+            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {
@@ -95,25 +95,25 @@ void DirectExchange::route(Deliverable& msg, const string& routingKey, const Fie
 
     for(i = queues.begin(); i != queues.end(); i++, count++) {
         msg.deliverTo((*i)->queue);
-        if ((*i)->mgmtBinding.get() != 0)
+        if ((*i)->mgmtBinding != 0)
             (*i)->mgmtBinding->inc_msgMatched ();
      }
 
     if(!count){
         QPID_LOG(warning, "DirectExchange " << getName() << " could not route message with key " << routingKey);
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->inc_msgDrops  ();
             mgmtExchange->inc_byteDrops (msg.contentSize ());
         }
     }
     else {
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->inc_msgRoutes  (count);
             mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
         }
     }
 
-    if (mgmtExchange.get() != 0) {
+    if (mgmtExchange != 0) {
         mgmtExchange->inc_msgReceives  ();
         mgmtExchange->inc_byteReceives (msg.contentSize ());
     }

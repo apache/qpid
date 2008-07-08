@@ -22,7 +22,7 @@
 #include "ConnectionState.h"
 #include "LinkRegistry.h"
 
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
@@ -37,15 +37,14 @@ namespace broker {
 
 Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
                const management::ArgsLinkBridge& _args) : 
-    link(_link), id(_id), args(_args),
+    link(_link), id(_id), args(_args), mgmtObject(0),
     listener(l), name(Uuid(true).str()), persistenceId(0)
 {
-    ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
-    if (agent.get() != 0) {
-        mgmtObject = management::Bridge::shared_ptr
-            (new management::Bridge(agent.get(), this, link, id, args.i_durable, args.i_src, args.i_dest,
-                                    args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
-                                    args.i_tag, args.i_excludes));
+    ManagementAgent* agent = ManagementAgent::getAgent();
+    if (agent != 0) {
+        mgmtObject = new management::Bridge(agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
+                                            args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
+                                            args.i_tag, args.i_excludes);
         if (!args.i_durable)
             agent->addObject(mgmtObject);
     }
@@ -109,7 +108,7 @@ void Bridge::setPersistenceId(uint64_t id) const
 {
     if (mgmtObject != 0 && persistenceId == 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
         agent->addObject (mgmtObject, id);
     }
     persistenceId = id;
@@ -175,9 +174,9 @@ uint32_t Bridge::encodedSize() const
         + args.i_excludes.size() + 1;
 }
 
-management::ManagementObject::shared_ptr Bridge::GetManagementObject (void) const
+management::ManagementObject* Bridge::GetManagementObject (void) const
 {
-    return dynamic_pointer_cast<management::ManagementObject>(mgmtObject);
+    return (management::ManagementObject*) mgmtObject;
 }
 
 management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId, management::Args& /*args*/)

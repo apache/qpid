@@ -79,7 +79,7 @@ class Connection : public sys::ConnectionInputHandler,
     void closeChannel(framing::ChannelId channel);
 
     // Manageable entry points
-    management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::ManagementObject* GetManagementObject (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
@@ -107,7 +107,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool mgmtClosing;
     const std::string mgmtId;
     boost::function0<void> ioCallback;
-    management::Connection::shared_ptr mgmtObject;
+    management::Connection* mgmtObject;
     LinkRegistry& links;
     framing::FrameHandler::MemFunRef<Connection, &Connection::receivedLast> lastInHandler;
     framing::FrameHandler::Chain inChain;

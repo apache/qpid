@@ -21,18 +21,16 @@
  * under the License.
  *
  */
-
 #include "qpid/Options.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Timer.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
-#include "ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "ManagementObject.h"
 #include "Manageable.h"
 #include "qpid/management/Agent.h"
 #include <qpid/framing/AMQFrame.h>
-#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace management {
@@ -48,9 +46,9 @@ class ManagementBroker : public ManagementAgent
 
     virtual ~ManagementBroker ();
 
-    static void       enableManagement (std::string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize);
-    static shared_ptr getAgent (void);
-    static void       shutdown (void);
+    static void enableManagement (std::string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize);
+    static ManagementAgent* getAgent (void);
+    static void shutdown (void);
 
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
@@ -60,14 +58,19 @@ class ManagementBroker : public ManagementAgent
                           std::string className,
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
-    void addObject       (ManagementObject::shared_ptr object,
-                          uint32_t                     persistId   = 0,
-                          uint32_t                     persistBank = 4);
+    uint64_t addObject   (ManagementObject* object,
+                          uint32_t          persistId   = 0,
+                          uint32_t          persistBank = 4);
     void clientAdded     (void);
     void dispatchCommand (broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
-    
+
+    // Stubs for remote management agent calls
+    void init (std::string, uint16_t, uint16_t, bool) { assert(0); }
+    uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
+    int getSignalFd () { assert(0); return -1; }
+
   private:
     friend class ManagementAgent;
 
@@ -86,8 +89,8 @@ class ManagementBroker : public ManagementAgent
     struct RemoteAgent : public Manageable
     {
         uint32_t          objIdBank;
-        Agent::shared_ptr mgmtObject;
-        ManagementObject::shared_ptr GetManagementObject (void) const { return mgmtObject; }
+        Agent*            mgmtObject;
+        ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
     };
 
@@ -143,7 +146,7 @@ class ManagementBroker : public ManagementAgent
     ManagementObjectMap          managementObjects;
     ManagementObjectMap          newManagementObjects;
 
-    static shared_ptr            agent;
+    static ManagementAgent*      agent;
     static bool                  enabled;
 
     framing::Uuid                uuid;

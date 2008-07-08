@@ -38,12 +38,12 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace std;
 
-ManagementAgent::shared_ptr ManagementBroker::agent;
-bool                        ManagementBroker::enabled = 0;
+ManagementAgent* ManagementBroker::agent;
+bool             ManagementBroker::enabled = 0;
 
 ManagementBroker::RemoteAgent::~RemoteAgent ()
 {
-    if (mgmtObject.get () != 0)
+    if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }
 
@@ -91,7 +91,19 @@ ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Managea
     }
 }
 
-ManagementBroker::~ManagementBroker () {}
+ManagementBroker::~ManagementBroker ()
+{
+    Mutex::ScopedLock lock (userLock);
+
+    moveNewObjectsLH();
+    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+         iter != managementObjects.end ();
+         iter++) {
+        ManagementObject* object = iter->second;
+        delete object;
+    }
+    managementObjects.clear();
+}
 
 void ManagementBroker::writeData ()
 {
@@ -108,24 +120,25 @@ void ManagementBroker::writeData ()
 void ManagementBroker::enableManagement (string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize)
 {
     enabled = 1;
-    if (agent.get () == 0)
-        agent = shared_ptr (new ManagementBroker (dataDir, interval, broker, threadPoolSize));
+    if (agent == 0)
+        agent = new ManagementBroker (dataDir, interval, broker, threadPoolSize);
 }
 
-ManagementAgent::shared_ptr ManagementAgent::getAgent (void)
+ManagementAgent* ManagementAgent::getAgent (void)
 {
     return ManagementBroker::agent;
 }
 
 void ManagementBroker::shutdown (void)
 {
-    if (agent.get () != 0)
+    if (agent != 0)
     {
-        ManagementBroker* broker = (ManagementBroker*) agent.get();
+        ManagementBroker* broker = (ManagementBroker*) agent;
 
         broker->mExchange.reset ();
         broker->dExchange.reset ();
-        agent.reset ();
+        delete agent;
+        agent = 0;
     }
 }
 
@@ -146,9 +159,9 @@ void ManagementBroker::RegisterClass (string   packageName,
     AddClassLocal (pIter, className, md5Sum, schemaCall);
 }
 
-void ManagementBroker::addObject (ManagementObject::shared_ptr object,
-                                  uint32_t                     persistId,
-                                  uint32_t                     persistBank)
+uint64_t ManagementBroker::addObject (ManagementObject* object,
+                                      uint32_t          persistId,
+                                      uint32_t          persistBank)
 {
     Mutex::ScopedLock lock (addLock);
     uint64_t objectId;
@@ -168,6 +181,7 @@ void ManagementBroker::addObject (ManagementObject::shared_ptr object,
 
     object->setObjectId (objectId);
     newManagementObjects[objectId] = object;
+    return objectId;
 }
 
 ManagementBroker::Periodic::Periodic (ManagementBroker& _broker, uint32_t _seconds)
@@ -281,7 +295,7 @@ void ManagementBroker::PeriodicProcessing (void)
              iter != managementObjects.end ();
              iter++)
         {
-            ManagementObject::shared_ptr object = iter->second;
+            ManagementObject* object = iter->second;
             object->setAllChanged ();
         }
     }
@@ -293,7 +307,7 @@ void ManagementBroker::PeriodicProcessing (void)
          iter != managementObjects.end ();
          iter++)
     {
-        ManagementObject::shared_ptr object = iter->second;
+        ManagementObject* object = iter->second;
 
         if (object->getConfigChanged () || object->isDeleted ())
         {
@@ -633,8 +647,7 @@ void ManagementBroker::handleAttachRequestLH (Buffer& inBuffer, string replyToKe
 
     RemoteAgent* agent = new RemoteAgent;
     agent->objIdBank  = assignedBank;
-    agent->mgmtObject = management::Agent::shared_ptr
-        (new management::Agent (this, agent));
+    agent->mgmtObject = new management::Agent (this, agent);
     agent->mgmtObject->set_sessionId    (sessionId);
     agent->mgmtObject->set_label        (label);
     agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());
@@ -674,7 +687,7 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
          iter != managementObjects.end ();
          iter++)
     {
-        ManagementObject::shared_ptr object = iter->second;
+        ManagementObject* object = iter->second;
         if (object->getClassName () == className)
         {
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
