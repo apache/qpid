@@ -18,6 +18,7 @@
 #include "Daemon.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
+#include "qpid/sys/LockFile.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -30,46 +31,7 @@ namespace qpid {
 namespace broker {
 
 using namespace std;
-
-namespace {
-/** Throw an exception containing msg and strerror if throwIf is true.
- * Name is supposed to be reminiscent of perror().
- */
-void throwIf(bool condition, const string& msg, int errNo=errno) {
-    if (condition)
-        throw Exception(msg + (errNo? ": "+strError(errNo) : string(".")));
-}
-
-
-/*
- * Rewritten using low-level IO, for compatibility 
- * with earlier Boost versions, i.e. 103200.
- */
-struct LockFile {
-
-    LockFile(const std::string& path_, bool create)
-        : path(path_), fd(-1), created(create)
-    {
-        errno = 0;
-        int flags=create ? O_WRONLY|O_CREAT|O_NOFOLLOW : O_RDWR;
-        fd = ::open(path.c_str(), flags, 0644);
-        throwIf(fd < 0,"Cannot open "+path);
-        throwIf(::lockf(fd, F_TLOCK, 0) < 0, "Cannot lock "+path);
-    }
-
-    ~LockFile() {
-        if (fd >= 0) {
-            ::lockf(fd, F_ULOCK, 0);
-            ::close(fd);
-        }
-    }
-
-    std::string path;
-    int fd;
-    bool created;
-};
-
-} // namespace
+using qpid::sys::LockFile;
 
 Daemon::Daemon(std::string _pidDir) : pidDir(_pidDir) {
     struct stat s;
@@ -98,25 +60,25 @@ string Daemon::pidFile(string pidDir, uint16_t port) {
  */
 void Daemon::fork()
 {
-    throwIf(::pipe(pipeFds) < 0, "Can't create pipe");  
-    throwIf((pid = ::fork()) < 0, "Daemon fork failed");
+    if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");  
+    if ((pid = ::fork()) < 0) throw ErrnoException("Daemon fork failed");
     if (pid == 0) {             // Child
         try {
             QPID_LOG(debug, "Forked daemon child process");
             
             // File descriptors
-            throwIf(::close(pipeFds[0])<0, "Cannot close read pipe");
-            throwIf(::close(0)<0, "Cannot close stdin");
-            throwIf(::close(1)<0, "Cannot close stdout");
-            throwIf(::close(2)<0, "Cannot close stderr");
+            if(::close(pipeFds[0])<0) throw ErrnoException("Cannot close read pipe");
+            if(::close(0)<0) throw ErrnoException("Cannot close stdin");
+            if(::close(1)<0) throw ErrnoException("Cannot close stdout");
+            if(::close(2)<0) throw ErrnoException("Cannot close stderr");
             int fd=::open("/dev/null",O_RDWR); // stdin
-            throwIf(fd != 0, "Cannot re-open stdin");
-            throwIf(::dup(fd)<0, "Cannot re-open stdout");
-            throwIf(::dup(fd)<0, "Cannot re-open stderror");
+            if(fd != 0) throw ErrnoException("Cannot re-open stdin");
+            if(::dup(fd)<0) throw ErrnoException("Cannot re-open stdout");
+            if(::dup(fd)<0) throw ErrnoException("Cannot re-open stderror");
 
             // Misc
-            throwIf(setsid()<0, "Cannot set session ID");
-            throwIf(chdir(pidDir.c_str()) < 0, "Cannot change directory to "+pidDir);
+            if(setsid()<0) throw ErrnoException("Cannot set session ID");
+            if(chdir(pidDir.c_str()) < 0) throw ErrnoException("Cannot change directory to "+pidDir);
             umask(027);
 
             // Child behavior
@@ -159,8 +121,8 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
     FD_ZERO(&fds);
     FD_SET(pipeFds[0], &fds);
     int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
-    throwIf(n==0, "Timed out waiting for daemon");
-    throwIf(n<0, "Error waiting for daemon");
+    if(n==0) throw ErrnoException("Timed out waiting for daemon");
+    if(n<0) throw ErrnoException("Error waiting for daemon");
     uint16_t port = 0;
     /*
      * Read the child's port number from the pipe.
