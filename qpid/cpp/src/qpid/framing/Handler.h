@@ -28,7 +28,6 @@
 namespace qpid {
 namespace framing {
 
-/** Generic handler that can be linked into chains. */
 template <class T>
 struct Handler {
     typedef T HandledType;
@@ -45,23 +44,6 @@ struct Handler {
 
     /** Pointer to next handler in a linked list. */
     Handler<T>* next;
-
-    /** A Chain is a handler holding a linked list of sub-handlers.
-     * Chain::next is invoked after the full chain, it is not itself part of the chain.
-     * Handlers inserted into the chain are deleted by the Chain dtor.
-     */
-    class Chain : public Handler<T> {
-      public:
-        Chain(Handler<T>& next_) : Handler(&next_), first(&next_) {}
-        ~Chain() { while (first != next) pop(); }
-        void handle(T t) { first->handle(t); }
-        void insert(Handler<T>* h) { h->next = first; first = h; }
-        bool empty() { return first == next; }
-
-      private:
-        void pop() { Handler<T>* p=first; first=first->next; delete p; }
-        Handler<T>* first;
-    };
 
     /** Adapt any void(T) functor as a Handler.
      * Functor<F>(f) will copy f.
@@ -84,7 +66,7 @@ struct Handler {
         MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(&x) {}
         void handle(T t) { (target->*F)(t); }
 
-        /** Allow calling with -> syntax, compatible with Chains */
+        /** Allow calling with -> syntax, like a qpid::HandlerChain */
         MemFunRef* operator->() { return this; }
 
       private:
@@ -103,15 +85,13 @@ struct Handler {
     };
         
     /** Support for implementing an in-out handler pair as a single class.
-     * Public interface is Handler<T>::Chains pair, but implementation
-     * overrides handleIn, handleOut functions in a single class.
+     * Overrides handleIn, handleOut functions in a single class.
      */
     struct InOutHandler : protected InOutHandlerInterface {
         InOutHandler(Handler<T>* nextIn=0, Handler<T>* nextOut=0) : in(*this, nextIn), out(*this, nextOut) {}
         MemFunRef<InOutHandlerInterface, &InOutHandlerInterface::handleIn> in;
         MemFunRef<InOutHandlerInterface, &InOutHandlerInterface::handleOut> out;
     };
-
 };
 
 

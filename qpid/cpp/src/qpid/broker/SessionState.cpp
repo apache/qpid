@@ -224,8 +224,8 @@ void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
         getProxy().getMessage().accept(SequenceSet(msg->getCommandId()));        
 }
 
-void SessionState::handleIn(AMQFrame& f) { inChain.handle(f); }
-void SessionState::handleOut(AMQFrame& f) { outChain.handle(f); }
+void SessionState::handleIn(AMQFrame& f) { inChain->handle(f); }
+void SessionState::handleOut(AMQFrame& f) { outChain->handle(f); }
 
 void SessionState::handleInLast(AMQFrame& frame) {
     SequenceNumber commandId = receiverGetCurrent();
@@ -290,9 +290,5 @@ void SessionState::readyToSend() {
 }
 
 Broker& SessionState::getBroker() { return broker; }
-
-framing::FrameHandler::Chain& SessionState::getInChain() { return inChain; }
-
-framing::FrameHandler::Chain& SessionState::getOutChain() { return outChain; }
 
 }} // namespace qpid::broker

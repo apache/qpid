@@ -88,7 +88,7 @@ Connection::~Connection()
         links.notifyClosed(mgmtId);
 }
 
-void Connection::received(framing::AMQFrame& frame){ inChain(frame); }
+void Connection::received(framing::AMQFrame& frame){ inChain->handle(frame); }
     
 void Connection::receivedLast(framing::AMQFrame& frame){
     if (frame.getChannel() == 0 && frame.getMethod()) {
