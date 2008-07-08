@@ -22,6 +22,8 @@
  */
 
 #include <string>
+#include <memory>
+#include "qpid/sys/LockFile.h"
 
 namespace qpid {
 
@@ -32,7 +34,7 @@ class DataDir
 {
     const bool        enabled;
     const std::string dirPath;
-    int dirFd;
+    std::auto_ptr<qpid::sys::LockFile> lockFile;
 
   public:
 

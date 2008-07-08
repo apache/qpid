@@ -26,13 +26,13 @@
 #include <sys/file.h>
 #include <fcntl.h>
 #include <cerrno>
+#include <unistd.h>
 
 namespace qpid {
 
 DataDir::DataDir (std::string path) :
     enabled (!path.empty ()),
-    dirPath (path),
-    dirFd(-1)
+    dirPath (path)
 {
     if (!enabled)
     {
@@ -50,24 +50,12 @@ DataDir::DataDir (std::string path) :
         else
             throw Exception ("Data directory not found: " + path);
     }
-    int dirFd = ::open(path.c_str(), 0);
-    if (dirFd == -1)
-        throw Exception(QPID_MSG("Can't open data directory: " << dirPath << ": " << strError(errno)));
-    int result = ::flock(dirFd, LOCK_EX | LOCK_NB);
-    if (result != 0) {
-        if (errno == EWOULDBLOCK)
-            throw Exception(QPID_MSG("Data directory locked by another process: " << path));
-        throw  Exception(QPID_MSG("Cannot lock data directory: " << strError(errno)));
-    }
-    QPID_LOG (info, "Locked data directory: " << dirPath);
+    std::string lockFileName(path);
+    lockFileName += "/lock";
+    lockFile = std::auto_ptr<sys::LockFile>(new sys::LockFile(lockFileName, true));
 }
 
-DataDir::~DataDir () {
-    if (dirFd != -1) {
-        ::close(dirFd);         // Closing the fd unlocks the directory.
-        QPID_LOG (info, "Unlocked data directory: " << dirPath);
-    }
-}
+DataDir::~DataDir () {}
 
 } // namespace qpid
 

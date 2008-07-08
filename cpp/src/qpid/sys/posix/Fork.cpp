@@ -32,27 +32,22 @@ namespace sys {
 using namespace std;
 
 namespace {
-/** Throw an exception containing msg and strerror if condition is true. */
-void throwIf(bool condition, const string& msg) {
-    if (condition) 
-        throw Exception(msg + (errno? ": "+strError(errno) : string()) + ".");
-}
 
 void writeStr(int fd, const std::string& str) {
     const char* WRITE_ERR = "Error writing to parent process";
     int size = str.size();
-    throwIf(int(sizeof(size)) > ::write(fd, &size, sizeof(size)), WRITE_ERR);
-    throwIf(size > ::write(fd, str.data(), size), WRITE_ERR);
+    if (int(sizeof(size)) > ::write(fd, &size, sizeof(size))) throw ErrnoException(WRITE_ERR);
+    if (size > ::write(fd, str.data(), size)) throw ErrnoException(WRITE_ERR);
 }
 
 string readStr(int fd) {
     string value;
     const char* READ_ERR = "Error reading from forked process";
     int size;
-    throwIf(int(sizeof(size)) > ::read(fd, &size, sizeof(size)), READ_ERR);
+    if (int(sizeof(size)) > ::read(fd, &size, sizeof(size))) throw ErrnoException(READ_ERR);
     if (size > 0) {          // Read string message
         value.resize(size);
-        throwIf(size > ::read(fd, const_cast<char*>(value.data()), size), READ_ERR);
+        if (size > ::read(fd, const_cast<char*>(value.data()), size)) throw ErrnoException(READ_ERR);
     }
     return value;
 }
@@ -64,7 +59,7 @@ Fork::~Fork() {}
 
 void Fork::fork() {
     pid_t pid = ::fork();
-    throwIf(pid < 0, "Failed to fork the process");
+    if (pid < 0) throw ErrnoException("Failed to fork the process");
     if (pid == 0) child();
     else parent(pid);
 }
@@ -80,9 +75,9 @@ struct AutoCloseFd {
 };
 
 void ForkWithMessage::fork() {
-    throwIf(::pipe(pipeFds) < 0, "Can't create pipe");
+    if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");
     pid_t pid = ::fork();
-    throwIf(pid < 0, "Fork fork failed");
+    if(pid < 0) throw ErrnoException("Fork fork failed");
     if (pid == 0) {             // Child
         AutoCloseFd ac(pipeFds[1]); // Write side.
         ::close(pipeFds[0]); // Read side
@@ -113,8 +108,8 @@ string ForkWithMessage::wait(int timeout) { // parent waits for child.
     FD_ZERO(&fds);
     FD_SET(pipeFds[0], &fds);
     int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
-    throwIf(n==0, "Timed out waiting for fork");
-    throwIf(n<0, "Error waiting for fork");
+    if(n<0) throw ErrnoException("Error waiting for fork");
+    if (n==0) throw Exception("Timed out waiting for fork");
 
     string error = readStr(pipeFds[0]);
     if (error.empty()) return readStr(pipeFds[0]);
