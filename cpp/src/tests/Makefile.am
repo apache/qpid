@@ -135,7 +135,8 @@ EXTRA_DIST +=								\
   MessageUtils.h							\
   TestMessageStore.h							\
   MockConnectionInputHandler.h						\
-  TxMocks.h
+  TxMocks.h								\
+  qpid_test_plugin.h
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
