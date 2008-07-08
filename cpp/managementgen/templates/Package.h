@@ -23,7 +23,7 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 
 namespace qpid {
 namespace management {
@@ -31,7 +31,7 @@ namespace management {
 class Package/*MGEN:Schema.PackageNameCap*/
 {
   public:
-    Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent::shared_ptr agent);
+    Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent* agent);
     ~Package/*MGEN:Schema.PackageNameCap*/ () {}
 };
 

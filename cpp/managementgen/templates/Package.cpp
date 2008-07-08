@@ -25,7 +25,7 @@
 
 using namespace qpid::management;
 
-Package/*MGEN:Schema.PackageNameCap*/::Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent::shared_ptr agent)
+Package/*MGEN:Schema.PackageNameCap*/::Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent* agent)
 {
 /*MGEN:Schema.ClassRegisters*/
 }

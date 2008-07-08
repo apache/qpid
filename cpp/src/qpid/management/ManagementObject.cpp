@@ -21,7 +21,7 @@
  
 #include "Manageable.h"
 #include "ManagementObject.h"
-#include "ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::framing;

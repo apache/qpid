@@ -53,7 +53,7 @@ public:
     void destroy();
     bool isDurable() { return args.i_durable; }
 
-    management::ManagementObject::shared_ptr GetManagementObject() const;
+    management::ManagementObject* GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId, management::Args& args);
 
     // PersistableConfig:
@@ -70,10 +70,10 @@ private:
     std::auto_ptr<framing::AMQP_ServerProxy>          peer;
 
     Link* link;
-    framing::ChannelId                  id;
-    management::ArgsLinkBridge          args;
-    management::Bridge::shared_ptr      mgmtObject;
-    CancellationListener listener;
+    framing::ChannelId          id;
+    management::ArgsLinkBridge  args;
+    management::Bridge*         mgmtObject;
+    CancellationListener        listener;
     std::string name;
     mutable uint64_t  persistenceId;
 };

@@ -23,7 +23,7 @@
 #include "LinkRegistry.h"
 #include "Broker.h"
 #include "Connection.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/management/Link.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
@@ -50,7 +50,7 @@ Link::Link(LinkRegistry*  _links,
            management::Manageable* parent)
     : links(_links), store(_store), host(_host), port(_port), useSsl(_useSsl), durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
-      persistenceId(0), broker(_broker), state(0),
+      persistenceId(0), mgmtObject(0), broker(_broker), state(0),
       visitCount(0),
       currentInterval(1),
       closing(false),
@@ -59,11 +59,10 @@ Link::Link(LinkRegistry*  _links,
 {
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
-        if (agent.get() != 0)
+        ManagementAgent* agent = ManagementAgent::getAgent();
+        if (agent != 0)
         {
-            mgmtObject = management::Link::shared_ptr
-                (new management::Link(agent.get(), this, parent, _host, _port, _useSsl, _durable));
+            mgmtObject = new management::Link(agent, this, parent, _host, _port, _useSsl, _durable);
             if (!durable)
                 agent->addObject(mgmtObject);
         }
@@ -76,7 +75,7 @@ Link::~Link ()
     if (state == STATE_OPERATIONAL && connection != 0)
         connection->close();
 
-    if (mgmtObject.get () != 0)
+    if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }
 
@@ -86,7 +85,7 @@ void Link::setStateLH (int newState)
         return;
 
     state = newState;
-    if (mgmtObject.get() == 0)
+    if (mgmtObject == 0)
         return;
 
     switch (state)
@@ -109,7 +108,7 @@ void Link::startConnectionLH ()
                          boost::bind (&Link::closed, this, _1, _2));
     } catch(std::exception& e) {
         setStateLH(STATE_WAITING);
-        if (mgmtObject.get() != 0)
+        if (mgmtObject != 0)
             mgmtObject->set_lastError (e.what());
     }
 }
@@ -142,7 +141,7 @@ void Link::closed (int, std::string text)
     if (state != STATE_FAILED)
     {
         setStateLH(STATE_WAITING);
-        if (mgmtObject.get() != 0)
+        if (mgmtObject != 0)
             mgmtObject->set_lastError (text);
     }
 
@@ -259,7 +258,7 @@ void Link::notifyConnectionForced(const string text)
     Mutex::ScopedLock mutex(lock);
 
     setStateLH(STATE_FAILED);
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->set_lastError(text);
 }
 
@@ -267,7 +266,7 @@ void Link::setPersistenceId(uint64_t id) const
 {
     if (mgmtObject != 0 && persistenceId == 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
         agent->addObject (mgmtObject, id);
     }
     persistenceId = id;
@@ -321,9 +320,9 @@ uint32_t Link::encodedSize() const
         + password.size() + 1;
 }
 
-ManagementObject::shared_ptr Link::GetManagementObject (void) const
+ManagementObject* Link::GetManagementObject (void) const
 {
-    return boost::dynamic_pointer_cast<ManagementObject> (mgmtObject);
+    return (ManagementObject*) mgmtObject;
 }
 
 Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args)

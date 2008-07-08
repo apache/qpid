@@ -18,21 +18,20 @@
 //
 
 #include "Vhost.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 
 using namespace qpid::broker;
 using qpid::management::ManagementAgent;
 
-Vhost::Vhost (management::Manageable* parentBroker)
+Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
 {
     if (parentBroker != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
 
-        if (agent.get () != 0)
+        if (agent != 0)
         {
-            mgmtObject = management::Vhost::shared_ptr
-                (new management::Vhost (agent.get(), this, parentBroker, "/"));
+            mgmtObject = new management::Vhost (agent, this, parentBroker, "/");
             agent->addObject (mgmtObject, 3, 1);
         }
     }

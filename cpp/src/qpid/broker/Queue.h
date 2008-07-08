@@ -96,7 +96,7 @@ namespace qpid {
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
-            management::Queue::shared_ptr mgmtObject;
+            management::Queue* mgmtObject;
 
             void pop();
             void push(boost::intrusive_ptr<Message>& msg);
@@ -201,7 +201,7 @@ namespace qpid {
             virtual void setExternalQueueStore(ExternalQueueStore* inst);
 
             // Manageable entry points
-            management::ManagementObject::shared_ptr GetManagementObject (void) const;
+            management::ManagementObject* GetManagementObject (void) const;
             management::Manageable::status_t
             ManagementMethod (uint32_t methodId, management::Args& args);
         };

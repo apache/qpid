@@ -130,6 +130,7 @@ make check
 %_includedir/qpid/sys
 %_includedir/qpid/log
 %_includedir/qpid/management
+%_includedir/qpid/agent
 %_libdir/libqpidcommon.so
 %_libdir/libqpidclient.so
 %_bindir/managementgen
