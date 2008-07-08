@@ -38,6 +38,8 @@ namespace cluster {
  * Lightweight C++ interface to cpg.h operations. 
  * Manages a single CPG handle, initialized in ctor, finialzed in destructor.
  * On error all functions throw Cpg::Exception
+ *
+ * NOTE: only one at a time can exist per process.
  */
 class Cpg : public Dispatchable {
   public:
@@ -95,7 +97,7 @@ class Cpg : public Dispatchable {
      */
     Cpg(Handler&);
     
-    /** Destructor calls shutdown. */
+    /** Destructor calls shutdown if not already calledx. */
     ~Cpg();
 
     /** Disconnect from CPG */
@@ -134,21 +136,16 @@ class Cpg : public Dispatchable {
     Id self() const;
 
   private:
-    class Handles;
-    struct ClearHandleOnExit;
-  friend class Handles;
-  friend struct ClearHandleOnExit;
-    
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
     static std::string cantLeaveMsg(const Name&);
     static std::string cantMcastMsg(const Name&);
     
     static void check(cpg_error_t result, const std::string& msg) {
-        // TODO aconway 2007-06-01: Logging and exceptions.
-        if (result != CPG_OK) 
-            throw Exception(errorStr(result, msg));
+        if (result != CPG_OK) throw Exception(errorStr(result, msg));
     }
+
+    static Cpg* cpgFromHandle(cpg_handle_t);
 
     static void globalDeliver(
         cpg_handle_t handle,
@@ -166,7 +163,6 @@ class Cpg : public Dispatchable {
         struct cpg_address *joined, int nJoined
     );
 
-    static Handles handles;
     cpg_handle_t handle;
     Handler& handler;
 };

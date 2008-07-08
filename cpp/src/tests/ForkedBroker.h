@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/Exception.h"
 #include "qpid/sys/Fork.h"
 #include "qpid/log/Logger.h"
 #include "qpid/broker/Broker.h"
@@ -48,7 +49,7 @@
  * 
  */
 class ForkedBroker : public qpid::sys::ForkWithMessage {
-    pid_t childPid;
+    pid_t pid;
     uint16_t port;
     qpid::broker::Broker::Options opts;
     std::string prefix;
@@ -56,22 +57,33 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
   public:
     struct ChildExit {};   // Thrown in child processes.
 
-    ForkedBroker(const qpid::broker::Broker::Options& opts_, const std::string& prefix_=std::string())
-        : childPid(0), port(0), opts(opts_), prefix(prefix_) { fork(); } 
+    ForkedBroker(const qpid::broker::Broker::Options& opts_=qpid::broker::Broker::Options(),
+                 const std::string& prefix_=std::string())
+        : pid(0), port(0), opts(opts_), prefix(prefix_) { fork(); } 
 
-    ~ForkedBroker() { stop(); }
-
-    void stop() {
-        if (childPid > 0) {
-            ::kill(childPid, SIGINT);
-            ::waitpid(childPid, 0, 0);
+    ~ForkedBroker() {
+        try { stop(); }
+        catch(const std::exception& e) {
+            QPID_LOG(error, e.what());
         }
     }
 
-    void parent(pid_t pid) {
-        childPid = pid;
+    void stop() {
+        if (pid > 0) {     // I am the parent, clean up children.
+            if (::kill(pid, SIGINT) < 0)
+                throw qpid::Exception(QPID_MSG("Can't kill process " << pid << ": " << qpid::strError(errno)));
+            int status = 0;
+            if (::waitpid(pid, &status, 0) < 0)
+                throw qpid::Exception(QPID_MSG("Waiting for process " << pid << ": " << qpid::strError(errno)));
+            if (WEXITSTATUS(status) != 0)
+                throw qpid::Exception(QPID_MSG("Process " << pid << " exited with status: " << WEXITSTATUS(status)));
+        }
+    }
+
+    void parent(pid_t pid_) {
+        pid = pid_;
         qpid::log::Logger::instance().setPrefix("parent");
-        std::string portStr = wait(2);
+        std::string portStr = wait(5);
         port = boost::lexical_cast<uint16_t>(portStr);
     }
 
@@ -88,6 +100,7 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
 
         // Force exit in the child process, otherwise we will try to
         // carry with parent tests.
+        broker.reset();         // Run broker dtor before we exit.
         exit(0);
     }
 

@@ -147,6 +147,16 @@ QPID_AUTO_TEST_CASE(CpgBasic) {
 }
 
 
+QPID_AUTO_TEST_CASE(testForkedBroker) {
+    // Verify the ForkedBroker works as expected.
+    Broker::Options opts;
+    opts.auth="no";
+    opts.noDataDir=true;
+    ForkedBroker broker(opts);
+    Client c(broker.getPort());
+    BOOST_CHECK_EQUAL("direct", c.session.exchangeQuery("amq.direct").getType()); 
+}
+
 QPID_AUTO_TEST_CASE(testWiringReplication) {
     ClusterFixture cluster(2);  // FIXME aconway 2008-07-02: 3 brokers
     Client c0(cluster[0].getPort());
