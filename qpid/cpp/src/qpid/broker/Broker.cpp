@@ -137,13 +137,13 @@ Broker::Broker(const Broker::Options& conf) :
         ManagementBroker::enableManagement (dataDir.isEnabled () ? dataDir.getPath () : string (),
                                             conf.mgmtPubInterval, this, conf.workerThreads + 3);
         managementAgent = management::ManagementAgent::getAgent ();
-        ((ManagementBroker*) managementAgent.get())->setInterval (conf.mgmtPubInterval);
+        ((ManagementBroker*) managementAgent)->setInterval (conf.mgmtPubInterval);
         qpid::management::PackageQpid packageInitializer (managementAgent);
 
         System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
         systemObject = System::shared_ptr (system);
 
-        mgmtObject = management::Broker::shared_ptr (new management::Broker (managementAgent.get(), this, system, conf.port));
+        mgmtObject = new management::Broker (managementAgent, this, system, conf.port);
         mgmtObject->set_workerThreads    (conf.workerThreads);
         mgmtObject->set_maxConns         (conf.maxConnections);
         mgmtObject->set_connBacklog      (conf.connectionBacklog);
@@ -199,9 +199,9 @@ Broker::Broker(const Broker::Options& conf) :
         exchanges.declare(qpid_management, ManagementExchange::typeName);
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get (amq_direct);
-        ((ManagementBroker*) managementAgent.get())->setExchange (mExchange, dExchange);
+        ((ManagementBroker*) managementAgent)->setExchange (mExchange, dExchange);
         dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent
-            ((ManagementBroker*) managementAgent.get());
+            ((ManagementBroker*) managementAgent);
     }
     else
         QPID_LOG(info, "Management not enabled");
@@ -298,9 +298,9 @@ Broker::~Broker() {
     QPID_LOG(notice, "Shut down");
 }
 
-ManagementObject::shared_ptr Broker::GetManagementObject(void) const
+ManagementObject* Broker::GetManagementObject(void) const
 {
-    return dynamic_pointer_cast<ManagementObject> (mgmtObject);
+    return (ManagementObject*) mgmtObject;
 }
 
 Manageable* Broker::GetVhostObject(void) const

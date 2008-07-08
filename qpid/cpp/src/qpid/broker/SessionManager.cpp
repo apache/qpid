@@ -74,7 +74,7 @@ void  SessionManager::detach(std::auto_ptr<SessionState> session) {
     session->detach();
     if (session->getTimeout() > 0) {
     session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
-    if (session->mgmtObject.get() != 0)
+    if (session->mgmtObject != 0)
         session->mgmtObject->set_expireTime ((uint64_t) Duration (session->expiry));
         detached.push_back(session.release()); // In expiry order
     eraseExpired();

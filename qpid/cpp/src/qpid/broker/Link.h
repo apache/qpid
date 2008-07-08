@@ -53,7 +53,7 @@ namespace qpid {
             string        username;
             string        password;
             mutable uint64_t    persistenceId;
-            management::Link::shared_ptr mgmtObject;
+            management::Link*   mgmtObject;
             Broker* broker;
             int     state;
             uint32_t visitCount;
@@ -123,7 +123,7 @@ namespace qpid {
             static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
             // Manageable entry points
-            management::ManagementObject::shared_ptr GetManagementObject (void) const;
+            management::ManagementObject*    GetManagementObject (void) const;
             management::Manageable::status_t ManagementMethod (uint32_t, management::Args&);
         };
     }

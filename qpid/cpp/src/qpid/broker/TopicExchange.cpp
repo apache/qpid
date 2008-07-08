@@ -117,7 +117,7 @@ bool TopicPattern::match(const Tokens& target)  const
 
 TopicExchange::TopicExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -125,7 +125,7 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable,
                              const FieldTable& _args, Manageable* _parent) :
     Exchange(_name, _durable, _args, _parent)
 {
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
@@ -137,9 +137,9 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
     } else {
         Binding::shared_ptr binding (new Binding (routingKey, queue, this));
         bindings[routingPattern].push_back(binding);
-        if (mgmtExchange.get() != 0) {
+        if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->inc_bindingCount();
+            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     }
@@ -158,9 +158,9 @@ bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, co
     if(q == qv.end()) return false;
     qv.erase(q);
     if(qv.empty()) bindings.erase(bi);
-    if (mgmtExchange.get() != 0) {
+    if (mgmtExchange != 0) {
         mgmtExchange->dec_bindingCount();
-        dynamic_pointer_cast<management::Queue>(queue->GetManagementObject())->dec_bindingCount();
+        ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
     }
     return true;
 }
@@ -187,13 +187,13 @@ void TopicExchange::route(Deliverable& msg, const string& routingKey, const Fiel
             Binding::vector& qv(i->second);
             for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++, count++){
                 msg.deliverTo((*j)->queue);
-                if ((*j)->mgmtBinding.get() != 0)
+                if ((*j)->mgmtBinding != 0)
                     (*j)->mgmtBinding->inc_msgMatched ();
             }
         }
     }
 
-    if (mgmtExchange.get() != 0)
+    if (mgmtExchange != 0)
     {
         mgmtExchange->inc_msgReceives  ();
         mgmtExchange->inc_byteReceives (msg.contentSize ());

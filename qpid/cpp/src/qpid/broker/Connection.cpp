@@ -25,7 +25,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -53,6 +53,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     isLink(isLink_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
+    mgmtObject(0),
     links(broker_.getLinks()),
     lastInHandler(*this),
     inChain(lastInHandler)
@@ -64,11 +65,10 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent();
+        ManagementAgent* agent = ManagementAgent::getAgent();
 
-        if (agent.get() != 0)
-            mgmtObject = management::Connection::shared_ptr
-                (new management::Connection(agent.get(), this, parent, mgmtId, !isLink));
+        if (agent != 0)
+            mgmtObject = new management::Connection(agent, this, parent, mgmtId, !isLink);
         agent->addObject(mgmtObject);
     }
 }
@@ -82,7 +82,7 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 
 Connection::~Connection()
 {
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->resourceDestroy();
     if (isLink)
         links.notifyClosed(mgmtId);
@@ -105,7 +105,7 @@ void Connection::receivedLast(framing::AMQFrame& frame){
 
 void Connection::recordFromServer(framing::AMQFrame& frame)
 {
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
     {
         mgmtObject->inc_framesToClient();
         mgmtObject->inc_bytesToClient(frame.size());
@@ -114,7 +114,7 @@ void Connection::recordFromServer(framing::AMQFrame& frame)
 
 void Connection::recordFromClient(framing::AMQFrame& frame)
 {
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
     {
         mgmtObject->inc_framesFromClient();
         mgmtObject->inc_bytesFromClient(frame.size());
@@ -134,7 +134,7 @@ string Connection::getAuthCredentials()
     if (!isLink)
         return string();
 
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
     {
         if (links.getAuthMechanism(mgmtId) == "ANONYMOUS")
             mgmtObject->set_authIdentity("anonymous");
@@ -154,7 +154,7 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->set_authIdentity(userId);
 }
 
@@ -222,9 +222,9 @@ SessionHandler& Connection::getChannel(ChannelId id) {
     return *ptr_map_ptr(i);
 }
 
-ManagementObject::shared_ptr Connection::GetManagementObject(void) const
+ManagementObject* Connection::GetManagementObject(void) const
 {
-    return dynamic_pointer_cast<ManagementObject>(mgmtObject);
+    return (ManagementObject*) mgmtObject;
 }
 
 Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&)
@@ -237,7 +237,7 @@ Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&)
     {
     case management::Connection::METHOD_CLOSE :
         mgmtClosing = true;
-        if (mgmtObject.get()) mgmtObject->set_closing(1);
+        if (mgmtObject != 0) mgmtObject->set_closing(1);
         out->activateOutput();
         status = Manageable::STATUS_OK;
         break;

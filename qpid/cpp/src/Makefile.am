@@ -367,6 +367,7 @@ nobase_include_HEADERS = \
   qpid/InlineAllocator.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
+  qpid/agent/ManagementAgent.h \
   qpid/broker/Broker.h \
   qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
@@ -523,7 +524,6 @@ nobase_include_HEADERS = \
   qpid/log/Statement.h \
   qpid/management/Args.h \
   qpid/management/Manageable.h \
-  qpid/management/ManagementAgent.h \
   qpid/management/ManagementBroker.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \

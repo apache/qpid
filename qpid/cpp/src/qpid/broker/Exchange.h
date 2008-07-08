@@ -54,16 +54,16 @@ namespace qpid {
                 Queue::shared_ptr         queue;
                 const std::string         key;
                 const framing::FieldTable args;
-                management::Binding::shared_ptr mgmtBinding;
+                management::Binding* mgmtBinding;
 
                 Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
                         framing::FieldTable args = framing::FieldTable ());
                 ~Binding ();
-                management::ManagementObject::shared_ptr GetManagementObject () const;
+                management::ManagementObject* GetManagementObject () const;
                 management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args);
             };
 
-            management::Exchange::shared_ptr mgmtExchange;
+            management::Exchange* mgmtExchange;
 
         public:
             typedef boost::shared_ptr<Exchange> shared_ptr;
@@ -98,7 +98,7 @@ namespace qpid {
             static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
             // Manageable entry points
-            management::ManagementObject::shared_ptr GetManagementObject (void) const;
+            management::ManagementObject* GetManagementObject (void) const;
             management::Manageable::status_t
                 ManagementMethod (uint32_t, management::Args&) { return management::Manageable::STATUS_UNKNOWN_METHOD; }
         };

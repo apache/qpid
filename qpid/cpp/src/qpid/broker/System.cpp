@@ -18,7 +18,7 @@
 //
 
 #include "System.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
 #include <sys/utsname.h>
 #include <iostream>
@@ -28,11 +28,11 @@ using qpid::management::ManagementAgent;
 using namespace qpid::broker;
 using namespace std;
 
-System::System (string _dataDir)
+System::System (string _dataDir) : mgmtObject(0)
 {
-    ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+    ManagementAgent* agent = ManagementAgent::getAgent ();
 
-    if (agent.get () != 0)
+    if (agent != 0)
     {
         framing::Uuid systemId;
 
@@ -62,8 +62,7 @@ System::System (string _dataDir)
             }
         }
 
-        mgmtObject = management::System::shared_ptr
-            (new management::System (agent.get(), this, systemId));
+        mgmtObject = new management::System (agent, this, systemId);
         struct utsname _uname;
         if (uname (&_uname) == 0)
         {

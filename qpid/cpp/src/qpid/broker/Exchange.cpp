@@ -21,7 +21,7 @@
 
 #include "Exchange.h"
 #include "ExchangeRegistry.h"
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 
 using namespace qpid::broker;
 using qpid::framing::Buffer;
@@ -32,15 +32,14 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 
 Exchange::Exchange (const string& _name, Manageable* parent) :
-    name(_name), durable(false), persistenceId(0)
+    name(_name), durable(false), persistenceId(0), mgmtExchange(0)
 {
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        if (agent.get () != 0)
+        ManagementAgent* agent = ManagementAgent::getAgent ();
+        if (agent != 0)
         {
-            mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (agent.get(), this, parent, _name, durable));
+            mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
             agent->addObject (mgmtExchange);
         }
     }
@@ -48,15 +47,14 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
 
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent)
-    : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0)
+    : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0), mgmtExchange(0)
 {
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        if (agent.get () != 0)
+        ManagementAgent* agent = ManagementAgent::getAgent ();
+        if (agent != 0)
         {
-            mgmtExchange = management::Exchange::shared_ptr
-                (new management::Exchange (agent.get(), this, parent, _name, durable));
+            mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
             if (!durable) {
                 if (name == "")
                     agent->addObject (mgmtExchange, 4, 1);  // Special default exchange ID
@@ -71,7 +69,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
 
 Exchange::~Exchange ()
 {
-    if (mgmtExchange.get () != 0)
+    if (mgmtExchange != 0)
         mgmtExchange->resourceDestroy ();
 }
 
@@ -79,7 +77,7 @@ void Exchange::setPersistenceId(uint64_t id) const
 {
     if (mgmtExchange != 0 && persistenceId == 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
         agent->addObject (mgmtExchange, id, 2);
     }
     persistenceId = id;
@@ -115,26 +113,25 @@ uint32_t Exchange::encodedSize() const
         + args.size(); 
 }
 
-ManagementObject::shared_ptr Exchange::GetManagementObject (void) const
+ManagementObject* Exchange::GetManagementObject (void) const
 {
-    return dynamic_pointer_cast<ManagementObject> (mgmtExchange);
+    return (ManagementObject*) mgmtExchange;
 }
 
 Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchange* parent,
                            FieldTable _args)
-    : queue(_queue), key(_key), args(_args)
+    : queue(_queue), key(_key), args(_args), mgmtBinding(0)
 {
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        if (agent.get() != 0)
+        ManagementAgent* agent = ManagementAgent::getAgent ();
+        if (agent != 0)
         {
-            ManagementObject::shared_ptr mo = queue->GetManagementObject();
-            if (mo.get() != 0)
+            ManagementObject* mo = queue->GetManagementObject();
+            if (mo != 0)
             {
                 uint64_t queueId = mo->getObjectId();
-                mgmtBinding = management::Binding::shared_ptr
-                    (new management::Binding (agent.get(), this, (Manageable*) parent, queueId, key, args));
+                mgmtBinding = new management::Binding (agent, this, (Manageable*) parent, queueId, key, args);
                 agent->addObject (mgmtBinding);
             }
         }
@@ -143,13 +140,13 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 
 Exchange::Binding::~Binding ()
 {
-    if (mgmtBinding.get () != 0)
+    if (mgmtBinding != 0)
         mgmtBinding->resourceDestroy ();
 }
 
-ManagementObject::shared_ptr Exchange::Binding::GetManagementObject () const
+ManagementObject* Exchange::Binding::GetManagementObject () const
 {
-    return dynamic_pointer_cast<ManagementObject> (mgmtBinding);
+    return (ManagementObject*) mgmtBinding;
 }
 
 Manageable::status_t Exchange::Binding::ManagementMethod (uint32_t, Args&)
