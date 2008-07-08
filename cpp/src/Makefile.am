@@ -226,7 +226,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/SystemInfo.cpp \
-  qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.cpp \
   qpid/DataDir.cpp \
   qpid/Options.cpp \
@@ -507,7 +506,6 @@ nobase_include_HEADERS = \
   qpid/framing/SequenceNumber.h \
   qpid/framing/SequenceSet.h \
   qpid/framing/SequenceNumberSet.h \
-  qpid/framing/SerializeHandler.h \
   qpid/framing/StructHelper.h \
   qpid/framing/TransferContent.h \
   qpid/framing/TypeFilter.h \
@@ -557,7 +555,6 @@ nobase_include_HEADERS = \
   qpid/sys/LockFile.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
-  qpid/sys/Serializer.h \
   qpid/sys/SystemInfo.h \
   qpid/sys/Shlib.h \
   qpid/sys/ShutdownHandler.h \
