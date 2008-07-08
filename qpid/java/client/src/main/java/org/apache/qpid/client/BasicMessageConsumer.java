@@ -277,6 +277,14 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                     _messageListener.set(messageListener);
                     _session.setHasMessageListeners();
                     _session.startDispatcherIfNecessary();
+                    
+                    // If we already have messages on the queue, deliver them to the listener
+                    Object o = _synchronousQueue.poll();
+                    while (o != null)
+                    {
+                        messageListener.onMessage((Message) o);
+                        o = _synchronousQueue.poll();
+                    }
                 }
             }
         }
