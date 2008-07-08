@@ -21,123 +21,78 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
+#include "qpid/shared_ptr.h"
+#include <boost/noncopyable.hpp>
 #include <vector>
+#include <boost/function.hpp>
+
 
 /**@file Generic plug-in framework. */
 
 namespace qpid {
-
 class Options;
 
 /**
  * Plug-in base class.
- *
- * A Plugin is created by a Plugin::Factory and attached to a Plugin::Target.
  */
-class Plugin {
+class Plugin : boost::noncopyable
+{
   public:
     /**
-     * Base class for target objects that receive plug-ins.
+     * Base interface for targets that receive plug-ins.
+     *
+     * The Broker is a plug-in target, there might be others
+     * in future.
      */
-    class Target {
-      public:
-        virtual ~Target();
+    struct Target { virtual ~Target() {} };
 
-      protected:
-        /** For each Factory create a plugin attached to this */
-        void createPlugins();
-
-        /** Initialize all attached plugins */
-        void initializePlugins();
-        
-        /** Release the attached plugins. Done automatically in destructor. */
-        void releasePlugins();
-
-      private:
-        std::vector<boost::shared_ptr<Plugin> > plugins;
-    };
-
-    /** Base class for a factory to create Plugins. */
-    class Factory {
-      public:
-        /**
-         * Constructor registers the factory so it will be included in getList().
-         *
-         * Derive your Plugin Factory class from Factory and create a
-         * single global instance in your plug-in library. Loading the
-         * library will automatically register your factory.
-         */
-        Factory();
-        
-        virtual ~Factory();
-
-        /** Get the list of Factories */
-        static const std::vector<Factory*>& getList();
-
-        /** For each Factory in Factory::getList() add options to opts. */
-        static void addOptions(Options& opts);
-
-        /**
-         * Configuration options for this factory.
-         * Then will be updated during option parsing by the host program.
-         * 
-         * @return An options group or 0 for no options.
-         */
-        virtual Options* getOptions() = 0;
-        
-        /**
-         * Create a Plugin for target.
-         * Uses option values set by getOptions().
-         * Target may not be fully initialized at this point.
-         * Actions that require a fully-initialized target should be
-         * done in initialize().
-         * 
-         * @returns 0 if the target type is not compatible with this Factory.
-         */
-        virtual boost::shared_ptr<Plugin> create(Target& target) = 0;
-    };
-
-    /**
-     * Template factory implementation, checks target type is correct. 
-     */
-    template <class TargetType> class FactoryT : public Factory {
-        Options* getOptions() { return 0; }
-
-        virtual boost::shared_ptr<Plugin> createT(TargetType& target) = 0;
-
-        boost::shared_ptr<Plugin> create(Target& target) {
-            TargetType* tt = dynamic_cast<TargetType*>(&target);
-            if (tt)
-                return createT(*tt);
-            else
-                return boost::shared_ptr<Plugin>();
-        }
-    };
-
-    // Plugin functions.
-
-    virtual ~Plugin();
+    typedef std::vector<Plugin*> Plugins;
     
     /**
-     * Initialize the Plugin. 
+     * Construct registers the plug-in to appear in getPlugins().
+     * 
+     * A concrete Plugin is instantiated as a global or static
+     * member variable in a library so it is registered during static
+     * initialization when the library is loaded.
+     */
+    Plugin();
+    
+    virtual ~Plugin();
+
+    /**
+     * Configuration options for the plugin.
+     * Then will be updated during option parsing by the host program.
+     * 
+     * @return An options group or 0 for no options. Default returns 0.
+     * Plugin retains ownership of return value.
+     */
+    virtual Options* getOptions();
+
+    /**
+     * Initialize Plugin functionality on a Target.
+     * Plugins should ignore targets they don't recognize.
+     *
+     * Called before the target itself is initialized.
+     */
+    virtual void earlyInitialize(Target&) = 0;
+
+    /**
+     * Initialize Plugin functionality on a Target.
+     * Plugins should ignore targets they don't recognize.
+     *
      * Called after the target is fully initialized.
      */
     virtual void initialize(Target&) = 0;
+
+    /** List of registered Plugin objects.
+     * Caller must not delete plugin pointers.
+     */
+    static const Plugins& getPlugins();
+
+    /** For each registered plugin, add plugin.getOptions() to opts. */
+    static void addOptions(Options& opts);
 };
-
-/** Template plugin factory */
-template <class TargetType> class PluginT : public Plugin {
-
-    virtual void initializeT(TargetType&) = 0;
-
-    void initialize(Plugin::Target& target) {
-        TargetType* tt = dynamic_cast<TargetType*>(&target);
-        assert(tt);
-        initializeT(*tt);
-    }
-};
-
+ 
 } // namespace qpid
 
 #endif  /*!QPID_PLUGIN_H*/
