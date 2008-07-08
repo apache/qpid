@@ -114,6 +114,7 @@ Cluster::~Cluster() {
     QPID_LOG(trace, *this << " Leaving cluster.");
     try {
         cpg.leave(name);
+        cpg.shutdown();
         dispatcher.join();
     }
     catch (const std::exception& e) {
