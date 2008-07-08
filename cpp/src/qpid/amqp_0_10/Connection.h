@@ -33,7 +33,6 @@ namespace qpid {
 namespace broker { class Broker; }
 namespace amqp_0_10 {
 
-// FIXME aconway 2008-03-18: Update to 0-10.
 class Connection  : public sys::ConnectionCodec,
                     public sys::ConnectionOutputHandler
 {
@@ -41,7 +40,7 @@ class Connection  : public sys::ConnectionCodec,
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
-    std::auto_ptr<broker::Connection> connection; // FIXME aconway 2008-03-18: 
+    broker::Connection connection;
     std::string identifier;
     bool initialized;
     bool isClient;

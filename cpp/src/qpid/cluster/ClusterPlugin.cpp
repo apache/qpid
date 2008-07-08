@@ -54,24 +54,29 @@ struct ClusterOptions : public Options {
 };
 
 struct ClusterPlugin : public Plugin {
+    typedef PluginHandlerChain<framing::FrameHandler, broker::Connection> ConnectionChain;
 
     ClusterOptions options;
     boost::optional<Cluster> cluster;
 
-    Options* getOptions() { return &options; }
+    template <class Chain> void init(Plugin::Target& t) {
+        Chain* c = dynamic_cast<Chain*>(&t);
+        if (c) cluster->initialize(*c);
+    }
 
     void earlyInitialize(Plugin::Target&) {}
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        // Only provide to a Broker, and only if the --cluster config is set.
         if (broker && !options.name.empty()) {
-            assert(!cluster); // A process can only belong to one cluster.
+            if (cluster) throw Exception("Cluster plugin cannot be initialized twice in a process.");
             cluster = boost::in_place(options.name,
                                       options.getUrl(broker->getPort()),
                                       boost::ref(*broker));
-            broker->getConnectionManager().add(cluster->getObserver());	
+            return;
         }
+        if (!cluster) return;   // Ignore chain handlers if we didn't init a cluster.
+        init<ConnectionChain>(target);
     }
 };
 

@@ -23,7 +23,6 @@
  */
 
 #include "ConnectionFactory.h"
-#include "ConnectionManager.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
 #include "DtxManager.h"
@@ -121,7 +120,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options& getOptions() { return config; }
 
     SessionManager& getSessionManager() { return sessionManager; }
-    ConnectionManager& getConnectionManager() { return connectionManager; }
 
     management::ManagementObject*     GetManagementObject (void) const;
     management::Manageable*           GetVhostObject      (void) const;
@@ -159,7 +157,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     ConnectionFactory factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
-    ConnectionManager connectionManager;
     management::ManagementAgent* managementAgent;
     management::Broker*          mgmtObject;
     Vhost::shared_ptr            vhostObject;
