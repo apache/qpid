@@ -23,6 +23,7 @@
  */
 
 #include "qpid/SessionState.h"
+#include "qpid/HandlerChain.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Mutex.h"
@@ -58,8 +59,8 @@ class SessionHandler;
 class SessionManager;
 
 /**
- * Broker-side session state includes sessions handler chains, which may
- * themselves have state. 
+ * Broker-side session state includes session's handler chains, which
+ * may themselves have state.
  */
 class SessionState : public qpid::SessionState, 
                      public SessionContext,
@@ -101,8 +102,9 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
-    framing::FrameHandler::Chain& getInChain(); 
-    framing::FrameHandler::Chain& getOutChain(); 
+    // Tag types to identify PluginHandlerChains. 
+    struct InTag {};
+    struct OutTag {};
 
   private:
 
@@ -131,7 +133,9 @@ class SessionState : public qpid::SessionState,
     management::Session* mgmtObject;
     framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleInLast> inLastHandler;
     framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleOutLast> outLastHandler;
-    framing::FrameHandler::Chain inChain, outChain;
+
+    qpid::PluginHandlerChain<framing::FrameHandler, InTag> inChain;
+    qpid::PluginHandlerChain<framing::FrameHandler, OutTag> outChain;
 
   friend class SessionManager;
 };

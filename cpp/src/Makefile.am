@@ -248,8 +248,6 @@ libqpidbroker_la_SOURCES = \
   qpid/amqp_0_10/Connection.cpp \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerSingleton.cpp \
-  qpid/broker/ConnectionManager.h \
-  qpid/broker/ConnectionManager.cpp \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/PersistableMessage.cpp \
@@ -354,6 +352,7 @@ nobase_include_HEADERS = \
   qpid/amqp_0_10/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \
+  qpid/HandlerChain.h \
   qpid/Plugin.h \
   qpid/ptr_map.h \
   qpid/RangeSet.h \

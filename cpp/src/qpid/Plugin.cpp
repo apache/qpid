@@ -20,10 +20,13 @@
 
 #include "Plugin.h"
 #include "qpid/Options.h"
+#include <boost/bind.hpp>
+#include <algorithm>
 
 namespace qpid {
 
 namespace {
+
 Plugin::Plugins& thePlugins() {
     // This is a single threaded singleton implementation so
     // it is important to be sure that the first use of this
@@ -31,7 +34,16 @@ Plugin::Plugins& thePlugins() {
     static Plugin::Plugins plugins;
     return plugins;
 }
+
+void call(boost::function<void()> f) { f(); }
+
+} // namespace
+
+Plugin::Target::~Target() {
+    std::for_each(cleanup.begin(), cleanup.end(), &call);
 }
+
+void Plugin::Target::addCleanup(const boost::function<void()>& f) { cleanup.push_back(f); }
 
 Plugin::Plugin() {
     // Register myself.
@@ -44,11 +56,20 @@ Options*  Plugin::getOptions() { return 0; }
 
 const Plugin::Plugins& Plugin::getPlugins() { return thePlugins(); }
 
+namespace {
+template <class F> void each_plugin(const F& f) {
+    std::for_each(Plugin::getPlugins().begin(), Plugin::getPlugins().end(), f);
+}
+}
+
 void Plugin::addOptions(Options& opts) {
     for (Plugins::const_iterator i = getPlugins().begin(); i != getPlugins().end(); ++i) {
         if ((*i)->getOptions())
             opts.add(*(*i)->getOptions());
     }
 }
+
+void Plugin::earlyInitAll(Target& t) { each_plugin(boost::bind(&Plugin::earlyInitialize, _1, t)); }
+void Plugin::initAll(Target& t) { each_plugin(boost::bind(&Plugin::initialize, _1, t)); }
 
 } // namespace qpid

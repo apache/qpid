@@ -55,11 +55,8 @@ std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const Ses
         throw SessionBusyException(QPID_MSG("Session already attached: " << id));
     Detached::iterator i = std::find(detached.begin(), detached.end(), id);
     std::auto_ptr<SessionState> state;
-    if (i == detached.end())  {
+    if (i == detached.end())  
         state.reset(new SessionState(broker, h, id, config));
-    for_each(observers.begin(), observers.end(),
-                 boost::bind(&Observer::opened, _1,boost::ref(*state)));
-    }
     else {
         state.reset(detached.release(i).release());
         state->attach(h);
@@ -97,10 +94,6 @@ void SessionManager::eraseExpired() {
             detached.erase(detached.begin(), keep);
         }
     }
-}
-
-void SessionManager::add(const intrusive_ptr<Observer>& o) {
-    observers.push_back(o);
 }
 
 }} // namespace qpid::broker
