@@ -23,7 +23,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
-#include "qpid/management/ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 

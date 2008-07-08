@@ -32,7 +32,7 @@ class System : public management::Manageable
 {
   private:
 
-    management::System::shared_ptr mgmtObject;
+    management::System* mgmtObject;
 
   public:
 
@@ -40,7 +40,7 @@ class System : public management::Manageable
 
     System (std::string _dataDir);
 
-    management::ManagementObject::shared_ptr GetManagementObject (void) const
+    management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }
 };
 

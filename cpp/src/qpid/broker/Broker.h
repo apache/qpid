@@ -123,10 +123,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
     SessionManager& getSessionManager() { return sessionManager; }
     ConnectionManager& getConnectionManager() { return connectionManager; }
 
-    management::ManagementObject::shared_ptr GetManagementObject (void) const;
-    management::Manageable*                  GetVhostObject      (void) const;
-    management::Manageable::status_t
-        ManagementMethod (uint32_t methodId, management::Args& args);
+    management::ManagementObject*     GetManagementObject (void) const;
+    management::Manageable*           GetVhostObject      (void) const;
+    management::Manageable::status_t  ManagementMethod (uint32_t methodId, management::Args& args);
     
     /** Add to the broker's protocolFactorys */
     void registerProtocolFactory(boost::shared_ptr<sys::ProtocolFactory>);
@@ -161,10 +160,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager dtxManager;
     SessionManager sessionManager;
     ConnectionManager connectionManager;
-    management::ManagementAgent::shared_ptr managementAgent;
-    management::Broker::shared_ptr mgmtObject;
-    Vhost::shared_ptr              vhostObject;
-    System::shared_ptr             systemObject;
+    management::ManagementAgent* managementAgent;
+    management::Broker*          mgmtObject;
+    Vhost::shared_ptr            vhostObject;
+    System::shared_ptr           systemObject;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 };

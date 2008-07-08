@@ -158,7 +158,8 @@ class Generator:
       raise ValueError ("path is not directory: %s" % path)
     if not exists:
       pair = os.path.split (path)
-      self.createPath (pair[0])
+      if pair[0] != '':
+        self.createPath (pair[0])
       os.mkdir (path)
 
   def normalize (self, path):

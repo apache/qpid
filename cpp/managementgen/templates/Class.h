@@ -79,7 +79,6 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
   public:
 
     friend class Package/*MGEN:Class.NamePackageCap*/;
-    typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
 
     /*MGEN:Class.NameCap*/ (ManagementAgent* agent,
                             Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);

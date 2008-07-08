@@ -95,7 +95,7 @@ class SessionState : public qpid::SessionState,
     DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);
 
     // Manageable entry points
-    management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::ManagementObject* GetManagementObject (void) const;
     management::Manageable::status_t
     ManagementMethod (uint32_t methodId, management::Args& args);
 
@@ -128,7 +128,7 @@ class SessionState : public qpid::SessionState,
     MessageBuilder msgBuilder;
     IncompleteMessageList incomplete;
     IncompleteMessageList::CompletionListener enqueuedOp;
-    management::Session::shared_ptr mgmtObject;
+    management::Session* mgmtObject;
     framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleInLast> inLastHandler;
     framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleOutLast> outLastHandler;
     framing::FrameHandler::Chain inChain, outChain;

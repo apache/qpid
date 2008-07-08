@@ -54,6 +54,7 @@ SessionState::SessionState(
       adapter(semanticState),
       msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
       enqueuedOp(boost::bind(&SessionState::enqueued, this, _1)),
+      mgmtObject(0),
       inLastHandler(*this),
       outLastHandler(*this),
       inChain(inLastHandler),
@@ -61,10 +62,9 @@ SessionState::SessionState(
 {
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        if (agent.get () != 0) {
-            mgmtObject = management::Session::shared_ptr
-                (new management::Session (agent.get(), this, parent, getId().getName()));
+        ManagementAgent* agent = ManagementAgent::getAgent ();
+        if (agent != 0) {
+            mgmtObject = new management::Session (agent, this, parent, getId().getName());
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             agent->addObject (mgmtObject);
@@ -79,7 +79,7 @@ SessionState::~SessionState() {
     // they don't belong in the manager. For now rely on uniqueness of UUIDs.
     // 
     broker.getSessionManager().forget(getId());
-    if (mgmtObject.get () != 0)
+    if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }
 
@@ -104,7 +104,7 @@ void SessionState::detach() {
     QPID_LOG(debug, getId() << ": detached on broker.");
     getConnection().outputTasks.removeOutputTask(&semanticState);
     handler = 0;
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->set_attached  (0);
 }
 
@@ -113,7 +113,7 @@ void SessionState::attach(SessionHandler& h) {
     Mutex::ScopedLock l(lock);
     QPID_LOG(debug, getId() << ": attached on broker.");
     handler = &h;
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
     {
         mgmtObject->set_attached (1);
         mgmtObject->set_connectionRef (h.getConnection().GetManagementObject()->getObjectId());
@@ -129,9 +129,9 @@ void SessionState::activateOutput() {
     // FIXME aconway 2008-05-22: should we hold the lock over activateOutput??
 }
 
-ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
+ManagementObject* SessionState::GetManagementObject (void) const
 {
-    return dynamic_pointer_cast<ManagementObject> (mgmtObject);
+    return (ManagementObject*) mgmtObject;
 }
 
 Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,

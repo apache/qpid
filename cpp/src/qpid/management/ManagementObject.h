@@ -25,7 +25,6 @@
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
 #include <qpid/framing/Buffer.h>
-#include <boost/shared_ptr.hpp>
 #include <map>
 
 namespace qpid { 
@@ -82,7 +81,6 @@ class ManagementObject
     void writeTimestamps (qpid::framing::Buffer& buf);
 
   public:
-    typedef boost::shared_ptr<ManagementObject> shared_ptr;
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
     ManagementObject (ManagementAgent* _agent, Manageable* _core) :
@@ -121,7 +119,7 @@ class ManagementObject
     inline sys::Mutex& getLock() { return accessLock; }
 };
 
-typedef std::map<uint64_t,ManagementObject::shared_ptr> ManagementObjectMap;
+typedef std::map<uint64_t,ManagementObject*> ManagementObjectMap;
 
 }}
             

@@ -62,16 +62,16 @@ Queue::Queue(const string& _name, bool _autodelete,
     exclusive(0),
     noLocal(false),
     persistenceId(0),
-    policyExceeded(false)
+    policyExceeded(false),
+    mgmtObject(0)
 {
     if (parent != 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
 
-        if (agent.get () != 0)
+        if (agent != 0)
         {
-            mgmtObject = management::Queue::shared_ptr
-                (new management::Queue (agent.get(), this, parent, _name, _store != 0, _autodelete, _owner != 0));
+            mgmtObject = new management::Queue (agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
 
             // Add the object to the management agent only if this queue is not durable.
             // If it's durable, we will add it later when the queue is assigned a persistenceId.
@@ -83,7 +83,7 @@ Queue::Queue(const string& _name, bool _autodelete,
 
 Queue::~Queue()
 {
-    if (mgmtObject.get () != 0)
+    if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }
 
@@ -128,14 +128,14 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
     } else {
         // if no store then mark as enqueued
         if (!enqueue(0, msg)){
-            if (mgmtObject.get() != 0) {
+            if (mgmtObject != 0) {
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
             }
             push(msg);
             msg->enqueueComplete();
         }else {
-            if (mgmtObject.get() != 0) {
+            if (mgmtObject != 0) {
                 mgmtObject->inc_msgTotalEnqueues ();
                 mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                 mgmtObject->inc_msgPersistEnqueues ();
@@ -151,7 +151,7 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
 void Queue::recover(boost::intrusive_ptr<Message>& msg){
     push(msg);
     msg->enqueueComplete(); // mark the message as enqueued
-    if (mgmtObject.get() != 0) {
+    if (mgmtObject != 0) {
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgPersistEnqueues ();
@@ -167,7 +167,7 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
 
 void Queue::process(boost::intrusive_ptr<Message>& msg){
     push(msg);
-    if (mgmtObject.get() != 0) {
+    if (mgmtObject != 0) {
         mgmtObject->inc_msgTotalEnqueues ();
         mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
         mgmtObject->inc_msgTxnEnqueues ();
@@ -348,7 +348,7 @@ void Queue::consume(Consumer& c, bool requestExclusive){
     }
     consumerCount++;
 
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->inc_consumerCount ();
 }
 
@@ -357,7 +357,7 @@ void Queue::cancel(Consumer& c){
     Mutex::ScopedLock locker(consumerLock);
     consumerCount--;
     if(exclusive) exclusive = 0;
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->dec_consumerCount ();
 }
 
@@ -394,7 +394,7 @@ void Queue::pop(){
     QueuedMessage& msg = messages.front();
 
     if (policy.get()) policy->dequeued(msg.payload->contentSize());
-    if (mgmtObject.get() != 0){
+    if (mgmtObject != 0){
         mgmtObject->inc_msgTotalDequeues  ();
         mgmtObject->inc_byteTotalDequeues (msg.payload->contentSize());
         if (msg.payload->isPersistent ()){
@@ -522,7 +522,7 @@ void Queue::configure(const FieldTable& _settings)
     QPID_LOG(debug, "Configured queue " << getName() << " with qpid.trace.id='" << traceId 
              << "' and qpid.trace.exclude='"<< excludeList << "' i.e. " << traceExclude.size() << " elements");
 
-    if (mgmtObject.get() != 0)
+    if (mgmtObject != 0)
         mgmtObject->set_arguments (_settings);
 }
 
@@ -574,14 +574,14 @@ uint64_t Queue::getPersistenceId() const
 
 void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
-    if (mgmtObject.get() != 0 && persistenceId == 0)
+    if (mgmtObject != 0 && persistenceId == 0)
     {
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::getAgent ();
         agent->addObject (mgmtObject, _persistenceId, 3);
 
         if (externalQueueStore) {
-            ManagementObject::shared_ptr childObj = externalQueueStore->GetManagementObject();
-            if (childObj.get() != 0)
+            ManagementObject* childObj = externalQueueStore->GetManagementObject();
+            if (childObj != 0)
                 childObj->setReference(mgmtObject->getObjectId());
         }
     }
@@ -669,8 +669,8 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
     externalQueueStore = inst;
 
     if (inst) {
-        ManagementObject::shared_ptr childObj = inst->GetManagementObject();
-        if (childObj.get() != 0 && mgmtObject.get() != 0)
+        ManagementObject* childObj = inst->GetManagementObject();
+        if (childObj != 0 && mgmtObject != 0)
             childObj->setReference(mgmtObject->getObjectId());
     }
 }
@@ -696,9 +696,9 @@ void Queue::Guard::wait(sys::Mutex& m)
     while (count) condition.wait(m);
 }
 
-ManagementObject::shared_ptr Queue::GetManagementObject (void) const
+ManagementObject* Queue::GetManagementObject (void) const
 {
-    return dynamic_pointer_cast<ManagementObject> (mgmtObject);
+    return (ManagementObject*) mgmtObject;
 }
 
 Manageable::status_t Queue::ManagementMethod (uint32_t methodId,
