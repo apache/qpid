@@ -29,7 +29,6 @@
 #include "QueueBindings.h"
 
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Serializer.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Queue.h"
