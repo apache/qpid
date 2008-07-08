@@ -38,7 +38,6 @@
 #include <vector>
 #include <memory>
 #include <deque>
-#include <set>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -62,8 +61,19 @@ namespace qpid {
          */
         class Queue : public boost::enable_shared_from_this<Queue>,
             public PersistableQueue, public management::Manageable {
-            typedef std::set<Consumer*> Listeners;
+            typedef qpid::InlineVector<Consumer*, 5> Listeners;
             typedef std::deque<QueuedMessage> Messages;
+
+            class Guard 
+            {
+                qpid::sys::Condition condition;
+                size_t count;
+              public:
+                Guard();
+                void lock();
+                void unlock();
+                void wait(sys::Mutex&);
+            };
 
             const string name;
             const bool autodelete;
@@ -79,6 +89,7 @@ namespace qpid {
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
             mutable qpid::sys::Mutex ownershipLock;
+            Guard notifierLock;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;
@@ -95,7 +106,6 @@ namespace qpid {
             bool getNextMessage(QueuedMessage& msg, Consumer& c);
             bool consumeNextMessage(QueuedMessage& msg, Consumer& c);
             bool browseNextMessage(QueuedMessage& msg, Consumer& c);
-            bool canExcludeUnwanted();
 
             void notify();
             void removeListener(Consumer&);
