@@ -132,16 +132,16 @@ public class MessageListenerTest extends QpidTestCase implements MessageListener
 
     }
 
-    public void testRecieveTheUseMessageListener() throws Exception
+    public void testRecieveThenUseMessageListener() throws Exception
     {
 
         _logger.error("Test disabled as initial receive is not called first");
         // Perform initial receive to start connection
-        // assertTrue(_consumer.receive(2000) != null);
-        // receivedCount++;
+        assertTrue(_consumer.receive(2000) != null);
+        receivedCount++;
 
         // Sleep to ensure remaining 4 msgs end up on _synchronousQueue
-        // Thread.sleep(1000);
+        Thread.sleep(1000);
 
         // Set the message listener and wait for the messages to come in.
         _consumer.setMessageListener(this);
