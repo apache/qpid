@@ -121,18 +121,17 @@ struct ClientSessionFixture : public ProxySessionFixture
 QPID_AUTO_TEST_CASE(testXmlBinding) {
   ClientSessionFixture f;
 
-  Session session = f.connection.newSession();
-  SubscriptionManager subscriptions(session);
+  SubscriptionManager subscriptions(f.session);
   SubscribedLocalQueue localQueue(subscriptions);
 
-  session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
-  session.queueDeclare(qpid::client::arg::queue="odd_blue");
+  f.session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
+  f.session.queueDeclare(qpid::client::arg::queue="odd_blue");
   subscriptions.subscribe(localQueue, "odd_blue");
 
   FieldTable binding;
   binding.setString("xquery", "declare variable $color external;"
                                "(./message/id mod 2 = 1) and ($color = 'blue')");
-  session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding); 
+  f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding); 
 
   Message message;
   message.getDeliveryProperties().setRoutingKey("query_name"); 
@@ -141,7 +140,7 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
   string m = "<message><id>1</id></message>";
   message.setData(m);
 
-  session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
+  f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
 
   Message m2 = localQueue.get();
   BOOST_CHECK_EQUAL(m, m2.getData());  
