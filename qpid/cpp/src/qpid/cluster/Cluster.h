@@ -22,6 +22,7 @@
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/ShadowConnectionOutputHandler.h"
 
+#include "qpid/HandlerChain.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
@@ -47,6 +48,8 @@ namespace cluster {
 class Cluster : private sys::Runnable, private Cpg::Handler
 {
   public:
+    typedef PluginHandlerChain<framing::FrameHandler, broker::Connection> ConnectionChain;
+
     /** Details of a cluster member */
     struct Member {
         Member(const Url& url_=Url()) : url(url_) {}
@@ -62,11 +65,11 @@ class Cluster : private sys::Runnable, private Cpg::Handler
      */
     Cluster(const std::string& name, const Url& url, broker::Broker&);
 
+    // Add cluster handlers to broker chains.
+    void initialize(ConnectionChain&);
+
     virtual ~Cluster();
 
-    // FIXME aconway 2008-01-29: 
-    boost::intrusive_ptr<broker::ConnectionManager::Observer> getObserver() { return observer; }
-    
     /** Get the current cluster membership. */
     MemberList getMembers() const;
 
@@ -124,7 +127,6 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    boost::intrusive_ptr<broker::ConnectionManager::Observer> observer;
     Id self;
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;

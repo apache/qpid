@@ -29,7 +29,7 @@ using sys::Mutex;
 
 Connection::Connection(sys::OutputControl& o, broker::Broker& broker, const std::string& id, bool _isClient)
     : frameQueueClosed(false), output(o),
-      connection(broker.getConnectionManager().create(this, broker, id, _isClient)),
+      connection(this, broker, id, _isClient),
       identifier(id), initialized(false), isClient(_isClient) {}
 
 size_t  Connection::decode(const char* buffer, size_t size) {
@@ -46,13 +46,13 @@ size_t  Connection::decode(const char* buffer, size_t size) {
     framing::AMQFrame frame;
     while(frame.decode(in)) {
         QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
-        connection->received(frame);
+        connection.received(frame);
     }
     return in.getPosition();
 }
 
 bool Connection::canEncode() {
-    if (!frameQueueClosed) connection->doOutput();
+    if (!frameQueueClosed) connection.doOutput();
     Mutex::ScopedLock l(frameQueueLock);
     return (!isClient && !initialized) || !frameQueue.empty();
 }
@@ -91,7 +91,7 @@ void  Connection::close() {
 }
 
 void  Connection::closed() {
-    connection->closed();
+    connection.closed();
 }
 
 void Connection::send(framing::AMQFrame& f) {

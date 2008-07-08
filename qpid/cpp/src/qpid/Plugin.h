@@ -40,11 +40,17 @@ class Plugin : boost::noncopyable
   public:
     /**
      * Base interface for targets that receive plug-ins.
-     *
-     * The Broker is a plug-in target, there might be others
-     * in future.
+     * Plug-ins can register clean-up functions to execute when
+     * the target is destroyed.
      */
-    struct Target { virtual ~Target() {} };
+    struct Target {
+      public:
+        virtual ~Target();
+        void addCleanup(const boost::function<void()>& cleanupFunction);
+
+      private:
+        std::vector<boost::function<void()> > cleanup;
+    };
 
     typedef std::vector<Plugin*> Plugins;
     
@@ -69,7 +75,9 @@ class Plugin : boost::noncopyable
     virtual Options* getOptions();
 
     /**
-     * Initialize Plugin functionality on a Target.
+     * Initialize Plugin functionality on a Target, called before
+     * initializing the target.
+     *
      * Plugins should ignore targets they don't recognize.
      *
      * Called before the target itself is initialized.
@@ -77,7 +85,9 @@ class Plugin : boost::noncopyable
     virtual void earlyInitialize(Target&) = 0;
 
     /**
-     * Initialize Plugin functionality on a Target.
+     * Initialize Plugin functionality on a Target. Called after
+     * initializing the target.
+     * 
      * Plugins should ignore targets they don't recognize.
      *
      * Called after the target is fully initialized.
@@ -88,6 +98,12 @@ class Plugin : boost::noncopyable
      * Caller must not delete plugin pointers.
      */
     static const Plugins& getPlugins();
+
+    /** Call earlyInitialize() on all registered plugins */
+    static void earlyInitAll(Target&);
+
+    /** Call initialize() on all registered plugins */
+    static void initAll(Target&);
 
     /** For each registered plugin, add plugin.getOptions() to opts. */
     static void addOptions(Options& opts);

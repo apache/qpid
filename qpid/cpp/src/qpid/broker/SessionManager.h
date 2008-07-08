@@ -46,14 +46,6 @@ class SessionHandler;
  */
 class SessionManager : private boost::noncopyable {
   public:
-    /**
-     * Observer notified of SessionManager events.
-     */
-    struct Observer : public RefCounted {
-        /** Called when a stateless session is attached. */
-        virtual void opened(SessionState&) {}
-    };
-    
     SessionManager(const qpid::SessionState::Configuration&, Broker&);
     
     ~SessionManager();
@@ -67,9 +59,6 @@ class SessionManager : private boost::noncopyable {
     /** Forget about an attached session. Called by SessionState destructor. */
     void forget(const SessionId&);
 
-    /** Add an Observer. */
-    void add(const boost::intrusive_ptr<Observer>&);
-    
     Broker& getBroker() const { return broker; }
 
     const qpid::SessionState::Configuration& getSessionConfig() const { return config; }
@@ -77,7 +66,6 @@ class SessionManager : private boost::noncopyable {
   private:
     typedef boost::ptr_vector<SessionState> Detached; // Sorted in expiry order.
     typedef std::set<SessionId> Attached;
-    typedef std::vector<boost::intrusive_ptr<Observer> > Observers;
 
     void eraseExpired();             
 
@@ -85,7 +73,6 @@ class SessionManager : private boost::noncopyable {
     Detached detached;
     Attached attached;
     qpid::SessionState::Configuration config;
-    Observers observers;
     Broker& broker;
 };
 

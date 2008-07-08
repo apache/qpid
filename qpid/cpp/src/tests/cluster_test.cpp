@@ -174,7 +174,7 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
     }    
 }
 
-QPID_AUTO_TEST_CASE(testMessageReplication) {
+QPID_AUTO_TEST_CASE(testMessageEnqueue) {
     // Enqueue on one broker, dequeue on another.
     ClusterFixture cluster(2);
     Client c0(cluster[0].getPort());
@@ -190,6 +190,28 @@ QPID_AUTO_TEST_CASE(testMessageReplication) {
     BOOST_CHECK_EQUAL(string("bar"), msg.getData());
 }
 
-// TODO aconway 2008-06-25: dequeue replication, failover.
+QPID_AUTO_TEST_CASE(testMessageDequeue) {
+    // Enqueue on one broker, dequeue on two others.
+    ClusterFixture cluster (3);
+    Client c0(cluster[0].getPort());
+    c0.session.queueDeclare("q");
+    c0.session.messageTransfer(arg::content=TransferContent("foo", "q"));
+    c0.session.messageTransfer(arg::content=TransferContent("bar", "q"));
+    c0.session.close();
+
+    Message msg;
+
+    Client c1(cluster[1].getPort());
+    BOOST_CHECK(c1.subs.get(msg, "q"));
+    BOOST_CHECK_EQUAL("foo", msg.getData());
+    
+    Client c2(cluster[2].getPort());
+    BOOST_CHECK(c1.subs.get(msg, "q"));
+    BOOST_CHECK_EQUAL("bar", msg.getData());
+    QueueQueryResult r = c2.session.queueQuery("q");
+    BOOST_CHECK_EQUAL(0, r.getMessageCount());
+}
+
+// TODO aconway 2008-06-25: failover.
 
 QPID_AUTO_TEST_SUITE_END()

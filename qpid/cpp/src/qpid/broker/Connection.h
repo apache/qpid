@@ -43,6 +43,7 @@
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Connection.h"
+#include "qpid/HandlerChain.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -91,8 +92,6 @@ class Connection : public sys::ConnectionInputHandler,
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
 
-    framing::FrameHandler::Chain& getInChain() { return inChain; } 
-
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -110,8 +109,7 @@ class Connection : public sys::ConnectionInputHandler,
     management::Connection* mgmtObject;
     LinkRegistry& links;
     framing::FrameHandler::MemFunRef<Connection, &Connection::receivedLast> lastInHandler;
-    framing::FrameHandler::Chain inChain;
-
+    PluginHandlerChain<framing::FrameHandler, Connection> inChain;
 };
 
 }}
