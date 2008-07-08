@@ -28,12 +28,13 @@
 
 #include <memory>
 #include <string>
+#include <errno.h>
 
 namespace qpid
 {
 
 /** Get the error message for a system number err, e.g. errno. */
-std::string strError(int err);
+std::string strError(int err=errno);
 
 /**
  * Base class for Qpid runtime exceptions.
@@ -52,6 +53,11 @@ class Exception : public std::exception
     mutable std::string whatStr;
 };
 
+/** Exception that includes an errno message. */
+struct ErrnoException : public Exception {
+    ErrnoException(const std::string& msg, int err=errno) : Exception(msg+": "+strError(err)) {}
+};
+    
 struct SessionException : public Exception {
     const framing::ReplyCode code;
     SessionException(framing::ReplyCode code_, const std::string& message)

@@ -86,7 +86,8 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Thread.h \
-  qpid/sys/posix/Fork.h
+  qpid/sys/posix/Fork.h \
+  qpid/sys/posix/LockFile.h
 
 platform_src = $(posix_plat_src)
 platform_hdr = $(posix_plat_hdr)
@@ -553,6 +554,7 @@ nobase_include_HEADERS = \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
   qpid/sys/Fork.h \
+  qpid/sys/LockFile.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
   qpid/sys/Serializer.h \
