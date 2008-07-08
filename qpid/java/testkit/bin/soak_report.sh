@@ -27,6 +27,8 @@
 
 log_freq=$1
 log_iter=$2
+shift 2
+JVM_ARGS=$@
 
 if [ "$QPID_TEST_HOME" = "" ] ; then
     echo "ERROR: Please set QPID_TEST_HOME ...."
@@ -130,7 +132,7 @@ print_system_stats()
 
 cleanup()
 {
-  kill -9 `ps aux | grep soak | awk '{ print $2 }'`
+  kill -9 `ps aux | grep java | grep soak | awk '{ print $2 }'`
 }
 
 print_results()
@@ -149,9 +151,11 @@ print_results()
 trap cleanup EXIT
 
 # runs a single instance of the MultiThreadedConsumer and MultiThreadedProducer
-sh $QPID_TEST_HOME/bin/run_soak_client.sh 1 $log_freq $log_iter org.apache.qpid.testkit.soak.MultiThreadedConsumer
-sh $QPID_TEST_HOME/bin/run_soak_client.sh 1 $log_freq $log_iter org.apache.qpid.testkit.soak.MultiThreadedProducer
+sh $QPID_TEST_HOME/bin/run_soak_client.sh 1 $log_freq $log_iter org.apache.qpid.testkit.soak.MultiThreadedConsumer $JVM_ARGS
+sh $QPID_TEST_HOME/bin/run_soak_client.sh 1 $log_freq $log_iter org.apache.qpid.testkit.soak.MultiThreadedProducer $JVM_ARGS
 
-sleep $log_iter
+sleep_time=$((log_freq * log_iter))
+echo "sleep time : " $sleep_time
+sleep $((log_freq * log_iter))
 
 print_results
