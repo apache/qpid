@@ -60,7 +60,7 @@ struct ClusterFixture : public ptr_vector<ForkedBroker> {
 
 void ClusterFixture::add() {
     broker::Broker::Options opts;
-    Plugin::Factory::addOptions(opts); // For cluster options.
+    Plugin::addOptions(opts); // For cluster options.
     const char* argv[] = {
         "", "--cluster-name", name.c_str(), "--auth=no", "--no-data-dir"
     };

@@ -19,53 +19,36 @@
  */
 
 #include "Plugin.h"
-#include <qpid/shared_ptr.h>
-#include <qpid/Options.h>
-#include <qpid/sys/Mutex.h>
+#include "qpid/Options.h"
 
 namespace qpid {
 
-Plugin::Target::~Target() {}
-
-void Plugin::Target::createPlugins() {
-    typedef std::vector<Plugin::Factory*>::const_iterator Iter; 
-    for (Iter i = Factory::getList().begin(); i != Factory::getList().end(); ++i) {
-        boost::shared_ptr<Plugin> plugin = (**i).create(*this);
-        if (plugin)
-            plugins.push_back(plugin);
-    }
+namespace {
+Plugin::Plugins& thePlugins() {
+    // This is a single threaded singleton implementation so
+    // it is important to be sure that the first use of this
+    // singleton is when the program is still single threaded
+    static Plugin::Plugins plugins;
+    return plugins;
+}
 }
 
-void Plugin::Target::initializePlugins() {
-    typedef std::vector<boost::shared_ptr<Plugin> >::iterator Iter; 
-    for (Iter i = plugins.begin(); i != plugins.end(); ++i) 
-        (**i).initialize(*this);
-}
-
-void Plugin::Target::releasePlugins() { plugins.clear(); }
-
-Plugin::Factory::~Factory() {}
-
-Plugin::Factory::Factory() {
-    const_cast<std::vector<Plugin::Factory*>& >(getList()).push_back(this);
-}
-
-static sys::PODMutex PluginFactoryGetListLock;
-
-const std::vector<Plugin::Factory*>& Plugin::Factory::getList() {
-    sys::PODMutex::ScopedLock l(PluginFactoryGetListLock);
-    static std::vector<Plugin::Factory*> list;
-    return list;
-}
-
-void Plugin::Factory::addOptions(Options& opts) {
-    typedef std::vector<Plugin::Factory*>::const_iterator Iter; 
-    for (Iter i = Factory::getList().begin(); i != Factory::getList().end(); ++i) {
-        Options* opt=(**i).getOptions();
-        if (opt) opts.add(*opt);
-    }
+Plugin::Plugin() {
+    // Register myself.
+    thePlugins().push_back(this);
 }
 
 Plugin::~Plugin() {}
+
+Options*  Plugin::getOptions() { return 0; }
+
+const Plugin::Plugins& Plugin::getPlugins() { return thePlugins(); }
+
+void Plugin::addOptions(Options& opts) {
+    for (Plugins::const_iterator i = getPlugins().begin(); i != getPlugins().end(); ++i) {
+        if ((*i)->getOptions())
+            opts.add(*(*i)->getOptions());
+    }
+}
 
 } // namespace qpid
