@@ -40,7 +40,6 @@ import java.nio.ByteBuffer;
  * short instead of Short
  */
 
-// RA making this public until we sort out the package issues
 public class Connection
     implements Receiver<ConnectionEvent>, Sender<ConnectionEvent>
 {
@@ -88,6 +87,12 @@ public class Connection
     {
         log.debug("SEND: [%s] %s", this, event);
         sender.send(event);
+    }
+
+    public void flush()
+    {
+        log.debug("FLUSH: [%s]", this);
+        sender.flush();
     }
 
     public int getChannelMax()

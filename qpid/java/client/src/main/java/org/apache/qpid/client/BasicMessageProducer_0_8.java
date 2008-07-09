@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import java.util.UUID;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 
@@ -65,9 +67,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         _protocolHandler.writeFrame(declare);
     }
 
-    void sendMessage(AMQDestination destination, Message origMessage,AbstractJMSMessage message,
-                     int deliveryMode,int priority, long timeToLive, boolean mandatory, boolean immediate,
-                     boolean wait) throws JMSException
+    void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
+                     UUID messageId, int deliveryMode,int priority, long timeToLive, boolean mandatory,
+                     boolean immediate, boolean wait) throws JMSException
     {
         BasicPublishBody body = getSession().getMethodRegistry().createBasicPublishBody(_session.getTicket(),
                                                                                         destination.getExchangeName(),

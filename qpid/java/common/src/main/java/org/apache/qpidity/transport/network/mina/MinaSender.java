@@ -58,6 +58,11 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         }
     }
 
+    public void flush()
+    {
+        // pass
+    }
+
     public synchronized void close()
     {
         // MINA will sometimes throw away in-progress writes when you

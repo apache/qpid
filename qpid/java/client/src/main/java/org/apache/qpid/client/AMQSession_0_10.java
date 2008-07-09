@@ -250,9 +250,9 @@ public class AMQSession_0_10 extends AMQSession
     public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable,
                                 final boolean exclusive, Map<String, Object> arguments) throws AMQException, FailoverException
     {
-        getQpidSession().queueDeclare(name.toString(), null, arguments, durable ? Option.DURABLE : Option.NO_OPTION,
-                                      autoDelete ? Option.AUTO_DELETE : Option.NO_OPTION,
-                                      exclusive ? Option.EXCLUSIVE : Option.NO_OPTION);
+        getQpidSession().queueDeclare(name.toString(), null, arguments, durable ? Option.DURABLE : Option.NONE,
+                                      autoDelete ? Option.AUTO_DELETE : Option.NONE,
+                                      exclusive ? Option.EXCLUSIVE : Option.NONE);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
@@ -387,7 +387,7 @@ public class AMQSession_0_10 extends AMQSession
                                               getAcknowledgeMode() == NO_ACKNOWLEDGE ? Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED:Session.TRANSFER_CONFIRM_MODE_REQUIRED,
                                               preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
                                               new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
-                                              consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
+                                              consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
         }
         catch (JMSException e)
         {
@@ -477,9 +477,9 @@ public class AMQSession_0_10 extends AMQSession
             arguments.put("no-local", true);
         }
         getQpidSession().queueDeclare(res.toString(), null, arguments,
-                                      amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NO_OPTION,
-                                      amqd.isDurable() ? Option.DURABLE : Option.NO_OPTION,
-                                      !amqd.isDurable() && amqd.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
+                                      amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
+                                      amqd.isDurable() ? Option.DURABLE : Option.NONE,
+                                      !amqd.isDurable() && amqd.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
         // passive --> false
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();

@@ -31,6 +31,8 @@ public interface Sender<T>
 
     void send(T msg);
 
+    void flush();
+
     void close();
 
 }

@@ -17,6 +17,8 @@ import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.RangeSet;
 
+import static org.apache.qpidity.transport.Option.*;
+
 /**
  * Implements a Qpid Sesion.
  */
@@ -66,8 +68,8 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         {
             super.processed(range);
         }
-        super.flushProcessed();
-        if( accept )
+        super.flushProcessed(accept ? BATCH : NONE);
+        if (accept)
         {
             messageAccept(ranges);
         }

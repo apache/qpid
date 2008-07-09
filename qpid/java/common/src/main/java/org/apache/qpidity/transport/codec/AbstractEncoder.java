@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,10 +65,13 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(byte[].class, Type.VBIN32);
     }
 
-    protected Sizer sizer()
+    private final Map<String,byte[]> str8cache = new LinkedHashMap<String,byte[]>()
     {
-        return new SizeEncoder();
-    }
+        @Override protected boolean removeEldestEntry(Map.Entry<String,byte[]> me)
+        {
+            return size() > 4*1024;
+        }
+    };
 
     protected abstract void doPut(byte b);
 
@@ -87,6 +91,15 @@ abstract class AbstractEncoder implements Encoder
     {
         put(ByteBuffer.wrap(bytes));
     }
+
+    protected abstract int beginSize8();
+    protected abstract void endSize8(int pos);
+
+    protected abstract int beginSize16();
+    protected abstract void endSize16(int pos);
+
+    protected abstract int beginSize32();
+    protected abstract void endSize32(int pos);
 
     public void writeUint8(short b)
     {
@@ -132,23 +145,6 @@ abstract class AbstractEncoder implements Encoder
         writeUint64(l);
     }
 
-    private static final String checkLength(String s, int n)
-    {
-        if (s == null)
-        {
-            return "";
-        }
-
-        if (s.length() > n)
-        {
-            throw new IllegalArgumentException("string too long: " + s);
-        }
-        else
-        {
-            return s;
-        }
-    }
-
     private static final byte[] encode(String s, String charset)
     {
         try
@@ -163,16 +159,31 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeStr8(String s)
     {
-        s = checkLength(s, 255);
-        writeUint8((short) s.length());
-        put(ByteBuffer.wrap(encode(s, "UTF-8")));
+        if (s == null)
+        {
+            s = "";
+        }
+
+        byte[] bytes = str8cache.get(s);
+        if (bytes == null)
+        {
+            bytes = encode(s, "UTF-8");
+            str8cache.put(s, bytes);
+        }
+        writeUint8((short) bytes.length);
+        put(bytes);
     }
 
     public void writeStr16(String s)
     {
-        s = checkLength(s, 65535);
-        writeUint16(s.length());
-        put(ByteBuffer.wrap(encode(s, "UTF-8")));
+        if (s == null)
+        {
+            s = "";
+        }
+
+        byte[] bytes = encode(s, "UTF-8");
+        writeUint16(bytes.length);
+        put(bytes);
     }
 
     public void writeVbin8(byte[] bytes)
@@ -245,18 +256,10 @@ abstract class AbstractEncoder implements Encoder
         }
 
         int width = s.getSizeWidth();
+        int pos = -1;
         if (width > 0)
         {
-            if (empty)
-            {
-                writeSize(width, 0);
-            }
-            else
-            {
-                Sizer sizer = sizer();
-                s.write(sizer);
-                writeSize(width, sizer.size());
-            }
+            pos = beginSize(width);
         }
 
         if (type > 0)
@@ -265,6 +268,11 @@ abstract class AbstractEncoder implements Encoder
         }
 
         s.write(this);
+
+        if (width > 0)
+        {
+            endSize(width, pos);
+        }
     }
 
     public void writeStruct32(Struct s)
@@ -275,12 +283,10 @@ abstract class AbstractEncoder implements Encoder
         }
         else
         {
-            Sizer sizer = sizer();
-            sizer.writeUint16(s.getEncodedType());
-            s.write(sizer);
-            writeUint32(sizer.size());
+            int pos = beginSize32();
             writeUint16(s.getEncodedType());
             s.write(this);
+            endSize32(pos);
         }
     }
 
@@ -338,18 +344,13 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeMap(Map<String,Object> map)
     {
-        if (map == null)
+        int pos = beginSize32();
+        if (map != null)
         {
-            writeUint32(0);
-            return;
+            writeUint32(map.size());
+            writeMapEntries(map);
         }
-
-        Sizer sizer = sizer();
-        sizer.writeMap(map);
-        // XXX: - 4
-        writeUint32(sizer.size() - 4);
-        writeUint32(map.size());
-        writeMapEntries(map);
+        endSize32(pos);
     }
 
     protected void writeMapEntries(Map<String,Object> map)
@@ -367,12 +368,13 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeList(List<Object> list)
     {
-        Sizer sizer = sizer();
-        sizer.writeList(list);
-        // XXX: - 4
-        writeUint32(sizer.size() - 4);
-        writeUint32(list.size());
-        writeListEntries(list);
+        int pos = beginSize32();
+        if (list != null)
+        {
+            writeUint32(list.size());
+            writeListEntries(list);
+        }
+        endSize32(pos);
     }
 
     protected void writeListEntries(List<Object> list)
@@ -387,16 +389,12 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeArray(List<Object> array)
     {
-        if (array == null)
+        int pos = beginSize32();
+        if (array != null)
         {
-            array = Collections.EMPTY_LIST;
+            writeArrayEntries(array);
         }
-
-        Sizer sizer = sizer();
-        sizer.writeArray(array);
-        // XXX: -4
-        writeUint32(sizer.size() - 4);
-        writeArrayEntries(array);
+        endSize32(pos);
     }
 
     protected void writeArrayEntries(List<Object> array)
@@ -452,6 +450,39 @@ abstract class AbstractEncoder implements Encoder
             break;
         case 4:
             writeUint32(size);
+            break;
+        default:
+            throw new IllegalStateException("illegal width: " + width);
+        }
+    }
+
+    private int beginSize(int width)
+    {
+        switch (width)
+        {
+        case 1:
+            return beginSize8();
+        case 2:
+            return beginSize16();
+        case 4:
+            return beginSize32();
+        default:
+            throw new IllegalStateException("illegal width: " + width);
+        }
+    }
+
+    private void endSize(int width, int pos)
+    {
+        switch (width)
+        {
+        case 1:
+            endSize8(pos);
+            break;
+        case 2:
+            endSize16(pos);
+            break;
+        case 4:
+            endSize32(pos);
             break;
         default:
             throw new IllegalStateException("illegal width: " + width);

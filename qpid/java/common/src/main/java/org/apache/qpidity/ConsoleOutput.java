@@ -41,6 +41,11 @@ public class ConsoleOutput implements Sender<ByteBuffer>
         System.out.println(str(buf));
     }
 
+    public void flush()
+    {
+        // pass
+    }
+
     public void close()
     {
         System.out.println("CLOSED");

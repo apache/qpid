@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpidity.transport.Binary;
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.transport.Struct;
 import org.apache.qpidity.transport.Type;
@@ -45,6 +46,14 @@ import static org.apache.qpidity.transport.util.Functions.*;
 abstract class AbstractDecoder implements Decoder
 {
 
+    private final Map<Binary,String> str8cache = new LinkedHashMap<Binary,String>()
+    {
+        @Override protected boolean removeEldestEntry(Map.Entry<Binary,String> me)
+        {
+            return size() > 4*1024;
+        }
+    };
+
     protected abstract byte doGet();
 
     protected abstract void doGet(byte[] bytes);
@@ -57,6 +66,13 @@ abstract class AbstractDecoder implements Decoder
     protected void get(byte[] bytes)
     {
         doGet(bytes);
+    }
+
+    protected Binary get(int size)
+    {
+        byte[] bytes = new byte[size];
+        get(bytes);
+        return new Binary(bytes);
     }
 
     protected short uget()
@@ -105,11 +121,11 @@ abstract class AbstractDecoder implements Decoder
         return readUint64();
     }
 
-    private static final String decode(byte[] bytes, String charset)
+    private static final String decode(byte[] bytes, int offset, int length, String charset)
     {
         try
         {
-            return new String(bytes, charset);
+            return new String(bytes, offset, length, charset);
         }
         catch (UnsupportedEncodingException e)
         {
@@ -117,13 +133,22 @@ abstract class AbstractDecoder implements Decoder
         }
     }
 
+    private static final String decode(byte[] bytes, String charset)
+    {
+        return decode(bytes, 0, bytes.length, charset);
+    }
 
     public String readStr8()
     {
         short size = readUint8();
-        byte[] bytes = new byte[size];
-        get(bytes);
-        return decode(bytes, "UTF-8");
+        Binary bin = get(size);
+        String str = str8cache.get(bin);
+        if (str == null)
+        {
+            str = decode(bin.array(), bin.offset(), bin.size(), "UTF-8");
+            str8cache.put(bin, str);
+        }
+        return str;
     }
 
     public String readStr16()
@@ -233,7 +258,19 @@ abstract class AbstractDecoder implements Decoder
     public Map<String,Object> readMap()
     {
         long size = readUint32();
+
+        if (size == 0)
+        {
+            return null;
+        }
+
         long count = readUint32();
+
+        if (count == 0)
+        {
+            return Collections.EMPTY_MAP;
+        }
+
         Map<String,Object> result = new LinkedHashMap();
         for (int i = 0; i < count; i++)
         {
@@ -243,13 +280,26 @@ abstract class AbstractDecoder implements Decoder
             Object value = read(t);
             result.put(key, value);
         }
+
         return result;
     }
 
     public List<Object> readList()
     {
         long size = readUint32();
+
+        if (size == 0)
+        {
+            return null;
+        }
+
         long count = readUint32();
+
+        if (count == 0)
+        {
+            return Collections.EMPTY_LIST;
+        }
+
         List<Object> result = new ArrayList();
         for (int i = 0; i < count; i++)
         {
@@ -264,14 +314,20 @@ abstract class AbstractDecoder implements Decoder
     public List<Object> readArray()
     {
         long size = readUint32();
+
         if (size == 0)
         {
-            return Collections.EMPTY_LIST;
+            return null;
         }
 
         byte code = get();
         Type t = getType(code);
         long count = readUint32();
+
+        if (count == 0)
+        {
+            return Collections.EMPTY_LIST;
+        }
 
         List<Object> result = new ArrayList<Object>();
         for (int i = 0; i < count; i++)
