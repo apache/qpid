@@ -23,6 +23,8 @@ package org.apache.qpidity.transport.codec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.apache.qpidity.transport.Binary;
+
 
 /**
  * BBDecoder
@@ -33,9 +35,9 @@ import java.nio.ByteOrder;
 public final class BBDecoder extends AbstractDecoder
 {
 
-    private final ByteBuffer in;
+    private ByteBuffer in;
 
-    public BBDecoder(ByteBuffer in)
+    public void init(ByteBuffer in)
     {
         this.in = in;
         this.in.order(ByteOrder.BIG_ENDIAN);
@@ -49,6 +51,21 @@ public final class BBDecoder extends AbstractDecoder
     protected void doGet(byte[] bytes)
     {
         in.get(bytes);
+    }
+
+    protected Binary get(int size)
+    {
+        if (in.hasArray())
+        {
+            byte[] bytes = in.array();
+            Binary bin = new Binary(bytes, in.arrayOffset() + in.position(), size);
+            in.position(in.position() + size);
+            return bin;
+        }
+        else
+        {
+            return super.get(size);
+        }
     }
 
     public boolean hasRemaining()

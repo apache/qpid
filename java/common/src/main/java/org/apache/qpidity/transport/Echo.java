@@ -49,10 +49,7 @@ public class Echo extends SessionDelegate
 
     public void data(Session ssn, Data data)
     {
-        for (ByteBuffer buf : data.getFragments())
-        {
-            ssn.data(buf);
-        }
+        ssn.data(data.getData());
         if (data.isLast())
         {
             ssn.endData();

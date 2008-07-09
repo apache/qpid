@@ -206,7 +206,7 @@ def get_fields(nd):
     index += 1
   return fields
 
-def get_parameters(fields):
+def get_parameters(type, fields):
   params = []
   options = False
   for f in fields:
@@ -214,11 +214,11 @@ def get_parameters(fields):
       options = True
     else:
       params.append("%s %s" % (f.type, f.name))
-  if options:
+  if options or type.name in ("control", "command"):
     params.append("Option ... _options")
   return params
 
-def get_arguments(fields):
+def get_arguments(type, fields):
   args = []
   options = False
   for f in fields:
@@ -226,7 +226,7 @@ def get_arguments(fields):
       options = True
     else:
       args.append(f.name)
-  if options:
+  if options or type.name in ("control", "command"):
     args.append("_options")
   return args
 

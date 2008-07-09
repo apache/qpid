@@ -56,6 +56,7 @@ public class Channel extends Invoker
     private Lock commandLock = new ReentrantLock();
     private boolean first = true;
     private ByteBuffer data = null;
+    private boolean batch = false;
 
     public Channel(Connection connection, int channel, SessionDelegate delegate)
     {
@@ -162,6 +163,13 @@ public class Channel extends Invoker
 
         emit(m);
 
+        if (!m.isBatch() && !m.hasPayload())
+        {
+            connection.flush();
+        }
+
+        batch = m.isBatch();
+
         if (m.getEncodedTrack() == Frame.L4 && !m.hasPayload())
         {
             commandLock.unlock();
@@ -199,6 +207,10 @@ public class Channel extends Invoker
         emit(new Data(data, first, true));
         first = true;
         data = null;
+        if (!batch)
+        {
+            connection.flush();
+        }
         commandLock.unlock();
     }
 
