@@ -22,13 +22,14 @@
  */
 
 #include "Dispatcher.h"
-#include "Socket.h"
 
 #include <boost/function.hpp>
 #include <deque>
 
 namespace qpid {
 namespace sys {
+    
+class Socket;
 
 /*
  * Asynchronous acceptor: accepts connections then does a callback with the
@@ -78,6 +79,23 @@ private:
     void failure(int, std::string);
 };
 
+struct AsynchIOBufferBase {
+    char* const bytes;
+    const int32_t byteCount;
+    int32_t dataStart;
+    int32_t dataCount;
+    
+    AsynchIOBufferBase(char* const b, const int32_t s) :
+        bytes(b),
+        byteCount(s),
+        dataStart(0),
+        dataCount(0)
+    {}
+    
+    virtual ~AsynchIOBufferBase()
+    {}
+};
+
 /*
  * Asychronous reader/writer: 
  * Reader accepts buffers to read into; reads into the provided buffers
@@ -92,22 +110,7 @@ private:
  */
 class AsynchIO : private DispatchHandle {
 public:
-    struct BufferBase {
-        char* const bytes;
-        const int32_t byteCount;
-        int32_t dataStart;
-        int32_t dataCount;
-        
-        BufferBase(char* const b, const int32_t s) :
-            bytes(b),
-            byteCount(s),
-            dataStart(0),
-            dataCount(0)
-        {}
-        
-        virtual ~BufferBase()
-        {}
-    };
+    typedef AsynchIOBufferBase BufferBase;
 
     typedef boost::function2<void, AsynchIO&, BufferBase*> ReadCallback;
     typedef boost::function1<void, AsynchIO&> EofCallback;

@@ -23,7 +23,6 @@
 
 #include "OutputControl.h"
 #include "ConnectionCodec.h"
-#include "AsynchIO.h"
 
 namespace qpid {
 
@@ -32,6 +31,11 @@ namespace framing {
 }
 
 namespace sys {
+
+class AsynchIO;
+class AsynchIOBufferBase;
+class Socket;
+
 class AsynchIOHandler : public OutputControl {
     std::string identifier;
     AsynchIO* aio;
@@ -54,7 +58,7 @@ class AsynchIOHandler : public OutputControl {
     void activateOutput();
 
     // Input side
-    void readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff);
+    void readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
     void eof(AsynchIO& aio);
     void disconnect(AsynchIO& aio);
 	

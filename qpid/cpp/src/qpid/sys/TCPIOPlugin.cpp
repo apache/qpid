@@ -24,6 +24,7 @@
 #include "AsynchIO.h"
 
 #include "qpid/Plugin.h"
+#include "qpid/sys/Socket.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 
@@ -112,7 +113,7 @@ void AsynchIOProtocolFactory::connect(
     Poller::shared_ptr poller,
     const std::string& host, int16_t port,
     ConnectionCodec::Factory* fact,
-    boost::function2<void, int, std::string> failed)
+    ConnectFailedCallback failed)
 {
     // Note that the following logic does not cause a memory leak.
     // The allocated Socket is freed either by the AsynchConnector

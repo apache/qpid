@@ -23,7 +23,6 @@
  */
 #include <map>
 #include <string>
-#include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
 
 namespace qpid {

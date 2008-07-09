@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/AsynchIO.h"
+#include "qpid/sys/Socket.h"
 #include "qpid/sys/Time.h"
 
 #include "check.h"
