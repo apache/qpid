@@ -23,6 +23,7 @@
  */
 
 #include <map>
+#include <boost/function.hpp>
 #include "Exchange.h"
 #include "MessageStore.h"
 #include "qpid/framing/FieldTable.h"
@@ -34,11 +35,10 @@ namespace broker {
     struct UnknownExchangeTypeException{};
 
     class ExchangeRegistry{
-        typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
-        ExchangeMap exchanges;
-        qpid::sys::RWlock lock;
-        management::Manageable* parent;
      public:
+        typedef boost::function4<Exchange::shared_ptr, const std::string&, 
+                                 bool, const qpid::framing::FieldTable&, qpid::management::Manageable*> FactoryFunction;
+
         ExchangeRegistry () : parent(0) {}
         std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
             throw(UnknownExchangeTypeException);
@@ -50,9 +50,20 @@ namespace broker {
         Exchange::shared_ptr getDefault();
 
         /**
-         * Register the manageable parent for declared queues
+         * Register the manageable parent for declared exchanges
          */
         void setParent (management::Manageable* _parent) { parent = _parent; }
+
+        void registerType(const std::string& type, FactoryFunction);
+      private:
+        typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
+        typedef std::map<std::string, FactoryFunction > FunctionMap;
+
+        ExchangeMap exchanges;
+        FunctionMap factory;
+        qpid::sys::RWlock lock;
+        management::Manageable* parent;
+
     };
 }
 }
