@@ -209,7 +209,7 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("bar", msg.getData());
     QueueQueryResult r = c2.session.queueQuery("q");
-    BOOST_CHECK_EQUAL(0, r.getMessageCount());
+    BOOST_CHECK_EQUAL(0u, r.getMessageCount());
 }
 
 // TODO aconway 2008-06-25: failover.
