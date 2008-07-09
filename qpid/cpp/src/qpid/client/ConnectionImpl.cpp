@@ -19,6 +19,7 @@
  *
  */
 #include "ConnectionImpl.h"
+#include "Connector.h"
 #include "ConnectionSettings.h"
 #include "SessionImpl.h"
 
@@ -38,7 +39,7 @@ using namespace qpid::framing::connection;//for connection error codes
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
     : Bounds(settings.maxFrameSize * settings.bounds),
       handler(settings, v),
-      connector(v, settings, this), 
+      connector(new Connector(v, settings, this)), 
       version(v), 
       isClosed(true),//closed until successfully opened 
       isClosing(false)
@@ -48,9 +49,9 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   NORMAL, std::string());
-    connector.setInputHandler(&handler);
-    connector.setTimeoutHandler(this);
-    connector.setShutdownHandler(this);
+    connector->setInputHandler(&handler);
+    connector->setTimeoutHandler(this);
+    connector->setShutdownHandler(this);
 
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
@@ -60,7 +61,7 @@ ConnectionImpl::~ConnectionImpl() {
     // Important to close the connector first, to ensure the
     // connector thread does not call on us while the destructor
     // is running.
-    connector.close(); 
+    connector->close(); 
 }
 
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session)
@@ -97,8 +98,8 @@ bool ConnectionImpl::isOpen() const
 void ConnectionImpl::open(const std::string& host, int port)
 {
     QPID_LOG(info, "Connecting to " << host << ":" << port);
-    connector.connect(host, port);
-    connector.init();
+    connector->connect(host, port);
+    connector->init();
     handler.waitForOpen();    
     Mutex::ScopedLock l(lock);
     isClosed = false;
@@ -112,7 +113,7 @@ void ConnectionImpl::idleIn()
 void ConnectionImpl::idleOut()
 {
     AMQFrame frame(in_place<AMQHeartbeatBody>());
-    connector.send(frame);
+    connector->send(frame);
 }
 
 void ConnectionImpl::close()
@@ -130,8 +131,8 @@ void ConnectionImpl::close()
 
 template <class F> void ConnectionImpl::closeInternal(const F& f) {
     isClosed = true;
-    connector.close();
-    for (SessionMap::iterator i=sessions.begin(); i != sessions.end(); ++i) {
+    connector->close();
+    for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         boost::shared_ptr<SessionImpl> s = i->second.lock();
         if (s) f(s);
     }

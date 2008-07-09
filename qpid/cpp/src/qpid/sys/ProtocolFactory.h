@@ -35,6 +35,8 @@ class Poller;
 class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
 {
   public:
+    typedef boost::function2<void, int, std::string> ConnectFailedCallback;
+
     virtual ~ProtocolFactory() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
@@ -43,7 +45,7 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
         boost::shared_ptr<Poller>,
         const std::string& host, int16_t port,
         ConnectionCodec::Factory* codec,
-        boost::function2<void, int, std::string> failed) = 0;
+        ConnectFailedCallback failed) = 0;
 };
 
 inline ProtocolFactory::~ProtocolFactory() {}

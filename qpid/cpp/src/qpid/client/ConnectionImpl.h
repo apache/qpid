@@ -24,7 +24,6 @@
 
 #include "Bounds.h"
 #include "ConnectionHandler.h"
-#include "Connector.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
@@ -33,11 +32,13 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
 namespace qpid {
 namespace client {
 
+class Connector;
 class ConnectionSettings;
 class SessionImpl;
 
@@ -52,7 +53,7 @@ class ConnectionImpl : public Bounds,
 
     SessionMap sessions; 
     ConnectionHandler handler;
-    Connector connector;
+    boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
     sys::Mutex lock;
     bool isClosed;
