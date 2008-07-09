@@ -67,7 +67,12 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
         }
 #endif
 	else{
-            throw UnknownExchangeTypeException();    
+            FunctionMap::iterator i =  factory.find(type);
+            if (i == factory.end()) {
+                throw UnknownExchangeTypeException();    
+            } else {
+                exchange = i->second(name, durable, args, parent);
+            }
         }
         exchanges[name] = exchange;
         return std::pair<Exchange::shared_ptr, bool>(exchange, true);
@@ -91,6 +96,12 @@ Exchange::shared_ptr ExchangeRegistry::get(const string& name){
         throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
     return i->second;
 }
+
+void ExchangeRegistry::registerType(const std::string& type, FactoryFunction f)
+{
+    factory[type] = f;
+}
+
 
 namespace 
 {
