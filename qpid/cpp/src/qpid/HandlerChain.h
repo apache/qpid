@@ -58,7 +58,7 @@ class HandlerChain {
 
     /** HandlerChain owns the ChainableHandler. */
     void push(HandlerAutoPtr h) {
-        handlers.push_back(h);
+      handlers.push_back(h.release());
         h->setNext(first);
         first = h.get();
     }
