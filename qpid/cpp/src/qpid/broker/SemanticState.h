@@ -115,7 +115,6 @@ class SemanticState : public sys::OutputTask,
     bool dtxSelected;
     DtxBufferMap suspendedXids;
     framing::SequenceSet accumulatedAck;
-    bool flowActive;
     boost::shared_ptr<Exchange> cacheExchange;
     sys::AggregateOutput outputTasks;
     
@@ -174,7 +173,6 @@ class SemanticState : public sys::OutputTask,
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void recover(bool requeue);
-    void flow(bool active);
     DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
