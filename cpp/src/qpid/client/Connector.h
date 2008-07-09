@@ -34,13 +34,18 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/Time.h"
-#include "qpid/sys/AsynchIO.h"
 
 #include <queue>
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
+
+namespace sys {
+class Poller;
+class AsynchIO;
+class AsynchIOBufferBase;
+}
 	
 namespace client {
 
@@ -56,7 +61,7 @@ class Connector : public framing::OutputHandler,
 
     /** Batch up frames for writing to aio. */
     class Writer : public framing::FrameHandler {
-        typedef sys::AsynchIO::BufferBase BufferBase;
+        typedef sys::AsynchIOBufferBase BufferBase;
         typedef std::vector<framing::AMQFrame> Frames;
 
         const uint16_t maxFrameSize;
@@ -109,7 +114,7 @@ class Connector : public framing::OutputHandler,
     sys::Socket socket;
 
     sys::AsynchIO* aio;
-    sys::Poller::shared_ptr poller;
+    boost::shared_ptr<sys::Poller> poller;
 
     void checkIdle(ssize_t status);
     void setSocketTimeout();
@@ -118,7 +123,7 @@ class Connector : public framing::OutputHandler,
     void handleClosed();
     bool closeInternal();
     
-    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIO::BufferBase*);
+    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void writebuff(qpid::sys::AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::AsynchIO&);
