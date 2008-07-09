@@ -65,9 +65,9 @@ public interface Session
 
     public void close();
 
-    public void sessionDetach(byte[] name);
+    public void sessionDetach(byte[] name, Option ... options);
 
-    public void sessionRequestTimeout(long expiry);
+    public void sessionRequestTimeout(long expiry, Option ... options);
 
     public byte[] getName();
 
@@ -153,7 +153,8 @@ public interface Session
      * 
      * @param acquireMode Indicates whether or not the transferred message has been acquired.
      */
-    public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode);
+    public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode,
+                                Option ... options);
 
     /**
      * Make a set of headers to be sent together with a message
@@ -207,7 +208,7 @@ public interface Session
      * <ul>
      * <li>{@link Option#EXCLUSIVE}: <p> Requests exclusive subscription access, so that only this
      * subscription can access the queue.
-     * <li>{@link Option#NO_OPTION}: <p> This is an empty option, and has no effect.
+     * <li>{@link Option#NONE}: <p> This is an empty option, and has no effect.
      * </ul>
      *
      * @param queue       The queue that the receiver is receiving messages from.
@@ -230,7 +231,7 @@ public interface Session
      * @param listener    The listener for this destination. To transfer large messages
      *                    use a {@link org.apache.qpidity.nclient.MessagePartListener}.
      * @param options     Set of options. Valid options are {{@link Option#EXCLUSIVE}
-     *                    and {@link Option#NO_OPTION}.
+     *                    and {@link Option#NONE}.
      * @param filter      A set of filters for the subscription. The syntax and semantics of these filters varies
      *                    according to the provider's implementation.
      */
@@ -246,7 +247,7 @@ public interface Session
      *
      * @param destination The destination to be cancelled.
      */
-    public void messageCancel(String destination);
+    public void messageCancel(String destination, Option ... options);
 
     /**
      * Associate a message listener with a destination.
@@ -274,7 +275,7 @@ public interface Session
      * @param mode        <ul> <li>credit ({@link Session#MESSAGE_FLOW_MODE_CREDIT}): choose credit based flow control
      *                    <li> window ({@link Session#MESSAGE_FLOW_MODE_WINDOW}): choose window based flow control</ul>
      */
-    public void messageSetFlowMode(String destination, MessageFlowMode mode);
+    public void messageSetFlowMode(String destination, MessageFlowMode mode, Option ... options);
 
 
     /**
@@ -295,7 +296,7 @@ public interface Session
      *                    </ul>
      * @param value       Number of credits, a value of 0 indicates an infinite amount of credit.
      */
-    public void messageFlow(String destination, MessageCreditUnit unit, long value);
+    public void messageFlow(String destination, MessageCreditUnit unit, long value, Option ... options);
 
     /**
      * Forces the broker to exhaust its credit supply.
@@ -304,7 +305,7 @@ public interface Session
      *
      * @param destination The destination on which the credit supply is to be exhausted.
      */
-    public void messageFlush(String destination);
+    public void messageFlush(String destination, Option ... options);
 
     /**
      * On receipt of this method, the brokers set credit to zero for a given
@@ -314,7 +315,7 @@ public interface Session
      *
      * @param destination The destination on which to reset credit.
      */
-    public void messageStop(String destination);
+    public void messageStop(String destination, Option ... options);
 
     /**
      * Acknowledge the receipt of a range of messages.
@@ -338,7 +339,7 @@ public interface Session
      *               failed).
      * @param text   String describing the reason for a message transfer rejection.
      */
-    public void messageReject(RangeSet ranges, MessageRejectCode code, String text);
+    public void messageReject(RangeSet ranges, MessageRejectCode code, String text, Option ... options);
 
     /**
      * As it is possible that the broker does not manage to reject some messages, after completion of
@@ -367,7 +368,7 @@ public interface Session
      * @param ranges Ranges of messages to be acquired.
      * @return Indicates the acquired messages
      */
-    public Future<Acquired> messageAcquire(RangeSet ranges);
+    public Future<Acquired> messageAcquire(RangeSet ranges, Option ... options);
 
     /**
      * Give up responsibility for processing ranges of messages.
@@ -384,21 +385,21 @@ public interface Session
     /**
      * Selects the session for local transaction support.
      */
-    public void txSelect();
+    public void txSelect(Option ... options);
 
     /**
      * Commit the receipt and delivery of all messages exchanged by this session's resources.
      *
      * @throws IllegalStateException If this session is not transacted, an exception will be thrown.
      */
-    public void txCommit() throws IllegalStateException;
+    public void txCommit(Option ... options) throws IllegalStateException;
 
     /**
      * Roll back the receipt and delivery of all messages exchanged by this session's resources.
      *
      * @throws IllegalStateException If this session is not transacted, an exception will be thrown.
      */
-    public void txRollback() throws IllegalStateException;
+    public void txRollback(Option ... options) throws IllegalStateException;
 
     //---------------------------------------------
     //            Queue methods
@@ -423,7 +424,7 @@ public interface Session
      * declaring connection closes.
      * <li> {@link Option#PASSIVE}: <p> If set, the server will not create the queue.
      * This field allows the client to assert the presence of a queue without modifying the server state.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an �empty� option.
+     * <li>{@link Option#NONE}: <p> Has no effect as it represents an �empty� option.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option
      *
@@ -435,7 +436,7 @@ public interface Session
      *                          the queue. </ol>
      * @param arguments         Used for backward compatibility
      * @param options           Set of Options ( valide options are: {@link Option#AUTO_DELETE}, {@link Option#DURABLE},
-     *                          {@link Option#EXCLUSIVE}, {@link Option#PASSIVE} and  {@link Option#NO_OPTION})
+     *                          {@link Option#EXCLUSIVE}, {@link Option#PASSIVE} and  {@link Option#NONE})
      * @see Option
      */
     public void queueDeclare(String queueName, String alternateExchange, Map<String, Object> arguments,
@@ -456,7 +457,8 @@ public interface Session
      *                     routing keys depends on the exchange implementation.
      * @param arguments    Used for backward compatibility
      */
-    public void exchangeBind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
+    public void exchangeBind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments,
+                             Option ... options);
 
     /**
      * Unbind a queue from an exchange.
@@ -465,7 +467,7 @@ public interface Session
      * @param exchangeName The name of the exchange to unbind from.
      * @param routingKey   Specifies the routing key of the binding to unbind.
      */
-    public void exchangeUnbind(String queueName, String exchangeName, String routingKey);
+    public void exchangeUnbind(String queueName, String exchangeName, String routingKey, Option ... options);
 
     /**
      * This method removes all messages from a queue. It does not cancel consumers. Purged messages
@@ -474,7 +476,7 @@ public interface Session
      * @param queueName Specifies the name of the queue to purge. If the queue name is empty, refers to the
      *                  current queue for the session, which is the last declared queue.
      */
-    public void queuePurge(String queueName);
+    public void queuePurge(String queueName, Option ... options);
 
     /**
      * This method deletes a queue. When a queue is deleted any pending messages are sent to a
@@ -485,7 +487,7 @@ public interface Session
      * <li> {@link Option#IF_EMPTY}: <p>  If set, the server will only delete the queue if it has no messages.
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the queue if it has no consumers.
      * If the queue has consumers the server does does not delete it but raises a channel exception instead.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an �empty� option.
+     * <li>{@link Option#NONE}: <p> Has no effect as it represents an �empty� option.
      * </ul>
      * </p>
      * <p/>
@@ -494,7 +496,7 @@ public interface Session
      * @param queueName Specifies the name of the queue to delete. If the queue name is empty, refers to the
      *                  current queue for the session, which is the last declared queue.
      * @param options   Set of options (Valid options are: {@link Option#IF_EMPTY}, {@link Option#IF_UNUSED}
-     *                  and {@link Option#NO_OPTION})
+     *                  and {@link Option#NONE})
      * @see Option
      */
     public void queueDelete(String queueName, Option... options);
@@ -506,7 +508,7 @@ public interface Session
      * @param queueName The name of the queue for which information is requested.
      * @return Information on the specified queue.
      */
-    public Future<QueueQueryResult> queueQuery(String queueName);
+    public Future<QueueQueryResult> queueQuery(String queueName, Option ... options);
 
 
     /**
@@ -519,7 +521,7 @@ public interface Session
      * @return Information on the specified binding.
      */
     public Future<ExchangeBoundResult> exchangeBound(String exchange, String queue, String routingKey,
-                                                     Map<String, Object> arguments);
+                                                     Map<String, Object> arguments, Option ... options);
 
     // --------------------------------------
     //              exhcange methods
@@ -536,7 +538,7 @@ public interface Session
      * exchanges) are purged when a server restarts.
      * <li>{@link Option#PASSIVE}: <p>If set, the server will not create the exchange.
      * The client can use this to check whether an exchange exists without modifying the server state.
-     * <li> {@link Option#NO_OPTION}: <p>This option is an empty option, and has no effect.
+     * <li> {@link Option#NONE}: <p>This option is an empty option, and has no effect.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option</p>
      *
@@ -548,7 +550,7 @@ public interface Session
      * @param alternateExchange In the event that a message cannot be routed, this is the name of the exchange to which
      *                          the message will be sent.
      * @param options           Set of options (valid options are: {@link Option#AUTO_DELETE}, {@link Option#DURABLE},
-     *                          {@link Option#PASSIVE}, {@link Option#NO_OPTION})
+     *                          {@link Option#PASSIVE}, {@link Option#NONE})
      * @param arguments         Used for backward compatibility
      * @see Option
      */
@@ -563,12 +565,12 @@ public interface Session
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the exchange if it has no queue bindings. If the
      * exchange has queue bindings the server does not delete it but raises a channel exception
      * instead.
-     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an empty option.
+     * <li> {@link Option#NONE}: <p> Has no effect as it represents an empty option.
      * </ul>
      * <p>Note that if an option is not set, it will default to false.
      *
      * @param exchangeName The name of exchange to be deleted.
-     * @param options      Set of options. Valid options are:  {@link Option#IF_UNUSED}, {@link Option#NO_OPTION}.
+     * @param options      Set of options. Valid options are:  {@link Option#IF_UNUSED}, {@link Option#NONE}.
      * @see Option
      */
     public void exchangeDelete(String exchangeName, Option... options);
@@ -581,7 +583,7 @@ public interface Session
      *                     return information about the default exchange.
      * @return Information on the specified exchange.
      */
-    public Future<ExchangeQueryResult> exchangeQuery(String exchangeName);
+    public Future<ExchangeQueryResult> exchangeQuery(String exchangeName, Option ... options);
 
     /**
      * If the session receives a sessionClosed with an error code it

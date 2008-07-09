@@ -42,6 +42,7 @@ public abstract class Method extends Struct implements ProtocolEvent
     private int id;
     private boolean idSet = false;
     private boolean sync = false;
+    private boolean batch = false;
 
     public final int getId()
     {
@@ -59,9 +60,19 @@ public abstract class Method extends Struct implements ProtocolEvent
         return sync;
     }
 
-    void setSync(boolean value)
+    final void setSync(boolean value)
     {
         this.sync = value;
+    }
+
+    public final boolean isBatch()
+    {
+        return batch;
+    }
+
+    final void setBatch(boolean value)
+    {
+        this.batch = value;
     }
 
     public abstract boolean hasPayload();
@@ -84,26 +95,30 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     public String toString()
     {
-        if (getEncodedTrack() != Frame.L4)
-        {
-            return super.toString();
-        }
-
         StringBuilder str = new StringBuilder();
 
-        if (idSet)
+        if (getEncodedTrack() == Frame.L4 && idSet)
         {
             str.append("id=");
             str.append(id);
         }
 
-        if (sync)
+        if (sync || batch)
         {
             if (str.length() > 0)
             {
                 str.append(" ");
             }
-            str.append(" [sync]");
+            str.append("[");
+            if (sync)
+            {
+                str.append("S");
+            }
+            if (batch)
+            {
+                str.append("B");
+            }
+            str.append("]");
         }
 
         if (str.length() > 0)

@@ -15,5 +15,6 @@ for c in composites:
       if not options.has_key(option):
         options[option] = None
         out("    $option,\n")}
-    NO_OPTION
+    BATCH,
+    NONE
 }

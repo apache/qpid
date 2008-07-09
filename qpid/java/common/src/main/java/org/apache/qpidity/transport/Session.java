@@ -130,7 +130,7 @@ public class Session extends Invoker
         log.debug("ID: [%s] %s", this.channel, id);
         if ((id % 65536) == 0)
         {
-            flushProcessed(true);
+            flushProcessed(TIMELY_REPLY);
         }
     }
 
@@ -166,19 +166,14 @@ public class Session extends Invoker
         }
     }
 
-    public void flushProcessed()
-    {
-        flushProcessed(false);
-    }
-
-    private void flushProcessed(boolean timely_reply)
+    public void flushProcessed(Option ... options)
     {
         RangeSet copy;
         synchronized (processedLock)
         {
             copy = processed.copy();
         }
-        sessionCompleted(copy, timely_reply ? TIMELY_REPLY : NO_OPTION);
+        sessionCompleted(copy, options);
     }
 
     void knownComplete(RangeSet kc)
@@ -353,9 +348,7 @@ public class Session extends Invoker
 
             if (needSync && lt(maxComplete, point))
             {
-                ExecutionSync sync = new ExecutionSync();
-                sync.setSync(true);
-                invoke(sync);
+                executionSync(SYNC);
             }
 
             long start = System.currentTimeMillis();

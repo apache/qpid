@@ -55,7 +55,7 @@ public class TopicListener implements MessageListener
                                  Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                  Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
                                  new MessagePartListenerAdapter(this),
-                                 null, Option.NO_OPTION);
+                                 null, Option.NONE);
         // issue credits
         // XXX: need to be able to set to null
         session.messageFlow(queueName, MessageCreditUnit.BYTE, Session.MESSAGE_FLOW_MAX_BYTES);

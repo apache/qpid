@@ -83,7 +83,7 @@ public interface DtxSession extends Session
      *
      * @param xid Specifies the xid of the transaction branch to be forgotten.
      */
-    public void dtxForget(Xid xid);
+    public void dtxForget(Xid xid, Option ... options);
 
     /**
      * This method obtains the current transaction timeout value in seconds. If set-timeout was not
@@ -93,7 +93,7 @@ public interface DtxSession extends Session
      * @param xid Specifies the xid of the transaction branch used for getting the timeout.
      * @return The current transaction timeout value in seconds.
      */
-    public Future<GetTimeoutResult> dtxGetTimeout(Xid xid);
+    public Future<GetTimeoutResult> dtxGetTimeout(Xid xid, Option ... options);
 
     /**
      * This method prepares any message produced or consumed on behalf of xid, ready for commitment.
@@ -109,14 +109,14 @@ public interface DtxSession extends Session
      *         <p/>
      *         xa-rbtimeout: The work represented by this transaction branch took too long.
      */
-    public Future<XaResult> dtxPrepare(Xid xid);
+    public Future<XaResult> dtxPrepare(Xid xid, Option ... options);
 
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
      * heuristically completed state.
      * @return a array of xids to be recovered.
      */
-    public Future<RecoverResult> dtxRecover();
+    public Future<RecoverResult> dtxRecover(Option ... options);
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
@@ -125,7 +125,7 @@ public interface DtxSession extends Session
      * @param xid Specifies the xid of the transaction branch to be rolled back.
      * @return Confirms to the client that the transaction branch is rolled back or specifies the error condition.
      */
-    public Future<XaResult> dtxRollback(Xid xid);
+    public Future<XaResult> dtxRollback(Xid xid, Option ... options);
 
     /**
      * Sets the specified transaction branch timeout value in seconds.
@@ -133,5 +133,5 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch for setting the timeout.
      * @param timeout The transaction timeout value in seconds.
      */
-    public void dtxSetTimeout(Xid xid, long timeout);
+    public void dtxSetTimeout(Xid xid, long timeout, Option ... options);
 }

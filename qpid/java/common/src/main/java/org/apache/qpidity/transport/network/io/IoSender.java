@@ -55,6 +55,11 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
         write(buf);
     }
 
+    public void flush()
+    {
+        // pass
+    }
+
     /* The extra copying sucks.
      * If I know for sure that the buf is backed
      * by an array then I could do buf.array()

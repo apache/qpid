@@ -68,8 +68,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
      * Sends a message to a given destination
      */
     void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
-                     int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate,
-                     boolean wait) throws JMSException
+                     UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
+                     boolean immediate, boolean wait) throws JMSException
     {
         message.prepareForSending();
         if (message.get010Message() == null)
@@ -84,7 +84,16 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         DeliveryProperties deliveryProp = message.get010Message().getDeliveryProperties();
         MessageProperties messageProps = message.get010Message().getMessageProperties();
-        // set the delivery properties
+
+        if (messageId != null)
+        {
+            messageProps.setMessageId(messageId);
+        }
+        else if (messageProps.hasMessageId())
+        {
+            messageProps.clearMessageId();
+        }
+
         if (!_disableTimestamps)
         {
             final long currentTime = System.currentTimeMillis();
@@ -141,13 +150,6 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             // set the application properties
             messageProps.setContentType(contentHeaderProperties.getContentType().toString());
             messageProps.setContentLength(message.getContentLength());
-
-            // XXX: fixme
-            String mid = message.getJMSMessageID();
-            if( mid != null )
-            {
-                messageProps.setMessageId(UUID.fromString(mid.substring(3)));
-            }
 
             AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
             if (correlationID != null)
