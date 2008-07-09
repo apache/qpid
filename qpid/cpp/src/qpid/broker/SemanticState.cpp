@@ -62,7 +62,6 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       prefetchCount(0),
       tagGenerator("sgen"),
       dtxSelected(false),
-      flowActive(true),
       outputTasks(ss)
 {
     outstanding.reset();
@@ -288,7 +287,7 @@ bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message> msg)
 
 bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
 {
-    blocked = !(filter(msg) && checkCredit(msg) && parent->flowActive && (!ackExpected || parent->checkPrefetch(msg)));
+    blocked = !(filter(msg) && checkCredit(msg) && (!ackExpected || parent->checkPrefetch(msg)));
     return !blocked;
 }
 
@@ -442,17 +441,6 @@ DeliveryId SemanticState::redeliver(QueuedMessage& msg, DeliveryToken::shared_pt
 {
     return deliveryAdapter.deliver(msg, token);
 }
-
-void SemanticState::flow(bool active)
-{
-    bool requestDelivery(!flowActive && active);
-    flowActive = active;
-    if (requestDelivery) {
-        //there may be messages that can be now be delivered
-        requestDispatch();
-    }
-}
-
 
 SemanticState::ConsumerImpl& SemanticState::find(const std::string& destination)
 {
