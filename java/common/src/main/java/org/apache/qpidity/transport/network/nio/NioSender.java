@@ -47,6 +47,11 @@ public class NioSender implements Sender<java.nio.ByteBuffer>
         }
     }
 
+    public void flush()
+    {
+        // pass
+    }
+
     private void write(java.nio.ByteBuffer buf)
     {
         synchronized (lock)

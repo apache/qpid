@@ -76,7 +76,7 @@ public class XAResourceImpl implements XAResource
             _logger.debug("commit tx branch with xid:  ", xid);
         }
         Future<XaResult> future =
-                _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
+                _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NONE);
 
         // now wait on the future for the result
         XaResult result = null;
@@ -129,8 +129,8 @@ public class XAResourceImpl implements XAResource
         }
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxEnd(convertXid(xid),
-                        flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
-                        flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
+                        flag == XAResource.TMFAIL ? Option.FAIL : Option.NONE,
+                        flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NONE);
         // now wait on the future for the result
         XaResult result = null;
         try
@@ -400,8 +400,8 @@ public class XAResourceImpl implements XAResource
         }
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxStart(convertXid(xid),
-                        flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
-                        flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
+                        flag == XAResource.TMJOIN ? Option.JOIN : Option.NONE,
+                        flag == XAResource.TMRESUME ? Option.RESUME : Option.NONE);
         // now wait on the future for the result
         XaResult result = null;
         try

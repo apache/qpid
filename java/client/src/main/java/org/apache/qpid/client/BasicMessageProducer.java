@@ -453,19 +453,21 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             }
         }
 
+        UUID messageId = null;
         if (_disableMessageId)
         {
             message.setJMSMessageID(null);
         }
         else
         {
+            messageId = UUID.randomUUID();
             StringBuilder b = new StringBuilder(39);
             b.append("ID:");
-            b.append(UUID.randomUUID());
+            b.append(messageId);
             message.setJMSMessageID(b.toString());
         }
 
-        sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
+        sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
 
         if (message != origMessage)
         {
@@ -484,8 +486,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     }
 
     abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
-                              int deliveryMode, int priority, long timeToLive, boolean mandatory,
-                              boolean immediate, boolean wait)throws JMSException;
+                              UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
+                              boolean immediate, boolean wait) throws JMSException;
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {

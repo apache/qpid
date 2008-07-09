@@ -79,7 +79,7 @@ public class InputHandler implements Receiver<ByteBuffer>
     private byte track;
     private int channel;
     private int size;
-    private Frame frame;
+    private ByteBuffer body;
 
     public InputHandler(Receiver<NetworkEvent> receiver, State state)
     {
@@ -99,9 +99,9 @@ public class InputHandler implements Receiver<ByteBuffer>
 
     private void frame()
     {
+        Frame frame = new Frame(flags, type, track, channel, body);
         assert size == frame.getSize();
         receiver.received(frame);
-        frame = null;
     }
 
     private void error(String fmt, Object ... args)
@@ -191,30 +191,28 @@ public class InputHandler implements Receiver<ByteBuffer>
                 return ERROR;
             }
 
-            frame = new Frame(flags, type, track, channel);
             if (size > buf.remaining()) {
-                frame.addFragment(buf.slice());
-                buf.position(buf.limit());
+                body = ByteBuffer.allocate(size);
+                body.put(buf);
                 return FRAME_FRAGMENT;
             } else {
-                ByteBuffer payload = buf.slice();
-                payload.limit(size);
+                body = buf.slice();
+                body.limit(size);
                 buf.position(buf.position() + size);
-                frame.addFragment(payload);
                 frame();
                 return FRAME_HDR;
             }
         case FRAME_FRAGMENT:
-            int delta = size - frame.getSize();
+            int delta = body.remaining();
             if (delta > buf.remaining()) {
-                frame.addFragment(buf.slice());
-                buf.position(buf.limit());
+                body.put(buf);
                 return FRAME_FRAGMENT;
             } else {
                 ByteBuffer fragment = buf.slice();
                 fragment.limit(delta);
                 buf.position(buf.position() + delta);
-                frame.addFragment(fragment);
+                body.put(fragment);
+                body.flip();
                 frame();
                 return FRAME_HDR;
             }

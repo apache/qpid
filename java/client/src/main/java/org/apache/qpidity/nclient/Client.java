@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.client.url.URLParser_0_10;
 import org.apache.qpid.jms.BrokerDetails;
@@ -60,6 +59,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     private static Logger _logger = LoggerFactory.getLogger(Client.class);
     private Condition closeOk;
     private boolean closed = false;
+    private long timeout = 60000;
 
     /**
      *
@@ -191,7 +191,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
         try
         {
-            negotiationComplete.await();
+            negotiationComplete.await(timeout, TimeUnit.MILLISECONDS);
             if( connectionDelegate.getUnsupportedProtocol() != null )
             {
                 _conn.close();
@@ -202,7 +202,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
         catch (InterruptedException e)
         {
-            //
+            throw new RuntimeException(e);
         }
         finally
         {
@@ -257,7 +257,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
         {
             try
             {
-                long timeout = 60000;
                 long start = System.currentTimeMillis();
                 long elapsed = 0;
                 while (!closed && elapsed < timeout)

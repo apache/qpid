@@ -80,7 +80,7 @@ if pack > 0:
   out("    private $(PACK_TYPES[pack]) packing_flags = 0;\n");
 
 fields = get_fields(type)
-params = get_parameters(fields)
+params = get_parameters(type, fields)
 options = get_options(fields)
 
 for f in fields:
@@ -99,7 +99,7 @@ for f in fields:
   if f.option: continue
   out("        $(f.set)($(f.name));\n")
 
-if options:
+if options or base == "Method":
   out("""
         for (int i=0; i < _options.length; i++) {
             switch (_options[i]) {
@@ -108,7 +108,11 @@ if options:
   for f in options:
     out("            case $(f.option): packing_flags |= $(f.flag_mask(pack)); break;\n")
 
-  out("""            case NO_OPTION: break;
+  if base == "Method":
+    out("""            case SYNC: this.setSync(true); break;
+            case BATCH: this.setBatch(true); break;
+""")
+  out("""            case NONE: break;
             default: throw new IllegalArgumentException("invalid option: " + _options[i]);
             }
         }

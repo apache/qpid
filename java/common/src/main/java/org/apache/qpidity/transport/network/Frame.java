@@ -38,7 +38,7 @@ import static org.apache.qpidity.transport.util.Functions.*;
  * @author Rafael H. Schloming
  */
 
-public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
+public final class Frame implements NetworkEvent
 {
     public static final int HEADER_SIZE = 12;
 
@@ -61,23 +61,21 @@ public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
     final private SegmentType type;
     final private byte track;
     final private int channel;
-    final private List<ByteBuffer> fragments;
-    private int size;
+    final private ByteBuffer body;
 
-    public Frame(byte flags, SegmentType type, byte track, int channel)
+    public Frame(byte flags, SegmentType type, byte track, int channel,
+                 ByteBuffer body)
     {
         this.flags = flags;
         this.type = type;
         this.track = track;
         this.channel = channel;
-        this.size = 0;
-        this.fragments = new ArrayList<ByteBuffer>();
+        this.body = body;
     }
 
-    public void addFragment(ByteBuffer fragment)
+    public ByteBuffer getBody()
     {
-        fragments.add(fragment);
-        size += fragment.remaining();
+        return body.slice();
     }
 
     public byte getFlags()
@@ -92,7 +90,7 @@ public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
 
     public int getSize()
     {
-        return size;
+        return body.remaining();
     }
 
     public SegmentType getType()
@@ -130,16 +128,6 @@ public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
         return flag(LAST_FRAME);
     }
 
-    public Iterator<ByteBuffer> getFragments()
-    {
-        return new SliceIterator(fragments.iterator());
-    }
-
-    public Iterator<ByteBuffer> iterator()
-    {
-        return getFragments();
-    }
-
     public void delegate(NetworkDelegate delegate)
     {
         delegate.frame(this);
@@ -148,26 +136,14 @@ public final class Frame implements NetworkEvent, Iterable<ByteBuffer>
     public String toString()
     {
         StringBuilder str = new StringBuilder();
+
         str.append(String.format
                    ("[%05d %05d %1d %s %d%d%d%d] ", getChannel(), getSize(),
                     getTrack(), getType(),
                     isFirstSegment() ? 1 : 0, isLastSegment() ? 1 : 0,
                     isFirstFrame() ? 1 : 0, isLastFrame() ? 1 : 0));
 
-        boolean first = true;
-        for (ByteBuffer buf : this)
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                str.append(" | ");
-            }
-
-            str.append(str(buf));
-        }
+        str.append(str(body));
 
         return str.toString();
     }

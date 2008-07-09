@@ -69,6 +69,7 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
         synchronized (lock)
         {
             sender.send(header.toByteBuffer());
+            sender.flush();
         }
     }
 
@@ -79,32 +80,40 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
             frames.add(frame);
             bytes += HEADER_SIZE + frame.getSize();
 
-            if (frame.isLastFrame() && frame.isLastSegment() || bytes > 64*1024)
+            if (bytes > 64*1024)
             {
-                ByteBuffer buf = ByteBuffer.allocate(bytes);
-                for (Frame f : frames)
-                {
-                    buf.put(f.getFlags());
-                    buf.put((byte) f.getType().getValue());
-                    buf.putShort((short) (f.getSize() + HEADER_SIZE));
-                    // RESERVED
-                    buf.put(RESERVED);
-                    buf.put(f.getTrack());
-                    buf.putShort((short) f.getChannel());
-                    // RESERVED
-                    buf.putInt(0);
-                    for(ByteBuffer frg : f)
-                    {
-                        buf.put(frg);
-                    }
-                }
-                buf.flip();
-
-                frames.clear();
-                bytes = 0;
-
-                sender.send(buf);
+                flush();
             }
+        }
+    }
+
+    public void flush()
+    {
+        synchronized (lock)
+        {
+            ByteBuffer buf = ByteBuffer.allocate(bytes);
+            int nframes = frames.size();
+            for (int i = 0; i < nframes; i++)
+            {
+                Frame frame = frames.get(i);
+                buf.put(frame.getFlags());
+                buf.put((byte) frame.getType().getValue());
+                buf.putShort((short) (frame.getSize() + HEADER_SIZE));
+                // RESERVED
+                buf.put(RESERVED);
+                buf.put(frame.getTrack());
+                buf.putShort((short) frame.getChannel());
+                // RESERVED
+                buf.putInt(0);
+                buf.put(frame.getBody());
+            }
+            buf.flip();
+
+            frames.clear();
+            bytes = 0;
+
+            sender.send(buf);
+            sender.flush();
         }
     }
 

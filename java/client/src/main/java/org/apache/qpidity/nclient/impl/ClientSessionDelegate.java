@@ -32,15 +32,11 @@ public class ClientSessionDelegate extends SessionDelegate
     // --------------------------------------------
     @Override public void data(Session ssn, Data data)
     {
-        for (ByteBuffer b : data.getFragments())
-        {    
-            _currentMessageListener.data(b);
-        }
+        _currentMessageListener.data(data.getData());
         if (data.isLast())
         {
             _currentMessageListener.messageReceived();
         }
-        
     }
 
     @Override public void header(Session ssn, Header header)

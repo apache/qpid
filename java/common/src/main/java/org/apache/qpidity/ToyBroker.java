@@ -188,10 +188,7 @@ class ToyBroker extends SessionDelegate
         ssn.header(m.header);
         for (Data d : m.body)
         {
-            for (ByteBuffer b : d.getFragments())
-            {
-                ssn.data(b);
-            }
+            ssn.data(d.getData());
         }
         ssn.endData();
     }
@@ -245,11 +242,8 @@ class ToyBroker extends SessionDelegate
 
             for (Data d : body)
             {
-                for (ByteBuffer b : d.getFragments())
-                {
-                    sb.append(" | ");
-                    sb.append(str(b));
-                }
+                sb.append(" | ");
+                sb.append(d);
             }
 
             return sb.toString();

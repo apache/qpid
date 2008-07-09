@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpidity.transport.codec.BBDecoder;
 import org.apache.qpidity.transport.codec.Decoder;
-import org.apache.qpidity.transport.codec.FragmentDecoder;
 
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
@@ -52,26 +51,32 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 {
 
     private final Receiver<ConnectionEvent> receiver;
-    private final Map<Integer,List<ByteBuffer>> segments;
+    private final Map<Integer,List<Frame>> segments;
+    private final ThreadLocal<BBDecoder> decoder = new ThreadLocal<BBDecoder>()
+    {
+        public BBDecoder initialValue()
+        {
+            return new BBDecoder();
+        }
+    };
 
     public Assembler(Receiver<ConnectionEvent> receiver)
     {
         this.receiver = receiver;
-        segments = new HashMap<Integer,List<ByteBuffer>>();
+        segments = new HashMap<Integer,List<Frame>>();
     }
 
     private int segmentKey(Frame frame)
     {
-        // XXX: can this overflow?
         return (frame.getTrack() + 1) * frame.getChannel();
     }
 
-    private List<ByteBuffer> getSegment(Frame frame)
+    private List<Frame> getSegment(Frame frame)
     {
         return segments.get(segmentKey(frame));
     }
 
-    private void setSegment(Frame frame, List<ByteBuffer> segment)
+    private void setSegment(Frame frame, List<Frame> segment)
     {
         int key = segmentKey(frame);
         if (segments.containsKey(key))
@@ -122,7 +127,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         switch (frame.getType())
         {
         case BODY:
-            emit(frame, new Data(frame, frame.isFirstFrame(),
+            emit(frame, new Data(frame.getBody(), frame.isFirstFrame(),
                                  frame.isLastFrame()));
             break;
         default:
@@ -138,42 +143,54 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 
     private void assemble(Frame frame)
     {
-        List<ByteBuffer> segment;
-        if (frame.isFirstFrame())
+        ByteBuffer segment;
+        if (frame.isFirstFrame() && frame.isLastFrame())
         {
-            segment = new ArrayList<ByteBuffer>();
-            setSegment(frame, segment);
+            segment = frame.getBody();
+            emit(frame, decode(frame, segment));
         }
         else
         {
-            segment = getSegment(frame);
+            List<Frame> frames;
+            if (frame.isFirstFrame())
+            {
+                frames = new ArrayList<Frame>();
+                setSegment(frame, frames);
+            }
+            else
+            {
+                frames = getSegment(frame);
+            }
+
+            frames.add(frame);
+
+            if (frame.isLastFrame())
+            {
+                clearSegment(frame);
+
+                int size = 0;
+                for (Frame f : frames)
+                {
+                    size += f.getSize();
+                }
+                segment = ByteBuffer.allocate(size);
+                for (Frame f : frames)
+                {
+                    segment.put(f.getBody());
+                }
+                segment.flip();
+                emit(frame, decode(frame, segment));
+            }
         }
 
-        for (ByteBuffer buf : frame)
-        {
-            segment.add(buf);
-        }
-
-        if (frame.isLastFrame())
-        {
-            clearSegment(frame);
-            emit(frame, decode(frame, frame.getType(), segment));
-        }
     }
 
-    private ProtocolEvent decode(Frame frame, SegmentType type, List<ByteBuffer> segment)
+    private ProtocolEvent decode(Frame frame, ByteBuffer segment)
     {
-        Decoder dec;
-        if (segment.size() == 1)
-        {
-            dec = new BBDecoder(segment.get(0));
-        }
-        else
-        {
-            dec = new FragmentDecoder(segment.iterator());
-        }
+        BBDecoder dec = decoder.get();
+        dec.init(segment);
 
-        switch (type)
+        switch (frame.getType())
         {
         case CONTROL:
             int controlType = dec.readUint16();
@@ -193,9 +210,9 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             {
                 structs.add(dec.readStruct32());
             }
-            return new Header(structs,frame.isLastFrame() && frame.isLastSegment());
+            return new Header(structs, frame.isLastFrame() && frame.isLastSegment());
         default:
-            throw new IllegalStateException("unknown frame type: " + type);
+            throw new IllegalStateException("unknown frame type: " + frame.getType());
         }
     }
 

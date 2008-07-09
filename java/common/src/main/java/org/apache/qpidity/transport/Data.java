@@ -37,25 +37,20 @@ import static org.apache.qpidity.transport.util.Functions.*;
 public class Data implements ProtocolEvent
 {
 
-    private final Iterable<ByteBuffer> fragments;
+    private final ByteBuffer data;
     private final boolean first;
     private final boolean last;
 
-    public Data(Iterable<ByteBuffer> fragments, boolean first, boolean last)
+    public Data(ByteBuffer data, boolean first, boolean last)
     {
-        this.fragments = fragments;
+        this.data = data;
         this.first = first;
         this.last = last;
     }
 
-    public Data(ByteBuffer buf, boolean first, boolean last)
+    public ByteBuffer getData()
     {
-        this(Collections.singletonList(buf), first, last);
-    }
-
-    public Iterable<ByteBuffer> getFragments()
-    {
-        return fragments;
+        return data.slice();
     }
 
     public boolean isFirst()
@@ -82,25 +77,7 @@ public class Data implements ProtocolEvent
     {
         StringBuffer str = new StringBuffer();
         str.append("Data(");
-        boolean first = true;
-        int left = 64;
-        for (ByteBuffer buf : getFragments())
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                str.append(" | ");
-            }
-            str.append(str(buf, left));
-            left -= buf.remaining();
-            if (left < 0)
-            {
-                break;
-            }
-        }
+        str.append(str(data, 64));
         str.append(")");
         return str.toString();
     }

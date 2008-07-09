@@ -21,7 +21,6 @@
 package org.apache.qpidity.transport.network;
 
 import org.apache.qpidity.transport.codec.BBEncoder;
-import org.apache.qpidity.transport.codec.SizeEncoder;
 
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
@@ -54,6 +53,13 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     private final Sender<NetworkEvent> sender;
     private final int maxPayload;
+    private final ThreadLocal<BBEncoder> encoder = new ThreadLocal()
+    {
+        public BBEncoder initialValue()
+        {
+            return new BBEncoder(4*1024);
+        }
+    };
 
     public Disassembler(Sender<NetworkEvent> sender, int maxFrame)
     {
@@ -70,6 +76,11 @@ public class Disassembler implements Sender<ConnectionEvent>,
     public void send(ConnectionEvent event)
     {
         event.getProtocolEvent().delegate(event, this);
+    }
+
+    public void flush()
+    {
+        sender.flush();
     }
 
     public void close()
@@ -92,8 +103,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
                 first = false;
             }
             nflags |= LAST_FRAME;
-            Frame frame = new Frame(nflags, type, track, event.getChannel());
-            // frame.addFragment(buf);
+            Frame frame = new Frame(nflags, type, track, event.getChannel(), buf.slice());
             sender.send(frame);
         }
         else
@@ -115,8 +125,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
                     newflags |= LAST_FRAME;
                 }
 
-                Frame frame = new Frame(newflags, type, track, event.getChannel());
-                frame.addFragment(slice);
+                Frame frame = new Frame(newflags, type, track, event.getChannel(), slice);
                 sender.send(frame);
             }
         }
@@ -137,18 +146,18 @@ public class Disassembler implements Sender<ConnectionEvent>,
         method(event, method, SegmentType.COMMAND);
     }
 
+    private ByteBuffer copy(ByteBuffer src)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(src.remaining());
+        buf.put(src);
+        buf.flip();
+        return buf;
+    }
+
     private void method(ConnectionEvent event, Method method, SegmentType type)
     {
-        SizeEncoder sizer = new SizeEncoder();
-        sizer.writeUint16(method.getEncodedType());
-        if (type == SegmentType.COMMAND)
-        {
-            sizer.writeUint16(0);
-        }
-        method.write(sizer);
-
-        ByteBuffer buf = ByteBuffer.allocate(sizer.size());
-        BBEncoder enc = new BBEncoder(buf);
+        BBEncoder enc = encoder.get();
+        enc.init();
         enc.writeUint16(method.getEncodedType());
         if (type == SegmentType.COMMAND)
         {
@@ -162,7 +171,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
             }
         }
         method.write(enc);
-        buf.flip();
+        ByteBuffer buf = enc.done();
 
         byte flags = FIRST_SEG;
 
@@ -176,42 +185,29 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     public void header(ConnectionEvent event, Header header)
     {
-         ByteBuffer buf;
-        if( header.getBuf() == null)
+        ByteBuffer buf;
+        if (header.getBuf() == null)
         {
-            SizeEncoder sizer = new SizeEncoder();
-            for (Struct st : header.getStructs())
-            {
-                sizer.writeStruct32(st);
-            }
-
-            buf = ByteBuffer.allocate(sizer.size());
-            BBEncoder enc = new BBEncoder(buf);
+            BBEncoder enc = encoder.get();
+            enc.init();
             for (Struct st : header.getStructs())
             {
                 enc.writeStruct32(st);
             }
+            buf = enc.done();
             header.setBuf(buf);
         }
         else
         {
             buf = header.getBuf();
+            buf.flip();
         }
-          buf.flip();
         fragment((byte) 0x0, SegmentType.HEADER, event, buf, true, true);
     }
 
     public void data(ConnectionEvent event, Data data)
     {
-        boolean first = data.isFirst();
-        for (Iterator<ByteBuffer> it = data.getFragments().iterator();
-             it.hasNext(); )
-        {
-            ByteBuffer buf = it.next();
-            boolean last = data.isLast() && !it.hasNext();
-            fragment(LAST_SEG, SegmentType.BODY, event, buf, first, last);
-            first = false;
-        }
+        fragment(LAST_SEG, SegmentType.BODY, event, data.getData(), data.isFirst(), data.isLast());
     }
 
     public void error(ConnectionEvent event, ProtocolError error)
