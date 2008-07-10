@@ -37,6 +37,7 @@ public class Header implements ProtocolEvent {
     private final List<Struct> structs;
     private ByteBuffer _buf;
     private boolean _noPayload;
+    private int channel;
 
     public Header(List<Struct> structs, boolean lastframe)
     {
@@ -71,6 +72,16 @@ public class Header implements ProtocolEvent {
         return null;
     }
 
+    public final int getChannel()
+    {
+        return channel;
+    }
+
+    public final void setChannel(int channel)
+    {
+        this.channel = channel;
+    }
+
     public byte getEncodedTrack()
     {
         return Frame.L4;
@@ -82,15 +93,16 @@ public class Header implements ProtocolEvent {
     }
 
     public boolean hasNoPayload()
-       {
-           return _noPayload;
-       }
-
+    {
+        return _noPayload;
+    }
 
     public String toString()
     {
         StringBuffer str = new StringBuffer();
-        str.append("Header(");
+        str.append("ch=");
+        str.append(channel);
+        str.append(" Header(");
         boolean first = true;
         for (Struct s : structs)
         {

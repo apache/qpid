@@ -82,18 +82,18 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     public void init(Channel ch, ProtocolHeader hdr)
     {
-        ch.getConnection().send(new ConnectionEvent(0, new ProtocolHeader
-                                                    (1,
-                                                     TransportConstants.getVersionMajor(),
-                                                     TransportConstants.getVersionMinor())));
+        ch.getConnection().send(new ProtocolHeader
+                                (1,
+                                 TransportConstants.getVersionMajor(),
+                                 TransportConstants.getVersionMinor()));
         if (hdr.getMajor() != TransportConstants.getVersionMajor() &&
             hdr.getMinor() != TransportConstants.getVersionMinor())
         {
             // XXX
-            ch.getConnection().send(new ConnectionEvent(0, new ProtocolHeader
-                                                        (1,
-                                                         TransportConstants.getVersionMajor(),
-                                                         TransportConstants.getVersionMinor())));
+            ch.getConnection().send(new ProtocolHeader
+                                    (1,
+                                     TransportConstants.getVersionMajor(),
+                                     TransportConstants.getVersionMinor()));
             ch.getConnection().close();
         }
         else

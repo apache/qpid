@@ -33,9 +33,7 @@ import org.apache.qpidity.transport.network.Frame;
  * @author Rafael H. Schloming
  */
 
-//RA making this public until we sort out the package issues
-
-public class ProtocolHeader implements NetworkEvent, ProtocolEvent
+public final class ProtocolHeader implements NetworkEvent, ProtocolEvent
 {
 
     private static final byte[] AMQP = {'A', 'M', 'Q', 'P' };
@@ -44,6 +42,7 @@ public class ProtocolHeader implements NetworkEvent, ProtocolEvent
     final private byte instance;
     final private byte major;
     final private byte minor;
+    private int channel;
 
     public ProtocolHeader(byte instance, byte major, byte minor)
     {
@@ -70,6 +69,16 @@ public class ProtocolHeader implements NetworkEvent, ProtocolEvent
     public byte getMinor()
     {
         return minor;
+    }
+
+    public int getChannel()
+    {
+        return channel;
+    }
+
+    public void setChannel(int channel)
+    {
+        this.channel = channel;
     }
 
     public byte getEncodedTrack()

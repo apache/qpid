@@ -29,6 +29,10 @@ package org.apache.qpidity.transport;
 public interface ProtocolEvent
 {
 
+    int getChannel();
+
+    void setChannel(int channel);
+
     byte getEncodedTrack();
 
     <C> void delegate(C context, ProtocolDelegate<C> delegate);
