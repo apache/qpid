@@ -127,6 +127,7 @@ public class XAResourceImpl implements XAResource
             default:
                  throw new XAException(XAException.XAER_INVAL);
         }
+        _xaSession.flushAcknowledgments();
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxEnd(convertXid(xid),
                         flag == XAResource.TMFAIL ? Option.FAIL : Option.NONE,
