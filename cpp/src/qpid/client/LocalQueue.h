@@ -25,6 +25,7 @@
 #include "qpid/client/Message.h"
 #include "qpid/client/Demux.h"
 #include "qpid/client/AckPolicy.h"
+#include "qpid/sys/Time.h"
 
 namespace qpid {
 namespace client {
@@ -42,7 +43,7 @@ class LocalQueue
   public:
     /** Create a local queue. Subscribe the local queue to a remote broker
      * queue with a SubscriptionManager.
-     * 
+     *
      * LocalQueue is an alternative to implementing a MessageListener.
      * 
      *@param ackPolicy Policy for acknowledging messages. @see AckPolicy.
@@ -51,14 +52,22 @@ class LocalQueue
 
     ~LocalQueue();
 
-    /** Pop the next message off the local queue.
+    /** Wait up to timeout for the next message from the local queue.
+     *@param result Set to the message from the queue.
+     *@param timeout wait up this timeout for a message to appear. 
+     *@return true if result was set, false if queue was empty after timeout.
+     */
+    bool get(Message& result, sys::Duration timeout=0);
+
+    /** Get the next message off the local queue, or wait for a
+     * message from the broker queue.
      *@exception ClosedException if subscription has been closed.
      */
-    Message pop();
+    Message get();
 
     /** Synonym for get(). */
-    Message get() { return pop(); }
-    
+    Message pop();
+
     /** Return true if local queue is empty. */
     bool empty() const;
 
@@ -72,10 +81,11 @@ class LocalQueue
     AckPolicy& getAckPolicy();
 
   private:
-    friend class SubscriptionManager;
     Session session;
     Demux::QueuePtr queue;
     AckPolicy autoAck;
+
+  friend class SubscriptionManager;
 };
 
 }} // namespace qpid::client

@@ -27,8 +27,8 @@
 #include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/LocalQueue.h>
+#include <qpid/client/FlowControl.h>
 #include <qpid/sys/Runnable.h>
-
 #include <set>
 #include <sstream>
 
@@ -48,13 +48,11 @@ class SubscriptionManager : public sys::Runnable
     typedef sys::Mutex::ScopedLock Lock;
     typedef sys::Mutex::ScopedUnlock Unlock;
 
-    void subscribeInternal(const std::string& q, const std::string& dest);
+    void subscribeInternal(const std::string& q, const std::string& dest, const FlowControl&);
     
     qpid::client::Dispatcher dispatcher;
     qpid::client::AsyncSession session;
-    uint32_t messages;
-    uint32_t bytes;
-    bool window;
+    FlowControl flowControl;
     AckPolicy autoAck;
     bool acceptMode;
     bool acquireMode;
@@ -64,6 +62,38 @@ class SubscriptionManager : public sys::Runnable
     /** Create a new SubscriptionManager associated with a session */
     SubscriptionManager(const Session& session);
     
+    /**
+     * Subscribe a MessagesListener to receive messages from queue.
+     *
+     * Provide your own subclass of MessagesListener to process
+     * incoming messages. It will be called for each message received.
+     * 
+     *@param listener Listener object to receive messages.
+     *@param queue Name of the queue to subscribe to.
+     *@param flow initial FlowControl for the subscription.
+     *@param tag Unique destination tag for the listener.
+     * If not specified, the queue name is used.
+     */
+    void subscribe(MessageListener& listener,
+                   const std::string& queue,
+                   const FlowControl& flow,
+                   const std::string& tag=std::string());
+
+    /**
+     * Subscribe a LocalQueue to receive messages from queue.
+     * 
+     * Incoming messages are stored in the queue for you to retrieve.
+     * 
+     *@param queue Name of the queue to subscribe to.
+     *@param flow initial FlowControl for the subscription.
+     *@param tag Unique destination tag for the listener.
+     * If not specified, the queue name is used.
+     */
+    void subscribe(LocalQueue& localQueue,
+                   const std::string& queue,
+                   const FlowControl& flow,
+                   const std::string& tag=std::string());
+
     /**
      * Subscribe a MessagesListener to receive messages from queue.
      *
@@ -92,6 +122,15 @@ class SubscriptionManager : public sys::Runnable
                    const std::string& queue,
                    const std::string& tag=std::string());
 
+
+    /** Get a single message from a queue.
+     *@param result is set to the message from the queue.
+     *@
+     *@param timeout wait up this timeout for a message to appear. 
+     *@return true if result was set, false if no message available after timeout.
+     */
+    bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
+
     /** Cancel a subscription. */
     void cancel(const std::string tag);
 
@@ -107,8 +146,16 @@ class SubscriptionManager : public sys::Runnable
     /** Cause run() to return */
     void stop();
 
-
     static const uint32_t UNLIMITED=0xFFFFFFFF;
+
+    /** Set the flow control for destination. */
+    void setFlowControl(const std::string& destintion, const FlowControl& flow);
+
+    /** Set the default initial flow control for subscriptions that do not specify it. */
+    void setFlowControl(const FlowControl& flow);
+
+    /** Get the default flow control for new subscriptions that do not specify it. */
+    const FlowControl& getFlowControl() const;
 
     /** Set the flow control for destination tag.
      *@param tag: name of the destination.
@@ -148,6 +195,15 @@ class SubscriptionManager : public sys::Runnable
      AckPolicy& getAckPolicy();
 };
 
+/** AutoCancel cancels a subscription in its destructor */
+class AutoCancel {
+  public:
+    AutoCancel(SubscriptionManager& sm_, const std::string& tag_) : sm(sm_), tag(tag_) {}
+    ~AutoCancel() { sm.cancel(tag); }
+  private:
+    SubscriptionManager& sm;
+    std::string tag;
+};
 
 }} // namespace qpid::client
 
