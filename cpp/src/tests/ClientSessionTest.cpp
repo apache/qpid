@@ -248,6 +248,7 @@ QPID_AUTO_TEST_CASE(testGet) {
     BOOST_CHECK_EQUAL("foo0", got.getData());
     BOOST_CHECK(fix.subs.get(got, "getq", TIME_SEC));
     BOOST_CHECK_EQUAL("foo1", got.getData());
+    BOOST_CHECK(!fix.subs.get(got, "getq"));
 }
 
 QPID_AUTO_TEST_CASE(testOpenFailure) {
