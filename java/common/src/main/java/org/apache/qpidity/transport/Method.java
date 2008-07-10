@@ -40,6 +40,7 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     // XXX: command subclass?
     private int id;
+    private int channel;
     private boolean idSet = false;
     private boolean sync = false;
     private boolean batch = false;
@@ -53,6 +54,16 @@ public abstract class Method extends Struct implements ProtocolEvent
     {
         this.id = id;
         this.idSet = true;
+    }
+
+    public final int getChannel()
+    {
+        return channel;
+    }
+
+    public final void setChannel(int channel)
+    {
+        this.channel = channel;
     }
 
     public final boolean isSync()
@@ -97,18 +108,18 @@ public abstract class Method extends Struct implements ProtocolEvent
     {
         StringBuilder str = new StringBuilder();
 
+        str.append("ch=");
+        str.append(channel);
+
         if (getEncodedTrack() == Frame.L4 && idSet)
         {
-            str.append("id=");
+            str.append(" id=");
             str.append(id);
         }
 
         if (sync || batch)
         {
-            if (str.length() > 0)
-            {
-                str.append(" ");
-            }
+            str.append(" ");
             str.append("[");
             if (sync)
             {
@@ -121,11 +132,9 @@ public abstract class Method extends Struct implements ProtocolEvent
             str.append("]");
         }
 
-        if (str.length() > 0)
-        {
-            str.append(" ");
-        }
+        str.append(" ");
         str.append(super.toString());
+
         return str.toString();
     }
 

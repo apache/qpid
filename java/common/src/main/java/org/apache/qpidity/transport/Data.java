@@ -40,6 +40,7 @@ public class Data implements ProtocolEvent
     private final ByteBuffer data;
     private final boolean first;
     private final boolean last;
+    private int channel;
 
     public Data(ByteBuffer data, boolean first, boolean last)
     {
@@ -63,6 +64,16 @@ public class Data implements ProtocolEvent
         return last;
     }
 
+    public final int getChannel()
+    {
+        return channel;
+    }
+
+    public final void setChannel(int channel)
+    {
+        this.channel = channel;
+    }
+
     public byte getEncodedTrack()
     {
         return Frame.L4;
@@ -76,6 +87,8 @@ public class Data implements ProtocolEvent
     public String toString()
     {
         StringBuffer str = new StringBuffer();
+        str.append("ch=");
+        str.append(" ");
         str.append("Data(");
         str.append(str(data, 64));
         str.append(")");

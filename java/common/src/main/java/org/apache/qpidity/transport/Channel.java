@@ -151,7 +151,8 @@ public class Channel extends Invoker
 
     private void emit(ProtocolEvent event)
     {
-        connection.send(new ConnectionEvent(channel, event));
+        event.setChannel(channel);
+        connection.send(event);
     }
 
     public void method(Method m)
