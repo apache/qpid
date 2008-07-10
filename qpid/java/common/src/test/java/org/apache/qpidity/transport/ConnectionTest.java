@@ -86,7 +86,7 @@ public class ConnectionTest extends TestCase
             }
         });
 
-        conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
+        conn.send(new ProtocolHeader(1, 0, 10));
         return conn;
     }
 

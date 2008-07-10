@@ -41,12 +41,12 @@ import java.nio.ByteBuffer;
  */
 
 public class Connection
-    implements Receiver<ConnectionEvent>, Sender<ConnectionEvent>
+    implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
     private static final Logger log = Logger.get(Connection.class);
 
-    final private Sender<ConnectionEvent> sender;
+    final private Sender<ProtocolEvent> sender;
     final private ConnectionDelegate delegate;
     private int channelMax = 1;
     // want to make this final
@@ -54,7 +54,7 @@ public class Connection
 
     final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
 
-    public Connection(Sender<ConnectionEvent> sender,
+    public Connection(Sender<ProtocolEvent> sender,
                       ConnectionDelegate delegate)
     {
         this.sender = sender;
@@ -76,14 +76,14 @@ public class Connection
         return delegate;
     }
 
-    public void received(ConnectionEvent event)
+    public void received(ProtocolEvent event)
     {
         log.debug("RECV: [%s] %s", this, event);
         Channel channel = getChannel(event.getChannel());
-        channel.received(event.getProtocolEvent());
+        channel.received(event);
     }
 
-    public void send(ConnectionEvent event)
+    public void send(ProtocolEvent event)
     {
         log.debug("SEND: [%s] %s", this, event);
         sender.send(event);

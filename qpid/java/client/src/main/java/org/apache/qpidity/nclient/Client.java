@@ -40,7 +40,6 @@ import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionClose;
 import org.apache.qpidity.transport.ConnectionCloseCode;
 import org.apache.qpidity.transport.ConnectionCloseOk;
-import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
@@ -186,8 +185,8 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
 
         // XXX: hardcoded version numbers
-        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, TransportConstants.getVersionMajor(),
-                TransportConstants.getVersionMinor())));
+        _conn.send(new ProtocolHeader(1, TransportConstants.getVersionMajor(),
+                                      TransportConstants.getVersionMinor()));
 
         try
         {
