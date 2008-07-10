@@ -74,6 +74,9 @@ public class AMQSession_0_10 extends AMQSession
     // a ref on the qpidity connection
     protected org.apache.qpidity.nclient.Connection _qpidConnection;
 
+    private RangeSet unacked = new RangeSet();
+    private int unackedCount = 0;
+
     /**
      * USed to store the range of in tx messages
      */
@@ -131,6 +134,18 @@ public class AMQSession_0_10 extends AMQSession
              defaultPrefetchHigh, defaultPrefetchLow);
     }
 
+    private void addUnacked(int id)
+    {
+        unacked.add(id);
+        unackedCount++;
+    }
+
+    private void clearUnacked()
+    {
+        unacked.clear();
+        unackedCount = 0;
+    }
+
     //------- overwritten methods of class AMQSession
 
     /**
@@ -140,6 +155,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param multiple    <tt>true</tt> to acknowledge all messages up to and including the one specified by the
      *                    delivery tag, <tt>false</tt> to just acknowledge that message.
      */
+
     public void acknowledgeMessage(long deliveryTag, boolean multiple)
     {
         if (_logger.isDebugEnabled())
@@ -147,14 +163,13 @@ public class AMQSession_0_10 extends AMQSession
             _logger.debug("Sending ack for delivery tag " + deliveryTag + " on session " + _channelId);
         }
         // acknowledge this message
-        RangeSet ranges = new RangeSet();
         if (multiple)
         {
             for (Long messageTag : _unacknowledgedMessageTags)
             {
                 if( messageTag <= deliveryTag )
                 {
-                    ranges.add((int) (long) messageTag);
+                    addUnacked(messageTag.intValue());
                     _unacknowledgedMessageTags.remove(messageTag);
                 }
             }
@@ -163,10 +178,26 @@ public class AMQSession_0_10 extends AMQSession
         }
         else
         {
-            ranges.add((int) deliveryTag);
+            addUnacked((int) deliveryTag);
             _unacknowledgedMessageTags.remove(deliveryTag);
         }
-        getQpidSession().messageAcknowledge(ranges, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+
+        long prefetch = getAMQConnection().getMaxPrefetch();
+
+        if (unackedCount >= prefetch/2)
+        {
+            flushAcknowledgments();
+        }
+    }
+
+    void flushAcknowledgments()
+    {
+        if (unackedCount > 0)
+        {
+            getQpidSession().messageAcknowledge
+                (unacked, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+            clearUnacked();
+        }
     }
 
     /**
@@ -210,6 +241,7 @@ public class AMQSession_0_10 extends AMQSession
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
+        flushAcknowledgments();
         getQpidSession().sync();
         getQpidSession().close();
         getCurrentException();
