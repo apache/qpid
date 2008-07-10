@@ -22,7 +22,6 @@ package org.apache.qpidity.transport.network;
 
 import org.apache.qpidity.transport.codec.BBEncoder;
 
-import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
 import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.transport.Method;
@@ -47,8 +46,8 @@ import static java.lang.Math.*;
  *
  */
 
-public class Disassembler implements Sender<ConnectionEvent>,
-                                     ProtocolDelegate<ConnectionEvent>
+public class Disassembler implements Sender<ProtocolEvent>,
+                                     ProtocolDelegate<Void>
 {
 
     private final Sender<NetworkEvent> sender;
@@ -73,9 +72,9 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     }
 
-    public void send(ConnectionEvent event)
+    public void send(ProtocolEvent event)
     {
-        event.getProtocolEvent().delegate(event, this);
+        event.delegate(null, this);
     }
 
     public void flush()
@@ -88,10 +87,10 @@ public class Disassembler implements Sender<ConnectionEvent>,
         sender.close();
     }
 
-    private void fragment(byte flags, SegmentType type, ConnectionEvent event,
+    private void fragment(byte flags, SegmentType type, ProtocolEvent event,
                           ByteBuffer buf, boolean first, boolean last)
     {
-        byte track = event.getProtocolEvent().getEncodedTrack() == Frame.L4 ? (byte) 1 : (byte) 0;
+        byte track = event.getEncodedTrack() == Frame.L4 ? (byte) 1 : (byte) 0;
 
         if(!buf.hasRemaining())
         {
@@ -131,19 +130,19 @@ public class Disassembler implements Sender<ConnectionEvent>,
         }
     }
 
-    public void init(ConnectionEvent event, ProtocolHeader header)
+    public void init(Void v, ProtocolHeader header)
     {
         sender.send(header);
     }
 
-    public void control(ConnectionEvent event, Method method)
+    public void control(Void v, Method method)
     {
-        method(event, method, SegmentType.CONTROL);
+        method(method, SegmentType.CONTROL);
     }
 
-    public void command(ConnectionEvent event, Method method)
+    public void command(Void v, Method method)
     {
-        method(event, method, SegmentType.COMMAND);
+        method(method, SegmentType.COMMAND);
     }
 
     private ByteBuffer copy(ByteBuffer src)
@@ -154,7 +153,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
         return buf;
     }
 
-    private void method(ConnectionEvent event, Method method, SegmentType type)
+    private void method(Method method, SegmentType type)
     {
         BBEncoder enc = encoder.get();
         enc.init();
@@ -180,10 +179,10 @@ public class Disassembler implements Sender<ConnectionEvent>,
             flags |= LAST_SEG;
         }
 
-        fragment(flags, type, event, buf, true, true);
+        fragment(flags, type, method, buf, true, true);
     }
 
-    public void header(ConnectionEvent event, Header header)
+    public void header(Void v, Header header)
     {
         ByteBuffer buf;
         if (header.getBuf() == null)
@@ -202,15 +201,15 @@ public class Disassembler implements Sender<ConnectionEvent>,
             buf = header.getBuf();
             buf.flip();
         }
-        fragment((byte) 0x0, SegmentType.HEADER, event, buf, true, true);
+        fragment((byte) 0x0, SegmentType.HEADER, header, buf, true, true);
     }
 
-    public void data(ConnectionEvent event, Data data)
+    public void data(Void v, Data data)
     {
-        fragment(LAST_SEG, SegmentType.BODY, event, data.getData(), data.isFirst(), data.isLast());
+        fragment(LAST_SEG, SegmentType.BODY, data, data.getData(), data.isFirst(), data.isLast());
     }
 
-    public void error(ConnectionEvent event, ProtocolError error)
+    public void error(Void v, ProtocolError error)
     {
         sender.send(error);
     }

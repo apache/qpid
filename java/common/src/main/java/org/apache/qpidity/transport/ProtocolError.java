@@ -30,9 +30,10 @@ import org.apache.qpidity.transport.network.NetworkEvent;
  * @author Rafael H. Schloming
  */
 
-public class ProtocolError implements NetworkEvent, ProtocolEvent
+public final class ProtocolError implements NetworkEvent, ProtocolEvent
 {
 
+    private int channel;
     private final byte track;
     private final String format;
     private final Object[] args;
@@ -42,6 +43,16 @@ public class ProtocolError implements NetworkEvent, ProtocolEvent
         this.track = track;
         this.format = format;
         this.args = args;
+    }
+
+    public int getChannel()
+    {
+        return channel;
+    }
+
+    public void setChannel(int channel)
+    {
+        this.channel = channel;
     }
 
     public byte getEncodedTrack()

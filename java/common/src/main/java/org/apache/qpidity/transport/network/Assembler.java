@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import org.apache.qpidity.transport.codec.BBDecoder;
 import org.apache.qpidity.transport.codec.Decoder;
 
-import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
 import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.transport.Method;
@@ -50,7 +49,7 @@ import org.apache.qpidity.transport.Struct;
 public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 {
 
-    private final Receiver<ConnectionEvent> receiver;
+    private final Receiver<ProtocolEvent> receiver;
     private final Map<Integer,List<Frame>> segments;
     private final ThreadLocal<BBDecoder> decoder = new ThreadLocal<BBDecoder>()
     {
@@ -60,7 +59,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         }
     };
 
-    public Assembler(Receiver<ConnectionEvent> receiver)
+    public Assembler(Receiver<ProtocolEvent> receiver)
     {
         this.receiver = receiver;
         segments = new HashMap<Integer,List<Frame>>();
@@ -94,7 +93,8 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 
     private void emit(int channel, ProtocolEvent event)
     {
-        receiver.received(new ConnectionEvent(channel, event));
+        event.setChannel(channel);
+        receiver.received(event);
     }
 
     private void emit(Frame frame, ProtocolEvent event)
