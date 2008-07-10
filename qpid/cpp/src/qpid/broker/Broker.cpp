@@ -288,13 +288,13 @@ void Broker::shutdown() {
 
 Broker::~Broker() {
     shutdown();
-    ManagementBroker::shutdown ();
     delete store;    
     if (config.auth) {
 #if HAVE_SASL
         sasl_done();
 #endif
     }
+    ManagementBroker::shutdown();
     QPID_LOG(notice, "Shut down");
 }
 
