@@ -52,7 +52,7 @@ public:
         {
             Waitable::ScopedWait w(waitable);
             AbsTime deadline(now(),timeout);
-            while (queue.empty()) waitable.wait(deadline);
+            while (queue.empty() && deadline > now()) waitable.wait(deadline);
         }
         if (queue.empty()) return false;
         result = queue.front();
