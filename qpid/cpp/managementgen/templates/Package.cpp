@@ -20,7 +20,7 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/management/Package/*MGEN:Schema.PackageNameCap*/.h"
+#include "Package/*MGEN:Schema.PackageNameCap*/.h"
 /*MGEN:Schema.ClassIncludes*/
 
 using namespace qpid::management;
