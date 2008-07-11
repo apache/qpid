@@ -28,9 +28,6 @@ usage  = "usage: %prog [options] schema-document type-document template-director
 parser = OptionParser (usage=usage)
 parser.add_option ("-m", "--makefile", dest="makefile", metavar="FILE",
                    help="Makefile fragment")
-parser.add_option ("-i", "--include-prefix", dest="include_prefix", metavar="PATH",
-                   default="qpid/management/",
-                   help="Prefix for #include of generated headers in generated source, default: qpid/management/")
 
 (opts, args) = parser.parse_args ()
 
@@ -41,9 +38,6 @@ schemafile  = args[0]
 typefile    = args[1]
 templatedir = args[2]
 outdir      = args[3]
-
-if opts.include_prefix == ".":
-  opts.include_prefix = None
 
 gen    = Generator     (outdir,   templatedir)
 schema = PackageSchema (typefile, schemafile, opts)

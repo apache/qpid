@@ -71,24 +71,22 @@ class ManagementData:
   #
 
   def registerObjId (self, objId):
-    boot = objId & 0x7FFF000000000000L
-    if boot == 0:
-      return
-    self.bootSequence = boot
+    if not objId in self.idBackMap:
+      self.idBackMap[objId]   = self.nextId
+      self.idMap[self.nextId] = objId
+      self.nextId += 1
 
   def displayObjId (self, objId):
-    bank = (objId & 0x0000FFFFFF000000L) >> 24
-    id   =  objId & 0x0000000000FFFFFFL
-    return bank * 10000 + id
+    if objId in self.idBackMap:
+      return self.idBackMap[objId]
+    else:
+      return 0
 
   def rawObjId (self, displayId):
-    bank  = displayId / 10000
-    id    = displayId % 10000
-    if bank < 5:
-      objId = (bank << 24) + id
+    if displayId in self.idMap:
+      return self.idMap[displayId]
     else:
-      objId = self.bootSequence + (bank << 24) + id
-    return objId
+      return 0
 
   def displayClassName (self, cls):
     (packageName, className, hash) = cls
@@ -201,6 +199,9 @@ class ManagementData:
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))
     self.operational = True
+    self.idMap = {}
+    self.idBackMap = {}
+    self.nextId = 101
 
   def close (self):
     pass
