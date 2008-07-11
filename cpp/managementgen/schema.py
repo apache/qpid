@@ -890,8 +890,7 @@ class SchemaClass:
   def genMethodArgIncludes (self, stream, variables):
     for method in self.methods:
       if method.getArgCount () > 0:
-        stream.write ("#include \"" + (self.options.include_prefix or "") +\
-                      "Args" + method.getFullName () + ".h\"\n")
+        stream.write ("#include \"Args" + method.getFullName () + ".h\"\n")
 
   def genMethodCount (self, stream, variables):
     stream.write ("%d" % len (self.methods))
@@ -1040,7 +1039,7 @@ class PackageSchema:
 
   def genClassIncludes (self, stream, variables):
     for _class in self.classes:
-      stream.write ("#include \"qpid/management/")
+      stream.write ("#include \"")
       _class.genNameCap (stream, variables)
       stream.write (".h\"\n")
 

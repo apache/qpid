@@ -89,6 +89,7 @@ class ManagementBroker : public ManagementAgent
     struct RemoteAgent : public Manageable
     {
         uint32_t          objIdBank;
+        std::string       routingKey;
         Agent*            mgmtObject;
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
@@ -97,8 +98,8 @@ class ManagementBroker : public ManagementAgent
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
     //       currently assumes that the exchange is "amq.direct" even though it could
     //       in theory be specified differently.
-    typedef std::map<framing::Uuid, RemoteAgent*> RemoteAgentMap;
-    typedef std::vector<std::string>              ReplyToVector;
+    typedef std::map<std::string, RemoteAgent*> RemoteAgentMap;
+    typedef std::vector<std::string>            ReplyToVector;
 
     //  Storage for known schema classes:
     //
@@ -129,16 +130,16 @@ class ManagementBroker : public ManagementAgent
     struct SchemaClass
     {
         ManagementObject::writeSchemaCall_t writeSchemaCall;
-        ReplyToVector                       remoteAgents;
-        size_t                              bufferLen;
-        uint8_t*                            buffer;
+        uint32_t pendingSequence;
+        size_t   bufferLen;
+        uint8_t* buffer;
 
-        SchemaClass () : writeSchemaCall(0), bufferLen(0), buffer(0) {}
+        SchemaClass () : writeSchemaCall(0), pendingSequence(0), bufferLen(0), buffer(0) {}
         bool hasSchema () { return (writeSchemaCall != 0) || (buffer != 0); }
         void appendSchema (framing::Buffer& buf);
     };
 
-    typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
+    typedef std::map<SchemaClassKey, SchemaClass*, SchemaClassKeyComp> ClassMap;
     typedef std::map<std::string, ClassMap> PackageMap;
 
     RemoteAgentMap               remoteAgents;
@@ -162,6 +163,7 @@ class ManagementBroker : public ManagementAgent
     uint32_t                     localBank;
     uint32_t                     nextObjectId;
     uint32_t                     nextRemoteBank;
+    uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
 
 #   define MA_BUFFER_SIZE 65536
@@ -183,11 +185,11 @@ class ManagementBroker : public ManagementAgent
                            size_t             first);
     void dispatchAgentCommandLH (broker::Message& msg);
 
-    PackageMap::iterator FindOrAddPackage (std::string name);
-    void AddClassLocal (PackageMap::iterator         pIter,
-                        std::string                  className,
-                        uint8_t*                     md5Sum,
-                        ManagementObject::writeSchemaCall_t schemaCall);
+    PackageMap::iterator FindOrAddPackageLH(std::string name);
+    void AddClass(PackageMap::iterator         pIter,
+                  std::string                  className,
+                  uint8_t*                     md5Sum,
+                  ManagementObject::writeSchemaCall_t schemaCall);
     void EncodePackageIndication (framing::Buffer&     buf,
                                   PackageMap::iterator pIter);
     void EncodeClassIndication (framing::Buffer&     buf,
@@ -198,13 +200,17 @@ class ManagementBroker : public ManagementAgent
     uint32_t assignBankLH (uint32_t requestedPrefix);
     void sendCommandComplete (std::string replyToKey, uint32_t sequence,
                               uint32_t code = 0, std::string text = std::string("OK"));
-    void handleBrokerRequestLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handlePackageQueryLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handlePackageIndLH    (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleClassQueryLH    (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleSchemaRequestLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleAttachRequestLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleGetQueryLH      (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleBrokerRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handlePackageQueryLH   (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handlePackageIndLH     (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleClassQueryLH     (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleClassIndLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleSchemaRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+
+    size_t ValidateSchema(framing::Buffer&);
 };
 
 }}
