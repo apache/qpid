@@ -102,7 +102,7 @@
   ===============================================================
   -->
   <class name="Agent">
-    <property name="sessionId"    type="uuid"  access="RO" index="y" desc="Session ID for Agent"/>
+    <property name="sessionName"  type="sstr"  access="RO" index="y" desc="Session ID for Agent"/>
     <property name="label"        type="sstr"  access="RO"           desc="Label for agent"/>
     <property name="registeredTo" type="objId" references="Broker" access="RO" desc="Broker agent is registered to"/>
     <property name="systemId"     type="uuid"  access="RO"           desc="Identifier of system where agent resides"/>

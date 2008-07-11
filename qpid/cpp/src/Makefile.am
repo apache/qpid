@@ -221,6 +221,8 @@ libqpidcommon_la_SOURCES = \
   qpid/Plugin.cpp \
   qpid/StringUtils.cpp \
   qpid/Url.cpp \
+  qpid/management/Manageable.cpp \
+  qpid/management/ManagementObject.cpp \
   qpid/sys/AggregateOutput.cpp \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
@@ -304,10 +306,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxBuffer.cpp \
   qpid/broker/TxPublish.cpp \
   qpid/broker/Vhost.cpp \
-  qpid/management/Manageable.cpp \
   qpid/management/ManagementBroker.cpp \
   qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementObject.cpp \
   qpid/sys/TCPIOPlugin.cpp
 
 if HAVE_XML
@@ -319,6 +319,7 @@ libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
+  qpid/agent/ManagementAgentImpl.cpp \
   qpid/client/AckPolicy.cpp			\
   qpid/client/Bounds.cpp			\
   qpid/client/ConnectionImpl.cpp		\
@@ -367,6 +368,7 @@ nobase_include_HEADERS = \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/agent/ManagementAgent.h \
+  qpid/agent/ManagementAgentImpl.h \
   qpid/broker/Broker.h \
   qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
