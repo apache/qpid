@@ -158,6 +158,7 @@
     <iterate target="clean"/>
     <delete dir="${build}"/>
     <delete dir="${release}"/>
+    <delete dir="${tasks.classes}"/>
   </target>
 
 </project>
