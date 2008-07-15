@@ -31,7 +31,6 @@ import java.util.Iterator;
  * A default implementation of {@link org.apache.mina.common.IoFuture}.
  *
  * @author The Apache Directory Project (mina-dev@directory.apache.org)
- * @version $Rev: 440259 $, $Date: 2006-09-05 14:01:47 +0900 (화, 05  9월 2006) $
  */
 public class DefaultIoFuture implements IoFuture
 {
