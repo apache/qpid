@@ -110,7 +110,7 @@ public class TxAckTest extends TestCase
                                                                           new LinkedList<RequiredDeliveryException>()
             );
             AMQQueue queue =
-                    AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("", new MemoryMessageStore()),
+                    AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("test", new MemoryMessageStore()),
                                                        null);
 
             for (int i = 0; i < messageCount; i++)
