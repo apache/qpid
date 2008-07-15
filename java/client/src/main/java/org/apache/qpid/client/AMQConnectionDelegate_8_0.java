@@ -32,12 +32,12 @@ import java.util.Set;
 import javax.jms.JMSException;
 import javax.jms.XASession;
 
-import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
@@ -84,11 +84,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         final Set<AMQState> openOrClosedStates =
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
 
+
+        StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
+
         TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
-        AMQState state = _conn._protocolHandler.attainState(openOrClosedStates);
+        AMQState state = waiter.await();
+
         if(state == AMQState.CONNECTION_OPEN)
         {
             _conn._failoverPolicy.attainedConnection();

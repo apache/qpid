@@ -20,9 +20,14 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.util.BlockingWaiter;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -54,37 +59,16 @@ import org.apache.qpid.protocol.AMQMethodListener;
  * </table>
  *
  * @todo Might be neater if this method listener simply wrapped another that provided the method handling using a
- *       methodRecevied method. The processMethod takes an additional channelId, however none of the implementations
- *       seem to use it. So wrapping the listeners is possible.
- *
- * @todo What is to stop a blocking method listener, receiving a second method whilst it is registered as a listener,
- *       overwriting the first one before the caller of the block method has had a chance to examine it? If one-shot
- *       behaviour is to be intended it should be enforced, perhaps by always returning false once the blocked for
- *       method has been received.
- *
- * @todo Interuption is caught but not handled. This could be allowed to fall through. This might actually be usefull
- *       for fail-over where a thread is blocking when failure happens, it could be interrupted to abandon or retry
- *       when this happens. At the very least, restore the interrupted status flag.
- *
+ * methodRecevied method. The processMethod takes an additional channelId, however none of the implementations
+ * seem to use it. So wrapping the listeners is possible.
  * @todo If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
- *       check that SynchronousQueue has a non-blocking put method available.
+ * check that SynchronousQueue has a non-blocking put method available.
  */
-public abstract class BlockingMethodFrameListener implements AMQMethodListener
+public abstract class BlockingMethodFrameListener extends BlockingWaiter<AMQMethodEvent> implements AMQMethodListener
 {
-    /** This flag is used to indicate that the blocked for method has been received. */
-    private volatile boolean _ready = false;
-
-    /** Used to protect the shared event and ready flag between the producer and consumer. */
-    private final Object _lock = new Object();
-
-    /** Used to hold the most recent exception that is passed to the {@link #error(Exception)} method. */
-    private volatile Exception _error;
 
     /** Holds the channel id for the channel upon which this listener is waiting for a response. */
     protected int _channelId;
-
-    /** Holds the incoming method. */
-    protected AMQMethodEvent _doneEvt = null;
 
     /**
      * Creates a new method listener, that filters incoming method to just those that match the specified channel id.
@@ -104,7 +88,14 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
      *
      * @return <tt>true</tt> if the method was handled, <tt>false</tt> otherwise.
      */
-    public abstract boolean processMethod(int channelId, AMQMethodBody frame); // throws AMQException;
+    public abstract boolean processMethod(int channelId, AMQMethodBody frame);
+
+    public boolean process(AMQMethodEvent evt)
+    {
+        AMQMethodBody method = evt.getMethod();
+
+        return (evt.getChannelId() == _channelId) && processMethod(evt.getChannelId(), method);
+    }
 
     /**
      * Informs this listener that an AMQP method has been received.
@@ -113,37 +104,9 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
      *
      * @return <tt>true</tt> if this listener has handled the method, <tt>false</tt> otherwise.
      */
-    public boolean methodReceived(AMQMethodEvent evt) // throws AMQException
+    public boolean methodReceived(AMQMethodEvent evt)
     {
-        AMQMethodBody method = evt.getMethod();
-
-        /*try
-        {*/
-        boolean ready = (evt.getChannelId() == _channelId) && processMethod(evt.getChannelId(), method);
-
-        if (ready)
-        {
-            // we only update the flag from inside the synchronized block
-            // so that the blockForFrame method cannot "miss" an update - it
-            // will only ever read the flag from within the synchronized block
-            synchronized (_lock)
-            {
-                _doneEvt = evt;
-                _ready = ready;
-                _lock.notify();
-            }
-        }
-
-        return ready;
-
-        /*}
-        catch (AMQException e)
-        {
-            error(e);
-            // we rethrow the error here, and the code in the frame dispatcher will go round
-            // each listener informing them that an exception has been thrown
-            throw e;
-        }*/
+        return received(evt);
     }
 
     /**
@@ -159,75 +122,15 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
      */
     public AMQMethodEvent blockForFrame(long timeout) throws AMQException, FailoverException
     {
-        synchronized (_lock)
+        try
         {
-            while (!_ready)
-            {
-                try
-                {
-                    if (timeout == -1)
-                    {
-                        _lock.wait();
-                    }
-                    else
-                    {
-
-                        _lock.wait(timeout);
-                        if (!_ready)
-                        {
-                            _error = new AMQTimeoutException("Server did not respond in a timely fashion", null);
-                            _ready = true;
-                        }
-                    }
-                }
-                catch (InterruptedException e)
-                {
-                    // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-                    // if (!_ready && timeout != -1)
-                    // {
-                    // _error = new AMQException("Server did not respond timely");
-                    // _ready = true;
-                    // }
-                }
-            }
+            return (AMQMethodEvent) block(timeout);
         }
-
-        if (_error != null)
+        finally
         {
-            if (_error instanceof AMQException)
-            {
-                throw (AMQException) _error;
-            }
-            else if (_error instanceof FailoverException)
-            {
-                // This should ensure that FailoverException is not wrapped and can be caught.
-                throw (FailoverException) _error; // needed to expose FailoverException.
-            }
-            else
-            {
-                throw new AMQException(null, "Woken up due to " + _error.getClass(), _error);
-            }
-        }
-
-        return _doneEvt;
-    }
-
-    /**
-     * This is a callback, called by the MINA dispatcher thread only. It is also called from within this
-     * class to avoid code repetition but again is only called by the MINA dispatcher thread.
-     *
-     * @param e
-     */
-    public void error(Exception e)
-    {
-        // set the error so that the thread that is blocking (against blockForFrame())
-        // can pick up the exception and rethrow to the caller
-        _error = e;
-
-        synchronized (_lock)
-        {
-            _ready = true;
-            _lock.notify();
+            //Prevent any more errors being notified to this waiter.
+            close();
         }
     }
+
 }

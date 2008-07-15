@@ -29,13 +29,16 @@ import org.apache.qpid.client.*;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.AMQException;
 
 import javax.jms.*;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.net.URISyntaxException;
 
 public class ReturnUnroutableMandatoryMessageTest extends TestCase implements ExceptionListener
 {
@@ -75,77 +78,89 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
      *
      * @throws Exception
      */
-    public void testReturnUnroutableMandatoryMessage_HEADERS() throws Exception
+    public void testReturnUnroutableMandatoryMessage_HEADERS() throws URISyntaxException, AMQException, JMSException
     {
         _bouncedMessageList.clear();
-        Connection con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
+        MessageConsumer consumer = null;
+        AMQSession producerSession = null;
+        AMQHeadersExchange queue = null;
+        Connection con=null, con2 = null;
+        try
+        {
+            con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
 
+            AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
-        AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
+            FieldTable ft = new FieldTable();
+            ft.setString("F1000", "1");
+            consumer = consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String) null, ft);
 
-        AMQHeadersExchange queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
-        FieldTable ft = new FieldTable();
-        ft.setString("F1000", "1");
-        MessageConsumer consumer = consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String) null, ft);
+            //force synch to ensure the consumer has resulted in a bound queue
+            //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
+            // This is the default now
 
-        //force synch to ensure the consumer has resulted in a bound queue
-        //((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
-        // This is the default now
+            con2 = new AMQConnection(BROKER, "guest", "guest", "producer1", VIRTUALHOST);
 
-        Connection con2 = new AMQConnection(BROKER, "guest", "guest", "producer1", VIRTUALHOST);
+            con2.setExceptionListener(this);
+            producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
-        con2.setExceptionListener(this);
-        AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-
-        // Need to start the "producer" connection in order to receive bounced messages
-        _logger.info("Starting producer connection");
-        con2.start();
-
-
-        MessageProducer nonMandatoryProducer = producerSession.createProducer(queue, false, false);
-        MessageProducer mandatoryProducer = producerSession.createProducer(queue);
-
-        // First test - should neither be bounced nor routed
-        _logger.info("Sending non-routable non-mandatory message");
-        TextMessage msg1 = producerSession.createTextMessage("msg1");
-        nonMandatoryProducer.send(msg1);
-
-        // Second test - should be bounced
-        _logger.info("Sending non-routable mandatory message");
-        TextMessage msg2 = producerSession.createTextMessage("msg2");
-        mandatoryProducer.send(msg2);
-
-        // Third test - should be routed
-        _logger.info("Sending routable message");
-        TextMessage msg3 = producerSession.createTextMessage("msg3");
-        msg3.setStringProperty("F1000", "1");
-        mandatoryProducer.send(msg3);
-
-
-        _logger.info("Starting consumer connection");
-        con.start();
-        TextMessage tm = (TextMessage) consumer.receive(1000L);
-
-        assertTrue("No message routed to receiver", tm != null);
-        assertTrue("Wrong message routed to receiver: " + tm.getText(), "msg3".equals(tm.getText()));
+            // Need to start the "producer" connection in order to receive bounced messages
+            _logger.info("Starting producer connection");
+            con2.start();
+        }
+        catch (JMSException jmse)
+        {
+            fail(jmse.getMessage());
+        }
 
         try
         {
-            Thread.sleep(1000L);
+            MessageProducer nonMandatoryProducer = producerSession.createProducer(queue, false, false);
+            MessageProducer mandatoryProducer = producerSession.createProducer(queue);
+
+            // First test - should neither be bounced nor routed
+            _logger.info("Sending non-routable non-mandatory message");
+            TextMessage msg1 = producerSession.createTextMessage("msg1");
+            nonMandatoryProducer.send(msg1);
+
+            // Second test - should be bounced
+            _logger.info("Sending non-routable mandatory message");
+            TextMessage msg2 = producerSession.createTextMessage("msg2");
+            mandatoryProducer.send(msg2);
+
+            // Third test - should be routed
+            _logger.info("Sending routable message");
+            TextMessage msg3 = producerSession.createTextMessage("msg3");
+            msg3.setStringProperty("F1000", "1");
+            mandatoryProducer.send(msg3);
+
+            _logger.info("Starting consumer connection");
+            con.start();
+            TextMessage tm = (TextMessage) consumer.receive(1000L);
+
+            assertTrue("No message routed to receiver", tm != null);
+            assertTrue("Wrong message routed to receiver: " + tm.getText(), "msg3".equals(tm.getText()));
+
+            try
+            {
+                Thread.sleep(1000L);
+            }
+            catch (InterruptedException e)
+            {
+                ;
+            }
+
+            assertTrue("Wrong number of messages bounced (expect 1): " + _bouncedMessageList.size(), _bouncedMessageList.size() == 1);
+            Message m = _bouncedMessageList.get(0);
+            assertTrue("Wrong message bounced: " + m.toString(), m.toString().contains("msg2"));
         }
-        catch (InterruptedException e)
+        catch (JMSException jmse)
         {
-            ;
+
         }
-
-        assertTrue("Wrong number of messages bounced (expect 1): " + _bouncedMessageList.size(), _bouncedMessageList.size() == 1);
-        Message m = _bouncedMessageList.get(0);
-        assertTrue("Wrong message bounced: " + m.toString(), m.toString().contains("msg2"));
-
-
         con.close();
         con2.close();
-
 
     }
 
@@ -153,7 +168,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     {
         _bouncedMessageList.clear();
         Connection con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
-
 
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -174,7 +188,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         _logger.info("Starting producer connection");
         con2.start();
 
-
         MessageProducer nonMandatoryProducer = producerSession.createProducer(valid_queue, false, false);
         MessageProducer mandatoryProducer = producerSession.createProducer(invalid_queue);
 
@@ -187,7 +200,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         _logger.info("Sending non-routable mandatory message");
         TextMessage msg2 = producerSession.createTextMessage("msg2");
         mandatoryProducer.send(msg2);
-
 
         _logger.info("Starting consumer connection");
         con.start();
@@ -209,17 +221,14 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         Message m = _bouncedMessageList.get(0);
         assertTrue("Wrong message bounced: " + m.toString(), m.toString().contains("msg2"));
 
-
         con.close();
         con2.close();
     }
-
 
     public void testReturnUnroutableMandatoryMessage_TOPIC() throws Exception
     {
         _bouncedMessageList.clear();
         Connection con = new AMQConnection(BROKER, "guest", "guest", "consumer1", VIRTUALHOST);
-
 
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -240,7 +249,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         _logger.info("Starting producer connection");
         con2.start();
 
-
         MessageProducer nonMandatoryProducer = producerSession.createProducer(valid_topic, false, false);
         MessageProducer mandatoryProducer = producerSession.createProducer(invalid_topic);
 
@@ -253,7 +261,6 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         _logger.info("Sending non-routable mandatory message");
         TextMessage msg2 = producerSession.createTextMessage("msg2");
         mandatoryProducer.send(msg2);
-
 
         _logger.info("Starting consumer connection");
         con.start();
@@ -275,11 +282,9 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         Message m = _bouncedMessageList.get(0);
         assertTrue("Wrong message bounced: " + m.toString(), m.toString().contains("msg2"));
 
-
         con.close();
         con2.close();
     }
-
 
     public static junit.framework.Test suite()
     {
@@ -293,7 +298,8 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         try
         {
             linkedException = jmsException.getLinkedException();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }

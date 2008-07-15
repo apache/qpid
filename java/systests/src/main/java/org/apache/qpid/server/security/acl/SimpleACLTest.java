@@ -35,7 +35,6 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.File;
 
-
 public class SimpleACLTest extends TestCase implements ConnectionListener
 {
     private String BROKER = "vm://:1";//"tcp://localhost:5672";
@@ -52,7 +51,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             fail("Configuration file not found:" + defaultaclConfigFile);
         }
 
-        if (System.getProperty("QPID_HOME") == null)
+        if (System.getProperty("QPID_HOME") == null)                                                                                            
         {
             fail("QPID_HOME not set");
         }
@@ -73,7 +72,7 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
     public String createConnectionString(String username, String password, String broker)
     {
 
-        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + broker + "'";
+        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + broker + "?retries='0''";
     }
 
     public void testAccessAuthorized() throws AMQException, URLSyntaxException
@@ -113,15 +112,9 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
         catch (AMQException amqe)
         {
-            if (amqe.getCause().getClass() == Exception.class)
-            {
-                System.err.println("QPID-594 : WARNING RACE CONDITION. Unable to determine cause of Connection Failure.");
-                return;
-            }
-            assertEquals("Linked Exception Incorrect", JMSException.class, amqe.getCause().getClass());
-            Exception linked = ((JMSException) amqe.getCause()).getLinkedException();
-            assertEquals("Exception was wrong type", AMQAuthenticationException.class, linked.getClass());
-            assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) linked).getErrorCode().getCode());
+            Throwable cause = amqe.getCause();
+            assertEquals("Exception was wrong type", AMQAuthenticationException.class, cause.getClass());
+            assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }
     }
 
@@ -303,11 +296,6 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
             conn.close();
 
             fail("Close is not expected to succeed.");
-        }
-        catch (IllegalStateException ise)
-        {
-            System.err.println("QPID-826 : WARNING : Unable to determine cause of failure due to closure as we don't " +
-                               "record it for reporting after connection closed asynchronously");
         }
         catch (JMSException e)
         {
@@ -567,15 +555,10 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             fail("Close is not expected to succeed.");
         }
-        catch (IllegalStateException ise)
-        {
-            System.err.println("QPID-826 : WARNING : Unable to determine cause of failure due to closure as we don't " +
-                               "record it for reporting after connection closed asynchronously");
-        }
         catch (JMSException e)
         {
             Throwable cause = e.getLinkedException();
-            cause.printStackTrace();
+
             assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }
