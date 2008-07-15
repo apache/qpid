@@ -36,7 +36,7 @@
  */
 struct  BrokerFixture : private boost::noncopyable {
     typedef qpid::broker::Broker Broker;
-    typedef boost::shared_ptr<Broker> BrokerPtr;
+    typedef boost::intrusive_ptr<Broker> BrokerPtr;
 
     BrokerPtr broker;
     qpid::sys::Thread brokerThread;

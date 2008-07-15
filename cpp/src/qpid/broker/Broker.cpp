@@ -240,16 +240,16 @@ void Broker::declareStandardExchange(const std::string& name, const std::string&
 }
 
 
-shared_ptr<Broker> Broker::create(int16_t port) 
+boost::intrusive_ptr<Broker> Broker::create(int16_t port) 
 {
     Options config;
     config.port=port;
     return create(config);
 }
 
-shared_ptr<Broker> Broker::create(const Options& opts) 
+boost::intrusive_ptr<Broker> Broker::create(const Options& opts) 
 {
-    return shared_ptr<Broker>(new Broker(opts));
+    return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
 
 void Broker::setStore (MessageStore* _store)
