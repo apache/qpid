@@ -121,7 +121,7 @@
 
       ${build.bin}
 
-  ant test [ -Dtest=&lt;pattern&gt; ] [ report ]
+  ant test [ -Dtest=&lt;pattern&gt; ] [-Dprofile=&lt;profile&gt;] [ report ]
 
     Execute unit tests and place the output in the build results
     directory:
@@ -152,7 +152,9 @@
     default to running all available tests for the project or module
     depending on the current working directory.
 
-    Finally it can be useful to append the report target in order to
+    Test Reports
+
+    It can be useful to append the report target in order to
     generate an html summary of the tests that were just run. The
     following command will run both the MongooseTest and GooseTest
     test cases and generate an html summary of the results:
@@ -161,6 +163,16 @@
 
     See the documentation for the "ant report" target for more details
     on the generated report.
+
+    Test Profiles
+
+    There are a number of profiles defined for running the test suite.
+    These test profiles define how the test should be run. If the test
+    profile is not specified then 'default.testprofile' is utilised.
+    This runs the system tests against the Java InVM broker. Additional
+    test profiles exists as follows:
+
+        cpp : Runs against the built cpp tree broker.
 
   ant report
 

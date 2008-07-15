@@ -25,7 +25,6 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.common.QpidProperties;
@@ -35,7 +34,6 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,14 +60,11 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
     private ConnectionStartMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionStartBody body, int channelId)
+    public void methodReceived(AMQProtocolSession session, ConnectionStartBody body, int channelId)
             throws AMQException
     {
         _log.debug("public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, "
             + "AMQMethodEvent evt): called");
-
-        final AMQProtocolSession session = stateManager.getProtocolSession();
-
 
         ProtocolVersion pv = new ProtocolVersion((byte) body.getVersionMajor(), (byte) body.getVersionMinor());
 
@@ -145,7 +140,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                     throw new AMQException(null, "No locales sent from server, passed: " + locales, null);
                 }
 
-                stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
+                session.getStateManager().changeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
                 clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()),
