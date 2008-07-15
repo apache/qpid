@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 import org.apache.qpidity.transport.Sender;
+import org.apache.qpidity.transport.TransportException;
 
 public class IoSender implements Sender<java.nio.ByteBuffer>
 {
@@ -39,7 +40,7 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
         }
         catch(IOException e)
         {
-            throw new RuntimeException("Error getting output stream for socket",e);
+            throw new TransportException("Error getting output stream for socket",e);
         }
     }
 
@@ -66,8 +67,18 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
      */
     private void write(java.nio.ByteBuffer buf)
     {
-        byte[] array = new byte[buf.remaining()];
-        buf.get(array);
+        byte[] array = null;
+
+        if (buf.hasArray())
+        {
+            array = buf.array();
+        }
+        else
+        {
+            array = new byte[buf.remaining()];
+            buf.get(array);
+        }
+
         if( _socket.isConnected())
         {
             synchronized (lock)
@@ -78,14 +89,13 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
                 }
                 catch(Exception e)
                 {
-                    e.fillInStackTrace();
-                    throw new RuntimeException("Error trying to write to the socket",e);
+                    throw new TransportException("Error trying to write to the socket",e);
                 }
             }
         }
         else
         {
-            throw new RuntimeException("Trying to write on a closed socket");
+            throw new TransportException("Trying to write on a closed socket");
         }
     }
 

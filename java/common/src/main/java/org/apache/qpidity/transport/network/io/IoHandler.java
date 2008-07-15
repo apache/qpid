@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.Receiver;
+import org.apache.qpidity.transport.TransportException;
 import org.apache.qpidity.transport.network.Assembler;
 import org.apache.qpidity.transport.network.Disassembler;
 import org.apache.qpidity.transport.network.InputHandler;
@@ -94,19 +95,14 @@ public class IoHandler implements Runnable
             {
                 _socket.connect(new InetSocketAddress(address, port));
             }
-            while (!_socket.isConnected())
-            {
-
-            }
-
         }
         catch (SocketException e)
         {
-            throw new RuntimeException("Error connecting to broker",e);
+            throw new TransportException("Error connecting to broker",e);
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error connecting to broker",e);
+            throw new TransportException("Error connecting to broker",e);
         }
 
         IoSender sender = new IoSender(_socket);
@@ -133,28 +129,21 @@ public class IoHandler implements Runnable
         {
             InputStream in = _socket.getInputStream();
             int read = 0;
-            while(_socket.isConnected())
+            while(read != -1)
             {
-                try
+                read = in.read(_readBuf);
+                if (read > 0)
                 {
-                    read = in.read(_readBuf);
-                    if (read > 0)
-                    {
-                        ByteBuffer b = ByteBuffer.allocate(read);
-                        b.put(_readBuf,0,read);
-                        b.flip();
-                        _receiver.received(b);
-                    }
-                }
-                catch(Exception e)
-                {
-                    throw new RuntimeException("Error reading from socket input stream",e);
+                    ByteBuffer b = ByteBuffer.allocate(read);
+                    b.put(_readBuf,0,read);
+                    b.flip();
+                    _receiver.received(b);
                 }
             }
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error getting input stream from the socket",e);
+            _receiver.exception(new Exception("Error getting input stream from the socket",e));
         }
         finally
         {
