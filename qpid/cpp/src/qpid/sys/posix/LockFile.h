@@ -43,7 +43,7 @@ public:
 
     ~LockFile() {
         if (fd >= 0) {
-            ::lockf(fd, F_ULOCK, 0);
+            (void) ::lockf(fd, F_ULOCK, 0); // Suppress warnings about ignoring return value.
             ::close(fd);
         }
     }
