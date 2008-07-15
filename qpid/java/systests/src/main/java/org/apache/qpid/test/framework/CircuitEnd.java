@@ -33,7 +33,7 @@ import javax.jms.*;
  * <tr><td> Provide a message consumer for receiving messages.
  * </table>
  *
- * @todo Update the {@link org.apache.qpid.util.ConversationFactory} so that it accepts these as the basic conversation
+ * @todo Update the {@link org.apache.qpid.test.utils.ConversationFactory} so that it accepts these as the basic conversation
  *       connection units.
  */
 public interface CircuitEnd
