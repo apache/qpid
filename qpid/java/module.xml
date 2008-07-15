@@ -26,7 +26,7 @@
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
-  <echo message="Running ant for module : ${module}"/>
+  <echo message="Running ant for module : ${module}" level="info"/>
 
   <property file="${project.root}/build.deps"/>
 
@@ -142,9 +142,13 @@
   <target name="precompile"/>
 
   <target name="compile" depends="prepare,precompile" description="compile sources">
-    <javac source="${java.source}" target="${java.target}"
+
+    <echo message="Targeting : ${java.target}" level="info"/>
+
+    <javac source="${java.source}" target="${java.target}" 
            destdir="${module.classes}" debug="on"
            deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.compiler.args}"/>
       <src refid="module.src.path"/>
       <classpath refid="module.class.path"/>
     </javac>
@@ -199,9 +203,12 @@
 
     <delete file="${module.failed}"/>
 
+    <echo message="Using config:${config}" level="info"/>
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
            failureproperty="test.failures" printsummary="on" timeout="600000" >
+
+      <jvmarg value="${jvm.args}"/>
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
