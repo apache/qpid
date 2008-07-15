@@ -122,6 +122,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 {
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandler.class);
+    private static final Logger _protocolLogger = LoggerFactory.getLogger("qpid.protocol");
+    private static final boolean PROTOCOL_DEBUG = (System.getProperty("amqj.protocol.logging.level") != null);
 
     /**
      * The connection that this protocol handler is associated with. There is a 1-1 mapping between connection
@@ -484,7 +486,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageReceived(IoSession session, Object message) throws Exception
     {
-        if (message instanceof AMQFrame)
+        if (PROTOCOL_DEBUG)
+        {
+            _protocolLogger.info("Recv:"+message);
+        }
+
+        if(message instanceof AMQFrame)
         {
             final boolean debug = _logger.isDebugEnabled();
             final long msgNumber = ++_messageReceivedCount;
@@ -565,6 +572,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageSent(IoSession session, Object message) throws Exception
     {
+        if (PROTOCOL_DEBUG)
+        {
+            _protocolLogger.info("Send:"+message);
+        }
+        
         final long sentMessages = _messagesOut++;
 
         final boolean debug = _logger.isDebugEnabled();
