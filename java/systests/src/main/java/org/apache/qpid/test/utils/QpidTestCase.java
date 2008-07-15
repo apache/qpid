@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -335,7 +336,7 @@ public class QpidTestCase extends TestCase
         else if (_broker.equals(VM))
         {
             TransportConnection.killAllVMBrokers();
-            //ApplicationRegistry.removeAll();
+            ApplicationRegistry.removeAll();
         }
         _brokerStarted = false;
     }

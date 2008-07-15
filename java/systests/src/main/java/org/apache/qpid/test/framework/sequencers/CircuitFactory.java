@@ -23,7 +23,7 @@ package org.apache.qpid.test.framework.sequencers;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.TestClientDetails;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 

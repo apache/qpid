@@ -22,8 +22,8 @@ package org.apache.qpid.test.unit.close;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.QpidClientConnection;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.testutil.QpidClientConnection;
 import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;

@@ -26,7 +26,7 @@ import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalPublisherImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalReceiverImpl;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
