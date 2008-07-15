@@ -47,6 +47,8 @@
   <property name="tasks.classes"         location="${tasks}/classes"/>
   <property name="tasks.src"             location="${tasks}/src"/>
 
+  <property name="javac.compiler.args"   value=""/>
+
   <macrodef name="indirect">
     <attribute name="name"/>
     <attribute name="variable"/>
@@ -75,8 +77,9 @@
   </macrodef>
 
   <mkdir dir="${tasks.classes}"/>
-  <javac srcdir="${tasks.src}" destdir="${tasks.classes}"
-         classpath="${java.class.path}"/>
+  <javac source="${java.source}" target="${java.target}" srcdir="${tasks.src}" destdir="${tasks.classes}"  classpath="${java.class.path}">
+    <compilerarg line="${javac.compiler.args}"/>
+  </javac>
 
   <taskdef name="map" classname="org.apache.qpid.tasks.Map"
            classpath="${tasks.classes}"/>
