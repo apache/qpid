@@ -149,6 +149,11 @@ public class VirtualHost implements Accessable
 
     public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
+        if (name == null || name.length() == 0)
+        {
+            throw new IllegalArgumentException("Illegal name (" + name + ") for virtualhost.");
+        }
+
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
