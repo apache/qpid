@@ -25,9 +25,9 @@
 namespace qpid {
 namespace broker {
 
-boost::shared_ptr<Broker> SignalHandler::broker;
+boost::intrusive_ptr<Broker> SignalHandler::broker;
 
-void SignalHandler::setBroker(const boost::shared_ptr<Broker>& b) {
+void SignalHandler::setBroker(const boost::intrusive_ptr<Broker>& b) {
     broker = b;
 
     signal(SIGINT,shutdownHandler); 
@@ -44,7 +44,7 @@ void SignalHandler::setBroker(const boost::shared_ptr<Broker>& b) {
 void SignalHandler::shutdownHandler(int) {
     if (broker.get()) {
         broker->shutdown();
-        broker.reset();
+        broker = 0;             // Release the broker reference.
     }
 }
 

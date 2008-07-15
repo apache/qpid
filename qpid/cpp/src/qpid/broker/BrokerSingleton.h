@@ -36,13 +36,13 @@ namespace broker {
  *
  * THREAD UNSAFE.
  */
-class BrokerSingleton : public shared_ptr<Broker>
+class BrokerSingleton : public boost::intrusive_ptr<Broker>
 {
   public:
     BrokerSingleton();
     ~BrokerSingleton();
   private:
-    static shared_ptr<Broker> broker;
+    static boost::intrusive_ptr<Broker> broker;
 };
 
 }} // namespace qpid::broker

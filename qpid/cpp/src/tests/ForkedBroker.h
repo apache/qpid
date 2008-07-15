@@ -91,7 +91,7 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
         prefix += boost::lexical_cast<std::string>(long(getpid()));
         qpid::log::Logger::instance().setPrefix(prefix);
         opts.port = 0;
-        boost::shared_ptr<qpid::broker::Broker> broker(new qpid::broker::Broker(opts));
+        boost::intrusive_ptr<qpid::broker::Broker> broker(new qpid::broker::Broker(opts));
         qpid::broker::SignalHandler::setBroker(broker);
         QPID_LOG(info, "ForkedBroker started on " << broker->getPort());
         ready(boost::lexical_cast<std::string>(broker->getPort())); // Notify parent.
@@ -99,8 +99,8 @@ class ForkedBroker : public qpid::sys::ForkWithMessage {
         QPID_LOG(notice, "ForkedBroker exiting.");
 
         // Force exit in the child process, otherwise we will try to
-        // carry with parent tests.
-        broker.reset();         // Run broker dtor before we exit.
+        // carry with parent tests. 
+        broker = 0;             // Run broker dtor before we exit.
         exit(0);
     }
 
