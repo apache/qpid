@@ -26,7 +26,6 @@ import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
@@ -76,11 +75,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         private final LinkedHashMap<Integer, AMQSession> _slowAccessSessions = new LinkedHashMap<Integer, AMQSession>();
         private int _size = 0;
         private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
-        
 
         public AMQSession get(int channelId)
         {
-            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
             {
                 return _fastAccessSessions[channelId];
             }
@@ -93,7 +91,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         public AMQSession put(int channelId, AMQSession session)
         {
             AMQSession oldVal;
-            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
             {
                 oldVal = _fastAccessSessions[channelId];
                 _fastAccessSessions[channelId] = session;
@@ -102,11 +100,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 oldVal = _slowAccessSessions.put(channelId, session);
             }
-            if((oldVal != null) && (session == null))
+            if ((oldVal != null) && (session == null))
             {
                 _size--;
             }
-            else if((oldVal == null) && (session != null))
+            else if ((oldVal == null) && (session != null))
             {
                 _size++;
             }
@@ -115,13 +113,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         }
 
-
         public AMQSession remove(int channelId)
         {
             AMQSession session;
-            if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+            if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
             {
-                 session = _fastAccessSessions[channelId];
+                session = _fastAccessSessions[channelId];
                 _fastAccessSessions[channelId] = null;
             }
             else
@@ -129,7 +126,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 session = _slowAccessSessions.remove(channelId);
             }
 
-            if(session != null)
+            if (session != null)
             {
                 _size--;
             }
@@ -141,9 +138,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             ArrayList<AMQSession> values = new ArrayList<AMQSession>(size());
 
-            for(int i = 0; i < 16; i++)
+            for (int i = 0; i < 16; i++)
             {
-                if(_fastAccessSessions[i] != null)
+                if (_fastAccessSessions[i] != null)
                 {
                     values.add(_fastAccessSessions[i]);
                 }
@@ -162,13 +159,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             _size = 0;
             _slowAccessSessions.clear();
-            for(int i = 0; i<16; i++)
+            for (int i = 0; i < 16; i++)
             {
                 _fastAccessSessions[i] = null;
             }
         }
     }
-
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
@@ -211,7 +207,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     /** The virtual path to connect to on the AMQ server */
     private String _virtualHost;
-   
 
     protected ExceptionListener _exceptionListener;
 
@@ -252,15 +247,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private ProtocolVersion _protocolVersion = ProtocolVersion.v0_9; // FIXME TGM, shouldn't need this
 
     protected AMQConnectionDelegate _delegate;
-    
+
     // this connection maximum number of prefetched messages
     private long _maxPrefetch;
 
     //Indicates whether persistent messages are synchronized
     private boolean _syncPersistence;
-    
-    /** used to hold a list of all exceptions that have been thrown during connection construction. gross */
-    final ArrayList<Exception> _exceptions = new ArrayList<Exception>();
 
     /**
      * @param broker      brokerdetails
@@ -337,20 +329,20 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     /**
      * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
-     *       was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
+     * was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
         // set this connection maxPrefetch
         if (connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH) != null)
         {
-            _maxPrefetch = Long.parseLong( connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+            _maxPrefetch = Long.parseLong(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
         }
         else
         {
             // use the defaul value set for all connections
             _maxPrefetch = Long.valueOf(System.getProperties().getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME,
-                    ClientProperties.MAX_PREFETCH_DEFAULT));
+                                                                           ClientProperties.MAX_PREFETCH_DEFAULT));
         }
 
         if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
@@ -376,25 +368,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // TODO: use this code once we have switch to 0.10
             // getDelegate();
             _delegate = new AMQConnectionDelegate_0_10(this);
-        }
-
-       
-        class Listener implements ExceptionListener
-        {
-            public void onException(JMSException e)
-            {
-                _exceptions.add(e);
-            }
-        }
-
-        try
-        {
-            setExceptionListener(new Listener());
-        }
-        catch (JMSException e)
-        {
-            // Shouldn't happen
-            throw new AMQException(null, null, e);
         }
 
         if (_logger.isInfoEnabled())
@@ -436,15 +409,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _temporaryTopicExchangeName = connectionURL.getTemporaryTopicExchangeName();
         }
 
-
-         _protocolHandler = new AMQProtocolHandler(this);
+        _protocolHandler = new AMQProtocolHandler(this);
 
         // We are not currently connected
         _connected = false;
 
         // TMG FIXME this seems... wrong...
         boolean retryAllowed = true;
-        while (!_connected && retryAllowed )
+        Exception connectionException = null;
+        while (!_connected && retryAllowed)
         {
             try
             {
@@ -456,36 +429,28 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 {
                     _logger.info(pe.getMessage());
                     _logger.info("Trying broker supported protocol version: " +
-                            TransportConstants.getVersionMajor() + "." +
-                            TransportConstants.getVersionMinor());
+                                 TransportConstants.getVersionMajor() + "." +
+                                 TransportConstants.getVersionMinor());
                 }
                 // we need to check whether we have a delegate for the supported protocol
                 getDelegate();
             }
             catch (Exception e)
             {
-                _exceptions.add(e);
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Unable to connect to broker at " + 
-                                _failoverPolicy.getCurrentBrokerDetails(),
-                                e);
+                    _logger.info("Unable to connect to broker at " +
+                                 _failoverPolicy.getCurrentBrokerDetails(),
+                                 e);
                 }
+                connectionException = e;
             }
-            
+
             if (!_connected)
             {
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
             }
-        }
-        try
-        {
-            setExceptionListener(null);
-        }
-        catch (JMSException e1)
-        {
-            // Can't happen
         }
 
         if (_logger.isDebugEnabled())
@@ -496,26 +461,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (!_connected)
         {
             String message = null;
-            try
+
+            if (connectionException != null)
             {
-                Thread.sleep(150);
-            }
-            catch (InterruptedException e)
-            {
-                // Eat it, we've hopefully got all the exceptions if this happened
-            }
-            
-            Exception lastException = null;
-            if (_exceptions.size() > 0)
-            {
-                lastException = _exceptions.get(_exceptions.size() - 1);
-                if (lastException.getCause() != null)
+                if (connectionException.getCause() != null)
                 {
-                    message = lastException.getCause().getMessage();
+                    message = connectionException.getCause().getMessage();
                 }
                 else
                 {
-                    message = lastException.getMessage();
+                    message = connectionException.getMessage();
                 }
             }
 
@@ -527,20 +482,20 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
                 else // can only be "" if getMessage() returned it therfore lastException != null
                 {
-                    message = "Unable to Connect:" + lastException.getClass();
+                    message = "Unable to Connect:" + connectionException.getClass();
                 }
             }
 
-            AMQException e = new AMQConnectionFailureException(message, _exceptions);
-                        
-            if (lastException != null)
+            AMQException e = new AMQConnectionFailureException(message, connectionException);
+
+            if (connectionException != null)
             {
-                if (lastException instanceof UnresolvedAddressException)
+                if (connectionException instanceof UnresolvedAddressException)
                 {
                     e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString(),
                                                           null);
                 }
-                
+
             }
             throw e;
         }
@@ -565,18 +520,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         try
         {
             Class c = Class.forName("org.apache.qpid.client.AMQConnectionDelegate_" +
-                    TransportConstants.getVersionMajor() + "_" +
-                    TransportConstants.getVersionMinor());
-             Class partypes[] = new Class[1];
+                                    TransportConstants.getVersionMajor() + "_" +
+                                    TransportConstants.getVersionMinor());
+            Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;
             _delegate = (AMQConnectionDelegate) c.getConstructor(partypes).newInstance(this);
         }
         catch (Exception e)
         {
             throw new AMQProtocolException(AMQConstant.UNSUPPORTED_CLIENT_PROTOCOL_ERROR,
-                    "Protocol: " + TransportConstants.getVersionMajor() + "."
-            + TransportConstants.getVersionMinor() + " is rquired by the broker but is not " +
-                            "currently supported by this client library implementation", e);
+                                           "Protocol: " + TransportConstants.getVersionMajor() + "."
+                                           + TransportConstants.getVersionMinor() + " is rquired by the broker but is not " +
+                                           "currently supported by this client library implementation", e);
         }
     }
 
@@ -867,7 +822,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-
         }
     }
 
@@ -892,14 +846,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    public void close() throws JMSException
+    public void     close() throws JMSException
     {
         close(DEFAULT_TIMEOUT);
     }
 
     public void close(long timeout) throws JMSException
     {
-        close(new ArrayList<AMQSession>(_sessions.values()),timeout);
+        close(new ArrayList<AMQSession>(_sessions.values()), timeout);
     }
 
     public void close(List<AMQSession> sessions, long timeout) throws JMSException
@@ -912,12 +866,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private void doClose(List<AMQSession> sessions, long timeout) throws JMSException
     {
-        synchronized(_sessionCreationLock)
+        synchronized (_sessionCreationLock)
         {
-            if(!sessions.isEmpty())
+            if (!sessions.isEmpty())
             {
                 AMQSession session = sessions.remove(0);
-                synchronized(session.getMessageDeliveryLock())
+                synchronized (session.getMessageDeliveryLock())
                 {
                     doClose(sessions, timeout);
                 }
@@ -1120,7 +1074,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _sessions;
     }
-    
+
     public String getUsername()
     {
         return _username;
@@ -1297,6 +1251,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (cause instanceof IOException)
         {
             closer = !_closed.getAndSet(true);
+
+            _protocolHandler.getProtocolSession().notifyError(je);
         }
 
         if (_exceptionListener != null)
@@ -1339,7 +1295,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         if (cause instanceof AMQException)
         {
-            return ((AMQException)cause).isHardError();
+            return ((AMQException) cause).isHardError();
         }
 
         return true;
@@ -1483,7 +1439,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public long getMaxPrefetch()
     {
-       return _maxPrefetch;
+        return _maxPrefetch;
     }
 
     /**
@@ -1495,14 +1451,4 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _syncPersistence;
     }
-
-    public Exception getLastException()
-    {
-        if (_exceptions.size() > 0)
-        {
-            return _exceptions.get(_exceptions.size() - 1);
-        }
-        return null;
-    }
-
 }

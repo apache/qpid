@@ -482,7 +482,7 @@ public final class AMQSession_0_8 extends AMQSession
                                                        false,
                                                        null).generateFrame(_channelId);
         QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
-        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
+        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);        
         return okHandler._messageCount;
     }
 

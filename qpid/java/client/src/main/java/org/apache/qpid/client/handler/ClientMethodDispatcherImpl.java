@@ -27,31 +27,33 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientMethodDispatcherImpl implements MethodDispatcher
 {
 
-
-    private static final BasicCancelOkMethodHandler      _basicCancelOkMethodHandler      = BasicCancelOkMethodHandler.getInstance();
-    private static final BasicDeliverMethodHandler       _basicDeliverMethodHandler       = BasicDeliverMethodHandler.getInstance();
-    private static final BasicReturnMethodHandler        _basicReturnMethodHandler        = BasicReturnMethodHandler.getInstance();
-    private static final ChannelCloseMethodHandler       _channelCloseMethodHandler       = ChannelCloseMethodHandler.getInstance();
-    private static final ChannelFlowOkMethodHandler      _channelFlowOkMethodHandler      = ChannelFlowOkMethodHandler.getInstance();
-    private static final ConnectionCloseMethodHandler    _connectionCloseMethodHandler    = ConnectionCloseMethodHandler.getInstance();
-    private static final ConnectionOpenOkMethodHandler   _connectionOpenOkMethodHandler   = ConnectionOpenOkMethodHandler.getInstance();
+    private static final BasicCancelOkMethodHandler _basicCancelOkMethodHandler = BasicCancelOkMethodHandler.getInstance();
+    private static final BasicDeliverMethodHandler _basicDeliverMethodHandler = BasicDeliverMethodHandler.getInstance();
+    private static final BasicReturnMethodHandler _basicReturnMethodHandler = BasicReturnMethodHandler.getInstance();
+    private static final ChannelCloseMethodHandler _channelCloseMethodHandler = ChannelCloseMethodHandler.getInstance();
+    private static final ChannelFlowOkMethodHandler _channelFlowOkMethodHandler = ChannelFlowOkMethodHandler.getInstance();
+    private static final ConnectionCloseMethodHandler _connectionCloseMethodHandler = ConnectionCloseMethodHandler.getInstance();
+    private static final ConnectionOpenOkMethodHandler _connectionOpenOkMethodHandler = ConnectionOpenOkMethodHandler.getInstance();
     private static final ConnectionRedirectMethodHandler _connectionRedirectMethodHandler = ConnectionRedirectMethodHandler.getInstance();
-    private static final ConnectionSecureMethodHandler   _connectionSecureMethodHandler   = ConnectionSecureMethodHandler.getInstance();
-    private static final ConnectionStartMethodHandler    _connectionStartMethodHandler    = ConnectionStartMethodHandler.getInstance();
-    private static final ConnectionTuneMethodHandler     _connectionTuneMethodHandler     = ConnectionTuneMethodHandler.getInstance();
-    private static final ExchangeBoundOkMethodHandler    _exchangeBoundOkMethodHandler    = ExchangeBoundOkMethodHandler.getInstance();
-    private static final QueueDeleteOkMethodHandler      _queueDeleteOkMethodHandler      = QueueDeleteOkMethodHandler.getInstance();
+    private static final ConnectionSecureMethodHandler _connectionSecureMethodHandler = ConnectionSecureMethodHandler.getInstance();
+    private static final ConnectionStartMethodHandler _connectionStartMethodHandler = ConnectionStartMethodHandler.getInstance();
+    private static final ConnectionTuneMethodHandler _connectionTuneMethodHandler = ConnectionTuneMethodHandler.getInstance();
+    private static final ExchangeBoundOkMethodHandler _exchangeBoundOkMethodHandler = ExchangeBoundOkMethodHandler.getInstance();
+    private static final QueueDeleteOkMethodHandler _queueDeleteOkMethodHandler = QueueDeleteOkMethodHandler.getInstance();
 
+    private static final Logger _logger = LoggerFactory.getLogger(ClientMethodDispatcherImpl.class);
 
 
     private static interface DispatcherFactory
     {
-        public ClientMethodDispatcherImpl createMethodDispatcher(AMQStateManager stateManager);
+        public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session);
     }
 
     private static final Map<ProtocolVersion, DispatcherFactory> _dispatcherFactories =
@@ -62,44 +64,40 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         _dispatcherFactories.put(ProtocolVersion.v8_0,
                                  new DispatcherFactory()
                                  {
-                                     public ClientMethodDispatcherImpl createMethodDispatcher(AMQStateManager stateManager)
+                                     public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session)
                                      {
-                                         return new ClientMethodDispatcherImpl_8_0(stateManager);
+                                         return new ClientMethodDispatcherImpl_8_0(session);
                                      }
                                  });
 
         _dispatcherFactories.put(ProtocolVersion.v0_9,
                                  new DispatcherFactory()
                                  {
-                                     public ClientMethodDispatcherImpl createMethodDispatcher(AMQStateManager stateManager)
+                                     public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session)
                                      {
-                                         return new ClientMethodDispatcherImpl_0_9(stateManager);
+                                         return new ClientMethodDispatcherImpl_0_9(session);
                                      }
                                  });
 
     }
 
-
-    public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQStateManager stateManager)
+    public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQProtocolSession session)
     {
+        _logger.error("New Method Dispatcher:" + session);
         DispatcherFactory factory = _dispatcherFactories.get(version);
-        return factory.createMethodDispatcher(stateManager);
+        return factory.createMethodDispatcher(session);
     }
-    
 
+    AMQProtocolSession _session;
 
-
-    private AMQStateManager _stateManager;
-
-    public ClientMethodDispatcherImpl(AMQStateManager stateManager)
+    public ClientMethodDispatcherImpl(AMQProtocolSession session)
     {
-        _stateManager = stateManager;
+        _session = session;
     }
-
 
     public AMQStateManager getStateManager()
     {
-        return _stateManager;
+        return _session.getStateManager();
     }
 
     public boolean dispatchAccessRequestOk(AccessRequestOkBody body, int channelId) throws AMQException
@@ -109,7 +107,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchBasicCancelOk(BasicCancelOkBody body, int channelId) throws AMQException
     {
-        _basicCancelOkMethodHandler.methodReceived(_stateManager,body,channelId);
+        _basicCancelOkMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -120,7 +118,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchBasicDeliver(BasicDeliverBody body, int channelId) throws AMQException
     {
-        _basicDeliverMethodHandler.methodReceived(_stateManager,body,channelId);
+        _basicDeliverMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -141,13 +139,13 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchBasicReturn(BasicReturnBody body, int channelId) throws AMQException
     {
-        _basicReturnMethodHandler.methodReceived(_stateManager,body,channelId);
+        _basicReturnMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchChannelClose(ChannelCloseBody body, int channelId) throws AMQException
     {
-        _channelCloseMethodHandler.methodReceived(_stateManager,body,channelId);
+        _channelCloseMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -163,7 +161,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchChannelFlowOk(ChannelFlowOkBody body, int channelId) throws AMQException
     {
-        _channelFlowOkMethodHandler.methodReceived(_stateManager,body,channelId);
+        _channelFlowOkMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -174,7 +172,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchConnectionClose(ConnectionCloseBody body, int channelId) throws AMQException
     {
-        _connectionCloseMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionCloseMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -185,37 +183,37 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchConnectionOpenOk(ConnectionOpenOkBody body, int channelId) throws AMQException
     {
-        _connectionOpenOkMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionOpenOkMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionRedirect(ConnectionRedirectBody body, int channelId) throws AMQException
     {
-        _connectionRedirectMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionRedirectMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionSecure(ConnectionSecureBody body, int channelId) throws AMQException
     {
-        _connectionSecureMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionSecureMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionStart(ConnectionStartBody body, int channelId) throws AMQException
     {
-        _connectionStartMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionStartMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionTune(ConnectionTuneBody body, int channelId) throws AMQException
     {
-        _connectionTuneMethodHandler.methodReceived(_stateManager,body,channelId);
+        _connectionTuneMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
     public boolean dispatchQueueDeleteOk(QueueDeleteOkBody body, int channelId) throws AMQException
     {
-        _queueDeleteOkMethodHandler.methodReceived(_stateManager,body,channelId);
+        _queueDeleteOkMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -431,7 +429,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchExchangeBoundOk(ExchangeBoundOkBody body, int channelId) throws AMQException
     {
-        _exchangeBoundOkMethodHandler.methodReceived(_stateManager,body,channelId);
+        _exchangeBoundOkMethodHandler.methodReceived(_session, body, channelId);
         return true;
     }
 
@@ -522,7 +520,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchTxSelectOk(TxSelectOkBody body, int channelId) throws AMQException
     {
-        return false;  
+        return false;
     }
 
 }

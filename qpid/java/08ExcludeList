@@ -5,5 +5,3 @@ org.apache.qpid.test.unit.ct.DurableSubscriberTests#*
 // Those tests are not finished
 org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.testcases.FailoverTest#*
-// Client Race Condition 
-org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection

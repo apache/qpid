@@ -25,12 +25,9 @@ import javax.security.sasl.SaslException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionSecureMethodHandler implements StateAwareMethodListener<ConnectionSecureBody>
 {
@@ -41,10 +38,9 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener<C
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionSecureBody body, int channelId)
+    public void methodReceived(AMQProtocolSession session, ConnectionSecureBody body, int channelId)
                 throws AMQException
     {
-        final AMQProtocolSession session = stateManager.getProtocolSession(); 
         SaslClient client = session.getSaslClient();
         if (client == null)
         {

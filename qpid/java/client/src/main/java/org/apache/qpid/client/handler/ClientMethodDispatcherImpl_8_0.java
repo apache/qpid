@@ -24,13 +24,13 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public class ClientMethodDispatcherImpl_8_0 extends ClientMethodDispatcherImpl implements MethodDispatcher_8_0
 {
-    public ClientMethodDispatcherImpl_8_0(AMQStateManager stateManager)
+    public ClientMethodDispatcherImpl_8_0(AMQProtocolSession session)
     {
-        super(stateManager);
+        super(session);
     }
 
     public boolean dispatchBasicRecoverOk(BasicRecoverOkBody body, int channelId) throws AMQException

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.client.state.listener;
 
-import org.apache.qpid.AMQException;
+
 import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
 import org.apache.qpid.framing.AMQMethodBody;
 
@@ -34,7 +34,7 @@ public class SpecificMethodFrameListener extends BlockingMethodFrameListener
         _expectedClass = expectedClass;
     }
 
-    public boolean processMethod(int channelId, AMQMethodBody frame) //throws AMQException
+    public boolean processMethod(int channelId, AMQMethodBody frame)
     {
         return _expectedClass.isInstance(frame);
     }
