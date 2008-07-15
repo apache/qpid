@@ -23,7 +23,6 @@ package org.apache.qpid.test.unit.client.destinationurl;
 import junit.framework.TestCase;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.test.unit.basic.PropertyValueTest;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
