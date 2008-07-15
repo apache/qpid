@@ -22,7 +22,7 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -36,11 +36,11 @@ class SignalHandler
 {
   public:
     /** Set the broker to be shutdown on signals */
-    static void setBroker(const boost::shared_ptr<Broker>& broker);
+    static void setBroker(const boost::intrusive_ptr<Broker>& broker);
 
   private:
     static void shutdownHandler(int);
-    static boost::shared_ptr<Broker> broker;
+    static boost::intrusive_ptr<Broker> broker;
 };
 }} // namespace qpid::broker
 
