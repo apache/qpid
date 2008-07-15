@@ -21,15 +21,12 @@
 package org.apache.qpid.test.client;
 
 import org.apache.qpid.client.AMQSession_0_8;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.test.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
 
-
-
-public class FlowControlTest extends FailoverBaseCase
+public class FlowControlTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(FlowControlTest.class);
 
@@ -37,20 +34,14 @@ public class FlowControlTest extends FailoverBaseCase
     private Session _clientSession;
     private Queue _queue;
 
-    public void setUp() throws Exception
-    {
-
-        super.setUp();
-
-
-    }
-
     /**
      * Simply
+     *
+     * @throws Exception
      */
     public void testBasicBytesFlowControl() throws Exception
     {
-         _queue = new AMQQueue("amq.direct","testqueue");//(Queue) _context.lookup("queue");
+        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
         _clientConnection = getConnection();
@@ -71,25 +62,24 @@ public class FlowControlTest extends FailoverBaseCase
 
         BytesMessage m1 = producerSession.createBytesMessage();
         m1.writeBytes(new byte[128]);
-        m1.setIntProperty("msg",1);
+        m1.setIntProperty("msg", 1);
         producer.send(m1);
         BytesMessage m2 = producerSession.createBytesMessage();
         m2.writeBytes(new byte[128]);
-        m2.setIntProperty("msg",2);
+        m2.setIntProperty("msg", 2);
         producer.send(m2);
         BytesMessage m3 = producerSession.createBytesMessage();
         m3.writeBytes(new byte[256]);
-        m3.setIntProperty("msg",3);
+        m3.setIntProperty("msg", 3);
         producer.send(m3);
 
         producer.close();
         producerSession.close();
         producerConnection.close();
 
-
         Connection consumerConnection = getConnection();
         Session consumerSession = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8)consumerSession).setPrefecthLimits(0,256);
+        ((AMQSession_0_8) consumerSession).setPrefecthLimits(0, 256);
         MessageConsumer recv = consumerSession.createConsumer(_queue);
         consumerConnection.start();
 
@@ -111,7 +101,6 @@ public class FlowControlTest extends FailoverBaseCase
 
         r2.acknowledge();
 
-
         r3 = recv.receive(RECEIVE_TIMEOUT);
         assertNotNull("Third message not received", r3);
         assertEquals("Messages in wrong order", 3, r3.getIntProperty("msg"));
@@ -125,7 +114,7 @@ public class FlowControlTest extends FailoverBaseCase
 
     public void testTwoConsumersBytesFlowControl() throws Exception
     {
-         _queue = new AMQQueue("amq.direct","testqueue1");//(Queue) _context.lookup("queue");
+        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
         _clientConnection = getConnection();
@@ -146,25 +135,24 @@ public class FlowControlTest extends FailoverBaseCase
 
         BytesMessage m1 = producerSession.createBytesMessage();
         m1.writeBytes(new byte[128]);
-        m1.setIntProperty("msg",1);
+        m1.setIntProperty("msg", 1);
         producer.send(m1);
         BytesMessage m2 = producerSession.createBytesMessage();
         m2.writeBytes(new byte[256]);
-        m2.setIntProperty("msg",2);
+        m2.setIntProperty("msg", 2);
         producer.send(m2);
         BytesMessage m3 = producerSession.createBytesMessage();
         m3.writeBytes(new byte[128]);
-        m3.setIntProperty("msg",3);
+        m3.setIntProperty("msg", 3);
         producer.send(m3);
 
         producer.close();
         producerSession.close();
         producerConnection.close();
 
-
         Connection consumerConnection = getConnection();
         Session consumerSession1 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8)consumerSession1).setPrefecthLimits(0,256);
+        ((AMQSession_0_8) consumerSession1).setPrefecthLimits(0, 256);
         MessageConsumer recv1 = consumerSession1.createConsumer(_queue);
 
         consumerConnection.start();
@@ -173,14 +161,12 @@ public class FlowControlTest extends FailoverBaseCase
         assertNotNull("First message not received", r1);
         assertEquals("Messages in wrong order", 1, r1.getIntProperty("msg"));
 
-
         Message r2 = recv1.receiveNoWait();
         assertNull("Second message incorrectly delivered", r2);
-        
-        Session consumerSession2 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8)consumerSession2).setPrefecthLimits(0,256);
-        MessageConsumer recv2 = consumerSession2.createConsumer(_queue);
 
+        Session consumerSession2 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        ((AMQSession_0_8) consumerSession2).setPrefecthLimits(0, 256);
+        MessageConsumer recv2 = consumerSession2.createConsumer(_queue);
 
         r2 = recv2.receive(100000L);//RECEIVE_TIMEOUT);
         assertNotNull("Second message not received", r2);
@@ -193,10 +179,8 @@ public class FlowControlTest extends FailoverBaseCase
         assertNotNull("Third message not received", r3);
         assertEquals("Messages in wrong order", 3, r3.getIntProperty("msg"));
 
-
-
         r2.acknowledge();
-        r3.acknowledge();
+        r3.acknowledge();                                                                 
         recv1.close();
         recv2.close();
         consumerSession1.close();
@@ -205,4 +189,23 @@ public class FlowControlTest extends FailoverBaseCase
 
     }
 
+    public static void main(String args[]) throws Throwable
+    {
+        FlowControlTest test = new FlowControlTest();
+
+        int run = 0;
+        while (true)
+        {
+            System.err.println("Test Run:" + ++run);
+            Thread.sleep(1000);
+
+            test.startBroker();
+            test.testBasicBytesFlowControl();
+
+            Thread.sleep(1000);
+            
+            test.stopBroker();
+        }
+    }
 }
+

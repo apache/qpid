@@ -31,9 +31,7 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AcknowledgeTest extends QpidTestCase
 {
@@ -63,21 +61,6 @@ public class AcknowledgeTest extends QpidTestCase
         _consumerA = _consumerSession.createConsumer(_queue);
 	}
 
-    @Override
-    protected void tearDown() throws Exception
-    {
-    	super.tearDown();
-    	try
-    	{
-    		TransportConnection.killAllVMBrokers();
-    		ApplicationRegistry.removeAll();
-    	}
-    	catch (Exception e)
-    	{
-    		fail("Unable to clean up");
-    	}
-
-    }
 
 
     private void sendMessages(int totalMessages) throws JMSException

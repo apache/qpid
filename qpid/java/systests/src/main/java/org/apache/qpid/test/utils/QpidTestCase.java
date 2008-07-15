@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.testutil;
+package org.apache.qpid.test.utils;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
@@ -45,6 +45,8 @@ public class QpidTestCase extends TestCase
 {
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+
+    protected long RECEIVE_TIMEOUT = 1000l;    
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -333,6 +335,7 @@ public class QpidTestCase extends TestCase
         else if (_broker.equals(VM))
         {
             TransportConnection.killAllVMBrokers();
+            //ApplicationRegistry.removeAll();
         }
         _brokerStarted = false;
     }
