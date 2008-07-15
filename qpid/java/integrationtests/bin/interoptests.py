@@ -19,8 +19,8 @@
 # under the License.
 
 import glob, os, subprocess
-from optparse import OptionParser
 from subprocess import Popen
+from optparse import OptionParser
 
 interop_cases = ["InteropTestCase1DummyRun", "InteropTestCase2BasicP2P", "InteropTestCase3BasicPubSub", "InteropTestCase4P2PMessageSize", "InteropTestCase5PubSubMessageSize"]
 
@@ -73,10 +73,16 @@ def main():
         parser.error("Test directory must be specified and must exist")
 
     # check dotnet test client
-    if (options.testlib == None or
+    if (options.dotnet == None or
         not os.path.exists(options.dotnet) or
         not os.path.exists(options.dotnet+"/TestClient.exe")):
         parser.error(".Net test directory must be specified and must contain TestClient.exe")
+
+    # check cpp test client
+    if (options.cpp == None or
+        not os.path.exists(options.cpp) or
+        not os.path.exists(options.cpp+"/src/tests/interop_runner")):
+        parser.error("C++ test directory must be specified and must contain test client")
         
     # Get list of available broker and client versions
     brokers = glob.glob(options.brokers+"/qpid-[0-9].[0-9].[0-9].[0-9]")
@@ -89,10 +95,9 @@ def main():
         parser.error("Broker directory did not contain any brokers!")
 
     for broker in brokers:
-        if (os.path.isdir(broker)):
-            for client in java_clients:
-                if (os.path.isdir(client)):
-                    test(options.testlib, broker, client, options.dotnet)
+        for client in java_clients:
+            test(options.testlib, broker, client, options.dotnet,
+                 options.cpp)
 
 def start_dotnet(dotnetpath):
     return Popen(["%s/TestClient.exe" % os.path.abspath(dotnetpath),
@@ -106,7 +111,7 @@ def start_java(javapath):
     for lib in clientlibs:
         classpath = classpath + testlibdir+"/"+lib+";"
         
-    classpath = classpath + clientpath+"/lib/qpid-incubating.jar"        
+    classpath = classpath + javapath+"/lib/qpid-incubating.jar"        
 
     # Add qpid common since the tests need that, classpath hatefulness
     classpath = classpath + ";"+testlibdir+"/qpid-common-incubating-M3.jar"
@@ -117,7 +122,9 @@ def start_java(javapath):
                  stderr=subprocess.STDOUT)
 
 def start_cpp(cpppath):
-    pass
+    return Popen([cpppath+"tests/interop_runner"],
+                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                 stderr=subprocess.STDOUT)
 
 def run_tests():
     for testcase in interop_cases:
