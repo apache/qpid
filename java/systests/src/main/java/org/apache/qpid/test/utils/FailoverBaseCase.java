@@ -18,25 +18,31 @@
  * under the License.
  *
  */
-package org.apache.qpid.test;
+package org.apache.qpid.test.utils;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.testutil.QpidTestCase;
 
 import javax.jms.Connection;
 
 public class FailoverBaseCase extends QpidTestCase
 {
-    protected long RECEIVE_TIMEOUT = 1000l;
+    private boolean failedOver = true;
+    
 
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
-        if( _broker.equals(VM) )
+
+        try
         {
-            System.getProperties().setProperty("amqj.AutoCreateVMBroker", "true");
+            TransportConnection.createVMBroker(2);
         }
+        catch (Exception e)
+        {
+            fail("Unable to create broker: " + e);
+        }
+
     }
 
     /**
@@ -60,13 +66,24 @@ public class FailoverBaseCase extends QpidTestCase
         return conn;
     }
 
+    public void tearDown() throws Exception
+    {
+        if (!failedOver)
+        {
+            TransportConnection.killVMBroker(2);
+            ApplicationRegistry.remove(2);
+        }
+        super.tearDown();
+    }
+
+
     /**
      * Only used of VM borker.
-     * // TODO: update the failover mechanism once 0.10 provides support for failover. 
      */
     public void failBroker()
     {
-        TransportConnection.killVMBroker(1);
-        ApplicationRegistry.remove(1);
+        failedOver = true;
+        TransportConnection.killVMBroker(2);
+        ApplicationRegistry.remove(2);
     }
 }

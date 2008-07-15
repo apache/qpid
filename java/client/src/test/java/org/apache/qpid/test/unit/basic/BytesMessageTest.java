@@ -29,7 +29,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

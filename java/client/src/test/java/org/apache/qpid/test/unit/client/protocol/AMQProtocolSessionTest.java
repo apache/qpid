@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.test.unit.client.protocol;
 
-import junit.framework.TestCase;
-
 import org.apache.mina.common.IoSession;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQProtocolSessionTest extends QpidTestCase
 {
