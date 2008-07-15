@@ -424,7 +424,7 @@ public interface Session
      * declaring connection closes.
      * <li> {@link Option#PASSIVE}: <p> If set, the server will not create the queue.
      * This field allows the client to assert the presence of a queue without modifying the server state.
-     * <li>{@link Option#NONE}: <p> Has no effect as it represents an �empty� option.
+     * <li>{@link Option#NONE}: <p> Has no effect as it represents an empty option.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option
      *
@@ -487,7 +487,7 @@ public interface Session
      * <li> {@link Option#IF_EMPTY}: <p>  If set, the server will only delete the queue if it has no messages.
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the queue if it has no consumers.
      * If the queue has consumers the server does does not delete it but raises a channel exception instead.
-     * <li>{@link Option#NONE}: <p> Has no effect as it represents an �empty� option.
+     * <li>{@link Option#NONE}: <p> Has no effect as it represents an empty option.
      * </ul>
      * </p>
      * <p/>
