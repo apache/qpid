@@ -21,17 +21,8 @@
 <project name="gentools" default="compile">
     <property name="src" location="src" />
 
-    <!--condition property="java.target" value="${java.target}" else="1.5">
-        <isset property="java.target"/>
-    </condition>
-
-    <condition property="java.source" value="${java.source}" else="1.5">
-        <isset property="java.source"/>
-    </condition-->
-         
     <property name="java.source" value="1.5"/>
     <property name="java.target" value="1.5"/>
-
     
     <target name="compile">
         <javac srcdir="${src}" source="${java.source}" target="${java.target}" fork="true" debug="on">
