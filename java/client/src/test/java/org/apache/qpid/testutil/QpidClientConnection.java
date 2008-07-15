@@ -22,10 +22,8 @@
 package org.apache.qpid.testutil;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.JMSAMQException;
-import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

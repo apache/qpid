@@ -1,7 +1,6 @@
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.testutil.QpidTestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 
