@@ -132,7 +132,7 @@ public class ConnectionTest extends QpidTestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + getBroker() + "?retries='1''");
+            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + getBroker() + "?retries='0''");
             fail("Connection should not be established password is wrong.");
         }
         catch (AMQConnectionFailureException amqe)

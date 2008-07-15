@@ -159,6 +159,8 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         assertEquals("Session reports Queue depth not as expected", depth, queueDepth);
 
+
+
         // Browse the queue to get a second opinion
         int msgCount = 0;
         Enumeration msgs = queueBrowser.getEnumeration();
@@ -418,9 +420,14 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         validate(messages);
     }
 
+    /**
+     * Testing that a QueueBrowser doesn't actually consume messages from a broker when it fails over. 
+     * @throws JMSException
+     */
     public void testFailoverWithQueueBrowser() throws JMSException
     {
         int messages = 5;
+        
 
         sendMessages("connection1", messages);
         sendMessages("connection2", messages);
@@ -475,7 +482,9 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         //Close browser
         queueBrowser.close();
 
-        //Validate all messages still on Broker 1
+        _logger.info("Closed Queue Browser, validating messages on broker.");
+
+        //Validate all messages still on Broker
         validate(messages);
     }
 
@@ -495,21 +504,5 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         //Validate all messages still on Broker 1
         validate(messages);
     }
-
-    public void loop() throws JMSException
-    {
-        int run = 0;
-        try
-        {
-            while (true)
-            {
-                System.err.println(run++ + ":************************************************************************");
-                testQueueBrowserMsgsRemainOnQueue();
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.error(e, e);
-        }
-    }
+        
 }

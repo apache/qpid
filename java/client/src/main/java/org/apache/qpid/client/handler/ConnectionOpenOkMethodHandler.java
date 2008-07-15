@@ -24,9 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener<ConnectionOpenOkBody>
 {
@@ -41,10 +39,10 @@ public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener<C
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionOpenOkBody body, int channelId)
+    public void methodReceived(AMQProtocolSession session, ConnectionOpenOkBody body, int channelId)
                 throws AMQException            
     {
-        stateManager.changeState(AMQState.CONNECTION_OPEN);
+        session.getStateManager().changeState(AMQState.CONNECTION_OPEN);
     }
 
 

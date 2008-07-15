@@ -139,11 +139,15 @@ public class FailoverHandler implements Runnable
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
-            _amqProtocolHandler.setStateManager(new AMQStateManager(_amqProtocolHandler.getProtocolSession()));
+
+            _amqProtocolHandler.setStateManager(new AMQStateManager());
+
+
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
                 _logger.info("Failover process veto-ed by client");
 
+                //Restore Existing State Manager
                 _amqProtocolHandler.setStateManager(existingStateManager);
 
                 //todo: ritchiem these exceptions are useless... Would be better to attempt to propogate exception that
@@ -181,13 +185,19 @@ public class FailoverHandler implements Runnable
 
             if (!failoverSucceeded)
             {
+                //Restore Existing State Manager
                 _amqProtocolHandler.setStateManager(existingStateManager);
+
                 _amqProtocolHandler.getConnection().exceptionReceived(
                         new AMQDisconnectedException("Server closed connection and no failover " +
                                 "was successful", null));
             }
             else
             {
+                // Set the new Protocol Session in the StateManager.               
+                existingStateManager.setProtocolSession(_amqProtocolHandler.getProtocolSession());
+
+                //Restore Existing State Manager
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 try
                 {
