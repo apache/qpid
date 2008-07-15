@@ -142,7 +142,7 @@ struct QpiddDaemon : public Daemon {
 
     /** Code for forked child process */
     void child() {
-        shared_ptr<Broker> brokerPtr(new Broker(options->broker));
+        boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         broker::SignalHandler::setBroker(brokerPtr);
         uint16_t port=brokerPtr->getPort();
         ready(port);            // Notify parent.
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
             d.fork();           // Broker is stared in QpiddDaemon::child()
         } 
         else {                  // Non-daemon broker.
-            shared_ptr<Broker> brokerPtr(new Broker(options->broker));
+            boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
             broker::SignalHandler::setBroker(brokerPtr);
             if (options->broker.port == 0)
                 cout << uint16_t(brokerPtr->getPort()) << endl; 

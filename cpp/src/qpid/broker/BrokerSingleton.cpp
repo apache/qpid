@@ -24,13 +24,13 @@ namespace broker {
 BrokerSingleton::BrokerSingleton() {
     if (broker.get() == 0)
         broker = Broker::create();
-    shared_ptr<Broker>::operator=(broker);
+    boost::intrusive_ptr<Broker>::operator=(broker);
 }
 
 BrokerSingleton::~BrokerSingleton() {
     broker->shutdown();
 }
 
-shared_ptr<Broker> BrokerSingleton::broker;
+boost::intrusive_ptr<Broker> BrokerSingleton::broker;
 
 }} // namespace qpid::broker

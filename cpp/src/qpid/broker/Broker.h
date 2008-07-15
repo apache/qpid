@@ -44,7 +44,9 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/RefCounted.h"
 
+#include <boost/intrusive_ptr.hpp>
 #include <vector>
 
 namespace qpid { 
@@ -64,7 +66,7 @@ static const  uint16_t DEFAULT_PORT=5672;
  * A broker instance. 
  */
 class Broker : public sys::Runnable, public Plugin::Target,
-               public management::Manageable
+               public management::Manageable, public RefCounted
 {
   public:
 
@@ -89,8 +91,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     virtual ~Broker();
 
     Broker(const Options& configuration);
-    static shared_ptr<Broker> create(const Options& configuration);
-    static shared_ptr<Broker> create(int16_t port = DEFAULT_PORT);
+    static boost::intrusive_ptr<Broker> create(const Options& configuration);
+    static boost::intrusive_ptr<Broker> create(int16_t port = DEFAULT_PORT);
 
     /**
      * Return listening port. If called before bind this is
