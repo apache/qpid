@@ -17,4 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-find . -regex '\.\/[P|T].CT-.*\.sh' -exec  {} -o results-Connections/ --csv \;
+Connections.sh && \
+JobQueue.sh && \
+Latency.sh && \
+MessageSize.sh && \
+Reliability.sh && \
+Throughput.sh
