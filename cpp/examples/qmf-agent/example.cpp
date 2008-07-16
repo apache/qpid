@@ -22,7 +22,6 @@
 #include <qpid/management/Manageable.h>
 #include <qpid/management/ManagementObject.h>
 #include <qpid/agent/ManagementAgent.h>
-#include <qpid/agent/ManagementAgentImpl.h>
 #include "Parent.h"
 #include "PackageQmf_example.h"
 
