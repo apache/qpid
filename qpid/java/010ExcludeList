@@ -32,6 +32,7 @@ org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
 org.apache.qpid.test.testcases.FailoverTest#*
+org.apache.qpid.test.client.failover.FailoverTest#*
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
