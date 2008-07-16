@@ -111,7 +111,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     }
 
 
-    protected void sendMessages(Connection producerConnection, int num) throws JMSException
+    protected void sendMessages(Connection producerConnection, int messageSendCount) throws JMSException
     {
         producerConnection.start();
 
@@ -122,7 +122,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         MessageProducer producer = producerSession.createProducer(_queue);
 
-        for (int messsageID = 0; messsageID < num; messsageID++)
+        for (int messsageID = 0; messsageID < messageSendCount; messsageID++)
         {
             TextMessage textMsg = producerSession.createTextMessage("Message " + messsageID);
             textMsg.setIntProperty(MESSAGE_ID_PROPERTY, messsageID);
@@ -132,7 +132,15 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         producerConnection.close();
     }
 
-    protected void checkQueueDepth(int depth) throws JMSException
+    /**
+     * Using the Protocol getQueueDepth method ensure that the correct number of messages are on the queue.
+     *
+     * Also uses a QueueBrowser as a second method of validating the message count on the queue.
+     *
+     * @param expectedDepth The expected Queue depth
+     * @throws JMSException on error
+     */
+    protected void checkQueueDepth(int expectedDepth) throws JMSException
     {
 
         // create QueueBrowser
@@ -143,7 +151,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         // check for messages
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Checking for " + depth + " messages with QueueBrowser");
+            _logger.debug("Checking for " + expectedDepth + " messages with QueueBrowser");
         }
 
         //Check what the session believes the queue count to be.
@@ -157,7 +165,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         {
         }
 
-        assertEquals("Session reports Queue depth not as expected", depth, queueDepth);
+        assertEquals("Session reports Queue expectedDepth not as expected", expectedDepth, queueDepth);
 
 
 
@@ -177,7 +185,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         }
 
         // check to see if all messages found
-        assertEquals("Browser did not find all messages", depth, msgCount);
+        assertEquals("Browser did not find all messages", expectedDepth, msgCount);
 
         //Close browser
         queueBrowser.close();
@@ -207,13 +215,20 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         }
     }
 
-
-    protected void checkMultipleGetEnum(int sentMessages, int browserCount) throws JMSException
+    /**
+     * This method checks that multiple calls to getEnumeration() on a queueBrowser provide the same behaviour.
+     *
+     * @param sentMessages The number of messages sent
+     * @param browserEnumerationCount The number of times to call getEnumeration()
+     * @throws JMSException
+     */
+    protected void checkMultipleGetEnum(int sentMessages, int browserEnumerationCount) throws JMSException
     {
         QueueBrowser queueBrowser = _clientSession.createBrowser(_queue);
 
-        for (int count = 0; count < browserCount; count++)
+        for (int count = 0; count < browserEnumerationCount; count++)
         {
+            _logger.info("Checking getEnumeration:" + count);
             Enumeration msgs = queueBrowser.getEnumeration();
 
             int msgCount = 0;
@@ -223,7 +238,9 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
                 msgs.nextElement();
                 msgCount++;
             }
-            assertEquals(msgCount, sentMessages);
+
+            // Verify that the browser can see all the messages sent.
+            assertEquals(sentMessages, msgCount);
         }
 
         try
@@ -236,22 +253,22 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         }
     }
 
-    protected void checkOverlappingMultipleGetEnum(int browserCount, int expectedMessages) throws JMSException
+    protected void checkOverlappingMultipleGetEnum(int expectedMessages, int browserEnumerationCount) throws JMSException
     {
-        checkOverlappingMultipleGetEnum(browserCount, expectedMessages, null);
+        checkOverlappingMultipleGetEnum(expectedMessages, browserEnumerationCount, null);
     }
 
-    protected void checkOverlappingMultipleGetEnum(int browserCount, int expectedMessages, String selector) throws JMSException
+    protected void checkOverlappingMultipleGetEnum(int expectedMessages, int browserEnumerationCount, String selector) throws JMSException
     {
         QueueBrowser queueBrowser = selector == null ?
                                     _clientSession.createBrowser(_queue, selector) :
                                     _clientSession.createBrowser(_queue);
 
-        Enumeration[] msgs = new Enumeration[browserCount];
-        int[] msgCount = new int[browserCount];
+        Enumeration[] msgs = new Enumeration[browserEnumerationCount];
+        int[] msgCount = new int[browserEnumerationCount];
 
         //create Enums
-        for (int count = 0; count < browserCount; count++)
+        for (int count = 0; count < browserEnumerationCount; count++)
         {
             msgs[count] = queueBrowser.getEnumeration();
         }
@@ -259,7 +276,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         //interleave reads
         for (int cnt = 0; cnt < expectedMessages; cnt++)
         {
-            for (int count = 0; count < browserCount; count++)
+            for (int count = 0; count < browserEnumerationCount; count++)
             {
                 if (msgs[count].hasMoreElements())
                 {
@@ -270,7 +287,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         }
 
         //validate all browsers get right message count.
-        for (int count = 0; count < browserCount; count++)
+        for (int count = 0; count < browserEnumerationCount; count++)
         {
             assertEquals(msgCount[count], expectedMessages);
         }
@@ -327,12 +344,12 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         checkQueueDepth(0);
     }
 
-    protected void checkQueueDepthWithSelectors(int clients, int totalMessages) throws JMSException
+    protected void checkQueueDepthWithSelectors(int totalMessages, int clients) throws JMSException
     {
 
         String selector = MESSAGE_ID_PROPERTY + " % " + clients;
 
-        checkOverlappingMultipleGetEnum(clients, totalMessages / clients, selector);
+        checkOverlappingMultipleGetEnum(totalMessages / clients, clients, selector);
     }
 
 
@@ -377,9 +394,14 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
     }
 
+    /**
+     * This tests that multiple getEnumerations on a QueueBrowser return the required number of messages.
+     * @throws NamingException
+     * @throws JMSException
+     */
     public void testMultipleGetEnum() throws NamingException, JMSException
     {
-        int messages = 100;
+        int messages = 10;
 
         sendMessages(messages);
 
@@ -398,7 +420,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         checkQueueDepth(messages);
 
-        checkOverlappingMultipleGetEnum(5, messages);
+        checkOverlappingMultipleGetEnum(messages, 5);
 
         validate(messages);
     }
@@ -414,20 +436,20 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         for (int clients = 2; clients <= 10; clients++)
         {
-            checkQueueDepthWithSelectors(clients, messages);
+            checkQueueDepthWithSelectors(messages, clients);
         }
 
         validate(messages);
     }
 
     /**
-     * Testing that a QueueBrowser doesn't actually consume messages from a broker when it fails over. 
+     * Testing that a QueueBrowser doesn't actually consume messages from a broker when it fails over.
      * @throws JMSException
      */
     public void testFailoverWithQueueBrowser() throws JMSException
     {
         int messages = 5;
-        
+
 
         sendMessages("connection1", messages);
         sendMessages("connection2", messages);
@@ -504,5 +526,5 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         //Validate all messages still on Broker 1
         validate(messages);
     }
-        
+
 }
