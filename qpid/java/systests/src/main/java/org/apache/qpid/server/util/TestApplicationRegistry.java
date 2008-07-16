@@ -63,6 +63,8 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _logger.info("Initialising TestApplicationRegistry");
+
         Properties users = new Properties();
 
         users.put("guest", "guest");
