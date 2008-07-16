@@ -48,8 +48,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * The two step process is required as there is an inherit race condition between starting a process that will cause
  * the state to change and then attempting to wait for that change. The interest in the change must be first set up so
  * that any asynchrous errors that occur can be delivered to the correct waiters.
- * 
- *
  */
 public class AMQStateManager implements AMQMethodListener
 {
@@ -124,13 +122,16 @@ public class AMQStateManager implements AMQMethodListener
      */
     public void setProtocolSession(AMQProtocolSession session)
     {
-        _logger.error("Setting ProtocolSession:" + session);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Setting ProtocolSession:" + session);
+        }
         _protocolSession = session;
     }
 
     /**
      * Propogate error to waiters
-    *
+     *
      * @param error The error to propogate.
      */
     public void error(Exception error)
@@ -160,7 +161,9 @@ public class AMQStateManager implements AMQMethodListener
 
     /**
      * Create and add a new waiter to the notifcation list.
+     *
      * @param states The waiter will attempt to wait for one of these desired set states to be achived.
+     *
      * @return the created StateWaiter.
      */
     public StateWaiter createWaiter(Set<AMQState> states)
@@ -178,6 +181,7 @@ public class AMQStateManager implements AMQMethodListener
 
     /**
      * Remove the waiter from the notification list.
+     *
      * @param waiter The waiter to remove.
      */
     public void removeWaiter(StateWaiter waiter)
