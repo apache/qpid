@@ -49,6 +49,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _logger.info("Initialising NullApplicationRegistry");
+        
         _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");
 
         Properties users = new Properties();

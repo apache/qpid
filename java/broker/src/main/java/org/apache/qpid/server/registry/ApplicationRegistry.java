@@ -44,7 +44,7 @@ import java.net.InetSocketAddress;
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
-    private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
+    protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static Map<Integer, IApplicationRegistry> _instanceMap = new HashMap<Integer, IApplicationRegistry>();
 
