@@ -829,7 +829,7 @@ public class TopicTest extends AbstractXATestCase
                 /////// stop the broker now !!
                 try
                 {
-                    shutdownServer();
+                    restartBroker();
                     init();
                 }
                 catch (Exception e)
@@ -1110,7 +1110,7 @@ public class TopicTest extends AbstractXATestCase
                 /////// stop the server now !!
                 try
                 {
-                    shutdownServer();
+                    restartBroker();
                     init();
                 }
                 catch (Exception e)
@@ -1288,7 +1288,7 @@ public class TopicTest extends AbstractXATestCase
                 /////// stop the server now !!
                 try
                 {
-                    shutdownServer();
+                    restartBroker();
                     init();
                 }
                 catch (Exception e)
