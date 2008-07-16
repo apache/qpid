@@ -30,7 +30,7 @@ using namespace std;
 
 System::System (string _dataDir) : mgmtObject(0)
 {
-    ManagementAgent* agent = ManagementAgent::getAgent ();
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
 
     if (agent != 0)
     {

@@ -68,11 +68,12 @@ CoreClass::CoreClass(ManagementAgent* agent, string _name) : name(_name)
 // Main program
 //==============================================================
 int main(int argc, char** argv) {
+    ManagementAgent::Singleton singleton;
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
 
     // Create the qmf management agent
-    ManagementAgent* agent = new ManagementAgentImpl();
+    ManagementAgent* agent = singleton.getInstance();
 
     // Register the Qmf_example schema with the agent
     PackageQmf_example packageInit(agent);

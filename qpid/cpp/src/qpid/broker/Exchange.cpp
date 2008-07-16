@@ -36,7 +36,7 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
             mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
@@ -51,7 +51,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
             mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
@@ -77,7 +77,7 @@ void Exchange::setPersistenceId(uint64_t id) const
 {
     if (mgmtExchange != 0 && persistenceId == 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         agent->addObject (mgmtExchange, id, 2);
     }
     persistenceId = id;
@@ -124,7 +124,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
             ManagementObject* mo = queue->GetManagementObject();

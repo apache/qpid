@@ -41,8 +41,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 {
   public:
 
-    ManagementAgentImpl ();
-    virtual ~ManagementAgentImpl ();
+    ManagementAgentImpl();
+    virtual ~ManagementAgentImpl();
 
     int getMaxThreads() { return 1; }
     void init(std::string brokerHost        = "localhost",

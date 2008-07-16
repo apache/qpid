@@ -149,6 +149,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
   private:
     boost::shared_ptr<sys::Poller> poller;
     Options config;
+    management::ManagementAgent::Singleton managementAgentSingleton;
     std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
     MessageStore* store;
     DataDir dataDir;
