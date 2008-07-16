@@ -50,7 +50,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     private static final Logger _logger = LoggerFactory.getLogger(ClientMethodDispatcherImpl.class);
 
-
     private static interface DispatcherFactory
     {
         public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session);
@@ -83,7 +82,11 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQProtocolSession session)
     {
-        _logger.error("New Method Dispatcher:" + session);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("New Method Dispatcher:" + session);
+        }
+        
         DispatcherFactory factory = _dispatcherFactories.get(version);
         return factory.createMethodDispatcher(session);
     }
