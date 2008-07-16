@@ -67,7 +67,7 @@ Queue::Queue(const string& _name, bool _autodelete,
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
 
         if (agent != 0)
         {
@@ -576,7 +576,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
     if (mgmtObject != 0 && persistenceId == 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         agent->addObject (mgmtObject, _persistenceId, 3);
 
         if (externalQueueStore) {

@@ -122,6 +122,7 @@ const std::string qpid_management("qpid.management");
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
+    managementAgentSingleton(!config.enableMgmt),
     store(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     links(this),
@@ -134,10 +135,10 @@ Broker::Broker(const Broker::Options& conf) :
 {
     if(conf.enableMgmt){
         QPID_LOG(info, "Management enabled");
-        ManagementBroker::enableManagement (dataDir.isEnabled () ? dataDir.getPath () : string (),
-                                            conf.mgmtPubInterval, this, conf.workerThreads + 3);
-        managementAgent = management::ManagementAgent::getAgent ();
-        ((ManagementBroker*) managementAgent)->setInterval (conf.mgmtPubInterval);
+        managementAgent = managementAgentSingleton.getInstance();
+        ((ManagementBroker*) managementAgent)->configure
+            (dataDir.isEnabled () ? dataDir.getPath () : string (),
+             conf.mgmtPubInterval, this, conf.workerThreads + 3);
         qpid::management::PackageQpid packageInitializer (managementAgent);
 
         System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
@@ -294,7 +295,6 @@ Broker::~Broker() {
         sasl_done();
 #endif
     }
-    ManagementBroker::shutdown();
     QPID_LOG(notice, "Shut down");
 }
 

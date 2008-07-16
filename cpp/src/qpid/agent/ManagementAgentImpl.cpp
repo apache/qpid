@@ -33,14 +33,36 @@ using std::string;
 using std::cout;
 using std::endl;
 
-ManagementAgent* ManagementAgent::getAgent()
-{
-    //static ManagementAgent* agent = 0;
+Mutex            ManagementAgent::Singleton::lock;
+bool             ManagementAgent::Singleton::disabled = false;
+ManagementAgent* ManagementAgent::Singleton::agent    = 0;
+int              ManagementAgent::Singleton::refCount = 0;
 
-    //if (agent == 0)
-    //    agent = new ManagementAgentImpl();
-    //return agent;
-    return 0;
+ManagementAgent::Singleton::Singleton(bool disableManagement)
+{
+    Mutex::ScopedLock _lock(lock);
+    if (disableManagement && !disabled) {
+        disabled = true;
+        assert(refCount == 0); // can't disable after agent has been allocated
+    }
+    if (refCount == 0 && !disabled)
+        agent = new ManagementAgentImpl();
+    refCount++;
+}
+
+ManagementAgent::Singleton::~Singleton()
+{
+    Mutex::ScopedLock _lock(lock);
+    refCount--;
+    if (refCount == 0 && !disabled) {
+        delete agent;
+        agent = 0;
+    }
+}
+
+ManagementAgent* ManagementAgent::Singleton::getInstance()
+{
+    return agent;
 }
 
 ManagementAgentImpl::ManagementAgentImpl() :

@@ -62,7 +62,7 @@ SessionState::SessionState(
 {
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0) {
             mgmtObject = new management::Session (agent, this, parent, getId().getName());
             mgmtObject->set_attached (0);
