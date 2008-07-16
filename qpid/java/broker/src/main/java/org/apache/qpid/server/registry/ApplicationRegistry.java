@@ -70,7 +70,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected PluginManager _pluginManager;
 
-
     static
     {
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
@@ -123,15 +122,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         try
         {
             IApplicationRegistry instance = _instanceMap.get(instanceID);
-            if(instance != null)
+            if (instance != null)
             {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Shuting down ApplicationRegistry(" + instanceID + "):" + instance);
+                }
                 instance.close();
             }
         }
         catch (Exception e)
         {
-            _logger.error("Error shutting down message store: " + e, e);
-
+            _logger.error("Error shutting down Application Registry(" + instanceID + "): " + e, e);
         }
         finally
         {
@@ -141,7 +143,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     /** Method to cleanly shutdown all registries currently running in this JVM */
     public static void removeAll()
-    {        
+    {
         Object[] keys = _instanceMap.keySet().toArray();
         for (Object k : keys)
         {
@@ -191,6 +193,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void close() throws Exception
     {
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Shutting down ApplicationRegistry:"+this);
+        }
+
         //Stop incomming connections
         unbind();
 
@@ -201,9 +208,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
 
         // close the rmi registry(if any) started for management
-        if (getInstance().getManagedObjectRegistry() != null)
+        if (getManagedObjectRegistry() != null)
         {
-            getInstance().getManagedObjectRegistry().close();
+            getManagedObjectRegistry().close();
         }
     }
 
@@ -251,7 +258,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
         return instance;
     }
-
 
     public static void setDefaultApplicationRegistry(String clazz)
     {
