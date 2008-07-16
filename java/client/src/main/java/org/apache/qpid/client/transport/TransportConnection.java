@@ -162,6 +162,7 @@ public class TransportConnection
                 {
                     if (AutoCreate)
                     {
+                        _logger.warn("Auto Creating InVM Broker on port:" + port);
                         createVMBroker(port);
                     }
                     else
