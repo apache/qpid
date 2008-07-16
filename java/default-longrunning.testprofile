@@ -4,6 +4,7 @@ broker.clean=${project.root}/clean-dir ${build.data}
 java.naming.provider.url=${project.root}/test-provider.properties
 test.excludes=true
 test.excludesfile=${project.root}/08ExcludeList
+test.includesfile=${project.root}/08LongRunningList
 log=info
 max_prefetch=1000
 amqj.logging.level=$log

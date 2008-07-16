@@ -488,7 +488,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         if (PROTOCOL_DEBUG)
         {
-            _protocolLogger.info("Recv:"+message);
+            _protocolLogger.info("RECV: [%s] %s", this, message);
         }
 
         if(message instanceof AMQFrame)
@@ -574,7 +574,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         if (PROTOCOL_DEBUG)
         {
-            _protocolLogger.info("Send:"+message);
+            _protocolLogger.debug("SEND: [%s] %s", this, message);
         }
         
         final long sentMessages = _messagesOut++;
