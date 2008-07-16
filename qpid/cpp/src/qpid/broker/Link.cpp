@@ -59,7 +59,7 @@ Link::Link(LinkRegistry*  _links,
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
             mgmtObject = new management::Link(agent, this, parent, _host, _port, _useSsl, _durable);
@@ -264,10 +264,9 @@ void Link::notifyConnectionForced(const string text)
 
 void Link::setPersistenceId(uint64_t id) const
 {
-    if (mgmtObject != 0 && persistenceId == 0)
-    {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
-        agent->addObject (mgmtObject, id);
+    if (mgmtObject != 0 && persistenceId == 0) {
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        agent->addObject(mgmtObject, id);
     }
     persistenceId = id;
 }

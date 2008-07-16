@@ -40,7 +40,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
     link(_link), id(_id), args(_args), mgmtObject(0),
     listener(l), name(Uuid(true).str()), persistenceId(0)
 {
-    ManagementAgent* agent = ManagementAgent::getAgent();
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0) {
         mgmtObject = new management::Bridge(agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
                                             args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
@@ -106,9 +106,8 @@ void Bridge::destroy()
 
 void Bridge::setPersistenceId(uint64_t id) const
 {
-    if (mgmtObject != 0 && persistenceId == 0)
-    {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+    if (mgmtObject != 0 && persistenceId == 0) {
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         agent->addObject (mgmtObject, id);
     }
     persistenceId = id;
