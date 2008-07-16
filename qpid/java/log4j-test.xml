@@ -35,11 +35,23 @@
   </appender>
 
   <logger name="org.apache.qpid">
-    <level value="debug"/>
+    <level value="${amqj.logging.level}"/>
+  </logger>
+
+  <logger name="org.apache.qpidity">
+    <level value="${amqj.logging.level}"/>
+  </logger>
+
+  <logger name="qpid.protocol">
+    <level value="${amqj.protocol.logging.level}"/>
+  </logger>
+
+  <logger name="org.apache.qpid.test.utils.QpidTestCase">
+    <level value="ALL"/>
   </logger>
 
   <root>
-    <level value="debug"/>
+    <level value="${root.logging.level}"/>
     <appender-ref ref="console" />
   </root>
 </log4j:configuration>
