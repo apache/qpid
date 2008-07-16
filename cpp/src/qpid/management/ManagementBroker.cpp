@@ -38,25 +38,83 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace std;
 
-ManagementAgent* ManagementBroker::agent;
-bool             ManagementBroker::enabled = 0;
+Mutex            ManagementAgent::Singleton::lock;
+bool             ManagementAgent::Singleton::disabled = false;
+ManagementAgent* ManagementAgent::Singleton::agent    = 0;
+int              ManagementAgent::Singleton::refCount = 0;
+
+ManagementAgent::Singleton::Singleton(bool disableManagement)
+{
+    Mutex::ScopedLock _lock(lock);
+    if (disableManagement && !disabled) {
+        disabled = true;
+        assert(refCount == 0); // can't disable after agent has been allocated
+    }
+    if (refCount == 0 && !disabled)
+        agent = new ManagementBroker();
+    refCount++;
+}
+
+ManagementAgent::Singleton::~Singleton()
+{
+    Mutex::ScopedLock _lock(lock);
+    refCount--;
+    if (refCount == 0 && !disabled) {
+        delete agent;
+        agent = 0;
+    }
+}
+
+ManagementAgent* ManagementAgent::Singleton::getInstance()
+{
+    return agent;
+}
 
 ManagementBroker::RemoteAgent::~RemoteAgent ()
 {
     if (mgmtObject != 0)
-        mgmtObject->resourceDestroy ();
+        mgmtObject->resourceDestroy();
 }
 
-ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Manageable* _broker, int _threads) :
-    threadPoolSize(_threads), dataDir(_dataDir), interval(_interval), broker(_broker)
+ManagementBroker::ManagementBroker () :
+    threadPoolSize(1), interval(10), broker(0)
 {
-    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
     localBank      = 5;
     nextObjectId   = 1;
     bootSequence   = 1;
     nextRemoteBank = 10;
     nextRequestSequence = 1;
     clientWasAdded = false;
+}
+
+ManagementBroker::~ManagementBroker ()
+{
+    Mutex::ScopedLock lock (userLock);
+
+    // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
+    // will stick around until dExchange and mExchange are implicitely destroyed (long
+    // after this destructor completes).  Those exchanges hold references to management
+    // objects that will be invalid.
+    dExchange.reset();
+    mExchange.reset();
+
+    moveNewObjectsLH();
+    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+         iter != managementObjects.end ();
+         iter++) {
+        ManagementObject* object = iter->second;
+        delete object;
+    }
+    managementObjects.clear();
+}
+
+void ManagementBroker::configure(string _dataDir, uint16_t _interval, Manageable* _broker, int _threads)
+{
+    dataDir        = _dataDir;
+    interval       = _interval;
+    broker         = _broker;
+    threadPoolSize = _threads;
+    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
 
     // Get from file or generate and save to file.
     if (dataDir.empty ())
@@ -92,20 +150,6 @@ ManagementBroker::ManagementBroker (string _dataDir, uint16_t _interval, Managea
     }
 }
 
-ManagementBroker::~ManagementBroker ()
-{
-    Mutex::ScopedLock lock (userLock);
-
-    moveNewObjectsLH();
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++) {
-        ManagementObject* object = iter->second;
-        delete object;
-    }
-    managementObjects.clear();
-}
-
 void ManagementBroker::writeData ()
 {
     string   filename (dataDir + "/.mbrokerdata");
@@ -115,31 +159,6 @@ void ManagementBroker::writeData ()
     {
         outFile << uuid << " " << bootSequence << " " << nextRemoteBank << endl;
         outFile.close ();
-    }
-}
-
-void ManagementBroker::enableManagement (string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize)
-{
-    enabled = 1;
-    if (agent == 0)
-        agent = new ManagementBroker (dataDir, interval, broker, threadPoolSize);
-}
-
-ManagementAgent* ManagementAgent::getAgent (void)
-{
-    return ManagementBroker::agent;
-}
-
-void ManagementBroker::shutdown (void)
-{
-    if (agent != 0)
-    {
-        ManagementBroker* broker = (ManagementBroker*) agent;
-
-        broker->mExchange.reset ();
-        broker->dExchange.reset ();
-        delete agent;
-        agent = 0;
     }
 }
 

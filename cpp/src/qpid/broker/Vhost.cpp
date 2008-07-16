@@ -27,7 +27,7 @@ Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
 {
     if (parentBroker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::getAgent ();
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
 
         if (agent != 0)
         {
