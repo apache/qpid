@@ -372,7 +372,7 @@ public class QueueTest extends AbstractXATestCase
             try
             {
                 _logger.debug("stopping broker");
-                shutdownServer();
+                restartBroker();
                 init();
             }
             catch (Exception e)
@@ -561,7 +561,7 @@ public class QueueTest extends AbstractXATestCase
             try
             {
                 _logger.debug("stopping broker");
-                shutdownServer();
+                restartBroker();
                 init();
             }
             catch (Exception e)
