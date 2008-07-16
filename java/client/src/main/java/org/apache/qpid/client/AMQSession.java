@@ -2840,9 +2840,21 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                     }
                     else
                     {
-                        _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
-                                               + message.getDeliveryTag() + "] from queue " + " consumer("
-                                               + message.getConsumerTag() + ") is closed rejecting(requeue)...");
+                        if (consumer.isNoConsume())
+                        {
+                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                                                   + message.getDeliveryTag() + "] from queue " + " consumer("
+                                                   + message.getConsumerTag() + ") is closed and a browser so dropping...");
+                            //DROP MESSAGE
+                            return;
+
+                        }
+                        else
+                        {
+                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                                                   + message.getDeliveryTag() + "] from queue " + " consumer("
+                                                   + message.getConsumerTag() + ") is closed rejecting(requeue)...");
+                        }
                     }
                 }
                 // Don't reject if we're already closing
