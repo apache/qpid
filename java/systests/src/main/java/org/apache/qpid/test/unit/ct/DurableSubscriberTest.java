@@ -67,7 +67,7 @@ public class DurableSubscriberTest extends QpidTestCase
             //now stop the server
             try
             {
-                shutdownServer();
+                restartBroker();
             }
             catch (Exception e)
             {
@@ -117,7 +117,7 @@ public class DurableSubscriberTest extends QpidTestCase
             //now stop the server
             try
             {
-                shutdownServer();
+                restartBroker();
             }
             catch (Exception e)
             {

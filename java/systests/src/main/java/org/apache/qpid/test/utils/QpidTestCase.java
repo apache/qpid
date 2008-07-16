@@ -356,7 +356,7 @@ public class QpidTestCase extends TestCase
         return _brokerVersion.equals(VERSION_010);
     }
 
-    public void shutdownServer() throws Exception
+    public void restartBroker() throws Exception
     {
         stopBroker();
         startBroker();
@@ -369,7 +369,7 @@ public class QpidTestCase extends TestCase
      *
      * @return an initial context
      *
-     * @throws Exception if there is an error getting the context
+     * @throws NamingException if there is an error getting the context
      */
     public InitialContext getInitialContext() throws NamingException
     {
