@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_CONNECTION_H
+#define QPID_BROKER_CONNECTION_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +21,6 @@
  * under the License.
  *
  */
-#ifndef _Connection_
-#define _Connection_
 
 #include <memory>
 #include <sstream>
@@ -43,7 +44,8 @@
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Connection.h"
-#include "qpid/HandlerChain.h"
+#include "qpid/Plugin.h"
+#include "qpid/RefCounted.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -53,11 +55,11 @@ namespace broker {
 class LinkRegistry;
 
 class Connection : public sys::ConnectionInputHandler, 
-                   public ConnectionState
+                   public ConnectionState,
+                   public Plugin::Target,
+                   public RefCounted
 {
   public:
-    typedef boost::shared_ptr<Connection> shared_ptr;
-
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
     ~Connection ();
 
@@ -74,8 +76,8 @@ class Connection : public sys::ConnectionInputHandler,
     void received(framing::AMQFrame& frame);
     void idleOut();
     void idleIn();
-    void closed();
     bool doOutput();
+    void closed();
 
     void closeChannel(framing::ChannelId channel);
 
@@ -92,12 +94,16 @@ class Connection : public sys::ConnectionInputHandler,
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
 
+    // Extension points: allow plugins to insert additional functionality.
+    boost::function<void(framing::AMQFrame&)> receivedFn;
+    boost::function<void()> closedFn; 
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
-    // End of the received handler chain.
-    void receivedLast(framing::AMQFrame& frame);
+    void receivedImpl(framing::AMQFrame& frame);
+    void closedImpl();
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;
@@ -108,10 +114,8 @@ class Connection : public sys::ConnectionInputHandler,
     boost::function0<void> ioCallback;
     management::Connection* mgmtObject;
     LinkRegistry& links;
-    framing::FrameHandler::MemFunRef<Connection, &Connection::receivedLast> lastInHandler;
-    PluginHandlerChain<framing::FrameHandler, Connection> inChain;
 };
 
 }}
 
-#endif
+#endif  /*!QPID_BROKER_CONNECTION_H*/

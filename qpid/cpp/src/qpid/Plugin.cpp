@@ -35,15 +35,20 @@ Plugin::Plugins& thePlugins() {
     return plugins;
 }
 
-void call(boost::function<void()> f) { f(); }
+void invoke(boost::function<void()> f) { f(); }
 
 } // namespace
 
-Plugin::Target::~Target() {
-    std::for_each(cleanup.begin(), cleanup.end(), &call);
+Plugin::Target::~Target() { finalize(); }
+
+void Plugin::Target::finalize() {
+    for_each(finalizers.begin(), finalizers.end(), invoke);
+    finalizers.clear();
 }
 
-void Plugin::Target::addCleanup(const boost::function<void()>& f) { cleanup.push_back(f); }
+void Plugin::Target::addFinalizer(const boost::function<void()>& f) {
+    finalizers.push_back(f);
+}
 
 Plugin::Plugin() {
     // Register myself.
@@ -69,7 +74,7 @@ void Plugin::addOptions(Options& opts) {
     }
 }
 
-void Plugin::earlyInitAll(Target& t) { each_plugin(boost::bind(&Plugin::earlyInitialize, _1, t)); }
-void Plugin::initAll(Target& t) { each_plugin(boost::bind(&Plugin::initialize, _1, t)); }
+void Plugin::earlyInitAll(Target& t) { each_plugin(boost::bind(&Plugin::earlyInitialize, _1, boost::ref(t))); }
+void Plugin::initializeAll(Target& t) { each_plugin(boost::bind(&Plugin::initialize, _1, boost::ref(t))); }
 
 } // namespace qpid

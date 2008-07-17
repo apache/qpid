@@ -62,7 +62,7 @@ void Cpg::globalConfigChange(
     cpgFromHandle(handle)->handler.configChange(handle, group, members, nMembers, left, nLeft, joined, nJoined);
 }
 
-Cpg::Cpg(Handler& h) : handler(h) {
+Cpg::Cpg(Handler& h) : handler(h), isShutdown(false) {
     cpg_callbacks_t callbacks = { &globalDeliver, &globalConfigChange };
     check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
     check(cpg_context_set(handle, this), "Cannot set CPG context");
@@ -78,10 +78,10 @@ Cpg::~Cpg() {
 }
 
 void Cpg::shutdown() {
-    if (handle) {
-        cpg_context_set(handle, 0);
+    if (!isShutdown) {
+        QPID_LOG(debug,"Shutting down CPG");
+        isShutdown=true;
         check(cpg_finalize(handle), "Error in shutdown of CPG");
-        handle = 0;
     }
 }
 
