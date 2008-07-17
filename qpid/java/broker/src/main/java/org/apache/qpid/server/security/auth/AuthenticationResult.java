@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth;
 
+import javax.security.sasl.SaslException;
+
 public class AuthenticationResult
 {
     public enum AuthenticationStatus
@@ -29,15 +31,33 @@ public class AuthenticationResult
 
     public AuthenticationStatus status;
     public byte[] challenge;
-
-    public AuthenticationResult(byte[] challenge, AuthenticationStatus status)
-    {
-        this.status = status;
-        this.challenge = challenge;
-    }
+    
+    private Exception cause;
 
     public AuthenticationResult(AuthenticationStatus status)
     {
+        this(null, status, null);
+    }
+
+    public AuthenticationResult(byte[] challenge, AuthenticationStatus status)
+    {
+        this(challenge, status, null);
+    }
+
+    public AuthenticationResult(AuthenticationStatus error, Exception cause)
+    {
+        this(null, error, cause);
+    }
+
+    public AuthenticationResult(byte[] challenge, AuthenticationStatus status, Exception cause)
+    {
         this.status = status;
+        this.challenge = challenge;
+        this.cause = cause;
+    }
+
+    public Exception getCause()
+    {
+        return cause;
     }
 }
