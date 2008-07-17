@@ -70,6 +70,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     sys::ConnectionOutputHandler& getOutput() const { return *out; }
     framing::ProtocolVersion getVersion() const { return version; }
 
+    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out = o; }
+
   protected:
     framing::ProtocolVersion version;
     sys::ConnectionOutputHandler* out;

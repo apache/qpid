@@ -22,12 +22,14 @@
 
 <amqp major="0" minor="10" port="5672">
 
-  <class name = "cluster" code = "0x80" label="clustering extensions">
+  <class name = "cluster" code = "0x80" label="Qpid clustering extensions.">
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
-    <control name = "notify" code="0x1" label="notify cluster of a new member">
-      <doc>Notify the cluster of a member URL</doc>
-      <!-- No chassis element, this is handled by separte cluster code for now.-->
+
+    <control name = "notify" code="0x1">
       <field name="url" type="str16" />
+    </control>
+
+    <control name="connection-close" code="0x2">
     </control>
   </class>
 </amqp>

@@ -22,14 +22,14 @@
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/ShadowConnectionOutputHandler.h"
 
-#include "qpid/HandlerChain.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Logger.h"
 #include "qpid/Url.h"
-
+#include "qpid/RefCounted.h"
 
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
@@ -41,19 +41,21 @@
 namespace qpid {
 namespace cluster {
 
+class ConnectionInterceptor;
+
 /**
  * Connection to the cluster.
  * Keeps cluster membership data.
  */
-class Cluster : private sys::Runnable, private Cpg::Handler
+class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
 {
   public:
-    typedef PluginHandlerChain<framing::FrameHandler, broker::Connection> ConnectionChain;
+    typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
 
     /** Details of a cluster member */
     struct Member {
-        Member(const Url& url_=Url()) : url(url_) {}
-        Url url;        ///< Broker address.
+        Cpg::Id  id;
+        Url url;
     };
     
     typedef std::vector<Member> MemberList;
@@ -65,11 +67,11 @@ class Cluster : private sys::Runnable, private Cpg::Handler
      */
     Cluster(const std::string& name, const Url& url, broker::Broker&);
 
-    // Add cluster handlers to broker chains.
-    void initialize(ConnectionChain&);
-
     virtual ~Cluster();
 
+    /** Initialize interceptors for a new connection */
+    void initialize(broker::Connection&);
+    
     /** Get the current cluster membership. */
     MemberList getMembers() const;
 
@@ -78,22 +80,22 @@ class Cluster : private sys::Runnable, private Cpg::Handler
 
     bool empty() const { return size() == 0; }
     
-    /** Wait for predicate(*this) to be true, up to timeout.
-     *@return True if predicate became true, false if timed out.
-     *Note the predicate may not be true after wait returns,
-     *all the caller can say is it was true at some earlier point.
-     */
-    bool wait(boost::function<bool(const Cluster&)> predicate,
-              sys::Duration timeout=sys::TIME_INFINITE) const;
-
     /** Send frame to the cluster */
-    void send(framing::AMQFrame&, void* connection, framing::FrameHandler*);
+    void send(const framing::AMQFrame&, ConnectionInterceptor*);
+
+    /** Leave the cluster */
+    void leave();
+    
+    // Cluster frame handing functions
+    void notify(const std::string& url);
+    void connectionClose();
     
   private:
     typedef Cpg::Id Id;
     typedef std::map<Id, Member>  MemberMap;
-    typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
-    typedef std::map<ShadowConnectionId, boost::shared_ptr<broker::Connection> > ShadowConnectionMap;
+    typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
+
+    boost::function<void()> shutdownNext;
     
     void notify();              ///< Notify cluster of my details.
 
@@ -114,19 +116,18 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     );
 
     void run();
-    
-    void handleClusterFrame(Id from, framing::AMQFrame&);
 
-    boost::shared_ptr<broker::Connection> getShadowConnection(const Cpg::Id&, void*);
+    void handleMethod(Id from, ConnectionInterceptor* connection, framing::AMQMethodBody& method);
 
-    mutable sys::Monitor lock;
-    broker::Broker& broker;
+    ConnectionInterceptor* getShadowConnection(const Cpg::Id&, void*);
+
+    mutable sys::Monitor lock;  // Protect access to members.
     Cpg cpg;
+    boost::intrusive_ptr<broker::Broker> broker;
     Cpg::Name name;
     Url url;
     MemberMap members;
     sys::Thread dispatcher;
-    boost::function<void()> callback;
     Id self;
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;

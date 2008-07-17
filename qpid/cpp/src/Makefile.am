@@ -353,7 +353,6 @@ nobase_include_HEADERS = \
   qpid/amqp_0_10/Exception.h \
   qpid/Msg.h \
   qpid/Options.h \
-  qpid/HandlerChain.h \
   qpid/Plugin.h \
   qpid/ptr_map.h \
   qpid/RangeSet.h \

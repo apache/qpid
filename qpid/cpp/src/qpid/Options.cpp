@@ -176,7 +176,7 @@ Options::Options(const string& name) :
 
 
 
-void Options::parse(int argc, char** argv, const std::string& configFile, bool allowUnknown)
+void Options::parse(int argc, char const* const* argv, const std::string& configFile, bool allowUnknown)
 {
     string defaultConfigFile = configFile; // May be changed by env/cmdline
     string parsing;
