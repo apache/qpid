@@ -209,7 +209,7 @@ struct Options : public po::options_description {
      * Note the filename argument can reference an options variable that
      * is updated by argc/argv or environment variable parsing.
      */
-    void parse(int argc, char** argv,
+    void parse(int argc, char const* const* argv,
                const std::string& configfile=std::string(),
                bool  allowUnknown = false);
     

@@ -165,6 +165,7 @@ class Cpg : public Dispatchable {
 
     cpg_handle_t handle;
     Handler& handler;
+    bool isShutdown;
 };
 
 std::ostream& operator <<(std::ostream& out, const cpg_name& name);
