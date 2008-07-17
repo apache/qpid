@@ -23,7 +23,6 @@
  */
 
 #include "qpid/SessionState.h"
-#include "qpid/HandlerChain.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Mutex.h"
@@ -102,10 +101,6 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
-    // Tag types to identify PluginHandlerChains. 
-    struct InTag {};
-    struct OutTag {};
-
   private:
 
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
@@ -131,11 +126,6 @@ class SessionState : public qpid::SessionState,
     IncompleteMessageList incomplete;
     IncompleteMessageList::CompletionListener enqueuedOp;
     management::Session* mgmtObject;
-    framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleInLast> inLastHandler;
-    framing::FrameHandler::MemFunRef<SessionState, &SessionState::handleOutLast> outLastHandler;
-
-    qpid::PluginHandlerChain<framing::FrameHandler, InTag> inChain;
-    qpid::PluginHandlerChain<framing::FrameHandler, OutTag> outChain;
 
   friend class SessionManager;
 };

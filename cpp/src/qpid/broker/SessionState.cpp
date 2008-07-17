@@ -54,11 +54,7 @@ SessionState::SessionState(
       adapter(semanticState),
       msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
       enqueuedOp(boost::bind(&SessionState::enqueued, this, _1)),
-      mgmtObject(0),
-      inLastHandler(*this),
-      outLastHandler(*this),
-      inChain(inLastHandler),
-      outChain(outLastHandler)
+      mgmtObject(0)
 {
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
@@ -75,9 +71,6 @@ SessionState::SessionState(
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
-    // FIXME aconway 2008-05-12: Need to distinguish outgoing sessions established by bridge,
-    // they don't belong in the manager. For now rely on uniqueness of UUIDs.
-    // 
     broker.getSessionManager().forget(getId());
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
@@ -126,7 +119,6 @@ void SessionState::activateOutput() {
     Mutex::ScopedLock l(lock);
     if (isAttached()) 
         getConnection().outputTasks.activateOutput();
-    // FIXME aconway 2008-05-22: should we hold the lock over activateOutput??
 }
 
 ManagementObject* SessionState::GetManagementObject (void) const
@@ -224,10 +216,7 @@ void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
         getProxy().getMessage().accept(SequenceSet(msg->getCommandId()));        
 }
 
-void SessionState::handleIn(AMQFrame& f) { inChain->handle(f); }
-void SessionState::handleOut(AMQFrame& f) { outChain->handle(f); }
-
-void SessionState::handleInLast(AMQFrame& frame) {
+void SessionState::handleIn(AMQFrame& frame) {
     SequenceNumber commandId = receiverGetCurrent();
     try {
         //TODO: make command handling more uniform, regardless of whether
@@ -258,7 +247,7 @@ void SessionState::handleInLast(AMQFrame& frame) {
     }
 }
 
-void SessionState::handleOutLast(AMQFrame& frame) {
+void SessionState::handleOut(AMQFrame& frame) {
     assert(handler);
     handler->out(frame);
 }

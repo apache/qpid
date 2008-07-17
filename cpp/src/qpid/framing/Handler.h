@@ -66,7 +66,7 @@ struct Handler {
         MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(&x) {}
         void handle(T t) { (target->*F)(t); }
 
-        /** Allow calling with -> syntax, like a qpid::HandlerChain */
+        /** Allow calling with -> syntax */
         MemFunRef* operator->() { return this; }
 
       private:

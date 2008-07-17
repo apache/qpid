@@ -21,11 +21,9 @@
  *
  */
 
-#include "qpid/shared_ptr.h"
 #include <boost/noncopyable.hpp>
-#include <vector>
 #include <boost/function.hpp>
-
+#include <vector>
 
 /**@file Generic plug-in framework. */
 
@@ -35,30 +33,36 @@ class Options;
 /**
  * Plug-in base class.
  */
-class Plugin : boost::noncopyable
-{
+class Plugin : private boost::noncopyable {
   public:
-    /**
-     * Base interface for targets that receive plug-ins.
-     * Plug-ins can register clean-up functions to execute when
-     * the target is destroyed.
-     */
-    struct Target {
-      public:
-        virtual ~Target();
-        void addCleanup(const boost::function<void()>& cleanupFunction);
-
-      private:
-        std::vector<boost::function<void()> > cleanup;
-    };
-
     typedef std::vector<Plugin*> Plugins;
     
     /**
-     * Construct registers the plug-in to appear in getPlugins().
+     * Base interface for targets that can receive plug-ins.
+     * Also allows plug-ins to attach a a function to be called
+     * when the target is 'finalized'.
+     */
+    class Target : private boost::noncopyable
+    {
+      public:
+        /** Calls finalize() if not already called. */
+        virtual ~Target();
+
+        /** Run all the finalizers */
+        void finalize();
+
+        /** Add a function to run when finalize() is called */
+        void addFinalizer(const boost::function<void()>&);
+
+      private:
+        std::vector<boost::function<void()> > finalizers;
+    };
+
+    /**
+     * Constructor registers the plug-in to appear in getPlugins().
      * 
      * A concrete Plugin is instantiated as a global or static
-     * member variable in a library so it is registered during static
+     * member variable in a library so it is registered during 
      * initialization when the library is loaded.
      */
     Plugin();
@@ -103,7 +107,7 @@ class Plugin : boost::noncopyable
     static void earlyInitAll(Target&);
 
     /** Call initialize() on all registered plugins */
-    static void initAll(Target&);
+    static void initializeAll(Target&);
 
     /** For each registered plugin, add plugin.getOptions() to opts. */
     static void addOptions(Options& opts);

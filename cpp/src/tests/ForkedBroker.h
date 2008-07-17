@@ -1,5 +1,5 @@
 #ifndef TESTS_FORKEDBROKER_H
-#define TESTS_FORKEDBROKER_H
+
 
 /*
  *
@@ -23,16 +23,11 @@
  */
 
 #include "qpid/Exception.h"
-#include "qpid/sys/Fork.h"
-#include "qpid/log/Logger.h"
+#include "qpid/log/Statement.h"
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/SignalHandler.h"
-
 #include <boost/lexical_cast.hpp>
-
 #include <string>
-
-#include <signal.h>
+#include <stdio.h>
 #include <sys/wait.h>
 
 /**
@@ -48,63 +43,66 @@
  * process.)
  * 
  */
-class ForkedBroker : public qpid::sys::ForkWithMessage {
-    pid_t pid;
-    uint16_t port;
-    qpid::broker::Broker::Options opts;
-    std::string prefix;
-
+class ForkedBroker {
   public:
-    struct ChildExit {};   // Thrown in child processes.
+    ForkedBroker(std::vector<const char*> argv) { init(argv); }
 
-    ForkedBroker(const qpid::broker::Broker::Options& opts_=qpid::broker::Broker::Options(),
-                 const std::string& prefix_=std::string())
-        : pid(0), port(0), opts(opts_), prefix(prefix_) { fork(); } 
+    ForkedBroker(int argc, const char* const argv[]) {
+        std::vector<const char*> args(argv, argv+argc);
+        init(args);
+    }
 
     ~ForkedBroker() {
-        try { stop(); }
-        catch(const std::exception& e) {
-            QPID_LOG(error, e.what());
+        try { stop(); } catch(const std::exception& e) {
+            QPID_LOG(error, QPID_MSG("Stopping forked broker: " << e.what()));
         }
     }
 
     void stop() {
-        if (pid > 0) {     // I am the parent, clean up children.
-            if (::kill(pid, SIGINT) < 0)
-                throw qpid::Exception(QPID_MSG("Can't kill process " << pid << ": " << qpid::strError(errno)));
-            int status = 0;
-            if (::waitpid(pid, &status, 0) < 0)
-                throw qpid::Exception(QPID_MSG("Waiting for process " << pid << ": " << qpid::strError(errno)));
-            if (WEXITSTATUS(status) != 0)
-                throw qpid::Exception(QPID_MSG("Process " << pid << " exited with status: " << WEXITSTATUS(status)));
-        }
-    }
-
-    void parent(pid_t pid_) {
-        pid = pid_;
-        qpid::log::Logger::instance().setPrefix("parent");
-        std::string portStr = wait(5);
-        port = boost::lexical_cast<uint16_t>(portStr);
-    }
-
-    void child() {
-        prefix += boost::lexical_cast<std::string>(long(getpid()));
-        qpid::log::Logger::instance().setPrefix(prefix);
-        opts.port = 0;
-        boost::intrusive_ptr<qpid::broker::Broker> broker(new qpid::broker::Broker(opts));
-        qpid::broker::SignalHandler::setBroker(broker);
-        QPID_LOG(info, "ForkedBroker started on " << broker->getPort());
-        ready(boost::lexical_cast<std::string>(broker->getPort())); // Notify parent.
-        broker->run();
-        QPID_LOG(notice, "ForkedBroker exiting.");
-
-        // Force exit in the child process, otherwise we will try to
-        // carry with parent tests. 
-        broker = 0;             // Run broker dtor before we exit.
-        exit(0);
+        using qpid::ErrnoException;
+        if (pid == 0) return;
+        if (::kill(pid, SIGINT) < 0) throw ErrnoException("kill failed");
+        int status;
+        if (::waitpid(pid, &status, 0) < 0) throw ErrnoException("wait for forked process failed");
+        if (WEXITSTATUS(status) != 0)
+            throw qpid::Exception(QPID_MSG("forked broker exited with: " << WEXITSTATUS(status)));
+        pid = 0;
     }
 
     uint16_t getPort() { return port; }
+
+  private:
+
+    void init(const std::vector<const char*>& args) {
+        using qpid::ErrnoException;
+        pid = 0;
+        port = 0;
+        int pipeFds[2];
+        if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");
+        pid = ::fork();
+        if (pid < 0) throw ErrnoException("Fork failed");
+        if (pid) {              // parent
+            ::close(pipeFds[1]);
+            FILE* f = ::fdopen(pipeFds[0], "r");
+            if (!f) throw ErrnoException("fopen failed");
+            if (::fscanf(f, "%d", &port) != 1) throw ErrnoException("fscanf failed");
+        }
+        else {                  // child
+            ::close(pipeFds[0]);
+            int fd = ::dup2(pipeFds[1], 1);
+            if (fd < 0) throw ErrnoException("dup2 failed");
+            const char* prog = "../qpidd";
+            std::vector<const char*> args2(args);
+            args2.push_back("--port=0");
+            args2.push_back("--mgmt-enable=no"); // TODO aconway 2008-07-16: why does mgmt cause problems?
+            args2.push_back(0);
+            execv(prog, const_cast<char* const*>(&args2[0]));
+            throw ErrnoException("execv failed");
+        }
+    }
+
+    pid_t pid;
+    int port;
 };
 
 #endif  /*!TESTS_FORKEDBROKER_H*/

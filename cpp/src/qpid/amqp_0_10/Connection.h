@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_CONNECTION_H
-#define QPID_BROKER_CONNECTION_H
+#ifndef QPID_AMQP_0_10_CONNECTION_H
+#define QPID_AMQP_0_10_CONNECTION_H
 
 /*
  *
@@ -24,8 +24,8 @@
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/Mutex.h"
-#include "Connection.h"
 #include "qpid/broker/Connection.h"
+#include <boost/intrusive_ptr.hpp>
 #include <queue>
 #include <memory>
 
@@ -40,7 +40,7 @@ class Connection  : public sys::ConnectionCodec,
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
-    broker::Connection connection;
+    boost::intrusive_ptr<broker::Connection> connection;
     std::string identifier;
     bool initialized;
     bool isClient;
@@ -60,4 +60,4 @@ class Connection  : public sys::ConnectionCodec,
 
 }} // namespace qpid::amqp_0_10
 
-#endif  /*!QPID_BROKER_CONNECTION_H*/
+#endif  /*!QPID_AMQP_0_10_CONNECTION_H*/

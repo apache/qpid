@@ -46,23 +46,6 @@ protected:
     virtual ~RefCounted() {};
 };
 
-/**
- * Reference-counted member of a reference-counted parent class.
- * Delegates reference counts to the parent so that the parent is
- * deleted only when there are no references to the parent or any of
- * its children.
- * TODO: Delete this class if it's unused as I don't think this class makes much sense:
- */
-struct RefCountedChild {
-    RefCounted& parent;
-
-protected:
-    RefCountedChild(RefCounted& parent_) : parent(parent_) {}
-
-public:
-    void addRef() const { parent.addRef(); }
-    void release() const { parent.release(); }
-};
 
 } // namespace qpid
 
@@ -70,8 +53,6 @@ public:
 namespace boost {
 inline void intrusive_ptr_add_ref(const qpid::RefCounted* p) { p->addRef(); }
 inline void intrusive_ptr_release(const qpid::RefCounted* p) { p->release(); }
-inline void intrusive_ptr_add_ref(const qpid::RefCountedChild* p) { p->addRef(); }
-inline void intrusive_ptr_release(const qpid::RefCountedChild* p) { p->release(); }
 }
 
 

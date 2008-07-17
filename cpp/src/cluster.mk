@@ -12,6 +12,8 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/Cpg.h \
   qpid/cluster/Dispatchable.h \
   qpid/cluster/ClusterPlugin.cpp \
+  qpid/cluster/ConnectionInterceptor.h \
+  qpid/cluster/ConnectionInterceptor.cpp \
   qpid/cluster/ClassifierHandler.h \
   qpid/cluster/ClassifierHandler.cpp \
   qpid/cluster/ShadowConnectionOutputHandler.h
