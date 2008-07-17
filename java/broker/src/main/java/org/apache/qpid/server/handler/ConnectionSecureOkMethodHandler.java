@@ -57,9 +57,6 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-
-        //fixme Vhost not defined yet
-        //session.getVirtualHost().getAuthenticationManager();
         AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
 
         SaslServer ss = session.getSaslServer();
@@ -72,11 +69,12 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         switch (authResult.status)
         {
             case ERROR:
-                // Can't do this as we violate protocol. Need to send Close
-                // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
-                _logger.info("Authentication failed");
-                stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                Exception cause = authResult.getCause();
 
+                _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
+
+                // This should be abstracted
+                stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
                 ConnectionCloseBody connectionCloseBody =
                         methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),
@@ -84,7 +82,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                  body.getClazz(),
                                                                  body.getMethod());
 
-                session.writeFrame(connectionCloseBody.generateFrame(0) );
+                session.writeFrame(connectionCloseBody.generateFrame(0));
                 disposeSaslServer(session);
                 break;
             case SUCCESS:
@@ -96,7 +94,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                 ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
                                                                 HeartbeatConfig.getInstance().getDelay());
                 session.writeFrame(tuneBody.generateFrame(0));
-                session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));                
+                session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
                 disposeSaslServer(session);
                 break;
             case CONTINUE:
