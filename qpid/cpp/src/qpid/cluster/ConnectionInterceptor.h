@@ -38,17 +38,16 @@ class ConnectionInterceptor {
     ConnectionInterceptor(broker::Connection&, Cluster&,
                           Cluster::ShadowConnectionId shadowId=Cluster::ShadowConnectionId(0,0));
     ~ConnectionInterceptor();
-
-    // Called on self-delivery
-    void deliver(framing::AMQFrame& f);
-
-    // Called on self-delivery of my own cluster.connection-close
-    void deliverClosed();
-
+    
     Cluster::ShadowConnectionId getShadowId() const { return shadowId; }
 
     bool isLocal() const { return shadowId == Cluster::ShadowConnectionId(0,0); }
-    
+
+    // self-delivery of intercepted extension points.
+    void deliver(framing::AMQFrame& f);
+    void deliverClosed();
+    void deliverDoOutput();
+
   private:
     struct NullConnectionHandler : public qpid::sys::ConnectionOutputHandler {
         void close() {}
@@ -57,12 +56,14 @@ class ConnectionInterceptor {
         void activateOutput() {}
     };
     
-    // Functions to add to Connection extension points.
+    // Functions to intercept to Connection extension points.
     void received(framing::AMQFrame&);
     void closed();
+    bool doOutput();
 
-    boost::function<void(framing::AMQFrame&)> receivedNext;
-    boost::function<void()> closedNext;
+    boost::function<void (framing::AMQFrame&)> receivedNext;
+    boost::function<void ()> closedNext;
+    boost::function<bool ()> doOutputNext;
 
     boost::intrusive_ptr<broker::Connection> connection;
     Cluster& cluster;
