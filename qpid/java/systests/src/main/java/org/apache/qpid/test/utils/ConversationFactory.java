@@ -21,7 +21,7 @@
 package org.apache.qpid.test.utils;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.util.ReflectionUtils;
+import org.apache.qpid.test.utils.ReflectionUtils;
 
 import javax.jms.*;
 
