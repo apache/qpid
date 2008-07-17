@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.util;
+package org.apache.qpid.test.utils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

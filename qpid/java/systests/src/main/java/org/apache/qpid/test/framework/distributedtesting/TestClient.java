@@ -27,8 +27,8 @@ import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.ClockSynchThread;
 import org.apache.qpid.test.framework.clocksynch.UDPClockSynchronizer;
-import org.apache.qpid.util.ReflectionUtils;
-import org.apache.qpid.util.ReflectionUtilsException;
+import org.apache.qpid.test.utils.ReflectionUtils;
+import org.apache.qpid.test.utils.ReflectionUtilsException;
 
 import org.apache.qpid.junit.extensions.SleepThrottle;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
