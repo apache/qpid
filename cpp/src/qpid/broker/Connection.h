@@ -96,7 +96,8 @@ class Connection : public sys::ConnectionInputHandler,
 
     // Extension points: allow plugins to insert additional functionality.
     boost::function<void(framing::AMQFrame&)> receivedFn;
-    boost::function<void()> closedFn; 
+    boost::function<void ()> closedFn;
+    boost::function<bool ()> doOutputFn;
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
@@ -104,6 +105,7 @@ class Connection : public sys::ConnectionInputHandler,
 
     void receivedImpl(framing::AMQFrame& frame);
     void closedImpl();
+    bool doOutputImpl();
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;

@@ -51,6 +51,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     ConnectionState(out_, broker_),
     receivedFn(boost::bind(&Connection::receivedImpl, this, _1)),
     closedFn(boost::bind(&Connection::closedImpl, this)),
+    doOutputFn(boost::bind(&Connection::doOutputImpl, this)),
     adapter(*this, isLink_),
     isLink(isLink_),
     mgmtClosing(false),
@@ -192,8 +193,9 @@ void Connection::closedImpl(){ // Physically closed, suspend open sessions.
     }
 }
 
-bool Connection::doOutput()
-{    
+bool Connection::doOutput() { return doOutputFn(); }
+
+bool Connection::doOutputImpl() {    
     try{
         if (ioCallback)
             ioCallback(); // Lend the IO thread for management processing
