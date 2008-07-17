@@ -29,7 +29,9 @@
       <field name="url" type="str16" />
     </control>
 
-    <control name="connection-close" code="0x2">
-    </control>
+    <control name="connection-close" code="0x2"/>
+
+    <control name="connection-do-output" code="0x3"/>
+
   </class>
 </amqp>

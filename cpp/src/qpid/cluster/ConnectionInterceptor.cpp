@@ -20,6 +20,7 @@
  */
 #include "ConnectionInterceptor.h"
 #include "qpid/framing/ClusterConnectionCloseBody.h"
+#include "qpid/framing/ClusterConnectionDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
@@ -37,6 +38,7 @@ ConnectionInterceptor::ConnectionInterceptor(
     // Attach  my functions to Connection extension points.
     shift(receivedNext, connection->receivedFn, boost::bind(&ConnectionInterceptor::received, this, _1));
     shift(closedNext, connection->closedFn, boost::bind(&ConnectionInterceptor::closed, this));
+    shift(doOutputNext, connection->doOutputFn, boost::bind(&ConnectionInterceptor::doOutput, this));
 }
 
 ConnectionInterceptor::~ConnectionInterceptor() {
@@ -77,6 +79,19 @@ void ConnectionInterceptor::deliverClosed() {
     // Drop reference so connection will be deleted, which in turn
     // will delete this via finalizer added in ctor.
     connection = 0;             
+}
+
+bool  ConnectionInterceptor::doOutput() {
+    cluster.send(AMQFrame(in_place<ClusterConnectionDoOutputBody>()), this);
+    return false;
+}
+
+void ConnectionInterceptor::deliverDoOutput() {
+    // FIXME aconway 2008-07-16: review thread safety.
+    // All connection processing happens in cluster queue, only read & write
+    // (from mutex-locked frameQueue) happens in reader/writer threads.
+    // 
+    doOutputNext();
 }
 
 }} // namespace qpid::cluster

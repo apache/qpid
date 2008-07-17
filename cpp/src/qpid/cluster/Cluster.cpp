@@ -208,6 +208,10 @@ void Cluster::handleMethod(Id from, ConnectionInterceptor* connection, AMQMethod
           connection->deliverClosed();
           break;
       }
+      case CLUSTER_CONNECTION_DO_OUTPUT_METHOD_ID: {
+          connection->deliverDoOutput();
+          break;
+      }
       default:
         assert(0);
     }
