@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.util;
+package org.apache.qpid.test.utils;
 
 /**
  * Wraps a checked exception that occurs when {@link ReflectionUtils} encounters checked exceptions using standard
