@@ -225,10 +225,6 @@ QPID_AUTO_TEST_CASE(testMessageEnqueue) {
     BOOST_CHECK_EQUAL(string("bar"), msg.getData());
 }
 
-#if 0
-
-// FIXME aconway 2008-07-16: Implement cluster dequeue notification, enable this test.
-
 QPID_AUTO_TEST_CASE(testMessageDequeue) {
     // Enqueue on one broker, dequeue on two others.
     ClusterFixture cluster (3);
@@ -236,10 +232,10 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     c0.session.queueDeclare("q");
     c0.session.messageTransfer(arg::content=TransferContent("foo", "q"));
     c0.session.messageTransfer(arg::content=TransferContent("bar", "q"));
-    c0.session.close();
 
     Message msg;
 
+    // Dequeue on 2 others, ensure correct order.
     Client c1(cluster[1]);
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("foo", msg.getData());
@@ -247,12 +243,13 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     Client c2(cluster[2]);
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("bar", msg.getData());
-    QueueQueryResult r = c2.session.queueQuery("q");
-    BOOST_CHECK_EQUAL(0u, r.getMessageCount());
+
+    // Queue should be empty on all queues.
+    BOOST_CHECK_EQUAL(0u, c0.session.queueQuery("q").getMessageCount());
+    BOOST_CHECK_EQUAL(0u, c1.session.queueQuery("q").getMessageCount());
+    BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
 }
 
 // TODO aconway 2008-06-25: failover.
-
-#endif
 
 QPID_AUTO_TEST_SUITE_END()

@@ -380,9 +380,13 @@ void SemanticState::requestDispatch()
 
 void SemanticState::requestDispatch(ConsumerImpl& c)
 {    
-    if(c.isBlocked()) {
-        c.doOutput();
-    }
+    if(c.isBlocked())
+        outputTasks.activateOutput();
+    // TODO aconway 2008-07-16:  we could directly call
+    //  c.doOutput();
+    // since we are in the connections thread but for consistency
+    // activateOutput() will set it up to be called in the next write idle.
+    // Current cluster code depends on this, review cluster code to change.
 }
 
 void SemanticState::complete(DeliveryRecord& delivery)
