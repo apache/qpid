@@ -230,12 +230,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
         catch (SaslException e)
         {
-            return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
+            return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
         }
-    }
-
-    public AuthenticationResult isAuthorize(VirtualHost vhost, String username)
-    {
-        return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
     }
 }

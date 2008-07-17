@@ -93,7 +93,7 @@
                 <queues>
                     <exchange>amq.direct</exchange>
                     <!-- 4Mb -->
-                    <maximumQueueDepth>4235g264</maximumQueueDepth>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>
                     <!-- 2Mb -->
                     <maximumMessageSize>2117632</maximumMessageSize>
                     <!-- 10 mins -->
