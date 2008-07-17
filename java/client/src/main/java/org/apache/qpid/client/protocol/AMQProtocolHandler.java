@@ -488,7 +488,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         if (PROTOCOL_DEBUG)
         {
-            _protocolLogger.info("RECV: [%s] %s", this, message);
+            _protocolLogger.info(String.format("RECV: [%s] %s", this, message));
         }
 
         if(message instanceof AMQFrame)
@@ -574,7 +574,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         if (PROTOCOL_DEBUG)
         {
-            _protocolLogger.debug("SEND: [%s] %s", this, message);
+            _protocolLogger.debug(String.format("SEND: [%s] %s", this, message));
         }
         
         final long sentMessages = _messagesOut++;
@@ -587,10 +587,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
 
         _connection.bytesSent(session.getWrittenBytes());
-        if (debug)
-        {
-            _logger.debug("Sent frame " + message);
-        }
     }
 
     public StateWaiter createWaiter(Set<AMQState> states) throws AMQException
