@@ -120,6 +120,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
     private static final String BROKER_READY = "broker.ready";
+    private static final String TEST_OUTPUT = "test.output";
 
     // values
     protected static final String VM = "vm";
@@ -130,6 +131,7 @@ public class QpidTestCase extends TestCase
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
+    private String _output = System.getProperty(TEST_OUTPUT);
 
     private Process _brokerProcess;
 
@@ -153,6 +155,22 @@ public class QpidTestCase extends TestCase
     public void runBare() throws Throwable
     {
         String name = getClass().getSimpleName() + "." + getName();
+        String qname = getClass().getName() + "." + getName();
+
+        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
+        PrintStream out = null;
+        PrintStream err = null;
+        boolean redirected = _output != null && _output.length() > 0;
+        if (redirected)
+        {
+            out = new PrintStream(String.format("%s/TEST-%s.out", _output, qname));
+            err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
+        }
+
+        System.setOut(out);
+        System.setErr(err);
+
         _logger.info("========== start " + name + " ==========");
         startBroker();
         try
@@ -170,6 +188,14 @@ public class QpidTestCase extends TestCase
                 _logger.error("exception stopping broker", e);
             }
             _logger.info("==========  stop " + name + " ==========");
+
+            if (redirected)
+            {
+                System.setErr(oldErr);
+                System.setOut(oldOut);
+                err.close();
+                out.close();
+            }
         }
     }
 
