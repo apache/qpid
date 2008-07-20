@@ -193,6 +193,7 @@
 
 
   <property file="${project.root}/${config}"/>
+  <property file="${project.root}/default.testprofile"/>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
