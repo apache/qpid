@@ -478,7 +478,7 @@ struct PublishThread : public Client {
                             arg::content=msg,
                             arg::acceptMode=1);
                     }
-                    if (opts.tx && (j % opts.tx == 0)) sync(session).txCommit();
+                    if (opts.tx && (i % opts.tx == 0)) sync(session).txCommit();
                     if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
                 }
                 if (opts.confirm) session.sync();
