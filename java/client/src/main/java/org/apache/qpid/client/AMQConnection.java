@@ -59,6 +59,7 @@ import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -467,6 +468,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 if (connectionException.getCause() != null)
                 {
                     message = connectionException.getCause().getMessage();
+                    connectionException.getCause().printStackTrace();
                 }
                 else
                 {
@@ -486,18 +488,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-            AMQException e = new AMQConnectionFailureException(message, connectionException);
-
-            if (connectionException != null)
+            for (Throwable th = connectionException; th != null; th = th.getCause())
             {
-                if (connectionException instanceof UnresolvedAddressException)
+                if (th instanceof UnresolvedAddressException ||
+                    th instanceof UnknownHostException)
                 {
-                    e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString(),
-                                                          null);
+                    throw new AMQUnresolvedAddressException
+                        (message,
+                         _failoverPolicy.getCurrentBrokerDetails().toString(),
+                         connectionException);
                 }
-
             }
-            throw e;
+
+            throw new AMQConnectionFailureException(message, connectionException);
         }
 
         _connectionMetaData = new QpidConnectionMetaData(this);

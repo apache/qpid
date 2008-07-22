@@ -21,6 +21,7 @@
 package org.apache.qpidity.transport.network;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
@@ -38,70 +39,46 @@ import static org.apache.qpidity.transport.network.InputHandler.State.*;
  * @author Rafael H. Schloming
  */
 
-public class InputHandler implements Receiver<ByteBuffer>
+public final class InputHandler implements Receiver<ByteBuffer>
 {
 
     public enum State
     {
         PROTO_HDR,
-        PROTO_HDR_M,
-        PROTO_HDR_Q,
-        PROTO_HDR_P,
-        PROTO_HDR_CLASS,
-        PROTO_HDR_INSTANCE,
-        PROTO_HDR_MAJOR,
-        PROTO_HDR_MINOR,
         FRAME_HDR,
-        FRAME_HDR_TYPE,
-        FRAME_HDR_SIZE1,
-        FRAME_HDR_SIZE2,
-        FRAME_HDR_RSVD1,
-        FRAME_HDR_TRACK,
-        FRAME_HDR_CH1,
-        FRAME_HDR_CH2,
-        FRAME_HDR_RSVD2,
-        FRAME_HDR_RSVD3,
-        FRAME_HDR_RSVD4,
-        FRAME_HDR_RSVD5,
-        FRAME_FRAGMENT,
+        FRAME_BODY,
         ERROR;
     }
 
     private final Receiver<NetworkEvent> receiver;
     private State state;
-
-    private byte instance;
-    private byte major;
-    private byte minor;
+    private ByteBuffer input = null;
+    private int needed;
 
     private byte flags;
     private SegmentType type;
     private byte track;
     private int channel;
-    private int size;
-    private ByteBuffer body;
 
     public InputHandler(Receiver<NetworkEvent> receiver, State state)
     {
         this.receiver = receiver;
         this.state = state;
+
+        switch (state)
+        {
+        case PROTO_HDR:
+            needed = 8;
+            break;
+        case FRAME_HDR:
+            needed = Frame.HEADER_SIZE;
+            break;
+        }
     }
 
     public InputHandler(Receiver<NetworkEvent> receiver)
     {
         this(receiver, PROTO_HDR);
-    }
-
-    private void init()
-    {
-        receiver.received(new ProtocolHeader(instance, major, minor));
-    }
-
-    private void frame()
-    {
-        Frame frame = new Frame(flags, type, track, channel, body);
-        assert size == frame.getSize();
-        receiver.received(frame);
     }
 
     private void error(String fmt, Object ... args)
@@ -111,154 +88,106 @@ public class InputHandler implements Receiver<ByteBuffer>
 
     public void received(ByteBuffer buf)
     {
-        while (buf.hasRemaining())
+        int limit = buf.limit();
+        int remaining = buf.remaining();
+        while (remaining > 0)
         {
-            state = next(buf);
+            if (remaining >= needed)
+            {
+                int consumed = needed;
+                int pos = buf.position();
+                if (input == null)
+                {
+                    buf.limit(pos + needed);
+                    input = buf;
+                    state = next(pos);
+                    buf.limit(limit);
+                    buf.position(pos + consumed);
+                }
+                else
+                {
+                    buf.limit(pos + needed);
+                    input.put(buf);
+                    buf.limit(limit);
+                    input.flip();
+                    state = next(0);
+                }
+
+                remaining -= consumed;
+                input = null;
+            }
+            else
+            {
+                if (input == null)
+                {
+                    input = ByteBuffer.allocate(needed);
+                }
+                input.put(buf);
+                needed -= remaining;
+                remaining = 0;
+            }
         }
     }
 
-    private State next(ByteBuffer buf)
+    private State next(int pos)
     {
+        input.order(ByteOrder.BIG_ENDIAN);
+
         switch (state) {
         case PROTO_HDR:
-            return expect(buf, 'A', PROTO_HDR_M);
-        case PROTO_HDR_M:
-            return expect(buf, 'M', PROTO_HDR_Q);
-        case PROTO_HDR_Q:
-            return expect(buf, 'Q', PROTO_HDR_P);
-        case PROTO_HDR_P:
-            return expect(buf, 'P', PROTO_HDR_CLASS);
-        case PROTO_HDR_CLASS:
-            return expect(buf, 1, PROTO_HDR_INSTANCE);
-        case PROTO_HDR_INSTANCE:
-            instance = buf.get();
-            return PROTO_HDR_MAJOR;
-        case PROTO_HDR_MAJOR:
-            major = buf.get();
-            return PROTO_HDR_MINOR;
-        case PROTO_HDR_MINOR:
-            minor = buf.get();
-            init();
+            if (input.get(pos) != 'A' &&
+                input.get(pos + 1) != 'M' &&
+                input.get(pos + 2) != 'Q' &&
+                input.get(pos + 3) != 'P')
+            {
+                error("bad protocol header: %s", str(input));
+                return ERROR;
+            }
+
+            byte instance = input.get(pos + 5);
+            byte major = input.get(pos + 6);
+            byte minor = input.get(pos + 7);
+            receiver.received(new ProtocolHeader(instance, major, minor));
+            needed = Frame.HEADER_SIZE;
             return FRAME_HDR;
         case FRAME_HDR:
-            flags = buf.get();
-            return FRAME_HDR_TYPE;
-        case FRAME_HDR_TYPE:
-            type = SegmentType.get(buf.get());
-            return FRAME_HDR_SIZE1;
-        case FRAME_HDR_SIZE1:
-            size = (0xFF & buf.get()) << 8;
-            return FRAME_HDR_SIZE2;
-        case FRAME_HDR_SIZE2:
-            size += 0xFF & buf.get();
-            size -= 12;
+            flags = input.get(pos);
+            type = SegmentType.get(input.get(pos + 1));
+            int size = (0xFFFF & input.getShort(pos + 2));
+            size -= Frame.HEADER_SIZE;
             if (size < 0 || size > (64*1024 - 12))
             {
                 error("bad frame size: %d", size);
                 return ERROR;
             }
-            else
-            {
-                return FRAME_HDR_RSVD1;
-            }
-        case FRAME_HDR_RSVD1:
-            return expect(buf, 0, FRAME_HDR_TRACK);
-        case FRAME_HDR_TRACK:
-            byte b = buf.get();
+            byte b = input.get(pos + 5);
             if ((b & 0xF0) != 0) {
                 error("non-zero reserved bits in upper nibble of " +
                       "frame header byte 5: '%x'", b);
                 return ERROR;
             } else {
                 track = (byte) (b & 0xF);
-                return FRAME_HDR_CH1;
             }
-        case FRAME_HDR_CH1:
-            channel = (0xFF & buf.get()) << 8;
-            return FRAME_HDR_CH2;
-        case FRAME_HDR_CH2:
-            channel += 0xFF & buf.get();
-            return FRAME_HDR_RSVD2;
-        case FRAME_HDR_RSVD2:
-            return expect(buf, 0, FRAME_HDR_RSVD3);
-        case FRAME_HDR_RSVD3:
-            return expect(buf, 0, FRAME_HDR_RSVD4);
-        case FRAME_HDR_RSVD4:
-            return expect(buf, 0, FRAME_HDR_RSVD5);
-        case FRAME_HDR_RSVD5:
-            if (!expect(buf, 0))
+            channel = (0xFFFF & input.getShort(pos + 6));
+            if (size == 0)
             {
-                return ERROR;
-            }
-
-            if (size > buf.remaining()) {
-                body = ByteBuffer.allocate(size);
-                body.put(buf);
-                return FRAME_FRAGMENT;
-            } else {
-                body = buf.slice();
-                body.limit(size);
-                buf.position(buf.position() + size);
-                frame();
+                Frame frame = new Frame(flags, type, track, channel, ByteBuffer.allocate(0));
+                receiver.received(frame);
+                needed = Frame.HEADER_SIZE;
                 return FRAME_HDR;
             }
-        case FRAME_FRAGMENT:
-            int delta = body.remaining();
-            if (delta > buf.remaining()) {
-                body.put(buf);
-                return FRAME_FRAGMENT;
-            } else {
-                ByteBuffer fragment = buf.slice();
-                fragment.limit(delta);
-                buf.position(buf.position() + delta);
-                body.put(fragment);
-                body.flip();
-                frame();
-                return FRAME_HDR;
+            else
+            {
+                needed = size;
+                return FRAME_BODY;
             }
+        case FRAME_BODY:
+            Frame frame = new Frame(flags, type, track, channel, input.slice());
+            receiver.received(frame);
+            needed = Frame.HEADER_SIZE;
+            return FRAME_HDR;
         default:
             throw new IllegalStateException();
-        }
-    }
-
-    private State expect(ByteBuffer buf, int expected, State next)
-    {
-        return expect(buf, (byte) expected, next);
-    }
-
-    private State expect(ByteBuffer buf, char expected, State next)
-    {
-        return expect(buf, (byte) expected, next);
-    }
-
-    private State expect(ByteBuffer buf, byte expected, State next)
-    {
-        if (expect(buf, expected))
-        {
-            return next;
-        }
-        else
-        {
-            return ERROR;
-        }
-    }
-
-    private boolean expect(ByteBuffer buf, int expected)
-    {
-        return expect(buf, (byte) expected);
-    }
-
-    private boolean expect(ByteBuffer buf, byte expected)
-    {
-        byte b = buf.get();
-        if (b == expected)
-        {
-            return true;
-        }
-        else
-        {
-            error("expecting '%x', got '%x'", expected, b);
-            return false;
         }
     }
 
