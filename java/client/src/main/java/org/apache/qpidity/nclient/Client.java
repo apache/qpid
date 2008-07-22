@@ -43,7 +43,7 @@ import org.apache.qpidity.transport.ConnectionCloseOk;
 import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
-import org.apache.qpidity.transport.network.io.IoHandler;
+import org.apache.qpidity.transport.network.io.IoTransport;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.network.nio.NioHandler;
 import org.slf4j.Logger;
@@ -167,15 +167,16 @@ public class Client implements org.apache.qpidity.nclient.Connection
         connectionDelegate.setPassword(password);
         connectionDelegate.setVirtualHost(virtualHost);
 
-        if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
+        String transport = System.getProperty("transport","io");
+        if (transport.equalsIgnoreCase("nio"))
         {
             _logger.info("using NIO Transport");
             _conn = NioHandler.connect(host, port,connectionDelegate);
         }
-        else if (System.getProperty("transport","mina").equalsIgnoreCase("io"))
+        else if (transport.equalsIgnoreCase("io"))
         {
             _logger.info("using Plain IO Transport");
-            _conn = IoHandler.connect(host, port,connectionDelegate);
+            _conn = IoTransport.connect(host, port,connectionDelegate);
         }
         else
         {
@@ -287,20 +288,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
         ssn.attach(ch);
         ssn.sessionAttach(ssn.getName());
         ssn.sessionRequestTimeout(expiryInSeconds);
-        String transport = System.getProperty("transport","mina");
-
-        try
-        {
-            if (Boolean.getBoolean("batch") && ("io".equalsIgnoreCase(transport) || "nio".equalsIgnoreCase(transport)))
-            {
-                _logger.debug("using batch mode in transport " + transport);
-                IoHandler.startBatchingFrames(_conn.getConnectionId());
-            }
-        }
-        catch(Exception e)
-        {
-            e.printStackTrace();
-        }
         return ssn;
     }
 

@@ -24,6 +24,7 @@ import org.apache.mina.util.AvailablePortFinder;
 
 import org.apache.qpid.util.concurrent.Condition;
 
+import org.apache.qpidity.transport.network.io.IoTransport;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.util.Logger;
 
@@ -67,7 +68,7 @@ public class ConnectionTest extends TestCase
 
     private Connection connect(final Condition closed)
     {
-        Connection conn = MinaHandler.connect("localhost", port, new ConnectionDelegate()
+        Connection conn = IoTransport.connect("localhost", port, new ConnectionDelegate()
         {
             public SessionDelegate getSessionDelegate()
             {

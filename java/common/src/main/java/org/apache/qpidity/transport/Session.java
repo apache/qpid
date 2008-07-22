@@ -249,7 +249,7 @@ public class Session extends Invoker
         }
     }
 
-    protected void invoke(Method m)
+    public void invoke(Method m)
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
