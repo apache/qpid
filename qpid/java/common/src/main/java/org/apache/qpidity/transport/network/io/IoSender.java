@@ -21,39 +21,135 @@ package org.apache.qpidity.transport.network.io;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpidity.transport.Sender;
 import org.apache.qpidity.transport.TransportException;
+import org.apache.qpidity.transport.util.Logger;
 
-public class IoSender implements Sender<java.nio.ByteBuffer>
+import static org.apache.qpidity.transport.util.Functions.*;
+
+
+final class IoSender extends Thread implements Sender<ByteBuffer>
 {
-    private final Object lock = new Object();
-    private Socket _socket;
-    private OutputStream _outStream;
 
-    public IoSender(Socket socket)
+    private static final Logger log = Logger.get(IoSender.class);
+
+    // by starting here, we ensure that we always test the wraparound
+    // case, we should probably make this configurable somehow so that
+    // we can test other cases as well
+    private final static int START = Integer.MAX_VALUE - 10;
+
+    private final IoTransport transport;
+    private final long timeout;
+    private final Socket socket;
+    private final OutputStream out;
+
+    private final byte[] buffer;
+    private final AtomicInteger head = new AtomicInteger(START);
+    private final AtomicInteger tail = new AtomicInteger(START);
+    private final Object notFull = new Object();
+    private final Object notEmpty = new Object();
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    private IOException exception = null;
+
+
+    public IoSender(IoTransport transport, int bufferSize, long timeout)
     {
-        this._socket = socket;
+        this.transport = transport;
+        this.socket = transport.getSocket();
+        this.buffer = new byte[bufferSize];
+        this.timeout = timeout;
+
         try
         {
-            _outStream = _socket.getOutputStream();
+            out = socket.getOutputStream();
         }
-        catch(IOException e)
+        catch (IOException e)
         {
-            throw new TransportException("Error getting output stream for socket",e);
+            throw new TransportException("Error getting output stream for socket", e);
         }
+
+        setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
+        start();
     }
 
-    /*
-     * Currently I don't implement any in memory buffering
-     * and just write straight to the wire.
-     * I want to experiment with buffering and see if I can
-     * get more performance, all though latency will suffer
-     * a bit.
-     */
-    public void send(java.nio.ByteBuffer buf)
+    private static final int mod(int n, int m)
     {
-        write(buf);
+        int r = n % m;
+        return r < 0 ? m + r : r;
+    }
+
+    public void send(ByteBuffer buf)
+    {
+        if (closed.get())
+        {
+            throw new TransportException("sender is closed", exception);
+        }
+
+        final int size = buffer.length;
+        int remaining = buf.remaining();
+
+        while (remaining > 0)
+        {
+            final int hd = head.get();
+            final int tl = tail.get();
+
+            if (hd - tl >= size)
+            {
+                synchronized (notFull)
+                {
+                    long start = System.currentTimeMillis();
+                    long elapsed = 0;
+                    while (head.get() - tail.get() >= size && elapsed < timeout)
+                    {
+                        try
+                        {
+                            notFull.wait(timeout - elapsed);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // pass
+                        }
+                        elapsed += System.currentTimeMillis() - start;
+                    }
+
+                    if (head.get() - tail.get() >= size)
+                    {
+                        throw new TransportException(String.format("write timed out: %s, %s", head.get(), tail.get()));
+                    }
+                }
+                continue;
+            }
+
+            final int hd_idx = mod(hd, size);
+            final int tl_idx = mod(tl, size);
+            final int length;
+
+            if (tl_idx > hd_idx)
+            {
+                length = Math.min(tl_idx - hd_idx, remaining);
+            }
+            else
+            {
+                length = Math.min(size - hd_idx, remaining);
+            }
+
+            buf.get(buffer, hd_idx, length);
+            head.getAndAdd(length);
+            if (hd == tail.get())
+            {
+                synchronized (notEmpty)
+                {
+                    notEmpty.notify();
+                }
+            }
+            remaining -= length;
+        }
     }
 
     public void flush()
@@ -61,66 +157,107 @@ public class IoSender implements Sender<java.nio.ByteBuffer>
         // pass
     }
 
-    /* The extra copying sucks.
-     * If I know for sure that the buf is backed
-     * by an array then I could do buf.array()
-     */
-    private void write(java.nio.ByteBuffer buf)
-    {
-        byte[] array = null;
-
-        if (buf.hasArray())
-        {
-            array = buf.array();
-        }
-        else
-        {
-            array = new byte[buf.remaining()];
-            buf.get(array);
-        }
-
-        if( _socket.isConnected())
-        {
-            synchronized (lock)
-            {
-                try
-                {
-                    _outStream.write(array);
-                }
-                catch(Exception e)
-                {
-                    throw new TransportException("Error trying to write to the socket",e);
-                }
-            }
-        }
-        else
-        {
-            throw new TransportException("Trying to write on a closed socket");
-        }
-    }
-
-    /*
-     * Haven't used this, but the intention is
-     * to experiment with it in the future.
-     * Also need to make sure the buffer size
-     * is configurable
-     */
-    public void setStartBatching()
-    {
-    }
-
     public void close()
     {
-        synchronized (lock)
+        if (closed.getAndSet(true))
         {
+            synchronized (notEmpty)
+            {
+                notEmpty.notify();
+            }
+
             try
             {
-                _socket.close();
+                join(timeout);
+                if (isAlive())
+                {
+                    throw new TransportException("join timed out");
+                }
+                socket.close();
             }
-            catch(Exception e)
+            catch (InterruptedException e)
             {
-                e.printStackTrace();
+                throw new TransportException(e);
+            }
+            catch (IOException e)
+            {
+                throw new TransportException(e);
+            }
+
+            if (exception != null)
+            {
+                throw new TransportException(exception);
             }
         }
     }
+
+    public void run()
+    {
+        final int size = buffer.length;
+
+        while (true)
+        {
+            final int hd = head.get();
+            final int tl = tail.get();
+
+            if (hd == tl)
+            {
+                if (closed.get())
+                {
+                    break;
+                }
+
+                synchronized (notEmpty)
+                {
+                    while (head.get() == tail.get() && !closed.get())
+                    {
+                        try
+                        {
+                            notEmpty.wait();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // pass
+                        }
+                    }
+                }
+
+                continue;
+            }
+
+            final int hd_idx = mod(hd, size);
+            final int tl_idx = mod(tl, size);
+
+            final int length;
+            if (tl_idx < hd_idx)
+            {
+                length = hd_idx - tl_idx;
+            }
+            else
+            {
+                length = size - tl_idx;
+            }
+
+            try
+            {
+                out.write(buffer, tl_idx, length);
+            }
+            catch (IOException e)
+            {
+                log.error(e, "error in read thread");
+                exception = e;
+                closed.set(true);
+                break;
+            }
+            tail.getAndAdd(length);
+            if (head.get() - tl >= size)
+            {
+                synchronized (notFull)
+                {
+                    notFull.notify();
+                }
+            }
+        }
+    }
+
 }
