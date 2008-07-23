@@ -19,8 +19,12 @@ under the License.
 
 <project name="run-tests" default="cpp-perftests" basedir=".">
 
-<target name="cpp-perftests">
-  <exec executable="./cppbuild-perftests.sh" failonerror="true"/> 
-</target>
-   
+    <target name="cpp-perftests">
+        <exec executable="./cppbuild-perftests.sh" failonerror="true"/>
+    </target>
+
+    <target name="tck">
+        <exec executable="./javajmstck.sh"/>
+    </target>
+
 </project>     
