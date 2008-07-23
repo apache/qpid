@@ -1397,8 +1397,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                                             }
                                             done = false;
                                         }
-                                        else
+                                        else // Not enough Credit for message and wouldSuspend
                                         {
+                                            //QPID-1187 - Treat the subscription as suspended for this message
+                                            // and wait for the message to be removed to continue delivery.
+                                            subActive = false;
+
                                             node.addStateChangeListener(new QueueEntryListener(sub, node));
                                         }
                                     }
