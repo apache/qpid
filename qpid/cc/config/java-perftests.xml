@@ -26,51 +26,47 @@ under the License.
         </listeners>
 
         <bootstrappers>
-            <svnbootstrapper localWorkingCopy="../java/perftests" />
+            <svnbootstrapper localWorkingCopy="../java/perftests"/>
         </bootstrappers>
 
         <modificationset quietperiod="30">
-            <buildstatus logdir="logs/qpid-cpp-trunk/"/>    
-            <buildstatus logdir="logs/qpid-java-trunk/"/>   
+            <buildstatus logdir="logs/qpid-cpp-trunk/"/>
+            <buildstatus logdir="logs/qpid-java-trunk/"/>
             <svn localWorkingCopy="../java/perftests"/>
         </modificationset>
 
         <schedule interval="3600">
-	    <composite>            
-		<!-- 0.10 C++ broker -->    	      
-            	<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/runbroker.sh"
-		  	workingdir="../java" />	
-		<ant  	target="all-tests"
-			uselogger="false"
-			antworkingdir="../java/perftests">
-                   <jvmarg arg="-Xmx1024m"/>
-		</ant>            
-		<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/stopbroker.sh"
-		  	workingdir="../java"/>	
-	    </composite>
-        </schedule>       
+            <composite>
+                <!-- 0.10 C++ broker -->
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/runbroker.sh"
+                      workingdir="../java"/>
+                <ant target="all-tests"
+                     uselogger="false"
+                     antworkingdir="../java/perftests">
+                    <jvmarg arg="-Xmx1024m"/>
+                </ant>
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/stopbroker.sh"
+                      workingdir="../java"/>
+            </composite>
+        </schedule>
 
         <publishers>
+            <artifactspublisher dest="artifacts/${project.name}"
+                                subdirectory="results"
+                                dir="../java/perftests/results"/>
 
-	    <artifactspublisher dest="artifacts/${project.name}"
-				subdirectory="results"   
-				dir="../java/perftests/results"/>
-<!--
-            <email subjectprefix="CC report fro ${project.name}" mailhost="localhost"
-                   returnaddress="my_email"
-		   buildresultsurl="http://my_host:8080/buildresults/${project.name}"
-                   skipusers="false" 
-		   reportsuccess="fixes"
+            <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
+                   returnaddress="${mail.returnaddress}"
+                   buildresultsurl="http://${env.HOSTNAME}:8080/buildresults/${project.name}"
+                   skipusers="false"
+                   reportsuccess="fixes"
                    spamwhilebroken="true">
-                   <always address="email"/>
-		   <map alias="name" address="email"/>
+                <always address="${mail.list}"/>
             </email>
--->
         </publishers>
-
     </project>
 </cruisecontrol>

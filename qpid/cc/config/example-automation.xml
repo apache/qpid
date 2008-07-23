@@ -20,9 +20,6 @@ under the License.
     <project name="qpid-example-automation"
              buildafterfailed="false">
 
-    <!-- Load environment variables -->
-    <property environment="env" toupper="true"/>
-
         <listeners>
             <currentbuildstatuslistener file="logs/${project.name}/status.txt"/>
         </listeners>
@@ -34,31 +31,28 @@ under the License.
         </modificationset>
 
         <schedule interval="3600">
-      	    <exec timeout="1800" 
-		  command="/bin/bash" 
-		  args="${env.CC_HOME}/cc/scripts/check_examples.sh"
-		  errorstr="FAILED"
-		  workingdir="./" />
+            <exec timeout="1800"
+                  command="/bin/bash"
+                  args="${env.CC_HOME}/cc/scripts/check_examples.sh"
+                  errorstr="FAILED"
+                  workingdir="./"/>
         </schedule>
 
-     <publishers>
-            <artifactspublisher dest="artifacts/${project.name}" 
+        <publishers>
+            <artifactspublisher dest="artifacts/${project.name}"
                                 file="${env.CC_HOME}/broker.log"/>
-            <artifactspublisher dest="artifacts/${project.name}" 
+            <artifactspublisher dest="artifacts/${project.name}"
                                 file="${env.CC_HOME}/script.log"/>
 
-           <!--
-            <email subjectprefix="CC report fro ${project.name}" mailhost="localhost"
-                   returnaddress="my_email"
-		   buildresultsurl="http://my_host:8080/buildresults/${project.name}"
-                   skipusers="false" 
-		   reportsuccess="fixes"
-                   spamwhilebroken="true">
-                   <always address="email"/>
-		   <map alias="name" address="email"/>
-            </email>
-	    -->
 
+            <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
+                   returnaddress="${mail.returnaddress}"
+                   buildresultsurl="http://${env.HOSTNAME}:8080/buildresults/${project.name}"
+                   skipusers="false"
+                   reportsuccess="fixes"
+                   spamwhilebroken="true">
+                <always address="${mail.list}"/>
+            </email>
         </publishers>
     </project>
 </cruisecontrol>
