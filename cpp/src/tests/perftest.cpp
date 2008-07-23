@@ -465,8 +465,8 @@ struct PublishThread : public Client {
                 for (size_t i=0; i<opts.count; i++) {
                     // Stamp the iteration into the message data, avoid
                     // any heap allocation.
-                    const_cast<std::string&>(msg.getData()).replace(offset, sizeof(uint32_t), 
-                                                                    reinterpret_cast<const char*>(&i), sizeof(uint32_t));
+                    const_cast<std::string&>(msg.getData()).replace(offset, sizeof(size_t), 
+                                          reinterpret_cast<const char*>(&i), sizeof(size_t));
                     if (opts.syncPub) {
                         sync(session).messageTransfer(
                             arg::destination=destination,
@@ -561,7 +561,7 @@ struct SubscribeThread : public Client {
                     //
                     // For now verify order only for a single publisher.
                     size_t offset = opts.uniqueData ? 5 /*marker is 'data:'*/ : 0;
-                    size_t n = *reinterpret_cast<const uint32_t*>(msg.getData().data() + offset);
+                    size_t n = *reinterpret_cast<const size_t*>(msg.getData().data() + offset);
                     if (opts.pubs == 1) {
                         if (opts.subs == 1 || opts.mode == FANOUT) verify(n==expect, "==", expect, n);
                         else verify(n>=expect, ">=", expect, n);
