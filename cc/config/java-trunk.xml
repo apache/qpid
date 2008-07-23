@@ -26,111 +26,106 @@ under the License.
         </listeners>
 
         <bootstrappers>
-            <svnbootstrapper localWorkingCopy="../java" />
-            <svnbootstrapper localWorkingCopy="../gentools" />
+            <svnbootstrapper localWorkingCopy="../java"/>
+            <svnbootstrapper localWorkingCopy="../gentools"/>
         </bootstrappers>
 
         <modificationset quietperiod="30">
-            <buildstatus logdir="logs/qpid-cpp-trunk/"/>    
-            <buildstatus logdir="logs/bdbstore-cpp-trunk/"/>   
+            <buildstatus logdir="logs/qpid-cpp-trunk/"/>
+            <buildstatus logdir="logs/bdbstore-cpp-trunk/"/>
             <svn localWorkingCopy="../java"/>
             <svn localWorkingCopy="../gentools"/>
         </modificationset>
 
         <schedule interval="3600">
-	    <composite>
+            <composite>
 
-            	<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/javaconfig.sh"
-		  	workingdir="../java" /> 
-		<!-- in VM 0.8 -->
-		<ant  	target="clean test"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-		   <property name="profile" value="java"/>
-		</ant> 
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/javaconfig.sh"
+                      workingdir="../java"/>
+                <!-- in VM 0.8 -->
+                <ant target="clean test"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                </ant>
 
-                 <ant  	target="report"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-		</ant>   	      
-            	<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/javareport.sh 08"
-		  	workingdir="../java" />
+                <ant target="report"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                </ant>
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/javareport.sh 08"
+                      workingdir="../java"/>
 
-		<!-- cpp -->
-                <ant  	target="test"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-	     	   <property name="profile" value="cpp"/>
-		</ant>
-		<ant  	target="report"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-		</ant>   
-		<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/javareport.sh cpp"
-		  	workingdir="../java" />
-	        
-	       <!-- cpp no prefetch -->
-	       <ant  	target="test"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-	     	   <property name="profile" value="cpp.noprefetch"/>
-		</ant>
-		<ant  	target="report"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-		</ant>   
-		<exec 	timeout="1800" 
-			command="/bin/bash" 
-		  	args="../cc/scripts/javareport.sh cpp-noprefetch"
-		  	workingdir="../java" />	        
+                <!-- cpp -->
+                <ant target="test"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                    <property name="profile" value="cpp"/>
+                </ant>
+                <ant target="report"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                </ant>
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/javareport.sh cpp"
+                      workingdir="../java"/>
 
-		<!-- make the release 
-		<ant  	target="release"
-			uselogger="false"
-			antworkingdir="../java">
-                   <jvmarg arg="-Xmx1024m"/>
-		</ant>   
-		-->
-	    </composite>
-        </schedule>       
+                <!-- cpp no prefetch -->
+                <ant target="test"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                    <property name="profile" value="cpp.noprefetch"/>
+                </ant>
+                <ant target="report"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                </ant>
+                <exec timeout="1800"
+                      command="/bin/bash"
+                      args="../cc/scripts/javareport.sh cpp-noprefetch"
+                      workingdir="../java"/>
+
+                <!-- make the release
+            <ant  	target="release"
+                uselogger="false"
+                antworkingdir="../java">
+                       <jvmarg arg="-Xmx1024m"/>
+            </ant>
+            -->
+            </composite>
+        </schedule>
 
         <publishers>
+            <artifactspublisher dest="artifacts/${project.name}"
+                                subdirectory="report_08"
+                                dir="../java/build/report_08"/>
 
-	    <artifactspublisher dest="artifacts/${project.name}"
-				subdirectory="report_08"   
-				dir="../java/build/report_08"/>
-
-	    <artifactspublisher dest="artifacts/${project.name}"   
-				subdirectory="report_cpp"
-				dir="../java/build/report_cpp"/>
+            <artifactspublisher dest="artifacts/${project.name}"
+                                subdirectory="report_cpp"
+                                dir="../java/build/report_cpp"/>
 
             <artifactspublisher dest="artifacts/${project.name}"
                                 subdirectory="report_cpp-noprefetch"
                                 dir="../java/build/report_cpp-noprefetch"/>
-<!--
-            <email subjectprefix="CC report fro ${project.name}" mailhost="localhost"
-                   returnaddress="my_email"
-		   buildresultsurl="http://my_host:8080/buildresults/${project.name}"
-                   skipusers="false" 
-		   reportsuccess="fixes"
-                   spamwhilebroken="true">
-                   <always address="email"/>
-		   <map alias="name" address="email"/>
-            </email>
--->
-        </publishers>
 
+            <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
+                   returnaddress="${mail.returnaddress}"
+                   buildresultsurl="http://${env.HOSTNAME}:8080/buildresults/${project.name}"
+                   skipusers="false"
+                   reportsuccess="fixes"
+                   spamwhilebroken="true">
+                <always address="${mail.list}"/>
+            </email>
+        </publishers>
     </project>
 </cruisecontrol>

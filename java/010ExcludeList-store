@@ -5,6 +5,7 @@ org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
 org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
+org.apache.qpid.test.unit.ack.AcknowledgeTest#*
 // those tests need durable subscribe states to be persisted
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#testDurSubRestoresMessageSelector
@@ -27,6 +28,7 @@ org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
 org.apache.qpid.test.testcases.FailoverTest#*
+org.apache.qpid.test.client.failover.FailoverTest#*
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
@@ -41,6 +43,8 @@ org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFails
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
 org.apache.qpid.test.client.FlowControlTest#*
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnresolvedVirtualHostFailure
 // the 0.10 c++ broker does not implement forget
 org.apache.qpid.test.unit.xa.FaultTest#testForget
 // the 0-10 c++ broker does not implement priority / this test depends on a Java broker extension for queue creation

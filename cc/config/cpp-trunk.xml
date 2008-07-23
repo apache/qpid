@@ -44,5 +44,16 @@ under the License.
 		  args="../cc/scripts/cppbuild.sh"
 		  workingdir="../cpp" />
         </schedule>
+
+         <publishers>
+            <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
+                   returnaddress="${mail.returnaddress}"
+                   buildresultsurl="http://${env.HOSTNAME}:8080/buildresults/${project.name}"
+                   skipusers="false"
+                   reportsuccess="fixes"
+                   spamwhilebroken="true">
+                <always address="${mail.list}"/>
+            </email>
+        </publishers>
     </project>
 </cruisecontrol>

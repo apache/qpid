@@ -17,19 +17,15 @@ specific language governing permissions and limitations
 under the License.
 -->
 <cruisecontrol>
-
     <project name="bdbstore-cpp-trunk"
              buildafterfailed="false">
-    
-    <!-- Load environment variables -->
-    <property environment="env" toupper="true"/>
 
         <listeners>
             <currentbuildstatuslistener file="logs/${project.name}/status.txt"/>
         </listeners>
 
         <bootstrappers>
-            <svnbootstrapper localWorkingCopy="${env.CPPSTORE_HOME}" />
+            <svnbootstrapper localWorkingCopy="${env.CPPSTORE_HOME}"/>
         </bootstrappers>
 
         <modificationset quietperiod="30">
@@ -39,10 +35,20 @@ under the License.
 
         <schedule interval="3600">
             <exec timeout="1800"
-	 	  command="/bin/bash" 
-		  args="${env.CC_HOME}/cc/scripts/bdbstorecppbuild.sh"
-		  workingdir="${env.CPPSTORE_HOME}" />
+                  command="/bin/bash"
+                  args="${env.CC_HOME}/cc/scripts/bdbstorecppbuild.sh"
+                  workingdir="${env.CPPSTORE_HOME}"/>
         </schedule>
 
+        <publishers>
+            <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
+                   returnaddress="${mail.returnaddress}"
+                   buildresultsurl="http://${env.HOSTNAME}:8080/buildresults/${project.name}"
+                   skipusers="false"
+                   reportsuccess="fixes"
+                   spamwhilebroken="true">
+                <always address="${mail.list}"/>
+            </email>
+        </publishers>
     </project>
 </cruisecontrol>
