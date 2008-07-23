@@ -478,7 +478,7 @@ struct PublishThread : public Client {
                             arg::content=msg,
                             arg::acceptMode=1);
                     }
-                    if (opts.tx && (i % opts.tx == 0)) sync(session).txCommit();
+                    if (opts.tx && ((i+1) % opts.tx == 0)) sync(session).txCommit();
                     if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
                 }
                 if (opts.confirm) session.sync();
@@ -551,7 +551,7 @@ struct SubscribeThread : public Client {
                 size_t expect=0;
                 for (size_t i = 0; i < opts.subQuota; ++i) {
                     msg=lq.pop();
-                    if (opts.tx && (i % opts.tx == 0)) sync(session).txCommit();
+                    if (opts.tx && ((i+1) % opts.tx == 0)) sync(session).txCommit();
                     if (opts.intervalSub) ::usleep(opts.intervalSub*1000);
                     // TODO aconway 2007-11-23: check message order for. 
                     // multiple publishers. Need an array of counters,
@@ -568,8 +568,8 @@ struct SubscribeThread : public Client {
                         expect = n+1;
                     }
                 }
-                if (opts.ack)
-                    subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
+                if (opts.tx || opts.ack)
+                    lq.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
                 if (opts.tx)
                     sync(session).txCommit();
                 AbsTime end=now();
