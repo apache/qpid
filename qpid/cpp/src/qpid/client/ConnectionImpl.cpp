@@ -40,9 +40,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     : Bounds(settings.maxFrameSize * settings.bounds),
       handler(settings, v),
       connector(new Connector(v, settings, this)), 
-      version(v), 
-      isClosed(true),//closed until successfully opened 
-      isClosing(false)
+      version(v)
 {
     QPID_LOG(debug, "ConnectionImpl created for " << version);
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
@@ -91,7 +89,7 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
 
 bool ConnectionImpl::isOpen() const 
 { 
-    return !isClosed && !isClosing; 
+    return handler.isOpen();
 }
 
 
@@ -101,8 +99,6 @@ void ConnectionImpl::open(const std::string& host, int port)
     connector->connect(host, port);
     connector->init();
     handler.waitForOpen();    
-    Mutex::ScopedLock l(lock);
-    isClosed = false;
 }
 
 void ConnectionImpl::idleIn()
@@ -118,19 +114,13 @@ void ConnectionImpl::idleOut()
 
 void ConnectionImpl::close()
 {
-    Mutex::ScopedLock l(lock);
-    if (isClosing || isClosed) return;
-    isClosing = true;
-    {
-        Mutex::ScopedUnlock u(lock);
-        handler.close();
-    }
+    if (!handler.isOpen()) return;
+    handler.close();
     closed(NORMAL, "Closed by client");
 }
 
 
 template <class F> void ConnectionImpl::closeInternal(const F& f) {
-    isClosed = true;
     connector->close();
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         boost::shared_ptr<SessionImpl> s = i->second.lock();
@@ -151,7 +141,7 @@ void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
     // FIXME aconway 2008-06-06: exception use, connection-forced is incorrect here.
     setException(new ConnectionException(CONNECTION_FORCED, CONN_CLOSED));
-    if (isClosed) return;
+    if (handler.isClosed()) return;
     handler.fail(CONN_CLOSED);
     closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONNECTION_FORCED, CONN_CLOSED));
 }
