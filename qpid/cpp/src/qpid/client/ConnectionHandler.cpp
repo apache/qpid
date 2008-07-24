@@ -186,3 +186,14 @@ void ConnectionHandler::closeOk()
     }
     setState(CLOSED);
 }
+
+bool ConnectionHandler::isOpen() const
+{
+    return getState() == OPEN;
+}
+
+bool ConnectionHandler::isClosed() const
+{
+    int s = getState();
+    return s == CLOSING || s == CLOSED || s == FAILED;
+}

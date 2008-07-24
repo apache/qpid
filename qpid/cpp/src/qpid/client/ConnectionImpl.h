@@ -56,8 +56,6 @@ class ConnectionImpl : public Bounds,
     boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
     sys::Mutex lock;
-    bool isClosed;
-    bool isClosing;
 
     template <class F> void closeInternal(const F&);
 
@@ -66,7 +64,6 @@ class ConnectionImpl : public Bounds,
     void idleOut();
     void idleIn();
     void shutdown();
-    bool setClosing();
 
   public:
     ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);

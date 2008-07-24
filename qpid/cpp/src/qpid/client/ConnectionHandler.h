@@ -96,6 +96,10 @@ public:
     void close();
     void fail(const std::string& message);
 
+    // Note that open and closed aren't related by open = !closed
+    bool isOpen() const;
+    bool isClosed() const;
+
     CloseListener onClose;
     ErrorListener onError;
 };
