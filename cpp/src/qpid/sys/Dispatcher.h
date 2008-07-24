@@ -78,7 +78,7 @@ protected:
     void doDelete();
 
 private:
-    void dispatchCallbacks(Poller::EventType dir);
+    void processEvent(Poller::EventType dir);
 };
 
 class Dispatcher : public Runnable {
