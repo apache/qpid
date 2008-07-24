@@ -38,12 +38,10 @@ Dispatcher::~Dispatcher() {
 void Dispatcher::run() {
     do {
         Poller::Event event = poller->wait();
-        DispatchHandle* h =
-            boost::polymorphic_downcast<DispatchHandle*>(event.handle);
 
         // If can read/write then dispatch appropriate callbacks        
-        if (h) {
-            h->dispatchCallbacks(event.type);
+        if (event.handle) {
+            event.process();
         } else {
             // Handle shutdown
             switch (event.type) {
@@ -344,7 +342,7 @@ void DispatchHandle::doDelete() {
     deferDelete();
 }
 
-void DispatchHandle::dispatchCallbacks(Poller::EventType type) {
+void DispatchHandle::processEvent(Poller::EventType type) {
     // Note that we are now doing the callbacks
     {
     ScopedLock<Mutex> lock(stateLock);

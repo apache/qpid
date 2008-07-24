@@ -30,31 +30,10 @@ namespace qpid {
 namespace sys {
 
 /**
- * Handle class to use for polling
- */
-class IOHandle;
-class Poller;
-class PollerHandlePrivate;
-class PollerHandle {
-    friend class Poller;
-
-    PollerHandlePrivate* const impl;
-
-public:
-    PollerHandle(const IOHandle& h);
-    
-    // Usual way to delete (will defer deletion until we
-    // can't be returned from a Poller::wait any more)
-    void deferDelete();
-    
-    // Class clients shouldn't ever use this
-    virtual ~PollerHandle();
-};
-
-/**
  * Poller: abstract class to encapsulate a file descriptor poll to be used
  * by a reactor
  */
+class PollerHandle;
 class PollerPrivate;
 class Poller {
     PollerPrivate* const impl;
@@ -87,6 +66,8 @@ public:
           handle(handle0),
           type(type0) {
         }
+        
+        void process();
     };
     
     Poller();
@@ -100,6 +81,33 @@ public:
     void rearmFd(PollerHandle& handle);
     Event wait(Duration timeout = TIME_INFINITE);
 };
+
+/**
+ * Handle class to use for polling
+ */
+class IOHandle;
+class PollerHandlePrivate;
+class PollerHandle {
+    friend class Poller;
+    friend struct Poller::Event;
+
+    PollerHandlePrivate* const impl;
+    virtual void processEvent(Poller::EventType) {};
+
+public:
+    PollerHandle(const IOHandle& h);
+    
+    // Usual way to delete (will defer deletion until we
+    // can't be returned from a Poller::wait any more)
+    void deferDelete();
+    
+    // Class clients shouldn't ever use this
+    virtual ~PollerHandle();
+};
+
+inline void Poller::Event::process() {
+            handle->processEvent(type);
+}
 
 }}
 #endif // _sys_Poller_h
