@@ -29,6 +29,8 @@ namespace qpid {
         {
             static const std::string maxCountKey;
             static const std::string maxSizeKey;
+            
+            static uint64_t defaultMaxSize;
 
             const uint32_t maxCount;
             const uint64_t maxSize;
@@ -46,6 +48,8 @@ namespace qpid {
             bool limitExceeded();
             uint32_t getMaxCount() const { return maxCount; }
             uint64_t getMaxSize() const { return maxSize; }           
+
+            static void setDefaultMaxSize(uint64_t);
         };
     }
 }
