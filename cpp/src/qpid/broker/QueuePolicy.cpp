@@ -29,7 +29,7 @@ QueuePolicy::QueuePolicy(uint32_t _maxCount, uint64_t _maxSize) :
 
 QueuePolicy::QueuePolicy(const FieldTable& settings) :
     maxCount(getInt(settings, maxCountKey, 0)), 
-    maxSize(getInt(settings, maxSizeKey, 0)), count(0), size(0) {}
+    maxSize(getInt(settings, maxSizeKey, defaultMaxSize)), count(0), size(0) {}
 
 void QueuePolicy::enqueued(uint64_t _size)
 {
@@ -57,14 +57,17 @@ void QueuePolicy::update(FieldTable& settings)
 
 int QueuePolicy::getInt(const FieldTable& settings, const std::string& key, int defaultValue)
 {
-    //Note: currently field table only contain signed 32 bit ints, which
-    //      restricts the values that can be set on the queue policy.
-    try {
-        return settings.getInt(key); 
-    } catch (FieldValueException& ignore) {
-        return defaultValue;
-    }
+    FieldTable::ValuePtr v = settings.get(key);
+    if (v && v->convertsTo<int>()) return v->get<int>();
+    else return defaultValue;
+}
+
+void QueuePolicy::setDefaultMaxSize(uint64_t s)
+{
+    defaultMaxSize = s;
 }
 
 const std::string QueuePolicy::maxCountKey("qpid.max_count");
 const std::string QueuePolicy::maxSizeKey("qpid.max_size");
+uint64_t QueuePolicy::defaultMaxSize(0);
+
