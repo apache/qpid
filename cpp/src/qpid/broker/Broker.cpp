@@ -40,6 +40,7 @@
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/Time.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -86,7 +87,8 @@ Broker::Options::Options(const std::string& name) :
     auth(AUTH_DEFAULT),
     realm("QPID"),
     replayFlushLimit(0),
-    replayHardLimit(0)
+    replayHardLimit(0),
+    queueLimit(100*1048576/*100M default limit*/)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -109,7 +111,8 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
-        ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication");
+        ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
+        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)");
 }
 
 const std::string empty;
@@ -166,6 +169,8 @@ Broker::Broker(const Broker::Options& conf) :
         exchanges.setParent (vhost);
         links.setParent     (vhost);
     }
+
+    QueuePolicy::setDefaultMaxSize(conf.queueLimit);
 
     // Early-Initialize plugins
     const Plugin::Plugins& plugins=Plugin::getPlugins();
