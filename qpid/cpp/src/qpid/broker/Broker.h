@@ -86,6 +86,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         std::string realm;
         size_t replayFlushLimit;
         size_t replayHardLimit;
+        uint queueLimit;
     };
     
     virtual ~Broker();
