@@ -106,6 +106,13 @@ under the License.
         </schedule>
 
         <publishers>
+            <onfailure>
+                <antpublisher target="report"
+                     uselogger="false"
+                     antworkingdir="../java">
+                    <jvmarg arg="-Xmx1024m"/>
+                </antpublisher>
+            </onfailure>
             <artifactspublisher dest="artifacts/${project.name}"
                                 subdirectory="report_08"
                                 dir="../java/build/report_08"/>
@@ -117,6 +124,10 @@ under the License.
             <artifactspublisher dest="artifacts/${project.name}"
                                 subdirectory="report_cpp-noprefetch"
                                 dir="../java/build/report_cpp-noprefetch"/>
+
+              <artifactspublisher dest="artifacts/${project.name}"
+                                subdirectory="report-fault"
+                                dir="../java/build/report"/>
 
             <email subjectprefix="${mail.subject}: ${project.name}" mailhost="${mail.host}"
                    returnaddress="${mail.returnaddress}"
