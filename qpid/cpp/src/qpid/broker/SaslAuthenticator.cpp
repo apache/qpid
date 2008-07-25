@@ -234,9 +234,10 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
             throw ConnectionForcedException("Authenticated username unavailable");
         }
 
-        QPID_LOG(info, "SASL: Authentication succeeded for: " << (char *)uid);
+        QPID_LOG(info, "SASL: Authentication succeeded for: "
+                 << const_cast<char*>(static_cast<const char*>(uid)));
 
-        connection.setUserId((char *)uid);
+        connection.setUserId(const_cast<char*>(static_cast<const char*>(uid)));
 
         client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
     } else if (SASL_CONTINUE == code) {
