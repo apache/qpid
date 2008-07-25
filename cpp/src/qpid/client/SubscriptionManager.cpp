@@ -134,8 +134,11 @@ bool SubscriptionManager::get(Message& result, const std::string& queue, sys::Du
     std::string unique = framing::Uuid(true).str();
     subscribe(lq, queue, FlowControl::messageCredit(1), unique);
     AutoCancel ac(*this, unique);
+    //first wait for message to be delivered if a timeout has been specified
+    if (timeout && lq.get(result, timeout)) return true;
+    //make sure message is not on queue before final check
     sync(session).messageFlush(unique);
-    return lq.get(result, timeout);
+    return lq.get(result, 0);
 }
 
 }} // namespace qpid::client
