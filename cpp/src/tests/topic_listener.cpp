@@ -76,13 +76,15 @@ struct Args : public qpid::TestOptions {
     bool transactional;
     bool durable;
     int prefetch;
+    string statusqueue;
 
     Args() : ack(0), transactional(false), durable(false), prefetch(0) {
         addOptions()
             ("ack", optValue(ack, "MODE"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("transactional", optValue(transactional), "Use transactions")
             ("durable", optValue(durable), "subscribers should use durable queues")
-            ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)");
+            ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)")
+            ("status-queue", optValue(statusqueue, "QUEUE-NAME"), "Message queue to put status messages on");
     }
 };
 
@@ -102,9 +104,6 @@ int main(int argc, char** argv){
             Connection connection;
             args.open(connection);
             AsyncSession session = connection.newSession();
-            if (args.transactional) {
-                session.txSelect();
-            }
 
             //declare exchange, queue and bind them:
             session.queueDeclare(arg::queue="response");
@@ -128,6 +127,17 @@ int main(int argc, char** argv){
             }
             mgr.subscribe(listener, control);
             session.sync();
+
+            if( args.statusqueue.length() > 0 ) {
+                stringstream msg_str;
+                msg_str << "topic_listener: " << (int)getpid();
+                session.messageTransfer(arg::content=Message(msg_str.str(), args.statusqueue));
+                cout << "Ready status put on queue '" << args.statusqueue << "'" << endl;
+            }
+
+            if (args.transactional) {
+                session.txSelect();
+            }
             
             cout << "topic_listener: listening..." << endl;
             mgr.run();
