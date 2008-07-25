@@ -41,6 +41,7 @@ using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
 using qpid::sys::Monitor;
+using qpid::sys::Thread;
 using qpid::sys::TIME_SEC;
 using std::string;
 using std::cout;
@@ -238,6 +239,19 @@ QPID_AUTO_TEST_CASE(testLocalQueue) {
     BOOST_CHECK_EQUAL("foo2", lq.pop().getData());    
 }
 
+struct DelayedTransfer : sys::Runnable
+{
+    ClientSessionFixture& fixture;
+
+    DelayedTransfer(ClientSessionFixture& f) : fixture(f) {}
+
+    void run()
+    {
+        sleep(1);
+        fixture.session.messageTransfer(content=Message("foo2", "getq"));
+    }
+};
+
 QPID_AUTO_TEST_CASE(testGet) {
     ClientSessionFixture fix;
     fix.session.queueDeclare(queue="getq", exclusive=true, autoDelete=true);
@@ -249,6 +263,12 @@ QPID_AUTO_TEST_CASE(testGet) {
     BOOST_CHECK(fix.subs.get(got, "getq", TIME_SEC));
     BOOST_CHECK_EQUAL("foo1", got.getData());
     BOOST_CHECK(!fix.subs.get(got, "getq"));
+    DelayedTransfer sender(fix);
+    Thread t(sender);
+    //test timed get where message shows up after a short delay
+    BOOST_CHECK(fix.subs.get(got, "getq", 5*TIME_SEC));
+    BOOST_CHECK_EQUAL("foo2", got.getData());    
+    t.join();
 }
 
 QPID_AUTO_TEST_CASE(testOpenFailure) {
