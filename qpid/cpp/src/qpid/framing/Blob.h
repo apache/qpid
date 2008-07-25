@@ -130,7 +130,7 @@ class Blob
         copy = b.copy;
         destroy = b.destroy;
         basePtr = reinterpret_cast<BaseType*>(
-            ((char*)this)+ ((char*)(b.basePtr) - (char*)(&b)));
+            ((char*)this)+ ((const char*)(b.basePtr) - (const char*)(&b)));
     }
 
   public:
