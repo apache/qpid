@@ -82,13 +82,13 @@ QPID_AUTO_TEST_CASE(testCommit)
     t.op.prepare(0);
     t.op.commit();
     BOOST_CHECK_EQUAL((uint32_t) 1, t.queue1->getMessageCount());
-    intrusive_ptr<Message> msg_dequeue = t.queue1->dequeue().payload;
+    intrusive_ptr<Message> msg_dequeue = t.queue1->get().payload;
 
     BOOST_CHECK_EQUAL( true, (static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
     BOOST_CHECK_EQUAL(t.msg, msg_dequeue);
 
     BOOST_CHECK_EQUAL((uint32_t) 1, t.queue2->getMessageCount());
-    BOOST_CHECK_EQUAL(t.msg, t.queue2->dequeue().payload);            
+    BOOST_CHECK_EQUAL(t.msg, t.queue2->get().payload);            
 }
 
 QPID_AUTO_TEST_SUITE_END()
