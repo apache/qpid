@@ -91,7 +91,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     BOOST_CHECK(!c1.received);
     msg1->enqueueComplete();
     
-    received = queue->dequeue().payload;
+    received = queue->get().payload;
     BOOST_CHECK_EQUAL(msg1.get(), received.get());    
 }
     
@@ -179,11 +179,11 @@ QPID_AUTO_TEST_CASE(testDequeue){
     
     BOOST_CHECK_EQUAL(uint32_t(3), queue->getMessageCount());
     
-    received = queue->dequeue().payload;
+    received = queue->get().payload;
     BOOST_CHECK_EQUAL(msg1.get(), received.get());
     BOOST_CHECK_EQUAL(uint32_t(2), queue->getMessageCount());
 
-    received = queue->dequeue().payload;
+    received = queue->get().payload;
     BOOST_CHECK_EQUAL(msg2.get(), received.get());
     BOOST_CHECK_EQUAL(uint32_t(1), queue->getMessageCount());
 
@@ -196,7 +196,7 @@ QPID_AUTO_TEST_CASE(testDequeue){
     BOOST_CHECK_EQUAL(msg3.get(), consumer.last.get());
     BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
 
-    received = queue->dequeue().payload;
+    received = queue->get().payload;
     BOOST_CHECK(!received);
     BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
         
