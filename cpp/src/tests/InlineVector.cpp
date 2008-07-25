@@ -30,8 +30,8 @@ using namespace std;
 typedef InlineVector<int, 3> Vec;
 
 bool isInline(const Vec& v) {
-    return (char*)&v <= (char*)(&v[0]) &&
-        (char*)(&v[0]) < (char*)&v+sizeof(v);
+    return (const char*)&v <= (const char*)(&v[0]) &&
+        (const char*)(&v[0]) < (const char*)&v+sizeof(v);
 }
 
 QPID_AUTO_TEST_CASE(testCtor) {
