@@ -429,7 +429,7 @@ void SemanticState::recover(bool requeue)
 
 bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected)
 {
-    QueuedMessage msg = queue->dequeue();
+    QueuedMessage msg = queue->get();
     if(msg.payload){
         DeliveryId myDeliveryTag = deliveryAdapter.deliver(msg, token);
         if(ackExpected){
