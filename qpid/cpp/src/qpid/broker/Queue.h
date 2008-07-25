@@ -98,7 +98,6 @@ namespace qpid {
             framing::SequenceNumber sequence;
             management::Queue* mgmtObject;
 
-            void pop();
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             bool seek(QueuedMessage& msg, Consumer& position);
@@ -111,6 +110,9 @@ namespace qpid {
             void addListener(Consumer&);
 
             bool isExcluded(boost::intrusive_ptr<Message>& msg);
+
+            void dequeued(boost::intrusive_ptr<Message>& msg);
+            void popAndDequeue();
 
         public:
             virtual void notifyDurableIOComplete();
@@ -178,10 +180,11 @@ namespace qpid {
              * dequeue from store (only done once messages is acknowledged)
              */
             bool dequeue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
+
             /**
-             * dequeues from memory only
+             * Gets the next available message 
              */
-            QueuedMessage dequeue();
+            QueuedMessage get();
 
             const QueuePolicy* getPolicy();
 

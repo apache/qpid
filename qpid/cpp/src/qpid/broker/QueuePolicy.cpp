@@ -71,3 +71,18 @@ const std::string QueuePolicy::maxCountKey("qpid.max_count");
 const std::string QueuePolicy::maxSizeKey("qpid.max_size");
 uint64_t QueuePolicy::defaultMaxSize(0);
 
+namespace qpid {
+    namespace broker {
+
+std::ostream& operator<<(std::ostream& out, const QueuePolicy& p)
+{
+    if (p.maxSize) out << "size: max=" << p.maxSize << ", current=" << p.size;
+    else out << "size unlimited, current=" << p.size;
+    out << "; ";
+    if (p.maxCount) out << "count: max=" << p.maxCount << ", current=" << p.count;
+    else out << "count unlimited, current=" << p.count;    
+    return out;
+}
+
+    }
+}

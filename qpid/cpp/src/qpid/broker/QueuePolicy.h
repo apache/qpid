@@ -21,6 +21,7 @@
 #ifndef _QueuePolicy_
 #define _QueuePolicy_
 
+#include <iostream>
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
@@ -50,6 +51,7 @@ namespace qpid {
             uint64_t getMaxSize() const { return maxSize; }           
 
             static void setDefaultMaxSize(uint64_t);
+	    friend std::ostream& operator<<(std::ostream&, const QueuePolicy&);
         };
     }
 }
