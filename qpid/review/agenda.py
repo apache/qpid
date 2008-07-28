@@ -24,7 +24,7 @@ from optparse import OptionParser
 
 prereqs = ["tr", "svn", "xsltproc", "sed", "grep", "wget"]
 
-svncmd = "svn log https://svn.apache.org/repos/asf/incubator/qpid --xml -r %s:HEAD | tr '\n\r|' '  -' | xsltproc svnlog2wiki.xsl - | grep r | sed -e 's/^ *//' | sed -e 's/\(QPID-[0-9]*\)/\[\1 | https:\/\/issues.apache.org\/jira\/browse\/\1 \]/g'"
+svncmd = "svn log https://svn.apache.org/repos/asf/incubator/qpid --xml -r %s:HEAD | tr '\\n\\r|' '  -' | xsltproc svnlog2wiki.xsl - | grep r | sed -e 's/^ *//' | sed -e 's/\\(QPID-[0-9]*\\)/\\[\\1 | https:\\/\\/issues.apache.org\\/jira\\/browse\\/\\1 \]/g'"
 
 jiracmd = "wget -q -O - http://issues.apache.org/jira/sr/jira.issueviews:searchrequest-xml/12312564/SearchRequest-12312564.xml?tempMax=1000 | tr '[]|' '()-' | xsltproc jiraRSS2wiki.xsl - | grep '|' | sed -e 's/^ *//'"
 
