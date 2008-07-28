@@ -37,11 +37,11 @@ namespace qpid {
 namespace sys {
 
 // Deletion manager to handle deferring deletion of PollerHandles to when they definitely aren't being used 
-DeletionManager<PollerHandle> PollerHandleDeletionManager;
+DeletionManager<PollerHandlePrivate> PollerHandleDeletionManager;
 
 //  Instantiate (and define) class static for DeletionManager
 template <>
-DeletionManager<PollerHandle>::AllThreadsStatuses DeletionManager<PollerHandle>::allThreadsStatuses(0);
+DeletionManager<PollerHandlePrivate>::AllThreadsStatuses DeletionManager<PollerHandlePrivate>::allThreadsStatuses(0);
 
 class PollerHandlePrivate {
     friend class Poller;
@@ -52,20 +52,23 @@ class PollerHandlePrivate {
         MONITORED,
         INACTIVE,
         HUNGUP,
-        MONITORED_HUNGUP
+        MONITORED_HUNGUP,
+        DELETED
     };
 
     int fd;
     ::__uint32_t events;
+    PollerHandle* pollerHandle;
     FDStat stat;
     Mutex lock;
 
-    PollerHandlePrivate(int f) :
+    PollerHandlePrivate(int f, PollerHandle* p) :
       fd(f),
       events(0),
+      pollerHandle(p),
       stat(ABSENT) {
     }
-    
+
     bool isActive() const {
         return stat == MONITORED || stat == MONITORED_HUNGUP;
     }
@@ -98,18 +101,26 @@ class PollerHandlePrivate {
         assert(stat == MONITORED);
         stat = HUNGUP;
     }
+    
+    bool isDeleted() const {
+        return stat == DELETED;
+    }
+
+    void setDeleted() {
+        stat = DELETED;
+    }
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-    impl(new PollerHandlePrivate(toFd(h.impl)))
+    impl(new PollerHandlePrivate(toFd(h.impl), this))
 {}
 
 PollerHandle::~PollerHandle() {
-    delete impl;
-}
-
-void PollerHandle::deferDelete() {
-    PollerHandleDeletionManager.markForDeletion(this);
+    ScopedLock<Mutex> l(impl->lock);
+    if (impl->isActive()) {
+        impl->setDeleted();
+    }
+    PollerHandleDeletionManager.markForDeletion(impl);
 }
 
 /**
@@ -201,7 +212,7 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
         op = EPOLL_CTL_MOD;
         epe.events = eh.events | PollerPrivate::directionToEpollEvent(dir);
     }
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
     
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, eh.fd, &epe));
     
@@ -231,7 +242,7 @@ void Poller::modFd(PollerHandle& handle, Direction dir) {
     
     ::epoll_event epe;
     epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
     
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
     
@@ -247,7 +258,7 @@ void Poller::rearmFd(PollerHandle& handle) {
 
     ::epoll_event epe;
     epe.events = eh.events;        
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
 
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
 
@@ -284,6 +295,7 @@ Poller::Event Poller::wait(Duration timeout) {
         int rc = ::epoll_wait(impl->epollFd, &epe, 1, timeoutMs);
         
         if (impl->isShutdown) {
+            PollerHandleDeletionManager.markAllUnusedInThisThread();
             return Event(0, SHUTDOWN);            
         }
         
@@ -291,13 +303,14 @@ Poller::Event Poller::wait(Duration timeout) {
             QPID_POSIX_CHECK(rc);
         } else if (rc > 0) {
             assert(rc == 1);
-            PollerHandle* handle = static_cast<PollerHandle*>(epe.data.ptr);
-            PollerHandlePrivate& eh = *handle->impl;
+            PollerHandlePrivate& eh = *static_cast<PollerHandlePrivate*>(epe.data.ptr);
             
             ScopedLock<Mutex> l(eh.lock);
             
             // the handle could have gone inactive since we left the epoll_wait
             if (eh.isActive()) {
+                PollerHandle* handle = eh.pollerHandle;
+
                 // If the connection has been hungup we could still be readable
                 // (just not writable), allow us to readable until we get here again
                 if (epe.events & ::EPOLLHUP) {
@@ -309,6 +322,14 @@ Poller::Event Poller::wait(Duration timeout) {
                     eh.setInactive();
                 }
                 return Event(handle, PollerPrivate::epollToDirection(epe.events));
+            } else if (eh.isDeleted()) {
+                // The handle has been deleted whilst still active and so must be removed
+                // from the poller
+                int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, eh.fd, 0);
+                // Ignore EBADF since it's quite likely that we could race with closing the fd
+                if (rc == -1 && errno != EBADF) {
+                    QPID_POSIX_CHECK(rc);
+                }
             }
         }
         // We only get here if one of the following:
@@ -323,6 +344,7 @@ Poller::Event Poller::wait(Duration timeout) {
         // with a timeout as we don't know how long we've waited so far and so we can't
         // continue the wait.
         if (rc == 0 || timeoutMs != -1) {
+            PollerHandleDeletionManager.markAllUnusedInThisThread();
             return Event(0, TIMEOUT);
         }
     } while (true);
