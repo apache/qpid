@@ -339,7 +339,7 @@ void DispatchHandle::doDelete() {
     }
     }
     // If we're not then do it right away
-    deferDelete();
+    delete this;
 }
 
 void DispatchHandle::processEvent(Poller::EventType type) {
@@ -433,7 +433,7 @@ void DispatchHandle::processEvent(Poller::EventType type) {
         break;
     }
     }      
-    deferDelete();
+    delete this;
 }
 
 }}
