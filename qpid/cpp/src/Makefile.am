@@ -543,7 +543,6 @@ nobase_include_HEADERS = \
   qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
   qpid/sys/IOHandle.h \
-  qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
