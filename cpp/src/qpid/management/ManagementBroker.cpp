@@ -125,6 +125,7 @@ void ManagementBroker::shutdown (void)
 
         broker->mExchange.reset ();
         broker->dExchange.reset ();
+        broker->timer.stop();
         agent.reset ();
     }
 }
