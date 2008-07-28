@@ -96,17 +96,11 @@ class PollerHandle {
 
 public:
     PollerHandle(const IOHandle& h);
-    
-    // Usual way to delete (will defer deletion until we
-    // can't be returned from a Poller::wait any more)
-    void deferDelete();
-    
-    // Class clients shouldn't ever use this
     virtual ~PollerHandle();
 };
 
 inline void Poller::Event::process() {
-            handle->processEvent(type);
+    handle->processEvent(type);
 }
 
 }}
