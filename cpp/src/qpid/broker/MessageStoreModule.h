@@ -25,8 +25,6 @@
 #include "Queue.h"
 #include "RecoveryManager.h"
 
-#include "qpid/sys/Module.h"
-
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
