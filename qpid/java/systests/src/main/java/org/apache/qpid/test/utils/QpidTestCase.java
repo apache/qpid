@@ -26,6 +26,7 @@ import javax.naming.NamingException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -166,10 +167,10 @@ public class QpidTestCase extends TestCase
         {
             out = new PrintStream(String.format("%s/TEST-%s.out", _output, qname));
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
+            System.setOut(out);
+            System.setErr(err);
         }
 
-        System.setOut(out);
-        System.setErr(err);
 
         _logger.info("========== start " + name + " ==========");
         startBroker();
