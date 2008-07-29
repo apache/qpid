@@ -1,3 +1,5 @@
 broker=build/bin/qpid-server
 broker.clean=${project.root}/clean-dir ${build.data}
 broker.ready=Qpid Broker Ready
+
+test.excludesfile=${project.root}/08ExcludeList-nonvm
