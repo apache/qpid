@@ -41,8 +41,8 @@ class Queue;
 class MessageDelivery {
 public:
     static boost::shared_ptr<DeliveryToken> getMessageDeliveryToken(const std::string& destination, 
-                                                                    u_int8_t confirmMode, 
-                                                                    u_int8_t acquireMode);
+                                                                    uint8_t confirmMode, 
+                                                                    uint8_t acquireMode);
 
     static void deliver(QueuedMessage& msg, framing::FrameHandler& out, 
                         DeliveryId deliveryTag, boost::shared_ptr<DeliveryToken> token, uint16_t framesize);

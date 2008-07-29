@@ -369,7 +369,7 @@ SessionAdapter::MessageHandlerImpl::reject(const SequenceSet& transfers, uint16_
     transfers.for_each(rejectOp);
 }
 
-void SessionAdapter::MessageHandlerImpl::flow(const std::string& destination, u_int8_t unit, u_int32_t value)
+void SessionAdapter::MessageHandlerImpl::flow(const std::string& destination, uint8_t unit, uint32_t value)
 {
     if (unit == 0) {
         //message
@@ -384,7 +384,7 @@ void SessionAdapter::MessageHandlerImpl::flow(const std::string& destination, u_
     
 }
     
-void SessionAdapter::MessageHandlerImpl::setFlowMode(const std::string& destination, u_int8_t mode)
+void SessionAdapter::MessageHandlerImpl::setFlowMode(const std::string& destination, uint8_t mode)
 {
     if (mode == 0) {
         //credit
@@ -589,7 +589,7 @@ DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 
 
 void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid& xid,
-                                                u_int32_t timeout)
+                                                uint32_t timeout)
 {
     getBroker().getDtxManager().setTimeout(convert(xid), timeout);
 }
