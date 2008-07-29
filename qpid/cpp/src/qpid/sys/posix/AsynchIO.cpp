@@ -31,6 +31,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
 
 #include <boost/bind.hpp>
 
@@ -133,7 +134,8 @@ void AsynchConnector::connComplete(DispatchHandle& h)
         connCallback(socket);
         DispatchHandle::doDelete();
     } else {
-        failure(errCode, std::string(strerror(errCode)));
+        // TODO: This need to be fixed as strerror isn't thread safe
+        failure(errCode, std::string(::strerror(errCode)));
     }
 }
 
