@@ -112,7 +112,7 @@
                         <configuration>
                             <sourceDirectory>${basedir}/src/main/grammar</sourceDirectory>
                             <outputDirectory>${basedir}/target/generated-sources</outputDirectory>
-                            <packageName>org.apache.qpidity.filter.selector</packageName>
+                            <packageName>org.apache.qpid.filter.selector</packageName>
                         </configuration>
                         <goals>
                             <goal>javacc</goal>
@@ -237,16 +237,16 @@
                <artifactId>maven-javadoc-plugin</artifactId>
                <configuration>
                   <excludePackageNames>
-                      org.apache.qpid.*:org.apache.qpidity.njms:org.apache.qpidity.njms.*:org.apache.qpidity.nclient.impl
+                      org.apache.qpid.*:org.apache.qpid.njms:org.apache.qpid.njms.*:org.apache.qpid.nclient.impl
                   </excludePackageNames>
                   <groups>
                     <group>
                       <title>API</title>
-                      <packages>org.apache.qpidity.nclient</packages>
+                      <packages>org.apache.qpid.nclient</packages>
                     </group>
                     <group>
                       <title>Utility Package</title>
-                       <packages>org.apache.qpidity.nclient.util</packages>
+                       <packages>org.apache.qpid.nclient.util</packages>
                     </group>
                   </groups>
                </configuration>

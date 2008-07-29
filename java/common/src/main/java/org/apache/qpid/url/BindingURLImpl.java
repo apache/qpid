@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.url;
 
-import org.apache.qpidity.exchange.ExchangeDefaults;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 

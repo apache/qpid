@@ -1,8 +1,8 @@
 package org.apache.qpid.example.amqpexample.fanout;
 
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.Session;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.Connection;
+import org.apache.qpid.nclient.Session;
 
 /**
  *  This creates a queue a queue and binds it to the

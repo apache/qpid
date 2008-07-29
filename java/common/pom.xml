@@ -61,7 +61,7 @@
 <!--                                <exec executable="python">
                                   <arg line="generate"/>
                                   <arg line="${generated.path}"/>
-                                  <arg line="org.apache.qpidity"/>
+                                  <arg line="org.apache.qpid"/>
                                   <arg line="${specs.dir}/amqp-transitional.0-10.xml"/>
                                 </exec> -->
                             </tasks>

@@ -28,16 +28,16 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.FiledTableSupport;
 import org.apache.qpid.util.Serial;
-import org.apache.qpidity.nclient.Session;
-import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
-import org.apache.qpidity.ErrorCode;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.transport.MessageCreditUnit;
-import org.apache.qpidity.transport.MessageFlowMode;
-import org.apache.qpidity.transport.RangeSet;
-import org.apache.qpidity.transport.Option;
-import org.apache.qpidity.transport.ExchangeBoundResult;
-import org.apache.qpidity.transport.Future;
+import org.apache.qpid.nclient.Session;
+import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
+import org.apache.qpid.ErrorCode;
+import org.apache.qpid.QpidException;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.MessageFlowMode;
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Option;
+import org.apache.qpid.transport.ExchangeBoundResult;
+import org.apache.qpid.transport.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,8 +71,8 @@ public class AMQSession_0_10 extends AMQSession
     private Object _currentExceptionLock = new Object();
     private QpidException _currentException;
 
-    // a ref on the qpidity connection
-    protected org.apache.qpidity.nclient.Connection _qpidConnection;
+    // a ref on the qpid connection
+    protected org.apache.qpid.nclient.Connection _qpidConnection;
 
     private RangeSet unacked = new RangeSet();
     private int unackedCount = 0;
@@ -96,7 +96,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
      * @param qpidConnection          The qpid connection
      */
-    AMQSession_0_10(org.apache.qpidity.nclient.Connection qpidConnection, AMQConnection con, int channelId,
+    AMQSession_0_10(org.apache.qpid.nclient.Connection qpidConnection, AMQConnection con, int channelId,
                     boolean transacted, int acknowledgeMode, MessageFactoryRegistry messageFactoryRegistry,
                     int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
@@ -126,7 +126,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
      * @param qpidConnection      The connection
      */
-    AMQSession_0_10(org.apache.qpidity.nclient.Connection qpidConnection, AMQConnection con, int channelId,
+    AMQSession_0_10(org.apache.qpid.nclient.Connection qpidConnection, AMQConnection con, int channelId,
                     boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
     {
 
@@ -594,7 +594,7 @@ public class AMQSession_0_10 extends AMQSession
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.nclient.Session getQpidSession()
+    protected org.apache.qpid.nclient.Session getQpidSession()
     {
         return _qpidSession;
     }
@@ -645,7 +645,7 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * Lstener for qpid protocol exceptions
      */
-    private class QpidSessionExceptionListener implements org.apache.qpidity.nclient.ClosedListener
+    private class QpidSessionExceptionListener implements org.apache.qpid.nclient.ClosedListener
     {
         public void onClosed(ErrorCode errorCode, String reason, Throwable t)
         {

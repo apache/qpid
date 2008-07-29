@@ -38,10 +38,6 @@
     <level value="${amqj.logging.level}"/>
   </logger>
 
-  <logger name="org.apache.qpidity">
-    <level value="${amqj.logging.level}"/>
-  </logger>
-
   <logger name="qpid.protocol">
     <level value="${amqj.protocol.logging.level}"/>
   </logger>

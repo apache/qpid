@@ -27,7 +27,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpidity.transport.Struct;
+import org.apache.qpid.transport.Struct;
 
 
 public interface MessageFactory

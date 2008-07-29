@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.url;
 
-import org.apache.qpidity.BrokerDetails;
+import org.apache.qpid.BrokerDetails;
 
 import java.util.List;
 
