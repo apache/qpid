@@ -302,7 +302,7 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
     }else{
         //remove the queue from the list of exclusive queues if necessary
         if(q->isExclusiveOwner(&getConnection())){
-            QueueVector::iterator i = find(getConnection().exclusiveQueues.begin(), getConnection().exclusiveQueues.end(), q);
+            QueueVector::iterator i = std::find(getConnection().exclusiveQueues.begin(), getConnection().exclusiveQueues.end(), q);
             if(i < getConnection().exclusiveQueues.end()) getConnection().exclusiveQueues.erase(i);
         }
         q->destroy();
