@@ -21,7 +21,7 @@
 package org.apache.qpid.test.unit.client.connection;
 
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpidity.transport.util.Logger;
+import org.apache.qpid.transport.util.Logger;
 
 import java.util.HashMap;
 import java.util.Map;

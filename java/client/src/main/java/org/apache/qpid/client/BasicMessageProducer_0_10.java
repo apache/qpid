@@ -33,13 +33,13 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpidity.nclient.util.ByteBufferMessage;
-import org.apache.qpidity.njms.ExceptionHelper;
-import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.MessageDeliveryMode;
-import org.apache.qpidity.transport.MessageDeliveryPriority;
-import org.apache.qpidity.transport.MessageProperties;
-import org.apache.qpidity.transport.ReplyTo;
+import org.apache.qpid.nclient.util.ByteBufferMessage;
+import org.apache.qpid.njms.ExceptionHelper;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageDeliveryPriority;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.ReplyTo;
 
 /**
  * This is a 0_10 message producer.
@@ -208,7 +208,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         // send the message
         try
         {
-            org.apache.qpidity.nclient.Session ssn = ((AMQSession_0_10) getSession()).getQpidSession();
+            org.apache.qpid.nclient.Session ssn = ((AMQSession_0_10) getSession()).getQpidSession();
 
             // if true, we need to sync the delivery of this message
             boolean sync = (deliveryMode == DeliveryMode.PERSISTENT &&

@@ -17,8 +17,8 @@
  */
 package org.apache.qpid.url;
 
-import org.apache.qpidity.BrokerDetails;
-import org.apache.qpidity.BrokerDetailsImpl;
+import org.apache.qpid.BrokerDetails;
+import org.apache.qpid.BrokerDetailsImpl;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;

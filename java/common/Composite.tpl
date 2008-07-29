@@ -1,4 +1,4 @@
-package org.apache.qpidity.transport;
+package org.apache.qpid.transport;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpidity.transport.codec.Decoder;
-import org.apache.qpidity.transport.codec.Encodable;
-import org.apache.qpidity.transport.codec.Encoder;
-import org.apache.qpidity.transport.codec.Validator;
+import org.apache.qpid.transport.codec.Decoder;
+import org.apache.qpid.transport.codec.Encodable;
+import org.apache.qpid.transport.codec.Encoder;
+import org.apache.qpid.transport.codec.Validator;
 
-import org.apache.qpidity.transport.network.Frame;
+import org.apache.qpid.transport.network.Frame;
 
 ${
 from genutil import *

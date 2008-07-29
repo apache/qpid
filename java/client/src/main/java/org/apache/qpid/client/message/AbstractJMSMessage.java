@@ -69,9 +69,9 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     /**
      * This is 0_10 specific
      */
-    private org.apache.qpidity.api.Message _010message = null;
+    private org.apache.qpid.api.Message _010message = null;
 
-    public void set010Message(org.apache.qpidity.api.Message m )
+    public void set010Message(org.apache.qpid.api.Message m )
     {
         _010message = m;
     }
@@ -103,7 +103,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
      * End 010 specific
      */
 
-    public org.apache.qpidity.api.Message get010Message()
+    public org.apache.qpid.api.Message get010Message()
     {
         return _010message;
     }
