@@ -24,7 +24,7 @@
 
   <import file="../module.xml"/>
 
-  <property name="output.dir" value="${module.precompiled}/org/apache/qpidity/filter/selector"/>
+  <property name="output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
 
   <target name="precompile">
     <mkdir dir="${output.dir}"/>

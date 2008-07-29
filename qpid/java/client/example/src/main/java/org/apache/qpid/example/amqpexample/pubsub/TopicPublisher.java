@@ -1,11 +1,11 @@
 package org.apache.qpid.example.amqpexample.pubsub;
 
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.Session;
-import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.MessageAcceptMode;
-import org.apache.qpidity.transport.MessageAcquireMode;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.Connection;
+import org.apache.qpid.nclient.Session;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
 
 public class TopicPublisher
 {

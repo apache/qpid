@@ -7,7 +7,7 @@ from genutil import *
 out_dir = sys.argv[1]
 spec_file = sys.argv[2]
 tpl_dir = sys.argv[3]
-pkg_dir = os.path.join(out_dir, "org/apache/qpidity/transport")
+pkg_dir = os.path.join(out_dir, "org/apache/qpid/transport")
 
 if not os.path.exists(pkg_dir):
   os.makedirs(pkg_dir)

@@ -1,4 +1,4 @@
-package org.apache.qpidity.transport;
+package org.apache.qpid.transport;
 
 import java.util.List;
 import java.util.Map;

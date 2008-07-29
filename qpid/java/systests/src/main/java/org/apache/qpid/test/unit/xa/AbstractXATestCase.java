@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import org.apache.qpidity.dtx.XidImpl;
+import org.apache.qpid.dtx.XidImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import javax.transaction.xa.Xid;

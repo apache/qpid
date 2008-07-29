@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpidity.nclient.DtxSession;
+import org.apache.qpid.nclient.DtxSession;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 
 import javax.jms.*;
@@ -48,7 +48,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     /**
      * Create a JMS XASession
      */
-    public XASessionImpl(org.apache.qpidity.nclient.Connection qpidConnection, AMQConnection con, int channelId,
+    public XASessionImpl(org.apache.qpid.nclient.Connection qpidConnection, AMQConnection con, int channelId,
                          int defaultPrefetchHigh, int defaultPrefetchLow)
     {
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
@@ -61,7 +61,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     //-- public methods
 
     /**
-     * Create a qpidity session.
+     * Create a qpid session.
      */
     public void createSession()
     {
@@ -126,7 +126,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.nclient.DtxSession getQpidSession()
+    protected org.apache.qpid.nclient.DtxSession getQpidSession()
     {
         return _qpidDtxSession;
     }

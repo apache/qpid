@@ -12,11 +12,11 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.ClosedListener;
-import org.apache.qpidity.ErrorCode;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.transport.ProtocolVersionException;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.ClosedListener;
+import org.apache.qpid.ErrorCode;
+import org.apache.qpid.QpidException;
+import org.apache.qpid.transport.ProtocolVersionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
     /**
      * The QpidConeection instance that is mapped with thie JMS connection.
      */
-    org.apache.qpidity.nclient.Connection _qpidConnection;
+    org.apache.qpid.nclient.Connection _qpidConnection;
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
