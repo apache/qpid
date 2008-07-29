@@ -128,7 +128,7 @@ void MessageStoreModule::flush(const qpid::broker::PersistableQueue& queue)
     TRANSFER_EXCEPTION(store->flush(queue));
 }
 
-u_int32_t MessageStoreModule::outstandingQueueAIO(const PersistableQueue& queue)
+uint32_t MessageStoreModule::outstandingQueueAIO(const PersistableQueue& queue)
 {
     TRANSFER_EXCEPTION(return store->outstandingQueueAIO(queue));
 }

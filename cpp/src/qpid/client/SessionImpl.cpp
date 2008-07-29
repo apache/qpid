@@ -301,22 +301,22 @@ void SessionImpl::sendContent(const MethodContent& content)
 {
     AMQFrame header(content.getHeader());
     header.setFirstSegment(false);
-    u_int64_t data_length = content.getData().length();
+    uint64_t data_length = content.getData().length();
     if(data_length > 0){
         header.setLastSegment(false);
         handleOut(header);   
         /*Note: end of frame marker included in overhead but not in size*/
-        const u_int32_t frag_size = maxFrameSize - AMQFrame::frameOverhead(); 
+        const uint32_t frag_size = maxFrameSize - AMQFrame::frameOverhead(); 
 
         if(data_length < frag_size){
             AMQFrame frame(in_place<AMQContentBody>(content.getData()));
             frame.setFirstSegment(false);
             handleOut(frame);
         }else{
-            u_int32_t offset = 0;
-            u_int32_t remaining = data_length - offset;
+            uint32_t offset = 0;
+            uint32_t remaining = data_length - offset;
             while (remaining > 0) {
-                u_int32_t length = remaining > frag_size ? frag_size : remaining;
+                uint32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(content.getData().substr(offset, length));
                 AMQFrame frame(in_place<AMQContentBody>(frag));
                 frame.setFirstSegment(false);

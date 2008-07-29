@@ -134,7 +134,7 @@ void NullMessageStore::flush(const qpid::broker::PersistableQueue&)
 {
 }
 
-u_int32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
+uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
 {
     return 0;
 }
