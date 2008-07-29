@@ -51,8 +51,12 @@ public:
         Mutex::ScopedLock l(waitable);
         {
             Waitable::ScopedWait w(waitable);
-            AbsTime deadline(now(),timeout);
-            while (queue.empty() && deadline > now()) waitable.wait(deadline);
+            if (timeout == TIME_INFINITE) {
+                while (queue.empty()) waitable.wait();
+            } else {
+                AbsTime deadline(now(),timeout);
+                while (queue.empty() && deadline > now()) waitable.wait(deadline);
+            }
         }
         if (queue.empty()) return false;
         result = queue.front();
