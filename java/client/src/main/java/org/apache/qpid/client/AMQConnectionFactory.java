@@ -38,7 +38,6 @@ import javax.naming.spi.ObjectFactory;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.transport.TransportConstants;
 
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
@@ -434,23 +433,15 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      */
     public XAConnection createXAConnection() throws JMSException
     {
-        if (TransportConstants.getVersionMajor() == 0 &&
-            TransportConstants.getVersionMinor() == 8)
+        try
         {
-            throw new UnsupportedOperationException("This protocol version does not support XA operations");
+            return new XAConnectionImpl(_connectionDetails, _sslConfig);
         }
-        else
+        catch (Exception e)
         {
-            try
-            {
-                return new XAConnectionImpl(_connectionDetails, _sslConfig);
-            }
-            catch (Exception e)
-            {
-                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                throw jmse;
-            }
+            JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+            jmse.setLinkedException(e);
+            throw jmse;
         }
     }
 

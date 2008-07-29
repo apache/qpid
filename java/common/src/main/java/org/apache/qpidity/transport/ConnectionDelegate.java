@@ -82,28 +82,12 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     public void init(Channel ch, ProtocolHeader hdr)
     {
-        ch.getConnection().send(new ProtocolHeader
-                                (1,
-                                 TransportConstants.getVersionMajor(),
-                                 TransportConstants.getVersionMinor()));
-        if (hdr.getMajor() != TransportConstants.getVersionMajor() &&
-            hdr.getMinor() != TransportConstants.getVersionMinor())
-        {
-            // XXX
-            ch.getConnection().send(new ProtocolHeader
-                                    (1,
-                                     TransportConstants.getVersionMajor(),
-                                     TransportConstants.getVersionMinor()));
-            ch.getConnection().close();
-        }
-        else
-        {
-            List<Object> plain = new ArrayList<Object>();
-            plain.add("PLAIN");
-            List<Object> utf8 = new ArrayList<Object>();
-            utf8.add("utf8");
-            ch.connectionStart(null, plain, utf8);
-        }
+        ch.getConnection().send(new ProtocolHeader (1, hdr.getMajor(), hdr.getMinor()));
+        List<Object> plain = new ArrayList<Object>();
+        plain.add("PLAIN");
+        List<Object> utf8 = new ArrayList<Object>();
+        utf8.add("utf8");
+        ch.connectionStart(null, plain, utf8);
     }
 
     // ----------------------------------------------
@@ -294,8 +278,4 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
         _virtualHost = host;
     }
 
-    public String getUnsupportedProtocol()
-    {
-        return null;
-    }
 }
