@@ -151,7 +151,6 @@ void AsynchConnector::failure(int errCode, std::string message)
 }
 
 /*
->>>>>>> .r654667
  * Asynch reader/writer
  */
 AsynchIO::AsynchIO(const Socket& s,
