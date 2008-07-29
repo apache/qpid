@@ -24,6 +24,7 @@
 #include "qpid/sys/Time.h"
 #include <ostream>
 #include <time.h>
+#include <stdio.h>
 #include <sys/time.h>
 
 namespace qpid {
