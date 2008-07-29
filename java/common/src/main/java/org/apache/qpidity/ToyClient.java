@@ -76,9 +76,7 @@ class ToyClient extends SessionDelegate
                                                   public void closed() {}
                                               });
         conn.send(new ProtocolHeader
-                  (1,
-                   TransportConstants.getVersionMajor(),
-                   TransportConstants.getVersionMinor()));
+                  (1, 0, 10));
 
         Channel ch = conn.getChannel(0);
         Session ssn = new Session("my-session".getBytes());

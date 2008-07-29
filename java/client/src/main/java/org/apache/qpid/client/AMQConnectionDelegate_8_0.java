@@ -43,6 +43,7 @@ import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
@@ -79,7 +80,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
     }
 
-    public void makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
+    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
     {
         final Set<AMQState> openOrClosedStates =
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
@@ -98,6 +99,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             _conn._failoverPolicy.attainedConnection();
             _conn._connected = true;
         }
+
+        return null;
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode, final int prefetch)

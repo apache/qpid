@@ -36,7 +36,6 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.transport.TransportConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +57,7 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.nio.channels.UnresolvedAddressException;
@@ -364,10 +364,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            // We always assume that the broker supports the lates AMQ protocol verions
-            // thie is currently 0.10
-            // TODO: use this code once we have switch to 0.10
-            // getDelegate();
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
 
@@ -420,21 +416,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         Exception connectionException = null;
         while (!_connected && retryAllowed)
         {
+            ProtocolVersion pe = null;
             try
             {
-                makeBrokerConnection(brokerDetails);
-            }
-            catch (AMQProtocolException pe)
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info(pe.getMessage());
-                    _logger.info("Trying broker supported protocol version: " +
-                                 TransportConstants.getVersionMajor() + "." +
-                                 TransportConstants.getVersionMinor());
-                }
-                // we need to check whether we have a delegate for the supported protocol
-                getDelegate();
+                pe = makeBrokerConnection(brokerDetails);
             }
             catch (Exception e)
             {
@@ -445,6 +430,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                                  e);
                 }
                 connectionException = e;
+            }
+
+            if (pe != null)
+            {
+                // reset the delegate to the version returned by the
+                // broker
+                initDelegate(pe);
             }
 
             if (!_connected)
@@ -518,23 +510,41 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
     }
 
-    private void getDelegate() throws AMQProtocolException
+    private void initDelegate(ProtocolVersion pe) throws AMQProtocolException
     {
         try
         {
-            Class c = Class.forName("org.apache.qpid.client.AMQConnectionDelegate_" +
-                                    TransportConstants.getVersionMajor() + "_" +
-                                    TransportConstants.getVersionMinor());
+            Class c = Class.forName(String.format
+                                    ("org.apache.qpid.client.AMQConnectionDelegate_%s_%s",
+                                     pe.getMajorVersion(), pe.getMinorVersion()));
             Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;
             _delegate = (AMQConnectionDelegate) c.getConstructor(partypes).newInstance(this);
         }
-        catch (Exception e)
+        catch (ClassNotFoundException e)
         {
-            throw new AMQProtocolException(AMQConstant.UNSUPPORTED_CLIENT_PROTOCOL_ERROR,
-                                           "Protocol: " + TransportConstants.getVersionMajor() + "."
-                                           + TransportConstants.getVersionMinor() + " is rquired by the broker but is not " +
-                                           "currently supported by this client library implementation", e);
+            throw new AMQProtocolException
+                (AMQConstant.UNSUPPORTED_CLIENT_PROTOCOL_ERROR,
+                 String.format("Protocol: %s.%s is rquired by the broker but is not " +
+                               "currently supported by this client library implementation",
+                               pe.getMajorVersion(), pe.getMinorVersion()),
+                 e);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException("unable to locate constructor for delegate", e);
+        }
+        catch (InstantiationException e)
+        {
+            throw new RuntimeException("error instantiating delegate", e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException("error accessing delegate", e);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException("error invoking delegate", e);
         }
     }
 
@@ -615,9 +625,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return false;
     }
 
-    public void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
+    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
-        _delegate.makeBrokerConnection(brokerDetail);
+        return _delegate.makeBrokerConnection(brokerDetail);
     }
 
     /**
