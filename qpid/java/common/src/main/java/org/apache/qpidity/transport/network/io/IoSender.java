@@ -159,7 +159,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
 
     public void close()
     {
-        if (closed.getAndSet(true))
+        if (!closed.getAndSet(true))
         {
             synchronized (notEmpty)
             {
@@ -244,9 +244,8 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
             }
             catch (IOException e)
             {
-                log.error(e, "error in read thread");
+                log.error(e, "error in write thread");
                 exception = e;
-                closed.set(true);
                 break;
             }
             tail.getAndAdd(length);
