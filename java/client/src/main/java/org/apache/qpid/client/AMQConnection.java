@@ -411,7 +411,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // We are not currently connected
         _connected = false;
 
-        // TMG FIXME this seems... wrong...
         boolean retryAllowed = true;
         Exception connectionException = null;
         while (!_connected && retryAllowed)
@@ -438,10 +437,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 // broker
                 initDelegate(pe);
             }
-
-            if (!_connected)
+            else if (!_connected)
             {
-                retryAllowed = _failoverPolicy.failoverAllowed();
+                retryAllowed = _failoverPolicy.failoverAllowed(); 
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
             }
         }
