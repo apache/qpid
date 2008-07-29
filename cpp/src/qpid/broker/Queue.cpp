@@ -292,13 +292,13 @@ void Queue::removeListener(Consumer& c)
 {
     Mutex::ScopedLock locker(messageLock);
     notifierLock.wait(messageLock);//wait until no notifies are in progress 
-    Listeners::iterator i = find(listeners.begin(), listeners.end(), &c);
+    Listeners::iterator i = std::find(listeners.begin(), listeners.end(), &c);
     if (i != listeners.end()) listeners.erase(i);
 }
 
 void Queue::addListener(Consumer& c)
 {
-    Listeners::iterator i = find(listeners.begin(), listeners.end(), &c);
+    Listeners::iterator i = std::find(listeners.begin(), listeners.end(), &c);
     if (i == listeners.end()) listeners.push_back(&c);
 }
 
