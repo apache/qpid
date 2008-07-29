@@ -35,7 +35,7 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
 
 broker-plugins.libs=${common.libs} ${felix.libs}
 
-junit-toolkit.libs=${log4j} ${junit}
+junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
 systests.libs=${client.libs} ${test.libs} ${broker.libs}
 perftests.libs=${systests.libs}

@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.junit.concurrency;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +69,7 @@ import java.util.concurrent.ThreadFactory;
 public class ThreadTestCoordinator
 {
     /** Used for logging. */
-    private static final Logger log = Logger.getLogger(ThreadTestCoordinator.class);
+    private static final Logger log = LoggerFactory.getLogger(ThreadTestCoordinator.class);
 
     /** Keeps track of the test threads by their ids. */
     private TestRunnable[] testThreads; // = new TestRunnable[2];
