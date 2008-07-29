@@ -37,7 +37,6 @@
 QPID_AUTO_TEST_SUITE(ClientSessionTest)
 
 using namespace qpid::client;
-using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
 using qpid::sys::Monitor;
@@ -46,7 +45,6 @@ using qpid::sys::TIME_SEC;
 using std::string;
 using std::cout;
 using std::endl;
-using namespace boost;
 
 
 struct DummyListener : public sys::Runnable, public MessageListener {
@@ -99,17 +97,17 @@ struct ClientSessionFixture : public ProxySessionFixture
     void declareSubscribe(const string& q="my-queue",
                           const string& dest="my-dest")
     {
-        session.queueDeclare(queue=q);
-        session.messageSubscribe(queue=q, destination=dest, acquireMode=1);
-        session.messageFlow(destination=dest, unit=0, value=0xFFFFFFFF);//messages
-        session.messageFlow(destination=dest, unit=1, value=0xFFFFFFFF);//bytes
+        session.queueDeclare(arg::queue=q);
+        session.messageSubscribe(arg::queue=q, arg::destination=dest, arg::acquireMode=1);
+        session.messageFlow(arg::destination=dest, arg::unit=0, arg::value=0xFFFFFFFF);//messages
+        session.messageFlow(arg::destination=dest, arg::unit=1, arg::value=0xFFFFFFFF);//bytes
     }
 };
 
 QPID_AUTO_TEST_CASE(testQueueQuery) {
     ClientSessionFixture fix;
     fix.session = fix.connection.newSession();
-    fix.session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
+    fix.session.queueDeclare(arg::queue="my-queue", arg::alternateExchange="amq.fanout", arg::exclusive=true, arg::autoDelete=true);
     QueueQueryResult result = fix.session.queueQuery(string("my-queue"));
     BOOST_CHECK_EQUAL(false, result.getDurable());
     BOOST_CHECK_EQUAL(true, result.getExclusive());
@@ -122,7 +120,7 @@ QPID_AUTO_TEST_CASE(testTransfer)
     ClientSessionFixture fix;
     fix.session=fix.connection.newSession();
     fix.declareSubscribe();
-    fix.session.messageTransfer(acceptMode=1, content=TransferContent("my-message", "my-queue"));
+    fix.session.messageTransfer(arg::acceptMode=1, arg::content=TransferContent("my-message", "my-queue"));
     //get & test the message:
     FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK(msg->isA<MessageTransferBody>());
@@ -139,12 +137,12 @@ QPID_AUTO_TEST_CASE(testDispatcher)
     fix.declareSubscribe();
     size_t count = 100;
     for (size_t i = 0; i < count; ++i) 
-        fix.session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
+        fix.session.messageTransfer(arg::content=TransferContent(boost::lexical_cast<string>(i), "my-queue"));
     DummyListener listener(fix.session, "my-dest", count);
     listener.run();
     BOOST_CHECK_EQUAL(count, listener.messages.size());        
     for (size_t i = 0; i < count; ++i) 
-        BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
+        BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
 QPID_AUTO_TEST_CASE(testDispatcherThread)
@@ -156,12 +154,12 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
     DummyListener listener(fix.session, "my-dest", count);
     sys::Thread t(listener);
     for (size_t i = 0; i < count; ++i) {
-        fix.session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
+        fix.session.messageTransfer(arg::content=TransferContent(boost::lexical_cast<string>(i), "my-queue"));
     }
     t.join();
     BOOST_CHECK_EQUAL(count, listener.messages.size());        
     for (size_t i = 0; i < count; ++i) 
-        BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
+        BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
 // FIXME aconway 2008-05-26: Re-enable with final resume implementation.
@@ -204,14 +202,14 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
 QPID_AUTO_TEST_CASE(testSendToSelf) {
     ClientSessionFixture fix;
     SimpleListener mylistener;
-    fix.session.queueDeclare(queue="myq", exclusive=true, autoDelete=true);
+    fix.session.queueDeclare(arg::queue="myq", arg::exclusive=true, arg::autoDelete=true);
     fix.subs.subscribe(mylistener, "myq");
     sys::Thread runner(fix.subs);//start dispatcher thread
     string data("msg");
     Message msg(data, "myq");
     const uint count=10;
     for (uint i = 0; i < count; ++i) {
-        fix.session.messageTransfer(content=msg);
+        fix.session.messageTransfer(arg::content=msg);
     }
     mylistener.waitFor(count);
     fix.subs.cancel("myq");
@@ -226,12 +224,12 @@ QPID_AUTO_TEST_CASE(testSendToSelf) {
 
 QPID_AUTO_TEST_CASE(testLocalQueue) {
     ClientSessionFixture fix;
-    fix.session.queueDeclare(queue="lq", exclusive=true, autoDelete=true);
+    fix.session.queueDeclare(arg::queue="lq", arg::exclusive=true, arg::autoDelete=true);
     LocalQueue lq;
     fix.subs.subscribe(lq, "lq", FlowControl(2, FlowControl::UNLIMITED, false));
-    fix.session.messageTransfer(content=Message("foo0", "lq"));
-    fix.session.messageTransfer(content=Message("foo1", "lq"));
-    fix.session.messageTransfer(content=Message("foo2", "lq"));
+    fix.session.messageTransfer(arg::content=Message("foo0", "lq"));
+    fix.session.messageTransfer(arg::content=Message("foo1", "lq"));
+    fix.session.messageTransfer(arg::content=Message("foo2", "lq"));
     BOOST_CHECK_EQUAL("foo0", lq.pop().getData());
     BOOST_CHECK_EQUAL("foo1", lq.pop().getData());
     BOOST_CHECK(lq.empty());    // Credit exhausted.
@@ -248,15 +246,15 @@ struct DelayedTransfer : sys::Runnable
     void run()
     {
         sleep(1);
-        fixture.session.messageTransfer(content=Message("foo2", "getq"));
+        fixture.session.messageTransfer(arg::content=Message("foo2", "getq"));
     }
 };
 
 QPID_AUTO_TEST_CASE(testGet) {
     ClientSessionFixture fix;
-    fix.session.queueDeclare(queue="getq", exclusive=true, autoDelete=true);
-    fix.session.messageTransfer(content=Message("foo0", "getq"));
-    fix.session.messageTransfer(content=Message("foo1", "getq"));
+    fix.session.queueDeclare(arg::queue="getq", arg::exclusive=true, arg::autoDelete=true);
+    fix.session.messageTransfer(arg::content=Message("foo0", "getq"));
+    fix.session.messageTransfer(arg::content=Message("foo1", "getq"));
     Message got;
     BOOST_CHECK(fix.subs.get(got, "getq", TIME_SEC));
     BOOST_CHECK_EQUAL("foo0", got.getData());

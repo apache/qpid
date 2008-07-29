@@ -76,15 +76,15 @@ public:
     const SequenceNumber& getId() const { return id; }
 
     template <class P> void remove(P predicate) {
-        parts.erase(remove_if(parts.begin(), parts.end(), predicate), parts.end());
+        parts.erase(std::remove_if(parts.begin(), parts.end(), predicate), parts.end());
     }
 
     template <class F> void map(F& functor) {
-        for_each(parts.begin(), parts.end(), functor);
+        std::for_each(parts.begin(), parts.end(), functor);
     }
 
     template <class F> void map(F& functor) const {
-        for_each(parts.begin(), parts.end(), functor);
+        std::for_each(parts.begin(), parts.end(), functor);
     }
 
     template <class F, class P> void map_if(F& functor, P predicate) {

@@ -37,13 +37,13 @@ bool TxBuffer::prepare(TransactionContext* const ctxt)
 
 void TxBuffer::commit()
 {
-    for_each(ops.begin(), ops.end(), mem_fn(&TxOp::commit));
+    std::for_each(ops.begin(), ops.end(), mem_fn(&TxOp::commit));
     ops.clear();
 }
 
 void TxBuffer::rollback()
 {
-    for_each(ops.begin(), ops.end(), mem_fn(&TxOp::rollback));
+    std::for_each(ops.begin(), ops.end(), mem_fn(&TxOp::rollback));
     ops.clear();
 }
 
