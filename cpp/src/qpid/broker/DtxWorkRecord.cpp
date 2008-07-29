@@ -79,7 +79,7 @@ bool DtxWorkRecord::commit(bool onePhase)
             store->commit(*txn);
             txn.reset();
             
-            for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
+            std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
             return true;
         } else {
             //1pc commit optimisation, don't need a 2pc transaction context:
@@ -89,7 +89,7 @@ bool DtxWorkRecord::commit(bool onePhase)
             std::auto_ptr<TransactionContext> localtxn = store->begin();
             if (prepare(localtxn.get())) {
                 store->commit(*localtxn);
-                for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
+                std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
                 return true;
             } else {
                 store->abort(*localtxn);
@@ -149,7 +149,7 @@ void DtxWorkRecord::abort()
         store->abort(*txn);
         txn.reset();
     }
-    for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));
+    std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));
 }
 
 void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer::shared_ptr ops)

@@ -36,7 +36,7 @@ Tokens& Tokens::operator=(const std::string& s) {
     std::string::const_iterator i = s.begin();
     while (true) {
         // Invariant: i is at the beginning of the next untokenized word.
-        std::string::const_iterator j = find(i, s.end(), '.');
+        std::string::const_iterator j = std::find(i, s.end(), '.');
         push_back(std::string(i, j));
         if (j == s.end()) return *this;
         i = j + 1;
