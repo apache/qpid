@@ -1,4 +1,6 @@
-/* Licensed to the Apache Software Foundation (ASF) under one
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -14,23 +16,37 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
+ */
+package org.apache.qpidity.transport;
+
+
+/**
+ * ProtocolVersionException
+ *
  */
 
-package org.apache.qpidity;
-
-public class ProtocolException extends QpidException
+public final class ProtocolVersionException extends TransportException
 {
-     /**
-     * Constructor for a Ptotocol Exception.
-     * <p> This is the only provided constructor and the parameters have to be set to null when
-     * they are unknown.
-     * @param message    A description of the reason of this exception.
-     * @param errorCode  A string specifyin the error code of this exception.
-     * @param cause     The linked Execption.
-     *
-     */
-    public ProtocolException(String message, ErrorCode errorCode, Throwable cause)
+
+    private final byte major;
+    private final byte minor;
+
+    public ProtocolVersionException(byte major, byte minor)
     {
-        super(message, errorCode, cause);
+        super(String.format("version missmatch: %s-%s", major, minor));
+        this.major = major;
+        this.minor = minor;
     }
+
+    public byte getMajor()
+    {
+        return this.major;
+    }
+
+    public byte getMinor()
+    {
+        return this.minor;
+    }
+
 }

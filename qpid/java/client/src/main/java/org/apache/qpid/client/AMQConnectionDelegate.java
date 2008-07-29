@@ -27,12 +27,13 @@ import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
 
 public interface AMQConnectionDelegate
 {
-    public void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException;
+    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException;
 
     public Session createSession(final boolean transacted, final int acknowledgeMode,
             final int prefetchHigh, final int prefetchLow) throws JMSException;

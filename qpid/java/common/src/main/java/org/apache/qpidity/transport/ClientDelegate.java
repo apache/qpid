@@ -31,10 +31,9 @@ public abstract class ClientDelegate extends ConnectionDelegate
 
     public void init(Channel ch, ProtocolHeader hdr)
     {
-        if (hdr.getMajor() != TransportConstants.getVersionMajor() &&
-            hdr.getMinor() != TransportConstants.getVersionMinor())
+        if (hdr.getMajor() != 0 && hdr.getMinor() != 10)
         {
-            throw new RuntimeException("version missmatch: " + hdr);
+            throw new ProtocolVersionException(hdr.getMajor(), hdr.getMinor());
         }
     }
 

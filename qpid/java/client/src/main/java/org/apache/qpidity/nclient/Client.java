@@ -31,7 +31,6 @@ import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.ProtocolException;
 import org.apache.qpidity.nclient.impl.ClientSession;
 import org.apache.qpidity.nclient.impl.ClientSessionDelegate;
 import org.apache.qpidity.transport.Channel;
@@ -40,8 +39,8 @@ import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionClose;
 import org.apache.qpidity.transport.ConnectionCloseCode;
 import org.apache.qpidity.transport.ConnectionCloseOk;
-import org.apache.qpidity.transport.TransportConstants;
 import org.apache.qpidity.transport.ProtocolHeader;
+import org.apache.qpidity.transport.ProtocolVersionException;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.io.IoTransport;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
@@ -59,6 +58,8 @@ public class Client implements org.apache.qpidity.nclient.Connection
     private Condition closeOk;
     private boolean closed = false;
     private long timeout = 60000;
+
+    private ProtocolHeader header = null;
 
     /**
      *
@@ -79,7 +80,6 @@ public class Client implements org.apache.qpidity.nclient.Connection
         ClientDelegate connectionDelegate = new ClientDelegate()
         {
             private boolean receivedClose = false;
-            private String _unsupportedProtocol;
             public SessionDelegate getSessionDelegate()
             {
                 return new ClientSessionDelegate();
@@ -138,27 +138,17 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
                 this.receivedClose = true;
             }
-
             @Override public void init(Channel ch, ProtocolHeader hdr)
             {
                 // TODO: once the merge is done we'll need to update this code
-                // for handling 0.8 protocol version type i.e. major=8 and minor=0 :(
-                if (hdr.getMajor() != TransportConstants.getVersionMajor()
-                        || hdr.getMinor() != TransportConstants.getVersionMinor())
+                // for handling 0.8 protocol version type i.e. major=8 and mino
+                if (hdr.getMajor() != 0 || hdr.getMinor() != 10)
                 {
-                    _unsupportedProtocol = TransportConstants.getVersionMajor() + "." +
-                                          TransportConstants.getVersionMinor();
-                    TransportConstants.setVersionMajor( hdr.getMajor() );
-                    TransportConstants.setVersionMinor( hdr.getMinor() );
+                    Client.this.header = hdr;
                     _lock.lock();
                     negotiationComplete.signalAll();
                     _lock.unlock();
                 }
-            }
-
-            @Override public String getUnsupportedProtocol()
-            {
-                return _unsupportedProtocol;
             }
         };
 
@@ -186,18 +176,15 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
 
         // XXX: hardcoded version numbers
-        _conn.send(new ProtocolHeader(1, TransportConstants.getVersionMajor(),
-                                      TransportConstants.getVersionMinor()));
+        _conn.send(new ProtocolHeader(1, 0, 10));
 
         try
         {
             negotiationComplete.await(timeout, TimeUnit.MILLISECONDS);
-            if( connectionDelegate.getUnsupportedProtocol() != null )
+            if (header != null)
             {
                 _conn.close();
-                throw new ProtocolException("Unsupported protocol version: " + connectionDelegate.getUnsupportedProtocol()
-                              , ErrorCode.UNSUPPORTED_PROTOCOL, null);
-
+                throw new ProtocolVersionException(header.getMajor(), header.getMinor());
             }
         }
         catch (InterruptedException e)
