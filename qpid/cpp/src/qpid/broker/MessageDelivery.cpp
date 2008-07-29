@@ -43,11 +43,11 @@ struct BaseToken : DeliveryToken
 struct MessageDeliveryToken : BaseToken
 {
     const std::string destination;
-    const u_int8_t confirmMode;
-    const u_int8_t acquireMode;
+    const uint8_t confirmMode;
+    const uint8_t acquireMode;
     const bool isPreview;
 
-    MessageDeliveryToken(const std::string& d, u_int8_t c, u_int8_t a, bool p) : 
+    MessageDeliveryToken(const std::string& d, uint8_t c, uint8_t a, bool p) : 
         destination(d), confirmMode(c), acquireMode(a), isPreview(p) {}
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId /*id*/)
@@ -65,7 +65,7 @@ struct MessageDeliveryToken : BaseToken
 }
 
 DeliveryToken::shared_ptr MessageDelivery::getMessageDeliveryToken(const std::string& destination, 
-                                                                  u_int8_t confirmMode, u_int8_t acquireMode)
+                                                                  uint8_t confirmMode, uint8_t acquireMode)
 {
     return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination, confirmMode, acquireMode, false));
 }
