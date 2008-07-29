@@ -116,9 +116,6 @@ class Connector : public framing::OutputHandler,
     sys::AsynchIO* aio;
     boost::shared_ptr<sys::Poller> poller;
 
-    void checkIdle(ssize_t status);
-    void setSocketTimeout();
-
     void run();
     void handleClosed();
     bool closeInternal();
@@ -141,13 +138,10 @@ class Connector : public framing::OutputHandler,
     virtual void init();
     virtual void close();
     virtual void setInputHandler(framing::InputHandler* handler);
-    virtual void setTimeoutHandler(sys::TimeoutHandler* handler);
     virtual void setShutdownHandler(sys::ShutdownHandler* handler);
     virtual sys::ShutdownHandler* getShutdownHandler() { return shutdownHandler; }
     virtual framing::OutputHandler* getOutputHandler();
     virtual void send(framing::AMQFrame& frame);
-    virtual void setReadTimeout(uint16_t timeout);
-    virtual void setWriteTimeout(uint16_t timeout);
     const std::string& getIdentifier() const { return identifier; }
 };
 

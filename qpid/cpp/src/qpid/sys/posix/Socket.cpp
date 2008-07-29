@@ -167,31 +167,6 @@ Socket::close() const
     socket = -1;
 }
 
-ssize_t
-Socket::send(const void* data, size_t size) const
-{
-    const int& socket = impl->fd;
-    ssize_t sent = ::send(socket, data, size, 0);
-    if (sent < 0) {
-        if (errno == ECONNRESET) return SOCKET_EOF;
-        if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        throw QPID_POSIX_ERROR(errno);
-    }
-    return sent;
-}
-
-ssize_t
-Socket::recv(void* data, size_t size) const
-{
-    const int& socket = impl->fd;
-    ssize_t received = ::recv(socket, data, size, 0);
-    if (received < 0) {
-        if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        throw QPID_POSIX_ERROR(errno);
-    }
-    return received;
-}
-
 int Socket::listen(uint16_t port, int backlog) const
 {
     const int& socket = impl->fd;
