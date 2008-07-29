@@ -74,7 +74,7 @@ class NullMessageStore : public MessageStore
     virtual void dequeue(TransactionContext* ctxt,
                          const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue);
-    virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
+    virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     virtual void flush(const qpid::broker::PersistableQueue& queue);
     ~NullMessageStore(){}
 };

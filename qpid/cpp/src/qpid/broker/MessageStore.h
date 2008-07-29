@@ -186,7 +186,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
      *
      * @param queue the name of the queue to check for outstanding AIO
      */
-    virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue) = 0;
+    virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue) = 0;
 
     
     virtual ~MessageStore(){}
