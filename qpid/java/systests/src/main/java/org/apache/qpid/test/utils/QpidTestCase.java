@@ -481,7 +481,7 @@ public class QpidTestCase extends TestCase
         }
         else
         {
-            con = getConnectionFactory().createConnection(username, password);
+            con = getConnectionFactory().createConnection(username, password, id);
         }
         //add the connection in the lis of connections
         _connections.add(con);
