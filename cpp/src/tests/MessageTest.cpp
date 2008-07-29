@@ -28,6 +28,7 @@
 #include "unit_test.h"
 
 #include <iostream>
+#include <alloca.h>
 
 using namespace boost;
 using namespace qpid::broker;

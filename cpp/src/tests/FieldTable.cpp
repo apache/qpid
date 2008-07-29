@@ -21,6 +21,7 @@
 #include <iostream>
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
+#include <alloca.h>
 
 #include "unit_test.h"
 

@@ -22,6 +22,7 @@
 #include "unit_test.h"
 
 #include <set>
+#include <alloca.h>
 
 QPID_AUTO_TEST_SUITE(UuidTestSuite)
 
