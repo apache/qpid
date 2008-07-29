@@ -136,15 +136,15 @@ class SchemaType:
     if self.style == "mma":
       stream.write ("    " + varName + "Count = 0;\n")
       stream.write ("    " + varName + "Total = 0;\n")
-      stream.write ("    " + varName + "Min   = -1;\n")
-      stream.write ("    " + varName + "Max   = 0;\n")
+      stream.write ("    " + varName + "Min   = std::numeric_limits<" + self.type.type.cpp + ">::max();\n")
+      stream.write ("    " + varName + "Max   = std::numeric_limits<" + self.type.type.cpp + ">::min();\n")
 
-  def genPerThreadHiLoStatResets (self, stream, varName):
+  def genPerThreadHiLoStatResets (self, stream, varName, cpptype):
     if self.style == "mma":
       stream.write ("        threadStats->" + varName + "Count = 0;\n")
       stream.write ("        threadStats->" + varName + "Total = 0;\n")
-      stream.write ("        threadStats->" + varName + "Min   = -1;\n")
-      stream.write ("        threadStats->" + varName + "Max   = 0;\n")
+      stream.write ("        threadStats->" + varName + "Min   = std::numeric_limits<" + cpptype + ">::max();\n")
+      stream.write ("        threadStats->" + varName + "Max   = std::numeric_limits<" + cpptype + ">::min();\n")
 
   def genWrite (self, stream, varName):
     if self.style != "mma":
@@ -377,7 +377,7 @@ class SchemaInst:
     self.type.type.genHiLoStatResets (stream, self.name)
 
   def genPerThreadHiLoStatResets (self, stream):
-    self.type.type.genPerThreadHiLoStatResets (stream, self.name)
+    self.type.type.genPerThreadHiLoStatResets (stream, self.name, self.type.type.cpp)
 
   def genSchemaText (self, stream, name, desc):
     stream.write ("    ft = FieldTable ();\n")
@@ -439,15 +439,15 @@ class SchemaInst:
       stream.write (indent + prefix + self.name + "Low  = " + val + ";\n")
     if self.type.type.style == "mma":
       stream.write (indent + prefix + self.name + "Count = 0;\n")
-      stream.write (indent + prefix + self.name + "Min   = -1;\n")
-      stream.write (indent + prefix + self.name + "Max   = 0;\n")
+      stream.write (indent + prefix + self.name + "Min   = std::numeric_limits<" + self.type.type.cpp + ">::max();\n")
+      stream.write (indent + prefix + self.name + "Max   = std::numeric_limits<" + self.type.type.cpp + ">::min();\n")
       stream.write (indent + prefix + self.name + "Total = 0;\n")
 
   def genInitializeTotalPerThreadStats (self, stream):
     if self.type.type.style == "mma":
       stream.write ("    totals->" + self.name + "Count = 0;\n")
-      stream.write ("    totals->" + self.name + "Min   = -1;\n")
-      stream.write ("    totals->" + self.name + "Max   = 0;\n")
+      stream.write ("    totals->" + self.name + "Min   = std::numeric_limits<" + self.type.type.cpp + ">::max();\n")
+      stream.write ("    totals->" + self.name + "Max   = std::numeric_limits<" + self.type.type.cpp + ">::min();\n")
       stream.write ("    totals->" + self.name + "Total = 0;\n")
     else:
       stream.write ("    totals->" + self.name + " = 0;\n")
