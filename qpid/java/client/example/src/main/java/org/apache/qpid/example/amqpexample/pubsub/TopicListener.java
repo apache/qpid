@@ -2,14 +2,14 @@ package org.apache.qpid.example.amqpexample.pubsub;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.api.Message;
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.Session;
-import org.apache.qpidity.nclient.util.MessageListener;
-import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
-import org.apache.qpidity.transport.MessageCreditUnit;
-import org.apache.qpidity.transport.Option;
+import org.apache.qpid.api.Message;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.Connection;
+import org.apache.qpid.nclient.Session;
+import org.apache.qpid.nclient.util.MessageListener;
+import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.Option;
 
 
 public class TopicListener implements MessageListener

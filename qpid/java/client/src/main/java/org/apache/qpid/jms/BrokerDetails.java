@@ -48,7 +48,7 @@ public interface BrokerDetails
     public static final long DEFAULT_CONNECT_TIMEOUT = 30000L;
     public static final boolean USE_SSL_DEFAULT = false;
 
-    // pulled these properties from the new BrokerDetails class in the qpidity package
+    // pulled these properties from the new BrokerDetails class in the qpid package
     public static final String PROTOCOL_TCP = "tcp";
     public static final String PROTOCOL_TLS = "tls";
 

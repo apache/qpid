@@ -27,12 +27,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.jms.*;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpidity.api.Message;
-import org.apache.qpidity.transport.*;
-import org.apache.qpidity.transport.Session;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.filter.MessageFilter;
-import org.apache.qpidity.filter.JMSSelectorFilter;
+import org.apache.qpid.api.Message;
+import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.QpidException;
+import org.apache.qpid.filter.MessageFilter;
+import org.apache.qpid.filter.JMSSelectorFilter;
 
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This is a 0.10 message consumer.
  */
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
-        implements org.apache.qpidity.nclient.util.MessageListener
+        implements org.apache.qpid.nclient.util.MessageListener
 {
 
     /**
@@ -108,7 +108,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         _isStarted = connection.started();
     }
 
-    // ----- Interface org.apache.qpidity.client.util.MessageListener
+    // ----- Interface org.apache.qpid.client.util.MessageListener
 
     /**
      *
