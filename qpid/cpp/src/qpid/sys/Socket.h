@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+
 #include "IOHandle.h"
 
 #include <string>
@@ -50,17 +51,6 @@ public:
     void connect(const std::string& host, uint16_t port) const;
 
     void close() const;
-
-    enum { SOCKET_TIMEOUT=-2, SOCKET_EOF=-3 } ErrorCode;
-
-    /** Returns bytes sent or an ErrorCode value < 0. */
-    ssize_t send(const void* data, size_t size) const;
-
-    /**
-     * Returns bytes received, an ErrorCode value < 0 or 0
-     * if the connection closed in an orderly manner.
-     */
-    ssize_t recv(void* data, size_t size) const;
 
     /** Bind to a port and start listening.
      *@param port 0 means choose an available port.

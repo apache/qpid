@@ -22,6 +22,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "check.h"
 #include <pthread.h>
 
@@ -39,8 +43,6 @@ class Thread
      * Workaround for broken Thread::current() in APR
      */
     static unsigned long logId() { return current().id(); }
-
-    inline static void yield();
 
     inline Thread();
     inline explicit Thread(qpid::sys::Runnable*);
@@ -81,12 +83,6 @@ Thread::Thread(pthread_t thr) : thread(thr) {}
 Thread Thread::current() {
     return Thread(pthread_self());
 }
-
-void Thread::yield() 
-{
-    QPID_POSIX_ASSERT_THROW_IF(pthread_yield());
-}
-
 
 }}
 #endif  /*!_sys_posix_Thread_h*/
