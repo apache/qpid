@@ -25,6 +25,7 @@
 #include "qpid/Exception.h"
 #include <cerrno>
 #include <assert.h>
+#include <stdio.h>
 
 #define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::strError(ERRNO)))
 
@@ -41,7 +42,7 @@
 #define QPID_POSIX_ASSERT_THROW_IF(ERRNO) QPID_POSIX_THROW_IF(ERRNO)
 #else
 #define QPID_POSIX_ASSERT_THROW_IF(ERRNO)                               \
-    do { int e=(ERRNO); if (e) { errno=e; perror(0); assert(0); } } while(0)
+    do { int e=(ERRNO); if (e) { errno=e; ::perror(0); assert(0); } } while(0)
 #endif
 
 #endif  /*!_posix_check_h*/

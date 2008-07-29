@@ -29,10 +29,10 @@
 #include "RecoveryManagerImpl.h"
 #include "TopicExchange.h"
 #include "Link.h"
+
 #include "qpid/management/PackageQpid.h"
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/management/ArgsBrokerEcho.h"
-
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -51,6 +51,7 @@
 
 #include <iostream>
 #include <memory>
+#include <stdlib.h>
 
 #if HAVE_SASL
 #include <sasl/sasl.h>

@@ -20,6 +20,7 @@
  */
 
 #include <string>
+#include <sys/types.h>
 
 namespace qpid {
 namespace sys {
