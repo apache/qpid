@@ -23,6 +23,7 @@
 #include "ManagementAgentImpl.h"
 #include <list>
 #include <unistd.h>
+#include <string.h>
 
 using namespace qpid::client;
 using namespace qpid::framing;
