@@ -133,55 +133,6 @@ void Connector::handleClosed() {
         shutdownHandler->shutdown();
 }
 
-// TODO: astitcher 20070908: This version of the code can never time out, so the idle processing
-// can never be called. The timeut processing needs to be added into the underlying Dispatcher code
-//
-// TODO: astitcher 20070908: EOF is dealt with separately now via a callback to eof
-void Connector::checkIdle(ssize_t status){
-    if(timeoutHandler){
-        AbsTime t = now();
-        if(status == Socket::SOCKET_TIMEOUT) {
-            if(idleIn && (Duration(lastIn, t) > idleIn)){
-                timeoutHandler->idleIn();
-            }
-        }
-        else if(status == 0 || status == Socket::SOCKET_EOF) {
-            handleClosed();
-        }
-        else {
-            lastIn = t;
-        }
-        if(idleOut && (Duration(lastOut, t) > idleOut)){
-            timeoutHandler->idleOut();
-        }
-    }
-}
-
-void Connector::setReadTimeout(uint16_t t){
-    idleIn = t * TIME_SEC;//t is in secs
-    if(idleIn && (!timeout || idleIn < timeout)){
-        timeout = idleIn;
-        setSocketTimeout();
-    }
-
-}
-
-void Connector::setWriteTimeout(uint16_t t){
-    idleOut = t * TIME_SEC;//t is in secs
-    if(idleOut && (!timeout || idleOut < timeout)){
-        timeout = idleOut;
-        setSocketTimeout();
-    }
-}
-
-void Connector::setSocketTimeout(){
-    socket.setTimeout(timeout);
-}
-
-void Connector::setTimeoutHandler(TimeoutHandler* handler){
-    timeoutHandler = handler;
-}
-
 struct Connector::Buff : public AsynchIO::BufferBase {
     Buff(size_t size) : AsynchIO::BufferBase(new char[size], size) {}    
     ~Buff() { delete [] bytes;}

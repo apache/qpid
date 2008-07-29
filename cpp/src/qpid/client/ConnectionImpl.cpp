@@ -48,7 +48,6 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   NORMAL, std::string());
     connector->setInputHandler(&handler);
-    connector->setTimeoutHandler(this);
     connector->setShutdownHandler(this);
 
     //only set error handler once  open
