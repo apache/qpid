@@ -26,8 +26,8 @@ import javax.naming.NamingException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +48,7 @@ public class QpidTestCase extends TestCase
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
-    protected long RECEIVE_TIMEOUT = 1000l;    
+    protected long RECEIVE_TIMEOUT = 1000l;
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -129,6 +129,8 @@ public class QpidTestCase extends TestCase
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
+    private static final String QPID_HOME = "QPID_HOME";
+
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
@@ -170,7 +172,6 @@ public class QpidTestCase extends TestCase
             System.setOut(out);
             System.setErr(err);
         }
-
 
         _logger.info("========== start " + name + " ==========");
         startBroker();
@@ -293,6 +294,15 @@ public class QpidTestCase extends TestCase
             _logger.info("starting broker: " + _broker);
             ProcessBuilder pb = new ProcessBuilder(_broker.split("\\s+"));
             pb.redirectErrorStream(true);
+
+            Map<String, String> env = pb.environment();
+
+            String qpidHome = System.getProperty(QPID_HOME);
+            env.put(QPID_HOME, qpidHome);
+
+            //Augment Path with bin directory in QPID_HOME.
+            env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
+
             _brokerProcess = pb.start();
 
             Piper p = new Piper(_brokerProcess.getInputStream(),
