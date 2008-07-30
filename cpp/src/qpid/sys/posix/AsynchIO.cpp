@@ -21,6 +21,7 @@
 
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Time.h"
+#include "qpid/log/Statement.h"
 
 #include "check.h"
 
@@ -85,11 +86,15 @@ void AsynchAcceptor::readable(DispatchHandle& h) {
         errno = 0;
         // TODO: Currently we ignore the peers address, perhaps we should
         // log it or use it for connection acceptance.
-        s = socket.accept(0, 0);
-        if (s) {
-            acceptedCallback(*s);
-        } else {
-            break;
+        try {
+            s = socket.accept(0, 0);
+            if (s) {
+                acceptedCallback(*s);
+            } else {
+                break;
+            }
+        } catch (const std::exception& e) {
+            QPID_LOG(error, "Could not accept socket: " << e.what());
         }
     } while (true);
 
