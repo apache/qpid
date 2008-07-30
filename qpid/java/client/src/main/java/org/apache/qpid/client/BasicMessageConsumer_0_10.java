@@ -83,12 +83,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                         AMQSession session, AMQProtocolHandler protocolHandler,
-                                        FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
+                                        FieldTable arguments, int prefetchHigh, int prefetchLow,
                                         boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
             throws JMSException
     {
         super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
-              rawSelectorFieldTable, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, noConsume, autoClose);
+                arguments, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, noConsume, autoClose);
         _0_10session = (AMQSession_0_10) session;
         if (messageSelector != null && !messageSelector.equals(""))
         {

@@ -91,7 +91,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
      */
-    private final FieldTable _rawSelectorFieldTable;
+    private final FieldTable _arguments;
 
     /**
      * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of
@@ -168,7 +168,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                    AMQSession session, AMQProtocolHandler protocolHandler,
-                                   FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
+                                   FieldTable arguments, int prefetchHigh, int prefetchLow,
                                    boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
     {
         _channelId = channelId;
@@ -179,7 +179,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _messageFactory = messageFactory;
         _session = session;
         _protocolHandler = protocolHandler;
-        _rawSelectorFieldTable = rawSelectorFieldTable;
+        _arguments = arguments;
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
@@ -343,9 +343,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _receivingThread = null;
     }
 
-    public FieldTable getRawSelectorFieldTable()
+    public FieldTable getArguments()
     {
-        return _rawSelectorFieldTable;
+        return _arguments;
     }
 
     public int getPrefetch()

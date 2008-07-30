@@ -33,6 +33,7 @@ import javax.jms.TopicSubscriber;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQTopicSessionAdaptor;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 
@@ -319,7 +320,7 @@ public class TopicSessionTest extends QpidTestCase
         assertNull(m);
 
         //send message to all consumers
-         message = session1.createTextMessage("hello2");
+        message = session1.createTextMessage("hello2");
         message.setStringProperty("Selector", "select");
 
         publisher.publish(message);
@@ -361,6 +362,52 @@ public class TopicSessionTest extends QpidTestCase
 
         con.close();
         con2.close();
+    }
+    
+    /**
+     * This tests QPID-1191, where messages which are sent to a topic but are not consumed by a subscriber
+     * due to a selector can be leaked.
+     * @throws Exception 
+     */
+    public void testNonMatchingMessagesDoNotFillQueue() throws Exception
+    {
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
+
+        // Setup Topic
+        AMQTopic topic = new AMQTopic(con, "testNoLocal");
+
+        TopicSession session = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+
+        // Setup subscriber with selector
+        TopicSubscriber selector = session.createSubscriber(topic,  "Selector = 'select'", false);
+        TopicPublisher publisher = session.createPublisher(topic);
+
+        con.start();
+        TextMessage m;
+        TextMessage message;
+
+        // Send non-matching message
+        message = session.createTextMessage("non-matching 1");
+        publisher.publish(message);
+        
+        // Send and consume matching message
+        message = session.createTextMessage("hello");
+        message.setStringProperty("Selector", "select");
+
+        publisher.publish(message);
+
+        m = (TextMessage) selector.receive(1000);
+        assertNotNull("should have received message", m);
+        assertEquals("Message contents were wrong", "hello", m.getText());
+        
+        // Send non-matching message
+        message = session.createTextMessage("non-matching 2");
+        publisher.publish(message);
+
+        // Assert queue count is 0
+        long depth = ((AMQTopicSessionAdaptor) session).getSession().getQueueDepth(topic);
+        assertEquals("Queue depth was wrong", 0, depth);
+        
     }
 
     public static junit.framework.Test suite()
