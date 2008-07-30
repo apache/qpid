@@ -227,8 +227,8 @@
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/broker"/>
-      <sysproperty key="QPID_HOME" value="${project.root}/broker"/>
+      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
+      <sysproperty key="QPID_HOME" value="${project.root}/build"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
