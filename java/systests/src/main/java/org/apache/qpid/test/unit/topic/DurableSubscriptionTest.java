@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import javax.jms.Connection;
 import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidSelectorException;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -290,9 +291,9 @@ public class DurableSubscriptionTest extends QpidTestCase
 																	 		 "=TEST 'test", true);
     		assertNull("Subscriber should not have been created", deadSubscriber);
     	} 
-    	catch (InvalidSelectorException e)
+    	catch (JMSException e)
     	{
-    		// This was expected
+    		assertTrue("Wrong type of exception thrown", e instanceof InvalidSelectorException);
     	}
     	
     	TopicSubscriber liveSubscriber = session.createDurableSubscriber(topic, "testDurableWithInvalidSelectorSub");
