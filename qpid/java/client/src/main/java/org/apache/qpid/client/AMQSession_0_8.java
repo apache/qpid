@@ -325,13 +325,13 @@ public final class AMQSession_0_8 extends AMQSession
     }
 
     public BasicMessageConsumer_0_8 createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
-            final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable ft,
+            final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable arguments,
             final boolean noConsume, final boolean autoClose)  throws JMSException
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
        return new BasicMessageConsumer_0_8(_channelId, _connection, destination, messageSelector, noLocal,
-                                 _messageFactoryRegistry,this, protocolHandler, ft, prefetchHigh, prefetchLow,
+                                 _messageFactoryRegistry,this, protocolHandler, arguments, prefetchHigh, prefetchLow,
                                  exclusive, _acknowledgeMode, noConsume, autoClose);
     }
 

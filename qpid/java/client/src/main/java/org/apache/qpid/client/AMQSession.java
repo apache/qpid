@@ -1650,9 +1650,15 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         final FieldTable ft = FieldTableFactory.newFieldTable();
                         // if (rawSelector != null)
                         // ft.put("headers", rawSelector.getDataAsBytes());
-                        if (rawSelector != null)
+                        // rawSelector is used by HeadersExchange and is not a JMS Selector
+                        if (rawSelector != null) 
                         {
                             ft.addAll(rawSelector);
+                        }
+                        
+                        if (messageSelector != null)
+                        {
+                            ft.put(new AMQShortString("x-filter-jms-selector"), messageSelector);
                         }
 
                         BasicMessageConsumer consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
@@ -1700,7 +1706,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     }
 
     public abstract BasicMessageConsumer createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
-                                                               final int prefetchLow, final boolean noLocal, final boolean exclusive, String selector, final FieldTable rawSelector,
+                                                               final int prefetchLow, final boolean noLocal, final boolean exclusive, String selector, final FieldTable arguments,
                                                                final boolean noConsume, final boolean autoClose) throws JMSException;
 
     /**
@@ -2357,8 +2363,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         // store the consumer queue name
         consumer.setQueuename(queueName);
 
-        // bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
-        bindQueue(queueName, amqd.getRoutingKey(), consumer.getRawSelectorFieldTable(), amqd.getExchangeName(), amqd);
+        bindQueue(queueName, amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd);
 
         // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
         if (!_immediatePrefetch)
