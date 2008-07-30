@@ -78,7 +78,8 @@ posix_plat_src = \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
   qpid/sys/posix/Mutex.cpp \
-  qpid/sys/posix/Fork.cpp
+  qpid/sys/posix/Fork.cpp \
+  qpid/sys/posix/StrError.cpp
 
 posix_plat_hdr = \
   qpid/sys/posix/check.h \
@@ -559,6 +560,7 @@ nobase_include_HEADERS = \
   qpid/sys/ShutdownHandler.h \
   qpid/sys/Socket.h \
   qpid/sys/StateMonitor.h \
+  qpid/sys/StrError.h \
   qpid/sys/Waitable.h \
   qpid/sys/Thread.h \
   qpid/sys/Time.h \

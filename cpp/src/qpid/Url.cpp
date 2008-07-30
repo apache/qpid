@@ -47,7 +47,7 @@ std::istream& operator>>(std::istream&, const TcpAddress&);
 Url Url::getHostNameUrl(uint16_t port) {
     char name[HOST_NAME_MAX];
     if (::gethostname(name, sizeof(name)) != 0)
-        throw InvalidUrl(QPID_MSG("Cannot get host name: " << strError(errno)));
+        throw InvalidUrl(QPID_MSG("Cannot get host name: " << qpid::sys::strError(errno)));
     return Url(TcpAddress(name, port));
 }
 
