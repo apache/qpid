@@ -42,10 +42,12 @@ struct Uuid : public boost::array<uint8_t, 16> {
     Uuid(bool unique=false) { if (unique) generate(); else clear(); }
 
     /** Copy from 16 bytes of data. */
-    Uuid(const uint8_t* data) { assign(data); }
+    Uuid(uint8_t* data) { assign(data); }
 
     /** Copy from 16 bytes of data. */
-    void assign(const uint8_t* data) { uuid_copy(c_array(), data); }
+    void assign(uint8_t* data) {
+        uuid_copy(c_array(), data);
+    }
     
     /** Set to a new unique identifier. */
     void generate() { uuid_generate(c_array()); }
@@ -54,7 +56,9 @@ struct Uuid : public boost::array<uint8_t, 16> {
     void clear() { uuid_clear(c_array()); }
     
     /** Test for null (all zeros). */
-    bool isNull() const { return uuid_is_null(data()); }
+    bool isNull() {
+        return uuid_is_null(data());
+    }
 
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
@@ -64,7 +68,7 @@ struct Uuid : public boost::array<uint8_t, 16> {
     void decode(framing::Buffer& buf);
 
     /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-    std::string str() const;
+    std::string str();
 
     template <class S> void serialize(S& s) {
         s.raw(begin(), size());
@@ -72,7 +76,7 @@ struct Uuid : public boost::array<uint8_t, 16> {
 };
 
 /** Print in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-std::ostream& operator<<(std::ostream&, const Uuid&);
+std::ostream& operator<<(std::ostream&, Uuid);
 
 /** Read from format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
 std::istream& operator>>(std::istream&, Uuid&);
