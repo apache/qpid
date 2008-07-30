@@ -42,7 +42,8 @@ if [ -z $AMQJ_LOGGING_LEVEL ]; then
 fi
 
 if [ -z "$QPID_HOME" ]; then
-  die "QPID_HOME must be set"
+    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPID_HOME}/bin
 fi
 
 if [ -z "$QPID_WORK" ]; then
