@@ -54,31 +54,45 @@ AC_ARG_ENABLE(warnings,
  esac],
  [enableval=yes])
 
-# Warnings: Enable as many as possible, keep the code clean. Please
-# do not disable warnings or remove -Werror without discussing on
-# qpid-dev list.
-#
-# The following warnings are deliberately omitted, they warn on valid code.
-# -Wunreachable-code -Wpadded -Winline
-# -Wshadow - warns about boost headers.
-
-if test "${enableval}" = yes; then
-  gl_COMPILER_FLAGS(-Werror)
-  gl_COMPILER_FLAGS(-pedantic)
-  gl_COMPILER_FLAGS(-Wall)
-  gl_COMPILER_FLAGS(-Wextra)
-  gl_COMPILER_FLAGS(-Wno-shadow)
-  gl_COMPILER_FLAGS(-Wpointer-arith)
-  gl_COMPILER_FLAGS(-Wcast-qual)
-  gl_COMPILER_FLAGS(-Wcast-align)
-  gl_COMPILER_FLAGS(-Wno-long-long)
-  gl_COMPILER_FLAGS(-Wvolatile-register-var)
-  gl_COMPILER_FLAGS(-Winvalid-pch)
-  gl_COMPILER_FLAGS(-Wno-system-headers)
-  gl_COMPILER_FLAGS(-Woverloaded-virtual)	
-  AC_SUBST([WARNING_CFLAGS], [$COMPILER_FLAGS])
-  AC_DEFINE([lint], 1, [Define to 1 if the compiler is checking for lint.])
-  COMPILER_FLAGS=
+# Set up for gcc as compiler
+if test x$GXX = xyes; then
+	# Warnings: Enable as many as possible, keep the code clean. Please
+	# do not disable warnings or remove -Werror without discussing on
+	# qpid-dev list.
+	#
+	# The following warnings are deliberately omitted, they warn on valid code.
+	# -Wunreachable-code -Wpadded -Winline
+	# -Wshadow - warns about boost headers.
+	if test "${enableval}" = yes; then
+	    gl_COMPILER_FLAGS(-Werror)
+	    gl_COMPILER_FLAGS(-pedantic)
+	    gl_COMPILER_FLAGS(-Wall)
+	    gl_COMPILER_FLAGS(-Wextra)
+	    gl_COMPILER_FLAGS(-Wno-shadow)
+	    gl_COMPILER_FLAGS(-Wpointer-arith)
+	    gl_COMPILER_FLAGS(-Wcast-qual)
+	    gl_COMPILER_FLAGS(-Wcast-align)
+	    gl_COMPILER_FLAGS(-Wno-long-long)
+	    gl_COMPILER_FLAGS(-Wvolatile-register-var)
+	    gl_COMPILER_FLAGS(-Winvalid-pch)
+	    gl_COMPILER_FLAGS(-Wno-system-headers)
+	    gl_COMPILER_FLAGS(-Woverloaded-virtual)	
+	    AC_SUBST([WARNING_CFLAGS], [$COMPILER_FLAGS])
+	    AC_DEFINE([lint], 1, [Define to 1 if the compiler is checking for lint.])
+	    COMPILER_FLAGS=
+	fi
+else
+	AC_CHECK_DECL([__SUNPRO_CC], [SUNCC=yes], [SUNCC=no])
+	
+	# Set up for sun CC compiler
+	if test x$SUNCC = xno; then
+		if test "${enableval}" = yes; then
+			WARNING_FLAGS=+w
+		fi
+		CXXFLAGS="$CXXFLAGS -library=stlport4 -mt"
+		LD="$CXX"
+		LDFLAGS="$LDFLAGS -library=stlport4 -mt"
+	fi
 fi
 
 AC_DISABLE_STATIC
@@ -277,6 +291,35 @@ AC_ARG_WITH([rdma],
 # Remove from LIBS, we will link it explicitly in make files.
 LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
+
+poller=no
+AC_ARG_WITH([poller],
+ [AS_HELP_STRING([--with-poller], [The low level poller implementation: poll/solaris-ecf/epoll])],
+ [case ${withval} in
+  poll)
+   AC_CHECK_HEADERS([sys/poll.h],[poller=no],[AC_MSG_ERROR([Can't find poll.h header file for poll])])
+   ;;
+  solaris-ecf)
+   AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],[AC_MSG_ERROR([Can't find port.h header file for solaris-ecf])])
+   ;;
+  epoll)
+   AC_CHECK_HEADERS([sys/epoll.h],[poller=epoll],[AC_MSG_ERROR([Can't find epoll.h header file for epoll])])
+   ;;
+ esac],
+ [
+  AC_CHECK_HEADERS([sys/poll.h],[poller=no],)
+  AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],)
+  AC_CHECK_HEADERS([sys/epoll.h],[poller=epoll],)
+ ]
+)
+
+AM_CONDITIONAL([HAVE_ECF], [test x$poller = xsolaris-ecf])
+AM_CONDITIONAL([HAVE_EPOLL], [test x$poller = xepoll])
+
+#Filter not implemented or invalid mechanisms
+if test $poller = xno; then
+  AC_MSG_ERROR([Polling mechanism not implemented for $host])
+fi
 
 # Files to generate	
 AC_CONFIG_FILES([

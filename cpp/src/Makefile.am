@@ -70,7 +70,6 @@ sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
-  qpid/sys/epoll/EpollPoller.cpp \
   qpid/sys/posix/IOHandle.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
@@ -90,7 +89,15 @@ posix_plat_hdr = \
   qpid/sys/posix/Fork.h \
   qpid/sys/posix/LockFile.h
 
-platform_src = $(posix_plat_src)
+if HAVE_EPOLL 
+  poller = qpid/sys/epoll/EpollPoller.cpp
+endif
+
+if HAVE_ECF
+  poller = qpid/sys/solaris/ECFPoller.cpp
+endif
+
+platform_src = $(posix_plat_src) $(poller)
 platform_hdr = $(posix_plat_hdr)
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la 
