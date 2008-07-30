@@ -38,7 +38,7 @@ void Uuid::decode(Buffer& buf) {
     buf.getRawData(c_array(), size());
 }
 
-ostream& operator<<(ostream& out, const Uuid& uuid) {
+ostream& operator<<(ostream& out, Uuid uuid) {
     char unparsed[UNPARSED_SIZE + 1];
     uuid_unparse(uuid.data(), unparsed);
     return out << unparsed;
@@ -52,7 +52,7 @@ istream& operator>>(istream& in, Uuid& uuid) {
     return in;
 }
 
-std::string Uuid::str() const {
+std::string Uuid::str() {
     std::ostringstream os;
     os << *this;
     return os.str();
