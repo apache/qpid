@@ -27,6 +27,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
+import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import java.util.concurrent.CountDownLatch;
 
 public class SelectorTest extends QpidTestCase implements MessageListener
 {
@@ -49,6 +51,7 @@ public class SelectorTest extends QpidTestCase implements MessageListener
     private int count;
     public String _connectionString = "vm://:1";
     private static final String INVALID_SELECTOR = "Cost LIKE 5";
+    CountDownLatch _responseLatch = new CountDownLatch(1);
 
     protected void setUp() throws Exception
     {
@@ -81,7 +84,7 @@ public class SelectorTest extends QpidTestCase implements MessageListener
         _session.createConsumer(destination, selector).setMessageListener(this);
     }
 
-    public synchronized void test() throws Exception
+    public void test() throws Exception
     {
         try
         {
@@ -98,7 +101,8 @@ public class SelectorTest extends QpidTestCase implements MessageListener
 
             ((BasicMessageProducer) _session.createProducer(_destination)).send(msg, DeliveryMode.NON_PERSISTENT);
             _logger.info("Message sent, waiting for response...");
-            wait(1000);
+
+            _responseLatch.await();
 
             if (count > 0)
             {
@@ -255,11 +259,11 @@ public class SelectorTest extends QpidTestCase implements MessageListener
         }
     }
 
-    public synchronized void onMessage(Message message)
+    public void onMessage(Message message)
     {
         count++;
         _logger.info("Got Message:" + message);
-        notify();
+        _responseLatch.countDown();
     }
 
     private static String randomize(String in)
