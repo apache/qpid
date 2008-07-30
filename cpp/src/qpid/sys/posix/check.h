@@ -23,11 +23,12 @@
  */
 
 #include "qpid/Exception.h"
+
 #include <cerrno>
 #include <assert.h>
 #include <stdio.h>
 
-#define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::strError(ERRNO)))
+#define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::sys::strError(ERRNO)))
 
 /** THROW QPID_POSIX_ERROR(errno) if RESULT is less than zero */
 #define QPID_POSIX_CHECK(RESULT)                        \

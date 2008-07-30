@@ -22,16 +22,10 @@
 #include "qpid/log/Statement.h"
 #include "Exception.h"
 #include <typeinfo>
-#include <errno.h>
 #include <assert.h>
 #include <string.h>
 
 namespace qpid {
-
-std::string strError(int err) {
-    char buf[512];
-    return std::string(strerror_r(err, buf, sizeof(buf)));
-}
 
 Exception::Exception(const std::string& msg) throw() : message(msg) {
     QPID_LOG(debug, "Exception constructed: " << message);
