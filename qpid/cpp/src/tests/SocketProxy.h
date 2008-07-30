@@ -78,7 +78,7 @@ class SocketProxy : private qpid::sys::Runnable
     
   private:
     static void throwErrno(const std::string& msg) {
-        throw qpid::Exception(msg+":"+qpid::strError(errno));
+        throw qpid::Exception(msg+":"+qpid::sys::strError(errno));
     }
     static void throwIf(bool condition, const std::string& msg) {
         if (condition) throw qpid::Exception(msg);
