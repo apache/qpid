@@ -18,6 +18,11 @@
 # under the License.
 #
 
+if [ -z "$QPID_HOME" ]; then
+    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPID_HOME}/bin
+fi
+
 # Set classpath to include Qpid jar with all required jars in manifest
 QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar:$QPID_HOME/lib/bdbstore-launch.jar
 
