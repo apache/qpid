@@ -24,6 +24,7 @@
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/constants.h"
+#include "qpid/sys/StrError.h"
 #include "qpid/Msg.h"
 
 #include <memory>
@@ -32,9 +33,6 @@
 
 namespace qpid
 {
-
-/** Get the error message for a system number err, e.g. errno. */
-std::string strError(int err);
 
 /**
  * Base class for Qpid runtime exceptions.
@@ -55,8 +53,8 @@ class Exception : public std::exception
 
 /** Exception that includes an errno message. */
 struct ErrnoException : public Exception {
-    ErrnoException(const std::string& msg, int err) : Exception(msg+": "+strError(err)) {}
-    ErrnoException(const std::string& msg) : Exception(msg+": "+strError(errno)) {}
+    ErrnoException(const std::string& msg, int err) : Exception(msg+": "+qpid::sys::strError(err)) {}
+    ErrnoException(const std::string& msg) : Exception(msg+": "+qpid::sys::strError(errno)) {}
 };
     
 struct SessionException : public Exception {
