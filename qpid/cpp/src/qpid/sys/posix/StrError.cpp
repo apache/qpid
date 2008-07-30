@@ -21,24 +21,21 @@
 
 #include "qpid/sys/StrError.h"
 
-// Ensure we get the POSIX verion of strerror_r
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
 #include <string.h>
-#undef _XOPEN_SOURCE
-#else
-#include <string.h>
-#endif
-
 
 namespace qpid {
 namespace sys {
 
 std::string strError(int err) {
-    char buf[512];
-    //POSIX strerror_r doesn't return the buffer
+    char buf[512] = "Unknown error";
+#ifdef _GNU_SOURCE
+    // GNU strerror_r returns the message
+    return ::strerror_r(err, buf, sizeof(buf));
+#else
+    // POSIX strerror_r doesn't return the buffer
     ::strerror_r(err, buf, sizeof(buf));
     return std::string(buf);
+#endif
 }
 
 }}
