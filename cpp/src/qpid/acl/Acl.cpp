@@ -20,10 +20,12 @@
 
 
 #include "qpid/broker/Broker.h"
-#include "qpid/cluster/Cluster.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
+#include "qpid/log/Logger.h"
+
+#include <map>
 
 #include <boost/utility/in_place_factory.hpp>
 
