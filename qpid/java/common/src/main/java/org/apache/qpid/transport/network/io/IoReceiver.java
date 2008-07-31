@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * IoReceiver
@@ -43,16 +44,48 @@ final class IoReceiver extends Thread
     private final Receiver<ByteBuffer> receiver;
     private final int bufferSize;
     private final Socket socket;
+    private final long timeout;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public IoReceiver(IoTransport transport, Receiver<ByteBuffer> receiver, int bufferSize)
+    public IoReceiver(IoTransport transport, Receiver<ByteBuffer> receiver,
+                      int bufferSize, long timeout)
     {
         this.transport = transport;
         this.receiver = receiver;
         this.bufferSize = bufferSize;
         this.socket = transport.getSocket();
+        this.timeout = timeout;
 
-        setName(String.format("IoReceive - %s", socket.getRemoteSocketAddress()));
+        setDaemon(true);
+        setName(String.format("IoReceiver - %s", socket.getRemoteSocketAddress()));
         start();
+    }
+
+    void close()
+    {
+        if (!closed.getAndSet(true))
+        {
+            try
+            {
+                socket.shutdownInput();
+                if (Thread.currentThread() != this)
+                {
+                    join(timeout);
+                    if (isAlive())
+                    {
+                        throw new TransportException("join timed out");
+                    }
+                }
+            }
+            catch (InterruptedException e)
+            {
+                throw new TransportException(e);
+            }
+            catch (IOException e)
+            {
+                throw new TransportException(e);
+            }
+        }
     }
 
     public void run()
@@ -67,7 +100,7 @@ final class IoReceiver extends Thread
             InputStream in = socket.getInputStream();
             int read = 0;
             int offset = 0;
-            while ((read = in.read(buffer, offset, bufferSize-offset)) != -1)
+            while (!closed.get() && (read = in.read(buffer, offset, bufferSize-offset)) != -1)
             {
                 if (read > 0)
                 {
@@ -84,22 +117,12 @@ final class IoReceiver extends Thread
         }
         catch (Throwable t)
         {
-            receiver.exception(new TransportException("error in read thread", t));
+            receiver.exception(t);
         }
         finally
         {
-            try
-            {
-                transport.getSender().close();
-            }
-            catch (TransportException e)
-            {
-                log.error(e, "error closing");
-            }
-            finally
-            {
-                receiver.closed();
-            }
+            receiver.closed();
+            transport.getSender().close();
         }
     }
 
