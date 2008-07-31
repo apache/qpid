@@ -25,13 +25,9 @@ import org.apache.qpid.client.AMQConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
+import javax.jms.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class tests a number of commits and roll back scenarios
@@ -503,4 +499,74 @@ public class CommitRollbackTest extends QpidTestCase
         _session.commit();
     }
 
+    /**
+     * Qpid-1163
+     * Check that when commt is called inside onMessage then
+     * the last message is nor redelivered. 
+     *
+     * @throws Exception
+     */
+    public void testCommitWhithinOnMessage() throws Exception
+    {
+        Queue queue = (Queue) getInitialContext().lookup("queue");
+        // create a consumer
+             MessageConsumer cons = _session.createConsumer(queue);           
+        MessageProducer prod = _session.createProducer(queue);
+        Message message =  _session.createTextMessage("Message");
+        message.setJMSCorrelationID("m1");
+        prod.send(message);
+        _session.commit();
+        _logger.info("Sent message to queue");
+        CountDownLatch cd = new CountDownLatch(1);
+        cons.setMessageListener(new CommitWhithinOnMessageListener(cd));
+        conn.start();
+        cd.await(30, TimeUnit.SECONDS);
+        if( cd.getCount() > 0 )
+        {
+           fail("Did not received message");
+        }
+        // Check that the message has been dequeued
+        _session.close();
+        conn.close();
+        conn = (AMQConnection) getConnection("guest", "guest");
+        conn.start();
+        Session session = conn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        cons = session.createConsumer(queue);        
+        message = cons.receiveNoWait();
+        if(message != null)
+        {
+            if(message.getJMSCorrelationID().equals("m1"))
+            {
+                fail("received message twice");
+            }
+            else
+            {
+                fail("queue should have been empty, received message: " + message);
+            }
+        }
+    }
+
+    private class CommitWhithinOnMessageListener implements MessageListener
+    {
+        private CountDownLatch _cd;
+        private CommitWhithinOnMessageListener(CountDownLatch cd)
+        {
+            _cd = cd;
+        }
+        public void onMessage(Message message)
+        {
+            try
+            {
+                _logger.info("received message " + message);
+                assertEquals("Wrong message received", message.getJMSCorrelationID(), "m1");
+                _logger.info("commit session");
+                _session.commit();
+                _cd.countDown();
+            }
+            catch (JMSException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
 }
