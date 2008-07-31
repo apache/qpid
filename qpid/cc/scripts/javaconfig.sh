@@ -21,7 +21,6 @@
 # copy the profiles
 sed "s#store_home#$CPPSTORE_HOME#g" $CC_HOME/cc/config/java/cpp.noprefetch.testprofile > "$CC_HOME/java/"/cpp.noprefetch.testprofile
 sed "s#store_home#$CPPSTORE_HOME#g" $CC_HOME/cc/config/java/cpp.testprofile > "$CC_HOME/java"/cpp.testprofile
-cp $CC_HOME/cc/config/java/*ExcludeList $CC_HOME/java/.
 QPID_JARS=`find "$CC_HOME/java/build/lib" -name '*.jar' | tr '\n' ":"`
 QPID_JARS=local.classes=$QPID_JARS
 sed "s#local.classes=.*#$QPID_JARS#g" $TS_HOME/bin/build.properties > "$TS_HOME/bin"/build.properties-new
