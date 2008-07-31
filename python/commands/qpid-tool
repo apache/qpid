@@ -65,6 +65,7 @@ class Mcli (Cmd):
     print "    schema <className>              - Print details of an object class"
     print "    set time-format short           - Select short timestamp format (default)"
     print "    set time-format long            - Select long timestamp format"
+    print "    id [<ID>]                       - Display translations of display object ids"
     print "    quit or ^D                      - Exit the program"
     print
 
@@ -92,6 +93,9 @@ class Mcli (Cmd):
         self.dispObject.do_setTimeFormat (tokens[1])
     except:
       pass
+
+  def do_id (self, data):
+    self.dataObject.do_id(data)
 
   def complete_schema (self, text, line, begidx, endidx):
     tokens = split (line)

@@ -59,7 +59,7 @@ class ManagementBroker : public ManagementAgent
                           uint32_t          persistId   = 0,
                           uint32_t          persistBank = 4);
     void clientAdded     (void);
-    void dispatchCommand (broker::Deliverable&       msg,
+    bool dispatchCommand (broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
 
@@ -177,9 +177,6 @@ class ManagementBroker : public ManagementAgent
                              std::string                  routingKey);
     void moveNewObjectsLH();
 
-    void dispatchMethodLH (broker::Message&   msg,
-                           const std::string& routingKey,
-                           size_t             first);
     void dispatchAgentCommandLH (broker::Message& msg);
 
     PackageMap::iterator FindOrAddPackageLH(std::string name);
@@ -206,6 +203,7 @@ class ManagementBroker : public ManagementAgent
     void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
 
     size_t ValidateSchema(framing::Buffer&);
 };

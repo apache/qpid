@@ -30,6 +30,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Condition.h"
 #include "qpid/framing/Uuid.h"
 #include <iostream>
 #include <sstream>
@@ -127,6 +128,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     BackgroundThread bgThread;
     sys::Thread      thread;
+    sys::Condition   startupCond;
+    bool             startupWait;
 
     PackageMap::iterator FindOrAddPackage (std::string name);
     void moveNewObjectsLH();
@@ -149,6 +152,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
     void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence);
+    void handleMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
     void handleConsoleAddedIndication();
 };
 

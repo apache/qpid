@@ -26,13 +26,13 @@ OUT_FILE    = $(SRC_DIR)/qmf-agent
 CC           = gcc
 LIB_DIR      = $(QPID_DIR)/cpp/src/.libs
 CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/src -I$(QPID_DIR)/cpp/src/gen -I$(GEN_DIR)
-CC_FLAGS     = -g -O2
+CC_FLAGS     = -g -O3
 LD_FLAGS     = -lqpidclient -lqpidcommon -L$(LIB_DIR)
 SPEC_DIR     = $(QPID_DIR)/specs
+TYPE_FILE    = $(SPEC_DIR)/management-types.xml
 MGEN_DIR     = $(QPID_DIR)/cpp/managementgen
 TEMPLATE_DIR = $(MGEN_DIR)/templates
 MGEN         = $(MGEN_DIR)/main.py
-OBJ_DIR      = $(SRC_DIR)/.libs
 
 vpath %.cpp $(SRC_DIR):$(GEN_DIR)
 vpath %.d   $(OBJ_DIR)
@@ -43,15 +43,17 @@ cpps   += $(wildcard $(GEN_DIR)/*.cpp)
 deps    = $(addsuffix .d, $(basename $(cpps)))
 objects = $(addsuffix .o, $(basename $(cpps)))
 
-.PHONY: all clean
+.PHONY: all clean gen
 
 #==========================================================
 # Pass 0: generate source files from schema
 ifeq ($(MAKELEVEL), 0)
 
-all:
-	$(MGEN) $(SCHEMA_FILE) $(SPEC_DIR)/management-types.xml $(TEMPLATE_DIR) $(GEN_DIR)
-	$(MAKE)
+all: gen
+	@$(MAKE)
+
+gen:
+	$(MGEN) $(SCHEMA_FILE) $(TYPE_FILE) $(TEMPLATE_DIR) $(GEN_DIR)
 
 clean:
 	rm -rf $(GEN_DIR) $(OUT_FILE) *.d *.o
@@ -62,7 +64,7 @@ clean:
 else ifeq ($(MAKELEVEL), 1)
 
 all: $(deps)
-	$(MAKE)
+	@$(MAKE)
 
 %.d : %.cpp
 	$(CC) -M $(CC_FLAGS) $(CC_INCLUDES) $< > $@

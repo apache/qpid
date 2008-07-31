@@ -154,7 +154,7 @@ class managementChannel:
   def accept (self, msg):
     self.qpidChannel.message_accept(RangedSet(msg.id))
 
-  def message (self, body, routing_key="agent"):
+  def message (self, body, routing_key="broker"):
     dp = self.qpidChannel.delivery_properties()
     dp.routing_key  = routing_key
     mp = self.qpidChannel.message_properties()
@@ -227,14 +227,14 @@ class managementClient:
     """ Invoke a method on a managed object. """
     self.method (channel, userSequence, objId, className, methodName, args)
 
-  def getObjects (self, channel, userSequence, className):
+  def getObjects (self, channel, userSequence, className, bank=0):
     """ Request immediate content from broker """
     codec = Codec (self.spec)
     self.setHeader (codec, ord ('G'), userSequence)
     ft = {}
     ft["_class"] = className
     codec.write_map (ft)
-    msg = channel.message(codec.encoded)
+    msg = channel.message(codec.encoded, routing_key="agent.%d" % bank)
     channel.send ("qpid.management", msg)
 
   def syncWaitForStable (self, channel):
@@ -273,14 +273,14 @@ class managementClient:
     self.cv.release ()
     return result
 
-  def syncGetObjects (self, channel, className):
+  def syncGetObjects (self, channel, className, bank=0):
     """ Synchronous (blocking) get call """
     self.cv.acquire ()
     self.syncInFlight = True
     self.syncResult   = []
     self.syncSequence = self.seqMgr.reserve ("sync")
     self.cv.release ()
-    self.getObjects (channel, self.syncSequence, className)
+    self.getObjects (channel, self.syncSequence, className, bank)
     self.cv.acquire ()
     starttime = time ()
     while self.syncInFlight:
@@ -748,6 +748,8 @@ class managementClient:
     sequence = self.seqMgr.reserve ((userSequence, classId, methodName))
     self.setHeader (codec, ord ('M'), sequence)
     codec.write_uint64 (objId)       # ID of object
+    codec.write_str8 (methodName)
+    bank = (objId & 0x0000FFFFFF000000) >> 24
 
     # Encode args according to schema
     if classId not in self.schema:
@@ -777,6 +779,5 @@ class managementClient:
 
     packageName = classId[0]
     className   = classId[1]
-    msg = channel.message(codec.encoded, "agent.method." + packageName + "." + \
-                            className + "." + methodName)
+    msg = channel.message(codec.encoded, "agent." + str(bank))
     channel.send ("qpid.management", msg)
