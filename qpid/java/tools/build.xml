@@ -20,7 +20,7 @@
  -->
 <project name="Qpid Tools" default="build">
 
-  <property name="module.depends" value="client"/>
+  <property name="module.depends" value="client common"/>
 
   <import file="../module.xml"/>
 
