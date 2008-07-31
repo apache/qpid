@@ -62,7 +62,6 @@ using namespace std;
       case QUEUE: return "Queue";
 	  case EXCHANGE: return "Exchnage";
 	  case ROUTINGKEY: return "RoutingKey";
-	  case SESSION: return "Session";
 	  default: return "Unknown";
 	  }
    }

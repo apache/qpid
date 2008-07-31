@@ -447,7 +447,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
 	{
 	    // add flags as needed
  	    if (!acl->authorise(getConnection().getUserId(),acl::CONSUME,acl::QUEUE,queueName,NULL) )
-	        throw NotAllowedException("ACL denied Session subscribe request");
+	        throw NotAllowedException("ACL denied Queue subscribe request");
     }
 
     Queue::shared_ptr queue = getQueue(queueName);
