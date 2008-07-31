@@ -79,7 +79,7 @@ using namespace std;
 	  switch (aclreslt)
 	  {
 	  case ALLOWLOG:
-          QPID_LOG(info, "ACL Allow log id:" << id <<" action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name );  
+          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name );  
 	  case ALLOW:
 	      return true;
 	  case DENYNOLOG:
