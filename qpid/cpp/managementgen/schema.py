@@ -577,7 +577,7 @@ class SchemaMethod:
     return self.name
 
   def getFullName (self):
-    return self.parent.getName().capitalize() + self.name[0:1].upper() +\
+    return capitalize(self.parent.getName()) + self.name[0:1].upper() +\
            self.name[1:]
 
   def getArgCount (self):
@@ -644,7 +644,7 @@ class SchemaEvent:
     return self.name
 
   def getFullName (self):
-    return self.parent.getName ().capitalize() + self.name.capitalize ()
+    return capitalize(self.parent.getName()) + capitalize(self.name)
 
   def getArgCount (self):
     return len (self.args)
@@ -938,7 +938,7 @@ class SchemaClass:
       method.genSchema (stream, variables)
 
   def genNameCap (self, stream, variables):
-    stream.write (self.name.capitalize ())
+    stream.write (capitalize(self.name))
 
   def genNameLower (self, stream, variables):
     stream.write (self.name.lower ())

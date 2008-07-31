@@ -86,9 +86,9 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
-    std::string getPackageName (void) { return packageName; }
-    std::string getClassName   (void) { return className; }
-    uint8_t*    getMd5Sum      (void) { return md5Sum; }
+    std::string& getPackageName (void) { return packageName; }
+    std::string& getClassName   (void) { return className; }
+    uint8_t*     getMd5Sum      (void) { return md5Sum; }
 
     // Method IDs
 /*MGEN:Class.MethodIdDeclarations*/

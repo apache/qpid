@@ -167,10 +167,14 @@ class ManagementData:
     if self.cli != None:
       self.cli.setPromptMessage ("Broker Disconnected")
 
-  def schemaHandler (self, context, className, configs, insts, methods, events):
+  def schemaHandler (self, context, classKey, configs, insts, methods, events):
     """ Callback for schema updates """
-    if className not in self.schema:
-      self.schema[className] = (configs, insts, methods, events)
+    if classKey not in self.schema:
+      schemaRev = 0
+      for key in self.schema:
+        if classKey[0] == key[0] and classKey[1] == key[1]:
+          schemaRev += 1
+      self.schema[classKey] = (configs, insts, methods, events, schemaRev)
 
   def setCli (self, cliobj):
     self.cli = cliobj
@@ -248,17 +252,17 @@ class ManagementData:
             return str (value)
     return "*type-error*"
 
-  def getObjIndex (self, className, config):
+  def getObjIndex (self, classKey, config):
     """ Concatenate the values from index columns to form a unique object name """
     result = ""
-    schemaConfig = self.schema[className][0]
+    schemaConfig = self.schema[classKey][0]
     for item in schemaConfig:
       if item[5] == 1 and item[0] != "id":
         if result != "":
           result = result + "."
         for key,val in config:
           if key == item[0]:
-            result = result + self.valueDisplay (className, key, val)
+            result = result + self.valueDisplay (classKey, key, val)
     return result
 
   def getClassKey (self, className):
@@ -268,11 +272,17 @@ class ManagementData:
         if key[1] == className:
           return key
     else:
-      package = className[0:dotPos]
-      name    = className[dotPos + 1:]
+      package   = className[0:dotPos]
+      name      = className[dotPos + 1:]
+      schemaRev = 0
+      delim = name.find(".")
+      if delim != -1:
+        schemaRev = int(name[delim + 1:])
+        name      = name[0:delim]
       for key in self.schema:
         if key[0] == package and key[1] == name:
-          return key
+          if self.schema[key][4] == schemaRev:
+            return key
     return None
 
   def classCompletions (self, prefix):
@@ -508,7 +518,11 @@ class ManagementData:
       sorted.sort ()
       for classKey in sorted:
         tuple = self.schema[classKey]
-        className = classKey[0] + "." + classKey[1]
+        if tuple[4] == 0:
+          suffix = ""
+        else:
+          suffix = ".%d" % tuple[4]
+        className = classKey[0] + "." + classKey[1] + suffix
         row = (className, len (tuple[0]), len (tuple[1]), len (tuple[2]), len (tuple[3]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",
@@ -527,6 +541,7 @@ class ManagementData:
         raise ValueError ()
 
       rows = []
+      schemaRev =  self.schema[classKey][4]
       for config in self.schema[classKey][0]:
         name     = config[0]
         if name != "id":
@@ -554,7 +569,7 @@ class ManagementData:
           rows.append ((name, typename, unit, "", "", desc))
 
       titles = ("Element", "Type", "Unit", "Access", "Notes", "Description")
-      self.disp.table ("Schema for class '%s.%s':" % (classKey[0], classKey[1]), titles, rows)
+      self.disp.table ("Schema for class '%s.%s.%d':" % (classKey[0], classKey[1], schemaRev), titles, rows)
 
       for mname in self.schema[classKey][2]:
         (mdesc, args) = self.schema[classKey][2][mname]
@@ -603,13 +618,20 @@ class ManagementData:
         raise ValueError ()
 
       schemaMethod = self.schema[classKey][2][methodName]
-      if len (args) != len (schemaMethod[1]):
-        print "Wrong number of method args: Need %d, Got %d" % (len (schemaMethod[1]), len (args))
+      count = 0
+      for arg in range(len(schemaMethod[1])):
+        if schemaMethod[1][arg][2].find("I") != -1:
+          count += 1
+      if len (args) != count:
+        print "Wrong number of method args: Need %d, Got %d" % (count, len (args))
         raise ValueError ()
 
       namedArgs = {}
-      for idx in range (len (args)):
-        namedArgs[schemaMethod[1][idx][0]] = args[idx]
+      idx = 0
+      for arg in range(len(schemaMethod[1])):
+        if schemaMethod[1][arg][2].find("I") != -1:
+          namedArgs[schemaMethod[1][arg][0]] = args[idx]
+          idx += 1
 
       self.methodSeq = self.methodSeq + 1
       self.methodsPending[self.methodSeq] = methodName
@@ -622,6 +644,35 @@ class ManagementData:
                                  methodName, namedArgs)
 #      except ValueError, e:
 #        print "Error invoking method:", e
+
+  def makeIdRow (self, displayId):
+    if displayId in self.idMap:
+      rawId = self.idMap[displayId]
+    else:
+      return None
+    return (displayId,
+            rawId,
+            (rawId & 0x7FFF000000000000) >> 48,
+            (rawId & 0x0000FFFFFF000000) >> 24,
+            (rawId & 0x0000000000FFFFFF))
+
+  def listIds (self, select):
+    rows = []
+    if select == 0:
+      sorted = self.idMap.keys()
+      sorted.sort()
+      for displayId in sorted:
+        row = self.makeIdRow (displayId)
+        rows.append(row)
+    else:
+      row = self.makeIdRow (select)
+      if row == None:
+        print "Display Id %d not known" % select
+        return
+      rows.append(row)
+    self.disp.table("Translation of Display IDs:",
+                    ("DisplayID", "RawID", "BootSequence", "Bank", "Object"),
+                    rows)
 
   def do_list (self, data):
     tokens = data.split ()
@@ -644,10 +695,17 @@ class ManagementData:
       print "Not enough arguments supplied"
       return
     
-    userOid    = long (tokens[0])
+    displayId  = long (tokens[0])
     methodName = tokens[1]
     args       = tokens[2:]
-    self.callMethod (userOid, methodName, args)
+    self.callMethod (displayId, methodName, args)
+
+  def do_id (self, data):
+    if data == "":
+      select = 0
+    else:
+      select = int(data)
+    self.listIds(select)
 
   def do_exit (self):
     self.mclient.removeChannel (self.mch)
