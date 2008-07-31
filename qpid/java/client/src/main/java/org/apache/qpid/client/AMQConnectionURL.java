@@ -225,8 +225,7 @@ public class AMQConnectionURL implements ConnectionURL
 
     public String toString()
     {
-        return _url;
-        /*StringBuffer sb = new StringBuffer();
+        StringBuffer sb = new StringBuffer();
 
         sb.append(AMQ_PROTOCOL);
         sb.append("://");
@@ -257,7 +256,7 @@ public class AMQConnectionURL implements ConnectionURL
 
         sb.append(optionsToString());
 
-        return sb.toString();*/
+        return sb.toString();
     }
 
     private String optionsToString()
@@ -290,7 +289,7 @@ public class AMQConnectionURL implements ConnectionURL
     public static void main(String[] args) throws URLSyntaxException
     {
         String url2 =
-            "amqp://ritchiem:bob@temp?brokerlist='tcp://localhost:5672;jcp://fancyserver:3000/',failover='roundrobin'";
+            "amqp://ritchiem:bob@temp/testHost?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
         // "amqp://user:pass@clientid/virtualhost?brokerlist='tcp://host:1?option1=\'value\',option2=\'value\';vm://:3?option1=\'value\'',failover='method?option1=\'value\',option2='value''";
 
         ConnectionURL connectionurl2 = new AMQConnectionURL(url2);
