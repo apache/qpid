@@ -62,6 +62,10 @@ class ManagementObject
     static const uint8_t TYPE_DOUBLE    = 13;
     static const uint8_t TYPE_UUID      = 14;
     static const uint8_t TYPE_FTABLE    = 15;
+    static const uint8_t TYPE_S8        = 16;
+    static const uint8_t TYPE_S16       = 17;
+    static const uint8_t TYPE_S32       = 18;
+    static const uint8_t TYPE_S64       = 19;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;

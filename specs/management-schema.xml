@@ -80,7 +80,7 @@
 
     <method name="leaveCluster"/>
 
-    <method name="echo" desc="Request a response to test the path to the management agent">
+    <method name="echo" desc="Request a response to test the path to the management broker">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
       <arg name="body"     dir="IO" type="lstr"   default=""/>
     </method>
