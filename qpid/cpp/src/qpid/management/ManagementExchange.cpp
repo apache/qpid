@@ -40,17 +40,16 @@ void ManagementExchange::route (Deliverable&      msg,
                                 const string&     routingKey,
                                 const FieldTable* args)
 {
-    // Intercept management agent commands
-    if ((routingKey.length () > 6 &&
-         routingKey.substr (0, 6).compare ("agent.") == 0) ||
-        (routingKey.length () == 5 &&
-         routingKey.substr (0, 5).compare ("agent") == 0))
-    {
-        managementAgent->dispatchCommand (msg, routingKey, args);
-        return;
-    }
+    bool routeIt = true;
 
-    TopicExchange::route (msg, routingKey, args);
+    // Intercept management agent commands
+    if ((routingKey.length() > 6 &&
+         routingKey.substr(0, 6).compare("agent.") == 0) ||
+        (routingKey == "broker"))
+        routeIt = managementAgent->dispatchCommand(msg, routingKey, args);
+
+    if (routeIt)
+        TopicExchange::route(msg, routingKey, args);
 }
 
 bool ManagementExchange::bind (Queue::shared_ptr queue,
