@@ -222,7 +222,8 @@ class ManagementData:
         if item[0] == key:
           typecode = item[1]
           unit     = item[2]
-          if (typecode >= 1 and typecode <= 5) or typecode == 12 or typecode == 13:  # numerics
+          if (typecode >= 1 and typecode <= 5) or typecode == 12 or typecode == 13 or \
+                (typecode >= 16 and typecode <= 19):
             if unit == None or unit == self.lastUnit:
               return str (value)
             else:
@@ -329,6 +330,14 @@ class ManagementData:
       return "uuid"
     elif typecode == 15:
       return "field-table"
+    elif typecode == 16:
+      return "int8"
+    elif typecode == 17:
+      return "int16"
+    elif typecode == 18:
+      return "int32"
+    elif typecode == 19:
+      return "int64"
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 

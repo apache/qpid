@@ -79,6 +79,10 @@ class Buffer
     void putShort(uint16_t i);
     void putLong(uint32_t i);
     void putLongLong(uint64_t i);
+    void putInt8(int8_t i);
+    void putInt16(int16_t i);
+    void putInt32(int32_t i);
+    void putInt64(int64_t i);
     void putFloat(float f);
     void putDouble(double f);
     void putBin128(uint8_t* b);
@@ -87,6 +91,10 @@ class Buffer
     uint16_t getShort(); 
     uint32_t getLong();
     uint64_t getLongLong();
+    int8_t   getInt8();
+    int16_t  getInt16();
+    int32_t  getInt32();
+    int64_t  getInt64();
     float    getFloat();
     double   getDouble();
     
