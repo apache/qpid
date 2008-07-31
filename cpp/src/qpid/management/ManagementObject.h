@@ -98,8 +98,8 @@ class ManagementObject
                                  qpid::framing::Buffer& outBuf) = 0;
     virtual void setReference   (uint64_t objectId);
 
-    virtual std::string  getClassName   (void) = 0;
-    virtual std::string  getPackageName (void) = 0;
+    virtual std::string& getClassName   (void) = 0;
+    virtual std::string& getPackageName (void) = 0;
     virtual uint8_t*     getMd5Sum      (void) = 0;
 
     void         setObjectId      (uint64_t oid) { objectId = oid; }

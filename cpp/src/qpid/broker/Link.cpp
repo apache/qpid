@@ -335,8 +335,7 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args
         return Manageable::STATUS_OK;
 
     case management::Link::METHOD_BRIDGE :
-        management::ArgsLinkBridge iargs =
-            dynamic_cast<const management::ArgsLinkBridge&>(args);
+        management::ArgsLinkBridge& iargs = (management::ArgsLinkBridge&) args;
 
         // Durable bridges are only valid on durable links
         if (iargs.i_durable && !durable)
