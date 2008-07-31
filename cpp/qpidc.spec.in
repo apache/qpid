@@ -144,6 +144,8 @@ make check
 %_libdir/libqpidbroker.so.0.1.0
 %_libdir/libqpidcluster.so.0
 %_libdir/libqpidcluster.so.0.1.0
+%_libdir/libqpidacl.so.0
+%_libdir/libqpidacl.so.0.1.0
 %_sbindir/%{qpidd}
 %config(noreplace) %_sysconfdir/qpidd.conf
 %config(noreplace) %_sysconfdir/sasl2/qpidd.conf
@@ -159,6 +161,7 @@ make check
 %defattr(-,root,root,-)
 %_libdir/libqpidbroker.so
 %_libdir/libqpidcluster.so
+%_libdir/libqpidacl.so
 %_includedir/qpid/broker
 
 %post -p /sbin/ldconfig
