@@ -32,5 +32,6 @@ export JAVA=java \
        JAVA_MEM=-Xmx1024m \
        JAVA_GC="-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
        QPID_CLASSPATH=$QPID_LIBS
+       QPID_RUN_LOG=2
 
 . qpid-run org.apache.qpid.server.Main "$@"
