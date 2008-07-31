@@ -128,6 +128,7 @@ Broker::Broker(const Broker::Options& conf) :
     config(conf),
     managementAgentSingleton(!config.enableMgmt),
     store(0),
+	acl(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     links(this),
     factory(*this),

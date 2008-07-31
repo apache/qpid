@@ -1,0 +1,105 @@
+/*
+ *
+ * Copyright (c) 2006 The Apache Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "Acl.h"
+
+
+#include "qpid/broker/Broker.h"
+#include "qpid/cluster/Cluster.h"
+#include "qpid/Plugin.h"
+#include "qpid/Options.h"
+#include "qpid/shared_ptr.h"
+
+#include <boost/utility/in_place_factory.hpp>
+
+namespace qpid {
+namespace acl {
+
+using namespace std;
+
+   Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b)
+   {
+       if (!readAclFile()) throw Exception("Could not read ACL file");
+	   QPID_LOG(info, "ACL Plugin loaded");
+
+   }
+
+   std::string Acl::printAction(acl::Action action)
+   {
+      switch (action)
+	  {
+	   case CONSUME: return "Consume";
+	   case PUBLISH: return "Publish";
+	   case CREATE: return "Create";
+	   case ACCESS: return "Access";
+	   case BIND: return "Bind";
+	   case UNBIND: return "Unbind";
+	   case DELETE: return "Delete";
+	   case PURGE: return "Purge";
+	   default: return "Unknown";
+	  }
+   }
+   
+   std::string Acl::printObjType(acl::ObjectType objType)
+   {
+      switch (objType)
+	  {
+      case QUEUE: return "Queue";
+	  case EXCHANGE: return "Exchnage";
+	  case ROUTINGKEY: return "RoutingKey";
+	  case SESSION: return "Session";
+	  default: return "Unknown";
+	  }
+   }
+
+   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>*
+   /*params*/)
+   {
+      if (aclValues.noEnforce) return true;
+   
+      // add real ACL check here... 
+      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
+	  
+	  switch (aclreslt)
+	  {
+	  case ALLOWLOG:
+          QPID_LOG(info, "ACL Allow log id:" << id <<" action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name );  
+	  case ALLOW:
+	      return true;
+	  case DENYNOLOG:
+	      return false;
+	  case DENY:
+	  default:
+	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name);  
+	      return false;
+	  }
+   
+      return false;  
+   }
+   
+   bool Acl::readAclFile()
+   {
+   
+      return true;
+   }
+
+   Acl::~Acl(){}
+
+
+    
+}} // namespace qpid::acl
