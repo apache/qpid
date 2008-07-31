@@ -24,7 +24,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
@@ -55,7 +54,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private IOException exception = null;
+    private volatile Throwable exception = null;
 
 
     public IoSender(IoTransport transport, int bufferSize, long timeout)
@@ -74,6 +73,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
             throw new TransportException("Error getting output stream for socket", e);
         }
 
+        setDaemon(true);
         setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
         start();
     }
@@ -159,6 +159,11 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
 
     public void close()
     {
+        close(true);
+    }
+
+    void close(boolean reportException)
+    {
         if (!closed.getAndSet(true))
         {
             synchronized (notEmpty)
@@ -168,11 +173,15 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
 
             try
             {
-                join(timeout);
-                if (isAlive())
+                if (Thread.currentThread() != this)
                 {
-                    throw new TransportException("join timed out");
+                    join(timeout);
+                    if (isAlive())
+                    {
+                        throw new TransportException("join timed out");
+                    }
                 }
+                transport.getReceiver().close();
                 socket.close();
             }
             catch (InterruptedException e)
@@ -184,7 +193,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                 throw new TransportException(e);
             }
 
-            if (exception != null)
+            if (reportException && exception != null)
             {
                 throw new TransportException(exception);
             }
@@ -246,6 +255,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
             {
                 log.error(e, "error in write thread");
                 exception = e;
+                close(false);
                 break;
             }
             tail.getAndAdd(length);

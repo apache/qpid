@@ -106,7 +106,8 @@ public final class IoTransport
         Connection conn = new Connection
             (new Disassembler(new OutputHandler(sender), 64*1024 - 1),
              delegate);
-        receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)), 2*readBufferSize);
+        receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)),
+                                  2*readBufferSize, timeout);
 
         return conn;
     }
