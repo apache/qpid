@@ -414,7 +414,7 @@ bool ManagementBroker::dispatchCommand (Deliverable&      deliverable,
     }
 
     else if (routingKey.compare(0, 6, "agent.") == 0) {
-        uint32_t delim = routingKey.find('.', 6);
+        std::string::size_type delim = routingKey.find('.', 6);
         if (delim == string::npos)
             delim = routingKey.length();
         string bank = routingKey.substr(6, delim - 6);
