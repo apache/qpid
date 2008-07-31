@@ -397,6 +397,14 @@ class managementClient:
       codec.write_uuid   (value)
     elif typecode == 15: # FTABLE
       codec.write_map    (value)
+    elif typecode == 16:
+      codec.write_int8 (int(value))
+    elif typecode == 17:
+      codec.write_int16 (int(value))
+    elif typecode == 18:
+      codec.write_int32 (int(value))
+    elif typecode == 19:
+      codec.write_int64 (int(value))
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
@@ -432,6 +440,14 @@ class managementClient:
       data = codec.read_uuid ()
     elif typecode == 15: # FTABLE
       data = codec.read_map ()
+    elif typecode == 16:
+      data = codec.read_int8 ()
+    elif typecode == 17:
+      data = codec.read_int16 ()
+    elif typecode == 18:
+      data = codec.read_int32 ()
+    elif typecode == 19:
+      data = codec.read_int64 ()
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
     return data

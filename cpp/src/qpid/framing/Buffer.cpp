@@ -74,6 +74,22 @@ void Buffer::putLongLong(uint64_t i){
     putLong(lo);
 }
 
+void Buffer::putInt8(int8_t i){
+    data[position++] = (uint8_t) i;
+}
+
+void Buffer::putInt16(int16_t i){
+    putShort((uint16_t) i);
+}
+
+void Buffer::putInt32(int32_t i){
+    putLong((uint32_t) i);
+}
+
+void Buffer::putInt64(int64_t i){
+    putLongLong((uint64_t) i);
+}
+
 void Buffer::putFloat(float f){
     union {
         uint32_t i;
@@ -127,6 +143,22 @@ uint64_t Buffer::getLongLong(){
     uint64_t lo = getLong();
     hi = hi << 32;
     return hi | lo;
+}
+
+int8_t Buffer::getInt8(){
+    return (int8_t) data[position++];
+}
+
+int16_t Buffer::getInt16(){
+    return (int16_t) getShort();
+}
+
+int32_t Buffer::getInt32(){
+    return (int32_t) getLong();
+}
+
+int64_t Buffer::getInt64(){
+    return (int64_t) getLongLong();
 }
 
 float Buffer::getFloat(){
