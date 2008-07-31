@@ -225,8 +225,7 @@ public class AMQConnectionURL implements ConnectionURL
 
     public String toString()
     {
-        return _url;
-        /*StringBuffer sb = new StringBuffer();
+        StringBuffer sb = new StringBuffer();
 
         sb.append(AMQ_PROTOCOL);
         sb.append("://");
@@ -257,7 +256,7 @@ public class AMQConnectionURL implements ConnectionURL
 
         sb.append(optionsToString());
 
-        return sb.toString();*/
+        return sb.toString();
     }
 
     private String optionsToString()
