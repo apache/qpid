@@ -45,6 +45,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/RefCounted.h"
+#include "AclModule.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <vector>
@@ -88,7 +89,33 @@ class Broker : public sys::Runnable, public Plugin::Target,
         size_t replayHardLimit;
         uint queueLimit;
     };
-    
+ 
+  private:
+    boost::shared_ptr<sys::Poller> poller;
+    Options config;
+    management::ManagementAgent::Singleton managementAgentSingleton;
+    std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
+    MessageStore* store;
+	AclModule* acl;
+    DataDir dataDir;
+
+    QueueRegistry queues;
+    ExchangeRegistry exchanges;
+    LinkRegistry links;
+    ConnectionFactory factory;
+    DtxManager dtxManager;
+    SessionManager sessionManager;
+    management::ManagementAgent* managementAgent;
+    management::Broker*          mgmtObject;
+    Vhost::shared_ptr            vhostObject;
+    System::shared_ptr           systemObject;
+
+    void declareStandardExchange(const std::string& name, const std::string& type);
+
+
+  public:
+
+  
     virtual ~Broker();
 
     Broker(const Options& configuration);
@@ -114,6 +141,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     void setStore (MessageStore*);
     MessageStore& getStore() { return *store; }
+    void setAcl (AclModule* _acl) {acl = _acl;}
+    AclModule* getAcl() { return acl; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
     LinkRegistry& getLinks() { return links; }
@@ -147,26 +176,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     // For the present just return the first ProtocolFactory registered.
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
-  private:
-    boost::shared_ptr<sys::Poller> poller;
-    Options config;
-    management::ManagementAgent::Singleton managementAgentSingleton;
-    std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
-    MessageStore* store;
-    DataDir dataDir;
-
-    QueueRegistry queues;
-    ExchangeRegistry exchanges;
-    LinkRegistry links;
-    ConnectionFactory factory;
-    DtxManager dtxManager;
-    SessionManager sessionManager;
-    management::ManagementAgent* managementAgent;
-    management::Broker*          mgmtObject;
-    Vhost::shared_ptr            vhostObject;
-    System::shared_ptr           systemObject;
-
-    void declareStandardExchange(const std::string& name, const std::string& type);
 };
 
 }}

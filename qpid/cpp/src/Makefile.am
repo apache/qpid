@@ -103,6 +103,7 @@ platform_hdr = $(posix_plat_hdr)
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la 
 
 include cluster.mk
+include acl.mk
 
 # The logger library uses boost::date_time to format time.
 # We have to disable the unused parameters warning to get around
@@ -377,6 +378,7 @@ nobase_include_HEADERS = \
   qpid/agent/ManagementAgent.h \
   qpid/agent/ManagementAgentImpl.h \
   qpid/broker/Broker.h \
+  qpid/broker/AclModule.h \
   qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
   qpid/broker/Queue.h \
