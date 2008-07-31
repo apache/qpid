@@ -53,4 +53,5 @@ org.apache.qpid.server.queue.PriorityTest
 org.apache.qpid.test.client.FlowControlTest
 // The default cpp.testprofile does not start the cpp broker with authentication so this test will fail.
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
-// c++ broker doesn't do selectors, so this will fail org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFillQueue
+// c++ broker doesn't do selectors, so this will fail 
+org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFillQueue
