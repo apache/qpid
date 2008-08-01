@@ -153,9 +153,7 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
-        std::map<std::string, std::string> params;
-		params.insert(make_pair("RKEY", routingKey));
-	    if (!acl->authorise(getConnection().getUserId(),acl::BIND,acl::EXCHANGE,exchangeName,&params) )
+	    if (!acl->authorise(getConnection().getUserId(),acl::BIND,acl::EXCHANGE,exchangeName,routingKey) )
 	        throw NotAllowedException("ACL denied exhange bind request");
     }
 

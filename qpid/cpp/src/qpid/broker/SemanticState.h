@@ -38,6 +38,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/shared_ptr.h"
+#include "AclModule.h"
 
 #include <list>
 #include <map>
@@ -117,7 +118,8 @@ class SemanticState : public sys::OutputTask,
     framing::SequenceSet accumulatedAck;
     boost::shared_ptr<Exchange> cacheExchange;
     sys::AggregateOutput outputTasks;
-    
+    AclModule* acl;
+	
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(boost::intrusive_ptr<Message>& msg);
