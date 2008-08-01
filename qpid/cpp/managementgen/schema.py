@@ -727,6 +727,7 @@ class SchemaClass:
     name  = attrs['name'].nodeValue
     for fragment in fragments:
       if fragment.name == name:
+        self.md5Sum.update (fragment.md5Sum.digest())
         for config in fragment.properties:
           self.properties.append (config)
         for inst   in fragment.statistics:
