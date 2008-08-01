@@ -26,6 +26,7 @@
 #include "qpid/broker/Timer.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/broker/ConnectionToken.h"
 #include "qpid/agent/ManagementAgent.h"
 #include "ManagementObject.h"
 #include "Manageable.h"
@@ -87,6 +88,7 @@ class ManagementBroker : public ManagementAgent
     {
         uint32_t          objIdBank;
         std::string       routingKey;
+        uint64_t          connectionRef;
         Agent*            mgmtObject;
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
@@ -95,8 +97,8 @@ class ManagementBroker : public ManagementAgent
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
     //       currently assumes that the exchange is "amq.direct" even though it could
     //       in theory be specified differently.
-    typedef std::map<std::string, RemoteAgent*> RemoteAgentMap;
-    typedef std::vector<std::string>            ReplyToVector;
+    typedef std::map<uint64_t, RemoteAgent*> RemoteAgentMap;
+    typedef std::vector<std::string>         ReplyToVector;
 
     //  Storage for known schema classes:
     //
@@ -192,6 +194,7 @@ class ManagementBroker : public ManagementAgent
     bool     bankInUse (uint32_t bank);
     uint32_t allocateNewBank ();
     uint32_t assignBankLH (uint32_t requestedPrefix);
+    void deleteOrphanedAgentsLH();
     void sendCommandComplete (std::string replyToKey, uint32_t sequence,
                               uint32_t code = 0, std::string text = std::string("OK"));
     void handleBrokerRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
@@ -201,7 +204,7 @@ class ManagementBroker : public ManagementAgent
     void handleClassIndLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleSchemaRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
 
