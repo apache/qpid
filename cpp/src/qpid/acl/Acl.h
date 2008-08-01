@@ -48,22 +48,28 @@ struct AclValues {
 class Acl : public broker::AclModule, public RefCounted 
 {
 
+private:
+   acl::AclValues aclValues;
+   broker::Broker* broker;
+   bool transferAcl;
+
+
 public:
    Acl (AclValues& av, broker::Broker& b);
 
    void initialize();
    
-   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>* params);
+   inline virtual bool doTransferAcl() {return transferAcl;};
+   
    // create specilied authorise methods for cases that need faster matching as needed.
+   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>* params);
+   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string RoutingKey);
 
    virtual ~Acl();
 private:
    std::string printAction(acl::Action action);
    std::string printObjType(acl::ObjectType objType);
-
-   acl::AclValues aclValues;
-   broker::Broker* broker;
-   
+   bool result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name);
    bool readAclFile();
       
 };

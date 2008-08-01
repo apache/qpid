@@ -33,6 +33,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
+#include "AclModule.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -65,6 +66,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       outputTasks(ss)
 {
     outstanding.reset();
+    acl = getSession().getBroker().getAcl();
 }
 
 SemanticState::~SemanticState() {
@@ -258,7 +260,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     blocked(true), 
     windowing(true), 
     msgCredit(0), 
-    byteCredit(0) {}
+    byteCredit(0){}
 
 OwnershipToken* SemanticState::ConsumerImpl::getSession()
 {
@@ -354,6 +356,12 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
+    }
+
+	if (acl && acl->doTransferAcl())
+	{
+	    if (!acl->authorise(getSession().getConnection().getUserId(),acl::PUBLISH,acl::EXCHANGE,exchangeName, msg->getRoutingKey() ))
+	        throw NotAllowedException("ACL denied exhange publish request");
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
