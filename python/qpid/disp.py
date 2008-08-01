@@ -45,8 +45,9 @@ class Display:
           width = cellWidth
       colWidth.append (width + self.tableSpacing)
       line = line + head
-      for i in range (colWidth[col] - len (head)):
-        line = line + " "
+      if col < len (heads) - 1:
+        for i in range (colWidth[col] - len (head)):
+          line = line + " "
       col = col + 1
     print line
     line = self.tablePrefix
@@ -60,8 +61,9 @@ class Display:
       col  = 0
       for width in colWidth:
         line = line + str (row[col])
-        for i in range (width - len (str (row[col]))):
-          line = line + " "
+        if col < len (heads) - 1:
+          for i in range (width - len (str (row[col]))):
+            line = line + " "
         col = col + 1
       print line
 
