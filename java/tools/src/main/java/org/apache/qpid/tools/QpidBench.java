@@ -59,7 +59,7 @@ public class QpidBench
             {
                 defval = String.format(" (%s)", def);
             }
-            usage.append(String.format("\n  %-15s%-15s %s", name, defval, description));
+            usage.append(String.format("\n  %-15s%-14s %s", name, defval, description));
         }
 
         public String broker = "localhost";
@@ -106,7 +106,7 @@ public class QpidBench
         }
 
         {
-            usage("-c, --count", "the number of messages to send and/or receive", count);
+            usage("-c, --count", "the number of messages to send/receive, 0 means no limit", count);
         }
 
         public void parse__count(String c)
@@ -120,7 +120,7 @@ public class QpidBench
         }
 
         {
-            usage("-w, --window", "the number of messages to send before blocking", window);
+            usage("-w, --window", "the number of messages to send before blocking, 0 disables", window);
         }
 
         public void parse__window(String w)
@@ -134,7 +134,7 @@ public class QpidBench
         }
 
         {
-            usage("--sample", "print stats after this many messages", sample);
+            usage("--sample", "print stats after this many messages, 0 disables", sample);
         }
 
         public void parse__sample(String s)
@@ -220,7 +220,7 @@ public class QpidBench
         }
 
         {
-            usage("--message-cache", "reuse the same for each send if true", message_cache);
+            usage("--message-cache", "reuse the same message for each send if true", message_cache);
         }
 
         public void parse__message_cache(String c)
