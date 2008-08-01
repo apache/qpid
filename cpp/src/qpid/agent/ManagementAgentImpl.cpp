@@ -112,7 +112,6 @@ void ManagementAgentImpl::init(std::string brokerHost,
 
     EncodeHeader (buffer, 'A');
     buffer.putShortString ("RemoteAgent [C++]");
-    buffer.putShortString (queueName.str());
     systemId.encode  (buffer);
     buffer.putLong (11);
 
