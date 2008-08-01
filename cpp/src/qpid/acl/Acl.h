@@ -22,6 +22,7 @@
 
 
 
+#include "qpid/acl/AclReader.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
@@ -37,7 +38,6 @@ class Broker;
 namespace acl {
 
 struct AclValues {
-    public:
 	bool noEnforce;
     std::string aclFile;
 
@@ -52,6 +52,7 @@ private:
    acl::AclValues aclValues;
    broker::Broker* broker;
    bool transferAcl;
+   boost::shared_ptr<AclData> data;
 
 
 public:
@@ -71,7 +72,7 @@ private:
    std::string printObjType(acl::ObjectType objType);
    bool result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name);
    bool readAclFile();
-      
+   bool readAclFile(std::string aclFile);      
 };
 
 
