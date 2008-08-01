@@ -16,6 +16,7 @@
  *
  */
 
+#include <sstream>
 #include "qpid/acl/Acl.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
@@ -61,6 +62,9 @@ struct AclPlugin : public Plugin {
 			return;  
 		}
         if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
+        std::ostringstream oss;
+        oss << b.getDataDir().getPath() << "/" << values.aclFile;
+        values.aclFile = oss.str();
         acl = new Acl(values, b);
 		b.setAcl(acl.get());
         b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
