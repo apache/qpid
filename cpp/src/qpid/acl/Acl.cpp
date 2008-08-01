@@ -72,6 +72,9 @@ using namespace std;
    /*params*/)
    {
       if (aclValues.noEnforce) return true;
+      boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
+      
+      // only use dataLocal here...
    
       // add real ACL check here... 
       AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
@@ -83,6 +86,9 @@ using namespace std;
    bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string /*RoutingKey*/)
    {
       if (aclValues.noEnforce) return true;
+      boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
+      
+      // only use dataLocal here...
    
       // add real ACL check here... 
       AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
@@ -113,8 +119,15 @@ using namespace std;
    bool Acl::readAclFile()
    {
       // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
-   
-   
+      return readAclFile(aclValues.aclFile);
+   }
+
+   bool Acl::readAclFile(std::string aclFile) {
+      boost::shared_ptr<AclData> d(new AclData);
+      if (AclReader::read(aclFile, d))
+          return false;
+ 
+      data = d;
       return true;
    }
 
