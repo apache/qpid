@@ -34,7 +34,7 @@ namespace acl {
 
 using namespace std;
 
-   Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b)
+   Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
    {
        if (!readAclFile()) throw Exception("Could not read ACL file");
 	   QPID_LOG(info, "ACL Plugin loaded");
@@ -76,6 +76,24 @@ using namespace std;
       // add real ACL check here... 
       AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
 	  
+	  
+	  return result(aclreslt, id, action, objType, name); 
+   }
+
+   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string /*RoutingKey*/)
+   {
+      if (aclValues.noEnforce) return true;
+   
+      // add real ACL check here... 
+      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
+	  
+	  
+	  return result(aclreslt, id, action, objType, ExchangeName); 
+   }
+
+   
+   bool Acl::result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name)
+   {
 	  switch (aclreslt)
 	  {
 	  case ALLOWLOG:
@@ -89,12 +107,13 @@ using namespace std;
 	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name);  
 	      return false;
 	  }
-   
       return false;  
    }
-   
+      
    bool Acl::readAclFile()
    {
+      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
+   
    
       return true;
    }

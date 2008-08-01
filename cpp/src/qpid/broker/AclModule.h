@@ -44,7 +44,13 @@ class AclModule
 
 public:
    
-   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>* params)=0;
+   // effienty turn off ACL on message transfer.
+   virtual bool doTransferAcl()=0;
+   
+   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, 
+       std::map<std::string, std::string>* params)=0;
+   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, 
+       std::string RoutingKey)=0;
    // create specilied authorise methods for cases that need faster matching as needed.
 
    virtual ~AclModule() {};
