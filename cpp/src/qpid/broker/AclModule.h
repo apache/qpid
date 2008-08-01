@@ -31,9 +31,9 @@
 namespace qpid {
 
 namespace acl{
-typedef enum ObjectType {QUEUE,EXCHANGE,ROUTINGKEY};
-typedef enum Action {CONSUME,PUBLISH,CREATE,ACCESS,BIND,UNBIND,DELETE,PURGE};
-typedef enum AclResult {ALLOW,ALLOWLOG,DENY,DENYNOLOG};	
+enum ObjectType {QUEUE,EXCHANGE,ROUTINGKEY};
+enum Action {CONSUME,PUBLISH,CREATE,ACCESS,BIND,UNBIND,DELETE,PURGE};
+enum AclResult {ALLOW,ALLOWLOG,DENY,DENYNOLOG};	
 }
 
 namespace broker {
