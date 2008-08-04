@@ -85,7 +85,7 @@ NOTE: make sure to install the related '-devel' packages also!
 =====================================
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
-  # yum install boost-devel e2fsprogs-devel pkgconfig openais-devel 
+  # yum install boost-devel e2fsprogs-devel pkgconfig openais openais-devel 
   # yum install gcc-c++ make autoconf automake help2man libtool doxygen graphviz ruby
 
 Follow the manual installation instruction below for any packages not
@@ -108,12 +108,18 @@ The exceptions are openais and boost.
 
 a. openais
 ==========
-Unpack the source distribution and do:
+
+If ais is shipped with you platform and you have 0.80.1-x or later, skip
+builing ais
+
+To build ais: Unpack the source distribution and do:
  # make
  # sudo make install DESTDIR=
  # sudo ldconfig
 
 This will install in the standard places (/usr/lib, /usr/include etc.)
+
+Configuring ais:
 
 Edit /etc/ais/openais.conf and modify the "bindnetaddr" setting
 to your hosts IP address. Do not use 127.0.0.1.
