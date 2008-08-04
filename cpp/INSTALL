@@ -109,7 +109,7 @@ The exceptions are openais and boost.
 a. openais
 ==========
 
-If ais is shipped with you platform and you have 0.80.1-x or later, skip
+If ais is shipped with you platform and you have 0.80.3-x or later, skip
 builing ais
 
 To build ais: Unpack the source distribution and do:
