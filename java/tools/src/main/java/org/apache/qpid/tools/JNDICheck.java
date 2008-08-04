@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.io.IOException;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 
 public class JNDICheck
 {
@@ -81,7 +81,7 @@ public class JNDICheck
 
         try
         {
-            properties.load(new FileReader(new File(propertyFile)));
+            properties.load(new FileInputStream(new File(propertyFile)));
         }
         catch (IOException e)
         {
