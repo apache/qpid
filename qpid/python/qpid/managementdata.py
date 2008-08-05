@@ -367,7 +367,7 @@ class ManagementData:
   def listOfIds (self, classKey, tokens):
     """ Generate a tuple of object ids for a classname based on command tokens. """
     list = []
-    if tokens[0] == "all":
+    if len(tokens) == 0 or tokens[0] == "all":
       for id in self.tables[classKey]:
         list.append (self.displayObjId (id))
 
@@ -385,7 +385,7 @@ class ManagementData:
               if self.getClassForId (self.rawObjId (long (id))) == classKey:
                 list.append (id)
           else:
-            list.append (token)
+            list.append (int(token))
 
     list.sort ()
     result = ()
@@ -421,26 +421,29 @@ class ManagementData:
     finally:
       self.lock.release ()
 
-  def listObjects (self, className):
+  def listObjects (self, tokens):
     """ Generate a display of a list of objects in a class """
+    if len(tokens) == 0:
+      print "Error - No class name provided"
+      return
+
     self.lock.acquire ()
     try:
-      classKey = self.getClassKey (className)
+      classKey = self.getClassKey (tokens[0])
       if classKey == None:
-        print ("Object type %s not known" % className)
+        print ("Object type %s not known" % tokens[0])
       else:
         rows = []
         if classKey in self.tables:
-          sorted = self.tables[classKey].keys ()
-          sorted.sort ()
-          for objId in sorted:
-            (ts, config, inst) = self.tables[classKey][objId]
+          ids = self.listOfIds(classKey, tokens[1:])
+          for objId in ids:
+            (ts, config, inst) = self.tables[classKey][self.rawObjId(objId)]
             createTime  = self.disp.timestamp (ts[1])
             destroyTime = "-"
             if ts[2] > 0:
               destroyTime = self.disp.timestamp (ts[2])
             objIndex = self.getObjIndex (classKey, config)
-            row = (self.refName (objId), createTime, destroyTime, objIndex)
+            row = (objId, createTime, destroyTime, objIndex)
             rows.append (row)
           self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
                            ("ID", "Created", "Destroyed", "Index"),
@@ -687,10 +690,12 @@ class ManagementData:
     tokens = data.split ()
     if len (tokens) == 0:
       self.listClasses ()
-    elif len (tokens) == 1 and not self.isOid (tokens[0]):
-      self.listObjects (data)
     else:
-      self.showObjects (tokens)
+      self.listObjects (tokens)
+
+  def do_show (self, data):
+    tokens = data.split ()
+    self.showObjects (tokens)
 
   def do_schema (self, data):
     if data == "":
