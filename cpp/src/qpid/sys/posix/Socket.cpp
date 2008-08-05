@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <cstdlib>
 #include <string.h>
@@ -251,9 +252,13 @@ int Socket::getError() const
     return result;
 }
 
-void Socket::configure(const Configuration& c)
+void Socket::setTcpNoDelay(bool nodelay) const
 {
-    c.configurePosixTcpSocket(impl->fd);
+    if (nodelay) {
+        int flag = 1;
+        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        QPID_POSIX_CHECK(result);
+    }
 }
 
 }} // namespace qpid::sys
