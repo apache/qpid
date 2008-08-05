@@ -1322,24 +1322,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _sessions.remove(channelId);
     }
 
-    /**
-     * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
-     * The caller must hold the failover mutex before calling this method.
-     */
-    public void resubscribeSesssions() throws JMSException, AMQException, FailoverException
-    {
-        ArrayList sessions = new ArrayList(_sessions.values());
-        _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: removeKey?
-        for (Iterator it = sessions.iterator(); it.hasNext();)
-        {
-            AMQSession s = (AMQSession) it.next();
-            // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
-            reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
-            s.resubscribe();
-            s.setFlowControl(true);
-        }
-    }
-
     public String toString()
     {
         StringBuffer buf = new StringBuffer("AMQConnection:\n");

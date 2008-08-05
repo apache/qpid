@@ -1673,11 +1673,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
      */
     public int getExpectedNumPings(int numpings)
     {
-        // log.debug("public int getExpectedNumPings(int numpings = " + numpings + "): called");
-
-        // log.debug("Each ping will be received by " + (_isPubSub ? getConsumersPerDestination() : 1) + " consumers.");
-
-        return numpings * (_isPubSub ? getConsumersPerDestination() : 1);
+        // Wow, I'm freaking sorry about this return here...
+        return ((_failAfterSend || _failBeforeCommit) ? numpings - 1: numpings) *
+                                    (_isPubSub ? getConsumersPerDestination() : 1);
     }
 
     /**

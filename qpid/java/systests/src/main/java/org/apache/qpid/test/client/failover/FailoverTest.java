@@ -98,7 +98,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         super.tearDown();
     }
 
-    private void consumeMessages(int toConsume) throws JMSException
+    private void consumeMessages(int toConsume, boolean transacted) throws JMSException
     {
         Message msg;
         for (int i = 0; i < toConsume; i++)
@@ -107,31 +107,43 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             assertNotNull("Message " + i + " was null!", msg);
             assertEquals("message " + i, ((TextMessage) msg).getText());
         }
+        if (transacted) {
+            consumerSession.commit();
+        }
     }
 
-    private void sendMessages(int totalMessages) throws JMSException
+    private void sendMessages(int totalMessages, boolean transacted) throws JMSException
     {
         for (int i = 0; i < totalMessages; i++)
         {
             producer.send(producerSession.createTextMessage("message " + i));
         }
+        if (transacted)
+        {
+            producerSession.commit();
+        }
     }
 
     public void testP2PFailover() throws Exception
     {
-        testP2PFailover(NUM_MESSAGES, true);
+        testP2PFailover(NUM_MESSAGES, true, false);
     }
 
     public void testP2PFailoverWithMessagesLeft() throws Exception
     {
-        testP2PFailover(NUM_MESSAGES, false);
+        testP2PFailover(NUM_MESSAGES, false, false);
     }
 
-    private void testP2PFailover(int totalMessages, boolean consumeAll) throws JMSException, NamingException
+    public void testP2PFailoverTransacted() throws Exception
+    {
+        testP2PFailover(NUM_MESSAGES, true, false);
+    }
+
+    private void testP2PFailover(int totalMessages, boolean consumeAll, boolean transacted) throws JMSException, NamingException
     {
         Message msg = null;
-        init(false, Session.AUTO_ACKNOWLEDGE);
-        sendMessages(totalMessages);
+        init(transacted, Session.AUTO_ACKNOWLEDGE);
+        sendMessages(totalMessages, transacted);
 
         // Consume some messages
         int toConsume = totalMessages;
@@ -140,7 +152,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             toConsume = totalMessages / 2;
         }
 
-        consumeMessages(toConsume);
+        consumeMessages(toConsume, transacted);
 
         _logger.info("Failing over");
 
@@ -150,8 +162,8 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 
         assertNull("Should not have received message from new broker!", msg);
         // Check that messages still sent / received
-        sendMessages(totalMessages);
-        consumeMessages(totalMessages);
+        sendMessages(totalMessages, transacted);
+        consumeMessages(totalMessages, transacted);
     }
 
     private void causeFailure(long delay)
@@ -173,7 +185,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     public void testClientAckFailover() throws Exception
     {
         init(false, Session.CLIENT_ACKNOWLEDGE);
-        sendMessages(1);
+        sendMessages(1, false);
         Message msg = consumer.receive();
         assertNotNull("Expected msgs not received", msg);
 

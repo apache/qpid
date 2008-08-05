@@ -368,8 +368,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     /** Session state : used to detect if commit is a) required b) allowed , i.e. does the tx span failover. */
     private boolean _dirty;
-    /** Has failover occured on this session */
-    private boolean _failedOver;
+    /** Has failover occured on this session with outstanding actions to commit? */
+    private boolean _failedOverDirty;
 
     private static final class FlowControlIndicator
     {
@@ -740,6 +740,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             }
             // Commits outstanding messages and acknowledgments
             sendCommit();
+            markClean();
         }
         catch (AMQException e)
         {
@@ -1796,7 +1797,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     void resubscribe() throws AMQException
     {
-        _failedOver = true;
+        if (_dirty)
+        {
+            _failedOverDirty = true;
+        }
         resubscribeProducers();
         resubscribeConsumers();
     }
@@ -2586,7 +2590,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public void markClean()
     {
         _dirty = false;
-        _failedOver = false;
+        _failedOverDirty = false;
     }
 
     /**
@@ -2596,7 +2600,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      */
     public boolean hasFailedOver()
     {
-        return _failedOver;
+        return _failedOverDirty;
     }
 
     /**
