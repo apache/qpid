@@ -244,7 +244,32 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("bar", msg.getData());
 
-    // Queue should be empty on all queues.
+    // Queue should be empty on all cluster members.
+    BOOST_CHECK_EQUAL(0u, c0.session.queueQuery("q").getMessageCount());
+    BOOST_CHECK_EQUAL(0u, c1.session.queueQuery("q").getMessageCount());
+    BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
+}
+
+QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
+    ClusterFixture cluster(3);
+    // First start a subscription.
+    Client c0(cluster[0]);
+    c0.session.queueDeclare("q");
+    c0.subs.subscribe(c0.lq, "q", FlowControl::messageCredit(2));
+    // Now send messages
+    Client c1(cluster[1]);
+    c1.session.messageTransfer(arg::content=TransferContent("foo", "q"));
+    c1.session.messageTransfer(arg::content=TransferContent("bar", "q"));
+
+    // Check they arrived
+    Message m;
+    BOOST_CHECK(c0.lq.get(m, sys::TIME_SEC));
+    BOOST_CHECK_EQUAL("foo", m.getData());
+    BOOST_CHECK(c0.lq.get(m, sys::TIME_SEC));
+    BOOST_CHECK_EQUAL("bar", m.getData());
+
+    // Queue should be empty on all cluster members.
+    Client c2(cluster[2]);
     BOOST_CHECK_EQUAL(0u, c0.session.queueQuery("q").getMessageCount());
     BOOST_CHECK_EQUAL(0u, c1.session.queueQuery("q").getMessageCount());
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());

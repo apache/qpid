@@ -109,8 +109,7 @@ template <class T> void encodePtr(Buffer& buf, T* ptr) {
 
 void Cluster::send(const AMQFrame& frame, ConnectionInterceptor* connection) {
     QPID_LOG(trace, "MCAST [" << connection << "] " << frame);
-    // FIXME aconway 2008-07-03: More efficient buffer management.
-    // Cache coded form of decoded frames for re-encoding?
+    char buffer[64*1024]; // FIXME aconway 2008-07-04: buffer management.
     Buffer buf(buffer);
     frame.encode(buf);
     encodePtr(buf, connection);
@@ -161,7 +160,8 @@ void Cluster::deliver(
     try {
         Buffer buf(static_cast<char*>(msg), msg_len);
         AMQFrame frame;
-        frame.decode(buf);
+        if (!frame.decode(buf))  // Not enough data.
+            throw Exception("Received incomplete cluster event."); // FIXME aconway 2008-08-05: cluster error handling.
         ConnectionInterceptor* connection;
         decodePtr(buf, connection);
         QPID_LOG(trace, "DLVR [" << from << " " << connection << "] " << frame);
@@ -170,7 +170,6 @@ void Cluster::deliver(
             QPID_LOG(warning, "Unexpected DLVR, already left the cluster.");
             return;
         }
-
         if (connection && from != self) // Look up shadow for remote connections
             connection = getShadowConnection(from, connection);
 

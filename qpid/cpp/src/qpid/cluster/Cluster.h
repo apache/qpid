@@ -131,7 +131,6 @@ class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
     Id self;
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;
-    char buffer[64*1024];       // FIXME aconway 2008-07-04: buffer management.
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
