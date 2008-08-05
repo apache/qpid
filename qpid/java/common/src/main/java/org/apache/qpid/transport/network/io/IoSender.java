@@ -23,7 +23,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
@@ -48,8 +47,9 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
     private final OutputStream out;
 
     private final byte[] buffer;
-    private final AtomicInteger head = new AtomicInteger(START);
-    private final AtomicInteger tail = new AtomicInteger(START);
+    private volatile int head = START;
+    private volatile int tail = START;
+    private volatile boolean idle = true;
     private final Object notFull = new Object();
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -96,16 +96,17 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
 
         while (remaining > 0)
         {
-            final int hd = head.get();
-            final int tl = tail.get();
+            final int hd = head;
+            final int tl = tail;
 
             if (hd - tl >= size)
             {
+                flush();
                 synchronized (notFull)
                 {
                     long start = System.currentTimeMillis();
                     long elapsed = 0;
-                    while (head.get() - tail.get() >= size && elapsed < timeout)
+                    while (head - tail >= size && elapsed < timeout)
                     {
                         try
                         {
@@ -118,9 +119,9 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                         elapsed += System.currentTimeMillis() - start;
                     }
 
-                    if (head.get() - tail.get() >= size)
+                    if (head - tail >= size)
                     {
-                        throw new TransportException(String.format("write timed out: %s, %s", head.get(), tail.get()));
+                        throw new TransportException(String.format("write timed out: %s, %s", head, tail));
                     }
                 }
                 continue;
@@ -140,21 +141,20 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
             }
 
             buf.get(buffer, hd_idx, length);
-            head.getAndAdd(length);
-            if (hd == tail.get())
-            {
-                synchronized (notEmpty)
-                {
-                    notEmpty.notify();
-                }
-            }
+            head += length;
             remaining -= length;
         }
     }
 
     public void flush()
     {
-        // pass
+        if (idle)
+        {
+            synchronized (notEmpty)
+            {
+                notEmpty.notify();
+            }
+        }
     }
 
     public void close()
@@ -206,8 +206,8 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
 
         while (true)
         {
-            final int hd = head.get();
-            final int tl = tail.get();
+            final int hd = head;
+            final int tl = tail;
 
             if (hd == tl)
             {
@@ -216,9 +216,11 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                     break;
                 }
 
+                idle = true;
+
                 synchronized (notEmpty)
                 {
-                    while (head.get() == tail.get() && !closed.get())
+                    while (head == tail && !closed.get())
                     {
                         try
                         {
@@ -230,6 +232,8 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                         }
                     }
                 }
+
+                idle = false;
 
                 continue;
             }
@@ -258,8 +262,8 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                 close(false);
                 break;
             }
-            tail.getAndAdd(length);
-            if (head.get() - tl >= size)
+            tail += length;
+            if (head - tl >= size)
             {
                 synchronized (notFull)
                 {

@@ -1,5 +1,6 @@
 package org.apache.qpid.nclient.interop;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import org.apache.qpid.nclient.Session;
 import org.apache.qpid.nclient.util.MessageListener;
 import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageCreditUnit;
@@ -77,18 +79,15 @@ public class BasicInteropTest implements ClosedListener
 
     public void testSendMessage(){
         System.out.println("------- Sending a message --------");
-        session.messageTransfer("test", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
-
         Map<String,Object> props = new HashMap<String,Object>();
         props.put("name", "rajith");
         props.put("age", 10);
         props.put("spf", 8.5);
-        session.header(new DeliveryProperties().setRoutingKey("testKey"),new MessageProperties().setApplicationHeaders(props));
+        session.messageTransfer("test", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(new DeliveryProperties().setRoutingKey("testKey"),
+                                           new MessageProperties().setApplicationHeaders(props)),
+                                ByteBuffer.wrap("TestMessage".getBytes()));
 
-        //session.header(new DeliveryProperties().setRoutingKey("testKey"));
-
-        session.data("TestMessage");
-        session.endData();
         session.sync();
         System.out.println("------- Message sent --------");
     }

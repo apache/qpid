@@ -20,6 +20,7 @@
  */
 package org.apache.qpid;
 
+import java.nio.*;
 import java.util.*;
 
 import org.apache.qpid.transport.*;
@@ -47,17 +48,9 @@ class ToyClient extends SessionDelegate
         }
     }
 
-    @Override public void header(Session ssn, Header header)
+    @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
-        for (Struct st : header.getStructs())
-        {
-            System.out.println("header: " + st);
-        }
-    }
-
-    @Override public void data(Session ssn, Data data)
-    {
-        System.out.println("got data: " + data);
+        System.out.println("msg: " + xfr);
     }
 
     public static final void main(String[] args)
@@ -111,16 +104,16 @@ class ToyClient extends SessionDelegate
         map.put("binary", new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 
         ssn.messageTransfer("asdf", MessageAcceptMode.EXPLICIT,
-                            MessageAcquireMode.PRE_ACQUIRED);
-        ssn.header(new DeliveryProperties(),
-                   new MessageProperties().setApplicationHeaders(map));
-        ssn.data("this is the data");
-        ssn.endData();
+                            MessageAcquireMode.PRE_ACQUIRED,
+                            new Header(new DeliveryProperties(),
+                                       new MessageProperties()
+                                       .setApplicationHeaders(map)),
+                            "this is the data");
 
         ssn.messageTransfer("fdsa", MessageAcceptMode.EXPLICIT,
-                            MessageAcquireMode.PRE_ACQUIRED);
-        ssn.data("this should be rejected");
-        ssn.endData();
+                            MessageAcquireMode.PRE_ACQUIRED,
+                            null,
+                            "this should be rejected");
         ssn.sync();
 
         Future<QueueQueryResult> future = ssn.queueQuery("asdf");

@@ -418,9 +418,15 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return chars;
     }
 
+    private String str = null;
+
     public String asString()
     {
-        return new String(asChars());
+        if (str == null)
+        {
+            str = new String(asChars());
+        }
+        return str;
     }
 
     public boolean equals(Object o)

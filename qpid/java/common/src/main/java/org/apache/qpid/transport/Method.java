@@ -22,6 +22,10 @@ package org.apache.qpid.transport;
 
 import org.apache.qpid.transport.network.Frame;
 
+import java.nio.ByteBuffer;
+
+import static org.apache.qpid.transport.util.Functions.*;
+
 /**
  * Method
  *
@@ -88,6 +92,26 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     public abstract boolean hasPayload();
 
+    public Header getHeader()
+    {
+        return null;
+    }
+
+    public void setHeader(Header header)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public ByteBuffer getBody()
+    {
+        return null;
+    }
+
+    public void setBody(ByteBuffer body)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public abstract byte getEncodedTrack();
 
     public abstract <C> void dispatch(C context, MethodDelegate<C> delegate);
@@ -134,6 +158,21 @@ public abstract class Method extends Struct implements ProtocolEvent
 
         str.append(" ");
         str.append(super.toString());
+        Header hdr = getHeader();
+        if (hdr != null)
+        {
+            for (Struct st : hdr.getStructs())
+            {
+                str.append("\n  ");
+                str.append(st);
+            }
+        }
+        ByteBuffer body = getBody();
+        if (body != null)
+        {
+            str.append("\n  body=");
+            str.append(str(body, 64));
+        }
 
         return str.toString();
     }

@@ -524,7 +524,7 @@ public class QpidBench
         StringBuilder str = new StringBuilder();
         for (int i = 0; i < opts.size; i++)
         {
-            str.append((char) i);
+            str.append((char) (i % 128));
         }
 
         String body = str.toString();
@@ -782,10 +782,8 @@ public class QpidBench
                 dp.setTimestamp(System.currentTimeMillis());
             }
 
-            ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
-            ssn.header(dp, mp);
-            ssn.data(body.slice());
-            ssn.endData();
+            ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(dp, mp), body.slice());
             count++;
         }
 
@@ -827,10 +825,9 @@ public class QpidBench
                      {
                          ssn.messageTransfer("amq.direct",
                                              MessageAcceptMode.NONE,
-                                             MessageAcquireMode.PRE_ACQUIRED);
-                         ssn.header(dp, mp);
-                         ssn.data(echo);
-                         ssn.endData();
+                                             MessageAcquireMode.PRE_ACQUIRED,
+                                             new Header(dp, mp),
+                                             echo);
                      }
 
                      if (sample)

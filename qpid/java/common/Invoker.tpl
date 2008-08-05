@@ -1,5 +1,6 @@
 package org.apache.qpid.transport;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,9 +33,9 @@ for c in composites:
     jclass = ""
 
   out("""
-     public final $jresult $(dromedary(name))($(", ".join(params))) {
-         $(jreturn)invoke(new $name($(", ".join(args)))$jclass);
-     }
+    public final $jresult $(dromedary(name))($(", ".join(params))) {
+        $(jreturn)invoke(new $name($(", ".join(args)))$jclass);
+    }
 """)
 }
 

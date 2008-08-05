@@ -4,6 +4,7 @@ import org.apache.qpid.nclient.Client;
 import org.apache.qpid.nclient.Connection;
 import org.apache.qpid.nclient.Session;
 import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 
@@ -34,16 +35,13 @@ public class FannoutProducer
 
         for (int i=0; i<10; i++)
         {
-            session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
-            session.header(deliveryProps);
-            session.data("Message " + i);
-            session.endData();
+            session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED,
+                                    new Header(deliveryProps), "Message " + i);
         }
 
-        session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
-        session.header(deliveryProps);
-        session.data("That's all, folks!");
-        session.endData();
+        session.messageTransfer("amq.fanout", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(deliveryProps),
+                                "That's all, folks!");
 
         // confirm completion
         session.sync();

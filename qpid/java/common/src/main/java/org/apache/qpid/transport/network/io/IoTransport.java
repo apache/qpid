@@ -33,7 +33,6 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.OutputHandler;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -47,6 +46,14 @@ import org.apache.qpid.transport.util.Logger;
  */
 public final class IoTransport
 {
+
+    static
+    {
+        org.apache.mina.common.ByteBuffer.setAllocator
+            (new org.apache.mina.common.SimpleByteBufferAllocator());
+        org.apache.mina.common.ByteBuffer.setUseDirectBuffers
+            (Boolean.getBoolean("amqj.enableDirectBuffers"));
+    }
 
     private static final Logger log = Logger.get(IoTransport.class);
 
@@ -104,8 +111,7 @@ public final class IoTransport
 
         sender = new IoSender(this, 2*writeBufferSize, timeout);
         Connection conn = new Connection
-            (new Disassembler(new OutputHandler(sender), 64*1024 - 1),
-             delegate);
+            (new Disassembler(sender, 64*1024 - 1), delegate);
         receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)),
                                   2*readBufferSize, timeout);
 

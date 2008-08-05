@@ -53,11 +53,6 @@ public class Channel extends Invoker
     // session may be null
     private Session session;
 
-    private Lock commandLock = new ReentrantLock();
-    private boolean first = true;
-    private ByteBuffer data = null;
-    private boolean batch = false;
-
     public Channel(Connection connection, int channel, SessionDelegate delegate)
     {
         this.connection = connection;
@@ -105,16 +100,6 @@ public class Channel extends Invoker
         method.delegate(session, sessionDelegate);
     }
 
-    public void header(Void v, Header header)
-    {
-        header.delegate(session, sessionDelegate);
-    }
-
-    public void data(Void v, Data data)
-    {
-        data.delegate(session, sessionDelegate);
-    }
-
     public void error(Void v, ProtocolError error)
     {
         throw new RuntimeException(error.getMessage());
@@ -157,62 +142,12 @@ public class Channel extends Invoker
 
     public void method(Method m)
     {
-        if (m.getEncodedTrack() == Frame.L4)
-        {
-            commandLock.lock();
-        }
-
         emit(m);
 
-        if (!m.isBatch() && !m.hasPayload())
+        if (!m.isBatch())
         {
             connection.flush();
         }
-
-        batch = m.isBatch();
-
-        if (m.getEncodedTrack() == Frame.L4 && !m.hasPayload())
-        {
-            commandLock.unlock();
-        }
-    }
-
-    public void header(Header header)
-    {
-        emit(header);
-    }
-
-    public void data(ByteBuffer buf)
-    {
-        if (data != null)
-        {
-            emit(new Data(data, first, false));
-            first = false;
-        }
-
-        data = buf;
-    }
-
-    public void data(String str)
-    {
-        data(str.getBytes());
-    }
-
-    public void data(byte[] bytes)
-    {
-        data(ByteBuffer.wrap(bytes));
-    }
-
-    public void end()
-    {
-        emit(new Data(data, first, true));
-        first = true;
-        data = null;
-        if (!batch)
-        {
-            connection.flush();
-        }
-        commandLock.unlock();
     }
 
     protected void invoke(Method m)
