@@ -292,11 +292,11 @@ void Broker::shutdown() {
     // call any function that is not async-signal safe.
     // Any unsafe shutdown actions should be done in the destructor.
     poller->shutdown();
-    finalize();                 // Finalize any plugins.
 }
 
 Broker::~Broker() {
     shutdown();
+    finalize();                 // Finalize any plugins.
     delete store;    
     if (config.auth) {
 #if HAVE_SASL

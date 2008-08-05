@@ -122,8 +122,8 @@ class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
     ConnectionInterceptor* getShadowConnection(const Cpg::Id&, void*);
 
     mutable sys::Monitor lock;  // Protect access to members.
+    broker::Broker* broker;
     Cpg cpg;
-    boost::intrusive_ptr<broker::Broker> broker;
     Cpg::Name name;
     Url url;
     MemberMap members;
