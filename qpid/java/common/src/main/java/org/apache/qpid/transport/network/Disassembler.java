@@ -119,12 +119,13 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     }
 
     private void fragment(byte flags, SegmentType type, ProtocolEvent event,
-                          ByteBuffer buf, boolean first, boolean last)
+                          ByteBuffer buf)
     {
         byte typeb = (byte) type.getValue();
         byte track = event.getEncodedTrack() == Frame.L4 ? (byte) 1 : (byte) 0;
 
         int remaining = buf.remaining();
+        boolean first = true;
         while (true)
         {
             int size = min(maxPayload, remaining);
@@ -136,7 +137,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
                 newflags |= FIRST_FRAME;
                 first = false;
             }
-            if (last && remaining == 0)
+            if (remaining == 0)
             {
                 newflags |= LAST_FRAME;
             }
@@ -219,11 +220,11 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
         synchronized (sendlock)
         {
-            fragment(flags, type, method, methodSeg, true, true);
+            fragment(flags, type, method, methodSeg);
             if (payload)
             {
-                fragment((byte) 0x0, SegmentType.HEADER, method, headerSeg, true, true);
-                fragment(LAST_SEG, SegmentType.BODY, method, method.getBody(), true, true);
+                fragment((byte) 0x0, SegmentType.HEADER, method, headerSeg);
+                fragment(LAST_SEG, SegmentType.BODY, method, method.getBody());
             }
         }
     }
