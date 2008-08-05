@@ -35,12 +35,13 @@ namespace qpid {
 namespace sys {
 
 class AsynchIOProtocolFactory : public ProtocolFactory {
+    const bool tcpNoDelay;
     Socket listener;
     const uint16_t listeningPort;
     std::auto_ptr<AsynchAcceptor> acceptor;
 
   public:
-    AsynchIOProtocolFactory(int16_t port, int backlog);
+    AsynchIOProtocolFactory(int16_t port, int backlog, bool nodelay);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, int16_t port,
                  ConnectionCodec::Factory*,
@@ -64,20 +65,25 @@ static class TCPIOPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog));
+            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, opts.tcpNoDelay));
             QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
             broker->registerProtocolFactory(protocol);
         }
     }
 } tcpPlugin;
 
-AsynchIOProtocolFactory::AsynchIOProtocolFactory(int16_t port, int backlog) :
-    listeningPort(listener.listen(port, backlog))
+AsynchIOProtocolFactory::AsynchIOProtocolFactory(int16_t port, int backlog, bool nodelay) :
+    tcpNoDelay(nodelay), listeningPort(listener.listen(port, backlog))
 {}
 
 void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
                                           ConnectionCodec::Factory* f, bool isClient) {
     AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
+
+    if (tcpNoDelay) {
+        s.setTcpNoDelay(tcpNoDelay);
+        QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
+    }
 
     if (isClient)
         async->setClient();

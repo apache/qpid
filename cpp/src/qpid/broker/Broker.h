@@ -88,6 +88,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         size_t replayFlushLimit;
         size_t replayHardLimit;
         uint queueLimit;
+        bool tcpNoDelay;
     };
  
   private:
