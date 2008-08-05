@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.apache.qpid.transport.Option.*;
 import static org.apache.qpid.transport.util.Functions.*;
 import static org.apache.qpid.util.Serial.*;
+import static org.apache.qpid.util.Strings.*;
 
 /**
  * Session
@@ -271,7 +272,7 @@ public class Session extends Invoker
                 }
                 needSync = !m.isSync();
                 channel.method(m);
-                if (autoSync && !m.hasPayload())
+                if (autoSync)
                 {
                     sync();
                 }
@@ -287,50 +288,6 @@ public class Session extends Invoker
         else
         {
             channel.method(m);
-        }
-    }
-
-    public void header(Header header)
-    {
-        channel.header(header);
-    }
-
-    public Header header(List<Struct> structs)
-    {
-        Header res = new Header(structs, false);
-        header(res);
-        return res;
-    }
-
-    public Header header(Struct ... structs)
-    {
-        return header(Arrays.asList(structs));
-    }
-
-    public void data(ByteBuffer buf)
-    {
-        channel.data(buf);
-    }
-
-    public void data(String str)
-    {
-        channel.data(str);
-    }
-
-    public void data(byte[] bytes)
-    {
-        channel.data(bytes);
-    }
-
-    public void endData()
-    {
-        channel.end();
-        synchronized (commands)
-        {
-            if (autoSync)
-            {
-                sync();
-            }
         }
     }
 
@@ -499,6 +456,26 @@ public class Session extends Invoker
             return String.format("Future(%s)", isDone() ? result : klass);
         }
 
+    }
+
+    public final void messageTransfer(String destination,
+                                      MessageAcceptMode acceptMode,
+                                      MessageAcquireMode acquireMode,
+                                      Header header,
+                                      byte[] body,
+                                      Option ... _options) {
+        messageTransfer(destination, acceptMode, acquireMode, header,
+                        ByteBuffer.wrap(body), _options);
+    }
+
+    public final void messageTransfer(String destination,
+                                      MessageAcceptMode acceptMode,
+                                      MessageAcquireMode acquireMode,
+                                      Header header,
+                                      String body,
+                                      Option ... _options) {
+        messageTransfer(destination, acceptMode, acquireMode, header,
+                        toUTF8(body), _options);
     }
 
     public void close()

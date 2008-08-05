@@ -154,7 +154,7 @@ public class Validator
 
     public static final void checkMap(Map<String,Object> map)
     {
-        if (map == null)
+        if (map == null || map.isEmpty())
         {
             return;
         }

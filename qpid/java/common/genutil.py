@@ -170,18 +170,15 @@ class Field:
     if self.type_node.name == "struct":
       self.read = "(%s) dec.readStruct(%s.TYPE)" % (tname, tname)
       self.write = "enc.writeStruct(%s.TYPE, check(struct).%s)" % (tname, self.name)
-      self.check = ""
       self.coder = "Struct"
     elif self.type_node.name == "domain":
       self.coder = camel(0, self.prim_type["@name"])
       self.read = "%s.get(dec.read%s())" % (tname, self.coder)
       self.write = "enc.write%s(check(struct).%s.getValue())" % (self.coder, self.name)
-      self.check = ""
     else:
       self.coder = camel(0, self.type_node["@name"])
       self.read = "dec.read%s()" % self.coder
       self.write = "enc.write%s(check(struct).%s)" % (self.coder, self.name)
-      self.check = "Validator.check%s(value);" % self.coder
     self.type = jtype(self.type_node)
     self.default = DEFAULTS.get(self.type, "null")
     self.has = camel(1, "has", self.name)
@@ -214,6 +211,9 @@ def get_parameters(type, fields):
       options = True
     else:
       params.append("%s %s" % (f.type, f.name))
+  if type["segments"]:
+    params.append("Header header")
+    params.append("ByteBuffer body")
   if options or type.name in ("control", "command"):
     params.append("Option ... _options")
   return params
@@ -226,6 +226,9 @@ def get_arguments(type, fields):
       options = True
     else:
       args.append(f.name)
+  if type["segments"]:
+    args.append("header")
+    args.append("body")
   if options or type.name in ("control", "command"):
     args.append("_options")
   return args

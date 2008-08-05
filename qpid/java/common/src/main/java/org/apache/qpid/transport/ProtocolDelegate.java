@@ -35,10 +35,6 @@ public interface ProtocolDelegate<C>
 
     void command(C context, Method command);
 
-    void header(C context, Header header);
-
-    void data(C context, Data data);
-
     void error(C context, ProtocolError error);
 
 }

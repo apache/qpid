@@ -11,8 +11,11 @@ import org.apache.qpid.QpidException;
 import org.apache.qpid.api.Message;
 import org.apache.qpid.nclient.ClosedListener;
 import org.apache.qpid.nclient.MessagePartListener;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
+import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
@@ -85,89 +88,35 @@ public class ClientSession extends org.apache.qpid.transport.Session implements 
 
     public void messageTransfer(String destination, Message msg, short acceptMode, short acquireMode) throws IOException
     {
-        // The javadoc clearly says that this method is suitable for small messages
-        // therefore reading the content in one shot.
-        ByteBuffer  data = msg.readData();
-        super.messageTransfer(destination, MessageAcceptMode.get(acceptMode),
-                              MessageAcquireMode.get(acquireMode));
-       // super.header(msg.getDeliveryProperties(),msg.getMessageProperties()  );
-        if( msg.getHeader() == null || msg.getDeliveryProperties().isDirty() || msg.getMessageProperties().isDirty() )
+        DeliveryProperties dp = msg.getDeliveryProperties();
+        MessageProperties mp = msg.getMessageProperties();
+        Header header;
+        if (msg.getHeader() == null || dp.isDirty() || mp.isDirty())
         {
-            msg.setHeader( super.header(msg.getDeliveryProperties(),msg.getMessageProperties()) );
-            msg.getDeliveryProperties().setDirty(false);
-            msg.getMessageProperties().setDirty(false);
+            header = new Header(dp, mp);
+            msg.setHeader(header);
+            dp.setDirty(false);
+            mp.setDirty(false);
         }
         else
         {
-            super.header(msg.getHeader());
+            header = msg.getHeader();
         }
-        data( data );
-        endData();
+        // The javadoc clearly says that this method is suitable for small messages
+        // therefore reading the content in one shot.
+        ByteBuffer  body = msg.readData();
+        int size = body.remaining();
+        super.messageTransfer
+            (destination, MessageAcceptMode.get(acceptMode),
+             MessageAcquireMode.get(acquireMode), header, body);
+        _currentDataSizeNotSynced += size;
+        _currentDataSizeNotFlushed += size;
     }
 
     public void sync()
     {
         super.sync();
         _currentDataSizeNotSynced = 0;
-    }
-
-    /* -------------------------
-     * Data methods
-     * ------------------------*/
-
-    public void data(ByteBuffer buf)
-    {
-        _currentDataSizeNotSynced = _currentDataSizeNotSynced + buf.remaining();
-        _currentDataSizeNotFlushed = _currentDataSizeNotFlushed + buf.remaining();
-        super.data(buf);
-    }
-
-    public void data(String str)
-    {
-        _currentDataSizeNotSynced = _currentDataSizeNotSynced + str.getBytes().length;
-        super.data(str);
-    }
-
-    public void data(byte[] bytes)
-    {
-        _currentDataSizeNotSynced = _currentDataSizeNotSynced + bytes.length;
-        super.data(bytes);
-    }
-
-    public void messageStream(String destination, Message msg, short acceptMode, short acquireMode) throws IOException
-    {
-        super.messageTransfer(destination, MessageAcceptMode.get(acceptMode),
-                              MessageAcquireMode.get(acquireMode));
-        super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
-        boolean b = true;
-        int count = 0;
-        while(b)
-        {
-            try
-            {
-                System.out.println("count : " + count++);
-                data(msg.readData());
-            }
-            catch(EOFException e)
-            {
-                b = false;
-            }
-        }
-        endData();
-    }
-
-    public void endData()
-    {
-        super.endData();
-    /*    if( MAX_NOT_SYNC_DATA_LENGH != -1 && _currentDataSizeNotSynced >= MAX_NOT_SYNC_DATA_LENGH)
-        {
-            sync();
-        }
-         if( MAX_NOT_FLUSH_DATA_LENGH != -1 && _currentDataSizeNotFlushed >= MAX_NOT_FLUSH_DATA_LENGH)
-        {
-           executionFlush();
-            _currentDataSizeNotFlushed = 0;
-        }*/
     }
 
     public RangeSet getRejectedMessages()

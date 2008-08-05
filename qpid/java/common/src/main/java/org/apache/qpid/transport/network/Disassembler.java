@@ -22,7 +22,6 @@ package org.apache.qpid.transport.network;
 
 import org.apache.qpid.transport.codec.BBEncoder;
 
-import org.apache.qpid.transport.Data;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolDelegate;
@@ -34,7 +33,8 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
+import java.nio.ByteOrder;
+import java.util.List;
 
 import static org.apache.qpid.transport.network.Frame.*;
 
@@ -46,12 +46,14 @@ import static java.lang.Math.*;
  *
  */
 
-public class Disassembler implements Sender<ProtocolEvent>,
-                                     ProtocolDelegate<Void>
+public final class Disassembler implements Sender<ProtocolEvent>,
+                                           ProtocolDelegate<Void>
 {
 
-    private final Sender<NetworkEvent> sender;
+    private final Sender<ByteBuffer> sender;
     private final int maxPayload;
+    private final ByteBuffer header;
+    private final Object sendlock = new Object();
     private final ThreadLocal<BBEncoder> encoder = new ThreadLocal()
     {
         public BBEncoder initialValue()
@@ -60,7 +62,7 @@ public class Disassembler implements Sender<ProtocolEvent>,
         }
     };
 
-    public Disassembler(Sender<NetworkEvent> sender, int maxFrame)
+    public Disassembler(Sender<ByteBuffer> sender, int maxFrame)
     {
         if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
         {
@@ -69,6 +71,8 @@ public class Disassembler implements Sender<ProtocolEvent>,
         }
         this.sender = sender;
         this.maxPayload  = maxFrame - HEADER_SIZE;
+        this.header =  ByteBuffer.allocate(HEADER_SIZE);
+        this.header.order(ByteOrder.BIG_ENDIAN);
 
     }
 
@@ -79,60 +83,80 @@ public class Disassembler implements Sender<ProtocolEvent>,
 
     public void flush()
     {
-        sender.flush();
+        synchronized (sendlock)
+        {
+            sender.flush();
+        }
     }
 
     public void close()
     {
-        sender.close();
+        synchronized (sendlock)
+        {
+            sender.close();
+        }
+    }
+
+    private final void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
+    {
+        synchronized (sendlock)
+        {
+            header.put(0, flags);
+            header.put(1, type);
+            header.putShort(2, (short) (size + HEADER_SIZE));
+            header.put(5, track);
+            header.putShort(6, (short) channel);
+
+            header.rewind();
+
+            sender.send(header);
+
+            int limit = buf.limit();
+            buf.limit(buf.position() + size);
+            sender.send(buf);
+            buf.limit(limit);
+        }
     }
 
     private void fragment(byte flags, SegmentType type, ProtocolEvent event,
                           ByteBuffer buf, boolean first, boolean last)
     {
+        byte typeb = (byte) type.getValue();
         byte track = event.getEncodedTrack() == Frame.L4 ? (byte) 1 : (byte) 0;
 
-        if(!buf.hasRemaining())
+        int remaining = buf.remaining();
+        while (true)
         {
-            //empty data
-            byte nflags = flags;
+            int size = min(maxPayload, remaining);
+            remaining -= size;
+
+            byte newflags = flags;
             if (first)
             {
-                nflags |= FIRST_FRAME;
+                newflags |= FIRST_FRAME;
                 first = false;
             }
-            nflags |= LAST_FRAME;
-            Frame frame = new Frame(nflags, type, track, event.getChannel(), buf.slice());
-            sender.send(frame);
-        }
-        else
-        {
-            while (buf.hasRemaining())
+            if (last && remaining == 0)
             {
-                ByteBuffer slice = buf.slice();
-                slice.limit(min(maxPayload, slice.remaining()));
-                buf.position(buf.position() + slice.remaining());
+                newflags |= LAST_FRAME;
+            }
 
-                byte newflags = flags;
-                if (first)
-                {
-                    newflags |= FIRST_FRAME;
-                    first = false;
-                }
-                if (last && !buf.hasRemaining())
-                {
-                    newflags |= LAST_FRAME;
-                }
+            frame(newflags, typeb, track, event.getChannel(), size, buf);
 
-                Frame frame = new Frame(newflags, type, track, event.getChannel(), slice);
-                sender.send(frame);
+            if (remaining == 0)
+            {
+                break;
             }
         }
     }
 
     public void init(Void v, ProtocolHeader header)
     {
-        sender.send(header);
+        synchronized (sendlock)
+        {
+            sender.send(header.toByteBuffer());
+            sender.flush();
+        }
     }
 
     public void control(Void v, Method method)
@@ -170,48 +194,43 @@ public class Disassembler implements Sender<ProtocolEvent>,
             }
         }
         method.write(enc);
-        ByteBuffer buf = enc.done();
+        ByteBuffer methodSeg = enc.segment();
 
         byte flags = FIRST_SEG;
 
-        if (!method.hasPayload())
+        boolean payload = method.hasPayload();
+        if (!payload)
         {
             flags |= LAST_SEG;
         }
 
-        fragment(flags, type, method, buf, true, true);
-    }
-
-    public void header(Void v, Header header)
-    {
-        ByteBuffer buf;
-        if (header.getBuf() == null)
+        ByteBuffer headerSeg = null;
+        if (payload)
         {
-            BBEncoder enc = encoder.get();
-            enc.init();
-            for (Struct st : header.getStructs())
+            final Header hdr = method.getHeader();
+            final List<Struct> structs = hdr.getStructs();
+            final int nstructs = structs.size();
+            for (int i = 0; i < nstructs; i++)
             {
-                enc.writeStruct32(st);
+                enc.writeStruct32(structs.get(i));
             }
-            buf = enc.done();
-            header.setBuf(buf);
+            headerSeg = enc.segment();
         }
-        else
-        {
-            buf = header.getBuf();
-            buf.flip();
-        }
-        fragment((byte) 0x0, SegmentType.HEADER, header, buf, true, true);
-    }
 
-    public void data(Void v, Data data)
-    {
-        fragment(LAST_SEG, SegmentType.BODY, data, data.getData(), data.isFirst(), data.isLast());
+        synchronized (sendlock)
+        {
+            fragment(flags, type, method, methodSeg, true, true);
+            if (payload)
+            {
+                fragment((byte) 0x0, SegmentType.HEADER, method, headerSeg, true, true);
+                fragment(LAST_SEG, SegmentType.BODY, method, method.getBody(), true, true);
+            }
+        }
     }
 
     public void error(Void v, ProtocolError error)
     {
-        sender.send(error);
+        throw new IllegalArgumentException("" + error);
     }
 
 }
