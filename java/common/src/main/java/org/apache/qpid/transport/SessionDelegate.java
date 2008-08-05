@@ -48,10 +48,6 @@ public abstract class SessionDelegate
         }
     }
 
-    public void header(Session ssn, Header header) { }
-
-    public void data(Session ssn, Data data) { }
-
     public void error(Session ssn, ProtocolError error) { }
 
     @Override public void executionResult(Session ssn, ExecutionResult result)

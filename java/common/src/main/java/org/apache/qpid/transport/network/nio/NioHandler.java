@@ -17,7 +17,6 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.OutputHandler;
 
 public class NioHandler implements Runnable
 {
@@ -68,8 +67,7 @@ public class NioHandler implements Runnable
 
         NioSender sender = new NioSender(_ch);
         Connection con = new Connection
-            (new Disassembler(new OutputHandler(sender), 64*1024 - 1),
-             delegate);
+            (new Disassembler(sender, 64*1024 - 1), delegate);
 
         con.setConnectionId(_count.incrementAndGet());
         _handlers.put(con.getConnectionId(),sender);

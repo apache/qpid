@@ -22,6 +22,7 @@ package org.apache.qpid.transport;
 
 import org.apache.qpid.transport.network.Frame;
 
+import java.util.Arrays;
 import java.util.List;
 import java.nio.ByteBuffer;
 
@@ -32,17 +33,18 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-public class Header implements ProtocolEvent {
+public class Header {
 
     private final List<Struct> structs;
-    private ByteBuffer _buf;
-    private boolean _noPayload;
-    private int channel;
 
-    public Header(List<Struct> structs, boolean lastframe)
+    public Header(List<Struct> structs)
     {
         this.structs = structs;
-        _noPayload= lastframe;
+    }
+
+    public Header(Struct ... structs)
+    {
+        this(Arrays.asList(structs));
     }
 
     public List<Struct> getStructs()
@@ -50,15 +52,6 @@ public class Header implements ProtocolEvent {
         return structs;
     }
 
-    public void setBuf(ByteBuffer buf)
-    {
-        _buf = buf;
-    }
-
-    public ByteBuffer getBuf()
-    {
-        return _buf;
-    }
     public <T> T get(Class<T> klass)
     {
         for (Struct st : structs)
@@ -72,36 +65,9 @@ public class Header implements ProtocolEvent {
         return null;
     }
 
-    public final int getChannel()
-    {
-        return channel;
-    }
-
-    public final void setChannel(int channel)
-    {
-        this.channel = channel;
-    }
-
-    public byte getEncodedTrack()
-    {
-        return Frame.L4;
-    }
-
-    public <C> void delegate(C context, ProtocolDelegate<C> delegate)
-    {
-        delegate.header(context, this);
-    }
-
-    public boolean hasNoPayload()
-    {
-        return _noPayload;
-    }
-
     public String toString()
     {
         StringBuffer str = new StringBuffer();
-        str.append("ch=");
-        str.append(channel);
         str.append(" Header(");
         boolean first = true;
         for (Struct s : structs)

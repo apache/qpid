@@ -44,7 +44,6 @@ import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.OutputHandler;
 
 import static org.apache.qpid.transport.util.Functions.*;
 
@@ -292,7 +291,7 @@ public class MinaHandler<E> implements IoHandler
         {
             // XXX: hardcoded max-frame
             return new Connection
-                (new Disassembler(new OutputHandler(sender), MAX_FRAME_SIZE), delegate);
+                (new Disassembler(sender, MAX_FRAME_SIZE), delegate);
         }
 
         public Receiver<java.nio.ByteBuffer> receiver(Connection conn)

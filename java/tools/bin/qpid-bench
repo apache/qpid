@@ -30,7 +30,6 @@ QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar
 export JAVA=java \
        JAVA_VM=-server \
        JAVA_MEM=-Xmx1024m \
-       JAVA_GC="-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
        QPID_CLASSPATH=$QPID_LIBS
 
 . qpid-run org.apache.qpid.tools.QpidBench "$@"

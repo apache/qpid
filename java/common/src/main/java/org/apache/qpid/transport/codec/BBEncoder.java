@@ -35,24 +35,29 @@ public final class BBEncoder extends AbstractEncoder
 {
 
     private ByteBuffer out;
+    private int segment;
 
     public BBEncoder(int capacity) {
         out = ByteBuffer.allocate(capacity);
         out.order(ByteOrder.BIG_ENDIAN);
+        segment = 0;
     }
 
     public void init()
     {
         out.clear();
+        segment = 0;
     }
 
-    public ByteBuffer done()
+    public ByteBuffer segment()
     {
-        out.flip();
-        ByteBuffer encoded = ByteBuffer.allocate(out.remaining());
-        encoded.put(out);
-        encoded.flip();
-        return encoded;
+        int pos = out.position();
+        out.position(segment);
+        ByteBuffer slice = out.slice();
+        slice.limit(pos - segment);
+        out.position(pos);
+        segment = pos;
+        return slice;
     }
 
     private void grow(int size)

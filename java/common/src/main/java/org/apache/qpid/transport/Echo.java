@@ -40,22 +40,6 @@ public class Echo extends SessionDelegate
     {
         this.xfr = xfr;
         ssn.invoke(xfr);
-    }
-
-    public void header(Session ssn, Header hdr)
-    {
-        ssn.header(hdr);
-    }
-
-    public void data(Session ssn, Data data)
-    {
-        ssn.data(data.getData());
-        if (data.isLast())
-        {
-            ssn.endData();
-        }
-
-        // XXX: should be able to get command-id from any segment
         ssn.processed(xfr);
     }
 
