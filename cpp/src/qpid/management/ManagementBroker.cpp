@@ -440,7 +440,6 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
     uint64_t objId = inBuffer.getLongLong();
     inBuffer.getShortString(methodName);
 
-    std::cout << "ManagementBroker::handleMethodRequest (" << objId << ", " << methodName << ")" << std::endl;
     EncodeHeader(outBuffer, 'm', sequence);
 
     ManagementObjectMap::iterator iter = managementObjects.find(objId);
