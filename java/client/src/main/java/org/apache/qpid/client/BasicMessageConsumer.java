@@ -730,18 +730,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         {
             if (isMessageListenerSet())
             {
-                // we do not need a lock around the test above, and the dispatch below as it is invalid
-                // for an application to alter an installed listener while the session is started
-                // synchronized (_closed)
-                {
-                    // if (!_closed.get())
-                    {
-
-                        preApplicationProcessing(jmsMessage);
-                        getMessageListener().onMessage(jmsMessage);
-                        postDeliver(jmsMessage);
-                    }
-                }
+                preApplicationProcessing(jmsMessage);
+                getMessageListener().onMessage(jmsMessage);
+                postDeliver(jmsMessage);
             }
             else
             {
@@ -802,7 +793,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 {
                     _session.acknowledgeMessage(msg.getDeliveryTag(), false);
                 }
-
+                _session.markDirty();
                 break;
 
             case Session.DUPS_OK_ACKNOWLEDGE:
