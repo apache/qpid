@@ -90,25 +90,12 @@ public class ClientSession extends org.apache.qpid.transport.Session implements 
     {
         DeliveryProperties dp = msg.getDeliveryProperties();
         MessageProperties mp = msg.getMessageProperties();
-        Header header;
-        if (msg.getHeader() == null || dp.isDirty() || mp.isDirty())
-        {
-            header = new Header(dp, mp);
-            msg.setHeader(header);
-            dp.setDirty(false);
-            mp.setDirty(false);
-        }
-        else
-        {
-            header = msg.getHeader();
-        }
-        // The javadoc clearly says that this method is suitable for small messages
-        // therefore reading the content in one shot.
         ByteBuffer  body = msg.readData();
         int size = body.remaining();
         super.messageTransfer
             (destination, MessageAcceptMode.get(acceptMode),
-             MessageAcquireMode.get(acquireMode), header, body);
+             MessageAcquireMode.get(acquireMode),
+             new Header(dp, mp), body);
         _currentDataSizeNotSynced += size;
         _currentDataSizeNotFlushed += size;
     }
