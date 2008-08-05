@@ -53,6 +53,7 @@ using namespace std;
 	   case UNBIND: return "Unbind";
 	   case DELETE: return "Delete";
 	   case PURGE: return "Purge";
+	   case UPDATE: return "Update";
 	   default: return "Unknown";
 	  }
    }
@@ -64,6 +65,9 @@ using namespace std;
       case QUEUE: return "Queue";
 	  case EXCHANGE: return "Exchnage";
 	  case ROUTINGKEY: return "RoutingKey";
+	  case BROKER: return "Broker";
+	  case LINK: return "Link";
+	  case ROUTE: return "Route";
 	  default: return "Unknown";
 	  }
    }
