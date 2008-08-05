@@ -161,7 +161,8 @@ namespace qpid {
             void consume(Consumer& c, bool exclusive = false);
             void cancel(Consumer& c);
 
-            uint32_t purge();
+            uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
+
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }

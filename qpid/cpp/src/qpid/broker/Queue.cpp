@@ -31,6 +31,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
+#include "qpid/management/ArgsQueuePurge.h"
 
 #include <iostream>
 #include <algorithm>
@@ -372,11 +373,24 @@ QueuedMessage Queue::get(){
     return msg;
 }
 
-uint32_t Queue::purge(){
+/**
+ * purge - for purging all or some messages on a queue
+ *         depending on the purge_request
+ *
+ * purge_request == 0 then purge all messages
+ *               == N then purge N messages from queue
+ * Sometimes purge_request == 1 to unblock the top of queue
+ */
+uint32_t Queue::purge(const uint32_t purge_request){
     Mutex::ScopedLock locker(messageLock);
-    int count = messages.size();
-    while(!messages.empty()) {
+    uint32_t purge_count = purge_request; // only comes into play if  >0 
+
+    uint32_t count = 0;
+    // Either purge them all or just the some (purge_count) while the queue isn't empty.
+    while((!purge_request || purge_count--) && !messages.empty()) 
+    {
         popAndDequeue();
+	count++;
     }
     return count;
 }
@@ -710,7 +724,7 @@ ManagementObject* Queue::GetManagementObject (void) const
 }
 
 Manageable::status_t Queue::ManagementMethod (uint32_t methodId,
-                                              Args&    /*args*/)
+                                              Args&    args)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
@@ -719,7 +733,8 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId,
     switch (methodId)
     {
     case management::Queue::METHOD_PURGE :
-        purge ();
+      management::ArgsQueuePurge iargs = dynamic_cast<const management::ArgsQueuePurge&>(args);
+        purge (iargs.i_request);
         status = Manageable::STATUS_OK;
         break;
     }
