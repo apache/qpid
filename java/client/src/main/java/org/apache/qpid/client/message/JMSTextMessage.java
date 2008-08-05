@@ -31,6 +31,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.util.Strings;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {
@@ -111,20 +112,17 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         try
         {
             if (text != null)
-            {                
-                _data = ByteBuffer.allocate(text.length());
-                _data.limit(text.length()) ;
-                //_data.sweep();
-                _data.setAutoExpand(true);
+            {
                 final String encoding = getContentHeaderProperties().getEncodingAsString();
-                if (encoding == null)
+                if (encoding == null || encoding.equalsIgnoreCase("UTF-8"))
                 {
-                    _data.put(text.getBytes(DEFAULT_CHARSET.name()));
+                    _data = ByteBuffer.wrap(Strings.toUTF8(text));
                 }
                 else
                 {
-                    _data.put(text.getBytes(encoding));
+                    _data = ByteBuffer.wrap(text.getBytes(encoding));
                 }
+                _data.position(_data.limit());
                 _changedData=true;
             }
             _decodedValue = text;

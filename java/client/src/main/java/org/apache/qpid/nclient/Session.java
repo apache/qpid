@@ -109,40 +109,16 @@ public interface Session
 
 
     /**
-     * <p>This transfer streams a complete message using a single method. 
-     * It uses pull-semantics instead of doing a push.</p>
-     * <p>Data is pulled from a Message object using read()
-     * and pushed using messageTransfer() and headers() followed by data() and endData().
-     * <br><b><i>This method should only be used by large messages</b></i><br>
-     * There are two convenience Message classes to do this.
-     * <ul>
-     * <li> <code>{@link org.apache.qpid.nclient.util.FileMessage}</code>
-     * <li> <code>{@link org.apache.qpid.nclient.util.StreamingMessage}</code>
-     * </ul>
-     * You can also implement a <code>Message</code> interface to wrap any
-     * data stream.
-     * </p>
+     * This command transfers a message between two peers.
      *
-     * @param destination The exchange the message is being sent to.
-     * @param msg         The Message to be sent.
-     * @param confirmMode <ul> </li>off ({@link Session#TRANSFER_CONFIRM_MODE_NOT_REQUIRED}): confirmation
-     *                    is not required. Once a message has been transferred in pre-acquire
-     *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
-     *                    transferred.
-     *                    <p/>
-     *                    <li> on  ({@link Session#TRANSFER_CONFIRM_MODE_REQUIRED}): an acquired message
-     *                    is not considered transferred until the original
-     *                    transfer is complete. A complete transfer is signaled by execution.complete.
-     *                    </ul>
-     * @param acquireMode <ul>
-     *                    <li> no-acquire  ({@link Session#TRANSFER_ACQUIRE_MODE_NO_ACQUIRE}): the message
-     *                    must be explicitly acquired.
-     *                    <li> pre-acquire ({@link Session#TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE}): the message
-     *                    is acquired when the transfer starts.
-     *                    </ul>
-     * @throws java.io.IOException If transferring a message fails due to some internal communication error, an exception is thrown.
+     * @param destination Specifies the destination to which the message is to be transferred.
+     * @param acceptMode Indicates whether message.accept, session.complete,
+     *                  or nothing at all is required to indicate successful transfer of the message.
+     * 
+     * @param acquireMode Indicates whether or not the transferred message has been acquired.
      */
-    public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException;
+    public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode,
+                                Header header, ByteBuffer body, Option ... options);
 
     /**
      * This command transfers a message between two peers.
@@ -154,46 +130,19 @@ public interface Session
      * @param acquireMode Indicates whether or not the transferred message has been acquired.
      */
     public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode,
-                                Option ... options);
+                                Header header, byte[] body, Option ... options);
 
     /**
-     * Make a set of headers to be sent together with a message
+     * This command transfers a message between two peers.
      *
-     * @param headers headers to be added
-     * @see org.apache.qpid.transport.DeliveryProperties
-     * @see org.apache.qpid.transport.MessageProperties
-     * @return The added headers.
+     * @param destination Specifies the destination to which the message is to be transferred.
+     * @param acceptMode Indicates whether message.accept, session.complete,
+     *                  or nothing at all is required to indicate successful transfer of the message.
+     * 
+     * @param acquireMode Indicates whether or not the transferred message has been acquired.
      */
-    public Header header(Struct... headers);
-
-    /**
-     * Add a byte array to the content of the message being sent.
-     *
-     * @param data Data to be added.
-     */
-    public void data(byte[] data);
-
-    /**
-     * A Add a ByteBuffer to the content of the message being sent.
-     * <p> Note that only the data between the buffer's current position and the
-     * buffer limit is added.
-     * It is therefore recommended to flip the buffer before adding it to the message,
-     *
-     * @param buf Data to be added.
-     */
-    public void data(ByteBuffer buf);
-
-    /**
-     * Add a string to the content of the message being sent.
-     *
-     * @param str String to be added.
-     */
-    public void data(String str);
-
-    /**
-     * Signals the end of data for the message.
-     */
-    public void endData();
+    public void messageTransfer(String destination, MessageAcceptMode acceptMode, MessageAcquireMode acquireMode,
+                                Header header, String body, Option ... options);
 
     //------------------------------------------------------
     //                 Messaging methods

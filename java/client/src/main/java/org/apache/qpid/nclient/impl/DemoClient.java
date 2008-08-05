@@ -9,10 +9,12 @@ import org.apache.qpid.nclient.Session;
 import org.apache.qpid.nclient.util.MessageListener;
 import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageProperties;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class DemoClient
@@ -56,17 +58,15 @@ public class DemoClient
         ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
 
         // queue
-        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
-        ssn.header(new DeliveryProperties().setRoutingKey("queue1"),
-                   new MessageProperties().setMessageId(UUID.randomUUID()));
-        ssn.data("this is the data");
-        ssn.endData();
+        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                            new Header(new DeliveryProperties().setRoutingKey("queue1"),
+                                       new MessageProperties().setMessageId(UUID.randomUUID())),
+                            ByteBuffer.wrap("this is the data".getBytes()));
 
         //reject
-        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
-        ssn.data("this should be rejected");
-        ssn.header(new DeliveryProperties().setRoutingKey("stocks"));
-        ssn.endData();
+        ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                            new Header(new DeliveryProperties().setRoutingKey("stocks")),
+                            ByteBuffer.wrap("this should be rejected".getBytes()));
         ssn.sync();
 
         // topic subs
@@ -84,11 +84,10 @@ public class DemoClient
         ssn.sync();
 
         // topic
-        ssn.messageTransfer("amq.topic", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED);
-        ssn.data("Topic message");
-        ssn.header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),
-                   new MessageProperties().setMessageId(UUID.randomUUID()));
-        ssn.endData();
+        ssn.messageTransfer("amq.topic", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                            new Header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),
+                                       new MessageProperties().setMessageId(UUID.randomUUID())),
+                            ByteBuffer.wrap("Topic message".getBytes()));
     }
 
 }

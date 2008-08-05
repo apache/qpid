@@ -45,10 +45,6 @@ class ToyBroker extends SessionDelegate
 {
 
     private ToyExchange exchange;
-    private MessageTransfer xfr = null;
-    private DeliveryProperties props = null;
-    private Header header = null;
-    private List<Data> body = null;
     private Map<String,Consumer> consumers = new ConcurrentHashMap<String,Consumer>();
 
     public ToyBroker(ToyExchange exchange)
@@ -103,22 +99,10 @@ class ToyBroker extends SessionDelegate
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
-        this.xfr = xfr;
-        body = new ArrayList<Data>();
-        System.out.println("received transfer " + xfr.getDestination());
-    }
-
-    @Override public void header(Session ssn, Header header)
-    {
-        if (xfr == null || body == null)
-        {
-            ssn.connectionClose(ConnectionCloseCode.FRAMING_ERROR,
-                                "no method segment");
-            ssn.close();
-            return;
-        }
-
-        props = header.get(DeliveryProperties.class);
+        String dest = xfr.getDestination();
+        System.out.println("received transfer " + dest);
+        Header header = xfr.getHeader();
+        DeliveryProperties props = header.get(DeliveryProperties.class);
         if (props != null)
         {
             System.out.println("received headers routing_key " + props.getRoutingKey());
@@ -130,67 +114,31 @@ class ToyBroker extends SessionDelegate
             System.out.println(mp.getApplicationHeaders());
         }
 
-        this.header = header;
-    }
-
-    @Override public void data(Session ssn, Data data)
-    {
-        if (xfr == null || body == null)
+        if (exchange.route(dest,props.getRoutingKey(),xfr))
         {
-            ssn.connectionClose(ConnectionCloseCode.FRAMING_ERROR, "no method segment");
-            ssn.close();
-            return;
-        }
-
-        body.add(data);
-
-        if (data.isLast())
-        {
-            String dest = xfr.getDestination();
-            Message m = new Message(header, body);
-
-            if (exchange.route(dest,props.getRoutingKey(),m))
-            {
-                System.out.println("queued " + m);
-                dispatchMessages(ssn);
-            }
-            else
-            {
-
-                reject(ssn);
-            }
-            ssn.processed(xfr);
-            xfr = null;
-            body = null;
-        }
-    }
-
-    private void reject(Session ssn)
-    {
-        if (props != null && props.getDiscardUnroutable())
-        {
-            return;
+            System.out.println("queued " + xfr);
+            dispatchMessages(ssn);
         }
         else
         {
-            RangeSet ranges = new RangeSet();
-            ranges.add(xfr.getId());
-            ssn.messageReject(ranges, MessageRejectCode.UNROUTABLE,
-                              "no such destination");
+
+            if (props == null || !props.getDiscardUnroutable())
+            {
+                RangeSet ranges = new RangeSet();
+                ranges.add(xfr.getId());
+                ssn.messageReject(ranges, MessageRejectCode.UNROUTABLE,
+                                  "no such destination");
+            }
         }
+        ssn.processed(xfr);
     }
 
-    private void transferMessageToPeer(Session ssn,String dest, Message m)
+    private void transferMessageToPeer(Session ssn,String dest, MessageTransfer m)
     {
         System.out.println("\n==================> Transfering message to: " +dest + "\n");
-        ssn.messageTransfer(dest, MessageAcceptMode.EXPLICIT,
-                            MessageAcquireMode.PRE_ACQUIRED);
-        ssn.header(m.header);
-        for (Data d : m.body)
-        {
-            ssn.data(d.getData());
-        }
-        ssn.endData();
+        ssn.messageTransfer(m.getDestination(), MessageAcceptMode.EXPLICIT,
+                            MessageAcquireMode.PRE_ACQUIRED,
+                            m.getHeader(), m.getBody());
     }
 
     private void dispatchMessages(Session ssn)
@@ -204,51 +152,14 @@ class ToyBroker extends SessionDelegate
     private void checkAndSendMessagesToConsumer(Session ssn,String dest)
     {
         Consumer c = consumers.get(dest);
-        LinkedBlockingQueue<Message> queue = exchange.getQueue(c._queueName);
-        Message m = queue.poll();
+        LinkedBlockingQueue<MessageTransfer> queue = exchange.getQueue(c._queueName);
+        MessageTransfer m = queue.poll();
         while (m != null && c._credit>0)
         {
             transferMessageToPeer(ssn,dest,m);
             c._credit--;
             m = queue.poll();
         }
-    }
-
-    class Message
-    {
-        private final Header header;
-        private final List<Data> body;
-
-        public Message(Header header, List<Data> body)
-        {
-            this.header = header;
-            this.body = body;
-        }
-
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            if (header != null)
-            {
-                boolean first = true;
-                for (Struct st : header.getStructs())
-                {
-                    if (first) { first = false; }
-                    else { sb.append(" "); }
-                    sb.append(st);
-                }
-            }
-
-            for (Data d : body)
-            {
-                sb.append(" | ");
-                sb.append(d);
-            }
-
-            return sb.toString();
-        }
-
     }
 
     // ugly, but who cares :)
