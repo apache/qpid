@@ -1,0 +1,13 @@
+#!/bin/sh
+# Stop brokers on ports listed in cluster.ports
+
+PORTS=`cat cluster.ports`
+for PORT in $PORTS ; do
+    ../qpidd -qp $PORT || ERROR="$ERROR $PORT"
+done
+rm -f cluster.ports
+
+if [ -n "$ERROR" ]; then
+    echo "Errors stopping brokers on ports: $ERROR"
+    exit 1
+fi
