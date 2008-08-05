@@ -302,7 +302,11 @@ void AsynchIO::readable(DispatchHandle& h) {
                     // we can carry on watching for reads
                     break;
                 } else {
-                    QPID_POSIX_CHECK(rc);
+                    // Report error then just treat as a socket disconnect
+                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(rc) << "(" << rc << ")" );
+                    eofCallback(*this);
+                    h.unwatchRead();
+                    break;
                 }
             }
         } else {
