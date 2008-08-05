@@ -25,26 +25,31 @@
 #include "qpid/Options.h"
 #include "qpid/log/Options.h"
 #include "qpid/Url.h"
-#include "qpid/sys/Socket.h"
 
 #include <iostream>
 #include <exception>
 
 namespace qpid {
+
+namespace sys {
+class Socket;
+}
+
 namespace client {
 
 /**
  * Settings for a Connection.
  */
-struct ConnectionSettings : public sys::Socket::Configuration {
+struct ConnectionSettings {
 
     ConnectionSettings();
     virtual ~ConnectionSettings();
 
     /**
-     * Applies any tcp specific options to the sockets file descriptor
+     * Allows socket to be configured; default only sets tcp-nodelay
+     * based on the flag set. Can be overridden.
      */
-    virtual void configurePosixTcpSocket(int fd) const;
+    virtual void configureSocket(qpid::sys::Socket&) const;
 
     /**
      * The host (or ip address) to connect to (defaults to 'localhost').

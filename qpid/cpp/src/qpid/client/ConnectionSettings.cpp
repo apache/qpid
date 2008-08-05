@@ -21,10 +21,8 @@
 #include "ConnectionSettings.h"
 
 #include "qpid/log/Logger.h"
-#include "qpid/sys/posix/check.h"
+#include "qpid/sys/Socket.h"
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 
 namespace qpid {
 namespace client {
@@ -45,13 +43,11 @@ ConnectionSettings::ConnectionSettings() :
 
 ConnectionSettings::~ConnectionSettings() {}
 
-void ConnectionSettings::configurePosixTcpSocket(int fd) const
+void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
 {
     if (tcpNoDelay) {
-        int flag = 1;
-        int result = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
-        QPID_POSIX_CHECK(result);
-        QPID_LOG(debug, "Set TCP_NODELAY");
+        socket.setTcpNoDelay(tcpNoDelay);
+        QPID_LOG(info, "Set TCP_NODELAY");
     }
 }
 

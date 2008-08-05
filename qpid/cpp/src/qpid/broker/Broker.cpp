@@ -89,7 +89,8 @@ Broker::Options::Options(const std::string& name) :
     realm("QPID"),
     replayFlushLimit(0),
     replayHardLimit(0),
-    queueLimit(100*1048576/*100M default limit*/)
+    queueLimit(100*1048576/*100M default limit*/),
+    tcpNoDelay(false)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -113,7 +114,8 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
-        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)");
+        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)")
+        ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections");
 }
 
 const std::string empty;
