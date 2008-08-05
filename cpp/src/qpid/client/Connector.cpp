@@ -60,7 +60,7 @@ Connector::Connector(ProtocolVersion ver,
       impl(cimpl)
 {
     QPID_LOG(debug, "Connector created for " << version);
-    socket.configure(settings);
+    settings.configureSocket(socket);
 }
 
 Connector::~Connector() {
