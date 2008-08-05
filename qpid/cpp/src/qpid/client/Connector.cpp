@@ -155,7 +155,6 @@ void Connector::Writer::handle(framing::AMQFrame& frame) {
     frames.push_back(frame);
     if (frame.getEof()) {//or if we already have a buffers worth
         lastEof = frames.size();
-        QPID_LOG(debug, "Requesting write: lastEof=" << lastEof);
         aio->notifyPendingWrite();
     }
     QPID_LOG(trace, "SENT " << identifier << ": " << frame);
@@ -163,8 +162,6 @@ void Connector::Writer::handle(framing::AMQFrame& frame) {
 
 void Connector::Writer::writeOne(const Mutex::ScopedLock& l) {
     assert(buffer);
-    QPID_LOG(trace, "Write buffer " << encode.getPosition()
-             << " bytes " << framesEncoded << " frames ");    
     framesEncoded = 0;
 
     buffer->dataStart = 0;
@@ -193,7 +190,6 @@ void Connector::Writer::write(sys::AsynchIO&) {
         frame.encode(encode);
         ++framesEncoded;
         bytesWritten += size;
-        QPID_LOG(debug, "Wrote frame: lastEof=" << lastEof << ", i=" << i);
     }
     frames.erase(frames.begin(), frames.begin()+lastEof);
     lastEof = 0;
