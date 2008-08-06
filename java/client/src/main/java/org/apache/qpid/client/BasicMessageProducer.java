@@ -48,6 +48,8 @@ import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.util.UUIDGen;
+import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +123,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private final boolean _waitUntilSent;
 
     private boolean _disableMessageId;
+
+    private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
 
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
@@ -460,7 +464,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
         else
         {
-            messageId = UUID.randomUUID();
+            messageId = _messageIdGenerator.generate();
             StringBuilder b = new StringBuilder(39);
             b.append("ID:");
             b.append(messageId);
