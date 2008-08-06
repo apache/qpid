@@ -96,6 +96,7 @@ class SemanticState : public sys::OutputTask,
         Queue::shared_ptr getQueue() { return queue; }
         bool isBlocked() const { return blocked; }        
 
+        bool hasOutput();
         bool doOutput();
     };
 
@@ -180,6 +181,7 @@ class SemanticState : public sys::OutputTask,
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);
     void handle(boost::intrusive_ptr<Message> msg);
+    bool hasOutput() { return outputTasks.hasOutput(); }
     bool doOutput() { return outputTasks.doOutput(); }
 
     //final 0-10 spec (completed and accepted are distinct):
