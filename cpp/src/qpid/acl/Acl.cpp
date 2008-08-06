@@ -64,7 +64,6 @@ using namespace std;
 	  {
       case QUEUE: return "Queue";
 	  case EXCHANGE: return "Exchnage";
-	  case ROUTINGKEY: return "RoutingKey";
 	  case BROKER: return "Broker";
 	  case LINK: return "Link";
 	  case ROUTE: return "Route";
