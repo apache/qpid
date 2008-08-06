@@ -19,11 +19,57 @@
  *
  */
 
-#include "Thread.h"
-#include "qpid/sys/Runnable.h"
+#include "qpid/sys/Thread.h"
 
-void* qpid::sys::Thread::runRunnable(void* p)
+#include "qpid/sys/Runnable.h"
+#include "check.h"
+
+#include <pthread.h>
+
+namespace qpid {
+namespace sys {
+
+namespace {
+void* runRunnable(void* p)
 {
     static_cast<Runnable*>(p)->run();
     return 0;
 }
+}
+
+struct ThreadPrivate {
+    pthread_t thread;
+    
+    ThreadPrivate(Runnable* runnable) {
+        QPID_POSIX_ASSERT_THROW_IF(::pthread_create(&thread, NULL, runRunnable, runnable));
+    }
+    
+    ThreadPrivate() : thread(::pthread_self()) {}
+};
+
+Thread::Thread() {}
+
+Thread::Thread(Runnable* runnable) : impl(new ThreadPrivate(runnable)) {}
+
+Thread::Thread(Runnable& runnable) : impl(new ThreadPrivate(&runnable)) {}
+
+void Thread::join(){
+    if (impl) {
+        QPID_POSIX_ASSERT_THROW_IF(::pthread_join(impl->thread, 0));
+    }
+}
+
+unsigned long Thread::id() {
+    if (impl)
+        return impl->thread;
+    else
+        return 0;
+}
+
+Thread Thread::current() {
+    Thread t;
+    t.impl.reset(new ThreadPrivate());
+    return t;
+}
+
+}}
