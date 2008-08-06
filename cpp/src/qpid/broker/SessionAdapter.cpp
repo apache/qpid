@@ -370,7 +370,7 @@ void SessionAdapter::QueueHandlerImpl::purge(const string& queue){
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
- 	    if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::QUEUE,queue,NULL) )
+ 	    if (!acl->authorise(getConnection().getUserId(),acl::PURGE,acl::QUEUE,queue,NULL) )
 	        throw NotAllowedException("ACL denied queue purge request");
     }
     getQueue(queue)->purge();
