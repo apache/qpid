@@ -590,6 +590,11 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
     unacked.erase(range.start, range.end);
 }
 
+bool SemanticState::ConsumerImpl::hasOutput() {
+    queue->addListener(*this);
+    return !queue->empty();
+}
+
 bool SemanticState::ConsumerImpl::doOutput()
 {
     //TODO: think through properly

@@ -43,6 +43,7 @@ namespace sys {
         void activateOutput();
         //all the following will be called on the same thread
         bool doOutput();
+        bool hasOutput();
         void addOutputTask(OutputTask* t);
         void removeOutputTask(OutputTask* t);
     };

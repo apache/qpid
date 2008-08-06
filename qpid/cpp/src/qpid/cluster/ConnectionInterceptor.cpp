@@ -82,15 +82,16 @@ void ConnectionInterceptor::deliverClosed() {
 }
 
 bool  ConnectionInterceptor::doOutput() {
-    cluster.send(AMQFrame(in_place<ClusterConnectionDoOutputBody>()), this);
+    if (connection->hasOutput()) {
+        printf("doOutput send %p\n", (void*)this);
+        cluster.send(AMQFrame(in_place<ClusterConnectionDoOutputBody>()), this);
+    } 
+
     return false;
 }
 
 void ConnectionInterceptor::deliverDoOutput() {
-    // FIXME aconway 2008-07-16: review thread safety.
-    // All connection processing happens in cluster queue, only read & write
-    // (from mutex-locked frameQueue) happens in reader/writer threads.
-    // 
+    printf("doOutput deliver %p\n", (void*)this);
     doOutputNext();
 }
 
