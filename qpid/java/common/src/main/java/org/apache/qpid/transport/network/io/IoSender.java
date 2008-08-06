@@ -61,7 +61,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
     {
         this.transport = transport;
         this.socket = transport.getSocket();
-        this.buffer = new byte[bufferSize];
+        this.buffer = new byte[pof2(bufferSize)]; // buffer size must be a power of 2
         this.timeout = timeout;
 
         try
@@ -76,6 +76,16 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
         setDaemon(true);
         setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
         start();
+    }
+
+    private static final int pof2(int n)
+    {
+        int result = 1;
+        while (result < n)
+        {
+            result *= 2;
+        }
+        return result;
     }
 
     private static final int mod(int n, int m)
@@ -106,7 +116,7 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                 {
                     long start = System.currentTimeMillis();
                     long elapsed = 0;
-                    while (head - tail >= size && elapsed < timeout)
+                    while (!closed.get() && head - tail >= size && elapsed < timeout)
                     {
                         try
                         {
@@ -117,6 +127,11 @@ final class IoSender extends Thread implements Sender<ByteBuffer>
                             // pass
                         }
                         elapsed += System.currentTimeMillis() - start;
+                    }
+
+                    if (closed.get())
+                    {
+                        throw new TransportException("sender is closed", exception);
                     }
 
                     if (head - tail >= size)
