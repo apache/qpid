@@ -32,6 +32,8 @@ import javax.jms.*;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.transport.network.io.IoTransport;
+import org.apache.qpid.util.UUIDGen;
+import org.apache.qpid.util.UUIDs;
 
 import static org.apache.qpid.tools.QpidBench.Mode.*;
 
@@ -732,6 +734,8 @@ public class QpidBench
         ssn.messageFlow("echo-queue", MessageCreditUnit.MESSAGE, 0xFFFFFFFF);
         ssn.messageFlow("echo-queue", MessageCreditUnit.BYTE, 0xFFFFFFFF);
 
+        UUIDGen gen = UUIDs.newGenerator();
+
         long count = 0;
         long lastTime = 0;
         long start = System.currentTimeMillis();
@@ -774,7 +778,7 @@ public class QpidBench
 
             if (opts.message_id)
             {
-                mp.setMessageId(UUID.randomUUID());
+                mp.setMessageId(gen.generate());
             }
 
             if (opts.timestamp)
