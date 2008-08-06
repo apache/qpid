@@ -212,6 +212,11 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer& c)
     }
 }
 
+bool Queue::empty() const {
+    Mutex::ScopedLock locker(messageLock);
+    return messages.empty();
+}
+
 bool Queue::consumeNextMessage(QueuedMessage& m, Consumer& c)
 {
     while (true) {
@@ -348,7 +353,6 @@ void Queue::consume(Consumer& c, bool requestExclusive){
         }
     }
     consumerCount++;
-
     if (mgmtObject != 0)
         mgmtObject->inc_consumerCount ();
 }

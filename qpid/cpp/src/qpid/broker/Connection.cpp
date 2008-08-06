@@ -193,6 +193,8 @@ void Connection::closedImpl(){ // Physically closed, suspend open sessions.
     }
 }
 
+bool Connection::hasOutput() { return outputTasks.hasOutput(); }
+
 bool Connection::doOutput() { return doOutputFn(); }
 
 bool Connection::doOutputImpl() {    

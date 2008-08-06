@@ -31,6 +31,12 @@ void AggregateOutput::activateOutput()
     control.activateOutput();
 }
 
+bool AggregateOutput::hasOutput() {
+    for (TaskList::const_iterator i = tasks.begin(); i != tasks.end(); ++i) 
+        if ((*i)->hasOutput()) return true;
+    return false;
+}
+
 bool AggregateOutput::doOutput()
 {
     bool result = false;
