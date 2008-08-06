@@ -21,11 +21,34 @@
  * under the License.
  *
  */
+#include <boost/shared_ptr.hpp>
 
-#ifdef USE_APR_PLATFORM
-#include "apr/Thread.h"
-#else
-#include "posix/Thread.h"
-#endif
+namespace qpid {
+namespace sys {
 
+class Runnable;
+class ThreadPrivate;
+
+class Thread
+{
+    boost::shared_ptr<ThreadPrivate> impl;
+
+  public:
+    Thread();
+    explicit Thread(qpid::sys::Runnable*);
+    explicit Thread(qpid::sys::Runnable&);
+    
+    void join();
+
+    unsigned long id();
+        
+    static Thread current();
+
+    /** ID of current thread for logging.
+     * Workaround for broken Thread::current() in APR
+     */
+    static unsigned long logId() { return current().id(); }
+};
+
+}}
 #endif  /*!_sys_Thread_h*/
