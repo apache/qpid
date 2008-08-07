@@ -36,59 +36,6 @@ import org.apache.qpid.server.exchange.Exchange;
  */
 class ExchangeBindings
 {
-    private static final FieldTable EMPTY_ARGUMENTS = new FieldTable();
-
-    static class ExchangeBinding
-    {
-        private final Exchange _exchange;
-        private final AMQShortString _routingKey;
-        private final FieldTable _arguments;
-
-        ExchangeBinding(AMQShortString routingKey, Exchange exchange)
-        {
-            this(routingKey, exchange, EMPTY_ARGUMENTS);
-        }
-
-        ExchangeBinding(AMQShortString routingKey, Exchange exchange, FieldTable arguments)
-        {
-            _routingKey = routingKey == null ? AMQShortString.EMPTY_STRING : routingKey;
-            _exchange = exchange;
-            _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
-        }
-
-        void unbind(AMQQueue queue) throws AMQException
-        {
-            _exchange.deregisterQueue(_routingKey, queue, _arguments);
-        }
-
-        public Exchange getExchange()
-        {
-            return _exchange;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingKey;
-        }
-
-        public int hashCode()
-        {
-            return (_exchange == null ? 0 : _exchange.hashCode())
-                   + (_routingKey == null ? 0 : _routingKey.hashCode());
-        }
-
-        public boolean equals(Object o)
-        {
-            if (!(o instanceof ExchangeBinding))
-            {
-                return false;
-            }
-            ExchangeBinding eb = (ExchangeBinding) o;
-            return _exchange.equals(eb._exchange)
-                   && _routingKey.equals(eb._routingKey);
-        }
-    }
-
     private final List<ExchangeBinding> _bindings = new CopyOnWriteArrayList<ExchangeBinding>();
     private final AMQQueue _queue;
 

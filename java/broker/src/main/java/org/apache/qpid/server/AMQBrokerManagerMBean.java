@@ -180,7 +180,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                                                        null);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _messageStore.createQueue(queue);
+                _messageStore.createQueue(queue, null);
             }
 
             Configuration virtualHostDefaultQueueConfiguration =

@@ -131,9 +131,10 @@ public interface MessageStore
      *
      * @param queue The queue to store.
      *
+     * @param arguments The additional arguments to the binding
      * @throws AMQException If the operation fails for any reason.
      */
-    void createQueue(AMQQueue queue) throws AMQException;
+    void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException;
 
     /**
      * Removes the specified queue from the persistent store.
@@ -255,4 +256,12 @@ public interface MessageStore
      * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
      */
     ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
+
+    /**
+     * Is this store capable of persisting the data
+     * 
+     * @return true if this store is capable of persisting data
+     */
+    boolean isPersistent();
+
 }

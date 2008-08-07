@@ -197,7 +197,7 @@ public class VirtualHostConfiguration
 
                 if (queue.isDurable())
                 {
-                    messageStore.createQueue(queue);
+                    messageStore.createQueue(queue, null);
                 }
 
                 queueRegistry.registerQueue(queue);
