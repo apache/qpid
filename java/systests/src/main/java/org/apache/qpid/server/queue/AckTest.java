@@ -34,7 +34,7 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
@@ -56,7 +56,7 @@ public class AckTest extends TestCase
 
     private MockProtocolSession _protocolSession;
 
-    private TestableMemoryMessageStore _messageStore;
+    private TestMemoryMessageStore _messageStore;
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -74,7 +74,7 @@ public class AckTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _messageStore = new TestableMemoryMessageStore();
+        _messageStore = new TestMemoryMessageStore();
         _protocolSession = new MockProtocolSession(_messageStore);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 

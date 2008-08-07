@@ -39,10 +39,9 @@ public interface MessageFactory
         throws JMSException, AMQException;
 
      AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                     Struct[] contentHeader,
-                                     AMQShortString exchange, AMQShortString routingKey,
-                                     List bodies, String replyToURL)
+                                      Struct[] contentHeader,
+                                      List bodies)
         throws JMSException, AMQException;
 
-    AbstractJMSMessage createMessage() throws JMSException;
+    AbstractJMSMessage createMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException;
 }

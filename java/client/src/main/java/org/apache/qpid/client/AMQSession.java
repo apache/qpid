@@ -68,15 +68,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.ReturnMessage;
-import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.client.state.AMQStateManager;
@@ -109,6 +101,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
+
+
     public static final class IdToConsumerMap
     {
         private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];
@@ -401,7 +395,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
      */
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
+    protected AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
 
@@ -515,7 +509,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public BytesMessage createBytesMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSBytesMessage();
+        return new JMSBytesMessage(getMessageDelegateFactory());
     }
 
     /**
@@ -629,7 +623,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         // Ensure we only try and close an open session.
         if (!_closed.getAndSet(true))
         {
-            synchronized (_connection.getFailoverMutex())
+            synchronized (getFailoverMutex())
             {
                 // We must close down all producers and consumers in an orderly fashion. This is the only method
                 // that can be called from a different thread of control from the one controlling the session.
@@ -691,7 +685,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         if (!_closed.getAndSet(true))
         {
-            synchronized (_connection.getFailoverMutex())
+            synchronized (getFailoverMutex())
             {
                 synchronized (_messageDeliveryLock)
                 {
@@ -944,7 +938,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public MapMessage createMapMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSMapMessage();
+        return new JMSMapMessage(getMessageDelegateFactory());
     }
 
     public javax.jms.Message createMessage() throws JMSException
@@ -955,7 +949,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     public ObjectMessage createObjectMessage() throws JMSException
     {
         checkNotClosed();
-        return (ObjectMessage) new JMSObjectMessage();
+        return (ObjectMessage) new JMSObjectMessage(getMessageDelegateFactory());
     }
 
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
@@ -1158,11 +1152,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
         // We need to determin here if the connection should be
 
-        synchronized (_connection.getFailoverMutex())
+        synchronized (getFailoverMutex())
         {
             checkNotClosed();
 
-            return new JMSStreamMessage();
+            return new JMSStreamMessage(getMessageDelegateFactory());
         }
     }
 
@@ -1215,12 +1209,17 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public TextMessage createTextMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized (getFailoverMutex())
         {
             checkNotClosed();
 
-            return new JMSTextMessage();
+            return new JMSTextMessage(getMessageDelegateFactory());
         }
+    }
+
+    protected Object getFailoverMutex()
+    {
+        return _connection.getFailoverMutex();
     }
 
     public TextMessage createTextMessage(String text) throws JMSException
@@ -1459,7 +1458,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    abstract void sendRecover() throws AMQException, FailoverException;
+    protected abstract void sendRecover() throws AMQException, FailoverException;
 
     public void rejectMessage(UnprocessedMessage message, boolean requeue)
     {
@@ -2181,7 +2180,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     }
 
-    abstract Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException;
+    protected abstract Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException;
 
     /**
      * Declares the named exchange and type of exchange.
@@ -2887,9 +2886,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    abstract boolean tagLE(long tag1, long tag2);
+    protected abstract boolean tagLE(long tag1, long tag2);
 
-    abstract boolean updateRollbackMark(long current, long deliveryTag);
+    protected abstract boolean updateRollbackMark(long current, long deliveryTag);
+
+    public abstract AMQMessageDelegateFactory getMessageDelegateFactory();
 
     /*public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write,
         boolean read) throws AMQException

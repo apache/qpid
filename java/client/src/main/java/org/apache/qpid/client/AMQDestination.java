@@ -65,9 +65,9 @@ public abstract class AMQDestination implements Destination, Referenceable
     private static final int IS_EXCLUSIVE_MASK = 0x2;
     private static final int IS_AUTODELETE_MASK = 0x4;
 
-    public static final Integer QUEUE_TYPE = Integer.valueOf(1);
-    public static final Integer TOPIC_TYPE = Integer.valueOf(2);
-    public static final Integer UNKNOWN_TYPE = Integer.valueOf(3);
+    public static final int QUEUE_TYPE = 1;
+    public static final int TOPIC_TYPE = 2;
+    public static final int UNKNOWN_TYPE = 3;
 
     protected AMQDestination(String url) throws URISyntaxException
     {

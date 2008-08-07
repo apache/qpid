@@ -26,20 +26,22 @@ import java.util.Enumeration;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
+import javax.jms.Session;
 
 public class NonQpidObjectMessage implements ObjectMessage {
 
-    private JMSObjectMessage _realMessage;
+    private ObjectMessage _realMessage;
     private String _contentString;
 
     /**
      * Allows us to construct a JMS message which
      * does not inherit from the Qpid message superclasses
      * and expand our unit testing of MessageConverter et al
+     * @param session
      */
-    public NonQpidObjectMessage()
+    public NonQpidObjectMessage(Session session) throws JMSException
     {
-        _realMessage = new JMSObjectMessage();
+        _realMessage = session.createObjectMessage();
     }
 
     public String getJMSMessageID() throws JMSException {

@@ -467,7 +467,7 @@ public final class JMSHeaderAdapter
         return getPropertyNames();
     }
 
-    protected static void checkPropertyName(CharSequence propertyName)
+    protected void checkPropertyName(CharSequence propertyName)
     {
         if (propertyName == null)
         {
@@ -481,7 +481,7 @@ public final class JMSHeaderAdapter
         checkIdentiferFormat(propertyName);
     }
 
-    protected static void checkIdentiferFormat(CharSequence propertyName)
+    protected void checkIdentiferFormat(CharSequence propertyName)
     {
 //        JMS requirements 3.5.1 Property Names
 //        Identifiers:

@@ -24,5 +24,7 @@ import javax.jms.JMSException;
 
 public interface Message extends javax.jms.Message
 {
+    public static final String JMS_TYPE = "x-jms-type";
+
     public void acknowledgeThis() throws JMSException;
 }
