@@ -494,15 +494,22 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public void checkNotClosed() throws JMSException
     {
-        // if the Connection has closed then we should throw any exception that has occured that we were not waiting for
-        AMQStateManager manager = _connection.getProtocolHandler().getStateManager();
-        if (isClosed() && manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED) && manager.getLastException() != null)
+        try
         {
-            JMSException jmse = new IllegalStateException("Object " + toString() + " has been closed");
-            jmse.setLinkedException(manager.getLastException());
-            throw jmse;
+            super.checkNotClosed();
         }
-        super.checkNotClosed();
+        catch (IllegalStateException ise)
+        {
+            // if the Connection has closed then we should throw any exception that has occured that we were not waiting for
+            AMQStateManager manager = _connection.getProtocolHandler().getStateManager();
+
+            if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED) && manager.getLastException() != null)
+            {
+                ise.setLinkedException(manager.getLastException());
+            }
+
+            throw ise;
+        }
     }
 
     public BytesMessage createBytesMessage() throws JMSException
