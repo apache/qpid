@@ -21,10 +21,7 @@
 package org.apache.qpid.client.message;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.Destination;
@@ -32,44 +29,435 @@ import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.commons.collections.map.ReferenceMap;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQUndefinedDestination;
-import org.apache.qpid.client.BasicMessageConsumer;
-import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.BindingURL;
 
-public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
+public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 {
-    private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
-    public static final String JMS_TYPE = "x-jms-type";
 
-    protected boolean _redelivered;
 
     protected ByteBuffer _data;
-    private boolean _readableProperties = false;
     protected boolean _readableMessage = false;
     protected boolean _changedData = true;
-    private Destination _destination;
-    private JMSHeaderAdapter _headerAdapter;
-    private static final boolean STRICT_AMQP_COMPLIANCE =
-            Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
+
 
     /**
      * This is 0_10 specific
      */
     private org.apache.qpid.api.Message _010message = null;
+    /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
+
+
+
+
+
+    private AMQMessageDelegate _delegate;
+    private boolean _redelivered;
+
+    protected AbstractJMSMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
+    {
+        _delegate = delegateFactory.createDelegate();
+        _data = data;
+        if (_data != null)
+        {
+            _data.acquire();
+        }
+
+
+        _readableMessage = (data != null);
+        _changedData = (data == null);
+
+    }
+
+    protected AbstractJMSMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
+    {
+
+        _delegate = delegate;
+
+        _data = data;
+        if (_data != null)
+        {
+            _data.acquire();
+        }
+
+        _readableMessage = data != null;
+
+    }
+
+    public String getJMSMessageID() throws JMSException
+    {
+        return _delegate.getJMSMessageID();
+    }
+
+    public void setJMSMessageID(String messageId) throws JMSException
+    {
+        _delegate.setJMSMessageID(messageId);
+    }
+
+    public void setJMSMessageID(UUID messageId) throws JMSException
+    {
+        _delegate.setJMSMessageID(messageId);
+    }
+
+
+    public long getJMSTimestamp() throws JMSException
+    {
+        return _delegate.getJMSTimestamp();
+    }
+
+    public void setJMSTimestamp(long timestamp) throws JMSException
+    {
+        _delegate.setJMSTimestamp(timestamp);
+    }
+
+    public byte[] getJMSCorrelationIDAsBytes() throws JMSException
+    {
+        return _delegate.getJMSCorrelationIDAsBytes();
+    }
+
+    public void setJMSCorrelationIDAsBytes(byte[] bytes) throws JMSException
+    {
+        _delegate.setJMSCorrelationIDAsBytes(bytes);
+    }
+
+    public void setJMSCorrelationID(String correlationId) throws JMSException
+    {
+        _delegate.setJMSCorrelationID(correlationId);
+    }
+
+    public String getJMSCorrelationID() throws JMSException
+    {
+        return _delegate.getJMSCorrelationID();
+    }
+
+    public Destination getJMSReplyTo() throws JMSException
+    {
+        return _delegate.getJMSReplyTo();
+    }
+
+    public void setJMSReplyTo(Destination destination) throws JMSException
+    {
+        _delegate.setJMSReplyTo(destination);
+    }
+
+    public Destination getJMSDestination() throws JMSException
+    {
+        return _delegate.getJMSDestination();
+    }
+
+    public void setJMSDestination(Destination destination)
+    {
+        _delegate.setJMSDestination(destination);
+    }
+
+    public int getJMSDeliveryMode() throws JMSException
+    {
+        return _delegate.getJMSDeliveryMode();
+    }
+
+    public void setJMSDeliveryMode(int i) throws JMSException
+    {
+        _delegate.setJMSDeliveryMode(i);
+    }
+
+
+    public boolean getJMSRedelivered() throws JMSException
+    {
+        return _redelivered;
+    }
+
+    public void setJMSRedelivered(boolean b) throws JMSException
+    {
+        _redelivered = b;
+    }
+
+
+    public String getJMSType() throws JMSException
+    {
+        return _delegate.getJMSType();
+    }
+
+    public void setJMSType(String string) throws JMSException
+    {
+        _delegate.setJMSType(string);
+    }
+
+    public long getJMSExpiration() throws JMSException
+    {
+        return _delegate.getJMSExpiration();
+    }
+
+    public void setJMSExpiration(long l) throws JMSException
+    {
+        _delegate.setJMSExpiration(l);
+    }
+
+    public int getJMSPriority() throws JMSException
+    {
+        return _delegate.getJMSPriority();
+    }
+
+    public void setJMSPriority(int i) throws JMSException
+    {
+        _delegate.setJMSPriority(i);
+    }
+
+
+    public boolean propertyExists(String propertyName) throws JMSException
+    {
+        return _delegate.propertyExists(propertyName);
+    }
+
+    public boolean getBooleanProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getBooleanProperty(s);
+    }
+
+    public byte getByteProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getByteProperty(s);
+    }
+
+    public short getShortProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getShortProperty(s);
+    }
+
+    public int getIntProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getIntProperty(s);
+    }
+
+    public long getLongProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getLongProperty(s);
+    }
+
+    public float getFloatProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getFloatProperty(s);
+    }
+
+    public double getDoubleProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getDoubleProperty(s);
+    }
+
+    public String getStringProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getStringProperty(s);
+    }
+
+    public Object getObjectProperty(final String s)
+            throws JMSException
+    {
+        return _delegate.getObjectProperty(s);
+    }
+
+    public Enumeration getPropertyNames()
+            throws JMSException
+    {
+        return _delegate.getPropertyNames();
+    }
+
+    public void setBooleanProperty(final String s, final boolean b)
+            throws JMSException
+    {
+        _delegate.setBooleanProperty(s, b);
+    }
+
+    public void setByteProperty(final String s, final byte b)
+            throws JMSException
+    {
+        _delegate.setByteProperty(s, b);
+    }
+
+    public void setShortProperty(final String s, final short i)
+            throws JMSException
+    {
+        _delegate.setShortProperty(s, i);
+    }
+
+    public void setIntProperty(final String s, final int i)
+            throws JMSException
+    {
+        _delegate.setIntProperty(s, i);
+    }
+
+    public void setLongProperty(final String s, final long l)
+            throws JMSException
+    {
+        _delegate.setLongProperty(s, l);
+    }
+
+    public void setFloatProperty(final String s, final float v)
+            throws JMSException
+    {
+        _delegate.setFloatProperty(s, v);
+    }
+
+    public void setDoubleProperty(final String s, final double v)
+            throws JMSException
+    {
+        _delegate.setDoubleProperty(s, v);
+    }
+
+    public void setStringProperty(final String s, final String s1)
+            throws JMSException
+    {
+        _delegate.setStringProperty(s, s1);
+    }
+
+    public void setObjectProperty(final String s, final Object o)
+            throws JMSException
+    {
+        _delegate.setObjectProperty(s, o);
+    }
+
+
+
+    public void clearProperties() throws JMSException
+    {
+        _delegate.clearProperties();
+    }
+
+    public void clearBody() throws JMSException
+    {
+        clearBodyImpl();
+        _readableMessage = false;
+
+    }
+
+
+    public void acknowledgeThis() throws JMSException
+    {
+        _delegate.acknowledgeThis();
+    }
+
+    public void acknowledge() throws JMSException
+    {
+        _delegate.acknowledge();
+    }
+
+    /**
+     * This forces concrete classes to implement clearBody()
+     *
+     * @throws JMSException
+     */
+    public abstract void clearBodyImpl() throws JMSException;
+
+    /**
+     * Get a String representation of the body of the message. Used in the toString() method which outputs this before
+     * message properties.
+     */
+    public abstract String toBodyString() throws JMSException;
+
+    protected abstract String getMimeType();
+
+
+
+    public String toString()
+    {
+        try
+        {
+            StringBuffer buf = new StringBuffer("Body:\n");
+            buf.append(toBodyString());
+            buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
+            buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
+            buf.append("\nJMS expiration: ").append(getJMSExpiration());
+            buf.append("\nJMS priority: ").append(getJMSPriority());
+            buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
+            //buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
+            buf.append("\nJMS Redelivered: ").append(_redelivered);
+            buf.append("\nJMS Destination: ").append(getJMSDestination());
+            buf.append("\nJMS Type: ").append(getJMSType());
+            buf.append("\nJMS MessageID: ").append(getJMSMessageID());
+            buf.append("\nAMQ message number: ").append(getDeliveryTag());
+
+            buf.append("\nProperties:");
+            final Enumeration propertyNames = getPropertyNames();
+            if (!propertyNames.hasMoreElements())
+            {
+                buf.append("<NONE>");
+            }
+            else
+            {
+                buf.append('\n');
+                while(propertyNames.hasMoreElements())
+                {
+                    String propertyName = (String) propertyNames.nextElement();
+                    buf.append(propertyName).append(":\t").append(getObjectProperty(propertyName));
+                }
+
+            }
+
+            return buf.toString();
+        }
+        catch (JMSException e)
+        {
+            return e.toString();
+        }
+    }
+
+
+    public AMQMessageDelegate getDelegate()
+    {
+        return _delegate;
+    }
+
+    public ByteBuffer getData()
+    {
+        // make sure we rewind the data just in case any method has moved the
+        // position beyond the start
+        if (_data != null)
+        {
+            reset();
+        }
+
+        return _data;
+    }
+
+    protected void checkReadable() throws MessageNotReadableException
+    {
+        if (!_readableMessage)
+        {
+            throw new MessageNotReadableException("You need to call reset() to make the message readable");
+        }
+    }
+
+    protected void checkWritable() throws MessageNotWriteableException
+    {
+        if (_readableMessage)
+        {
+            throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
+        }
+    }
+
+    public void reset()
+    {
+        if (!_changedData)
+        {
+            _data.rewind();
+        }
+        else
+        {
+            _data.flip();
+            dataChanged();
+            _changedData = false;
+        }
+    }
 
     public void set010Message(org.apache.qpid.api.Message m )
     {
@@ -109,627 +497,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     }
 
 
-    protected AbstractJMSMessage(ByteBuffer data)
-    {
-        super(new BasicContentHeaderProperties());
-        _data = data;
-        if (_data != null)
-        {
-            _data.acquire();
-        }
 
-        _readableProperties = false;
-        _readableMessage = (data != null);
-        _changedData = (data == null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
 
-    }
-
-    protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-        AMQShortString routingKey, ByteBuffer data) throws AMQException
-    {
-        this(contentHeader, deliveryTag);
-
-        Integer type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
-
-        AMQDestination dest;
-
-        if (AMQDestination.QUEUE_TYPE.equals(type))
-        {
-            dest = new AMQQueue(exchange, routingKey, routingKey);
-        }
-        else if (AMQDestination.TOPIC_TYPE.equals(type))
-        {
-            dest = new AMQTopic(exchange, routingKey, null);
-        }
-        else
-        {
-            dest = new AMQUndefinedDestination(exchange, routingKey, null);
-        }
-        // Destination dest = AMQDestination.createDestination(url);
-        setJMSDestination(dest);
-
-        _data = data;
-        if (_data != null)
-        {
-            _data.acquire();
-        }
-
-        _readableMessage = data != null;
-
-    }
-
-    protected AbstractJMSMessage(BasicContentHeaderProperties contentHeader, long deliveryTag)
-    {
-        super(contentHeader, deliveryTag);
-        _readableProperties = (_contentHeaderProperties != null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
-    }
-
-    public String getJMSMessageID() throws JMSException
-    {
-        return getContentHeaderProperties().getMessageIdAsString();
-    }
-
-    public void setJMSMessageID(String messageId) throws JMSException
-    {
-        getContentHeaderProperties().setMessageId(messageId);
-    }
-
-    public long getJMSTimestamp() throws JMSException
-    {
-        return getContentHeaderProperties().getTimestamp();
-    }
-
-    public void setJMSTimestamp(long timestamp) throws JMSException
-    {
-        getContentHeaderProperties().setTimestamp(timestamp);
-    }
-
-    public byte[] getJMSCorrelationIDAsBytes() throws JMSException
-    {
-        return getContentHeaderProperties().getCorrelationIdAsString().getBytes();
-    }
-
-    public void setJMSCorrelationIDAsBytes(byte[] bytes) throws JMSException
-    {
-        getContentHeaderProperties().setCorrelationId(new String(bytes));
-    }
-
-    public void setJMSCorrelationID(String correlationId) throws JMSException
-    {
-        getContentHeaderProperties().setCorrelationId(correlationId);
-    }
-
-    public String getJMSCorrelationID() throws JMSException
-    {
-        return getContentHeaderProperties().getCorrelationIdAsString();
-    }
-
-    public Destination getJMSReplyTo() throws JMSException
-    {
-        String replyToEncoding = getContentHeaderProperties().getReplyToAsString();
-        if (replyToEncoding == null)
-        {
-            return null;
-        }
-        else
-        {
-            Destination dest = (Destination) _destinationCache.get(replyToEncoding);
-            if (dest == null)
-            {
-                try
-                {
-                    BindingURL binding = new AMQBindingURL(replyToEncoding);
-                    dest = AMQDestination.createDestination(binding);
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new JMSAMQException("Illegal value in JMS_ReplyTo property: " + replyToEncoding, e);
-                }
-
-                _destinationCache.put(replyToEncoding, dest);
-            }
-
-            return dest;
-        }
-    }
-
-    public void setJMSReplyTo(Destination destination) throws JMSException
-    {
-        if (destination == null)
-        {
-            throw new IllegalArgumentException("Null destination not allowed");
-        }
-
-        if (!(destination instanceof AMQDestination))
-        {
-            throw new IllegalArgumentException(
-                "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
-        }
-
-        final AMQDestination amqd = (AMQDestination) destination;
-
-        final AMQShortString encodedDestination = amqd.getEncodedName();
-        _destinationCache.put(encodedDestination, destination);
-        getContentHeaderProperties().setReplyTo(encodedDestination);
-    }
-
-    public Destination getJMSDestination() throws JMSException
-    {
-        return _destination;
-    }
-
-    public void setJMSDestination(Destination destination)
-    {
-        _destination = destination;
-    }
-
-    public int getJMSDeliveryMode() throws JMSException
-    {
-        return getContentHeaderProperties().getDeliveryMode();
-    }
-
-    public void setJMSDeliveryMode(int i) throws JMSException
-    {
-        getContentHeaderProperties().setDeliveryMode((byte) i);
-    }
-
-    public BasicContentHeaderProperties getContentHeaderProperties()
-    {
-        return (BasicContentHeaderProperties) _contentHeaderProperties;
-    }
-
-    public boolean getJMSRedelivered() throws JMSException
-    {
-        return _redelivered;
-    }
-
-    public void setJMSRedelivered(boolean b) throws JMSException
-    {
-        _redelivered = b;
-    }
-
-    public String getJMSType() throws JMSException
-    {
-        return getContentHeaderProperties().getTypeAsString();
-    }
-
-    public void setJMSType(String string) throws JMSException
-    {
-        getContentHeaderProperties().setType(string);
-    }
-
-    public long getJMSExpiration() throws JMSException
-    {
-        return getContentHeaderProperties().getExpiration();
-    }
-
-    public void setJMSExpiration(long l) throws JMSException
-    {
-        getContentHeaderProperties().setExpiration(l);
-    }
-
-    public int getJMSPriority() throws JMSException
-    {
-        return getContentHeaderProperties().getPriority();
-    }
-
-    public void setJMSPriority(int i) throws JMSException
-    {
-        getContentHeaderProperties().setPriority((byte) i);
-    }
-
-    public void clearProperties() throws JMSException
-    {
-        getJmsHeaders().clear();
-
-        _readableProperties = false;
-    }
-
-    public void clearBody() throws JMSException
-    {
-        clearBodyImpl();
-        _readableMessage = false;
-    }
-
-    public boolean propertyExists(AMQShortString propertyName) throws JMSException
-    {
-        return getJmsHeaders().propertyExists(propertyName);
-    }
-
-    public boolean propertyExists(String propertyName) throws JMSException
-    {
-        return getJmsHeaders().propertyExists(propertyName);
-    }
-
-    public boolean getBooleanProperty(AMQShortString propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getBoolean(propertyName);
-    }
-
-    public boolean getBooleanProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getBoolean(propertyName);
-    }
-
-    public byte getByteProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getByte(propertyName);
-    }
-
-    public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getBytes(propertyName);
-    }
-
-    public short getShortProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getShort(propertyName);
-    }
-
-    public int getIntProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getInteger(propertyName);
-    }
-
-    public long getLongProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getLong(propertyName);
-    }
-
-    public float getFloatProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getFloat(propertyName);
-    }
-
-    public double getDoubleProperty(String propertyName) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        return getJmsHeaders().getDouble(propertyName);
-    }
-
-    public String getStringProperty(String propertyName) throws JMSException
-    {
-        //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
-        if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
-        {
-            return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
-        }
-        else
-        {
-            if (STRICT_AMQP_COMPLIANCE)
-            {
-                throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-            }
-
-            return getJmsHeaders().getString(propertyName);
-        }
-    }
-
-    public Object getObjectProperty(String propertyName) throws JMSException
-    {
-        return getJmsHeaders().getObject(propertyName);
-    }
-
-    public Enumeration getPropertyNames() throws JMSException
-    {
-        return getJmsHeaders().getPropertyNames();
-    }
-
-    public void setBooleanProperty(AMQShortString propertyName, boolean b) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setBoolean(propertyName, b);
-    }
-
-    public void setBooleanProperty(String propertyName, boolean b) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setBoolean(propertyName, b);
-    }
-
-    public void setByteProperty(String propertyName, byte b) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setByte(propertyName, new Byte(b));
-    }
-
-    public void setBytesProperty(AMQShortString propertyName, byte[] bytes) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setBytes(propertyName, bytes);
-    }
-
-    public void setShortProperty(String propertyName, short i) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setShort(propertyName, new Short(i));
-    }
-
-    public void setIntProperty(String propertyName, int i) throws JMSException
-    {
-        checkWritableProperties();
-        JMSHeaderAdapter.checkPropertyName(propertyName);
-        super.setIntProperty(new AMQShortString(propertyName), new Integer(i));
-    }
-
-    public void setLongProperty(String propertyName, long l) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setLong(propertyName, new Long(l));
-    }
-
-    public void setFloatProperty(String propertyName, float f) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setFloat(propertyName, new Float(f));
-    }
-
-    public void setDoubleProperty(String propertyName, double v) throws JMSException
-    {
-        if (STRICT_AMQP_COMPLIANCE)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
-        checkWritableProperties();
-        getJmsHeaders().setDouble(propertyName, new Double(v));
-    }
-
-    public void setStringProperty(String propertyName, String value) throws JMSException
-    {
-        checkWritableProperties();
-        JMSHeaderAdapter.checkPropertyName(propertyName);
-        super.setLongStringProperty(new AMQShortString(propertyName), value);
-    }
-
-    public void setObjectProperty(String propertyName, Object object) throws JMSException
-    {
-        checkWritableProperties();
-        getJmsHeaders().setObject(propertyName, object);
-    }
-
-    protected void removeProperty(AMQShortString propertyName) throws JMSException
-    {
-        getJmsHeaders().remove(propertyName);
-    }
-
-    protected void removeProperty(String propertyName) throws JMSException
-    {
-        getJmsHeaders().remove(propertyName);
-    }
-
-    public void acknowledgeThis() throws JMSException
-    {
-        // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
-        // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
-        if (_session != null)
-        {
-            if (_session.getAMQConnection().isClosed())
-            {
-                throw new javax.jms.IllegalStateException("Connection is already closed");
-            }
-
-            // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
-            // received on the session
-            _session.acknowledgeMessage(_deliveryTag, true);
-        }
-    }
-
-    public void acknowledge() throws JMSException
-    {
-        if (_session != null)
-        {
-            _session.acknowledge();
-        }
-    }
-
-    /**
-     * This forces concrete classes to implement clearBody()
-     *
-     * @throws JMSException
-     */
-    public abstract void clearBodyImpl() throws JMSException;
-
-    /**
-     * Get a String representation of the body of the message. Used in the toString() method which outputs this before
-     * message properties.
-     */
-    public abstract String toBodyString() throws JMSException;
-
-    public String getMimeType()
-    {
-        return getMimeTypeAsShortString().toString();
-    }
-
-    public abstract AMQShortString getMimeTypeAsShortString();
-
-    public String toString()
-    {
-        try
-        {
-            StringBuffer buf = new StringBuffer("Body:\n");
-            buf.append(toBodyString());
-            buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
-            buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
-            buf.append("\nJMS expiration: ").append(getJMSExpiration());
-            buf.append("\nJMS priority: ").append(getJMSPriority());
-            buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
-            //buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
-            buf.append("\nJMS Redelivered: ").append(_redelivered);
-            buf.append("\nJMS Destination: ").append(getJMSDestination());
-            buf.append("\nJMS Type: ").append(getJMSType());
-            buf.append("\nJMS MessageID: ").append(getJMSMessageID());
-            buf.append("\nAMQ message number: ").append(_deliveryTag);
-
-            buf.append("\nProperties:");
-            if (getJmsHeaders().isEmpty())
-            {
-                buf.append("<NONE>");
-            }
-            else
-            {
-                buf.append('\n').append(getJmsHeaders().getHeaders());
-            }
-
-            return buf.toString();
-        }
-        catch (JMSException e)
-        {
-            return e.toString();
-        }
-    }
-
-    public void setUnderlyingMessagePropertiesMap(FieldTable messageProperties)
-    {
-        getContentHeaderProperties().setHeaders(messageProperties);
-    }
-
-    public JMSHeaderAdapter getJmsHeaders()
-    {
-        return _headerAdapter;
-    }
-
-    public ByteBuffer getData()
-    {
-        // make sure we rewind the data just in case any method has moved the
-        // position beyond the start
-        if (_data != null)
-        {
-            reset();
-        }
-
-        return _data;
-    }
-
-    protected void checkReadable() throws MessageNotReadableException
-    {
-        if (!_readableMessage)
-        {
-            throw new MessageNotReadableException("You need to call reset() to make the message readable");
-        }
-    }
-
-    protected void checkWritable() throws MessageNotWriteableException
-    {
-        if (_readableMessage)
-        {
-            throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
-        }
-    }
-
-    protected void checkWritableProperties() throws MessageNotWriteableException
-    {
-        if (_readableProperties)
-        {
-            throw new MessageNotWriteableException("You need to call clearProperties() to make the message writable");
-        }
-        _contentHeaderProperties.updated();
-    }
-
-    public boolean isReadable()
-    {
-        return _readableMessage;
-    }
-
-    public boolean isWritable()
-    {
-        return !_readableMessage;
-    }
-
-    public void reset()
-    {
-        if (!_changedData)
-        {
-            _data.rewind();
-        }
-        else
-        {
-            _data.flip();
-            dataChanged();
-            _changedData = false;
-        }
-    }
 
     public int getContentLength()
     {
@@ -746,6 +515,68 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public void receivedFromServer()
     {
         _changedData = false;
+    }
+
+    /**
+     * The session is set when CLIENT_ACKNOWLEDGE mode is used so that the CHANNEL ACK can be sent when the user calls
+     * acknowledge()
+     *
+     * @param s the AMQ session that delivered this message
+     */
+    public void setAMQSession(AMQSession s)
+    {
+        _delegate.setAMQSession(s);
+    }
+
+    public AMQSession getAMQSession()
+    {
+        return _delegate.getAMQSession();
+    }
+
+    /**
+     * Get the AMQ message number assigned to this message
+     *
+     * @return the message number
+     */
+    public long getDeliveryTag()
+    {
+        return _delegate.getDeliveryTag();
+    }
+
+    /** Invoked prior to sending the message. Allows the message to be modified if necessary before sending. */
+    public void prepareForSending() throws JMSException
+    {
+    }
+
+
+    public void setContentType(String contentType)
+    {
+        _delegate.setContentType(contentType);
+    }
+
+    public String getContentType()
+    {
+        return _delegate.getContentType();
+    }
+
+    public void setEncoding(String encoding)
+    {
+        _delegate.setEncoding(encoding);
+    }
+
+    public String getEncoding()
+    {
+        return _delegate.getEncoding();
+    }
+
+    public String getReplyToString()
+    {
+        return _delegate.getReplyToString();
+    }
+
+    protected void removeProperty(final String propertyName) throws JMSException
+    {
+        _delegate.removeProperty(propertyName);
     }
 
 }

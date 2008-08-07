@@ -29,6 +29,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -470,7 +471,7 @@ public final class AMQSession_0_8 extends AMQSession
 
     }
 
-    Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException
+    protected Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException
     {
         AMQFrame queueDeclare =
             getMethodRegistry().createQueueDeclareBody(getTicket(),
@@ -486,14 +487,19 @@ public final class AMQSession_0_8 extends AMQSession
         return okHandler._messageCount;
     }
 
-    final boolean tagLE(long tag1, long tag2)
+    protected final boolean tagLE(long tag1, long tag2)
     {
         return tag1 <= tag2;
     }
 
-    final boolean updateRollbackMark(long currentMark, long deliveryTag)
+    protected final boolean updateRollbackMark(long currentMark, long deliveryTag)
     {
         return false;
+    }
+
+    public AMQMessageDelegateFactory getMessageDelegateFactory()
+    {
+        return AMQMessageDelegateFactory.FACTORY_0_8;
     }
 
 }

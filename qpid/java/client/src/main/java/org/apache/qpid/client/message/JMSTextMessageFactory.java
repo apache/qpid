@@ -26,21 +26,17 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 
 public class JMSTextMessageFactory extends AbstractJMSMessageFactory
 {
 
-    public AbstractJMSMessage createMessage() throws JMSException
+    public AbstractJMSMessage createMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
-        return new JMSTextMessage();
+        return new JMSTextMessage(delegateFactory);
     }
 
-    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data,
-                                               AMQShortString exchange, AMQShortString routingKey, 
-                                               BasicContentHeaderProperties contentHeader) throws AMQException
+    protected AbstractJMSMessage createMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        return new JMSTextMessage(deliveryTag,  contentHeader, 
-                                  exchange, routingKey, data);
+        return new JMSTextMessage(delegate, data);
     }
 }

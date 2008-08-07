@@ -24,12 +24,10 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.jms.*;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.api.Message;
 import org.apache.qpid.transport.*;
-import org.apache.qpid.transport.Session;
 import org.apache.qpid.QpidException;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.filter.JMSSelectorFilter;
@@ -269,12 +267,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     }
 
     @Override public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(
-            UnprocessedMessage<Struct[], ByteBuffer> messageFrame) throws Exception
+            AMQMessageDelegateFactory delegateFactory, UnprocessedMessage<Struct[], ByteBuffer> messageFrame) throws Exception
     {
         return _messageFactory.createMessage(messageFrame.getDeliveryTag(), messageFrame.isRedelivered(),
-                                             messageFrame.getExchange(), messageFrame.getRoutingKey(),
-                                             messageFrame.getContentHeader(), messageFrame.getBodies(),
-                                             messageFrame.getReplyToURL());
+                messageFrame.getContentHeader(), messageFrame.getBodies()
+        );
     }
 
     // private methods

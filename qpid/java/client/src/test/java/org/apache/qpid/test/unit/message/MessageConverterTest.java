@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.TextMessage;
+import javax.jms.*;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.MessageConverter;
+import org.apache.qpid.client.*;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.AMQException;
+
+import java.util.Map;
 
 
 public class MessageConverterTest extends TestCase
@@ -47,36 +47,38 @@ public class MessageConverterTest extends TestCase
     protected JMSTextMessage testTextMessage;
 
     protected JMSMapMessage testMapMessage;
+    private AMQSession _session = new TestAMQSession();
+
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        testTextMessage = new JMSTextMessage();
+        testTextMessage = new JMSTextMessage(AMQMessageDelegateFactory.FACTORY_0_8);
 
         //Set Message Text
         testTextMessage.setText("testTextMessage text");
         setMessageProperties(testTextMessage);
 
-        testMapMessage = new JMSMapMessage();
+        testMapMessage = new JMSMapMessage(AMQMessageDelegateFactory.FACTORY_0_8);
         testMapMessage.setString("testMapString", "testMapStringValue");
         testMapMessage.setDouble("testMapDouble", Double.MAX_VALUE);
     }
 
     public void testSetProperties() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((TextMessage) testTextMessage).getConvertedMessage();
+        AbstractJMSMessage newMessage = new MessageConverter(_session, (TextMessage) testTextMessage).getConvertedMessage();
         mesagePropertiesTest(testTextMessage, newMessage);
     }
 
     public void testJMSTextMessageConversion() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((TextMessage) testTextMessage).getConvertedMessage();
+        AbstractJMSMessage newMessage = new MessageConverter(_session, (TextMessage) testTextMessage).getConvertedMessage();
         assertEquals("Converted message text mismatch", ((JMSTextMessage) newMessage).getText(), testTextMessage.getText());
     }
 
     public void testJMSMapMessageConversion() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((MapMessage) testMapMessage).getConvertedMessage();
+        AbstractJMSMessage newMessage = new MessageConverter(_session, (MapMessage) testMapMessage).getConvertedMessage();
         assertEquals("Converted map message String mismatch", ((JMSMapMessage) newMessage).getString("testMapString"),
                      testMapMessage.getString("testMapString"));
         assertEquals("Converted map message Double mismatch", ((JMSMapMessage) newMessage).getDouble("testMapDouble"),

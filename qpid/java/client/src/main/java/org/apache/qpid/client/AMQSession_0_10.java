@@ -27,6 +27,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.util.Serial;
 import org.apache.qpid.nclient.Session;
 import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
@@ -773,7 +774,7 @@ public class AMQSession_0_10 extends AMQSession
         return subscriber;
     }
 
-    Long requestQueueDepth(AMQDestination amqd)
+    protected Long requestQueueDepth(AMQDestination amqd)
     {
         return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
     }
@@ -821,14 +822,19 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
-    final boolean tagLE(long tag1, long tag2)
+    protected final boolean tagLE(long tag1, long tag2)
     {
         return Serial.le((int) tag1, (int) tag2);
     }
 
-    final boolean updateRollbackMark(long currentMark, long deliveryTag)
+    protected final boolean updateRollbackMark(long currentMark, long deliveryTag)
     {
         return Serial.lt((int) currentMark, (int) deliveryTag);
+    }
+
+    public AMQMessageDelegateFactory getMessageDelegateFactory()
+    {
+        return AMQMessageDelegateFactory.FACTORY_0_10;
     }
 
 }

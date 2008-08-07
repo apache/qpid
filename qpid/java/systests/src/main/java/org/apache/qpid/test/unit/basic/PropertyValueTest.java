@@ -25,10 +25,12 @@ import junit.framework.Assert;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.AMQMessage;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.AMQBindingURL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.net.URISyntaxException;
 
 public class PropertyValueTest extends QpidTestCase implements MessageListener
 {
@@ -183,43 +186,6 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             m.setShortProperty("Short", (short) Short.MAX_VALUE);
             m.setStringProperty("String", "Test");
 
-            // AMQP Specific values
-
-            // Timestamp
-            long nano = System.nanoTime();
-            m.setStringProperty("time-str", String.valueOf(nano));
-            ((AMQMessage) m).setTimestampProperty(new AMQShortString("time"), nano);
-
-            // Decimal
-            BigDecimal bd = new BigDecimal(Integer.MAX_VALUE);
-            ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal"), bd.setScale(Byte.MAX_VALUE));
-
-            bd = new BigDecimal((long) Integer.MAX_VALUE + 1L);
-
-            try
-            {
-                ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal-bad-value"), bd.setScale(Byte.MAX_VALUE));
-                fail("UnsupportedOperationException should be thrown as value can't be correctly transmitted");
-            }
-            catch (UnsupportedOperationException uoe)
-            {
-                // normal path.
-            }
-
-            try
-            {
-                ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal-bad-scale"),
-                    bd.setScale(Byte.MAX_VALUE + 1));
-                fail("UnsupportedOperationException should be thrown as scale can't be correctly transmitted");
-            }
-            catch (UnsupportedOperationException uoe)
-            {
-                // normal path.
-            }
-
-            // Void
-            ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
-
             _logger.debug("Sending Msg:" + m);
             producer.send(m);
         }
@@ -236,7 +202,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
         }
     }
 
-    void check() throws JMSException
+    void check() throws JMSException, URISyntaxException
     {
         List<String> actual = new ArrayList<String>();
         for (JMSTextMessage m : received)
@@ -259,8 +225,8 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             Assert.assertEquals("Check Priority properties are correctly transported", 8, m.getJMSPriority());
 
             // Queue
-            Assert.assertEquals("Check ReplyTo properties are correctly transported", m.getStringProperty("TempQueue"),
-                m.getJMSReplyTo().toString());
+            Assert.assertEquals("Check ReplyTo properties are correctly transported", AMQDestination.createDestination(new AMQBindingURL(m.getStringProperty("TempQueue"))),
+                m.getJMSReplyTo());
 
             Assert.assertEquals("Check Type properties are correctly transported", "Test", m.getJMSType());
 
@@ -271,7 +237,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             Assert.assertEquals("Check Long properties are correctly transported", (long) Long.MAX_VALUE,
                 m.getLongProperty("Long"));
             Assert.assertEquals("Check String properties are correctly transported", "Test", m.getStringProperty("String"));
-
+/*
             // AMQP Tests Specific values
 
             Assert.assertEquals("Check Timestamp properties are correctly transported", m.getStringProperty("time-str"),
@@ -288,7 +254,7 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
 
             Assert.assertTrue("Check void properties are correctly transported",
                               ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
-
+*/
             //JMSXUserID
             if (m.getStringProperty("JMSXUserID") != null)
             {

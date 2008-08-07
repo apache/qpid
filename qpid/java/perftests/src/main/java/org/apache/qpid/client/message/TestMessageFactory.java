@@ -29,7 +29,6 @@ import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.BytesMessage;
 import javax.jms.TextMessage;
-import javax.jms.Queue;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 
@@ -42,10 +41,10 @@ public class TestMessageFactory
         return session.createTextMessage(createMessagePayload(size));
     }
 
-    public static JMSTextMessage newJMSTextMessage(int size, String encoding) throws JMSException
+    public static TextMessage newJMSTextMessage(Session session, int size, String encoding) throws JMSException
     {
-        ByteBuffer byteBuffer = (new SimpleByteBufferAllocator()).allocate(size, true);
-        JMSTextMessage message = new JMSTextMessage(byteBuffer, encoding);
+
+        TextMessage message = session.createTextMessage();
         message.clearBody();
         message.setText(createMessagePayload(size));
         return message;
