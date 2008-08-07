@@ -82,7 +82,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private volatile Subscription _exclusiveSubscriber;
 
-    private final QueueEntryList _entries;
+    protected final QueueEntryList _entries;
 
     private final AMQQueueMBean _managedObject;
     private final Executor _asyncDelivery;
@@ -221,6 +221,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             _logger.error("Mismatch between queue bindings and exchange record of bindings");
         }
+    }
+
+    public List<ExchangeBinding> getExchangeBindings()
+    {
+        return new ArrayList<ExchangeBinding>(_bindings.getExchangeBindings());
     }
 
     // ------ Manage Subscriptions

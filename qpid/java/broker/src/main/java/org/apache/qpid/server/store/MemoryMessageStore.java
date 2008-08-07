@@ -121,7 +121,7 @@ public class MemoryMessageStore implements MessageStore
 
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
         // Not required to do anything
     }
@@ -213,7 +213,12 @@ public class MemoryMessageStore implements MessageStore
         return bodyList.get(index);
     }
 
-     private void checkNotClosed() throws MessageStoreClosedException
+    public boolean isPersistent()
+    {
+        return false;
+    }
+
+    private void checkNotClosed() throws MessageStoreClosedException
      {
         if (_closed.get())
         {

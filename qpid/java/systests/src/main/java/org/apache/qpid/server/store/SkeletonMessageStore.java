@@ -78,7 +78,7 @@ public class SkeletonMessageStore implements MessageStore
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
     }        
 
@@ -127,6 +127,11 @@ public class SkeletonMessageStore implements MessageStore
     public ContentChunk getContentBodyChunk(StoreContext s,Long messageId, int index) throws AMQException
     {
         return null;
+    }
+
+    public boolean isPersistent()
+    {
+        return false;
     }
 
     public void removeQueue(final AMQQueue queue) throws AMQException

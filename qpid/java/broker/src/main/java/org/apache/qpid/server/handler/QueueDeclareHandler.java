@@ -117,7 +117,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queue = createQueue(queueName, body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        store.createQueue(queue);
+                        store.createQueue(queue, body.getArguments());
                     }
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)
