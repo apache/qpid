@@ -43,6 +43,8 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.Notification;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collections;
 
@@ -304,7 +306,9 @@ public class AMQQueueAlertTest extends TestCase
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false, size);
-            messages[i].enqueue(Collections.singleton(_queue));
+            ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+            qs.add(_queue);
+            messages[i].enqueue(qs);
             messages[i].routingComplete(_messageStore, new MessageHandleFactory());
 
         }

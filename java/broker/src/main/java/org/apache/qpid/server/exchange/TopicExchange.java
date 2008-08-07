@@ -32,7 +32,6 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
@@ -48,9 +47,6 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.lang.ref.WeakReference;
 
 public class TopicExchange extends AbstractExchange
@@ -532,7 +528,10 @@ public class TopicExchange extends AbstractExchange
 
         final AMQShortString routingKey = payload.getRoutingKey();
 
-        Collection<AMQQueue> queues = getMatchedQueues(payload, routingKey);
+        // The copy here is unfortunate, but not too bad relevant to the amount of
+        // things created and copied in getMatchedQueues
+        ArrayList<AMQQueue> queues = new ArrayList<AMQQueue>();
+        queues.addAll(getMatchedQueues(payload, routingKey));
 
         if(queues == null || queues.isEmpty())
         {
