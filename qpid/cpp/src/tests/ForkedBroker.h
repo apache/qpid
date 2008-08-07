@@ -85,7 +85,7 @@ class ForkedBroker {
             ::close(pipeFds[1]);
             FILE* f = ::fdopen(pipeFds[0], "r");
             if (!f) throw ErrnoException("fopen failed");
-            if (::fscanf(f, "%d", &port) != 1) throw ErrnoException("fscanf failed");
+            if (::fscanf(f, "%d", &port) != 1) throw ErrnoException("ill-formatted port");
         }
         else {                  // child
             ::close(pipeFds[0]);

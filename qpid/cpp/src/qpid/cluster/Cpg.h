@@ -117,19 +117,9 @@ class Cpg : public Dispatchable {
     void dispatchAll() { dispatch(CPG_DISPATCH_ALL); }
     void dispatchBlocking() { dispatch(CPG_DISPATCH_BLOCKING); }
 
-    void join(const Name& group) {
-        check(cpg_join(handle, const_cast<Name*>(&group)),cantJoinMsg(group));
-    };
-    
-    void leave(const Name& group) {
-        check(cpg_leave(handle,const_cast<Name*>(&group)),cantLeaveMsg(group));
-    }
-
-    void mcast(const Name& group, const iovec* iov, int iovLen) {
-        check(cpg_mcast_joined(
-                  handle, CPG_TYPE_AGREED, const_cast<iovec*>(iov), iovLen),
-              cantMcastMsg(group));
-    }
+    void join(const Name& group);    
+    void leave(const Name& group);
+    void mcast(const Name& group, const iovec* iov, int iovLen);
 
     cpg_handle_t getHandle() const { return handle; }
 
@@ -138,8 +128,7 @@ class Cpg : public Dispatchable {
   private:
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
-    static std::string cantLeaveMsg(const Name&);
-    static std::string cantMcastMsg(const Name&);
+    static std::string cantLeaveMsg(const Name&); std::string cantMcastMsg(const Name&);
     
     static void check(cpg_error_t result, const std::string& msg) {
         if (result != CPG_OK) throw Exception(errorStr(result, msg));
@@ -162,6 +151,9 @@ class Cpg : public Dispatchable {
         struct cpg_address *left, int nLeft,
         struct cpg_address *joined, int nJoined
     );
+
+    bool isFlowControlEnabled();
+    void waitForFlowControl();
 
     cpg_handle_t handle;
     Handler& handler;
