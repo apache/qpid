@@ -52,6 +52,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException;
 
+    List<ExchangeBinding> getExchangeBindings();
 
 
     void registerSubscription(final Subscription subscription, final boolean exclusive) throws AMQException;

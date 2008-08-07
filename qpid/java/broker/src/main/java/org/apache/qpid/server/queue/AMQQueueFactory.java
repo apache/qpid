@@ -28,7 +28,7 @@ import org.apache.qpid.AMQException;
 
 public class AMQQueueFactory
 {
-    private static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+    public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
 
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
                                               boolean durable,

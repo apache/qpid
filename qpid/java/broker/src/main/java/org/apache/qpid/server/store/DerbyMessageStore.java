@@ -728,7 +728,7 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void createQueue(AMQQueue queue) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
         _logger.debug("public void createQueue(AMQQueue queue = " + queue + "): called");
 
@@ -1279,6 +1279,11 @@ public class DerbyMessageStore implements MessageStore
 
 
 
+    }
+
+    public boolean isPersistent()
+    {
+        return true;
     }
 
     private void checkNotClosed() throws MessageStoreClosedException

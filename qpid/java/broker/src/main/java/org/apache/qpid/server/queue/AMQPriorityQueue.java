@@ -39,6 +39,11 @@ public class AMQPriorityQueue extends SimpleAMQQueue
         super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
     }
 
+    public int getPriorities()
+    {
+        return ((PriorityQueueList) _entries).getPriorities();
+    }
+
     @Override
     protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
     {
@@ -63,5 +68,4 @@ public class AMQPriorityQueue extends SimpleAMQQueue
         }
     }
 
-    
 }
