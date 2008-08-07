@@ -291,12 +291,17 @@ public class AMQMessage implements Filterable<AMQException>
         return this;
     }
 
-    /** Threadsafe. Increment the reference count on the message. */
     public boolean incrementReference()
     {
-        if(_referenceCount.incrementAndGet() <= 1)
+        return incrementReference(1);
+    }
+
+    /* Threadsafe. Increment the reference count on the message. */
+    public boolean incrementReference(int count)
+    {
+        if(_referenceCount.addAndGet(count) <= 1)
         {
-            _referenceCount.decrementAndGet();
+            _referenceCount.addAndGet(-count);
             return false;
         }
         else

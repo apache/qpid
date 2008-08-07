@@ -27,23 +27,23 @@ public class AccessResult
         GRANTED, REFUSED
     }
 
-    StringBuilder _authorizer;
-    AccessStatus _status;
+    private String _authorizer;
+    private AccessStatus _status;
 
     public AccessResult(ACLPlugin authorizer, AccessStatus status)
     {
         _status = status;
-        _authorizer = new StringBuilder(authorizer.getPluginName());
+        _authorizer = authorizer.getPluginName();
     }
 
     public void setAuthorizer(ACLPlugin authorizer)
     {
-        _authorizer.append(authorizer.getPluginName());
+        _authorizer += authorizer.getPluginName();
     }
 
     public String getAuthorizer()
     {
-        return _authorizer.toString();
+        return _authorizer;
     }
 
     public void setStatus(AccessStatus status)
@@ -58,8 +58,7 @@ public class AccessResult
 
     public void addAuthorizer(ACLPlugin accessManager)
     {
-        _authorizer.insert(0, "->");
-        _authorizer.insert(0, accessManager.getPluginName());
+        _authorizer = accessManager.getPluginName() + "->" + _authorizer;
     }
 
 

@@ -204,7 +204,7 @@ public class DiagnosticExchange extends AbstractExchange
         ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).setHeaders(headers);
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
 
-        Collection<AMQQueue> queues =  new ArrayList<AMQQueue>();
+        ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
         queues.add(q);
         payload.enqueue(queues);
         

@@ -249,7 +249,7 @@ public class HeadersExchange extends AbstractExchange
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
         }
         boolean routed = false;
-        Collection<AMQQueue> queues = new ArrayList<AMQQueue>();
+        ArrayList<AMQQueue> queues = new ArrayList<AMQQueue>();
         for (Registration e : _bindings)
         {
 
