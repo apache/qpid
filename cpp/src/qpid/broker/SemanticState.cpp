@@ -591,8 +591,7 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
 }
 
 bool SemanticState::ConsumerImpl::hasOutput() {
-    queue->addListener(*this);
-    return !queue->empty();
+    return queue->checkForMessages(*this);
 }
 
 bool SemanticState::ConsumerImpl::doOutput()
