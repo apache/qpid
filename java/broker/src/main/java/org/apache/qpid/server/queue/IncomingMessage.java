@@ -34,6 +34,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class IncomingMessage implements Filterable<RuntimeException>
@@ -63,7 +64,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
      * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
      * by the message handle.
      */
-    private Collection<AMQQueue> _destinationQueues;
+    private ArrayList<AMQQueue> _destinationQueues;
 
     private AMQProtocolSession _publisher;
     private MessageStore _messageStore;
@@ -134,21 +135,13 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
             if(_destinationQueues != null)
             {
-                for (AMQQueue q : _destinationQueues)
+                for (int i = 0; i < _destinationQueues.size(); i++)
                 {
-                    if(q.isDurable())
-                    {
-
-                        _messageStore.enqueueMessage(_txnContext.getStoreContext(), q, _messageId);
-                    }
+                    _messageStore.enqueueMessage(_txnContext.getStoreContext(),
+                            _destinationQueues.get(i), _messageId);
                 }
             }
-
         }
-
-
-
-
     }
 
     public AMQMessage deliverToQueues()
@@ -157,10 +150,9 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
         // we get a reference to the destination queues now so that we can clear the
         // transient message data as quickly as possible
-        Collection<AMQQueue> destinationQueues = _destinationQueues;
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Delivering message " + _messageId + " to " + destinationQueues);
+            _logger.debug("Delivering message " + _messageId + " to " + _destinationQueues);
         }
 
         AMQMessage message = null;
@@ -178,10 +170,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             message.setExpiration(_expiration);
             message.setClientIdentifier(_publisher.getSessionIdentifier());
 
-
-
-
-            if ((destinationQueues == null) || destinationQueues.isEmpty())
+            if ((_destinationQueues == null) || _destinationQueues.size() == 0)
             {
 
                 if (isMandatory() || isImmediate())
@@ -196,10 +185,9 @@ public class IncomingMessage implements Filterable<RuntimeException>
             }
             else
             {
-                // TODO
-
                 int offset;
-                final int queueCount = destinationQueues.size();
+                final int queueCount = _destinationQueues.size();
+                message.incrementReference(queueCount);
                 if(queueCount == 1)
                 {
                     offset = 0;
@@ -212,33 +200,16 @@ public class IncomingMessage implements Filterable<RuntimeException>
                         offset = -offset;
                     }
                 }
-
-                int i = 0;
-                for (AMQQueue q : destinationQueues)
+                for (int i = offset; i < queueCount; i++)
                 {
-                    if(++i > offset)
-                    {
-                        // Increment the references to this message for each queue delivery.
-                        message.incrementReference();
-                        // normal deliver so add this message at the end.
-                        _txnContext.deliver(q, message);
-                    }
+                    // normal deliver so add this message at the end.
+                    _txnContext.deliver(_destinationQueues.get(i), message);
                 }
-                i = 0;
-                if(offset != 0)
+                for (int i = 0; i < offset; i++)
                 {
-                    for (AMQQueue q : destinationQueues)
-                    {
-                        if(i++ < offset)
-                        {
-                            // Increment the references to this message for each queue delivery.
-                            message.incrementReference();
-                            // normal deliver so add this message at the end.
-                            _txnContext.deliver(q, message);
-                        }
-                    }
+                    // normal deliver so add this message at the end.
+                    _txnContext.deliver(_destinationQueues.get(i), message);
                 }
-
             }
 
             // we then allow the transactional context to do something with the message content
@@ -329,7 +300,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
         _exchange.route(this);
     }
 
-    public void enqueue(final Collection<AMQQueue> queues)
+    public void enqueue(final ArrayList<AMQQueue> queues)
     {
         _destinationQueues = queues;
     }

@@ -37,12 +37,12 @@ import org.apache.qpid.server.queue.AMQQueue;
  */
 class Index
 {
-    private ConcurrentMap<AMQShortString, List<AMQQueue>> _index
-            = new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
+    private ConcurrentMap<AMQShortString, ArrayList<AMQQueue>> _index
+            = new ConcurrentHashMap<AMQShortString, ArrayList<AMQQueue>>();
 
     synchronized boolean add(AMQShortString key, AMQQueue queue)
     {
-        List<AMQQueue> queues = _index.get(key);
+        ArrayList<AMQQueue> queues = _index.get(key);
         if(queues == null)
         {
             queues = new ArrayList<AMQQueue>();
@@ -66,7 +66,7 @@ class Index
 
     synchronized boolean remove(AMQShortString key, AMQQueue queue)
     {
-        List<AMQQueue> queues = _index.get(key);
+        ArrayList<AMQQueue> queues = _index.get(key);
         if (queues != null)
         {
             queues = new ArrayList<AMQQueue>(queues);
@@ -87,7 +87,7 @@ class Index
         return false;
     }
 
-    List<AMQQueue> get(AMQShortString key)
+    ArrayList<AMQQueue> get(AMQShortString key)
     {
         return _index.get(key);
     }

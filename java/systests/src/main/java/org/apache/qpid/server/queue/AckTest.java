@@ -40,6 +40,7 @@ import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Collections;
@@ -146,7 +147,9 @@ public class AckTest extends TestCase
             // we increment the reference here since we are not delivering the messaging to any queues, which is where
             // the reference is normally incremented. The test is easier to construct if we have direct access to the
             // subscription
-            msg.enqueue(Collections.singleton(_queue));
+            ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+            qs.add(_queue);
+            msg.enqueue(qs);
             msg.routingComplete(_messageStore, factory);
             if(msg.allContentReceived())
             {

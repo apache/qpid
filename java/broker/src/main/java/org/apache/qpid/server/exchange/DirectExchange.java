@@ -191,7 +191,7 @@ public class DirectExchange extends AbstractExchange
 
         final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : payload.getRoutingKey();
 
-        final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
+        final ArrayList<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
 
         if (_logger.isDebugEnabled())
         {
