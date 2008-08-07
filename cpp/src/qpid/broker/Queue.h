@@ -107,6 +107,7 @@ namespace qpid {
 
             void notify();
             void removeListener(Consumer&);
+            void addListener(Consumer&);
 
             bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
@@ -114,8 +115,6 @@ namespace qpid {
             void popAndDequeue();
 
         public:
-            // FIXME aconway 2008-08-06: was private, verify if needed public.
-            void addListener(Consumer&);
 
             virtual void notifyDurableIOComplete();
             typedef boost::shared_ptr<Queue> shared_ptr;
@@ -128,9 +127,14 @@ namespace qpid {
                   management::Manageable* parent = 0);
             ~Queue();
 
-            bool empty() const;
-            
             bool dispatch(Consumer&);
+            /**
+             * Check whether there would be a message available for
+             * dispatch to this consumer. If not, the consumer will be
+             * notified of events that may have changed this
+             * situation.
+             */
+            bool checkForMessages(Consumer&);
 
             void create(const qpid::framing::FieldTable& settings);
             void configure(const qpid::framing::FieldTable& settings);
