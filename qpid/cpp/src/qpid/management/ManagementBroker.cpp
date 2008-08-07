@@ -90,24 +90,26 @@ ManagementBroker::ManagementBroker () :
 
 ManagementBroker::~ManagementBroker ()
 {
-    Mutex::ScopedLock lock (userLock);
-
-    // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
-    // will stick around until dExchange and mExchange are implicitely destroyed (long
-    // after this destructor completes).  Those exchanges hold references to management
-    // objects that will be invalid.
-    dExchange.reset();
-    mExchange.reset();
     timer.stop();
+    {
+        Mutex::ScopedLock lock (userLock);
 
-    moveNewObjectsLH();
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++) {
-        ManagementObject* object = iter->second;
-        delete object;
+        // Reset the shared pointers to exchanges.  If this is not done now, the exchanges
+        // will stick around until dExchange and mExchange are implicitely destroyed (long
+        // after this destructor completes).  Those exchanges hold references to management
+        // objects that will be invalid.
+        dExchange.reset();
+        mExchange.reset();
+
+        moveNewObjectsLH();
+        for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+             iter != managementObjects.end ();
+             iter++) {
+            ManagementObject* object = iter->second;
+            delete object;
+        }
+        managementObjects.clear();
     }
-    managementObjects.clear();
 }
 
 void ManagementBroker::configure(string _dataDir, uint16_t _interval, Manageable* _broker, int _threads)
