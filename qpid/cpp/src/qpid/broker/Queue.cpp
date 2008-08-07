@@ -212,9 +212,30 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer& c)
     }
 }
 
-bool Queue::empty() const {
+bool Queue::checkForMessages(Consumer& c)
+{
     Mutex::ScopedLock locker(messageLock);
-    return messages.empty();
+    if (messages.empty()) {
+        //no message available, register consumer for notification
+        //when this changes
+        addListener(c);
+        return false;
+    } else {
+        QueuedMessage msg = messages.front();
+        if (store && !msg.payload->isEnqueueComplete()) {
+            //though a message is on the queue, it has not yet been
+            //enqueued and so is not available for consumption yet,
+            //register consumer for notification when this changes
+            addListener(c);
+            return false;            
+        } else {
+            //check that consumer has sufficient credit for the
+            //message (if it does not, no need to register it for
+            //notification as the consumer itself will handle the
+            //credit allocation required to change this condition).
+            return c.accept(msg.payload);
+        }
+    }
 }
 
 bool Queue::consumeNextMessage(QueuedMessage& m, Consumer& c)
