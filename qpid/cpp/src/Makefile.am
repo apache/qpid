@@ -85,7 +85,6 @@ posix_plat_hdr = \
   qpid/sys/posix/Condition.h \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
-  qpid/sys/posix/Thread.h \
   qpid/sys/posix/Fork.h \
   qpid/sys/posix/LockFile.h
 
