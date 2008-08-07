@@ -33,7 +33,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQMessageHandle;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -105,7 +105,7 @@ public class TxAckTest extends TestCase
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
-            TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(),
+            TransactionalContext txnContext = new NonTransactionalContext(new TestMemoryMessageStore(),
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );

@@ -25,6 +25,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
@@ -683,7 +684,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
         try
         {
-            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(messageFrame);
+            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(_session.getMessageDelegateFactory(), messageFrame);
 
             if (debug)
             {
@@ -720,7 +721,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H, B> messageFrame)
+    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage<H, B> messageFrame)
             throws Exception;
 
     /** @param jmsMessage this message has already been processed so can't redo preDeliver */

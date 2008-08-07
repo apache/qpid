@@ -114,9 +114,14 @@ public class ObjectMessageTest extends QpidTestCase implements MessageListener
     {
         synchronized (received)
         {
+            long endTime = System.currentTimeMillis() + 30000L;
             while (received.size() < count)
             {
-                received.wait();
+                received.wait(30000);
+                if(received.size() < count && System.currentTimeMillis() > endTime)
+                {
+                    throw new RuntimeException("Only received " + received.size() + " messages, was expecting " + count);
+                }
             }
         }
     }

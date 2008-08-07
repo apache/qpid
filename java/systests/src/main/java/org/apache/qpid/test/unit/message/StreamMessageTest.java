@@ -106,7 +106,8 @@ public class StreamMessageTest extends QpidTestCase
         _logger.info("Starting consumer connection");
         con.start();
 
-        StreamMessage msg2 = (StreamMessage) consumer.receive();
+        StreamMessage msg2 = (StreamMessage) consumer.receive(2000);
+        assertNotNull(msg2);
 
         msg2.readByte();
         try

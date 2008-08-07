@@ -30,6 +30,12 @@ public class ByteBufferMessage implements Message
     private int _transferId;
     private Header _header;
 
+    public ByteBufferMessage(MessageProperties messageProperties, DeliveryProperties deliveryProperties)
+    {
+        _currentMessageProps = messageProperties;
+        _currentDeliveryProps = deliveryProperties;
+    }
+
     public void setHeader(Header header) {
         _header = header;
     }

@@ -29,14 +29,13 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.AMQMessageHandle;
-import org.apache.qpid.server.txn.NonTransactionalContext;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
  */
 public class TestReferenceCounting extends TestCase
 {
-    private TestableMemoryMessageStore _store;
+    private TestMemoryMessageStore _store;
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -44,7 +43,7 @@ public class TestReferenceCounting extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _store = new TestableMemoryMessageStore();
+        _store = new TestMemoryMessageStore();
     }
 
     /**

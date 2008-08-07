@@ -31,7 +31,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +91,7 @@ public class MessageFactoryRegistry
      * @param deliveryTag   the AMQ message id
      * @param redelivered   true if redelivered
      * @param contentHeader the content header that was received
-     * @param bodies        a list of ContentBody instances
-     * @return the message.
+     * @param bodies        a list of ContentBody instances @return the message.
      * @throws AMQException
      * @throws JMSException
      */
@@ -120,9 +118,8 @@ public class MessageFactoryRegistry
         }
     }
 
-    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
-                                            AMQShortString routingKey, Struct[] contentHeader, List bodies,
-                                            String replyTo) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
+                                            Struct[] contentHeader, List bodies) throws AMQException, JMSException
     {
         MessageProperties mprop = (MessageProperties) contentHeader[0];
         String messageType = mprop.getContentType();
@@ -138,12 +135,12 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies, replyTo);
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, bodies);
         }
     }
 
 
-    public AbstractJMSMessage createMessage(String mimeType) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(AMQMessageDelegateFactory delegateFactory, String mimeType) throws AMQException, JMSException
     {
         if (mimeType == null)
         {
@@ -157,7 +154,7 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage();
+            return mf.createMessage(delegateFactory);
         }
     }
 }
