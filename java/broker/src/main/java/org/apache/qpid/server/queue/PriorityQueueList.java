@@ -42,6 +42,11 @@ public class PriorityQueueList implements QueueEntryList
         }
     }
 
+    public int getPriorities()
+    {
+        return _priorities;
+    }
+
     public AMQQueue getQueue()
     {
         return _queue;
