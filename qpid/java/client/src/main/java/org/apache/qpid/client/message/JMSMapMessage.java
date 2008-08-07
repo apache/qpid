@@ -24,7 +24,6 @@ import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 import org.slf4j.Logger;
@@ -44,18 +43,19 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     private static final Logger _logger = LoggerFactory.getLogger(JMSMapMessage.class);
 
     public static final String MIME_TYPE = "jms/map-message";
-    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
+
 
     private Map<String, Object> _map = new HashMap<String, Object>();
 
-    public JMSMapMessage() throws JMSException
+    public JMSMapMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
-        this(null);
+        this(delegateFactory, null);
     }
 
-    JMSMapMessage(ByteBuffer data) throws JMSException
+    JMSMapMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data) throws JMSException
     {
-        super(data); // this instantiates a content header
+
+        super(delegateFactory, data); // this instantiates a content header
         if(data != null)
         {
             populateMapFromData();
@@ -63,10 +63,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     }
 
-    JMSMapMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange, AMQShortString routingKey,
-        ByteBuffer data) throws AMQException
+    JMSMapMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, exchange, routingKey, data);
+
+        super(delegate, data);
         try
         {
             populateMapFromData();
@@ -79,14 +79,15 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     }
 
+
     public String toBodyString() throws JMSException
     {
         return _map == null ? "" : _map.toString();
     }
 
-    public AMQShortString getMimeTypeAsShortString()
+    protected String getMimeType()
     {
-        return MIME_TYPE_SHORT_STRING;
+        return MIME_TYPE;
     }
 
     public ByteBuffer getData()

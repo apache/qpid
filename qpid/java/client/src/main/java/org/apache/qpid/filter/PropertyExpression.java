@@ -17,10 +17,9 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.framing.CommonContentHeaderProperties;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.QpidException;
+import org.apache.qpid.ErrorCode;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -54,20 +53,7 @@ public class PropertyExpression implements Expression
                                      {
                                          public Object evaluate(AbstractJMSMessage message)
                                          {
-                                             try
-                                             {
-                                                 CommonContentHeaderProperties _properties =
-                                                         message.getContentHeaderProperties();
-                                                 AMQShortString replyTo = _properties.getReplyTo();
-
-                                                 return (replyTo == null) ? null : replyTo.toString();
-                                             }
-                                             catch (Exception e)
-                                             {
-                                                 _logger.warn("Error evaluating property", e);
-
-                                                 return null;
-                                             }
+                                             return message.getReplyToString();
                                          }
                                      });
 
@@ -77,13 +63,9 @@ public class PropertyExpression implements Expression
                                          {
                                              try
                                              {
-                                                  CommonContentHeaderProperties _properties =
-                                                         message.getContentHeaderProperties();
-                                                 AMQShortString type = _properties.getType();
-
-                                                 return (type == null) ? null : type.toString();
+                                                 return message.getJMSType();
                                              }
-                                             catch (Exception e)
+                                             catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property", e);
 
@@ -107,7 +89,7 @@ public class PropertyExpression implements Expression
 
                                                  return mode;
                                              }
-                                             catch (Exception e)
+                                             catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property",e);
                                              }
@@ -122,9 +104,7 @@ public class PropertyExpression implements Expression
                                          {
                                              try
                                              {
-                                              CommonContentHeaderProperties _properties =
-                                                         message.getContentHeaderProperties();
-                                                 return (int) _properties.getPriority();
+                                                 return message.getJMSPriority();
                                              }
                                              catch (Exception e)
                                              {
@@ -142,13 +122,9 @@ public class PropertyExpression implements Expression
 
                                              try
                                              {
-                                                  CommonContentHeaderProperties _properties =
-                                                         message.getContentHeaderProperties();
-                                                 AMQShortString messageId = _properties.getMessageId();
-
-                                                 return (messageId == null) ? null : messageId;
+                                                 return message.getJMSMessageID();
                                              }
-                                             catch (Exception e)
+                                             catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property",e);
 
@@ -164,9 +140,7 @@ public class PropertyExpression implements Expression
                                          {
                                              try
                                              {
-                                               CommonContentHeaderProperties _properties =
-                                                         message.getContentHeaderProperties();
-                                                 return _properties.getTimestamp();
+                                                 return message.getJMSTimestamp();
                                              }
                                              catch (Exception e)
                                              {
@@ -185,12 +159,9 @@ public class PropertyExpression implements Expression
 
                                              try
                                              {
-                                                 CommonContentHeaderProperties _properties =
-                                                                                                message.getContentHeaderProperties();
-                                                 AMQShortString correlationId = _properties.getCorrelationId();
-                                                 return (correlationId == null) ? null : correlationId.toString();
+                                                 return message.getJMSCorrelationID();
                                              }
-                                             catch (Exception e)
+                                             catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property",e);
 
@@ -207,11 +178,9 @@ public class PropertyExpression implements Expression
 
                                              try
                                              {
-                                                     CommonContentHeaderProperties _properties =
-                                                                                                message.getContentHeaderProperties();
-                                                 return _properties.getExpiration();
+                                                 return message.getJMSExpiration();
                                              }
-                                             catch (Exception e)
+                                             catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property",e);
                                                  return null;
@@ -257,13 +226,20 @@ public class PropertyExpression implements Expression
         else
         {
 
-           CommonContentHeaderProperties _properties =     message.getContentHeaderProperties();
-            if (_logger.isDebugEnabled())
+            try
             {
-                _logger.debug("Looking up property:" + name);
-                _logger.debug("Properties are:" + _properties.getHeaders().keySet());
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Looking up property:" + name);
+                    _logger.debug("Properties are:" + message.getPropertyNames());
+                }
+                return message.getObjectProperty(name);
             }
-            return _properties.getHeaders().getObject(name);
+            catch(JMSException e)
+            {
+                throw new QpidException("Exception evaluating properties for filter", ErrorCode.INTERNAL_ERROR, e);
+            }
         }
     }
 

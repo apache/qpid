@@ -76,7 +76,7 @@ public class JMSPropertiesTest extends QpidTestCase
         MessageProducer producer = producerSession.createProducer(queue);
         Destination JMS_REPLY_TO = new AMQQueue(con2, "my.replyto");
         // create a test message to send
-        ObjectMessage sentMsg = new NonQpidObjectMessage();
+        ObjectMessage sentMsg = new NonQpidObjectMessage(producerSession);
         sentMsg.setJMSCorrelationID(JMS_CORR_ID);
         sentMsg.setJMSDeliveryMode(JMS_DELIV_MODE);
         sentMsg.setJMSType(JMS_TYPE);

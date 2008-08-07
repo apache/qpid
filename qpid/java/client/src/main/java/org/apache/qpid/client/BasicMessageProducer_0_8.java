@@ -27,6 +27,8 @@ import javax.jms.Message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.AMQMessageDelegate;
+import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicConsumeBody;
@@ -81,7 +83,8 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         message.prepareForSending();
         ByteBuffer payload = message.getData();
-        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
+        AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
+        BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
 
         if (!_disableTimestamps)
         {

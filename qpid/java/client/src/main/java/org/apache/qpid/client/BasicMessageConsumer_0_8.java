@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import java.util.concurrent.TimeUnit;
-
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 
@@ -31,6 +29,7 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.filter.JMSSelectorFilter;
 import org.apache.qpid.framing.AMQFrame;
@@ -82,7 +81,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
         }
     }
 
-     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<ContentHeaderBody, ContentBody> messageFrame)throws Exception
+     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage<ContentHeaderBody, ContentBody> messageFrame)throws Exception
      {
 
         return _messageFactory.createMessage(messageFrame.getDeliveryTag(),

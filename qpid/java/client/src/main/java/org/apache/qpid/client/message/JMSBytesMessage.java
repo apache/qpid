@@ -33,36 +33,37 @@ import javax.jms.MessageFormatException;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
     public static final String MIME_TYPE = "application/octet-stream";
-    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
 
-    public JMSBytesMessage()
+
+    public JMSBytesMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(null);
+        this(delegateFactory,null);
+
     }
 
     /**
      * Construct a bytes message with existing data.
      *
+     * @param delegateFactory
      * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     *             set to auto expand
      */
-    JMSBytesMessage(ByteBuffer data)
+    JMSBytesMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
     {
-        super(data); // this instanties a content header
+
+        super(delegateFactory, data); // this instanties a content header
     }
 
-    JMSBytesMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                    AMQShortString routingKey, ByteBuffer data) throws AMQException
+    JMSBytesMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, exchange, routingKey, data);
+        super(delegate, data);
     }
+
 
     public void reset()
     {
@@ -70,9 +71,9 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         _readableMessage = true;
     }
 
-    public AMQShortString getMimeTypeAsShortString()
+    protected String getMimeType()
     {
-        return MIME_TYPE_SHORT_STRING;
+        return MIME_TYPE;
     }
 
     public long getBodyLength() throws JMSException

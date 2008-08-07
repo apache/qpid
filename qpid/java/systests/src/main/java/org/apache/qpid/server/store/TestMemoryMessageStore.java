@@ -31,9 +31,9 @@ import java.util.List;
 /**
  * Adds some extra methods to the memory message store for testing purposes.
  */
-public class TestableMemoryMessageStore extends MemoryMessageStore
+public class TestMemoryMessageStore extends MemoryMessageStore
 {
-    public TestableMemoryMessageStore()
+    public TestMemoryMessageStore()
     {
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>();
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>();

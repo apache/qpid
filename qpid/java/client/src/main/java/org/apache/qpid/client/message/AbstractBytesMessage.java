@@ -31,7 +31,6 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 
 /**
  * @author Apache Software Foundation
@@ -44,21 +43,21 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
      */
     private static final int DEFAULT_BUFFER_INITIAL_SIZE = 1024;
 
-    AbstractBytesMessage()
+    AbstractBytesMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(null);
+        this(delegateFactory, null);
     }
 
     /**
      * Construct a bytes message with existing data.
      *
+     * @param delegateFactory
      * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     *             set to auto expand
      */
-    AbstractBytesMessage(ByteBuffer data)
+    AbstractBytesMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
     {
-        super(data); // this instanties a content header
-        getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
+        super(delegateFactory, data); // this instanties a content header
+        setContentType(getMimeType());
 
         if (_data == null)
         {
@@ -72,13 +71,12 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         _data.setAutoExpand(true);
     }
 
-    AbstractBytesMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-        AMQShortString routingKey, ByteBuffer data) throws AMQException
-    {
-        // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-        super(messageNbr, contentHeader, exchange, routingKey, data);
-        getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
-    }
+    AbstractBytesMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
+     {
+         super(delegate, data);
+         setContentType(getMimeType());
+     }
+
 
     public void clearBodyImpl() throws JMSException
     {

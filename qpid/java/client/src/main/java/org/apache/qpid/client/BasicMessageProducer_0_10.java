@@ -29,6 +29,7 @@ import javax.jms.DeliveryMode;
 
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.FiledTableSupport;
+import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -72,9 +73,15 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                      boolean immediate, boolean wait) throws JMSException
     {
         message.prepareForSending();
-        if (message.get010Message() == null)
+
+        AMQMessageDelegate_0_10 delegate = (AMQMessageDelegate_0_10) message.getDelegate();
+
+        org.apache.qpid.api.Message underlyingMessage = message.get010Message();
+        if (underlyingMessage == null)
         {
-            message.set010Message(new ByteBufferMessage());
+            underlyingMessage = new ByteBufferMessage(delegate.getMessageProperties(), delegate.getDeliveryProperties()); 
+            message.set010Message(underlyingMessage);
+
         }
         // force a rebuild of the 0-10 message if data has changed
         if (message.getData() == null)
@@ -82,8 +89,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             message.dataChanged();
         }
 
-        DeliveryProperties deliveryProp = message.get010Message().getDeliveryProperties();
-        MessageProperties messageProps = message.get010Message().getMessageProperties();
+        DeliveryProperties deliveryProp = underlyingMessage.getDeliveryProperties();
+        MessageProperties messageProps = underlyingMessage.getMessageProperties();
 
         if (messageId != null)
         {
@@ -144,20 +151,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setRoutingKey(routingKey);
         }
 
-        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
-        if (contentHeaderProperties.reset())
-        {
-            // set the application properties
-            messageProps.setContentType(contentHeaderProperties.getContentType().toString());
-            messageProps.setContentLength(message.getContentLength());
+        messageProps.setContentLength(message.getContentLength());
 
-            AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
-            if (correlationID != null)
-            {
-                messageProps.setCorrelationId(correlationID.getBytes());
-            }
 
-            String replyToURL = contentHeaderProperties.getReplyToAsString();
+        /*    String replyToURL = contentHeaderProperties.getReplyToAsString();
             if (replyToURL != null)
             {
                 if(_logger.isDebugEnabled())
@@ -179,31 +176,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 }
                 messageProps.setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
             }
+*/
 
-            Map<String,Object> map = null;
-
-            if (contentHeaderProperties.getHeaders() != null)
-            {
-                //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
-                contentHeaderProperties.getHeaders().remove(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
-                map = FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders());
-            }
-
-            AMQShortString type = contentHeaderProperties.getType();
-            if (type != null)
-            {
-                if (map == null)
-                {
-                    map = new HashMap<String,Object>();
-                }
-                map.put(AbstractJMSMessage.JMS_TYPE, type.toString());
-            }
-
-            if (map != null)
-            {
-                messageProps.setApplicationHeaders(map);
-            }
-        }
 
         // send the message
         try
@@ -221,7 +195,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             try
             {
                 ssn.messageTransfer(destination.getExchangeName().toString(),
-                                    message.get010Message(),
+                                    underlyingMessage,
                                     ssn.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                     ssn.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
             }

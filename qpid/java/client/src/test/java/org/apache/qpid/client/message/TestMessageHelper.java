@@ -26,21 +26,21 @@ public class TestMessageHelper
 {
     public static JMSTextMessage newJMSTextMessage() throws JMSException
     {
-        return new JMSTextMessage();
+        return new JMSTextMessage(AMQMessageDelegateFactory.FACTORY_0_8);
     }
 
     public static JMSBytesMessage newJMSBytesMessage() throws JMSException
     {
-        return new JMSBytesMessage();
+        return new JMSBytesMessage(AMQMessageDelegateFactory.FACTORY_0_8);
     }
 
     public static JMSMapMessage newJMSMapMessage() throws JMSException
     {
-        return new JMSMapMessage();
+        return new JMSMapMessage(AMQMessageDelegateFactory.FACTORY_0_8);
     }
 
     public static JMSStreamMessage newJMSStreamMessage()
     {
-        return new JMSStreamMessage();
+        return new JMSStreamMessage(AMQMessageDelegateFactory.FACTORY_0_8);
     }
 }

@@ -26,7 +26,6 @@ import javax.jms.StreamMessage;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 /**
@@ -35,7 +34,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 public class JMSStreamMessage extends AbstractBytesTypedMessage implements StreamMessage
 {
     public static final String MIME_TYPE="jms/stream-message";
-    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
+
 
 
     /**
@@ -44,28 +43,30 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
      */
     private int _byteArrayRemaining = -1;
 
-    public JMSStreamMessage()
+    public JMSStreamMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(null);
+        this(delegateFactory,null);
+
     }
 
     /**
      * Construct a stream message with existing data.
      *
+     * @param delegateFactory
      * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     *             set to auto expand
      */
-    JMSStreamMessage(ByteBuffer data)
+    JMSStreamMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
     {
-        super(data); // this instanties a content header
+
+        super(delegateFactory, data); // this instanties a content header
     }
 
-
-    JMSStreamMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                     AMQShortString routingKey, ByteBuffer data) throws AMQException
+    JMSStreamMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, exchange, routingKey, data);
+
+        super(delegate, data);
     }
+
 
     public void reset()
     {
@@ -73,9 +74,9 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
         _readableMessage = true;
     }
 
-    public AMQShortString getMimeTypeAsShortString()
+    protected String getMimeType()
     {
-        return MIME_TYPE_SHORT_STRING;
+        return MIME_TYPE;
     }
 
 

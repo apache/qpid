@@ -33,7 +33,6 @@ import javax.jms.MessageNotWriteableException;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 /**
@@ -70,27 +69,28 @@ public abstract class AbstractBytesTypedMessage extends AbstractBytesMessage
      */
     private int _byteArrayRemaining = -1;
 
-    AbstractBytesTypedMessage()
+    AbstractBytesTypedMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(null);
+
+        this(delegateFactory, null);
     }
 
     /**
      * Construct a stream message with existing data.
      *
+     * @param delegateFactory
      * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     *             set to auto expand
      */
-    AbstractBytesTypedMessage(ByteBuffer data)
+    AbstractBytesTypedMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
     {
-        super(data); // this instanties a content header
+
+        super(delegateFactory, data); // this instanties a content header
     }
 
-
-    AbstractBytesTypedMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                              AMQShortString routingKey, ByteBuffer data) throws AMQException
+    AbstractBytesTypedMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, exchange, routingKey, data);
+
+        super(delegate, data);
     }
 
 

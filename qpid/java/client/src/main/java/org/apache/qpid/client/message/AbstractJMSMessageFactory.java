@@ -38,16 +38,10 @@ import javax.jms.JMSException;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
     private static final Logger _logger = LoggerFactory.getLogger(AbstractJMSMessageFactory.class);
-
-    protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data, AMQShortString exchange,
-                                                        AMQShortString routingKey,
-                                                        BasicContentHeaderProperties contentHeader) throws AMQException;
 
     protected AbstractJMSMessage create08MessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
                                                          AMQShortString exchange, AMQShortString routingKey,
@@ -105,13 +99,18 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                     .remaining());
         }
 
-        return createMessage(messageNbr, data, exchange, routingKey,
-                             (BasicContentHeaderProperties) contentHeader.properties);
+        AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
+                                                                 (BasicContentHeaderProperties) contentHeader.properties,
+                                                                 exchange, routingKey);
+
+        return createMessage(delegate, data);
     }
 
+    protected abstract AbstractJMSMessage createMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException;
+
+
     protected AbstractJMSMessage create010MessageWithBody(long messageNbr, Struct[] contentHeader,
-                                                          AMQShortString exchange, AMQShortString routingKey,
-                                                          List bodies, String replyToURL) throws AMQException
+                                                          List bodies) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
@@ -131,40 +130,13 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data
                     .remaining());
         }
-        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         // set the properties of this message
         MessageProperties mprop = (MessageProperties) contentHeader[0];
         DeliveryProperties devprop = (DeliveryProperties) contentHeader[1];
-        props.setContentType(mprop.getContentType());
-        props.setCorrelationId(asString(mprop.getCorrelationId()));
-        String encoding = mprop.getContentEncoding();
-        if (encoding != null && !encoding.equals(""))
-        {
-            props.setEncoding(encoding);
-        }
-        if (devprop.hasDeliveryMode())
-        {
-            props.setDeliveryMode((byte) devprop.getDeliveryMode().getValue());
-        }
-        props.setExpiration(devprop.getExpiration());
-        UUID mid = mprop.getMessageId();
-        props.setMessageId(mid == null ? null : "ID:" + mid.toString());
-        if (devprop.hasPriority())
-        {
-            props.setPriority((byte) devprop.getPriority().getValue());
-        }
-        props.setReplyTo(replyToURL);
-        props.setTimestamp(devprop.getTimestamp());
-        String type = null;
-        Map<String,Object> map = mprop.getApplicationHeaders();
-        if (map != null)
-        {
-            type = (String) map.get(AbstractJMSMessage.JMS_TYPE);
-        }
-        props.setType(type);
-        props.setUserId(asString(mprop.getUserId()));
-        props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));        
-        AbstractJMSMessage message = createMessage(messageNbr, data, exchange, routingKey, props);        
+
+        AMQMessageDelegate delegate = new AMQMessageDelegate_0_10(mprop, devprop, messageNbr);
+
+        AbstractJMSMessage message = createMessage(delegate, data);
         return message;
     }
 
@@ -192,12 +164,11 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     }
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, Struct[] contentHeader,
-                                            AMQShortString exchange, AMQShortString routingKey, List bodies,
-                                            String replyToURL)
+                                            List bodies)
             throws JMSException, AMQException
     {
         final AbstractJMSMessage msg =
-                create010MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, replyToURL);
+                create010MessageWithBody(messageNbr, contentHeader, bodies);
         msg.setJMSRedelivered(redelivered);
         msg.receivedFromServer();
         return msg;
