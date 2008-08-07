@@ -47,6 +47,8 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collections;
 
@@ -216,8 +218,9 @@ public class AMQQueueMBeanTest extends TestCase
         IncomingMessage msg = message(false, false);
         long id = msg.getMessageId();
         _queue.clearQueue(_storeContext);
-
-        msg.enqueue(Collections.singleton(_queue));
+        ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+        qs.add(_queue);
+        msg.enqueue(qs);
         msg.routingComplete(_messageStore, new MessageHandleFactory());
 
         msg.addContentBodyFrame(new ContentChunk()
@@ -319,7 +322,9 @@ public class AMQQueueMBeanTest extends TestCase
         for (int i = 0; i < messageCount; i++)
         {
             IncomingMessage currentMessage = message(false, persistent);
-            currentMessage.enqueue(Collections.singleton(_queue));
+            ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+            qs.add(_queue);
+            currentMessage.enqueue(qs);
 
             // route header
             currentMessage.routingComplete(_messageStore, new MessageHandleFactory());
