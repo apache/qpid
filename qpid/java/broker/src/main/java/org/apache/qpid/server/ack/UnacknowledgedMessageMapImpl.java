@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.ack;
 
+import org.apache.qpid.server.store.StoreContext;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -160,7 +161,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void drainTo(Collection<QueueEntry> destination, long deliveryTag) throws AMQException
+    public void drainTo(long deliveryTag, StoreContext storeContext) throws AMQException
+   
     {
         synchronized (_lock)
         {
@@ -175,6 +177,10 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                     throw new AMQException("UnacknowledgedMessageMap is out of order:" + unacked.getKey() +
                                            " When deliveryTag is:" + deliveryTag + "ES:" + _map.entrySet().toString());
                 }
+
+                //Message has been ack so discard it. This will dequeue and decrement the reference.
+                unacked.getValue().discard(storeContext);
+
                 it.remove();
 
                 _unackedSize -= unacked.getValue().getMessage().getSize();
@@ -182,7 +188,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 unacked.getValue().restoreCredit();
 
 
-                destination.add(unacked.getValue());
                 if (unacked.getKey() == deliveryTag)
                 {
                     break;

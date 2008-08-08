@@ -154,28 +154,13 @@ public class NonTransactionalContext implements TransactionalContext
                     throw new AMQException("Multiple ack on delivery tag " + deliveryTag + " not known for channel");
                 }
 
-                LinkedList<QueueEntry> acked = new LinkedList<QueueEntry>();
-                unacknowledgedMessageMap.drainTo(acked, deliveryTag);
-                for (QueueEntry msg : acked)
-                {
-                        if (debug)
-                        {
-                            _log.debug("Discarding message: " + msg.getMessage().getMessageId());
-                        }
-                        if(msg.getMessage().isPersistent())
-                        {
-                            beginTranIfNecessary();
-                        }
-
-                        //Message has been ack so discard it. This will dequeue and decrement the reference.
-                        msg.discard(_storeContext);
-                }
+                unacknowledgedMessageMap.drainTo(deliveryTag, _storeContext);
             }
         }
         else
         {
             QueueEntry msg;
-            msg = unacknowledgedMessageMap.remove(deliveryTag);
+            msg = unacknowledgedMessageMap.get(deliveryTag);
 
             if (msg == null)
             {
@@ -196,6 +181,9 @@ public class NonTransactionalContext implements TransactionalContext
 
             //Message has been ack so discard it. This will dequeue and decrement the reference.
             msg.discard(_storeContext);
+
+            unacknowledgedMessageMap.remove(deliveryTag);
+
 
             if (debug)
             {

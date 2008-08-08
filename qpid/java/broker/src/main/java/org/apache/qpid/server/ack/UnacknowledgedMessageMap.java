@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.StoreContext;
 
 public interface UnacknowledgedMessageMap
 {
@@ -55,8 +56,8 @@ public interface UnacknowledgedMessageMap
 
     QueueEntry remove(long deliveryTag);
 
-    void drainTo(Collection<QueueEntry> destination, long deliveryTag) throws AMQException;
-
+    public void drainTo(long deliveryTag, StoreContext storeContext) throws AMQException;
+    
     Collection<QueueEntry> cancelAllMessages();
 
     void acknowledgeMessage(long deliveryTag, boolean multiple, TransactionalContext txnContext) throws AMQException;
