@@ -31,7 +31,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.protocol.TestMinaProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -48,7 +48,7 @@ public class DestWildExchangeTest extends TestCase
     MessageStore _store;
     StoreContext _context;
 
-    TestMinaProtocolSession _protocolSession;
+    InternalTestProtocolSession _protocolSession;
 
 
     public void setUp() throws AMQException
@@ -57,7 +57,7 @@ public class DestWildExchangeTest extends TestCase
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
         _context = new StoreContext();
-        _protocolSession = new TestMinaProtocolSession();
+        _protocolSession = new InternalTestProtocolSession();
     }
 
 

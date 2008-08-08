@@ -33,8 +33,8 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
-import org.apache.qpid.server.protocol.TestMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -129,7 +129,7 @@ public class AMQQueueMBeanTest extends TestCase
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
 
-        TestMinaProtocolSession protocolSession = new TestMinaProtocolSession();
+        InternalTestProtocolSession protocolSession = new InternalTestProtocolSession();
         AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
         protocolSession.addChannel(channel);
 
@@ -314,7 +314,7 @@ public class AMQQueueMBeanTest extends TestCase
                                                     null);
         _queueMBean = new AMQQueueMBean(_queue);
 
-        _protocolSession = new TestMinaProtocolSession();
+        _protocolSession = new InternalTestProtocolSession();
     }
 
     private void sendMessages(int messageCount, boolean persistent) throws AMQException
