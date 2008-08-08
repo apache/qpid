@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.nio.ByteBuffer;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -36,11 +37,8 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
 import org.apache.qpid.njms.ExceptionHelper;
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageDeliveryMode;
-import org.apache.qpid.transport.MessageDeliveryPriority;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.ReplyTo;
+import org.apache.qpid.transport.*;
+import static org.apache.qpid.transport.Option.*;
 
 /**
  * This is a 0_10 message producer.
@@ -76,21 +74,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         AMQMessageDelegate_0_10 delegate = (AMQMessageDelegate_0_10) message.getDelegate();
 
-        org.apache.qpid.api.Message underlyingMessage = message.get010Message();
-        if (underlyingMessage == null)
-        {
-            underlyingMessage = new ByteBufferMessage(delegate.getMessageProperties(), delegate.getDeliveryProperties()); 
-            message.set010Message(underlyingMessage);
-
-        }
-        // force a rebuild of the 0-10 message if data has changed
-        if (message.getData() == null)
-        {
-            message.dataChanged();
-        }
-
-        DeliveryProperties deliveryProp = underlyingMessage.getDeliveryProperties();
-        MessageProperties messageProps = underlyingMessage.getMessageProperties();
+        DeliveryProperties deliveryProp = delegate.getDeliveryProperties();
+        MessageProperties messageProps = delegate.getMessageProperties();
 
         if (messageId != null)
         {
@@ -140,10 +125,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setPriority(MessageDeliveryPriority.get((short) priority));
             message.setJMSPriority(priority);
         }
-        String excahngeName = destination.getExchangeName().toString();
-        if ( deliveryProp.getExchange() == null || ! deliveryProp.getExchange().equals(excahngeName))
+        String exchangeName = destination.getExchangeName().toString();
+        if ( deliveryProp.getExchange() == null || ! deliveryProp.getExchange().equals(exchangeName))
         {
-            deliveryProp.setExchange(excahngeName);
+            deliveryProp.setExchange(exchangeName);
         }
         String routingKey = destination.getRoutingKey().toString();
         if (deliveryProp.getRoutingKey() == null || ! deliveryProp.getRoutingKey().equals(routingKey))
@@ -153,63 +138,27 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         messageProps.setContentLength(message.getContentLength());
 
-
-        /*    String replyToURL = contentHeaderProperties.getReplyToAsString();
-            if (replyToURL != null)
-            {
-                if(_logger.isDebugEnabled())
-                {
-                    StringBuffer b = new StringBuffer();
-                    b.append("\n==========================");
-                    b.append("\nReplyTo : " + replyToURL);
-                    b.append("\n==========================");
-                    _logger.debug(b.toString());
-                }
-                AMQBindingURL dest;
-                try
-                {
-                    dest = new AMQBindingURL(replyToURL);
-                }
-                catch (URISyntaxException e)
-                {
-                    throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-                }
-                messageProps.setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
-            }
-*/
-
-
         // send the message
         try
         {
-            org.apache.qpid.nclient.Session ssn = ((AMQSession_0_10) getSession()).getQpidSession();
+            org.apache.qpid.transport.Session ssn = (org.apache.qpid.transport.Session)
+                ((AMQSession_0_10) getSession()).getQpidSession();
 
             // if true, we need to sync the delivery of this message
             boolean sync = (deliveryMode == DeliveryMode.PERSISTENT &&
                             getSession().getAMQConnection().getSyncPersistence());
 
+            org.apache.mina.common.ByteBuffer data = message.getData();
+            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
+            
+            ssn.messageTransfer(destination.getExchangeName().toString(), MessageAcceptMode.NONE,
+                                MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(deliveryProp, messageProps),
+                    buffer, sync ? SYNC : NONE);
             if (sync)
             {
-                ssn.setAutoSync(true);
+                ssn.sync();
             }
-            try
-            {
-                ssn.messageTransfer(destination.getExchangeName().toString(),
-                                    underlyingMessage,
-                                    ssn.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                    ssn.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-            }
-            finally
-            {
-                if (sync)
-                {
-                    ssn.setAutoSync(false);
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         catch (RuntimeException rte)
         {

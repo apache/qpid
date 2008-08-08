@@ -3,9 +3,7 @@ package org.apache.qpid.nclient.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.nclient.MessagePartListener;
 
 /**
@@ -26,16 +24,35 @@ public class MessagePartListenerAdapter implements MessagePartListener
 		_adaptee = listener;
     }
 
-    public void messageTransfer(int transferId)
+    public void messageTransfer(MessageTransfer xfr)
     {
-        _currentMsg = new ByteBufferMessage(transferId);
-    }
+        _currentMsg = new ByteBufferMessage(xfr.getId());
 
-    public void data(ByteBuffer src)
-    {
+        for (Struct st : xfr.getHeader().getStructs())
+        {
+            if(st instanceof DeliveryProperties)
+            {
+                _currentMsg.setDeliveryProperties((DeliveryProperties)st);
+
+            }
+            else if(st instanceof MessageProperties)
+            {
+                _currentMsg.setMessageProperties((MessageProperties)st);
+            }
+
+        }
+
+
+        ByteBuffer body = xfr.getBody();
+        if (body == null)
+        {
+            body = ByteBuffer.allocate(0);
+        }
+
+
         try
         {
-            _currentMsg.appendData(src);
+            _currentMsg.appendData(body);
         }
         catch(IOException e)
         {
@@ -43,16 +60,7 @@ public class MessagePartListenerAdapter implements MessagePartListener
             // doesn't occur as we are using
             // a ByteBuffer
         }
-    }
 
-    public void messageHeader(Header header)
-    {
-        _currentMsg.setDeliveryProperties(header.get(DeliveryProperties.class));
-        _currentMsg.setMessageProperties(header.get(MessageProperties.class));
-    }
-
-    public void messageReceived()
-    {
         _adaptee.onMessage(_currentMsg);
     }
 

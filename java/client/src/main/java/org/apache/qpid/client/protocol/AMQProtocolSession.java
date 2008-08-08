@@ -224,9 +224,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      *
      * @throws AMQException if this was not expected
      */
-    public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
-    {
-        final int channelId = message.getChannelId();
+    public void unprocessedMessageReceived(final int channelId, UnprocessedMessage message) throws AMQException
+    {        
         if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {
             _channelId2UnprocessedMsgArray[channelId] = message;
@@ -239,8 +238,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void contentHeaderReceived(int channelId, ContentHeaderBody contentHeader) throws AMQException
     {
-        final UnprocessedMessage msg = (channelId & FAST_CHANNEL_ACCESS_MASK) == 0 ? _channelId2UnprocessedMsgArray[channelId]
-                                       : _channelId2UnprocessedMsgMap.get(channelId);
+        final UnprocessedMessage_0_8 msg = (UnprocessedMessage_0_8) ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0 ? _channelId2UnprocessedMsgArray[channelId]
+                                               : _channelId2UnprocessedMsgMap.get(channelId));
 
         if (msg == null)
         {
@@ -290,15 +289,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             throw new AMQException(null, "Error: received content body without having received a ContentHeader frame first", null);
         }
 
-        /*try
-        {*/
         msg.receiveBody(contentBody);
-        /*}
-        catch (UnexpectedBodyReceivedException e)
-        {
-            _channelId2UnprocessedMsgMap.remove(channelId);
-            throw e;
-        }*/
 
         if (msg.isAllBodyDataReceived())
         {
@@ -478,7 +469,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         final AMQSession session = getSession(channelId);
 
-        session.confirmConsumerCancelled(consumerTag);
+        session.confirmConsumerCancelled(consumerTag.toIntValue());
     }
 
     public void setProtocolVersion(final ProtocolVersion pv)

@@ -40,7 +40,7 @@ public interface MessageFactory
 
      AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                       Struct[] contentHeader,
-                                      List bodies)
+                                      java.nio.ByteBuffer body)
         throws JMSException, AMQException;
 
     AbstractJMSMessage createMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException;

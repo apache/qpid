@@ -111,6 +111,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     private final byte[] _data;
     private final int _offset;
     private int _hashCode;
+    private String _asString = null;
+
     private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
     
@@ -137,7 +139,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     public AMQShortString(String data)
     {
         this((data == null) ? EMPTY_CHAR_ARRAY : data.toCharArray());
-
+        _asString = data;
     }
 
     public AMQShortString(char[] data)
@@ -418,15 +420,14 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return chars;
     }
 
-    private String str = null;
 
     public String asString()
     {
-        if (str == null)
+        if (_asString == null)
         {
-            str = new String(asChars());
+            _asString = new String(asChars());
         }
-        return str;
+        return _asString;
     }
 
     public boolean equals(Object o)

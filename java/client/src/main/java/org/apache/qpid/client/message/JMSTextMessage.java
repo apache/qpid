@@ -66,17 +66,6 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     }
 
 
-    JMSTextMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data) throws JMSException
-    {
-        this(delegateFactory, data, null);
-    }
-
-    JMSTextMessage(AMQMessageDelegateFactory delegateFactory, String text) throws JMSException
-    {
-        super(delegateFactory, (ByteBuffer) null);
-        setText(text);
-    }
-
     public void clearBodyImpl() throws JMSException
     {
         if (_data != null)

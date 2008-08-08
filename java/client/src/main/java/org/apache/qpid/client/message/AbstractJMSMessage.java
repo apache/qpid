@@ -44,13 +44,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
     protected boolean _readableMessage = false;
     protected boolean _changedData = true;
 
-
-    /**
-     * This is 0_10 specific
-     */
-    private org.apache.qpid.api.Message _010message = null;
     /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
-
 
 
 
@@ -454,51 +448,9 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
         else
         {
             _data.flip();
-            dataChanged();
             _changedData = false;
         }
     }
-
-    public void set010Message(org.apache.qpid.api.Message m )
-    {
-        _010message = m;
-    }
-
-    public void dataChanged()
-    {
-        if (_010message != null)
-        {
-            _010message.clearData();
-            try
-            {
-                if (_data != null)
-                {
-                    _010message.appendData(_data.buf().slice());
-                }
-                else
-                {
-                    _010message.appendData(java.nio.ByteBuffer.allocate(0));
-                }
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * End 010 specific
-     */
-
-    public org.apache.qpid.api.Message get010Message()
-    {
-        return _010message;
-    }
-
-
-
-
 
     public int getContentLength()
     {

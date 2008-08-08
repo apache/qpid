@@ -24,6 +24,8 @@ import org.apache.qpid.transport.network.Frame;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.nio.ByteBuffer;
 
 
@@ -35,22 +37,23 @@ import java.nio.ByteBuffer;
 
 public class Header {
 
-    private final List<Struct> structs;
+    private final Struct[] structs;
 
     public Header(List<Struct> structs)
     {
-        this.structs = structs;
+        this(structs.toArray(new Struct[structs.size()]));
     }
 
     public Header(Struct ... structs)
     {
-        this(Arrays.asList(structs));
+        this.structs = structs;
     }
 
-    public List<Struct> getStructs()
+    public Struct[] getStructs()
     {
         return structs;
     }
+
 
     public <T> T get(Class<T> klass)
     {
@@ -58,7 +61,7 @@ public class Header {
         {
             if (klass.isInstance(st))
             {
-                return klass.cast(st);
+                return (T) st;
             }
         }
 

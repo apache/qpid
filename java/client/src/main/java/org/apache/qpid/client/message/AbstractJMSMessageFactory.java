@@ -110,17 +110,17 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
 
     protected AbstractJMSMessage create010MessageWithBody(long messageNbr, Struct[] contentHeader,
-                                                          List bodies) throws AMQException
+                                                          java.nio.ByteBuffer body) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
 
-        // we optimise the non-fragmented case to avoid copying
-        if ((bodies != null))
+
+        if (body != null)
         {
-            data = ByteBuffer.wrap((java.nio.ByteBuffer) bodies.get(0));
+            data = ByteBuffer.wrap(body);
         }
-        else // bodies == null
+        else // body == null
         {
             data = ByteBuffer.allocate(0);
         }
@@ -164,11 +164,11 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     }
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, Struct[] contentHeader,
-                                            List bodies)
+                                            java.nio.ByteBuffer body)
             throws JMSException, AMQException
     {
         final AbstractJMSMessage msg =
-                create010MessageWithBody(messageNbr, contentHeader, bodies);
+                create010MessageWithBody(messageNbr, contentHeader, body);
         msg.setJMSRedelivered(redelivered);
         msg.receivedFromServer();
         return msg;

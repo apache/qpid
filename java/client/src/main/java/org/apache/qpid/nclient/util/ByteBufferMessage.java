@@ -2,8 +2,7 @@ package org.apache.qpid.nclient.util;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
@@ -22,7 +21,7 @@ import org.apache.qpid.api.Message;
  */
 public class ByteBufferMessage implements Message
 {
-    private Queue<ByteBuffer> _data = new LinkedList<ByteBuffer>();
+    private List<ByteBuffer> _data;// = new ArrayList<ByteBuffer>();
     private ByteBuffer _readBuffer;
     private int _dataSize;
     private DeliveryProperties _currentDeliveryProps;
@@ -76,7 +75,18 @@ public class ByteBufferMessage implements Message
      */
     public void appendData(ByteBuffer src) throws IOException
     {
-        _data.offer(src);
+        if(_data == null)
+        {
+            _data = Collections.singletonList(src);
+        }
+        else
+        {
+            if(_data.size() == 1)
+            {
+                _data = new ArrayList<ByteBuffer>(_data);
+            }
+            _data.add(src);
+        }
         _dataSize += src.remaining();
     }
 
@@ -100,12 +110,12 @@ public class ByteBufferMessage implements Message
         _currentMessageProps = props;
     }
 
-    public void readData(byte[] target) throws IOException
+    public void readData(byte[] target)
     {
         getReadBuffer().get(target);
     }
 
-    public ByteBuffer readData() throws IOException
+    public ByteBuffer readData()
     {
         return getReadBuffer();
     }
@@ -115,7 +125,7 @@ public class ByteBufferMessage implements Message
         //optimize for the simple cases
         if(_data.size() == 1)
         {
-            _readBuffer = _data.element().duplicate();
+            _readBuffer = _data.get(0).duplicate();
         }
         else
         {
@@ -128,7 +138,7 @@ public class ByteBufferMessage implements Message
         }
     }
 
-    private ByteBuffer getReadBuffer() throws IOException
+    private ByteBuffer getReadBuffer()
     {
         if (_readBuffer != null )
         {
@@ -143,7 +153,7 @@ public class ByteBufferMessage implements Message
             }
             else
             {
-                throw new IOException("No Data to read");
+                return ByteBuffer.allocate(0);
             }
         }
     }
@@ -151,16 +161,9 @@ public class ByteBufferMessage implements Message
     //hack for testing
     @Override public String toString()
     {
-        try
-        {
-            ByteBuffer temp = getReadBuffer();
-            byte[] b = new byte[temp.remaining()];
-            temp.get(b);
-            return new String(b);
-        }
-        catch(IOException e)
-        {
-            return "No data";
-        }
+        ByteBuffer temp = getReadBuffer();
+        byte[] b = new byte[temp.remaining()];
+        temp.get(b);
+        return new String(b);
     }
 }
