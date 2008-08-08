@@ -47,11 +47,13 @@ import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.network.io.IoTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -252,6 +254,19 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _protocolSession.init();
     }
 
+    /**
+     * Called when we want to create a new IoTransport session
+     * @param brokerDetail 
+     */
+    public void createIoTransportSession(BrokerDetails brokerDetail)
+    {
+        _protocolSession = new AMQProtocolSession(this, _connection);
+        _stateManager.setProtocolSession(_protocolSession);
+        IoTransport.connect_0_9(getProtocolSession(),
+                brokerDetail.getHost(), brokerDetail.getPort());
+        _protocolSession.init();
+    }
+    
     /**
      * Called when the network connection is closed. This can happen, either because the client explicitly requested
      * that the connection be closed, in which case nothing is done, or because the connection died. In the case

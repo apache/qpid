@@ -26,6 +26,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Receiver;
@@ -82,6 +83,19 @@ public final class IoTransport
     private Connection connectInternal(String host, int port,
             ConnectionDelegate delegate)
     {
+        createSocket(host, port);
+
+        sender = new IoSender(this, 2*writeBufferSize, timeout);
+        Connection conn = new Connection
+            (new Disassembler(sender, 64*1024 - 1), delegate);
+        receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)),
+                                  2*readBufferSize, timeout);
+
+        return conn;
+    }
+
+    private void createSocket(String host, int port)
+    {
         try
         {
             InetAddress address = InetAddress.getByName(host);
@@ -108,14 +122,6 @@ public final class IoTransport
         {
             throw new TransportException("Error connecting to broker", e);
         }
-
-        sender = new IoSender(this, 2*writeBufferSize, timeout);
-        Connection conn = new Connection
-            (new Disassembler(sender, 64*1024 - 1), delegate);
-        receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)),
-                                  2*readBufferSize, timeout);
-
-        return conn;
     }
 
     IoSender getSender()
@@ -131,6 +137,23 @@ public final class IoTransport
     Socket getSocket()
     {
         return socket;
+    }
+
+    public static void connect_0_9 (AMQVersionAwareProtocolSession session, String host, int port)
+    {
+        IoTransport handler = new IoTransport();
+        handler.connectInternal_0_9(session, host, port);
+    }
+    
+    public void connectInternal_0_9(AMQVersionAwareProtocolSession session, String host, int port)
+    {
+
+        createSocket(host, port);
+
+        sender = new IoSender(this, 2*writeBufferSize, timeout);
+        receiver = new IoReceiver(this, new InputHandler_0_9(session),
+                    2*readBufferSize, timeout);
+        session.setSender(sender);
     }
 
 }

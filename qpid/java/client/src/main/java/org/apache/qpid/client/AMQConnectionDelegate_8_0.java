@@ -48,6 +48,7 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.transport.network.io.IoTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +89,16 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+        // TODO: use system property thingy for this
+        if (System.getProperty("UseTransportIo", "false").equals("false"))   
+        {
+            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+        } 
+        else 
+        {
+            _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
+        }
+        
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
