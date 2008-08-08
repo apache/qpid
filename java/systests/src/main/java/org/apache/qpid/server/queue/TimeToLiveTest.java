@@ -95,7 +95,7 @@ public class TimeToLiveTest extends TestCase
 
         env.put("connectionfactory.connection", "amqp://guest:guest@TTL_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
         env.put("queue.queue", QUEUE);
-
+                                           
         Context context = factory.getInitialContext(env);
 
         Queue queue = (Queue) context.lookup("queue");
