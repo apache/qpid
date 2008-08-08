@@ -31,7 +31,7 @@ import org.apache.qpid.transport.util.Logger;
 import static org.apache.qpid.transport.util.Functions.*;
 
 
-final class IoSender extends Thread implements Sender<ByteBuffer>
+public final class IoSender extends Thread implements Sender<ByteBuffer>
 {
 
     private static final Logger log = Logger.get(IoSender.class);

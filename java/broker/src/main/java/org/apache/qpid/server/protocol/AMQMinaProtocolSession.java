@@ -50,6 +50,7 @@ import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.io.IoSender;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
@@ -844,5 +845,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public String getClientVersion()
     {
         return (_clientVersion == null) ? null : _clientVersion.toString();
+    }
+
+    public void setSender(IoSender sender)
+    {
+       // No-op, interface munging between this and AMQProtocolSession
+    }
+
+    public void init()
+    {
+       // No-op, interface munging between this and AMQProtocolSession
     }
 }
