@@ -456,10 +456,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         else
         {
             messageId = _messageIdGenerator.generate();
-            StringBuilder b = new StringBuilder(39);
-            b.append("ID:");
-            b.append(messageId);
-            message.setJMSMessageID(b.toString());
+            message.setJMSMessageID(messageId);
         }
 
         sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
