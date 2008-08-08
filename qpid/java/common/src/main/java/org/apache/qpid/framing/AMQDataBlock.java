@@ -50,4 +50,14 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
         return buffer;
     }
 
+    public java.nio.ByteBuffer toNioByteBuffer()
+    {
+        final java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate((int) getSize());
+
+        ByteBuffer buf = ByteBuffer.wrap(buffer);
+        writePayload(buf);    
+        buffer.flip();
+        return buffer;
+    }
+
 }

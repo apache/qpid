@@ -44,6 +44,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.network.io.IoSender;
 import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 
 /**
@@ -99,7 +100,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     private MethodDispatcher _methodDispatcher;
 
-    private final AMQConnection _connection;
+    protected final AMQConnection _connection;
+
     private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
@@ -118,11 +120,20 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     }
 
+    public AMQProtocolSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
+    {
+        _protocolHandler = protocolHandler;
+        _minaProtocolSession = null;
+        _protocolVersion = connection.getProtocolVersion();
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
+                                                                           this);
+        _connection = connection;
+    }
+
     public void init()
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-
         _minaProtocolSession.write(new ProtocolInitiation(_connection.getProtocolVersion()));
     }
 
@@ -171,7 +182,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public SaslClient getSaslClient()
     {
-        return (SaslClient) _minaProtocolSession.getAttribute(SASL_CLIENT);
+        return (SaslClient) _minaProtocolSession.getAttribute(SASL_CLIENT);    
     }
 
     /**
@@ -422,6 +433,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         }
 
         _logger.debug("Closing protocol session");
+        
         final CloseFuture future = _minaProtocolSession.close();
 
         // There is no recovery we can do if the join on the close failes so simply mark the connection CLOSED
@@ -430,7 +442,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         // error now shouldn't matter.
 
         _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
-
         future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
     }
 
@@ -534,5 +545,10 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void notifyError(Exception error)
     {
         _protocolHandler.propagateExceptionToAllWaiters(error);
+    }
+
+    public void setSender(IoSender sender)
+    {
+        // No-op, interface munging
     }
 }

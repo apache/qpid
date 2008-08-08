@@ -29,6 +29,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.transport.network.io.IoSender;
 
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
@@ -245,5 +246,17 @@ public class MockProtocolSession implements AMQProtocolSession
     public VersionSpecificRegistry getRegistry()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setSender(IoSender sender)
+    {
+        // FIXME AS TODO
+        
+    }
+
+    public void init()
+    {
+        // TODO Auto-generated method stub
+        
     }
 }
