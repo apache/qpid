@@ -104,6 +104,10 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     List<QueueEntry> getMessagesOnTheQueue(long fromMessageId, long toMessageId);
 
+    List<Long> getMessagesOnTheQueue(int num);
+
+    List<Long> getMessagesOnTheQueue(int num, int offest);
+
     QueueEntry getMessageOnTheQueue(long messageId);
 
 
