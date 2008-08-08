@@ -21,6 +21,7 @@
 package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.*;
+import org.apache.qpid.transport.network.io.IoSender;
 import org.apache.qpid.AMQException;
 
 /**
@@ -53,5 +54,8 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
     public void contentBodyReceived(int channelId, ContentBody body) throws AMQException;
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body) throws AMQException;
 
+
+    public void setSender(IoSender sender);
+    public void init();
 
 }
