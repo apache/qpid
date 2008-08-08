@@ -20,34 +20,24 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.client.BasicMessageConsumer;
 
-/**
- * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and
- * the content body/ies.
- *
- * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
- * thread in order to minimise the amount of work done in the MINA dispatcher thread.
- */
-public class UnprocessedMessage_0_10 extends UnprocessedMessage
+public final class CloseConsumerMessage extends UnprocessedMessage
 {
-    private MessageTransfer _transfer;
 
-    public UnprocessedMessage_0_10(int consumerTag, MessageTransfer xfr)
+    public CloseConsumerMessage(BasicMessageConsumer consumer)
     {
-        super(consumerTag);
-        _transfer = xfr;
+        super(consumer.getConsumerTag());
     }
 
-    // additional 0_10 method
 
     public long getDeliveryTag()
     {
-        return _transfer.getId();
+        return 0;
     }
 
-    public MessageTransfer getMessageTransfer()
+    public boolean isRedelivered()
     {
-        return _transfer;
+        return false;
     }
 }

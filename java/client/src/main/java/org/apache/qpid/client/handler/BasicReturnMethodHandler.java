@@ -45,14 +45,14 @@ public class BasicReturnMethodHandler implements StateAwareMethodListener<BasicR
     throws AMQException
     {
         _logger.debug("New JmsBounce method received");
-        final ReturnMessage msg = new ReturnMessage(channelId,
+        final ReturnMessage msg = new ReturnMessage(
                 body.getExchange(),
                 body.getRoutingKey(),
                 body.getReplyText(),
                 body.getReplyCode()
         );
 
-        session.unprocessedMessageReceived(msg);
+        session.unprocessedMessageReceived(channelId, msg);
     }
 
 }

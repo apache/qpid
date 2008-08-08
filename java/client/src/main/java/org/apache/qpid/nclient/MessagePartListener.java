@@ -20,6 +20,7 @@ package org.apache.qpid.nclient;
 import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageTransfer;
 
 /**
  * Assembles message parts.
@@ -33,31 +34,13 @@ import org.apache.qpid.transport.Header;
  * are transferred.
  */
 public interface MessagePartListener
-{    
-    /**
-     * Indicates the Message transfer has started.
-     * 
-     * @param transferId The message transfer ID. 
-     */
-    public void messageTransfer(int transferId);
-    
-    /**
-     * Add the following a header to the message being received.
-     *
-     * @param header Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
-     */
-    public void messageHeader(Header header);
+{
 
     /**
-     * Add the following byte array to the content of the message being received
+     * Inform the listener of the message transfer
      *
-     * @param src Data to be added or streamed.
+     * @param xfr the message transfer object
      */
-    public void data(ByteBuffer src);
-
-    /**
-     * Indicates that the message has been fully received. 
-     */
-    public void messageReceived();
+    public void messageTransfer(MessageTransfer xfr);
 
 }

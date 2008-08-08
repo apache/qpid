@@ -43,13 +43,12 @@ public class BasicDeliverMethodHandler implements StateAwareMethodListener<Basic
             throws AMQException
     {
         final UnprocessedMessage_0_8 msg = new UnprocessedMessage_0_8(
-                channelId,
                 body.getDeliveryTag(),
-                body.getConsumerTag(),
+                body.getConsumerTag().toIntValue(),
                 body.getExchange(),
                 body.getRoutingKey(),
                 body.getRedelivered());
         _logger.debug("New JmsDeliver method received:" + session);
-        session.unprocessedMessageReceived(msg);
+        session.unprocessedMessageReceived(channelId, msg);
     }
 }

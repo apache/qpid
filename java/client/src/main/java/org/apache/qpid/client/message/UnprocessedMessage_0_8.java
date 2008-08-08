@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
@@ -37,9 +36,15 @@ import org.apache.qpid.framing.ContentHeaderBody;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody,ContentBody>
+public class UnprocessedMessage_0_8 extends UnprocessedMessage
 {
     private long _bytesReceived = 0;
+
+
+    private AMQShortString _exchange;
+    private AMQShortString _routingKey;
+    private final long _deliveryId;
+    protected boolean _redelivered;
 
     private BasicDeliverBody _deliverBody;
     private ContentHeaderBody _contentHeader;
@@ -47,21 +52,37 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ContentBody> _bodies;
 
-    public UnprocessedMessage_0_8(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage_0_8(long deliveryId, int consumerTag, AMQShortString exchange, AMQShortString routingKey, boolean redelivered)
     {
-        super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
+        super(consumerTag);
+        _exchange = exchange;
+        _routingKey = routingKey;
+
+        _redelivered = redelivered;
+        _deliveryId = deliveryId;
     }
 
-    public UnprocessedMessage_0_8(int channelId, BasicReturnBody body)
+
+    public AMQShortString getExchange()
     {
-        //FIXME: TGM, SRSLY 4RL
-        super(channelId, 0, null, body.getExchange(), body.getRoutingKey(), false);
+        return _exchange;
     }
 
-    public UnprocessedMessage_0_8(int channelId, BasicDeliverBody body)
+    public AMQShortString getRoutingKey()
     {
-        super(channelId, body.getDeliveryTag(), body.getConsumerTag(), body.getExchange(), body.getRoutingKey(), false);
+        return _routingKey;
     }
+
+    public long getDeliveryTag()
+    {
+        return _deliveryId;
+    }
+
+    public boolean isRedelivered()
+    {
+        return _redelivered;
+    }
+
 
     public void receiveBody(ContentBody body)
     {
@@ -124,7 +145,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage<ContentHeaderBody
     public String toString()
     {
         StringBuilder buf = new StringBuilder();
-        buf.append("Channel Id : " + this.getChannelId());
+
         if (_contentHeader != null)
         {
           buf.append("ContentHeader " + _contentHeader);

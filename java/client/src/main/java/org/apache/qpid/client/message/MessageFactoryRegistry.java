@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.ByteBuffer;
 
 import javax.jms.JMSException;
 
@@ -32,6 +33,8 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.DeliveryProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,24 +121,30 @@ public class MessageFactoryRegistry
         }
     }
 
-    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                            Struct[] contentHeader, List bodies) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(MessageTransfer transfer) throws AMQException, JMSException
     {
-        MessageProperties mprop = (MessageProperties) contentHeader[0];
+
+        MessageProperties mprop = transfer.getHeader().get(MessageProperties.class);
         String messageType = mprop.getContentType();
         if (messageType == null)
         {
             _logger.debug("no message type specified, building a byte message");
             messageType = JMSBytesMessage.MIME_TYPE;
         }
-        MessageFactory mf = _mimeShortStringToFactoryMap.get(new AMQShortString(messageType));
+        MessageFactory mf = _mimeStringToFactoryMap.get(messageType);
         if (mf == null)
         {
             throw new AMQException(null, "Unsupport MIME type of " + messageType, null);
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, bodies);
+            boolean redelivered = false;
+            DeliveryProperties deliverProps;
+            if((deliverProps = transfer.getHeader().get(DeliveryProperties.class)) != null)
+            {
+                redelivered = deliverProps.getRedelivered();
+            }
+            return mf.createMessage(transfer.getId(), redelivered, transfer.getHeader().getStructs(), transfer.getBody());
         }
     }
 
