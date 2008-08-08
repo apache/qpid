@@ -1613,4 +1613,26 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             deliverAsync(_sub);
         }
     }
+
+    public List<Long> getMessagesOnTheQueue(int num)
+    {
+        return getMessagesOnTheQueue(num, 0);
+    }
+
+    public List<Long> getMessagesOnTheQueue(int num, int offset)
+    {
+        ArrayList<Long> ids = new ArrayList<Long>(num);
+        QueueEntryIterator it = _entries.iterator();
+        for (int i = 0; i < offset; i++)
+        {
+            it.advance();
+        }
+
+        for (int i = 0; i < num && !it.atTail(); i++)
+        {
+            it.advance();
+            ids.add(it.getNode().getMessage().getMessageId());
+        }
+        return ids;
+    }
 }
