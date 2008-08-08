@@ -52,6 +52,10 @@ public class DupsOkTest extends QpidTestCase
         _queue = (Queue)  getInitialContext().lookup("queue");
 
 
+        //Declare the queue
+        Connection consumerConnection = getConnection();
+        consumerConnection.createSession(false,Session.AUTO_ACKNOWLEDGE).createConsumer(_queue).close();
+
         //Create Producer put some messages on the queue
         Connection producerConnection = getConnection();
 
@@ -83,11 +87,13 @@ public class DupsOkTest extends QpidTestCase
         //Create Client
         Connection clientConnection = getConnection();
 
-        clientConnection.start();
-
         final Session clientSession = clientConnection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
 
         MessageConsumer consumer = clientSession.createConsumer(_queue);
+
+        assertEquals("The queue should have msgs at start", MSG_COUNT, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
+
+        clientConnection.start();        
 
         consumer.setMessageListener(new MessageListener()
         {
@@ -146,11 +152,13 @@ public class DupsOkTest extends QpidTestCase
             throw e;
         }
 
-
-        // wait for the ack to get back
-        Thread.sleep(1000);
+        //Close consumer to give broker time to process in bound Acks. As The main thread will be released while
+        // before the dispatcher has sent the ack back to the broker.
+        consumer.close();
 
         assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
+
+        clientConnection.close();
     }
 
 }
