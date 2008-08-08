@@ -7,9 +7,9 @@ public class ReturnMessage extends UnprocessedMessage_0_8
     final private AMQShortString  _replyText;
     final private int _replyCode;
 
-    public ReturnMessage(int channelId,AMQShortString exchange,AMQShortString routingKey,AMQShortString replyText,int replyCode)
+    public ReturnMessage(AMQShortString exchange, AMQShortString routingKey, AMQShortString replyText, int replyCode)
     {
-        super(channelId,-1,null,exchange,routingKey,false);
+        super(-1,0,exchange,routingKey,false);
         _replyText = replyText;
         _replyCode = replyCode;
     }

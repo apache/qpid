@@ -200,7 +200,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             break;
         case HEADER:
             command = incomplete[channel];
-            List<Struct> structs = new ArrayList();
+            List<Struct> structs = new ArrayList(2);
             while (dec.hasRemaining())
             {
                 structs.add(dec.readStruct32());

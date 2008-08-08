@@ -128,8 +128,14 @@ public class Session extends Invoker
     {
         int id = nextCommandId();
         cmd.setId(id);
-        log.debug("ID: [%s] %s", this.channel, id);
-        if ((id % 65536) == 0)
+
+        if(log.isDebugEnabled())
+        {
+            log.debug("ID: [%s] %s", this.channel, id);
+        }
+
+        //if ((id % 65536) == 0)
+        if ((id & 0xff) == 0)
         {
             flushProcessed(TIMELY_REPLY);
         }
@@ -232,7 +238,11 @@ public class Session extends Invoker
 
     boolean complete(int lower, int upper)
     {
-        log.debug("%s complete(%d, %d)", this, lower, upper);
+        //avoid autoboxing
+        if(log.isDebugEnabled())
+        {
+            log.debug("%s complete(%d, %d)", this, lower, upper);
+        }
         synchronized (commands)
         {
             int old = maxComplete;
