@@ -34,8 +34,8 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
-import org.apache.qpid.server.protocol.TestMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -185,7 +185,7 @@ public class AMQQueueAlertTest extends TestCase
     */
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
-        _protocolSession = new TestMinaProtocolSession();
+        _protocolSession = new InternalTestProtocolSession();
         AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
         _protocolSession.addChannel(channel);
 
@@ -296,7 +296,7 @@ public class AMQQueueAlertTest extends TestCase
         super.setUp();
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _protocolSession = new TestMinaProtocolSession();
+        _protocolSession = new InternalTestProtocolSession();
 
     }
 
