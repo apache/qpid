@@ -34,7 +34,6 @@ import org.apache.qpid.transport.Struct;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.List;
 
 import static org.apache.qpid.transport.network.Frame.*;
 
@@ -209,11 +208,11 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         if (payload)
         {
             final Header hdr = method.getHeader();
-            final List<Struct> structs = hdr.getStructs();
-            final int nstructs = structs.size();
-            for (int i = 0; i < nstructs; i++)
+            final Struct[] structs = hdr.getStructs();
+
+            for (Struct st : structs)
             {
-                enc.writeStruct32(structs.get(i));
+                enc.writeStruct32(st);
             }
             headerSeg = enc.segment();
         }

@@ -26,15 +26,7 @@ public class ClientSessionDelegate extends SessionDelegate
     {
         MessagePartListener listener = ((ClientSession)session).getMessageListeners()
             .get(xfr.getDestination());
-        listener.messageTransfer(xfr.getId());
-        listener.messageHeader(xfr.getHeader());
-        ByteBuffer body = xfr.getBody();
-        if (body == null)
-        {
-            body = ByteBuffer.allocate(0);
-        }
-        listener.data(body);
-        listener.messageReceived();
+        listener.messageTransfer(xfr);
     }
 
     @Override public void messageReject(Session session, MessageReject struct)

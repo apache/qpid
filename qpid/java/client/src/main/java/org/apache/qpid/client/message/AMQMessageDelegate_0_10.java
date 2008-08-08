@@ -22,19 +22,14 @@
 package org.apache.qpid.client.message;
 
 import org.apache.commons.collections.map.ReferenceMap;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQUndefinedDestination;
-import org.apache.qpid.client.JMSAMQException;
+import org.apache.qpid.client.*;
 import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
+import org.apache.qpid.nclient.*;
 import org.apache.qpid.jms.Message;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
@@ -47,8 +42,10 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageFormatException;
 import javax.jms.DeliveryMode;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
 {
@@ -68,27 +65,32 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
     private AMQSession _session;
     private final long _deliveryTag;
 
-    private static Map<String,Integer> _exchangeTypeMap = new HashMap<String, Integer>();
+    private static Map<AMQShortString,Integer> _exchangeTypeMap = new ConcurrentHashMap<AMQShortString, Integer>();
+    private static Map<String,Integer> _exchangeTypeStringMap = new ConcurrentHashMap<String, Integer>();
+    private static Map<String, Integer> _exchangeTypeToDestinationType = new ConcurrentHashMap<String, Integer>();;
 
     static
     {
-        // TODO - XXX - Need to add to this map when we find an exchange we don't know about
+        _exchangeTypeMap.put(ExchangeDefaults.DIRECT_EXCHANGE_NAME, AMQDestination.QUEUE_TYPE);
+        _exchangeTypeMap.put(AMQShortString.EMPTY_STRING, AMQDestination.QUEUE_TYPE);
+        _exchangeTypeMap.put(ExchangeDefaults.TOPIC_EXCHANGE_NAME, AMQDestination.TOPIC_TYPE);
+        _exchangeTypeMap.put(ExchangeDefaults.FANOUT_EXCHANGE_NAME, AMQDestination.TOPIC_TYPE);
 
-        _exchangeTypeMap.put(null, AMQDestination.QUEUE_TYPE);
-        _exchangeTypeMap.put("amq.direct", AMQDestination.QUEUE_TYPE);
-        _exchangeTypeMap.put("", AMQDestination.QUEUE_TYPE);
-        _exchangeTypeMap.put("amq.topic", AMQDestination.TOPIC_TYPE);
-        _exchangeTypeMap.put("amq.fanout", AMQDestination.TOPIC_TYPE);
+        _exchangeTypeStringMap.put(ExchangeDefaults.DIRECT_EXCHANGE_NAME.toString(), AMQDestination.QUEUE_TYPE);
+        _exchangeTypeStringMap.put("", AMQDestination.QUEUE_TYPE);
+        _exchangeTypeStringMap.put(ExchangeDefaults.TOPIC_EXCHANGE_NAME.toString(), AMQDestination.TOPIC_TYPE);
+        _exchangeTypeStringMap.put(ExchangeDefaults.FANOUT_EXCHANGE_NAME.toString(), AMQDestination.TOPIC_TYPE);
 
-        
+
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS.toString(), AMQDestination.QUEUE_TYPE);
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.TOPIC_EXCHANGE_NAME.toString(), AMQDestination.TOPIC_TYPE);
+        _exchangeTypeToDestinationType.put(ExchangeDefaults.FANOUT_EXCHANGE_NAME.toString(), AMQDestination.TOPIC_TYPE);
     }
 
     protected AMQMessageDelegate_0_10()
     {
         this(new MessageProperties(), new DeliveryProperties(), -1);
         _readableProperties = false;
-
-
     }
 
     protected AMQMessageDelegate_0_10(long deliveryTag, MessageProperties messageProps, DeliveryProperties deliveryProps, AMQShortString exchange,
@@ -99,13 +101,68 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
 
         AMQDestination dest;
 
-        dest = new AMQUndefinedDestination(exchange, routingKey, null);
-
-        // Destination dest = AMQDestination.createDestination(url);
+        dest = generateDestination(exchange, routingKey);
         setJMSDestination(dest);
+    }
+
+    private AMQDestination generateDestination(AMQShortString exchange, AMQShortString routingKey)
+    {
+        AMQDestination dest;
+        switch(getExchangeType(exchange))
+        {
+            case AMQDestination.QUEUE_TYPE:
+                dest = new AMQQueue(exchange, routingKey, routingKey);
+                break;
+            case  AMQDestination.TOPIC_TYPE:
+                dest = new AMQTopic(exchange, routingKey, null);
+                break;
+            default:
+                dest = new AMQUndefinedDestination(exchange, routingKey, null);
+
+        }
+
+        return dest;
+    }
+
+    private int getExchangeType(AMQShortString exchange)
+    {
+        Integer type = _exchangeTypeMap.get(exchange == null ? AMQShortString.EMPTY_STRING : exchange);
+
+        if(type == null)
+        {
+            return AMQDestination.UNKNOWN_TYPE;
+        }
 
 
+        return type;
+    }
 
+
+    public static void updateExchangeTypeMapping(Header header, org.apache.qpid.nclient.Session session)
+    {
+        DeliveryProperties deliveryProps = header.get(DeliveryProperties.class);
+        if(deliveryProps != null)
+        {
+            String exchange = deliveryProps.getExchange();
+
+            if(exchange != null && !_exchangeTypeStringMap.containsKey(exchange))
+            {
+
+                AMQShortString exchangeShortString = new AMQShortString(exchange);
+                Future<ExchangeQueryResult> future =
+                                session.exchangeQuery(exchange.toString());
+                ExchangeQueryResult res = future.get();
+
+                Integer type = _exchangeTypeToDestinationType.get(res.getType());
+                if(type == null)
+                {
+                    type = AMQDestination.UNKNOWN_TYPE;
+                }
+                _exchangeTypeStringMap.put(exchange, type);
+                _exchangeTypeMap.put(exchangeShortString, type);
+
+            }
+        }
     }
 
     protected AMQMessageDelegate_0_10(MessageProperties messageProps, DeliveryProperties deliveryProps, long deliveryTag)
@@ -212,19 +269,10 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
                 String exchange = replyTo.getExchange();
                 String routingKey = replyTo.getRoutingKey();
 
-                int type = _exchangeTypeMap.get(exchange);
+                dest = generateDestination(exchange == null ? null : new AMQShortString(exchange),
+                        routingKey == null ? null : new AMQShortString(routingKey));
 
-                switch(type)
-                {
-                    case AMQDestination.QUEUE_TYPE:
-                        dest = new AMQQueue(new AMQShortString(exchange), new AMQShortString(routingKey), new AMQShortString(routingKey));
-                        break;
-                    case  AMQDestination.TOPIC_TYPE:
-                        dest = new AMQTopic(new AMQShortString(exchange), new AMQShortString(routingKey), null);
-                        break;
-                    default:
-                        dest = new AMQUndefinedDestination(new AMQShortString(exchange), new AMQShortString(routingKey), null);
-                }
+
 
 
 
@@ -897,4 +945,5 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
     {
         return _deliveryProps;
     }
+
 }

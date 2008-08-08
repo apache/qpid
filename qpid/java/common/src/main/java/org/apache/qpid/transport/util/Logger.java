@@ -42,6 +42,11 @@ public final class Logger
         this.log = log;
     }
 
+    public boolean isDebugEnabled()
+    {
+        return log.isDebugEnabled();
+    }
+
     public void debug(String message, Object ... args)
     {
         if (log.isDebugEnabled())

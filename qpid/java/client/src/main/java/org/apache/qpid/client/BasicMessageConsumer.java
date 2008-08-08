@@ -22,10 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
@@ -49,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class BasicMessageConsumer<H, B> extends Closeable implements MessageConsumer
+public abstract class BasicMessageConsumer<U> extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
@@ -72,7 +69,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
     /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
-    protected AMQShortString _consumerTag;
+    protected int _consumerTag;
 
     /** We need to know the channel id when constructing frames */
     protected final int _channelId;
@@ -517,7 +514,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
             throw e;
         }
-        else if (o instanceof UnprocessedMessage.CloseConsumerMessage)
+        else if (o instanceof CloseConsumerMessage)
         {
             _closed.set(true);
             deregisterConsumer();
@@ -635,7 +632,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * @param closeMessage
      *            this message signals that we should close the browser
      */
-    public void notifyCloseMessage(UnprocessedMessage.CloseConsumerMessage closeMessage)
+    public void notifyCloseMessage(CloseConsumerMessage closeMessage)
     {
         if (isMessageListenerSet())
         {
@@ -667,26 +664,21 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      *
      * @param messageFrame the raw unprocessed mesage
      */
-    void notifyMessage(UnprocessedMessage messageFrame)
+    void notifyMessage(U messageFrame)
     {
-        if (messageFrame instanceof UnprocessedMessage.CloseConsumerMessage)
+        if (messageFrame instanceof CloseConsumerMessage)
         {
-            notifyCloseMessage((UnprocessedMessage.CloseConsumerMessage) messageFrame);
+            notifyCloseMessage((CloseConsumerMessage) messageFrame);
             return;
         }
 
-        final boolean debug = _logger.isDebugEnabled();
 
-        if (debug)
-        {
-            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliveryTag());
-        }
 
         try
         {
             AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(_session.getMessageDelegateFactory(), messageFrame);
 
-            if (debug)
+            if (_logger.isDebugEnabled())
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             }
@@ -721,7 +713,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage<H, B> messageFrame)
+    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, U messageFrame)
             throws Exception;
 
     /** @param jmsMessage this message has already been processed so can't redo preDeliver */
@@ -936,12 +928,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _session.deregisterConsumer(this);
     }
 
-    public AMQShortString getConsumerTag()
+    public int getConsumerTag()
     {
         return _consumerTag;
     }
 
-    public void setConsumerTag(AMQShortString consumerTag)
+    public void setConsumerTag(int consumerTag)
     {
         _consumerTag = consumerTag;
     }

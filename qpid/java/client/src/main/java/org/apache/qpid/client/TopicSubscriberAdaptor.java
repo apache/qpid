@@ -32,20 +32,20 @@ import javax.jms.TopicSubscriber;
  * Wraps a MessageConsumer to fulfill the extended TopicSubscriber contract
  *
  */
-class TopicSubscriberAdaptor implements TopicSubscriber
+class TopicSubscriberAdaptor<C extends BasicMessageConsumer> implements TopicSubscriber
 {
     private final Topic _topic;
-    private final BasicMessageConsumer _consumer;
+    private final C _consumer;
     private final boolean _noLocal;
 
-    TopicSubscriberAdaptor(Topic topic, BasicMessageConsumer consumer, boolean noLocal)
+    TopicSubscriberAdaptor(Topic topic, C consumer, boolean noLocal)
     {
         _topic = topic;
         _consumer = consumer;
         _noLocal = noLocal;
     }
     
-    TopicSubscriberAdaptor(Topic topic, BasicMessageConsumer consumer)
+    TopicSubscriberAdaptor(Topic topic, C consumer)
     {
         this(topic, consumer, consumer.isNoLocal());
     }
@@ -103,7 +103,7 @@ class TopicSubscriberAdaptor implements TopicSubscriber
     }
     
     private void checkPreConditions() throws javax.jms.IllegalStateException{
-    	BasicMessageConsumer msgConsumer = (BasicMessageConsumer)_consumer;
+    	C msgConsumer = _consumer;
     	
     	if (msgConsumer.isClosed() ){
 			throw new javax.jms.IllegalStateException("Consumer is closed");
@@ -120,7 +120,7 @@ class TopicSubscriberAdaptor implements TopicSubscriber
 		}
 	}
 
-    BasicMessageConsumer getMessageConsumer()
+    C getMessageConsumer()
     {
         return _consumer;
     }
