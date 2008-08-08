@@ -22,8 +22,36 @@
  */
 
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <fcntl.h>
+#include <cerrno>
+#include <unistd.h>
 
 namespace qpid {
+
+class LockFile {
+public:
+    LockFile(const std::string& path_, bool create):
+        path(path_), fd(-1), created(create) {
+        int flags=create ? O_WRONLY|O_CREAT|O_NOFOLLOW : O_RDWR;
+        fd = ::open(path.c_str(), flags, 0644);
+        if (fd < 0) throw Exception("Cannot open " + path + ": " + strError(errno));
+        if (::lockf(fd, F_TLOCK, 0) < 0) throw Exception("Cannot lock " + path + ": " + strError(errno));
+    }
+
+    ~LockFile() {
+        if (fd >= 0) {
+            (void) ::lockf(fd, F_ULOCK, 0); // Suppress warnings about ignoring return value.
+            ::close(fd);
+        }
+    }
+
+    std::string path;
+    int fd;
+    bool created;
+};
 
 /**
  * DataDir class.
@@ -32,6 +60,7 @@ class DataDir
 {
     const bool        enabled;
     const std::string dirPath;
+    std::auto_ptr<LockFile> lockFile;
 
   public:
 

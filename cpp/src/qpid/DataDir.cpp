@@ -28,6 +28,7 @@
 
 namespace qpid {
 
+
 DataDir::DataDir (std::string path) :
     enabled (!path.empty ()),
     dirPath (path)
@@ -50,34 +51,12 @@ DataDir::DataDir (std::string path) :
             throw Exception ("Data directory not found: " + path);
     }
 
-    std::string lockFile (path);
-    lockFile = lockFile + "/lock";
-    int fd = ::open (lockFile.c_str (), O_CREAT | O_EXCL,
-                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fd == -1)
-    {
-        if (errno == EEXIST)
-            throw Exception ("Data directory is locked by another process: " + path);
-        if (errno == EACCES)
-            throw Exception ("Insufficient privileges for data directory: " + path);
-        throw Exception(
-            QPID_MSG("Error locking " << lockFile << ": " << strError(errno)));
-    }
-
-    QPID_LOG (info, "Locked data directory: " << dirPath);
+    std::string lockFileName(path);
+    lockFileName += "/lock";
+    lockFile = std::auto_ptr<LockFile>(new LockFile(lockFileName, true));
 }
 
-DataDir::~DataDir ()
-{
-    if (dirPath.empty ())
-        return;
-
-    std::string lockFile (dirPath);
-    lockFile = lockFile + "/lock";
-
-    ::unlink (lockFile.c_str ());
-    QPID_LOG (info, "Unlocked data directory: " << dirPath);
-}
+DataDir::~DataDir () {}
 
 } // namespace qpid
 
