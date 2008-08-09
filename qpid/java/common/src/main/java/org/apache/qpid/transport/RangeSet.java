@@ -47,6 +47,11 @@ public final class RangeSet implements Iterable<Range>
         return ranges.iterator();
     }
 
+    public Range getFirst()
+    {
+        return ranges.getFirst();
+    }
+
     public boolean includes(Range range)
     {
         for (Range r : this)

@@ -27,11 +27,14 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.util.Logger;
@@ -45,7 +48,7 @@ import org.apache.qpid.transport.util.Logger;
  * SO_RCVBUF    - amqj.receiveBufferSize
  * SO_SNDBUF    - amqj.sendBufferSize
  */
-public final class IoTransport
+public final class IoTransport<E>
 {
 
     static
@@ -59,69 +62,24 @@ public final class IoTransport
     private static final Logger log = Logger.get(IoTransport.class);
 
     private static int DEFAULT_READ_WRITE_BUFFER_SIZE = 64 * 1024;
+    private static int readBufferSize = Integer.getInteger
+        ("amqj.receiveBufferSize", DEFAULT_READ_WRITE_BUFFER_SIZE);
+    private static int writeBufferSize = Integer.getInteger
+        ("amqj.sendBufferSize", DEFAULT_READ_WRITE_BUFFER_SIZE);
 
-    private IoReceiver receiver;
-    private IoSender sender;
     private Socket socket;
-    private int readBufferSize;
-    private int writeBufferSize;
-    private final long timeout = 60000;
+    private IoSender sender;
+    private E endpoint;
+    private IoReceiver receiver;
+    private long timeout = 60000;
 
-    private IoTransport()
+    IoTransport(Socket socket, Binding<E,ByteBuffer> binding)
     {
-        readBufferSize = Integer.getInteger("amqj.receiveBufferSize",DEFAULT_READ_WRITE_BUFFER_SIZE);
-        writeBufferSize = Integer.getInteger("amqj.sendBufferSize",DEFAULT_READ_WRITE_BUFFER_SIZE);
-    }
-
-    public static final Connection connect(String host, int port,
-            ConnectionDelegate delegate)
-    {
-        IoTransport handler = new IoTransport();
-        return handler.connectInternal(host,port,delegate);
-    }
-
-    private Connection connectInternal(String host, int port,
-            ConnectionDelegate delegate)
-    {
-        createSocket(host, port);
-
-        sender = new IoSender(this, 2*writeBufferSize, timeout);
-        Connection conn = new Connection
-            (new Disassembler(sender, 64*1024 - 1), delegate);
-        receiver = new IoReceiver(this, new InputHandler(new Assembler(conn)),
-                                  2*readBufferSize, timeout);
-
-        return conn;
-    }
-
-    private void createSocket(String host, int port)
-    {
-        try
-        {
-            InetAddress address = InetAddress.getByName(host);
-            socket = new Socket();
-            socket.setReuseAddress(true);
-            socket.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
-
-            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.setSendBufferSize(writeBufferSize);
-            socket.setReceiveBufferSize(readBufferSize);
-
-            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.connect(new InetSocketAddress(address, port));
-        }
-        catch (SocketException e)
-        {
-            throw new TransportException("Error connecting to broker", e);
-        }
-        catch (IOException e)
-        {
-            throw new TransportException("Error connecting to broker", e);
-        }
+        this.socket = socket;
+        this.sender = new IoSender(this, 2*writeBufferSize, timeout);
+        this.endpoint = binding.endpoint(sender);
+        this.receiver = new IoReceiver(this, binding.receiver(endpoint),
+                                       2*readBufferSize, timeout);
     }
 
     IoSender getSender()
@@ -139,21 +97,78 @@ public final class IoTransport
         return socket;
     }
 
-    public static void connect_0_9 (AMQVersionAwareProtocolSession session, String host, int port)
+    public static final <E> E connect(String host, int port,
+                                      Binding<E,ByteBuffer> binding)
     {
-        IoTransport handler = new IoTransport();
-        handler.connectInternal_0_9(session, host, port);
+        Socket socket = createSocket(host, port);
+        IoTransport<E> transport = new IoTransport<E>(socket, binding);
+        return transport.endpoint;
     }
-    
-    public void connectInternal_0_9(AMQVersionAwareProtocolSession session, String host, int port)
+
+    public static final Connection connect(String host, int port,
+                                           ConnectionDelegate delegate)
+    {
+        return connect(host, port, new ConnectionBinding(delegate));
+    }
+
+    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port)
+    {
+        connect(host, port, new Binding_0_9(session));
+    }
+
+    private static class Binding_0_9
+        implements Binding<AMQVersionAwareProtocolSession,ByteBuffer>
     {
 
-        createSocket(host, port);
+        private AMQVersionAwareProtocolSession session;
 
-        sender = new IoSender(this, 2*writeBufferSize, timeout);
-        receiver = new IoReceiver(this, new InputHandler_0_9(session),
-                    2*readBufferSize, timeout);
-        session.setSender(sender);
+        Binding_0_9(AMQVersionAwareProtocolSession session)
+        {
+            this.session = session;
+        }
+
+        public AMQVersionAwareProtocolSession endpoint(Sender<ByteBuffer> sender)
+        {
+            session.setSender(sender);
+            return session;
+        }
+
+        public Receiver<ByteBuffer> receiver(AMQVersionAwareProtocolSession ssn)
+        {
+            return new InputHandler_0_9(ssn);
+        }
+
+    }
+
+    private static Socket createSocket(String host, int port)
+    {
+        try
+        {
+            InetAddress address = InetAddress.getByName(host);
+            Socket socket = new Socket();
+            socket.setReuseAddress(true);
+            socket.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
+
+            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.setSendBufferSize(writeBufferSize);
+            socket.setReceiveBufferSize(readBufferSize);
+
+            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.connect(new InetSocketAddress(address, port));
+            return socket;
+        }
+        catch (SocketException e)
+        {
+            throw new TransportException("Error connecting to broker", e);
+        }
+        catch (IOException e)
+        {
+            throw new TransportException("Error connecting to broker", e);
+        }
     }
 
 }

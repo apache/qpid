@@ -16,12 +16,12 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.transport.network.io.IoSender;
+import org.apache.qpid.transport.Sender;
 
 public class AMQIoTransportProtocolSession extends AMQProtocolSession
 {
 
-    protected IoSender _ioSender;
+    protected Sender<java.nio.ByteBuffer> _ioSender;
     private SaslClient _saslClient;
     private ConnectionTuneParameters _connectionTuneParameters;
     
@@ -102,7 +102,7 @@ public class AMQIoTransportProtocolSession extends AMQProtocolSession
     }
     
     @Override
-    public void setSender(IoSender sender)
+    public void setSender(Sender<java.nio.ByteBuffer> sender)
     {
         _ioSender = sender;
     }

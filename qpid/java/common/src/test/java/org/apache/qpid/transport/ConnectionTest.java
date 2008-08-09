@@ -24,8 +24,9 @@ import org.apache.mina.util.AvailablePortFinder;
 
 import org.apache.qpid.util.concurrent.Condition;
 
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.network.io.IoAcceptor;
 import org.apache.qpid.transport.network.io.IoTransport;
-import org.apache.qpid.transport.network.mina.MinaHandler;
 import org.apache.qpid.transport.util.Logger;
 
 import junit.framework.TestCase;
@@ -63,7 +64,9 @@ public class ConnectionTest extends TestCase
             public void closed() {}
         };
 
-        MinaHandler.accept("localhost", port, server);
+        IoAcceptor ioa = new IoAcceptor
+            ("localhost", port, new ConnectionBinding(server));
+        ioa.start();
     }
 
     private Connection connect(final Condition closed)

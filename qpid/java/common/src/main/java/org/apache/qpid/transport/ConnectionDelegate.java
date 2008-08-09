@@ -248,6 +248,11 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
         context.connectionOpenOk(hosts);
     }
 
+    @Override public void connectionClose(Channel ch, ConnectionClose close)
+    {
+        ch.connectionCloseOk();
+    }
+
     public String getPassword()
     {
         return _password;
