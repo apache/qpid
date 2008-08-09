@@ -76,7 +76,8 @@ public class Session extends Invoker
     // completed incoming commands
     private final Object processedLock = new Object();
     private RangeSet processed = new RangeSet();
-    private Range syncPoint = null;
+    private int maxProcessed = commandsIn - 1;
+    private int syncPoint = maxProcessed;
 
     // outgoing command count
     private int commandsOut = 0;
@@ -165,7 +166,16 @@ public class Session extends Invoker
         synchronized (processedLock)
         {
             processed.add(range);
-            flush = syncPoint != null && processed.includes(syncPoint);
+            Range first = processed.getFirst();
+            int lower = first.getLower();
+            int upper = first.getUpper();
+            int old = maxProcessed;
+            if (le(lower, maxProcessed + 1))
+            {
+                maxProcessed = max(maxProcessed, upper);
+            }
+            flush = lt(old, syncPoint) && ge(maxProcessed, syncPoint);
+            syncPoint = maxProcessed;
         }
         if (flush)
         {
@@ -206,15 +216,11 @@ public class Session extends Invoker
     {
         int id = getCommandsIn() - 1;
         log.debug("%s synced to %d", this, id);
-        Range range = new Range(0, id - 1);
         boolean flush;
         synchronized (processedLock)
         {
-            flush = processed.includes(range);
-            if (!flush)
-            {
-                syncPoint = range;
-            }
+            syncPoint = id;
+            flush = ge(maxProcessed, syncPoint);
         }
         if (flush)
         {
