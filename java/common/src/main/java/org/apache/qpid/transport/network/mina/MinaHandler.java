@@ -38,6 +38,7 @@ import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.ConnectionBinding;
 
 import org.apache.qpid.transport.util.Logger;
 
@@ -55,7 +56,6 @@ import static org.apache.qpid.transport.util.Functions.*;
 //RA making this public until we sort out the package issues
 public class MinaHandler<E> implements IoHandler
 {
-    private static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
     /** Default buffer size for pending messages reads */
     private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
     /** Default buffer size for pending messages writes */
@@ -201,7 +201,7 @@ public class MinaHandler<E> implements IoHandler
         IoAcceptor acceptor = new SocketAcceptor();
         acceptor.bind(address, new MinaHandler<E>(binding));
     }
-                   
+
     public static final <E> E connect(String host, int port,
                                       Binding<E,java.nio.ByteBuffer> binding)
     {
@@ -262,43 +262,13 @@ public class MinaHandler<E> implements IoHandler
                                     ConnectionDelegate delegate)
         throws IOException
     {
-        accept(host, port, new ConnectionBinding
-               (delegate, InputHandler.State.PROTO_HDR));
+        accept(host, port, new ConnectionBinding(delegate));
     }
 
     public static final Connection connect(String host, int port,
                                            ConnectionDelegate delegate)
     {
-        return connect(host, port, new ConnectionBinding
-                       (delegate, InputHandler.State.PROTO_HDR));
-    }
-
-    private static class ConnectionBinding
-        implements Binding<Connection,java.nio.ByteBuffer>
-    {
-
-        private final ConnectionDelegate delegate;
-        private final InputHandler.State state;
-
-        ConnectionBinding(ConnectionDelegate delegate,
-                          InputHandler.State state)
-        {
-            this.delegate = delegate;
-            this.state = state;
-        }
-
-        public Connection endpoint(Sender<java.nio.ByteBuffer> sender)
-        {
-            // XXX: hardcoded max-frame
-            return new Connection
-                (new Disassembler(sender, MAX_FRAME_SIZE), delegate);
-        }
-
-        public Receiver<java.nio.ByteBuffer> receiver(Connection conn)
-        {
-            return new InputHandler(new Assembler(conn), state);
-        }
-
+        return connect(host, port, new ConnectionBinding(delegate));
     }
 
 }
