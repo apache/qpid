@@ -66,6 +66,10 @@ if [ -z "$QPID_WORK" ]; then
     QPID_WORK=$HOME
 fi
 
+if [ -z "$JAVA" ]; then
+    JAVA=java
+fi
+
 if $cygwin; then
   QPID_HOME=$(cygpath -w $QPID_HOME)
   QPID_WORK=$(cygpath -w $QPID_WORK)

@@ -44,7 +44,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-import org.apache.qpid.transport.network.io.IoSender;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 
 /**
@@ -538,7 +538,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _protocolHandler.propagateExceptionToAllWaiters(error);
     }
 
-    public void setSender(IoSender sender)
+    public void setSender(Sender<java.nio.ByteBuffer> sender)
     {
         // No-op, interface munging
     }

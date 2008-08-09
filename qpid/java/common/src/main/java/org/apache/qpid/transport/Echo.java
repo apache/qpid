@@ -23,7 +23,8 @@ package org.apache.qpid.transport;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.transport.network.mina.MinaHandler;
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.network.io.IoAcceptor;
 
 
 /**
@@ -62,7 +63,9 @@ public class Echo extends SessionDelegate
         delegate.setUsername("guest");
         delegate.setPassword("guest");
 
-        MinaHandler.accept("0.0.0.0", 5672, delegate);
+        IoAcceptor ioa = new IoAcceptor
+            ("0.0.0.0", 5672, new ConnectionBinding(delegate));
+        ioa.start();
     }
 
 }
