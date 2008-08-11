@@ -71,6 +71,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     {
         super.tearDown();
         TransportConnection.killAllVMBrokers();
+        ApplicationRegistry.remove(1);
     }
 
     /**
