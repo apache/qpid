@@ -37,6 +37,23 @@ namespace qpid {
 namespace sys {
 
 class DispatchHandleRef;
+/**
+ * In order to have your own handle (file descriptor on Unix) watched by the poller
+ * you need to:
+ * 
+ * - Subclass IOHandle, in the constructor supply an appropriate
+ *    IOHandlerPrivate object for the platform.
+ *    
+ * - Construct a DispatchHandle passing it your IOHandle and 
+ *   callback functions for read, write and disconnect events.
+ *
+ * - Ensure the DispatchHandle is not deleted until the poller is no longer using it.
+ *   TODO: astitcher document DispatchHandleRef to simplify this.
+ *   
+ * When an event occurs on the handle, the poller calls the relevant callback and
+ * stops watching that handle. Your callback can call rewatch() or related functions
+ * to re-enable polling.
+ */
 class DispatchHandle : public PollerHandle {
     friend class DispatchHandleRef;
 public:
@@ -55,6 +72,18 @@ private:
     } state;
 
 public:
+    /**
+     * Provide a handle to poll and a set of callbacks.  Note
+     * callbacks can be 0, meaning you are not interested in that
+     * event.
+     * 
+     *@param h: the handle to watch. The IOHandle encapsulates a
+     * platfrom-specific handle to an IO object (e.g. a file descriptor
+     * on Unix.)
+     *@param rCb Callback called when the handle is readable.
+     *@param wCb Callback called when the handle is writable.
+     *@param dCb Callback called when the handle is disconnected.
+     */
     DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
       PollerHandle(h),
       readableCallback(rCb),
@@ -65,16 +94,31 @@ public:
 
     ~DispatchHandle();
 
+    /** Add this DispatchHandle to the poller to be watched. */
     void startWatch(Poller::shared_ptr poller);
+
+    /** Resume watchingn for all non-0 callbacks. */
     void rewatch();
+    /** Resume watchingn for read only. */
     void rewatchRead();
+
+    /** Resume watchingn for write only. */
     void rewatchWrite();
+
+    /** Stop watching temporarily. The DispatchHandle remains
+        associated with the poller and can be re-activated using
+        rewatch. */
     void unwatch();
+    /** Stop watching for read */
     void unwatchRead();
+    /** Stop watching for write */
     void unwatchWrite();
+
+    /** Stop watching permanently. Disassociates from the poller. */
     void stopWatch();
     
 protected:
+    /** Override to get extra processing done when the DispatchHandle is deleted. */
     void doDelete();
 
 private:
