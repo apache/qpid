@@ -1,6 +1,11 @@
 This example shows how to program a simple application
 using the XML Exchange. 
 
+[Note: The XML Exchange is not a standard AMQP exchange type. To run
+this example you need to have a broker that has support for the xml
+exchange. If you are compiling the broker from source please refer to
+the INSTALL notes from qpid.]
+
 To run the example, execute the programs in the
 following order:
 
