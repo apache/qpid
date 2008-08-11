@@ -36,9 +36,9 @@
 namespace qpid {
 namespace sys {
 
-class Dispatcher;
+class DispatchHandleRef;
 class DispatchHandle : public PollerHandle {
-    friend class Dispatcher;
+    friend class DispatchHandleRef;
 public:
     typedef boost::function1<void, DispatchHandle&> Callback;
 
@@ -80,6 +80,28 @@ protected:
 private:
     void processEvent(Poller::EventType dir);
 };
+
+class DispatchHandleRef {
+    DispatchHandle* ref;
+
+public:
+    typedef boost::function1<void, DispatchHandle&> Callback;
+    DispatchHandleRef(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
+      ref(new DispatchHandle(h, rCb, wCb, dCb))
+    {}
+
+    ~DispatchHandleRef() { ref->doDelete(); }
+
+    void startWatch(Poller::shared_ptr poller) { ref->startWatch(poller); }
+    void rewatch() { ref->rewatch(); }
+    void rewatchRead() { ref->rewatchRead(); }
+    void rewatchWrite() { ref->rewatchWrite(); }
+    void unwatch() { ref->unwatch(); }
+    void unwatchRead() { ref->unwatchRead(); }
+    void unwatchWrite() { ref->unwatchWrite(); }
+    void stopWatch() { ref->stopWatch(); }
+};
+
 
 class Dispatcher : public Runnable {
     const Poller::shared_ptr poller;
