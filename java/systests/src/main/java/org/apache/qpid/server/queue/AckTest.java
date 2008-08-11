@@ -60,20 +60,17 @@ public class AckTest extends TestCase
 
     private StoreContext _storeContext = new StoreContext();
 
-    private AMQChannel _channel;                   
+    private AMQChannel _channel;
 
     private AMQQueue _queue;
 
     private static final AMQShortString DEFAULT_CONSUMER_TAG = new AMQShortString("conTag");
 
-    public AckTest() throws Exception
-    {
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
-    }
-
     protected void setUp() throws Exception
     {
         super.setUp();
+        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
+
         _messageStore = new TestMemoryMessageStore();
         _protocolSession = new MockProtocolSession(_messageStore);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
