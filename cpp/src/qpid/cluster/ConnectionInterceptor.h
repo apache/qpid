@@ -55,6 +55,8 @@ class ConnectionInterceptor {
         void doOutput() {}
         void activateOutput() {}
     };
+
+    bool isShadow() { return shadowId != Cluster::ShadowConnectionId(0,0); }
     
     // Functions to intercept to Connection extension points.
     void received(framing::AMQFrame&);

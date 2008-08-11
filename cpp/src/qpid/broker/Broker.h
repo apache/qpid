@@ -177,6 +177,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     // For the present just return the first ProtocolFactory registered.
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
+    /** Expose poller so plugins can register their descriptors. */
+    boost::shared_ptr<sys::Poller> getPoller(); 
 };
 
 }}

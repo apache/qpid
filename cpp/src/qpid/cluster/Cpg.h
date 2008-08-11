@@ -20,11 +20,15 @@
  */
 
 #include "qpid/Exception.h"
+#include "qpid/sys/IOHandle.h"
 #include "qpid/cluster/Dispatchable.h"
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+#include <boost/scoped_ptr.hpp>
+
 #include <cassert>
+
 #include <string.h>
 
 extern "C" {
@@ -34,14 +38,15 @@ extern "C" {
 namespace qpid {
 namespace cluster {
 
+
 /**
- * Lightweight C++ interface to cpg.h operations. 
+ * Lightweight C++ interface to cpg.h operations.
+ * 
  * Manages a single CPG handle, initialized in ctor, finialzed in destructor.
- * On error all functions throw Cpg::Exception
+ * On error all functions throw Cpg::Exception.
  *
- * NOTE: only one at a time can exist per process.
  */
-class Cpg : public Dispatchable {
+class Cpg : public sys::IOHandle {
   public:
     struct Exception : public ::qpid::Exception {
         Exception(const std::string& msg) : ::qpid::Exception(msg) {}
@@ -59,7 +64,6 @@ class Cpg : public Dispatchable {
 
         std::string str() const { return std::string(value, length); }
     };
-
 
     // boost::tuple gives us == and < for free.
     struct Id : public boost::tuple<uint32_t, uint32_t>  {
@@ -125,11 +129,13 @@ class Cpg : public Dispatchable {
 
     Id self() const;
 
+    int getFd();
+    
   private:
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
     static std::string cantLeaveMsg(const Name&); std::string cantMcastMsg(const Name&);
-    
+
     static void check(cpg_error_t result, const std::string& msg) {
         if (result != CPG_OK) throw Exception(errorStr(result, msg));
     }
@@ -170,7 +176,6 @@ inline bool operator==(const cpg_name& a, const cpg_name& b) {
 inline bool operator!=(const cpg_name& a, const cpg_name& b) { return !(a == b); }
 
 }} // namespace qpid::cluster
-
 
 
 #endif  /*!CPG_H*/

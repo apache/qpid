@@ -52,6 +52,7 @@ void ConnectionInterceptor::received(framing::AMQFrame& f) {
 }
 
 void ConnectionInterceptor::deliver(framing::AMQFrame& f) {
+    //    ostringstream os; os << f; printf("Received: %s\n", os.str().c_str()); // FIXME aconway 2008-08-08: remove
     receivedNext(f);
 }
 
@@ -83,16 +84,21 @@ void ConnectionInterceptor::deliverClosed() {
 
 bool  ConnectionInterceptor::doOutput() {
     if (connection->hasOutput()) {
-        printf("doOutput send %p\n", (void*)this);
+        QPID_LOG(debug, "Intercept doOutput, call doOutputNext"); // FIXME aconway 2008-08-08: remove
         cluster.send(AMQFrame(in_place<ClusterConnectionDoOutputBody>()), this);
-    } 
-
+        return doOutputNext();
+    }
     return false;
 }
 
 void ConnectionInterceptor::deliverDoOutput() {
-    printf("doOutput deliver %p\n", (void*)this);
-    doOutputNext();
+    if (isShadow()) {
+        QPID_LOG(debug, "Shadow deliver do output, call doOutputNext"); // FIXME aconway 2008-08-08: remove
+        doOutputNext();
+    }
+    else {
+        QPID_LOG(debug, "Primary deliver doOutput, ignore."); // FIXME aconway 2008-08-08: remove
+    }
 }
 
 }} // namespace qpid::cluster
