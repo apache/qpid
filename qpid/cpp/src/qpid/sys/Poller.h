@@ -31,7 +31,9 @@ namespace sys {
 
 /**
  * Poller: abstract class to encapsulate a file descriptor poll to be used
- * by a reactor
+ * by a reactor.
+ *
+ * @see DispatchHandler for more details of normal use.
  */
 class PollerHandle;
 class PollerPrivate;
