@@ -24,6 +24,7 @@
 
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -47,7 +48,7 @@ class ConnectionInterceptor;
  * Connection to the cluster.
  * Keeps cluster membership data.
  */
-class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
+class Cluster : private Cpg::Handler, public RefCounted
 {
   public:
     typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
@@ -115,7 +116,8 @@ class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
         struct cpg_address */*joined*/, int /*nJoined*/
     );
 
-    void run();
+    void dispatch(sys::DispatchHandle&);
+    void disconnect(sys::DispatchHandle&);
 
     void handleMethod(Id from, ConnectionInterceptor* connection, framing::AMQMethodBody& method);
 
@@ -123,14 +125,15 @@ class Cluster : private sys::Runnable, private Cpg::Handler, public RefCounted
 
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker* broker;
+    boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
     Cpg::Name name;
     Url url;
     MemberMap members;
-    sys::Thread dispatcher;
     Id self;
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;
+    sys::DispatchHandle cpgDispatchHandle;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

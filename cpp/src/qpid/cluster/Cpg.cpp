@@ -17,8 +17,9 @@
  */
 
 #include "Cpg.h"
-
 #include "qpid/sys/Mutex.h"
+// Note cpg is currently unix-specific. Refactor if availble on other platforms.
+#include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/log/Statement.h"
 
 #include <vector>
@@ -62,11 +63,21 @@ void Cpg::globalConfigChange(
     cpgFromHandle(handle)->handler.configChange(handle, group, members, nMembers, left, nLeft, joined, nJoined);
 }
 
-Cpg::Cpg(Handler& h) : handler(h), isShutdown(false) {
+int Cpg::getFd() {
+    int fd;
+    check(cpg_fd_get(handle, &fd), "Cannot get CPG file descriptor");
+    return fd;
+}
+
+Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdown(false) {
     cpg_callbacks_t callbacks = { &globalDeliver, &globalConfigChange };
     check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
     check(cpg_context_set(handle, this), "Cannot set CPG context");
-    QPID_LOG(debug, "Initialize CPG handle 0x" << std::hex << handle);
+    // Note: CPG is currently unix-specific. If CPG is ported to
+    // windows then this needs to be refactored into
+    // qpid::sys::<platform>
+    IOHandle::impl->fd = getFd();
+    QPID_LOG(debug, "Initialized CPG handle 0x" << std::hex << handle);
 }
 
 Cpg::~Cpg() {
@@ -93,6 +104,7 @@ bool Cpg::isFlowControlEnabled() {
 
 // TODO aconway 2008-08-07: better handling of flow control.
 // Wait for flow control to be disabled.
+// FIXME aconway 2008-08-08: does flow control check involve a round-trip? If so maybe remove...
 void Cpg::waitForFlowControl() {
     int delayNs=1000;           // one millisecond
     int tries=8;                // double the delay on each try.
@@ -177,7 +189,6 @@ ostream& operator <<(ostream& out, const Cpg::Id& id) {
 ostream& operator <<(ostream& out, const cpg_name& name) {
     return out << string(name.value, name.length);
 }
-
 
 }} // namespace qpid::cluster
 
