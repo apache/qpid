@@ -121,6 +121,12 @@ public class MemoryMessageStore implements MessageStore
 
     }
 
+
+    public void createQueue(AMQQueue queue) throws AMQException
+    {
+        // Not requred to do anything
+    }
+
     public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
         // Not required to do anything
