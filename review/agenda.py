@@ -58,7 +58,7 @@ def main():
         parser.error("svn revision must be specified")
 
     print(get_commits(options.revision))
-    print "=== Jiras==="
+    print "h2. Jiras"
     print(get_jiras())
 
 if __name__ == "__main__":
