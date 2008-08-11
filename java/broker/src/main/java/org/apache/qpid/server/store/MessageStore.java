@@ -131,6 +131,15 @@ public interface MessageStore
      *
      * @param queue The queue to store.
      *
+     * @throws AMQException If the operation fails for any reason.
+     */
+    void createQueue(AMQQueue queue) throws AMQException;
+
+    /**
+     * Makes the specified queue persistent.
+     *
+     * @param queue The queue to store.
+     *
      * @param arguments The additional arguments to the binding
      * @throws AMQException If the operation fails for any reason.
      */

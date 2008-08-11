@@ -78,6 +78,10 @@ public class SkeletonMessageStore implements MessageStore
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public void createQueue(AMQQueue queue) throws AMQException
+    {
+    }
+
     public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
     }        
