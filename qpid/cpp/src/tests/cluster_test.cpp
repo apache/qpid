@@ -162,28 +162,6 @@ struct Callback : public Cpg::Handler {
     }
 };
 
-#if 0                           // FIXME aconway 2008-08-06: 
-
-QPID_AUTO_TEST_CASE(CpgBasic) {
-    // Verify basic functionality of cpg. This will catch any
-    // openais configuration or permission errors.
-    //
-    Cpg::Name group("CpgBasic");
-    Callback cb(group.str());
-    Cpg cpg(cb);
-    cpg.join(group);
-    iovec iov = { (void*)"Hello!", 6 };
-    cpg.mcast(group, &iov, 1);
-    cpg.leave(group);
-    cpg.dispatchSome();
-
-    BOOST_REQUIRE_EQUAL(1u, cb.delivered.size());
-    BOOST_CHECK_EQUAL("Hello!", cb.delivered.front());
-    BOOST_REQUIRE_EQUAL(2u, cb.configChanges.size());
-    BOOST_CHECK_EQUAL(1, cb.configChanges[0]);
-    BOOST_CHECK_EQUAL(0, cb.configChanges[1]);
-}
-
 QPID_AUTO_TEST_CASE(testForkedBroker) {
     // Verify the ForkedBroker works as expected.
     const char* argv[] = { "", "--auth=no", "--no-data-dir", "--log-prefix=testForkedBroker" };
@@ -250,7 +228,7 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     BOOST_CHECK_EQUAL(0u, c1.session.queueQuery("q").getMessageCount());
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
 }
-#endif
+
 QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
     ClusterFixture cluster(3);
     // First start a subscription.
@@ -276,6 +254,5 @@ QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
 }
 
-// TODO aconway 2008-06-25: failover.
 
 QPID_AUTO_TEST_SUITE_END()

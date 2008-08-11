@@ -395,5 +395,7 @@ void Broker::connect(
     connect(addr.host, addr.port, false, failed, f);
 }
 
+boost::shared_ptr<sys::Poller> Broker::getPoller() { return poller; }
+
 }} // namespace qpid::broker
 

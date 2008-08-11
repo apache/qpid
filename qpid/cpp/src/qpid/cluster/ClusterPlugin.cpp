@@ -18,7 +18,6 @@
 
 #include "ConnectionInterceptor.h"
 
-
 #include "qpid/broker/Broker.h"
 #include "qpid/cluster/Cluster.h"
 #include "qpid/Plugin.h"
