@@ -82,7 +82,11 @@ public class AckTest extends TestCase
 
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"),
                                                     null);
+    }
 
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
     }
 
     private void publishMessages(int count) throws AMQException
