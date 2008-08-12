@@ -32,6 +32,7 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
+import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
@@ -300,6 +301,31 @@ public class AckTest extends TestCase
             ++i;
         }
     }
+
+            /**
+     * A regression fixing QPID-1136 showed this up
+     *
+     * @throws Exception
+     */
+    public void testMessageDequeueRestoresCreditTest() throws Exception
+    {
+        // Send 10 messages
+        Pre0_10CreditManager creditManager = new Pre0_10CreditManager(0l, 1);
+
+        _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession,
+                                                                            DEFAULT_CONSUMER_TAG, true, null, false, creditManager);
+        final int msgCount = 1;
+        publishMessages(msgCount);
+
+        _queue.deliverAsync(_subscription);
+
+        _channel.acknowledgeMessage(1, false);
+
+        // Check credit available
+        assertTrue("No credit available", creditManager.hasCredit());
+
+    }
+
 
 /*
     public void testPrefetchHighLow() throws AMQException
