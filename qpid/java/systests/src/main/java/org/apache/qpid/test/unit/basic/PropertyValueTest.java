@@ -35,6 +35,7 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -88,6 +89,16 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
         // set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
         connection.start();
+    }
+
+    public void testGetNonexistent() throws Exception
+    {
+        Connection conn = getConnection();
+        Session ssn = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Message m = ssn.createTextMessage();
+        String s = m.getStringProperty("nonexistent");
+        assertNull(s);
+        conn.close();
     }
 
     public void testOnce()
