@@ -49,7 +49,7 @@ class SpecTest(TestCase):
     mp = self.spec["message.message_properties"]
     rt = self.spec["message.reply_to"]
 
-    props = Struct(mp, content_length=0xDEADBEEF,
+    props = Struct(mp, content_length=3735928559L,
                    reply_to=Struct(rt, exchange="the exchange name",
                                    routing_key="the routing key"))
     dec = self.encdec(mp, props)
