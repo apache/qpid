@@ -256,6 +256,12 @@ public class QueueEntryImpl implements QueueEntry
 
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
         {
+            if (state instanceof SubscriptionAcquiredState)
+            {
+                Subscription s = ((SubscriptionAcquiredState) state).getSubscription();
+                s.restoreCredit(this);
+            }
+
             getQueue().dequeue(storeContext, this);
             if(_stateChangeListeners != null)
             {
@@ -279,16 +285,6 @@ public class QueueEntryImpl implements QueueEntry
         if(delete())
         {
             getMessage().decrementReference(storeContext);
-        }
-    }
-
-    public void restoreCredit()
-    {
-        EntryState state = _state;
-        if(state instanceof SubscriptionAcquiredState)
-        {
-            Subscription s = ((SubscriptionAcquiredState) _state).getSubscription();
-            s.restoreCredit(this);
         }
     }
 

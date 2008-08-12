@@ -175,8 +175,6 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     void dispose(final StoreContext storeContext) throws MessageCleanupException;
 
-    void restoreCredit();
-
     void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException;
 
     boolean isQueueDeleted();

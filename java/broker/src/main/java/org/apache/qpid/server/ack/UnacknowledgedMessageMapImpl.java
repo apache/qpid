@@ -94,7 +94,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             if(message != null)
             {
                 _unackedSize -= message.getMessage().getSize();
-                message.restoreCredit();
+
             }
 
             return message;
@@ -184,8 +184,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 it.remove();
 
                 _unackedSize -= unacked.getValue().getMessage().getSize();
-
-                unacked.getValue().restoreCredit();
 
 
                 if (unacked.getKey() == deliveryTag)
