@@ -21,6 +21,7 @@
 
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/ShadowConnectionOutputHandler.h"
+#include "qpid/cluster/PollableQueue.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
@@ -96,10 +97,17 @@ class Cluster : private Cpg::Handler, public RefCounted
     typedef std::map<Id, Member>  MemberMap;
     typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
 
+    struct DeliveredFrame {
+        framing::AMQFrame frame; Id from; void* connection;
+        DeliveredFrame(const framing::AMQFrame& f, const Id i, void* c)
+            : frame(f), from(i), connection(c) {}
+    };
+
     boost::function<void()> shutdownNext;
     
     void notify();              ///< Notify cluster of my details.
 
+    /** CPG deliver callback. */
     void deliver(
         cpg_handle_t /*handle*/,
         struct cpg_name *group,
@@ -108,6 +116,7 @@ class Cluster : private Cpg::Handler, public RefCounted
         void* /*msg*/,
         int /*msg_len*/);
 
+    /** CPG config change callback */
     void configChange(
         cpg_handle_t /*handle*/,
         struct cpg_name */*group*/,
@@ -115,6 +124,10 @@ class Cluster : private Cpg::Handler, public RefCounted
         struct cpg_address */*left*/, int /*nLeft*/,
         struct cpg_address */*joined*/, int /*nJoined*/
     );
+
+    /** Callback to handle delivered frames from the deliverQueue. */
+    void deliverFrames(const PollableQueue<DeliveredFrame>::iterator& begin,
+                       const PollableQueue<DeliveredFrame>::iterator& end);
 
     void dispatch(sys::DispatchHandle&);
     void disconnect(sys::DispatchHandle&);
@@ -134,6 +147,7 @@ class Cluster : private Cpg::Handler, public RefCounted
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
+    PollableQueue<DeliveredFrame> deliverQueue;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
