@@ -97,11 +97,13 @@ class Cluster : private Cpg::Handler, public RefCounted
     typedef std::map<Id, Member>  MemberMap;
     typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
 
-    struct DeliveredFrame {
+    /** Message sent over the cluster. */
+    struct Message {
         framing::AMQFrame frame; Id from; void* connection;
-        DeliveredFrame(const framing::AMQFrame& f, const Id i, void* c)
+        Message(const framing::AMQFrame& f, const Id i, void* c)
             : frame(f), from(i), connection(c) {}
     };
+    typedef PollableQueue<Message> MessageQueue;
 
     boost::function<void()> shutdownNext;
     
@@ -126,10 +128,17 @@ class Cluster : private Cpg::Handler, public RefCounted
     );
 
     /** Callback to handle delivered frames from the deliverQueue. */
-    void deliverFrames(const PollableQueue<DeliveredFrame>::iterator& begin,
-                       const PollableQueue<DeliveredFrame>::iterator& end);
+    void deliverQueueCb(const MessageQueue::iterator& begin,
+                      const MessageQueue::iterator& end);
 
+    /** Callback to multi-cast frames from mcastQueue */
+    void mcastQueueCb(const MessageQueue::iterator& begin,
+                    const MessageQueue::iterator& end);
+
+
+    /** Callback to dispatch CPG events. */
     void dispatch(sys::DispatchHandle&);
+    /** Callback if CPG fd is disconnected. */
     void disconnect(sys::DispatchHandle&);
 
     void handleMethod(Id from, ConnectionInterceptor* connection, framing::AMQMethodBody& method);
@@ -147,7 +156,8 @@ class Cluster : private Cpg::Handler, public RefCounted
     ShadowConnectionMap shadowConnectionMap;
     ShadowConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-    PollableQueue<DeliveredFrame> deliverQueue;
+    MessageQueue deliverQueue;
+    MessageQueue mcastQueue;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
