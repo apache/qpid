@@ -116,7 +116,6 @@ public class TxAck implements TxnOp
         //make persistent changes, i.e. dequeue and decrementReference
         for (QueueEntry msg : _unacked.values())
         {
-            msg.restoreCredit();
             //Message has been ack so discard it. This will dequeue and decrement the reference.
             msg.discard(storeContext);
 

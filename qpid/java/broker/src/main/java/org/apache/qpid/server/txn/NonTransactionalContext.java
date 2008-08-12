@@ -134,7 +134,6 @@ public class NonTransactionalContext implements TransactionalContext
                         {
                             beginTranIfNecessary();
                         }
-                        message.restoreCredit();
                         //Message has been ack so discard it. This will dequeue and decrement the reference.
                         message.discard(_storeContext);
 
