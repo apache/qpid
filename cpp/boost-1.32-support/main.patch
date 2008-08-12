@@ -1,7 +1,19 @@
+Index: configure.ac
+===================================================================
+--- configure.ac	(revision 685217)
++++ configure.ac	(working copy)
+@@ -66,7 +66,6 @@
+ # -Wshadow - warns about boost headers.
+ 
+ if test "${enableval}" = yes; then
+-  gl_COMPILER_FLAGS(-Werror)
+   gl_COMPILER_FLAGS(-pedantic)
+   gl_COMPILER_FLAGS(-Wall)
+   gl_COMPILER_FLAGS(-Wextra)
 Index: src/tests/.valgrind.supp
 ===================================================================
---- src/tests/.valgrind.supp    (revision 683589)
-+++ src/tests/.valgrind.supp    (working copy)
+--- src/tests/.valgrind.supp	(revision 685217)
++++ src/tests/.valgrind.supp	(working copy)
 @@ -70,19 +70,6 @@
     fun:pthread_create@@GLIBC_2.2.5
     fun:_ZN4qpid6broker5Timer5startEv
@@ -20,7 +32,7 @@ Index: src/tests/.valgrind.supp
 -   fun:_ZN5boost9unit_test9test_case3runEv
 -   fun:main
  }
-
+ 
  {
 @@ -151,29 +138,6 @@
     fun:calloc
@@ -51,21 +63,21 @@ Index: src/tests/.valgrind.supp
 -   fun:pthread_create@@GLIBC_2.2.5
     fun:_ZN4qpid6client9Connector4initEv
  }
-
+ 
 @@ -191,4 +155,3 @@
     fun:strdup
     fun:_ZN4qpid7Options5parseEiPPcRKSsb
  }
 -
-Index: configure.ac
+Index: src/Makefile.am
 ===================================================================
---- configure.ac        (revision 683589)
-+++ configure.ac        (working copy)
-@@ -66,7 +66,6 @@
- # -Wshadow - warns about boost headers.
-
- if test "${enableval}" = yes; then
--  gl_COMPILER_FLAGS(-Werror)
-   gl_COMPILER_FLAGS(-pedantic)
-   gl_COMPILER_FLAGS(-Wall)
-   gl_COMPILER_FLAGS(-Wextra)
+--- src/Makefile.am	(revision 685217)
++++ src/Makefile.am	(working copy)
+@@ -1,6 +1,6 @@
+ SUBDIRS = . tests
+ 
+-EXTRA_DIST= $(platform_dist) $(rgen_srcs)
++EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(top_srcdir)/src/boost
+ 
+ ## Generated code
+ 
