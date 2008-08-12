@@ -652,14 +652,7 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
             }
             else if(o == null)
             {
-                if(propertyMap.containsKey(propertyName))
-                {
-                    return null;
-                }
-                else
-                {
-                    return String.valueOf(null);
-                }
+                return null;
             }
             else if(o.getClass().isArray())
             {
