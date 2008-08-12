@@ -51,6 +51,9 @@ class PollableCondition : public sys::IOHandle {
      *@return The state of the condition before it was cleared.
      */
     bool clear();
+
+  private:
+    int writeFd;
 };
 }} // namespace qpid::cluster
 

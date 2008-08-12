@@ -22,8 +22,6 @@
  *
  */
 
-// Linux implementation of PollableCondition using the conditionfd(2) system call.
-
 // FIXME aconway 2008-08-11: this could be of more general interest,
 // move to common lib.
 // 
@@ -31,6 +29,47 @@
 #include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/cluster/PollableCondition.h"
 #include "qpid/Exception.h"
+
+#include <unistd.h>
+#include <fcntl.h>
+
+namespace qpid {
+namespace cluster {
+
+PollableCondition::PollableCondition() : IOHandle(new sys::IOHandlePrivate) {
+    int fds[2];
+    if (::pipe(fds) == -1)
+        throw ErrnoException(QPID_MSG("Can't create PollableCondition"));
+    impl->fd = fds[0];
+    writeFd = fds[1];
+    if (::fcntl(impl->fd, F_SETFL, O_NONBLOCK) == -1)
+        throw ErrnoException(QPID_MSG("Can't create PollableCondition"));
+    if (::fcntl(writeFd, F_SETFL, O_NONBLOCK) == -1)
+        throw ErrnoException(QPID_MSG("Can't create PollableCondition"));
+}
+
+bool PollableCondition::clear() {
+    char buf[256];
+    ssize_t n;
+    bool wasSet = false;
+    while ((n = ::read(impl->fd, buf, sizeof(buf))) > 0) 
+        wasSet = true;
+    if (n == -1 && errno != EAGAIN) throw ErrnoException(QPID_MSG("Error clearing PollableCondition"));
+    return wasSet;
+}
+
+void PollableCondition::set() {
+    static const char dummy=0;
+    ssize_t n = ::write(writeFd, &dummy, 1);
+    if (n == -1 && errno != EAGAIN) throw ErrnoException("Error setting PollableCondition");
+}
+
+
+#if 0
+// FIXME aconway 2008-08-12: More efficient Linux implementation using
+// eventfd system call.  Do a configure.ac test to enable this when
+// eventfd is available.
+
 #include <sys/eventfd.h>
 
 namespace qpid {
@@ -54,6 +93,8 @@ void PollableCondition::set() {
     if (n != 8) throw ErrnoException("write failed on conditionfd");
 }
     
+#endif
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_SYS_LINUX_POLLABLECONDITION_CPP*/
