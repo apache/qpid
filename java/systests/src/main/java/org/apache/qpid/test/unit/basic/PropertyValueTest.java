@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.net.URISyntaxException;
 
+import java.lang.reflect.*;
+
 public class PropertyValueTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(PropertyValueTest.class);
@@ -91,14 +93,53 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
         connection.start();
     }
 
-    public void testGetNonexistent() throws Exception
+    private Message getTestMessage() throws Exception
     {
         Connection conn = getConnection();
         Session ssn = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Message m = ssn.createTextMessage();
+        return ssn.createTextMessage();
+    }
+
+    public void testGetNonexistent() throws Exception
+    {
+        Message m = getTestMessage();
         String s = m.getStringProperty("nonexistent");
         assertNull(s);
-        conn.close();
+    }
+
+    private static final String[] NAMES = {
+        "setBooleanProperty", "setByteProperty", "setShortProperty",
+        "setIntProperty", "setLongProperty", "setFloatProperty",
+        "setDoubleProperty", "setObjectProperty"
+    };
+
+    private static final Class[] TYPES = {
+        boolean.class, byte.class, short.class, int.class, long.class,
+        float.class, double.class, Object.class
+    };
+
+    private static final Object[] VALUES = {
+        true, (byte) 0, (short) 0, 0, (long) 0, (float) 0, (double) 0,
+        new Object()
+    };
+
+    public void testSetEmptyPropertyName() throws Exception
+    {
+        Message m = getTestMessage();
+
+        for (int i = 0; i < NAMES.length; i++)
+        {
+            Method meth = m.getClass().getMethod(NAMES[i], String.class, TYPES[i]);
+            try
+            {
+                meth.invoke(m, "", VALUES[i]);
+                fail("expected illegal argument exception");
+            }
+            catch (InvocationTargetException e)
+            {
+                assertEquals(e.getCause().getClass(), IllegalArgumentException.class);
+            }
+        }
     }
 
     public void testOnce()

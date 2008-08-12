@@ -682,54 +682,63 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, b);
     }
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, b);
     }
 
     public void setShortProperty(String propertyName, short i) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, i);
     }
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, i);
     }
 
     public void setLongProperty(String propertyName, long l) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, l);
     }
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, f);
     }
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, v);
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, value);
     }
 
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
+        checkPropertyName(propertyName);
         checkWritableProperties();
         setApplicationHeader(propertyName, object);
     }
