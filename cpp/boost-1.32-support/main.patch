@@ -1,18 +1,18 @@
--Index: configure.ac
--===================================================================
----- configure.ac	(revision 681145)
--+++ configure.ac	(working copy)
--@@ -64,7 +64,6 @@
-- 	# -Wunreachable-code -Wpadded -Winline
-- 	# -Wshadow - warns about boost headers.
-- 	if test "${enableval}" = yes; then
---	    gl_COMPILER_FLAGS(-Werror)
-- 	    gl_COMPILER_FLAGS(-pedantic)
-- 	    gl_COMPILER_FLAGS(-Wall)
-- 	    gl_COMPILER_FLAGS(-Wextra)
+Index: configure.ac
+===================================================================
+--- configure.ac	(revision 685281)
++++ configure.ac	(working copy)
+@@ -64,7 +64,6 @@
+ 	# -Wunreachable-code -Wpadded -Winline
+ 	# -Wshadow - warns about boost headers.
+ 	if test "${enableval}" = yes; then
+-	    gl_COMPILER_FLAGS(-Werror)
+ 	    gl_COMPILER_FLAGS(-pedantic)
+ 	    gl_COMPILER_FLAGS(-Wall)
+ 	    gl_COMPILER_FLAGS(-Wextra)
 Index: src/tests/.valgrind.supp
 ===================================================================
---- src/tests/.valgrind.supp	(revision 683578)
+--- src/tests/.valgrind.supp	(revision 685281)
 +++ src/tests/.valgrind.supp	(working copy)
 @@ -193,8 +193,116 @@
  }
@@ -132,15 +132,15 @@ Index: src/tests/.valgrind.supp
     socketcall.sendmsg(msg.msg_iov[i])
     fun:sendmsg
     obj:/usr/lib/openais/libcpg.so.2.0.0
-Index: configure.ac
+Index: src/Makefile.am
 ===================================================================
---- configure.ac	(revision 683578)
-+++ configure.ac	(working copy)
-@@ -64,7 +64,6 @@
- 	# -Wunreachable-code -Wpadded -Winline
- 	# -Wshadow - warns about boost headers.
- 	if test "${enableval}" = yes; then
--	    gl_COMPILER_FLAGS(-Werror)
- 	    gl_COMPILER_FLAGS(-pedantic)
- 	    gl_COMPILER_FLAGS(-Wall)
- 	    gl_COMPILER_FLAGS(-Wextra)
+--- src/Makefile.am	(revision 685281)
++++ src/Makefile.am	(working copy)
+@@ -1,6 +1,6 @@
+ SUBDIRS = . tests
+ 
+-EXTRA_DIST= $(platform_dist) $(rgen_srcs)
++EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(top_srcdir)/src/boost
+ 
+ ## Generated code
+ 
