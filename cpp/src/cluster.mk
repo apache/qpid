@@ -16,7 +16,10 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/ConnectionInterceptor.cpp \
   qpid/cluster/ClassifierHandler.h \
   qpid/cluster/ClassifierHandler.cpp \
-  qpid/cluster/ShadowConnectionOutputHandler.h
+  qpid/cluster/ShadowConnectionOutputHandler.h \
+  qpid/cluster/PollableCondition.h \
+  qpid/cluster/PollableCondition.cpp \
+  qpid/cluster/PollableQueue.h
 
 libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la
 
