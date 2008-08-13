@@ -39,6 +39,7 @@ import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -139,6 +140,20 @@ public class PropertyValueTest extends QpidTestCase implements MessageListener
             {
                 assertEquals(e.getCause().getClass(), IllegalArgumentException.class);
             }
+        }
+    }
+
+    public void testSetDisallowedClass() throws Exception
+    {
+        Message m = getTestMessage();
+        try
+        {
+            m.setObjectProperty("foo", new Object());
+            fail("expected a MessageFormatException");
+        }
+        catch (MessageFormatException e)
+        {
+            // pass
         }
     }
 

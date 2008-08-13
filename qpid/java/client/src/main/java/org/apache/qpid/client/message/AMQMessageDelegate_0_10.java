@@ -736,10 +736,32 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
         setApplicationHeader(propertyName, value);
     }
 
+    private static final Set<Class> ALLOWED = new HashSet();
+    static
+    {
+        ALLOWED.add(Boolean.class);
+        ALLOWED.add(Byte.class);
+        ALLOWED.add(Short.class);
+        ALLOWED.add(Integer.class);
+        ALLOWED.add(Long.class);
+        ALLOWED.add(Float.class);
+        ALLOWED.add(Double.class);
+        ALLOWED.add(Character.class);
+        ALLOWED.add(String.class);
+        ALLOWED.add(byte[].class);
+    }
+
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
+        if (object != null && !ALLOWED.contains(object.getClass()))
+        {
+            throw new MessageFormatException
+                (String.format
+                 ("Cannot set a %s, allowed property types are: %s",
+                  object.getClass(), ALLOWED));
+        }
         setApplicationHeader(propertyName, object);
     }
 
