@@ -35,11 +35,8 @@ import org.apache.qpid.transport.network.io.IoAcceptor;
 public class Echo extends SessionDelegate
 {
 
-    private MessageTransfer xfr = null;
-
     public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
-        this.xfr = xfr;
         ssn.invoke(xfr);
         ssn.processed(xfr);
     }
