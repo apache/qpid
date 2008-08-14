@@ -141,9 +141,9 @@ public class DupsOkTest extends QpidTestCase
 
         try
         {
-            if (!_awaitCompletion.await(60, TimeUnit.SECONDS))
+            if (!_awaitCompletion.await(120, TimeUnit.SECONDS))
             {
-                fail("Test did not complete in 60 seconds");   
+                fail("Test did not complete in 120 seconds");
             }
         }
         catch (InterruptedException e)
