@@ -132,13 +132,25 @@
 
   <target name="zip" depends="build,prepare" description="build release archive">
     <zip destfile="${release.zip}">
-      <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+      <zipfileset dir="${build}" prefix="${project.namever}" filemode="755">
+        <include name="bin/*"/>
+	<exclude name="bin/*.txt"/>
+      </zipfileset>
+
+      <zipfileset dir="${build}" prefix="${project.namever}">
+        <include name="bin/*.txt"/>
+      </zipfileset>
+
+      <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}" >
+        <exclude name="bin/**"/>
+	<exclude name="**/*.class"/>
+      </zipfileset>
     </zip>
   </target>
 
-  <target name="tar" depends="build,prepare" description="build release archive">
-    <tar destfile="${release.tar}">
-      <tarfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+  <target name="tar" depends="zip" description="build release archive">
+    <tar destfile="${release.tar}" longfile="gnu" >
+      <zipfileset src="${release.zip}"/>
     </tar>
   </target>
 
