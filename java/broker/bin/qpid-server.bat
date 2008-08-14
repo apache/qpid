@@ -81,10 +81,12 @@ set CLASSPATH=%QPID_HOME%\lib\qpid-incubating.jar
 :afterQpidClasspath
 
 REM start parsing -run arguments
+set QPID_ARGS=
 if "%1" == "" goto endRunArgs
 :runLoop
 set var=%1
 if "%var:~0,5%" == "-run:" goto runFound
+set QPID_ARGS=%QPID_ARGS% %1 
 :beforeRunShift
 shift
 if not "%1"=="" goto runLoop
@@ -187,16 +189,6 @@ goto afterQpidJavaMem
 echo Info: QPID_JAVA_MEM not set. Defaulting to JAVA_MEM %JAVA_MEM%
 :after QpidJavaMem
 
-rem Slurp the command line arguments. This loop allows for an unlimited number
-rem of agruments (up to the command line limit, anyway).
-set QPID_ARGS=%1
-if ""%1""=="""" goto runCommand
-shift
-:loop
-if ""%1""=="""" goto runCommand
-set QPID_ARGS=%QPID_ARGS% %1
-shift
-goto loop
 
 rem QPID_OPTS intended to hold any -D props for use
 rem user must enclose any value for QPID_OPTS in double quotes
