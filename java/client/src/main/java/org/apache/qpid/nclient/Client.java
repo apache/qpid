@@ -122,6 +122,7 @@ public class Client implements org.apache.qpid.nclient.Connection
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
+                super.connectionClose(context, connectionClose);
                 ErrorCode errorCode = ErrorCode.get(connectionClose.getReplyCode().getValue());
                 if (_closedListner == null && errorCode != ErrorCode.NO_ERROR)
                 {

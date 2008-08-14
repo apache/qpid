@@ -250,6 +250,7 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 
     @Override public void connectionClose(Channel ch, ConnectionClose close)
     {
+        ch.getConnection().closeCode(close);
         ch.connectionCloseOk();
     }
 

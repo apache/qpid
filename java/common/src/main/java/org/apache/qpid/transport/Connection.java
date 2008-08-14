@@ -148,6 +148,17 @@ public class Connection
         delegate.exception(t);
     }
 
+    void closeCode(ConnectionClose close)
+    {
+        synchronized (channels)
+        {
+            for (Channel ch : channels.values())
+            {
+                ch.closeCode(close);
+            }
+        }
+    }
+
     public void closed()
     {
         log.debug("connection closed: %s", this);
