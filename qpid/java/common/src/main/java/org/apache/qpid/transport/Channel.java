@@ -134,6 +134,14 @@ public class Channel extends Invoker
         this.session = session;
     }
 
+    void closeCode(ConnectionClose close)
+    {
+        if (session != null)
+        {
+            session.closeCode(close);
+        }
+    }
+
     private void emit(ProtocolEvent event)
     {
         event.setChannel(channel);

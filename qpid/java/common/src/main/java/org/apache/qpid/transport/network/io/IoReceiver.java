@@ -100,7 +100,7 @@ final class IoReceiver extends Thread
             InputStream in = socket.getInputStream();
             int read = 0;
             int offset = 0;
-            while (!closed.get() && (read = in.read(buffer, offset, bufferSize-offset)) != -1)
+            while ((read = in.read(buffer, offset, bufferSize-offset)) != -1)
             {
                 if (read > 0)
                 {

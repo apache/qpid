@@ -268,6 +268,23 @@ public class Session extends Invoker
 
     public void invoke(Method m)
     {
+        if (closed.get())
+        {
+            List<ExecutionException> exc = getExceptions();
+            if (!exc.isEmpty())
+            {
+                throw new SessionException(exc);
+            }
+            else if (close != null)
+            {
+                throw new ConnectionException(close);
+            }
+            else
+            {
+                throw new SessionClosedException();
+            }
+        }
+
         if (m.getEncodedTrack() == Frame.L4)
         {
             synchronized (commands)
@@ -377,6 +394,13 @@ public class Session extends Invoker
         {
             exceptions.add(exc);
         }
+    }
+
+    private ConnectionClose close = null;
+
+    void closeCode(ConnectionClose close)
+    {
+        this.close = close;
     }
 
     List<ExecutionException> getExceptions()
