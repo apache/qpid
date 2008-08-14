@@ -49,6 +49,7 @@ generate_MaxMethodBodySize_h_SOURCES=gen/generate_MaxMethodBodySize_h.cpp
 qpid/framing/MaxMethodBodySize.h: generate_MaxMethodBodySize_h
 	./generate_MaxMethodBodySize_h
 BUILT_SOURCES=qpid/framing/MaxMethodBodySize.h
+DISTCLEANFILES=qpid/framing/MaxMethodBodySize.h
 
 ## Compiler flags
 
