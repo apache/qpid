@@ -15,6 +15,7 @@ CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
 OPTS="-d --load-module ../.libs/libqpidcluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $*"
 
 if test "$SIZE" = "one"; then	# Special case of singleton cluster, use default port.
+    ../qpidd -q
     with_ais_group ../qpidd $OPTS || exit 1
 else
     for (( i=0; i<SIZE; ++i )); do
