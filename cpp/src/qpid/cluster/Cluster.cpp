@@ -87,13 +87,21 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
     mcastQueue.start(poller);
 }
 
-Cluster::~Cluster() {}
+Cluster::~Cluster() {
+    for (ShadowConnectionMap::iterator i = shadowConnectionMap.begin();
+         i != shadowConnectionMap.end();
+         ++i)
+    {
+        i->second->dirtyClose(); 
+    }
+    std::for_each(localConnectionSet.begin(), localConnectionSet.end(), boost::bind(&ConnectionInterceptor::dirtyClose, _1));
+}
 
 // local connection initializes plugins
 void Cluster::initialize(broker::Connection& c) {
     bool isLocal = &c.getOutput() != &shadowOut;
     if (isLocal)
-        new ConnectionInterceptor(c, *this);
+        localConnectionSet.insert(new ConnectionInterceptor(c, *this));
 }
 
 void Cluster::leave() {
@@ -260,6 +268,8 @@ void Cluster::handleMethod(Id from, ConnectionInterceptor* connection, AMQMethod
       case CLUSTER_CONNECTION_CLOSE_METHOD_ID: {
           if (!connection->isLocal())
               shadowConnectionMap.erase(connection->getShadowId());
+          else
+              localConnectionSet.erase(connection);
           connection->deliverClosed();
           break;
       }

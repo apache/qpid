@@ -91,11 +91,12 @@ class Cluster : private Cpg::Handler, public RefCounted
     // Cluster frame handing functions
     void notify(const std::string& url);
     void connectionClose();
-    
+
   private:
     typedef Cpg::Id Id;
     typedef std::map<Id, Member>  MemberMap;
     typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
+    typedef std::set<ConnectionInterceptor*> LocalConnectionSet;
 
     /** Message sent over the cluster. */
     struct Message {
@@ -154,6 +155,7 @@ class Cluster : private Cpg::Handler, public RefCounted
     MemberMap members;
     Id self;
     ShadowConnectionMap shadowConnectionMap;
+    LocalConnectionSet localConnectionSet;
     ShadowConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
     MessageQueue deliverQueue;

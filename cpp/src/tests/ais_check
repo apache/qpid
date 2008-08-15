@@ -1,4 +1,5 @@
 #!/bin/sh
+srcdir=`dirname $0`
 
 # Check AIS requirements tests if found.
 id -nG | grep '\<ais\>' >/dev/null || \
@@ -31,6 +32,6 @@ with_ais_group() {
 
 # Run the tests
 srcdir=`dirname $0`
-with_ais_group ./cluster_test || ERROR=1
+with_ais_group $srcdir/run_test ./cluster_test || ERROR=1
 exit $ERROR
 
