@@ -152,6 +152,16 @@ public class MessageListenerTest extends QpidTestCase implements MessageListener
         // Should have recieved all async messages
         assertEquals(MSG_COUNT, receivedCount);
 
+        _clientConnection.close();
+
+        Connection conn = getConnection("guest", "guest");
+        Session clientSession = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = clientSession.createQueue("message-listener-test-queue");
+        MessageConsumer cons = clientSession.createConsumer(queue);
+        conn.start();
+
+        // check that the messages were actually dequeued
+        assertTrue(cons.receive(2000) == null);
     }
 
     public void onMessage(Message message)

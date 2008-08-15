@@ -280,7 +280,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                     Object o = _synchronousQueue.poll();
                     while (o != null)
                     {
-                        messageListener.onMessage((Message) o);
+                        notifyMessage((AbstractJMSMessage) o);
                         o = _synchronousQueue.poll();
                     }
                 }
