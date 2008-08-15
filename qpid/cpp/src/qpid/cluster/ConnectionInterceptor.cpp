@@ -42,7 +42,6 @@ ConnectionInterceptor::ConnectionInterceptor(
 }
 
 ConnectionInterceptor::~ConnectionInterceptor() {
-    assert(isClosed);
     assert(connection == 0);
 }
 
@@ -52,7 +51,6 @@ void ConnectionInterceptor::received(framing::AMQFrame& f) {
 }
 
 void ConnectionInterceptor::deliver(framing::AMQFrame& f) {
-    //    ostringstream os; os << f; printf("Received: %s\n", os.str().c_str()); // FIXME aconway 2008-08-08: remove
     receivedNext(f);
 }
 
@@ -82,9 +80,19 @@ void ConnectionInterceptor::deliverClosed() {
     connection = 0;             
 }
 
+void ConnectionInterceptor::dirtyClose() {
+    // Not closed via cluster self-delivery but closed locally.
+    // Used for dirty cluster shutdown where active connections
+    // must be cleaned up.
+    connection = 0;
+}
+
 bool  ConnectionInterceptor::doOutput() {
+    // FIXME aconway 2008-08-15: this is not correct.
+    // Run in write threads so order of execution of doOutput is not determinate.
+    // Will only work reliably for in single-consumer tests.   
+
     if (connection->hasOutput()) {
-        QPID_LOG(debug, "Intercept doOutput, call doOutputNext"); // FIXME aconway 2008-08-08: remove
         cluster.send(AMQFrame(in_place<ClusterConnectionDoOutputBody>()), this);
         return doOutputNext();
     }
@@ -92,13 +100,9 @@ bool  ConnectionInterceptor::doOutput() {
 }
 
 void ConnectionInterceptor::deliverDoOutput() {
-    if (isShadow()) {
-        QPID_LOG(debug, "Shadow deliver do output, call doOutputNext"); // FIXME aconway 2008-08-08: remove
+    // FIXME aconway 2008-08-15: see comment in doOutput.
+    if (isShadow()) 
         doOutputNext();
-    }
-    else {
-        QPID_LOG(debug, "Primary deliver doOutput, ignore."); // FIXME aconway 2008-08-08: remove
-    }
 }
 
 }} // namespace qpid::cluster

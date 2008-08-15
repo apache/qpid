@@ -48,6 +48,8 @@ class ConnectionInterceptor {
     void deliverClosed();
     void deliverDoOutput();
 
+    void dirtyClose();
+
   private:
     struct NullConnectionHandler : public qpid::sys::ConnectionOutputHandler {
         void close() {}
