@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.client;
 
+import java.util.UUID;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.AMQMessageDelegate;
+import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicConsumeBody;
@@ -65,9 +69,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         _protocolHandler.writeFrame(declare);
     }
 
-    void sendMessage(AMQDestination destination, Message origMessage,AbstractJMSMessage message,
-                     int deliveryMode,int priority, long timeToLive, boolean mandatory, boolean immediate,
-                     boolean wait) throws JMSException
+    void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
+                     UUID messageId, int deliveryMode,int priority, long timeToLive, boolean mandatory,
+                     boolean immediate, boolean wait) throws JMSException
     {
         BasicPublishBody body = getSession().getMethodRegistry().createBasicPublishBody(_session.getTicket(),
                                                                                         destination.getExchangeName(),
@@ -79,7 +83,8 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         message.prepareForSending();
         ByteBuffer payload = message.getData();
-        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
+        AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
+        BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
 
         if (!_disableTimestamps)
         {

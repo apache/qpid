@@ -28,21 +28,21 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A filter performing a comparison of two objects
  */
-public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression
+public abstract class ComparisonExpression<E extends Exception> extends BinaryExpression<E> implements BooleanExpression<E>
 {
 
-    public static BooleanExpression createBetween(Expression value, Expression left, Expression right)
+    public static<E extends Exception> BooleanExpression<E> createBetween(Expression<E> value, Expression left, Expression<E> right)
     {
         return LogicExpression.createAND(createGreaterThanEqual(value, left), createLessThanEqual(value, right));
     }
 
-    public static BooleanExpression createNotBetween(Expression value, Expression left, Expression right)
+    public static<E extends Exception> BooleanExpression<E> createNotBetween(Expression<E> value, Expression<E> left, Expression<E> right)
     {
         return LogicExpression.createOR(createLessThan(value, left), createGreaterThan(value, right));
     }
@@ -73,7 +73,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         REGEXP_CONTROL_CHARS.add(new Character('!'));
     }
 
-    static class LikeExpression extends UnaryExpression implements BooleanExpression
+    static class LikeExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
     {
 
         Pattern likePattern;
@@ -81,7 +81,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          * @param right
          */
-        public LikeExpression(Expression right, String like, int escape)
+        public LikeExpression(Expression<E> right, String like, int escape)
         {
             super(right);
 
@@ -138,7 +138,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(AMQMessage message) throws AMQException
+        public Object evaluate(Filterable<E> message) throws E
         {
 
             Object rv = this.getRight().evaluate(message);
@@ -146,11 +146,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             if (rv == null)
             {
                 return null;
-            }
-
-            if(rv instanceof AMQShortString)
-            {
-                rv = rv.toString();
             }
 
             if (!(rv instanceof String))
@@ -163,7 +158,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
-        public boolean matches(AMQMessage message) throws AMQException
+        public boolean matches(Filterable<E> message) throws E
         {
             Object object = evaluate(message);
 
@@ -241,45 +236,9 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         return doCreateEqual(left, right);
     }
 
-    private static BooleanExpression doCreateEqual(Expression left, Expression right)
+    private static<E extends Exception> BooleanExpression<E> doCreateEqual(Expression<E> left, Expression<E> right)
     {
-        return new ComparisonExpression(left, right)
-            {
-
-                public Object evaluate(AMQMessage message) throws AMQException
-                {
-                    Object lv = left.evaluate(message);
-                    Object rv = right.evaluate(message);
-
-                    // Iff one of the values is null
-                    if ((lv == null) ^ (rv == null))
-                    {
-                        return Boolean.FALSE;
-                    }
-
-                    if ((lv == rv) || lv.equals(rv))
-                    {
-                        return Boolean.TRUE;
-                    }
-
-                    if ((lv instanceof Comparable) && (rv instanceof Comparable))
-                    {
-                        return compare((Comparable) lv, (Comparable) rv);
-                    }
-
-                    return Boolean.FALSE;
-                }
-
-                protected boolean asBoolean(int answer)
-                {
-                    return answer == 0;
-                }
-
-                public String getExpressionSymbol()
-                {
-                    return "=";
-                }
-            };
+        return new EqualExpression(left, right);
     }
 
     public static BooleanExpression createGreaterThan(final Expression left, final Expression right)
@@ -429,7 +388,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         super(left, right);
     }
 
-    public Object evaluate(AMQMessage message) throws AMQException
+    public Object evaluate(Filterable<E> message) throws E
     {
         Comparable lv = (Comparable) left.evaluate(message);
         if (lv == null)
@@ -454,40 +413,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         // try to convert up to allow the comparison.
         if (lc != rc)
         {
-            if(lc == AMQShortString.class)
-            {
-                if(rc == String.class)
-                {
-                    rv = new AMQShortString((String) rv);
-
-                    if(right instanceof ConstantExpression)
-                    {
-                        ((ConstantExpression)right).setValue(rv);
-                    }
-                }
-                else
-                {
-                    return Boolean.FALSE;
-                }
-            }
-            else if(lc == String.class)
-            {
-                if(rc == AMQShortString.class)
-                {
-                    lv = new AMQShortString((String) lv);
-
-                    if(left instanceof ConstantExpression)
-                    {
-                        ((ConstantExpression)left).setValue(lv);
-                    }
-                }
-                else
-                {
-                    return Boolean.FALSE;
-                }
-
-            }
-            else if (lc == Byte.class)
+            if (lc == Byte.class)
             {
                 if (rc == Short.class)
                 {
@@ -624,11 +550,52 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     protected abstract boolean asBoolean(int answer);
 
-    public boolean matches(AMQMessage message) throws AMQException
+    public boolean matches(Filterable<E> message) throws E
     {
         Object object = evaluate(message);
 
         return (object != null) && (object == Boolean.TRUE);
     }
 
+    private static class EqualExpression<E extends Exception> extends ComparisonExpression<E>
+    {
+        public EqualExpression(final Expression<E> left, final Expression<E> right)
+        {
+            super(left, right);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Object lv = left.evaluate(message);
+            Object rv = right.evaluate(message);
+
+            // Iff one of the values is null
+            if ((lv == null) ^ (rv == null))
+            {
+                return Boolean.FALSE;
+            }
+
+            if ((lv == rv) || lv.equals(rv))
+            {
+                return Boolean.TRUE;
+            }
+
+            if ((lv instanceof Comparable) && (rv instanceof Comparable))
+            {
+                return compare((Comparable) lv, (Comparable) rv);
+            }
+
+            return Boolean.FALSE;
+        }
+
+        protected boolean asBoolean(int answer)
+        {
+            return answer == 0;
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "=";
+        }
+    }
 }

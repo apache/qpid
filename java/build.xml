@@ -22,9 +22,9 @@
 
   <import file="common.xml"/>
 
-  <property name="modules.core"       value="junit-toolkit common broker client"/>
+  <property name="modules.core"       value="junit-toolkit common broker client tools"/>
   <property name="modules.examples"   value="client/example"/>
-  <property name="modules.tests"      value="systests perftests integrationtests"/>
+  <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
   <property name="modules.management" value="management/eclipse-plugin"/>
   <property name="modules.plugin"     value="broker-plugins"/>
 
@@ -109,7 +109,7 @@
     </path>
     <pathconvert property="qpid.jar.classpath" pathsep=" " dirsep="/">
       <path refid="class.path"/>
-      <globmapper from="${build.lib}/*" to="*"/>
+      <globmapper from="${build.lib}${file.separator}*" to="*"/>
     </pathconvert>
 
     <jar destfile="${qpid.jar}">
@@ -132,13 +132,25 @@
 
   <target name="zip" depends="build,prepare" description="build release archive">
     <zip destfile="${release.zip}">
-      <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+      <zipfileset dir="${build}" prefix="${project.namever}" filemode="755">
+        <include name="bin/*"/>
+	<exclude name="bin/*.txt"/>
+      </zipfileset>
+
+      <zipfileset dir="${build}" prefix="${project.namever}" filemode="644">
+        <include name="bin/*.txt"/>
+      </zipfileset>
+
+      <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}" filemode="644" dirmode="755">
+        <exclude name="bin/**"/>
+	<exclude name="**/*.class"/>
+      </zipfileset>
     </zip>
   </target>
 
-  <target name="tar" depends="build,prepare" description="build release archive">
-    <tar destfile="${release.tar}">
-      <tarfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}"/>
+  <target name="tar" depends="zip" description="build release archive">
+    <tar destfile="${release.tar}" longfile="gnu" >
+      <zipfileset src="${release.zip}"/>
     </tar>
   </target>
 
@@ -158,6 +170,7 @@
     <iterate target="clean"/>
     <delete dir="${build}"/>
     <delete dir="${release}"/>
+    <delete dir="${tasks.classes}"/>
   </target>
 
 </project>

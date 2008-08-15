@@ -30,45 +30,23 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * An expression which performs an operation on two expression values
  */
-public abstract class UnaryExpression implements Expression
+public abstract class UnaryExpression<E extends Exception> implements Expression<E>
 {
 
     private static final BigDecimal BD_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE);
-    protected Expression right;
+    protected Expression<E> right;
 
-    public static Expression createNegate(Expression left)
+    public static<E extends Exception> Expression<E> createNegate(Expression<E> left)
     {
-        return new UnaryExpression(left)
-        {
-            public Object evaluate(AMQMessage message) throws AMQException
-            {
-                Object rvalue = right.evaluate(message);
-                if (rvalue == null)
-                {
-                    return null;
-                }
-
-                if (rvalue instanceof Number)
-                {
-                    return negate((Number) rvalue);
-                }
-
-                return null;
-            }
-
-            public String getExpressionSymbol()
-            {
-                return "-";
-            }
-        };
+        return new NegativeExpression(left);
     }
 
-    public static BooleanExpression createInExpression(PropertyExpression right, List elements, final boolean not)
+    public static<E extends Exception> BooleanExpression createInExpression(PropertyExpression<E> right, List elements, final boolean not)
     {
 
         // Use a HashSet if there are many elements.
@@ -88,81 +66,17 @@ public abstract class UnaryExpression implements Expression
 
         final Collection inList = t;
 
-        return new BooleanUnaryExpression(right)
-        {
-            public Object evaluate(AMQMessage message) throws AMQException
-            {
-
-                Object rvalue = right.evaluate(message);
-                if (rvalue == null)
-                {
-                    return null;
-                }
-
-                if (rvalue.getClass() != String.class)
-                {
-                    return null;
-                }
-
-                if (((inList != null) && inList.contains(rvalue)) ^ not)
-                {
-                    return Boolean.TRUE;
-                }
-                else
-                {
-                    return Boolean.FALSE;
-                }
-
-            }
-
-            public String toString()
-            {
-                StringBuffer answer = new StringBuffer();
-                answer.append(right);
-                answer.append(" ");
-                answer.append(getExpressionSymbol());
-                answer.append(" ( ");
-
-                int count = 0;
-                for (Iterator i = inList.iterator(); i.hasNext();)
-                {
-                    Object o = (Object) i.next();
-                    if (count != 0)
-                    {
-                        answer.append(", ");
-                    }
-
-                    answer.append(o);
-                    count++;
-                }
-
-                answer.append(" )");
-
-                return answer.toString();
-            }
-
-            public String getExpressionSymbol()
-            {
-                if (not)
-                {
-                    return "NOT IN";
-                }
-                else
-                {
-                    return "IN";
-                }
-            }
-        };
+        return new InExpression(right, inList, not);
     }
 
-    abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression
+    abstract static class BooleanUnaryExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
     {
-        public BooleanUnaryExpression(Expression left)
+        public BooleanUnaryExpression(Expression<E> left)
         {
             super(left);
         }
 
-        public boolean matches(AMQMessage message) throws AMQException
+        public boolean matches(Filterable<E> message) throws E
         {
             Object object = evaluate(message);
 
@@ -171,26 +85,9 @@ public abstract class UnaryExpression implements Expression
     }
     ;
 
-    public static BooleanExpression createNOT(BooleanExpression left)
+    public static<E extends Exception> BooleanExpression<E> createNOT(BooleanExpression<E> left)
     {
-        return new BooleanUnaryExpression(left)
-        {
-            public Object evaluate(AMQMessage message) throws AMQException
-            {
-                Boolean lvalue = (Boolean) right.evaluate(message);
-                if (lvalue == null)
-                {
-                    return null;
-                }
-
-                return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
-            }
-
-            public String getExpressionSymbol()
-            {
-                return "NOT";
-            }
-        };
+        return new NotExpression(left);
     }
 
     public static BooleanExpression createXPath(final String xpath)
@@ -203,36 +100,9 @@ public abstract class UnaryExpression implements Expression
         return new XQueryExpression(xpath);
     }
 
-    public static BooleanExpression createBooleanCast(Expression left)
+    public static<E extends Exception> BooleanExpression createBooleanCast(Expression<E> left)
     {
-        return new BooleanUnaryExpression(left)
-        {
-            public Object evaluate(AMQMessage message) throws AMQException
-            {
-                Object rvalue = right.evaluate(message);
-                if (rvalue == null)
-                {
-                    return null;
-                }
-
-                if (!rvalue.getClass().equals(Boolean.class))
-                {
-                    return Boolean.FALSE;
-                }
-
-                return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
-            }
-
-            public String toString()
-            {
-                return right.toString();
-            }
-
-            public String getExpressionSymbol()
-            {
-                return "";
-            }
-        };
+        return new BooleanCastExpression(left);
     }
 
     private static Number negate(Number left)
@@ -281,7 +151,7 @@ public abstract class UnaryExpression implements Expression
         this.right = left;
     }
 
-    public Expression getRight()
+    public Expression<E> getRight()
     {
         return right;
     }
@@ -334,4 +204,166 @@ public abstract class UnaryExpression implements Expression
      */
     public abstract String getExpressionSymbol();
 
+    private static class NegativeExpression<E extends Exception> extends UnaryExpression<E>
+    {
+        public NegativeExpression(final Expression<E> left)
+        {
+            super(left);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
+            {
+                return null;
+            }
+
+            if (rvalue instanceof Number)
+            {
+                return negate((Number) rvalue);
+            }
+
+            return null;
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "-";
+        }
+    }
+
+    private static class InExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
+        private final Collection _inList;
+        private final boolean _not;
+
+        public InExpression(final PropertyExpression<E> right, final Collection inList, final boolean not)
+        {
+            super(right);
+            _inList = inList;
+            _not = not;
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
+            {
+                return null;
+            }
+
+            if (rvalue.getClass() != String.class)
+            {
+                return null;
+            }
+
+            if (((_inList != null) && _inList.contains(rvalue)) ^ _not)
+            {
+                return Boolean.TRUE;
+            }
+            else
+            {
+                return Boolean.FALSE;
+            }
+
+        }
+
+        public String toString()
+        {
+            StringBuffer answer = new StringBuffer();
+            answer.append(right);
+            answer.append(" ");
+            answer.append(getExpressionSymbol());
+            answer.append(" ( ");
+
+            int count = 0;
+            for (Iterator i = _inList.iterator(); i.hasNext();)
+            {
+                Object o = (Object) i.next();
+                if (count != 0)
+                {
+                    answer.append(", ");
+                }
+
+                answer.append(o);
+                count++;
+            }
+
+            answer.append(" )");
+
+            return answer.toString();
+        }
+
+        public String getExpressionSymbol()
+        {
+            if (_not)
+            {
+                return "NOT IN";
+            }
+            else
+            {
+                return "IN";
+            }
+        }
+    }
+
+    private static class NotExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
+        public NotExpression(final BooleanExpression<E> left)
+        {
+            super(left);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Boolean lvalue = (Boolean) right.evaluate(message);
+            if (lvalue == null)
+            {
+                return null;
+            }
+
+            return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "NOT";
+        }
+    }
+
+    private static class BooleanCastExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
+        public BooleanCastExpression(final Expression<E> left)
+        {
+            super(left);
+        }
+
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
+            {
+                return null;
+            }
+
+            if (!rvalue.getClass().equals(Boolean.class))
+            {
+                return Boolean.FALSE;
+            }
+
+            return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
+        }
+
+        public String toString()
+        {
+            return right.toString();
+        }
+
+        public String getExpressionSymbol()
+        {
+            return "";
+        }
+    }
 }

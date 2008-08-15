@@ -37,7 +37,7 @@ public class StoreContext
 
     public StoreContext()
     {
-        _name = super.toString();
+        _name = "StoreContext";
     }
 
     public StoreContext(String name)
@@ -52,7 +52,10 @@ public class StoreContext
 
     public void setPayload(Object payload)
     {
-        _logger.debug("public void setPayload(Object payload = " + payload + "): called");
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("public void setPayload(Object payload = " + payload + "): called");
+        }
         _payload = payload;
     }
 

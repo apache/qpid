@@ -47,7 +47,16 @@ public enum NotificationCheck
             if(maximumMessageSize != 0)
             {
                 // Check for threshold message size
-                long messageSize = (msg == null) ? 0 : msg.getSize();
+                long messageSize;
+                try
+                {
+                    messageSize = (msg == null) ? 0 : msg.getContentHeaderBody().bodySize;
+                }
+                catch (AMQException e)
+                {
+                    messageSize = 0;
+                }
+
 
                 if (messageSize >= maximumMessageSize)
                 {

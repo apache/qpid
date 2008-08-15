@@ -24,18 +24,17 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.log4j.Logger;
 
 import java.util.*;
@@ -50,7 +49,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     /**
      * Not used in this test, just there to stub out the routing calls
      */
-    private MessageStore _store = new SkeletonMessageStore();
+    private MessageStore _store = new MemoryMessageStore();
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -94,7 +93,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected void route(Message m) throws AMQException
     {
         m.route(exchange);
-        m.routingComplete(_store, _storeContext, _handleFactory);
+        m.getIncomingMessage().routingComplete(_store, _handleFactory);
+        if(m.getIncomingMessage().allContentReceived())
+        {
+            m.getIncomingMessage().deliverToQueues();
+        }
     }
 
     protected void routeAndTest(Message m, TestQueue... expected) throws AMQException
@@ -122,12 +125,12 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             {
                 if (expected.contains(q))
                 {
-                    assertTrue("Expected " + m + " to be delivered to " + q, m.isInQueue(q));
+                    assertTrue("Expected " + m + " to be delivered to " + q, q.isInQueue(m));
                     //assert m.isInQueue(q) : "Expected " + m + " to be delivered to " + q;
                 }
                 else
                 {
-                    assertFalse("Did not expect " + m + " to be delivered to " + q, m.isInQueue(q));
+                    assertFalse("Did not expect " + m + " to be delivered to " + q, q.isInQueue(m));
                     //assert !m.isInQueue(q) : "Did not expect " + m + " to be delivered to " + q;
                 }
             }
@@ -234,7 +237,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         return properties;
     }
 
-    static class TestQueue extends AMQQueue
+    static class TestQueue extends SimpleAMQQueue
     {
         final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
 
@@ -248,13 +251,167 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * not invoked. It is unnecessary since for this test we only care to know whether the message was
          * sent to the queue; the queue processing logic is not being tested.
          * @param msg
-         * @param deliverFirst
          * @throws AMQException
          */
-        public void process(StoreContext context, QueueEntry msg, boolean deliverFirst) throws AMQException
+        @Override
+        public QueueEntry enqueue(StoreContext context, AMQMessage msg) throws AMQException
         {
-            messages.add(new HeadersExchangeTest.Message(msg.getMessage()));
+            messages.add( new HeadersExchangeTest.Message(msg));
+            return new QueueEntry()
+            {
+
+                public AMQQueue getQueue()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public AMQMessage getMessage()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public long getSize()
+                {
+                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean getDeliveredToConsumer()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean expired() throws AMQException
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isAcquired()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean acquire()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean acquire(Subscription sub)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean delete()
+                {
+                    return false;
+                }
+
+                public boolean isDeleted()
+                {
+                    return false;
+                }
+
+                public boolean acquiredBySubscription()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void setDeliveredToSubscription()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void release()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public String debugIdentity()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean immediateAndNotDelivered()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void setRedelivered(boolean b)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public Subscription getDeliveredSubscription()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void reject()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void reject(Subscription subscription)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isRejectedBy(Subscription subscription)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void requeue(StoreContext storeContext) throws AMQException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void dequeue(final StoreContext storeContext) throws FailedDequeueException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void dispose(final StoreContext storeContext) throws MessageCleanupException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void restoreCredit()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isQueueDeleted()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void addStateChangeListener(StateChangeListener listener)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean removeStateChangeListener(StateChangeListener listener)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public int compareTo(final QueueEntry o)
+                {
+                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+            };
         }
+
+        boolean isInQueue(Message msg)
+        {
+            return messages.contains(msg);
+        }
+
     }
 
     /**
@@ -262,9 +419,43 @@ public class AbstractHeadersExchangeTestBase extends TestCase
      */
     static class Message extends AMQMessage
     {
-        private static MessageStore _messageStore = new MemoryMessageStore();
+        private class TestIncomingMessage extends IncomingMessage
+        {
+
+            public TestIncomingMessage(final long messageId,
+                                       final MessagePublishInfo info,
+                                       final TransactionalContext txnContext,
+                                       final AMQProtocolSession publisher)
+            {
+                super(messageId, info, txnContext, publisher);
+            }
+
+
+            public AMQMessage getUnderlyingMessage()
+            {
+                return Message.this;
+            }
+
+
+            public ContentHeaderBody getContentHeaderBody()
+            {
+                try
+                {
+                    return Message.this.getContentHeaderBody();
+                }
+                catch (AMQException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        private IncomingMessage _incoming;
+
+        private static MessageStore _messageStore = new SkeletonMessageStore();
 
         private static StoreContext _storeContext = new StoreContext();
+
 
         private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext,
                                                                                       null,
@@ -278,12 +469,47 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         Message(String id, FieldTable headers) throws AMQException
         {
-            this(getPublishRequest(id), getContentHeader(headers), null);
+            this(_messageStore.getNewMessageId(),getPublishRequest(id), getContentHeader(headers), null);
         }
 
-        private Message(MessagePublishInfo publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
+        public IncomingMessage getIncomingMessage()
         {
-            super(_messageStore.getNewMessageId(), publish, _txnContext, header);
+            return _incoming;
+        }
+
+        private Message(long messageId,
+                        MessagePublishInfo publish,
+                        ContentHeaderBody header,
+                        List<ContentBody> bodies) throws AMQException
+        {
+            super(createMessageHandle(messageId, publish, header), _txnContext.getStoreContext(), publish);
+
+
+            
+            _incoming = new TestIncomingMessage(getMessageId(),publish,_txnContext,new MockProtocolSession(_messageStore));
+            _incoming.setContentHeaderBody(header);
+
+
+        }
+
+        private static AMQMessageHandle createMessageHandle(final long messageId,
+                                                            final MessagePublishInfo publish,
+                                                            final ContentHeaderBody header)
+        {
+
+            final AMQMessageHandle amqMessageHandle = (new MessageHandleFactory()).createMessageHandle(messageId,
+                                                                                                       _messageStore,
+                                                                                                       true);
+
+            try
+            {
+                amqMessageHandle.setPublishAndContentHeaderBody(new StoreContext(),publish,header);
+            }
+            catch (AMQException e)
+            {
+                
+            }
+            return amqMessageHandle;
         }
 
         private Message(AMQMessage msg) throws AMQException
@@ -291,15 +517,13 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             super(msg);
         }
 
+
+
         void route(Exchange exchange) throws AMQException
         {
-            exchange.route(this);
+            exchange.route(_incoming);
         }
 
-        boolean isInQueue(TestQueue queue)
-        {
-            return queue.messages.contains(this);
-        }
 
         public int hashCode()
         {

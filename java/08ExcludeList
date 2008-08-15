@@ -2,7 +2,8 @@ org.apache.qpid.test.unit.xa.QueueTest#*
 org.apache.qpid.test.unit.xa.TopicTest#*
 org.apache.qpid.test.unit.xa.FaultTest#*
 org.apache.qpid.test.unit.ct.DurableSubscriberTests#*
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurableWithInvalidSelector
 // Those tests are not finished
 org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.testcases.FailoverTest#*
+// This is a long running test so should exclude from normal runs
+org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover

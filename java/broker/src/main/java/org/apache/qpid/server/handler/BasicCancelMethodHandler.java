@@ -21,11 +21,9 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -65,7 +63,7 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
                        " nowait:" + body.getNowait());
         }
 
-        channel.unsubscribeConsumer(session, body.getConsumerTag());
+        channel.unsubscribeConsumer(body.getConsumerTag());
         if (!body.getNowait())
         {
             MethodRegistry methodRegistry = session.getMethodRegistry();

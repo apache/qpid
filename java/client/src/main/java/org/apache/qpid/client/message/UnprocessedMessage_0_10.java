@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.client.message;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.Struct;
+import org.apache.qpid.transport.MessageTransfer;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and
@@ -35,58 +29,25 @@ import org.apache.qpidity.transport.Struct;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public class UnprocessedMessage_0_10 extends UnprocessedMessage<Struct[],ByteBuffer>
+public class UnprocessedMessage_0_10 extends UnprocessedMessage
 {
-    private Struct[] _headers;
-    private String _replyToURL;
+    private MessageTransfer _transfer;
 
-    /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
-    private List<ByteBuffer> _bodies = new ArrayList<ByteBuffer>();
-
-    public UnprocessedMessage_0_10(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    public UnprocessedMessage_0_10(int consumerTag, MessageTransfer xfr)
     {
-        super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
-    }
-
-    public void receiveBody(ByteBuffer body)
-    {
-
-        _bodies.add(body);
-    }
-
-    public void setContentHeader(Struct[] headers)
-    {
-        this._headers = headers;
-        for(Struct s: headers)
-        {
-            if (s instanceof DeliveryProperties)
-            {
-                DeliveryProperties props = (DeliveryProperties)s;
-                _exchange = new AMQShortString(props.getExchange());
-                _routingKey = new AMQShortString(props.getRoutingKey());
-                _redelivered = props.getRedelivered();
-            }
-        }
-    }
-
-    public Struct[] getContentHeader()
-    {
-        return _headers;
-    }
-
-    public List<ByteBuffer> getBodies()
-    {
-        return _bodies;
+        super(consumerTag);
+        _transfer = xfr;
     }
 
     // additional 0_10 method
-    public String getReplyToURL()
+
+    public long getDeliveryTag()
     {
-        return _replyToURL;
+        return _transfer.getId();
     }
 
-    public void setReplyToURL(String url)
+    public MessageTransfer getMessageTransfer()
     {
-        _replyToURL = url;
+        return _transfer;
     }
 }

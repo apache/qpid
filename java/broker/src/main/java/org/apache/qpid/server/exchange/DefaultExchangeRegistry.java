@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -121,9 +122,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      * @param payload
      * @throws AMQException if something goes wrong delivering data
      */
-    public void routeContent(AMQMessage payload) throws AMQException
+    public void routeContent(IncomingMessage payload) throws AMQException
     {
-        final AMQShortString exchange = payload.getMessagePublishInfo().getExchange();
+        final AMQShortString exchange = payload.getExchange();
         final Exchange exch = getExchange(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
         // the BasicPublish being received (where the exchange is validated) and the final

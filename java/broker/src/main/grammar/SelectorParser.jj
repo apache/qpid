@@ -94,7 +94,7 @@ public class SelectorParser {
             return this.JmsSelector();
         }
         catch (Throwable e) {
-	        throw (AMQInvalidArgumentException)new AMQInvalidArgumentException(sql, e);
+	        throw (AMQInvalidArgumentException)new AMQInvalidArgumentException(sql,e);
         }
 
     }

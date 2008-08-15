@@ -30,7 +30,12 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
     protected void setUp() throws Exception
     {
         super.setUp();
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
+        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
+    }
+
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
     }
 
     public void testSimple() throws AMQException

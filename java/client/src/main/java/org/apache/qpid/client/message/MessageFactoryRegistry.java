@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.ByteBuffer;
 
 import javax.jms.JMSException;
 
@@ -30,9 +31,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpidity.transport.Struct;
-import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.MessageProperties;
+import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.DeliveryProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,8 +94,7 @@ public class MessageFactoryRegistry
      * @param deliveryTag   the AMQ message id
      * @param redelivered   true if redelivered
      * @param contentHeader the content header that was received
-     * @param bodies        a list of ContentBody instances
-     * @return the message.
+     * @param bodies        a list of ContentBody instances @return the message.
      * @throws AMQException
      * @throws JMSException
      */
@@ -120,30 +121,35 @@ public class MessageFactoryRegistry
         }
     }
 
-    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
-                                            AMQShortString routingKey, Struct[] contentHeader, List bodies,
-                                            String replyTo) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(MessageTransfer transfer) throws AMQException, JMSException
     {
-        MessageProperties mprop = (MessageProperties) contentHeader[0];
+
+        MessageProperties mprop = transfer.getHeader().get(MessageProperties.class);
         String messageType = mprop.getContentType();
         if (messageType == null)
         {
             _logger.debug("no message type specified, building a byte message");
             messageType = JMSBytesMessage.MIME_TYPE;
         }
-        MessageFactory mf = _mimeShortStringToFactoryMap.get(new AMQShortString(messageType));
+        MessageFactory mf = _mimeStringToFactoryMap.get(messageType);
         if (mf == null)
         {
             throw new AMQException(null, "Unsupport MIME type of " + messageType, null);
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies, replyTo);
+            boolean redelivered = false;
+            DeliveryProperties deliverProps;
+            if((deliverProps = transfer.getHeader().get(DeliveryProperties.class)) != null)
+            {
+                redelivered = deliverProps.getRedelivered();
+            }
+            return mf.createMessage(transfer.getId(), redelivered, transfer.getHeader().getStructs(), transfer.getBody());
         }
     }
 
 
-    public AbstractJMSMessage createMessage(String mimeType) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(AMQMessageDelegateFactory delegateFactory, String mimeType) throws AMQException, JMSException
     {
         if (mimeType == null)
         {
@@ -157,7 +163,7 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage();
+            return mf.createMessage(delegateFactory);
         }
     }
 }

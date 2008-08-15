@@ -81,14 +81,6 @@ public class QueueDepthWithSelectorTest extends TestCase
         System.err.println("_logger.isDebug:" + _logger.isDebugEnabled() + ":" + _logger.isEnabledFor(Level.DEBUG));
         System.err.println("_logger.isTrace:" + _logger.isTraceEnabled() + ":" + _logger.isEnabledFor(Level.TRACE));
 
-        Logger csdm = Logger.getLogger(ConcurrentSelectorDeliveryManager.class);
-        System.err.println("csdm.isE-Error:" + csdm.isEnabledFor(Level.ERROR));
-        System.err.println("csdm.isE-Warn:" + csdm.isEnabledFor(Level.WARN));
-        System.err.println("csdm.isInfo:" + csdm.isInfoEnabled() + ":" + csdm.isEnabledFor(Level.INFO));
-        System.err.println("csdm.isDebug:" + csdm.isDebugEnabled() + ":" + csdm.isEnabledFor(Level.DEBUG));
-        System.err.println("csdm.isTrace:" + csdm.isTraceEnabled() + ":" + csdm.isEnabledFor(Level.TRACE));
-
-
         System.err.println(Logger.getRootLogger().getLoggerRepository());
 
         if (BROKER.startsWith("vm://"))
@@ -184,8 +176,13 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         try
         {
+            Thread.sleep(2000);
             long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _context.lookup("queue"));
             assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
+        }
+        catch (InterruptedException e)
+        {
+            fail(e.getMessage());
         }
         catch (NamingException e)
         {
@@ -209,7 +206,7 @@ public class QueueDepthWithSelectorTest extends TestCase
 
     }
 
-    private void verifyAllMessagesRecevied() throws JMSException
+    private void verifyAllMessagesRecevied() throws Exception
     {
 
         boolean[] msgIdRecevied = new boolean[MSG_COUNT];
@@ -219,6 +216,8 @@ public class QueueDepthWithSelectorTest extends TestCase
             _messages[i] = _consumer.receive(1000);
             assertNotNull("should have received a message but didn't", _messages[i]);
         }
+        long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _context.lookup("queue"));
+        assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
 
         //Check received messages
         int msgId = 0;

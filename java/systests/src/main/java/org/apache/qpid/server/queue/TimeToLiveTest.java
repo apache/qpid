@@ -30,6 +30,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
@@ -82,7 +83,8 @@ public class TimeToLiveTest extends TestCase
     {
         if (usingInVMBroker())
         {
-            TransportConnection.killAllVMBrokers();
+            TransportConnection.killVMBroker(1);
+            ApplicationRegistry.remove(1);
         }
         super.tearDown();
     }
@@ -95,7 +97,7 @@ public class TimeToLiveTest extends TestCase
 
         env.put("connectionfactory.connection", "amqp://guest:guest@TTL_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
         env.put("queue.queue", QUEUE);
-
+                                           
         Context context = factory.getInitialContext(env);
 
         Queue queue = (Queue) context.lookup("queue");

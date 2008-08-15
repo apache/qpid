@@ -22,15 +22,9 @@ package org.apache.qpid.client.message;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.qpid.client.AMQSession;
 
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageEOFException;
-import javax.jms.ObjectMessage;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
+import javax.jms.*;
 
 import java.util.Enumeration;
 
@@ -52,12 +46,11 @@ public class MessageConverter
         _newMessage = message;
     }
 
-    public MessageConverter(BytesMessage message) throws JMSException
+    public MessageConverter(AMQSession session, BytesMessage bytesMessage) throws JMSException
     {
-        BytesMessage bytesMessage = (BytesMessage) message;
         bytesMessage.reset();
 
-        JMSBytesMessage nativeMsg = new JMSBytesMessage();
+        JMSBytesMessage nativeMsg = (JMSBytesMessage) session.createBytesMessage();
 
         byte[] buf = new byte[1024];
 
@@ -69,12 +62,12 @@ public class MessageConverter
         }
 
         _newMessage = nativeMsg;
-        setMessageProperties(message);
+        setMessageProperties(bytesMessage);
     }
 
-    public MessageConverter(MapMessage message) throws JMSException
+    public MessageConverter(AMQSession session, MapMessage message) throws JMSException
     {
-        MapMessage nativeMessage = new JMSMapMessage();
+        MapMessage nativeMessage = session.createMapMessage();
 
         Enumeration mapNames = message.getMapNames();
         while (mapNames.hasMoreElements())
@@ -87,21 +80,21 @@ public class MessageConverter
         setMessageProperties(message);
     }
 
-    public MessageConverter(ObjectMessage message) throws JMSException
+    public MessageConverter(AMQSession session, ObjectMessage origMessage) throws JMSException
     {
-        ObjectMessage origMessage = (ObjectMessage) message;
-        ObjectMessage nativeMessage = new JMSObjectMessage();
+
+        ObjectMessage nativeMessage = session.createObjectMessage();
 
         nativeMessage.setObject(origMessage.getObject());
 
         _newMessage = (AbstractJMSMessage) nativeMessage;
-        setMessageProperties(message);
+        setMessageProperties(origMessage);
 
     }
 
-    public MessageConverter(TextMessage message) throws JMSException
+    public MessageConverter(AMQSession session, TextMessage message) throws JMSException
     {
-        TextMessage nativeMessage = new JMSTextMessage();
+        TextMessage nativeMessage = session.createTextMessage();
 
         nativeMessage.setText(message.getText());
 
@@ -109,9 +102,9 @@ public class MessageConverter
         setMessageProperties(message);
     }
 
-    public MessageConverter(StreamMessage message) throws JMSException
+    public MessageConverter(AMQSession session, StreamMessage message) throws JMSException
     {
-        StreamMessage nativeMessage = new JMSStreamMessage();
+        StreamMessage nativeMessage = session.createStreamMessage();
 
         try
         {
@@ -130,11 +123,11 @@ public class MessageConverter
         setMessageProperties(message);
     }
 
-    public MessageConverter(Message message) throws JMSException
+    public MessageConverter(AMQSession session, Message message) throws JMSException
     {
         // Send a message with just properties.
         // Throwing away content
-        BytesMessage nativeMessage = new JMSBytesMessage();
+        Message nativeMessage = session.createMessage();
 
         _newMessage = (AbstractJMSMessage) nativeMessage;
         setMessageProperties(message);

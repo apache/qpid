@@ -22,10 +22,8 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicQosBody;
-import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -49,8 +47,8 @@ public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
             throw body.getChannelNotFoundException(channelId);
         }
 
-        channel.setPrefetchCount(body.getPrefetchCount());
-        channel.setPrefetchSize(body.getPrefetchSize());
+        channel.setCredit(body.getPrefetchSize(), body.getPrefetchCount());
+
 
         MethodRegistry methodRegistry = session.getMethodRegistry();
         AMQMethodBody responseBody = methodRegistry.createBasicQosOkBody();

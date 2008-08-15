@@ -68,12 +68,15 @@ public class AmqPlainSaslServer implements SaslServer
             PasswordCallback passwordCb = new PasswordCallback("prompt", false);
             // TODO: should not get pwd as a String but as a char array...
             String pwd = (String) ft.getString("PASSWORD");
-            passwordCb.setPassword(pwd.toCharArray());
             AuthorizeCallback authzCb = new AuthorizeCallback(username, username);
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};
             _cbh.handle(callbacks);
-            _complete = true;
-            if (authzCb.isAuthorized())
+            String storedPwd = new String(passwordCb.getPassword());
+            if (storedPwd.equals(pwd))
+            {
+                _complete = true;
+            }
+            if (authzCb.isAuthorized() && _complete)
             {
                 _authorizationId = authzCb.getAuthenticationID();
                 return null;

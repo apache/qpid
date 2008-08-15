@@ -39,7 +39,7 @@ public class FilterManagerFactory
         if (filters != null)
         {
 
-            manager = new SimpleFilterManager();
+
 
             if(filters.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()))
             {
@@ -47,23 +47,13 @@ public class FilterManagerFactory
 
                 if (selector != null && !selector.equals(""))
                 {
+                    manager = new SimpleFilterManager();
                     manager.add(new JMSSelectorFilter(selector));
                 }
 
             }
 
-            if (filters.containsKey(AMQPFilterTypes.NO_CONSUME.getValue()))
-            {
-                manager.add(new NoConsumerFilter());
-            }
 
-
-
-            //If we added no filters don't bear the overhead of having an filter manager
-            if (!manager.hasFilters())
-            {
-                manager = null;
-            }
         }
         else
         {

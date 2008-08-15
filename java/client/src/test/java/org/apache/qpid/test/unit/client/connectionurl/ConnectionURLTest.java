@@ -33,11 +33,12 @@ public class ConnectionURLTest extends TestCase
 
     public void testFailoverURL() throws URLSyntaxException
     {
-        String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
+        String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin?cyclecount='100''";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
         assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
+        assertEquals("100", connectionurl.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE));        
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals("bob"));
         assertTrue(connectionurl.getVirtualHost().equals("/test"));
@@ -276,7 +277,7 @@ public class ConnectionURLTest extends TestCase
 
     public void testSingleTransportMultiOptionURL() throws URLSyntaxException
     {
-        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672',routingkey='jim',timeout='200',immediatedelivery='true'";
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672?foo='jim'&bar='bob'&fred='jimmy'',routingkey='jim',timeout='200',immediatedelivery='true'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
@@ -493,8 +494,38 @@ public class ConnectionURLTest extends TestCase
         }
     }
 
+    public void testSingleTransportMultiOptionOnBrokerURL() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672?foo='jim'&bar='bob'&fred='jimmy'',routingkey='jim',timeout='200',immediatedelivery='true'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+
+        assertTrue(connectionurl.getBrokerCount() == 1);
+
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+
+        assertTrue(service.getTransport().equals("tcp"));
+
+        
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
+        assertEquals("jim",service.getProperty("foo"));
+        assertEquals("bob",service.getProperty("bar"));
+        assertEquals("jimmy",service.getProperty("fred"));
+
+        assertTrue(connectionurl.getOption("routingkey").equals("jim"));
+        assertTrue(connectionurl.getOption("timeout").equals("200"));
+        assertTrue(connectionurl.getOption("immediatedelivery").equals("true"));
+    }
+
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(ConnectionURLTest.class);
     }
 }
+

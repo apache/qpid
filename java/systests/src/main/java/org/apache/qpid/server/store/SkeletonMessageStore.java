@@ -22,12 +22,11 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
 
@@ -81,6 +80,10 @@ public class SkeletonMessageStore implements MessageStore
 
     public void createQueue(AMQQueue queue) throws AMQException
     {
+    }
+
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    {
     }        
 
     public void beginTran(StoreContext s) throws AMQException
@@ -130,17 +133,22 @@ public class SkeletonMessageStore implements MessageStore
         return null;
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public boolean isPersistent()
+    {
+        return false;
+    }
+
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
 
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
 
     }

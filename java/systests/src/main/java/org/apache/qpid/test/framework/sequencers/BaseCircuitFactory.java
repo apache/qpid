@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.TestClientDetails;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import java.util.LinkedList;
 import java.util.List;

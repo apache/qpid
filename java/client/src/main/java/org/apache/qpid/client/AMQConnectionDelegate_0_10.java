@@ -9,13 +9,14 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.ClosedListener;
-import org.apache.qpidity.ErrorCode;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.ProtocolException;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.ClosedListener;
+import org.apache.qpid.ErrorCode;
+import org.apache.qpid.QpidException;
+import org.apache.qpid.transport.ProtocolVersionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
     /**
      * The QpidConeection instance that is mapped with thie JMS connection.
      */
-    org.apache.qpidity.nclient.Connection _qpidConnection;
+    org.apache.qpid.nclient.Connection _qpidConnection;
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
@@ -101,7 +102,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
      * @throws IOException
      * @throws AMQException
      */
-    public void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
+    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
         _qpidConnection = Client.createConnection();
         try
@@ -115,15 +116,18 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword());
             _qpidConnection.setClosedListener(this);
+            _conn._connected = true;
         }
-        catch(ProtocolException pe)
+        catch(ProtocolVersionException pe)
         {
-           throw new AMQProtocolException(null, pe.getMessage(), pe);
+            return new ProtocolVersion(pe.getMajor(), pe.getMinor());
         }
         catch (QpidException e)
         {
             throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot connect to broker", e);
         }
+
+        return null;
     }
 
     /**

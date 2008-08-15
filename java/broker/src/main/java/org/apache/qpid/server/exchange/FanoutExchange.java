@@ -26,10 +26,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -95,7 +94,7 @@ public class FanoutExchange extends AbstractExchange
 
             try
             {
-                queue.bind(new AMQShortString(binding), null, FanoutExchange.this);
+                queue.bind(FanoutExchange.this, new AMQShortString(binding), null);
             }
             catch (AMQException ex)
             {
@@ -183,32 +182,17 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public void route(AMQMessage payload) throws AMQException
+    public void route(IncomingMessage payload) throws AMQException
     {
-        final MessagePublishInfo publishInfo = payload.getMessagePublishInfo();
-        final AMQShortString routingKey = publishInfo.getRoutingKey();
-        if ((_queues == null) || _queues.isEmpty())
-        {
-            String msg = "No queues bound to " + this;
-            if (publishInfo.isMandatory() || publishInfo.isImmediate())
-            {
-                throw new NoRouteException(msg, payload);
-            }
-            else
-            {
-                _logger.warn(msg);
-            }
-        }
-        else
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Publishing message to queue " + _queues);
-            }
 
-            payload.enqueue(new ArrayList(_queues));
-
+    
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Publishing message to queue " + _queues);
         }
+
+        payload.enqueue(new ArrayList(_queues));
+
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)

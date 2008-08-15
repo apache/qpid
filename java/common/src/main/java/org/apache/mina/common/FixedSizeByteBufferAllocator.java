@@ -62,7 +62,6 @@ public class FixedSizeByteBufferAllocator  implements ByteBufferAllocator
         private static final class FixedSizeByteBuffer extends ByteBuffer
         {
             private java.nio.ByteBuffer buf;
-            private int refCount = 1;
             private int mark = -1;
 
 
@@ -70,36 +69,14 @@ public class FixedSizeByteBufferAllocator  implements ByteBufferAllocator
             {
                 this.buf = buf;
                 buf.order( ByteOrder.BIG_ENDIAN );
-                refCount = 1;
             }
 
             public synchronized void acquire()
             {
-                if( refCount <= 0 )
-                {
-                    throw new IllegalStateException( "Already released buffer." );
-                }
-
-                refCount ++;
             }
 
             public void release()
             {
-                synchronized( this )
-                {
-                    if( refCount <= 0 )
-                    {
-                        refCount = 0;
-                        throw new IllegalStateException(
-                                "Already released buffer.  You released the buffer too many times." );
-                    }
-
-                    refCount --;
-                    if( refCount > 0)
-                    {
-                        return;
-                    }
-                }
             }
 
             public java.nio.ByteBuffer buf()
@@ -157,49 +134,11 @@ public class FixedSizeByteBufferAllocator  implements ByteBufferAllocator
                 {
                     if( newCapacity > capacity() )
                     {
-                        // Allocate a new buffer and transfer all settings to it.
-                        int pos = position();
-                        int limit = limit();
-                        ByteOrder bo = order();
-
-                        capacity0( newCapacity );
-                        buf.limit( limit );
-                        if( mark >= 0 )
-                        {
-                            buf.position( mark );
-                            buf.mark();
-                        }
-                        buf.position( pos );
-                        buf.order( bo );
+                        throw new IllegalArgumentException();
                     }
 
                     return this;
                 }
-
-            protected void capacity0( int requestedCapacity )
-            {
-                int newCapacity = MINIMUM_CAPACITY;
-                while( newCapacity < requestedCapacity )
-                {
-                    newCapacity <<= 1;
-                }
-
-                java.nio.ByteBuffer oldBuf = this.buf;
-                java.nio.ByteBuffer newBuf;
-                if( isDirect() )
-                {
-                    newBuf = java.nio.ByteBuffer.allocateDirect( newCapacity );
-                }
-                else
-                {
-                    newBuf = java.nio.ByteBuffer.allocate( newCapacity );
-                }
-
-                newBuf.clear();
-                oldBuf.clear();
-                newBuf.put( oldBuf );
-                this.buf = newBuf;
-            }
 
 
 

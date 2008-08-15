@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.tools.messagestore.commands;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
+import org.apache.qpid.server.queue.AMQQueue;
 
 public class Purge extends Move
 {

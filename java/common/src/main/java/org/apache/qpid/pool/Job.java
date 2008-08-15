@@ -50,7 +50,7 @@ import org.apache.mina.common.IoSession;
  *
  * @todo For better re-usability could make the completion handler optional. Only run it when one is set.
  */
-public class Job implements Runnable
+public class Job implements ReadWriteRunnable
 {
     /** The maximum number of events to process per run of the job. More events than this may be queued in the job. */
     private final int _maxEvents;
@@ -67,18 +67,22 @@ public class Job implements Runnable
     /** Holds the completion continuation, called upon completion of a run of the job. */
     private final JobCompletionHandler _completionHandler;
 
+    private final boolean _readJob;
+
     /**
      * Creates a new job that aggregates many continuations together.
      *
      * @param session           The Mina session.
      * @param completionHandler The per job run, terminal continuation.
      * @param maxEvents         The maximum number of aggregated continuations to process per run of the job.
+     * @param readJob
      */
-    Job(IoSession session, JobCompletionHandler completionHandler, int maxEvents)
+    Job(IoSession session, JobCompletionHandler completionHandler, int maxEvents, final boolean readJob)
     {
         _session = session;
         _completionHandler = completionHandler;
         _maxEvents = maxEvents;
+        _readJob = readJob;
     }
 
     /**
@@ -156,6 +160,22 @@ public class Job implements Runnable
             _completionHandler.notCompleted(_session, this);
         }
     }
+
+    public boolean isReadJob()
+    {
+        return _readJob;
+    }
+
+    public boolean isRead()
+    {
+        return _readJob;
+    }
+
+    public boolean isWrite()
+    {
+        return !_readJob;
+    }
+
 
     /**
      * Another interface for a continuation.

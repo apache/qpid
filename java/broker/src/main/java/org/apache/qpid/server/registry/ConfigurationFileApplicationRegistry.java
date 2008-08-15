@@ -48,23 +48,6 @@ import org.apache.qpid.AMQException;
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
 
-    private ManagedObjectRegistry _managedObjectRegistry;
-
-    private AuthenticationManager _authenticationManager;
-
-    private ACLPlugin _accessManager;
-
-    private PrincipalDatabaseManager _databaseManager;
-
-    private VirtualHostRegistry _virtualHostRegistry;
-
-    private PluginManager _pluginManager;
-
-
-    public ConfigurationFileApplicationRegistry(Configuration configuration)
-    {
-        super(configuration);
-    }
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
@@ -81,7 +64,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-    public static final Configuration config(File url) throws ConfigurationException
+    private static final Configuration config(File url) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
         // interpolation takes place accross the entirety of the
@@ -150,39 +133,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _virtualHostRegistry;
-    }
-
-    public ACLPlugin getAccessManager()
-    {
-        return _accessManager;
-    }
-
-    public ManagedObjectRegistry getManagedObjectRegistry()
-    {
-        return _managedObjectRegistry;
-    }
-
-    public PrincipalDatabaseManager getDatabaseManager()
-    {
-        return _databaseManager;
-    }
-
-    public AuthenticationManager getAuthenticationManager()
-    {
-        return _authenticationManager;
-    }
-
     public Collection<String> getVirtualHostNames()
     {
         return getConfiguration().getList("virtualhosts.virtualhost.name");
     }
 
-    public PluginManager getPluginManager()
-    {
-        return _pluginManager;
-    }
 }

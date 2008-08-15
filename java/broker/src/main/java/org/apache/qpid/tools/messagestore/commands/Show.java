@@ -26,6 +26,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
@@ -33,7 +34,6 @@ import org.apache.qpid.tools.utils.Console;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 public class Show extends AbstractCommand
 {

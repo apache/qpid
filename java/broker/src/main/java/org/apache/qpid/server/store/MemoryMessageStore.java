@@ -26,9 +26,9 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -121,22 +121,28 @@ public class MemoryMessageStore implements MessageStore
 
     }
 
+
     public void createQueue(AMQQueue queue) throws AMQException
     {
-        // Not required to do anything
+        // Not requred to do anything
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
+    {
+        // Not required to do anything
+    }
+
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
         // Not required to do anything
     }
@@ -213,7 +219,12 @@ public class MemoryMessageStore implements MessageStore
         return bodyList.get(index);
     }
 
-     private void checkNotClosed() throws MessageStoreClosedException
+    public boolean isPersistent()
+    {
+        return false;
+    }
+
+    private void checkNotClosed() throws MessageStoreClosedException
      {
         if (_closed.get())
         {

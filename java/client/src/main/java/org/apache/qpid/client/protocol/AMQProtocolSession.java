@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.security.sasl.SaslClient;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -38,13 +37,14 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
-import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 
 /**
@@ -67,8 +67,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     protected final IoSession _minaProtocolSession;
 
-    private AMQStateManager _stateManager;
-
     protected WriteFuture _lastWriteFuture;
 
     /**
@@ -86,7 +84,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      * Maps from a channel id to an unprocessed message. This is used to tie together the JmsDeliverBody (which arrives
      * first) with the subsequent content header and content bodies.
      */
-    private final ConcurrentMap<Integer,UnprocessedMessage> _channelId2UnprocessedMsgMap = new ConcurrentHashMap<Integer,UnprocessedMessage>();
+    private final ConcurrentMap<Integer, UnprocessedMessage> _channelId2UnprocessedMsgMap = new ConcurrentHashMap<Integer, UnprocessedMessage>();
     private final UnprocessedMessage[] _channelId2UnprocessedMsgArray = new UnprocessedMessage[16];
 
     /** Counter to ensure unique queue names */
@@ -97,25 +95,16 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 //    private VersionSpecificRegistry _registry =
 //        MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
 
-
     private MethodRegistry _methodRegistry =
             MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());
 
-
     private MethodDispatcher _methodDispatcher;
 
+    protected final AMQConnection _connection;
 
-    private final AMQConnection _connection;
     private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
-    {
-        this(protocolHandler, protocolSession, connection, new AMQStateManager());
-
-    }
-
-    public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection,
-        AMQStateManager stateManager)
     {
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
@@ -124,20 +113,27 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
         // fixme - real value needed
         _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-        _stateManager = stateManager;
-        _stateManager.setProtocolSession(this);
         _protocolVersion = connection.getProtocolVersion();
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
-                                                                 stateManager);
+                                                                           this);
         _connection = connection;
 
+    }
+
+    public AMQProtocolSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
+    {
+        _protocolHandler = protocolHandler;
+        _minaProtocolSession = null;
+        _protocolVersion = connection.getProtocolVersion();
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
+                                                                           this);
+        _connection = connection;
     }
 
     public void init()
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-
         _minaProtocolSession.write(new ProtocolInitiation(_connection.getProtocolVersion()));
     }
 
@@ -161,14 +157,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public AMQStateManager getStateManager()
     {
-        return _stateManager;
-    }
-
-    public void setStateManager(AMQStateManager stateManager)
-    {
-        _stateManager = stateManager;
-        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(_protocolVersion,
-                                                                 stateManager);         
+        return _protocolHandler.getStateManager();
     }
 
     public String getVirtualHost()
@@ -193,7 +182,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public SaslClient getSaslClient()
     {
-        return (SaslClient) _minaProtocolSession.getAttribute(SASL_CLIENT);
+        return (SaslClient) _minaProtocolSession.getAttribute(SASL_CLIENT);    
     }
 
     /**
@@ -235,12 +224,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      *
      * @throws AMQException if this was not expected
      */
-    public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
-    {
-        final int channelId = message.getChannelId();
-        if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+    public void unprocessedMessageReceived(final int channelId, UnprocessedMessage message) throws AMQException
+    {        
+        if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {
-            _channelId2UnprocessedMsgArray[channelId] = message;    
+            _channelId2UnprocessedMsgArray[channelId] = message;
         }
         else
         {
@@ -250,18 +238,17 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void contentHeaderReceived(int channelId, ContentHeaderBody contentHeader) throws AMQException
     {
-        final UnprocessedMessage msg = (channelId & FAST_CHANNEL_ACCESS_MASK) == 0 ? _channelId2UnprocessedMsgArray[channelId]
-                                                               : _channelId2UnprocessedMsgMap.get(channelId);
-
+        final UnprocessedMessage_0_8 msg = (UnprocessedMessage_0_8) ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0 ? _channelId2UnprocessedMsgArray[channelId]
+                                               : _channelId2UnprocessedMsgMap.get(channelId));
 
         if (msg == null)
         {
-            throw new AMQException(null, "Error: received content header without having received a BasicDeliver frame first", null);
+            throw new AMQException(null, "Error: received content header without having received a BasicDeliver frame first on session:" + this, null);
         }
 
         if (msg.getContentHeader() != null)
         {
-            throw new AMQException(null, "Error: received duplicate content header or did not receive correct number of content body frames", null);
+            throw new AMQException(null, "Error: received duplicate content header or did not receive correct number of content body frames on session:" + this, null);
         }
 
         msg.setContentHeader(contentHeader);
@@ -275,7 +262,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         UnprocessedMessage_0_8 msg;
         final boolean fastAccess = (channelId & FAST_CHANNEL_ACCESS_MASK) == 0;
-        if(fastAccess)
+        if (fastAccess)
         {
             msg = (UnprocessedMessage_0_8) _channelId2UnprocessedMsgArray[channelId];
         }
@@ -291,7 +278,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
         if (msg.getContentHeader() == null)
         {
-            if(fastAccess)
+            if (fastAccess)
             {
                 _channelId2UnprocessedMsgArray[channelId] = null;
             }
@@ -302,15 +289,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             throw new AMQException(null, "Error: received content body without having received a ContentHeader frame first", null);
         }
 
-        /*try
-        {*/
         msg.receiveBody(contentBody);
-        /*}
-        catch (UnexpectedBodyReceivedException e)
-        {
-            _channelId2UnprocessedMsgMap.remove(channelId);
-            throw e;
-        }*/
 
         if (msg.isAllBodyDataReceived())
         {
@@ -333,7 +312,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         AMQSession session = getSession(channelId);
         session.messageReceived(msg);
-        if((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
+        if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {
             _channelId2UnprocessedMsgArray[channelId] = null;
         }
@@ -431,12 +410,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return (AMQConnection) _minaProtocolSession.getAttribute(AMQ_CONNECTION);
     }
 
-    public void closeProtocolSession()
+    public void closeProtocolSession() throws AMQException
     {
         closeProtocolSession(true);
     }
 
-    public void closeProtocolSession(boolean waitLast)
+    public void closeProtocolSession(boolean waitLast) throws AMQException
     {
         _logger.debug("Waiting for last write to join.");
         if (waitLast && (_lastWriteFuture != null))
@@ -445,7 +424,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         }
 
         _logger.debug("Closing protocol session");
+        
         final CloseFuture future = _minaProtocolSession.close();
+
+        // There is no recovery we can do if the join on the close failes so simply mark the connection CLOSED
+        // then wait for the connection to close.
+        // ritchiem: Could this release BlockingWaiters to early? The close has been done as much as possible so any
+        // error now shouldn't matter.
+
+        _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
         future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
     }
 
@@ -482,16 +469,16 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         final AMQSession session = getSession(channelId);
 
-        session.confirmConsumerCancelled(consumerTag);
+        session.confirmConsumerCancelled(consumerTag.toIntValue());
     }
 
     public void setProtocolVersion(final ProtocolVersion pv)
     {
         _protocolVersion = pv;
         _methodRegistry = MethodRegistry.getMethodRegistry(pv);
-        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, _stateManager);
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, this);
 
-      //  _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
+        //  _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
     }
 
     public byte getProtocolMinorVersion()
@@ -524,12 +511,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return _methodDispatcher;
     }
 
-
     public void setTicket(int ticket, int channelId)
     {
         final AMQSession session = getSession(channelId);
         session.setTicket(ticket);
     }
+
     public void setMethodDispatcher(MethodDispatcher methodDispatcher)
     {
         _methodDispatcher = methodDispatcher;
@@ -544,5 +531,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void methodFrameReceived(final int channel, final AMQMethodBody amqMethodBody) throws AMQException
     {
         _protocolHandler.methodBodyReceived(channel, amqMethodBody, _minaProtocolSession);
+    }
+
+    public void notifyError(Exception error)
+    {
+        _protocolHandler.propagateExceptionToAllWaiters(error);
+    }
+
+    public void setSender(Sender<java.nio.ByteBuffer> sender)
+    {
+        // No-op, interface munging
     }
 }

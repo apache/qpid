@@ -31,60 +31,49 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.util.Strings;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {
     private static final String MIME_TYPE = "text/plain";
-    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
-
 
     private String _decodedValue;
 
     /**
      * This constant represents the name of a property that is set when the message payload is null.
      */
-    private static final AMQShortString PAYLOAD_NULL_PROPERTY = CustomJMSXProperty.JMS_AMQP_NULL.getShortStringName();
+    private static final String PAYLOAD_NULL_PROPERTY = CustomJMSXProperty.JMS_AMQP_NULL.toString();
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
-    public JMSTextMessage() throws JMSException
+    public JMSTextMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
-        this(null, null);
+        this(delegateFactory, null, null);
     }
 
-    JMSTextMessage(ByteBuffer data, String encoding) throws JMSException
+    JMSTextMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data, String encoding) throws JMSException
     {
-        super(data); // this instantiates a content header
-        getContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
-        getContentHeaderProperties().setEncoding(encoding);
+        super(delegateFactory, data); // this instantiates a content header
+        setContentType(getMimeType());
+        setEncoding(encoding);
     }
 
-    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                   AMQShortString routingKey, ByteBuffer data)
+    JMSTextMessage(AMQMessageDelegate delegate, ByteBuffer data)
             throws AMQException
     {
-        super(deliveryTag, contentHeader, exchange, routingKey, data);
-        contentHeader.setContentType(MIME_TYPE_SHORT_STRING);
+        super(delegate, data);
+        setContentType(getMimeType());
         _data = data;
     }
 
-    JMSTextMessage(ByteBuffer data) throws JMSException
-    {
-        this(data, null);
-    }
-
-    JMSTextMessage(String text) throws JMSException
-    {
-        super((ByteBuffer) null);
-        setText(text);
-    }
 
     public void clearBodyImpl() throws JMSException
     {
         if (_data != null)
         {
             _data.release();
+            _data = null;
         }
-        _data = null;
+
         _decodedValue = null;
     }
 
@@ -93,14 +82,9 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         return getText();
     }
 
-    public void setData(ByteBuffer data)
+    protected String getMimeType()
     {
-        _data = data;
-    }
-
-    public AMQShortString getMimeTypeAsShortString()
-    {
-        return MIME_TYPE_SHORT_STRING;
+        return MIME_TYPE;
     }
 
     public void setText(String text) throws JMSException
@@ -111,20 +95,17 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         try
         {
             if (text != null)
-            {                
-                _data = ByteBuffer.allocate(text.length());
-                _data.limit(text.length()) ;
-                //_data.sweep();
-                _data.setAutoExpand(true);
-                final String encoding = getContentHeaderProperties().getEncodingAsString();
-                if (encoding == null)
+            {
+                final String encoding = getEncoding();
+                if (encoding == null || encoding.equalsIgnoreCase("UTF-8"))
                 {
-                    _data.put(text.getBytes(DEFAULT_CHARSET.name()));
+                    _data = ByteBuffer.wrap(Strings.toUTF8(text));
                 }
                 else
                 {
-                    _data.put(text.getBytes(encoding));
+                    _data = ByteBuffer.wrap(text.getBytes(encoding));
                 }
+                _data.position(_data.limit());
                 _changedData=true;
             }
             _decodedValue = text;
@@ -156,11 +137,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 return null;
             }
-            if (getContentHeaderProperties().getEncodingAsString() != null)
+            if (getEncoding() != null)
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.forName(getContentHeaderProperties().getEncodingAsString()).newDecoder());
+                    _decodedValue = _data.getString(Charset.forName(getEncoding()).newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {
@@ -199,4 +180,6 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             removeProperty(PAYLOAD_NULL_PROPERTY);
         }
     }
+
+
 }

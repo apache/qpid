@@ -1,5 +1,6 @@
-package org.apache.qpidity.transport;
+package org.apache.qpid.transport;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,8 +16,8 @@ from genutil import *
 for c in composites:
   name = cname(c)
   fields = get_fields(c)
-  params = get_parameters(fields)
-  args = get_arguments(fields)
+  params = get_parameters(c, fields)
+  args = get_arguments(c, fields)
   result = c["result"]
   if result:
     if not result["@type"]:
@@ -32,9 +33,9 @@ for c in composites:
     jclass = ""
 
   out("""
-     public $jresult $(dromedary(name))($(", ".join(params))) {
-         $(jreturn)invoke(new $name($(", ".join(args)))$jclass);
-     }
+    public final $jresult $(dromedary(name))($(", ".join(params))) {
+        $(jreturn)invoke(new $name($(", ".join(args)))$jclass);
+    }
 """)
 }
 

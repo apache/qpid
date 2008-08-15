@@ -467,7 +467,7 @@ public final class JMSHeaderAdapter
         return getPropertyNames();
     }
 
-    protected static void checkPropertyName(CharSequence propertyName)
+    protected void checkPropertyName(CharSequence propertyName)
     {
         if (propertyName == null)
         {
@@ -481,7 +481,7 @@ public final class JMSHeaderAdapter
         checkIdentiferFormat(propertyName);
     }
 
-    protected static void checkIdentiferFormat(CharSequence propertyName)
+    protected void checkIdentiferFormat(CharSequence propertyName)
     {
 //        JMS requirements 3.5.1 Property Names
 //        Identifiers:
@@ -492,14 +492,14 @@ public final class JMSHeaderAdapter
 //          '_' and '$'. An identifier part character is any character for which the
 //          method Character.isJavaIdentifierPart returns true.
 //        - Identifiers cannot be the names NULL, TRUE, or FALSE.
-//        � Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or
+//          Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or
 //          ESCAPE.
-//        � Identifiers are either header field references or property references. The
+//          Identifiers are either header field references or property references. The
 //          type of a property value in a message selector corresponds to the type
 //          used to set the property. If a property that does not exist in a message is
 //          referenced, its value is NULL. The semantics of evaluating NULL values
-//          in a selector are described in Section 3.8.1.2, �Null Values.�
-//        � The conversions that apply to the get methods for properties do not
+//          in a selector are described in Section 3.8.1.2, Null Values.
+//          The conversions that apply to the get methods for properties do not
 //          apply when a property is used in a message selector expression. For
 //          example, suppose you set a property as a string value, as in the
 //          following:
@@ -507,8 +507,8 @@ public final class JMSHeaderAdapter
 //          The following expression in a message selector would evaluate to false,
 //          because a string cannot be used in an arithmetic expression:
 //          "NumberOfOrders > 1"
-//        � Identifiers are case sensitive.
-//        � Message header field references are restricted to JMSDeliveryMode,
+//          Identifiers are case sensitive.
+//          Message header field references are restricted to JMSDeliveryMode,
 //          JMSPriority, JMSMessageID, JMSTimestamp, JMSCorrelationID, and
 //          JMSType. JMSMessageID, JMSCorrelationID, and JMSType values may be
 //          null and if so are treated as a NULL value.

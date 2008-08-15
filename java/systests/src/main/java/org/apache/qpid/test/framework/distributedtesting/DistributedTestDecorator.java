@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 

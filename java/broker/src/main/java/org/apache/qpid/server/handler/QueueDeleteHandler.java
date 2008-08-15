@@ -24,11 +24,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -104,15 +103,16 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             }
             else
             {
-
+                
                 //Perform ACLs
                 virtualHost.getAccessManager().authorise(session, Permission.DELETE, body, queue);
 
-                int purged = queue.delete(body.getIfUnused(), body.getIfEmpty());
+                int purged = queue.delete();
+
 
                 if (queue.isDurable())
                 {
-                    store.removeQueue(queue.getName());
+                    store.removeQueue(queue);
                 }
 
                 MethodRegistry methodRegistry = session.getMethodRegistry();

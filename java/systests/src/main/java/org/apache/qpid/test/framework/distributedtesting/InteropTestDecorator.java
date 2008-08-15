@@ -29,7 +29,7 @@ import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.framework.sequencers.InteropCircuitFactory;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 
@@ -47,7 +47,7 @@ import java.util.*;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Broadcast test invitations and collect enlists. <td> {@link org.apache.qpid.util.ConversationFactory}.
+ * <tr><td> Broadcast test invitations and collect enlists. <td> {@link org.apache.qpid.test.utils.ConversationFactory}.
  * <tr><td> Output test failures for clients unwilling to run the test case. <td> {@link Coordinator}
  * <tr><td> Execute distributed test cases. <td> {@link FrameworkBaseCase}
  * <tr><td> Fail non-participating pairings. <td> {@link OptOutTestCase}

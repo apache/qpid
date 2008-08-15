@@ -25,10 +25,12 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.*;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -40,7 +42,9 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class AMQSession_0_8 extends AMQSession
+import java.util.Map;
+
+public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
 {
 
     /** Used for debugging. */
@@ -125,10 +129,19 @@ public final class AMQSession_0_8 extends AMQSession
         handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitBody().generateFrame(_channelId), TxCommitOkBody.class);
     }
 
-    public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive) throws AMQException,
+    public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive, final Map<String, Object> arguments) throws AMQException,
             FailoverException
     {
-        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,null);
+        FieldTable table = null;
+        if(arguments != null && !arguments.isEmpty())
+        {
+            table = new FieldTable();
+            for(Map.Entry<String, Object> entry : arguments.entrySet())
+            {
+                table.setObject(entry.getKey(), entry.getValue());
+            }
+        }
+        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,table);
         AMQFrame queueDeclare = body.generateFrame(_channelId);
         getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
     }
@@ -206,6 +219,7 @@ public final class AMQSession_0_8 extends AMQSession
         return isQueueBound(destination.getExchangeName(),destination.getAMQQueueName(),destination.getAMQQueueName());
     }
 
+
     public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
             throws JMSException
     {
@@ -233,10 +247,14 @@ public final class AMQSession_0_8 extends AMQSession
         {
             throw new JMSAMQException("Queue bound query failed: " + e.getMessage(), e);
         }
-    }
+    }    
 
-    public void sendConsume(BasicMessageConsumer consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler, boolean nowait,
-            String messageSelector, AMQShortString tag) throws AMQException, FailoverException
+    @Override public void sendConsume(BasicMessageConsumer_0_8 consumer,
+                                      AMQShortString queueName,
+                                      AMQProtocolHandler protocolHandler,
+                                      boolean nowait,
+                                      String messageSelector,
+                                      int tag) throws AMQException, FailoverException
     {
         FieldTable arguments = FieldTableFactory.newFieldTable();
         if ((messageSelector != null) && !messageSelector.equals(""))
@@ -256,7 +274,7 @@ public final class AMQSession_0_8 extends AMQSession
 
         BasicConsumeBody body = getMethodRegistry().createBasicConsumeBody(getTicket(),
                                                                            queueName,
-                                                                           tag,
+                                                                           new AMQShortString(String.valueOf(tag)),
                                                                            consumer.isNoLocal(),
                                                                            consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
                                                                            consumer.isExclusive(),
@@ -314,24 +332,84 @@ public final class AMQSession_0_8 extends AMQSession
     }
 
     public BasicMessageConsumer_0_8 createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
-            final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable ft,
+            final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable arguments,
             final boolean noConsume, final boolean autoClose)  throws JMSException
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
        return new BasicMessageConsumer_0_8(_channelId, _connection, destination, messageSelector, noLocal,
-                                 _messageFactoryRegistry,this, protocolHandler, ft, prefetchHigh, prefetchLow,
+                                 _messageFactoryRegistry,this, protocolHandler, arguments, prefetchHigh, prefetchLow,
                                  exclusive, _acknowledgeMode, noConsume, autoClose);
     }
 
 
-    public BasicMessageProducer createMessageProducer(final Destination destination, final boolean mandatory,
+    public BasicMessageProducer_0_8 createMessageProducer(final Destination destination, final boolean mandatory,
             final boolean immediate, final boolean waitUntilSent, long producerId)
     {
 
        return new BasicMessageProducer_0_8(_connection, (AMQDestination) destination, _transacted, _channelId,
                                  this, getProtocolHandler(), producerId, immediate, mandatory, waitUntilSent);
     }
+
+
+    @Override public void messageReceived(UnprocessedMessage message)
+    {
+
+        if (message instanceof ReturnMessage)
+        {
+            // Return of the bounced message.
+            returnBouncedMessage((ReturnMessage) message);
+        }
+        else
+        {
+            super.messageReceived(message);
+        }
+    }
+
+    private void returnBouncedMessage(final ReturnMessage msg)
+    {
+        _connection.performConnectionTask(new Runnable()
+        {
+            public void run()
+            {
+                try
+                {
+                    // Bounced message is processed here, away from the mina thread
+                    AbstractJMSMessage bouncedMessage =
+                            _messageFactoryRegistry.createMessage(0, false, msg.getExchange(),
+                                                                  msg.getRoutingKey(), msg.getContentHeader(), msg.getBodies());
+                    AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
+                    AMQShortString reason = msg.getReplyText();
+                    _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+
+                    // @TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
+                    if (errorCode == AMQConstant.NO_CONSUMERS)
+                    {
+                        _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage, null));
+                    }
+                    else if (errorCode == AMQConstant.NO_ROUTE)
+                    {
+                        _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage, null));
+                    }
+                    else
+                    {
+                        _connection.exceptionReceived(
+                                new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage, null));
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    _logger.error(
+                            "Caught exception trying to raise undelivered message exception (dump follows) - ignoring...",
+                            e);
+                }
+            }
+        });
+    }
+
+
+
 
     public void sendRollback() throws AMQException, FailoverException
     {
@@ -353,7 +431,7 @@ public final class AMQSession_0_8 extends AMQSession
         checkNotClosed();
         AMQTopic origTopic = checkValidTopic(topic);
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
-        TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
+        TopicSubscriberAdaptor<BasicMessageConsumer_0_8> subscriber = _subscriptions.get(name);
         if (subscriber != null)
         {
             if (subscriber.getTopic().equals(topic))
@@ -412,6 +490,28 @@ public final class AMQSession_0_8 extends AMQSession
         return subscriber;
     }
 
+
+
+
+    public void setPrefecthLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    {
+        new FailoverRetrySupport<Object, AMQException>(
+                new FailoverProtectedOperation<Object, AMQException>()
+                {
+                    public Object execute() throws AMQException, FailoverException
+                    {
+
+                        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
+
+                        // todo send low water mark when protocol allows.
+                        // todo Be aware of possible changes to parameter order as versions change.
+                        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
+                  
+                        return null;
+                    }
+                 }, _connection).execute();
+    }
+
     class QueueDeclareOkHandler extends SpecificMethodFrameListener
     {
 
@@ -437,7 +537,7 @@ public final class AMQSession_0_8 extends AMQSession
 
     }
 
-    Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException
+    protected Long requestQueueDepth(AMQDestination amqd) throws AMQException, FailoverException
     {
         AMQFrame queueDeclare =
             getMethodRegistry().createQueueDeclareBody(getTicket(),
@@ -449,18 +549,23 @@ public final class AMQSession_0_8 extends AMQSession
                                                        false,
                                                        null).generateFrame(_channelId);
         QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
-        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
+        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);        
         return okHandler._messageCount;
     }
 
-    final boolean tagLE(long tag1, long tag2)
+    protected final boolean tagLE(long tag1, long tag2)
     {
         return tag1 <= tag2;
     }
 
-    final boolean updateRollbackMark(long currentMark, long deliveryTag)
+    protected final boolean updateRollbackMark(long currentMark, long deliveryTag)
     {
         return false;
+    }
+
+    public AMQMessageDelegateFactory getMessageDelegateFactory()
+    {
+        return AMQMessageDelegateFactory.FACTORY_0_8;
     }
 
 }

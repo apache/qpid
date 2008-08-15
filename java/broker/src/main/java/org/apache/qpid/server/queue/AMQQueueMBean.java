@@ -292,7 +292,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop
+     * @see AMQQueue#deleteMessageFromTop
      */
     public void deleteMessageFromTop() throws JMException
     {
@@ -307,7 +307,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue
+     * @see AMQQueue#clearQueue
      */
     public void clearQueue() throws JMException
     {

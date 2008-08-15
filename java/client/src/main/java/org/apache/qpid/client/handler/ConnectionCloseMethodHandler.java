@@ -25,13 +25,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,20 +46,21 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
     }
 
     private ConnectionCloseMethodHandler()
-    { }
+    {
+    }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionCloseBody method, int channelId)
-                throws AMQException
+    public void methodReceived(AMQProtocolSession session, ConnectionCloseBody method, int channelId)
+            throws AMQException
     {
         _logger.info("ConnectionClose frame received");
-        final AMQProtocolSession session = stateManager.getProtocolSession();
-        
 
         // does it matter
         // stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
         AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
         AMQShortString reason = method.getReplyText();
+
+        AMQException error = null;
 
         try
         {
@@ -75,35 +74,33 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
             {
                 if (errorCode == AMQConstant.NOT_ALLOWED || (errorCode == AMQConstant.ACCESS_REFUSED))
                 {
-                    _logger.info("Error :" + errorCode +":"+ Thread.currentThread().getName());
+                    _logger.info("Error :" + errorCode + ":" + Thread.currentThread().getName());
 
-                    // todo ritchiem : Why do this here when it is going to be done in the finally block?
-                    session.closeProtocolSession();
-
-                    // todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
-                    stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
-
-                    throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
+                    error = new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
                 }
                 else
                 {
                     _logger.info("Connection close received with error code " + errorCode);
 
-                    throw new AMQConnectionClosedException(errorCode, "Error: " + reason, null);
+                    error = new AMQConnectionClosedException(errorCode, "Error: " + reason, null);
                 }
             }
         }
         finally
         {
-            // this actually closes the connection in the case where it is not an error.
 
+            if (error != null)
+            {
+                session.notifyError(error);
+            }            
+
+            // Close the protocol Session, including any open TCP connections 
             session.closeProtocolSession();
 
-            // ritchiem: Doing this though will cause any waiting connection start to be released without being able to
-            // see what the cause was.
-            stateManager.changeState(AMQState.CONNECTION_CLOSED);
+            // Closing the session should not introduce a race condition as this thread will continue to propgate any
+            // exception in to the exceptionCaught method of the SessionHandler.
+            // Any sessionClosed event should occur after this.
         }
     }
-
 
 }

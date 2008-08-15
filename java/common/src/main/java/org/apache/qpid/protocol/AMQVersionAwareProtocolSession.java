@@ -21,7 +21,11 @@
 package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.*;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.AMQException;
+
+import java.nio.ByteBuffer;
+
 
 /**
  * AMQVersionAwareProtocolSession is implemented by all AMQP session classes, that need to provide an awareness to
@@ -53,5 +57,8 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
     public void contentBodyReceived(int channelId, ContentBody body) throws AMQException;
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body) throws AMQException;
 
+
+    public void setSender(Sender<ByteBuffer> sender);
+    public void init();
 
 }

@@ -43,8 +43,8 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public DefaultExchangeFactory(VirtualHost host)
     {
         _host = host;
-        registerExchangeType(DestNameExchange.TYPE);
-        registerExchangeType(DestWildExchange.TYPE);
+        registerExchangeType(DirectExchange.TYPE);
+        registerExchangeType(TopicExchange.TYPE);
         registerExchangeType(HeadersExchange.TYPE);
         registerExchangeType(FanoutExchange.TYPE);
     }
@@ -67,7 +67,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         if (exchType == null)
         {
 
-            throw new AMQUnknownExchangeType("Unknown exchange type: " + type, null);
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
         Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
         return e;

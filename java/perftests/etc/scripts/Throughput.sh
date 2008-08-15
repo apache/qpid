@@ -17,4 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
- find . -regex '.*T.BT-.*\.sh' -exec  {} -o 2110rc3-throughput/ --csv $* \; 
+find . -regex '.*[P|T].BT-.*\.sh' -exec  {} -o results-throughput/ --csv $* \; 

@@ -112,7 +112,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
             if (!exch.isBound(routingKey, body.getArguments(), queue))
             {
-                queue.bind(routingKey, body.getArguments(), exch);
+                queue.bind(exch, routingKey, body.getArguments());
             }
         }
         catch (AMQInvalidRoutingKeyException rke)

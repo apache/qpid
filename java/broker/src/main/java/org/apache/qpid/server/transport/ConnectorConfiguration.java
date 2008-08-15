@@ -97,6 +97,10 @@ public class ConnectorConfiguration
                 defaultValue = "false")
     public boolean _multiThreadNIO;
 
+    @Configured(path = "advanced.useWriteBiasedPool",
+                    defaultValue = "false")        
+    public boolean useBiasedWrites;
+
 
     public IoAcceptor createAcceptor()
     {

@@ -22,16 +22,17 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * Represents an expression
  */
-public interface Expression
+public interface Expression<E extends Exception>
 {
 
     /**
      * @return the value of this expression
      */
-    public Object evaluate(AMQMessage message) throws AMQException;
+    public Object evaluate(Filterable<E> message) throws E;
 
 }

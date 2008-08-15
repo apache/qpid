@@ -1,11 +1,12 @@
 package org.apache.qpid.example.amqpexample.pubsub;
 
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.Session;
-import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.MessageAcceptMode;
-import org.apache.qpidity.transport.MessageAcquireMode;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.Connection;
+import org.apache.qpid.nclient.Session;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
 
 public class TopicPublisher
 {
@@ -18,20 +19,17 @@ public class TopicPublisher
       deliveryProps.setRoutingKey(routing_key);
 
       for (int i=0; i<5; i++) {
-        session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
-        session.header(deliveryProps);
-        session.data("Message " + i);
-        session.endData();
+          session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED,
+                                  new Header(deliveryProps), "Message " + i);
       }
 
     }
 
     public void noMoreMessages(Session session)
     {
-        session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED);
-        session.header(new DeliveryProperties().setRoutingKey("control"));
-        session.data("That's all, folks!");
-        session.endData();
+        session.messageTransfer("amq.topic", MessageAcceptMode.EXPLICIT, MessageAcquireMode.PRE_ACQUIRED,
+                                new Header(new DeliveryProperties().setRoutingKey("control")),
+                                "That's all, folks!");
     }
 
     public static void main(String[] args)

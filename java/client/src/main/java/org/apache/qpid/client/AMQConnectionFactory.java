@@ -38,7 +38,6 @@ import javax.naming.spi.ObjectFactory;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.transport.TransportConstants;
 
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
@@ -294,14 +293,23 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
     public Connection createConnection(String userName, String password) throws JMSException
     {
+        return createConnection(userName, password, null);
+    }
+    
+    public Connection createConnection(String userName, String password, String id) throws JMSException
+    {
         try
         {
             if (_connectionDetails != null)
             {
                 _connectionDetails.setUsername(userName);
                 _connectionDetails.setPassword(password);
-
-                if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+                
+                if (id != null && !id.equals(""))
+                {
+                    _connectionDetails.setClientName(id);
+                } 
+                else if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
                 {
                     _connectionDetails.setClientName(getUniqueClientID());
                 }
@@ -309,7 +317,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
             }
             else
             {
-                return new AMQConnection(_host, _port, userName, password, getUniqueClientID(), _virtualPath);
+                return new AMQConnection(_host, _port, userName, password, (id != null ? id : getUniqueClientID()), _virtualPath);
             }
         }
         catch (Exception e)
@@ -434,23 +442,15 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      */
     public XAConnection createXAConnection() throws JMSException
     {
-        if (TransportConstants.getVersionMajor() == 0 &&
-            TransportConstants.getVersionMinor() == 8)
+        try
         {
-            throw new UnsupportedOperationException("This protocol version does not support XA operations");
+            return new XAConnectionImpl(_connectionDetails, _sslConfig);
         }
-        else
+        catch (Exception e)
         {
-            try
-            {
-                return new XAConnectionImpl(_connectionDetails, _sslConfig);
-            }
-            catch (Exception e)
-            {
-                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                throw jmse;
-            }
+            JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+            jmse.setLinkedException(e);
+            throw jmse;
         }
     }
 

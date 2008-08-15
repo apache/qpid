@@ -29,6 +29,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 import org.apache.xpath.CachedXPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.traversal.NodeIterator;
@@ -42,7 +43,7 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
         this.xpath = xpath;
     }
     
-    public boolean evaluate(AMQMessage m) throws AMQException
+    public boolean evaluate(Filterable m) throws AMQException
     {
         // TODO - we would have to check the content type and then evaluate the content
         //        here... is this really a feature we wish to implement? - RobG

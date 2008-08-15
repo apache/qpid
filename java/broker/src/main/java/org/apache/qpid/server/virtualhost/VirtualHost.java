@@ -26,6 +26,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.connection.ConnectionRegistry;
+import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
@@ -55,6 +57,8 @@ public class VirtualHost implements Accessable
 
     private final String _name;
 
+    private ConnectionRegistry _connectionRegistry;
+
     private QueueRegistry _queueRegistry;
 
     private ExchangeRegistry _exchangeRegistry;
@@ -71,10 +75,11 @@ public class VirtualHost implements Accessable
 
     private ACLPlugin _accessManager;
 
-    private Timer _houseKeepingTimer;
-
+    private final Timer _houseKeepingTimer;
+     
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    
+
+
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -86,6 +91,10 @@ public class VirtualHost implements Accessable
         return _name;
     }
 
+    public IConnectionRegistry getConnectionRegistry()
+    {
+        return _connectionRegistry;
+    }
 
     /**
      * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
@@ -140,12 +149,18 @@ public class VirtualHost implements Accessable
 
     public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
+        if (name == null || name.length() == 0)
+        {
+            throw new IllegalArgumentException("Illegal name (" + name + ") for virtualhost.");
+        }
+
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
-        // This isn't needed to be registered
-        //_virtualHostMBean.register();
 
+        _connectionRegistry = new ConnectionRegistry(this);
+
+        _houseKeepingTimer = new Timer("Queue-housekeeping-"+name, true);
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
         _exchangeFactory.initialise(hostConfig);
@@ -172,25 +187,22 @@ public class VirtualHost implements Accessable
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
-
-        _houseKeepingTimer = new Timer("Queue-housekeeping-" + _name, true);
-        
         initialiseHouseKeeping(hostConfig);
     }
 
     private void initialiseHouseKeeping(final Configuration hostConfig)
     {
-
+     
         long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
-
+    
         /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
-        if (period != 0L)
+        if(period != 0L)
         {
             class RemoveExpiredMessagesTask extends TimerTask
             {
                 public void run()
                 {
-                    for (AMQQueue q : _queueRegistry.getQueues())
+                    for(AMQQueue q : _queueRegistry.getQueues())
                     {
 
                         try
@@ -199,7 +211,7 @@ public class VirtualHost implements Accessable
                         }
                         catch (AMQException e)
                         {
-                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(), e);
+                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
                             throw new RuntimeException(e);
                         }
                     }
@@ -207,11 +219,11 @@ public class VirtualHost implements Accessable
             }
 
             _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
-                                                   period / 2,
-                                                   period);
+                    period/2,
+                    period);
         }
     }
-
+    
     private void initialiseMessageStore(Configuration config) throws Exception
     {
         String messageStoreClass = config.getString("store.class");
@@ -285,14 +297,20 @@ public class VirtualHost implements Accessable
     public ACLPlugin getAccessManager()
     {
         return _accessManager;
-    }
+    }                                                                   
 
     public void close() throws Exception
     {
+        //Stop Housekeeping
         if (_houseKeepingTimer != null)
         {
             _houseKeepingTimer.cancel();
         }
+
+        //Stop Connections
+        _connectionRegistry.close();
+
+        //Close MessageStore
         if (_messageStore != null)
         {
             _messageStore.close();

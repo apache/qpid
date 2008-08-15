@@ -93,4 +93,24 @@ public class AMQTypedValue
     {
         return "[" + getType() + ": " + getValue() + "]";
     }
+
+
+    public boolean equals(Object o)
+    {
+        if(o instanceof AMQTypedValue)
+        {
+            AMQTypedValue other = (AMQTypedValue) o;
+            return _type == other._type && (_value == null ? other._value == null : _value.equals(other._value));
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public int hashCode()
+    {
+        return _type.hashCode() ^ (_value == null ? 0 : _value.hashCode());
+    }
+
 }

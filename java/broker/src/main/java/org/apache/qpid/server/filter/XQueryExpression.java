@@ -19,6 +19,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
@@ -35,7 +36,7 @@ public final class XQueryExpression implements BooleanExpression {
         this.xpath = xpath;
     }
 
-    public Object evaluate(AMQMessage message) throws AMQException {
+    public Object evaluate(Filterable message) throws AMQException {
         return Boolean.FALSE;
     }
 
@@ -48,7 +49,7 @@ public final class XQueryExpression implements BooleanExpression {
      * @return true if the expression evaluates to Boolean.TRUE.
      * @throws AMQException
      */
-    public boolean matches(AMQMessage message) throws AMQException
+    public boolean matches(Filterable message) throws AMQException
     {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            

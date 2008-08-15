@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -28,6 +29,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.transport.Sender;
 
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
@@ -115,6 +117,10 @@ public class MockProtocolSession implements AMQProtocolSession
 
     public void closeSession() throws AMQException
     {
+    }
+
+    public void closeConnection(int channelId, AMQConnectionException e, boolean closeIoSession) throws AMQException
+    {        
     }
 
     public Object getKey()
@@ -215,6 +221,11 @@ public class MockProtocolSession implements AMQProtocolSession
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public ProtocolSessionIdentifier getSessionIdentifier()
+    {
+        return null;
+    }
+
     public byte getProtocolMajorVersion()
     {
         return getProtocolVersion().getMajorVersion();
@@ -235,5 +246,17 @@ public class MockProtocolSession implements AMQProtocolSession
     public VersionSpecificRegistry getRegistry()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setSender(Sender<java.nio.ByteBuffer> sender)
+    {
+        // FIXME AS TODO
+        
+    }
+
+    public void init()
+    {
+        // TODO Auto-generated method stub
+        
     }
 }

@@ -26,7 +26,7 @@
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
-  <echo message="Running ant for module : ${module}"/>
+  <echo message="Running ant for module : ${module}" level="info"/>
 
   <property file="${project.root}/build.deps"/>
 
@@ -142,9 +142,13 @@
   <target name="precompile"/>
 
   <target name="compile" depends="prepare,precompile" description="compile sources">
-    <javac source="${java.source}" target="${java.target}"
+
+    <echo message="Targeting : ${java.target}" level="info"/>
+
+    <javac source="${java.source}" target="${java.target}" 
            destdir="${module.classes}" debug="on"
            deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.compiler.args}"/>
       <src refid="module.src.path"/>
       <classpath refid="module.class.path"/>
     </javac>
@@ -189,6 +193,7 @@
 
 
   <property file="${project.root}/${config}"/>
+  <property file="${project.root}/default.testprofile"/>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
@@ -199,11 +204,16 @@
 
     <delete file="${module.failed}"/>
 
+    <echo message="Using config:${config}" level="info"/>
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
            failureproperty="test.failures" printsummary="on" timeout="600000" >
 
+      <jvmarg value="${jvm.args}"/>
+
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
+      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
+      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
@@ -214,10 +224,11 @@
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="test.excludes" value="${test.excludes}"/>
       <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
+      <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
-      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/broker"/>
-      <sysproperty key="QPID_HOME" value="${project.root}/broker"/>
+      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
+      <sysproperty key="QPID_HOME" value="${project.root}/build"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>

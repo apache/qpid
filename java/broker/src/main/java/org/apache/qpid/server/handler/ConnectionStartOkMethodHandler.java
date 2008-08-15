@@ -93,7 +93,10 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
             switch (authResult.status)
             {
                 case ERROR:
-                    _logger.info("Authentication failed");
+                    Exception cause = authResult.getCause();
+
+                    _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
+
                     stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
                     ConnectionCloseBody closeBody =

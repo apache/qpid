@@ -24,7 +24,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
@@ -39,7 +39,7 @@ import java.util.LinkedList;
 
 class MessageTestHelper extends TestCase
 {
-    private final MessageStore _messageStore = new MemoryMessageStore();
+    private final MessageStore _messageStore = new SkeletonMessageStore();
 
     private final StoreContext _storeContext = new StoreContext();
 
@@ -52,12 +52,12 @@ class MessageTestHelper extends TestCase
         ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
-    QueueEntry message() throws AMQException
+    QueueEntryImpl message() throws AMQException
     {
         return message(false);
     }
 
-    QueueEntry message(final boolean immediate) throws AMQException
+    QueueEntryImpl message(final boolean immediate) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
         {
@@ -87,9 +87,16 @@ class MessageTestHelper extends TestCase
                 return null;
             }
         };
-                              
-        return new QueueEntry(null,new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
-                              new ContentHeaderBody()));
+
+        //public AMQMessage(Long messageId, AMQMessageHandle messageHandle , TransactionalContext txnConext, MessagePublishInfo info)
+        long messageId = _messageStore.getNewMessageId();
+        final AMQMessageHandle messageHandle =
+                (new MessageHandleFactory()).createMessageHandle(messageId, _messageStore, false);
+        messageHandle.setPublishAndContentHeaderBody(new StoreContext(),publish,new ContentHeaderBody());
+        AMQMessage msg = new AMQMessage(messageHandle, _txnContext.getStoreContext(), publish);
+        
+
+        return new QueueEntryImpl(null,msg, Long.MIN_VALUE);
     }
 
 }

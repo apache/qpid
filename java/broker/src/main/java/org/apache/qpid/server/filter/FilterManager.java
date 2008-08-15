@@ -24,14 +24,16 @@ package org.apache.qpid.server.filter;
 //
 
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
+import org.apache.qpid.AMQException;
 
-public interface FilterManager
+public interface FilterManager<E extends Exception>
 {
-    void add(MessageFilter filter);
+    void add(MessageFilter<E> filter);
 
-    void remove(MessageFilter filter);
+    void remove(MessageFilter<E> filter);
 
-    boolean allAllow(AMQMessage msg);
+    boolean allAllow(Filterable<E>  msg);
 
     boolean hasFilters();
 }

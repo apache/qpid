@@ -42,19 +42,6 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
-    private ManagedObjectRegistry _managedObjectRegistry;
-
-    private AuthenticationManager _authenticationManager;
-
-    private VirtualHostRegistry _virtualHostRegistry;
-
-    private ACLPlugin _accessManager;
-
-    private PrincipalDatabaseManager _databaseManager;
-
-    private PluginManager _pluginManager;
-
-
     public NullApplicationRegistry()
     {
         super(new MapConfiguration(new HashMap()));
@@ -62,6 +49,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _logger.info("Initialising NullApplicationRegistry");
+        
         _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");
 
         Properties users = new Properties();
@@ -84,46 +73,10 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     }
 
-    public Configuration getConfiguration()
-    {
-        return _configuration;
-    }
-
-
-    public ManagedObjectRegistry getManagedObjectRegistry()
-    {
-        return _managedObjectRegistry;
-    }
-
-    public PrincipalDatabaseManager getDatabaseManager()
-    {
-        return _databaseManager;
-    }
-
-    public AuthenticationManager getAuthenticationManager()
-    {
-        return _authenticationManager;
-    }
-
     public Collection<String> getVirtualHostNames()
     {
         String[] hosts = {"test"};
         return Arrays.asList(hosts);
-    }
-
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _virtualHostRegistry;
-    }
-
-    public ACLPlugin getAccessManager()
-    {
-        return _accessManager;
-    }
-
-    public PluginManager getPluginManager()
-    {
-        return _pluginManager;
     }
 }
 

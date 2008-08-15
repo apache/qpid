@@ -37,63 +37,65 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
     public static final String MIME_TYPE = "application/java-object-stream";
-    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
+
 
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     /**
      * Creates empty, writable message for use by producers
+     * @param delegateFactory
      */
-    public JMSObjectMessage()
+    public JMSObjectMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(null);
+        this(delegateFactory, null);
     }
 
-    private JMSObjectMessage(ByteBuffer data)
+    private JMSObjectMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
     {
-        super(data);
+        super(delegateFactory, data);
         if (data == null)
         {
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
 
-        getContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
+        setContentType(getMimeType());
     }
 
     /**
      * Creates read only message for delivery to consumers
      */
-    JMSObjectMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange, AMQShortString routingKey,
-        ByteBuffer data) throws AMQException
-    {
-        super(messageNbr, contentHeader, exchange, routingKey, data);
-    }
+
+      JMSObjectMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
+      {
+          super(delegate, data);
+      }
+
 
     public void clearBodyImpl() throws JMSException
     {
         if (_data != null)
         {
             _data.release();
+            _data = null;
         }
 
-        _data = null;
+
 
     }
 
     public String toBodyString() throws JMSException
     {
-        return toString(_data);
+        return String.valueOf(getObject());
     }
 
-    public AMQShortString getMimeTypeAsShortString()
+    public String getMimeType()
     {
-        return MIME_TYPE_SHORT_STRING;
+        return MIME_TYPE;
     }
 
     public void setObject(Serializable serializable) throws JMSException
@@ -171,27 +173,5 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         }
         catch (IOException ignore)
         { }
-    }
-
-    private static String toString(ByteBuffer data)
-    {
-        if (data == null)
-        {
-            return null;
-        }
-
-        int pos = data.position();
-        try
-        {
-            return data.getString(Charset.forName("UTF8").newDecoder());
-        }
-        catch (CharacterCodingException e)
-        {
-            return null;
-        }
-        finally
-        {
-            data.position(pos);
-        }
     }
 }

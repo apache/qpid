@@ -22,9 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
@@ -48,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class BasicMessageConsumer<H, B> extends Closeable implements MessageConsumer
+public abstract class BasicMessageConsumer<U> extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
@@ -71,7 +69,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
     /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
-    protected AMQShortString _consumerTag;
+    protected int _consumerTag;
 
     /** We need to know the channel id when constructing frames */
     protected final int _channelId;
@@ -91,7 +89,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
      */
-    private final FieldTable _rawSelectorFieldTable;
+    private final FieldTable _arguments;
 
     /**
      * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of
@@ -168,7 +166,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                    AMQSession session, AMQProtocolHandler protocolHandler,
-                                   FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
+                                   FieldTable arguments, int prefetchHigh, int prefetchLow,
                                    boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
     {
         _channelId = channelId;
@@ -179,7 +177,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _messageFactory = messageFactory;
         _session = session;
         _protocolHandler = protocolHandler;
-        _rawSelectorFieldTable = rawSelectorFieldTable;
+        _arguments = arguments;
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
@@ -277,6 +275,14 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                     _messageListener.set(messageListener);
                     _session.setHasMessageListeners();
                     _session.startDispatcherIfNecessary();
+                    
+                    // If we already have messages on the queue, deliver them to the listener
+                    Object o = _synchronousQueue.poll();
+                    while (o != null)
+                    {
+                        messageListener.onMessage((Message) o);
+                        o = _synchronousQueue.poll();
+                    }
                 }
             }
         }
@@ -335,9 +341,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _receivingThread = null;
     }
 
-    public FieldTable getRawSelectorFieldTable()
+    public FieldTable getArguments()
     {
-        return _rawSelectorFieldTable;
+        return _arguments;
     }
 
     public int getPrefetch()
@@ -508,6 +514,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
             throw e;
         }
+        else if (o instanceof CloseConsumerMessage)
+        {
+            _closed.set(true);
+            deregisterConsumer();
+            return null;
+        }
         else
         {
             return (AbstractJMSMessage) o;
@@ -562,6 +574,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
             else
             {
+            	// FIXME: wow this is ugly
                 // //fixme this probably is not right
                 // if (!isNoConsume())
                 { // done in BasicCancelOK Handler but not sending one so just deregister.
@@ -606,7 +619,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 }
                 else
                 {
-                    _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8);
+                	StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+                    _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
                 }
             }
         }
@@ -615,25 +629,56 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     }
 
     /**
+     * @param closeMessage
+     *            this message signals that we should close the browser
+     */
+    public void notifyCloseMessage(CloseConsumerMessage closeMessage)
+    {
+        if (isMessageListenerSet())
+        {
+            // Currently only possible to get this msg type with a browser.
+            // If we get the message here then we should probably just close
+            // this consumer.
+            // Though an AutoClose consumer with message listener is quite odd..
+            // Just log out the fact so we know where we are
+            _logger.warn("Using an AutoCloseconsumer with message listener is not supported.");
+        }
+        else
+        {
+            try
+            {
+                _synchronousQueue.put(closeMessage);
+            }
+            catch (InterruptedException e)
+            {
+                _logger.info(" SynchronousQueue.put interupted. Usually result of connection closing,"
+                        + "but we shouldn't have close yet");
+            }
+        }
+    }
+
+    
+    /**
      * Called from the AMQSession when a message has arrived for this consumer. This methods handles both the case of a
      * message listener or a synchronous receive() caller.
      *
      * @param messageFrame the raw unprocessed mesage
      */
-    void notifyMessage(UnprocessedMessage messageFrame)
+    void notifyMessage(U messageFrame)
     {
-        final boolean debug = _logger.isDebugEnabled();
-
-        if (debug)
+        if (messageFrame instanceof CloseConsumerMessage)
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliveryTag());
+            notifyCloseMessage((CloseConsumerMessage) messageFrame);
+            return;
         }
+
+
 
         try
         {
-            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(messageFrame);
+            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(_session.getMessageDelegateFactory(), messageFrame);
 
-            if (debug)
+            if (_logger.isDebugEnabled())
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             }
@@ -668,7 +713,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H, B> messageFrame)
+    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, U messageFrame)
             throws Exception;
 
     /** @param jmsMessage this message has already been processed so can't redo preDeliver */
@@ -678,18 +723,9 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         {
             if (isMessageListenerSet())
             {
-                // we do not need a lock around the test above, and the dispatch below as it is invalid
-                // for an application to alter an installed listener while the session is started
-                // synchronized (_closed)
-                {
-                    // if (!_closed.get())
-                    {
-
-                        preApplicationProcessing(jmsMessage);
-                        getMessageListener().onMessage(jmsMessage);
-                        postDeliver(jmsMessage);
-                    }
-                }
+                preApplicationProcessing(jmsMessage);
+                getMessageListener().onMessage(jmsMessage);
+                postDeliver(jmsMessage);
             }
             else
             {
@@ -750,7 +786,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 {
                     _session.acknowledgeMessage(msg.getDeliveryTag(), false);
                 }
-
+                _session.markDirty();
                 break;
 
             case Session.DUPS_OK_ACKNOWLEDGE:
@@ -892,12 +928,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         _session.deregisterConsumer(this);
     }
 
-    public AMQShortString getConsumerTag()
+    public int getConsumerTag()
     {
         return _consumerTag;
     }
 
-    public void setConsumerTag(AMQShortString consumerTag)
+    public void setConsumerTag(int consumerTag)
     {
         _consumerTag = consumerTag;
     }

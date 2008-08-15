@@ -22,7 +22,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 public class NoConsumerFilter implements MessageFilter
 {
@@ -34,7 +34,7 @@ public class NoConsumerFilter implements MessageFilter
         _logger.info("Created NoConsumerFilter");
     }
 
-    public boolean matches(AMQMessage message)
+    public boolean matches(Filterable message)
     {
        return true;
     }

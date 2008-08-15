@@ -23,7 +23,9 @@ package org.apache.qpid.server.protocol;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -35,7 +37,27 @@ import java.security.Principal;
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
 
+    public static final class ProtocolSessionIdentifier
+    {
+        private final Object _sessionIdentifier;
+        private final Object _sessionInstance;
 
+        ProtocolSessionIdentifier(AMQProtocolSession session)
+        {
+            _sessionIdentifier = session.getClientIdentifier();
+            _sessionInstance = session.getClientProperties() == null ? null : session.getClientProperties().getObject(ClientProperties.instance.toAMQShortString());
+        }
+
+        public Object getSessionIdentifier()
+        {
+            return _sessionIdentifier;
+        }
+
+        public Object getSessionInstance()
+        {
+            return _sessionInstance;
+        }
+    }
 
     public static interface Task
     {
@@ -129,6 +151,10 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     void closeSession() throws AMQException;
 
+    /** This must be called to close the session in order to free up any resources managed by the session. */
+    void closeConnection(int channelId, AMQConnectionException e, boolean closeProtocolSession) throws AMQException;
+
+
     /** @return a key that uniquely identifies this session */
     Object getKey();
 
@@ -175,5 +201,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     public MethodRegistry getMethodRegistry();
 
     public MethodDispatcher getMethodDispatcher();
+
+    public ProtocolSessionIdentifier getSessionIdentifier();
     
 }

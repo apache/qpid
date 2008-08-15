@@ -2,14 +2,14 @@ package org.apache.qpid.example.amqpexample.pubsub;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.api.Message;
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.Session;
-import org.apache.qpidity.nclient.util.MessageListener;
-import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
-import org.apache.qpidity.transport.MessageCreditUnit;
-import org.apache.qpidity.transport.Option;
+import org.apache.qpid.api.Message;
+import org.apache.qpid.nclient.Client;
+import org.apache.qpid.nclient.Connection;
+import org.apache.qpid.nclient.Session;
+import org.apache.qpid.nclient.util.MessageListener;
+import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.Option;
 
 
 public class TopicListener implements MessageListener
@@ -55,7 +55,7 @@ public class TopicListener implements MessageListener
                                  Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                  Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
                                  new MessagePartListenerAdapter(this),
-                                 null, Option.NO_OPTION);
+                                 null, Option.NONE);
         // issue credits
         // XXX: need to be able to set to null
         session.messageFlow(queueName, MessageCreditUnit.BYTE, Session.MESSAGE_FLOW_MAX_BYTES);

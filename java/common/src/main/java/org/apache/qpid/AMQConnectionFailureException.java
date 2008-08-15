@@ -21,6 +21,10 @@
 
 package org.apache.qpid;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -35,6 +39,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQConnectionFailureException extends AMQException
 {
+    Collection<Exception> _exceptions;
+    
 	public AMQConnectionFailureException(String message, Throwable cause)
 	{
 		super(null, message, cause);
@@ -43,5 +49,17 @@ public class AMQConnectionFailureException extends AMQException
     public AMQConnectionFailureException(AMQConstant errorCode, String message, Throwable cause)
     {
         super(errorCode, message, cause);
+    }
+
+    public AMQConnectionFailureException(String message, Collection<Exception> exceptions)
+    {
+        // Blah, I hate ? but java won't let super() be anything other than the first thing, sorry...
+        super (null, message, exceptions.isEmpty() ? null : exceptions.iterator().next());
+        this._exceptions = exceptions;
+    }
+    
+    public Collection<Exception> getLinkedExceptions()
+    {
+        return _exceptions;
     }
 }

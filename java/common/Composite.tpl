@@ -1,28 +1,30 @@
-package org.apache.qpidity.transport;
+package org.apache.qpid.transport;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpidity.transport.codec.Decoder;
-import org.apache.qpidity.transport.codec.Encodable;
-import org.apache.qpidity.transport.codec.Encoder;
-import org.apache.qpidity.transport.codec.Validator;
+import org.apache.qpid.transport.codec.Decoder;
+import org.apache.qpid.transport.codec.Encodable;
+import org.apache.qpid.transport.codec.Encoder;
 
-import org.apache.qpidity.transport.network.Frame;
+import org.apache.qpid.transport.network.Frame;
 
 ${
 from genutil import *
 
 cls = klass(type)["@name"]
 
+segments = type["segments"]
+
 if type.name in ("control", "command"):
   base = "Method"
   size = 0
   pack = 2
-  if type["segments"]:
+  if segments:
     payload = "true"
   else:
     payload = "false"
@@ -80,12 +82,16 @@ if pack > 0:
   out("    private $(PACK_TYPES[pack]) packing_flags = 0;\n");
 
 fields = get_fields(type)
-params = get_parameters(fields)
+params = get_parameters(type, fields)
 options = get_options(fields)
 
 for f in fields:
   if not f.empty:
     out("    private $(f.type) $(f.name);\n")
+
+if segments:
+  out("    private Header header;\n")
+  out("    private ByteBuffer body;\n")
 }
 
 ${
@@ -99,7 +105,11 @@ for f in fields:
   if f.option: continue
   out("        $(f.set)($(f.name));\n")
 
-if options:
+if segments:
+  out("        setHeader(header);\n")
+  out("        setBody(body);\n")
+
+if options or base == "Method":
   out("""
         for (int i=0; i < _options.length; i++) {
             switch (_options[i]) {
@@ -108,7 +118,11 @@ if options:
   for f in options:
     out("            case $(f.option): packing_flags |= $(f.flag_mask(pack)); break;\n")
 
-  out("""            case NO_OPTION: break;
+  if base == "Method":
+    out("""            case SYNC: this.setSync(true); break;
+            case BATCH: this.setBatch(true); break;
+""")
+  out("""            case NONE: break;
             default: throw new IllegalArgumentException("invalid option: " + _options[i]);
             }
         }
@@ -150,7 +164,6 @@ else:
     }
 
     public final $name $(f.set)($(f.type) value) {
-        $(f.check)
 ${
 if not f.empty:
   out("        this.$(f.name) = value;")
@@ -165,6 +178,44 @@ if pack > 0:
 
     public final $name $(f.name)($(f.type) value) {
         return $(f.set)(value);
+    }
+""")
+}
+
+${
+if segments:
+    out("""    public final Header getHeader() {
+        return this.header;
+    }
+
+    public final void setHeader(Header header) {
+        this.header = header;
+    }
+
+    public final $name header(Header header) {
+        setHeader(header);
+        return this;
+    }
+
+    public final ByteBuffer getBody() {
+        if (this.body == null)
+        {
+            return null;
+        }
+        else
+        {
+            return this.body.slice();
+        }
+    }
+
+    public final void setBody(ByteBuffer body) {
+        this.body = body;
+    }
+
+    public final $name body(ByteBuffer body)
+    {
+        setBody(body);
+        return this;
     }
 """)
 }

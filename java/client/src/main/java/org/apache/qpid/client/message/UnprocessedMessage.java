@@ -20,23 +20,7 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.List;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQChannelException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.client.BasicMessageConsumer;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.BasicReturnBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MethodDispatcher;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 
 /**
@@ -46,65 +30,24 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public abstract class UnprocessedMessage<H,B>
+public abstract class UnprocessedMessage
 {
-    private final int _channelId;
-    private final long _deliveryId;
-    private final AMQShortString _consumerTag;
-    protected AMQShortString _exchange;
-    protected AMQShortString _routingKey;
-    protected boolean _redelivered;
+    private final int _consumerTag;
 
-    public UnprocessedMessage(int channelId,long deliveryId,AMQShortString consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+
+    public UnprocessedMessage(int consumerTag)
     {
-        _channelId = channelId;
-        _deliveryId = deliveryId;
         _consumerTag = consumerTag;
-        _exchange = exchange;
-        _routingKey = routingKey;
-        _redelivered = redelivered;
     }
 
-    public abstract void receiveBody(B nativeMessageBody);
 
-    public abstract void setContentHeader(H nativeMessageHeader);
+    abstract public long getDeliveryTag();
 
-    public int getChannelId()
-    {
-        return _channelId;
-    }
 
-    public long getDeliveryTag()
-    {
-        return _deliveryId;
-    }
-
-    public AMQShortString getConsumerTag()
+    public int getConsumerTag()
     {
         return _consumerTag;
     }
 
-    public AMQShortString getExchange()
-    {
-        return _exchange;
-    }
 
-    public AMQShortString getRoutingKey()
-    {
-        return _routingKey;
-    }
-
-    public boolean isRedelivered()
-    {
-        return _redelivered;
-    }
-    public abstract List<B> getBodies();
-  
-    public abstract H getContentHeader();
- 
-    // specific to 0_10
-    public String getReplyToURL()
-    {
-        return "";
-    }    
 }

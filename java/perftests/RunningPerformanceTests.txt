@@ -7,7 +7,7 @@ Building the Tests (Only develoeprs need to know how to do this).
 The performance tests are compiled as part of the Maven build by default, but the performance test scripts are not. There is also an additional step to perform, that generates a convenient Jar file containing all of the test dependencies, to simplify invoking Java with a very long command line. The steps to build the performance test suite are:
 
    1. Cd to the /java/perftests directory.
-   2. Execute: mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen (this generates the scripts).
+   2. Execute: mvn org.apache.qpid:junit-toolkit-maven-plugin:tkscriptgen (this generates the scripts).
    3. Execute: mvn assembly:assembly
 
 The assembly:assembly step generates a Jar with all the dependecies in it in a file name ending with -all-test-deps.jar, which contains the client code and all its dependencies, plus JUnit and the toolkit test runners. The generated scripts expect to find the jar in the current directory. You can Cd to the /target directory and run the scripts from there. The assembly:assembly step also outputs some archives that contain all the scripts and required Jar for convenient shipping of the test suite. Unpack this anywhere you like and run the tests from there.

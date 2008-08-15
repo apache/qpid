@@ -33,6 +33,6 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 public interface StateAwareMethodListener<B extends AMQMethodBody>
 {
 
-    void methodReceived(AMQStateManager stateManager, B body, int channelId) throws AMQException;
+    void methodReceived(AMQProtocolSession session, B body, int channelId) throws AMQException;
 
 }

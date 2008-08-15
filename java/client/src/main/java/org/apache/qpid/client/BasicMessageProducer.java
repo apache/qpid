@@ -31,23 +31,16 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
-import javax.jms.Queue;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
-import javax.jms.Topic;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.util.UUIDGen;
+import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +114,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private final boolean _waitUntilSent;
 
     private boolean _disableMessageId;
+
+    private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
 
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
@@ -365,27 +360,27 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
             if (message instanceof BytesMessage)
             {
-                newMessage = new MessageConverter((BytesMessage) message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, (BytesMessage) message).getConvertedMessage();
             }
             else if (message instanceof MapMessage)
             {
-                newMessage = new MessageConverter((MapMessage) message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, (MapMessage) message).getConvertedMessage();
             }
             else if (message instanceof ObjectMessage)
             {
-                newMessage = new MessageConverter((ObjectMessage) message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, (ObjectMessage) message).getConvertedMessage();
             }
             else if (message instanceof TextMessage)
             {
-                newMessage = new MessageConverter((TextMessage) message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, (TextMessage) message).getConvertedMessage();
             }
             else if (message instanceof StreamMessage)
             {
-                newMessage = new MessageConverter((StreamMessage) message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, (StreamMessage) message).getConvertedMessage();
             }
             else
             {
-                newMessage = new MessageConverter(message).getConvertedMessage();
+                newMessage = new MessageConverter(_session, message).getConvertedMessage();
             }
 
             if (newMessage != null)
@@ -453,19 +448,18 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             }
         }
 
+        UUID messageId = null;
         if (_disableMessageId)
         {
-            message.setJMSMessageID(null);
+            message.setJMSMessageID((UUID)null);
         }
         else
         {
-            StringBuilder b = new StringBuilder(39);
-            b.append("ID:");
-            b.append(UUID.randomUUID());
-            message.setJMSMessageID(b.toString());
+            messageId = _messageIdGenerator.generate();
+            message.setJMSMessageID(messageId);
         }
 
-        sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
+        sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
 
         if (message != origMessage)
         {
@@ -484,8 +478,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     }
 
     abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
-                              int deliveryMode, int priority, long timeToLive, boolean mandatory,
-                              boolean immediate, boolean wait)throws JMSException;
+                              UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
+                              boolean immediate, boolean wait) throws JMSException;
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {

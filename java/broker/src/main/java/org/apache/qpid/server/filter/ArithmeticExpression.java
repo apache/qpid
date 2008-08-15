@@ -21,12 +21,12 @@ package org.apache.qpid.server.filter;
 //
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.Filterable;
 
 /**
  * An expression which performs an operation on two expression values
  */
-public abstract class ArithmeticExpression extends BinaryExpression
+public abstract class ArithmeticExpression<E extends Exception> extends BinaryExpression<E>
 {
 
     protected static final int INTEGER = 1;
@@ -248,7 +248,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
         }
     }
 
-    public Object evaluate(AMQMessage message) throws AMQException
+    public Object evaluate(Filterable<E> message) throws E
     {
         Object lvalue = left.evaluate(message);
         if (lvalue == null)

@@ -22,11 +22,8 @@ package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,13 +42,9 @@ public class BasicCancelOkMethodHandler implements StateAwareMethodListener<Basi
     private BasicCancelOkMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, BasicCancelOkBody body, int channelId)
+    public void methodReceived(AMQProtocolSession session, BasicCancelOkBody body, int channelId)
         throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-
-
-
         if (_logger.isInfoEnabled())
         {
             _logger.info("New BasicCancelOk method received for consumer:" + body.getConsumerTag());

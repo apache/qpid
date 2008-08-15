@@ -26,15 +26,14 @@ import org.apache.qpid.framing.amqp_0_9.MethodDispatcher_0_9;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public class ClientMethodDispatcherImpl_0_9 extends ClientMethodDispatcherImpl implements MethodDispatcher_0_9
 {
-    public ClientMethodDispatcherImpl_0_9(AMQStateManager stateManager)
+    public ClientMethodDispatcherImpl_0_9(AMQProtocolSession session)
     {
-        super(stateManager);
+        super(session);
     }
-
 
     public boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody body, int channelId) throws AMQException
     {
@@ -148,8 +147,7 @@ public class ClientMethodDispatcherImpl_0_9 extends ClientMethodDispatcherImpl i
 
     public boolean dispatchQueueUnbindOk(QueueUnbindOkBody body, int channelId) throws AMQException
     {
-        return false;  
+        return false;
     }
-
 
 }

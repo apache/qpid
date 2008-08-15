@@ -21,9 +21,9 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.dtx.XidImpl;
-import org.apache.qpidity.transport.*;
+import org.apache.qpid.QpidException;
+import org.apache.qpid.dtx.XidImpl;
+import org.apache.qpid.transport.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +76,7 @@ public class XAResourceImpl implements XAResource
             _logger.debug("commit tx branch with xid:  ", xid);
         }
         Future<XaResult> future =
-                _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NO_OPTION);
+                _xaSession.getQpidSession().dtxCommit(convertXid(xid), b ? Option.ONE_PHASE : Option.NONE);
 
         // now wait on the future for the result
         XaResult result = null;
@@ -86,7 +86,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -127,10 +127,11 @@ public class XAResourceImpl implements XAResource
             default:
                  throw new XAException(XAException.XAER_INVAL);
         }
+        _xaSession.flushAcknowledgments();
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxEnd(convertXid(xid),
-                        flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
-                        flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
+                        flag == XAResource.TMFAIL ? Option.FAIL : Option.NONE,
+                        flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NONE);
         // now wait on the future for the result
         XaResult result = null;
         try
@@ -139,7 +140,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -168,7 +169,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -198,7 +199,7 @@ public class XAResourceImpl implements XAResource
             }
             catch (SessionException e)
             {
-                // we need to restore the qpidity session that has been closed
+                // we need to restore the qpid session that has been closed
                 _xaSession.createSession();
                 // we should get a single exception
                 convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -245,7 +246,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -288,7 +289,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
@@ -297,7 +298,7 @@ public class XAResourceImpl implements XAResource
         int i = 0;
         for (Object obj : res.getInDoubt())
         {
-            org.apache.qpidity.transport.Xid xid = (org.apache.qpidity.transport.Xid) obj;
+            org.apache.qpid.transport.Xid xid = (org.apache.qpid.transport.Xid) obj;
             result[i] = new XidImpl(xid.getBranchId(), (int) xid.getFormat(), xid.getGlobalId());
             i++;
         }
@@ -326,7 +327,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
@@ -400,8 +401,8 @@ public class XAResourceImpl implements XAResource
         }
         Future<XaResult> future = _xaSession.getQpidSession()
                 .dtxStart(convertXid(xid),
-                        flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
-                        flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
+                        flag == XAResource.TMJOIN ? Option.JOIN : Option.NONE,
+                        flag == XAResource.TMRESUME ? Option.RESUME : Option.NONE);
         // now wait on the future for the result
         XaResult result = null;
         try
@@ -410,7 +411,7 @@ public class XAResourceImpl implements XAResource
         }
         catch (SessionException e)
         {
-            // we need to restore the qpidity session that has been closed
+            // we need to restore the qpid session that has been closed
             _xaSession.createSession();
             // we should get a single exception
             convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
@@ -511,7 +512,7 @@ public class XAResourceImpl implements XAResource
      * @return the qpid formated xid
      * @throws XAException when xid is null or when it cannot be converted. 
      */
-    private org.apache.qpidity.transport.Xid convertXid(Xid xid) throws XAException
+    private org.apache.qpid.transport.Xid convertXid(Xid xid) throws XAException
     {
         if (xid == null)
         {

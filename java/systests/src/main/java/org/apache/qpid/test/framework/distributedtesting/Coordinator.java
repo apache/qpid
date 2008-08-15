@@ -37,7 +37,7 @@ import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.TKTestRunner;
 import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;

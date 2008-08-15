@@ -23,7 +23,7 @@ package org.apache.qpid.test.framework.distributedcircuit;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.test.framework.*;
-import org.apache.qpid.util.ConversationFactory;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.TimingController;
 import org.apache.qpid.junit.extensions.TimingControllerAware;

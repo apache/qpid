@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
@@ -351,7 +352,8 @@ public class DerbyMessageStore implements MessageStore
             String queueName = rs.getString(1);
             String owner = rs.getString(2);
             AMQShortString queueNameShortString = new AMQShortString(queueName);
-            AMQQueue q =  new AMQQueue(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost);
+            AMQQueue q =  AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                                                             null);
             _virtualHost.getQueueRegistry().registerQueue(q);
             queueMap.put(queueNameShortString,q);
 
@@ -450,7 +452,8 @@ public class DerbyMessageStore implements MessageStore
                         argumentsFT = new FieldTable(buf,arguments.length());
                     }
 
-                    queue.bind(bindingKey == null ? null : new AMQShortString(bindingKey), argumentsFT, exchange);
+                    queue.bind(exchange, bindingKey == null ? null : new AMQShortString(bindingKey), argumentsFT);
+
                 }
             }
         }
@@ -727,6 +730,11 @@ public class DerbyMessageStore implements MessageStore
 
     public void createQueue(AMQQueue queue) throws AMQException
     {
+        createQueue(queue, null);
+    }
+
+    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+    {
         _logger.debug("public void createQueue(AMQQueue queue = " + queue + "): called");
 
         if (_state != State.RECOVERING)
@@ -762,9 +770,9 @@ public class DerbyMessageStore implements MessageStore
         return connection;
     }
 
-    public void removeQueue(AMQShortString name) throws AMQException
+    public void removeQueue(final AMQQueue queue) throws AMQException
     {
-
+        AMQShortString name = queue.getName();
         _logger.debug("public void removeQueue(AMQShortString name = " + name + "): called");
         Connection conn = null;
 
@@ -808,8 +816,9 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
+        AMQShortString name = queue.getName();
 
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
@@ -848,8 +857,9 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
+        AMQShortString name = queue.getName();
 
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
@@ -1276,6 +1286,11 @@ public class DerbyMessageStore implements MessageStore
 
     }
 
+    public boolean isPersistent()
+    {
+        return true;
+    }
+
     private void checkNotClosed() throws MessageStoreClosedException
     {
         if (_closed.get())
@@ -1300,7 +1315,8 @@ public class DerbyMessageStore implements MessageStore
 
         public void process() throws AMQException
         {
-            _queue.process(_context, _queue.createEntry(_message), false);
+            _queue.enqueue(_context, _message);
+
         }
 
     }
@@ -1349,7 +1365,8 @@ public class DerbyMessageStore implements MessageStore
                 AMQQueue queue = queues.get(queueName);
                 if (queue == null)
                 {
-                    queue = new AMQQueue(queueName, false, null, false, _virtualHost);
+                    queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, null, false, _virtualHost, null);
+
                     _virtualHost.getQueueRegistry().registerQueue(queue);
                     queues.put(queueName, queue);
                 }

@@ -1,8 +1,8 @@
 # See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
-py=$PYTHON/pubsub
+py=$PYTHON_EXAMPLES/pubsub
 
 topic_listener_java(){
-java -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Listener
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Listener
 }
 
 background "can receive messages" topic_listener_java

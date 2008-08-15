@@ -24,10 +24,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,11 +44,10 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener<Con
     protected ConnectionTuneMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionTuneBody frame, int channelId)
+    public void methodReceived(AMQProtocolSession session, ConnectionTuneBody frame, int channelId)
                 throws AMQException
     {
         _logger.debug("ConnectionTune frame received");
-        final AMQProtocolSession session = stateManager.getProtocolSession();
         final MethodRegistry methodRegistry = session.getMethodRegistry();
 
 
@@ -65,7 +62,7 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener<Con
         params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.getHeartbeat()));
         session.setConnectionTuneParameters(params);
 
-        stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
+        session.getStateManager().changeState(AMQState.CONNECTION_NOT_OPENED);
 
         ConnectionTuneOkBody tuneOkBody = methodRegistry.createConnectionTuneOkBody(params.getChannelMax(),
                                                                                     params.getFrameMax(),
