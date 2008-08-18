@@ -37,6 +37,7 @@ import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.queue.ExchangeBinding;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -129,6 +130,16 @@ public class MessageStoreTest extends TestCase
 
     AMQShortString directRouting = new AMQShortString("MST-direct");
     AMQShortString topicRouting = new AMQShortString("MST-topic");
+
+    protected void setUp()
+    {
+        ApplicationRegistry.getInstance(1);
+    }
+
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
+    }
 
     protected void runTestWithStore(Configuration configuration)
     {
