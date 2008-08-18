@@ -129,11 +129,17 @@ public class ExchangeMBeanTest  extends TestCase
     {
         super.setUp();
 
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _queueRegistry = _virtualHost.getQueueRegistry();
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _virtualHost,
                                                     null);
         _queueRegistry.registerQueue(_queue);
     }
+
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
+    }
+
 }
