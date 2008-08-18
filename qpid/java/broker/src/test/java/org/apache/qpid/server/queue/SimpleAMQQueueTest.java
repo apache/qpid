@@ -12,6 +12,7 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import junit.framework.TestCase;
 
@@ -56,9 +57,18 @@ public class SimpleAMQQueueTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        //Create Application Registry for test
+        ApplicationRegistry.getInstance(1);
+
         AMQShortString qname = new AMQShortString("qname");
         AMQShortString owner = new AMQShortString("owner");
         _queue = new SimpleAMQQueue(qname, false, owner, false, new VirtualHost("vhost", store));
+    }
+
+    @Override
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
     }
 
     public void testGetFirstMessageId() throws Exception

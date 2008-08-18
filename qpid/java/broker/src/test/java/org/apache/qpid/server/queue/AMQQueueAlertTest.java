@@ -294,11 +294,17 @@ public class AMQQueueAlertTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _protocolSession = new InternalTestProtocolSession();
 
     }
+
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove(1);
+    }
+
 
     private void sendMessages(long messageCount, final long size) throws AMQException
     {
