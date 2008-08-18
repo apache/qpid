@@ -79,6 +79,8 @@ public class AMQSessionTest extends QpidTestCase
 
         subscriber = _session.createDurableSubscriber(_topic, "mysubname2", "abc", false);
         assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        _session.unsubscribe("mysubname");
+        _session.unsubscribe("mysubname2");
     }
 
     public void testCreateQueueReceiver() throws JMSException
