@@ -175,14 +175,12 @@ AC_ARG_WITH([cpg],
     no) with_CPG=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
-   [		   # not specified - enable if libs/headers available.
-    with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_local_get],,[with_CPG=no])
-    AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
+   [		   # not specified - default no
+    with_CPG=no
    ]
 )
-# Remove from LIBS, we will link it explicitly in make files.
 LIBS=$tmp_LIBS
+
 AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
 if test x$with_CPG = xyes; then
   CPPFLAGS+=" -DCPG"
