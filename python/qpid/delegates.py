@@ -74,8 +74,13 @@ class Delegate:
     notify(ch.session.condition)
 
   def session_detach(self, ch, d):
-    ssn = self.connection.detach(d.name, ch)
+    #send back the confirmation of detachment before removing the
+    #channel from the attached set; this avoids needing to hold the
+    #connection lock during the sending of this control and ensures
+    #that if the channel is immediately reused for a new session the
+    #attach request will follow the detached notification.
     ch.session_detached(d.name)
+    ssn = self.connection.detach(d.name, ch)
 
   def session_detached(self, ch, d):
     self.connection.detach(d.name, ch)
