@@ -55,6 +55,12 @@ public class ManagementConsoleTest extends TestCase
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
     }
 
+    @Override
+    protected void tearDown() throws Exception
+    {
+        ApplicationRegistry.removeAll();
+    }
+
     /**
      * Test for AMQQueueMBean attribute and operation names, which are used in the management console
      * @throws Exception
