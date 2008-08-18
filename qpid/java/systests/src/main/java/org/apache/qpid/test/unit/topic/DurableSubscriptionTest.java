@@ -188,6 +188,8 @@ public class DurableSubscriptionTest extends QpidTestCase
         consumer1.close();
         consumer3.close();
 
+        session3.unsubscribe("MySubscription");
+
         con.close();
     }
 
@@ -266,6 +268,8 @@ public class DurableSubscriptionTest extends QpidTestCase
         consumer1.close();
         consumer3.close();
 
+        session3.unsubscribe("MySubscription");
+
         con0.close();
         con1.close();
         con3.close();
@@ -305,6 +309,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     	assertNotNull ("Message should have been received", msg);
     	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
     	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
+        session.unsubscribe("testDurableWithInvalidSelectorSub");
     }
     
     /***
@@ -339,6 +344,8 @@ public class DurableSubscriptionTest extends QpidTestCase
     	assertNotNull ("Message should have been received", msg);
     	assertEquals ("testDurableWithInvalidSelector2", ((TextMessage) msg).getText());
     	assertNull("Should not receive subsequent message", liveSubscriber.receive(200));
+
+        session.unsubscribe("testDurableWithInvalidDestinationsub");
     }
     
     public static junit.framework.Test suite()
