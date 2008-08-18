@@ -134,6 +134,7 @@ public class TopicSessionTest extends QpidTestCase
         m = (TextMessage) sub2.receive(2000);
         assertNotNull(m);
         assertEquals("goodbye", m.getText());
+        session1.unsubscribe("subscription0");
         con.close();
     }
 
@@ -163,6 +164,7 @@ public class TopicSessionTest extends QpidTestCase
         tm = (TextMessage) sub.receive(2000);
         assertNotNull(tm);
         assertEquals("Hello2", tm.getText());
+        session2.unsubscribe("subscription0");
         con1.close();
         con2.close();
     }
