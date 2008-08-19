@@ -31,6 +31,8 @@
 #include "qpid/client/Message.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/Buffer.h"
 
 using namespace qpid;
 using namespace qpid::client;
@@ -230,6 +232,33 @@ struct Controller : public Client
         SubscriptionManager subs(session);
         subs.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
         subs.setAcceptMode(1/*not-required*/);
+
+        // Recover DTX transactions (if any)
+        if (opts.dtx) {
+            std::vector<std::string> inDoubtXids;
+            framing::DtxRecoverResult dtxRes = session.dtxRecover().get();
+            const framing::Array& xidArr = dtxRes.getInDoubt();
+            xidArr.collect(inDoubtXids);
+
+            if (inDoubtXids.size()) {
+                std::cout << "Recovering DTX in-doubt transaction(s):" << std::endl;
+                framing::StructHelper decoder;
+                framing::Xid xid;
+                // abort even, commit odd transactions
+//                for (std::vector<std::string>::const_iterator i = inDoubtXids.begin(), int cnt = 1; i < inDoubtXids.end(); i++, cnt++) {
+                for (unsigned i = 0; i < inDoubtXids.size(); i++) {
+                    decoder.decode(xid, inDoubtXids[i]);
+                    std::cout << (i%2 ? " * aborting " : " * committing ");
+                    xid.print(std::cout);
+                    std::cout << std::endl;
+                    if (i%2) {
+                        session.dtxRollback(arg::xid=xid);
+                    } else {
+                        session.dtxCommit(arg::xid=xid);
+                    }
+                }
+            }
+        }
 
         StringSet drained;
         //drain each queue and verify the correct set of messages are available
