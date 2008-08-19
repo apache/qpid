@@ -375,7 +375,7 @@ public class DurableSubscriptionTest extends QpidTestCase
                      "testResubscribeWithChangedSelector1",
                      ((TextMessage) rMsg).getText());
         
-        rMsg = subA.receive(250);
+        rMsg = subA.receive(1000);
         assertNull(rMsg);
         
         // Disconnect subscriber
