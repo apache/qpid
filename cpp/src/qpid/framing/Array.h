@@ -54,7 +54,7 @@ class Array
     void add(ValuePtr value);
 
     template <class T>
-    void collect(std::vector<T>& out)
+    void collect(std::vector<T>& out) const
     {
         for (ValueVector::const_iterator i = values.begin(); i != values.end(); ++i) {
             out.push_back((*i)->get<T>());
