@@ -115,11 +115,13 @@ public class TopicExchange extends AbstractExchange
     {
         private final AMQShortString _bindingKey;
         private final AMQQueue _queue;
+        private final FieldTable _args;
 
-        public Binding(AMQShortString bindingKey, AMQQueue queue)
+        public Binding(AMQShortString bindingKey, AMQQueue queue, FieldTable args)
         {
             _bindingKey = bindingKey;
             _queue = queue;
+            _args = args;
         }
 
         public AMQShortString getBindingKey()
@@ -134,7 +136,7 @@ public class TopicExchange extends AbstractExchange
 
         public int hashCode()
         {
-            return (_bindingKey == null ? 1 : _bindingKey.hashCode())*31 + _queue.hashCode();
+            return (_bindingKey == null ? 1 : _bindingKey.hashCode())*31 +_queue.hashCode();
         }
 
         public boolean equals(Object o)
@@ -382,7 +384,7 @@ public class TopicExchange extends AbstractExchange
             routingKey = rKey;
         }
 
-        Binding binding = new Binding(rKey, queue);
+        Binding binding = new Binding(rKey, queue, args);
 
         if(_bindings.containsKey(binding))
         {
@@ -544,14 +546,29 @@ public class TopicExchange extends AbstractExchange
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
     {
-        return isBound(routingKey, queue);
+        Binding binding = new Binding(routingKey, queue, arguments);
+        if (arguments == null)
+        {
+            return _bindings.containsKey(binding);
+        }
+        else
+        {
+            FieldTable o = _bindings.get(binding);
+            if (o != null)
+            {
+                return o.equals(arguments);
+            }
+            else
+            {
+                return false;
+            }
+            
+        }
     }
 
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
-        Binding binding = new Binding(routingKey, queue);
-
-        return _bindings.containsKey(binding);
+        return isBound(routingKey, null, queue);
     }
 
     public boolean isBound(AMQShortString routingKey)
@@ -590,7 +607,7 @@ public class TopicExchange extends AbstractExchange
         assert queue != null;
         assert rKey != null;
 
-        Binding binding = new Binding(rKey, queue);
+        Binding binding = new Binding(rKey, queue, args);
 
 
         if (!_bindings.containsKey(binding))
