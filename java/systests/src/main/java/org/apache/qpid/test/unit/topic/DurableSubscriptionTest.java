@@ -348,6 +348,66 @@ public class DurableSubscriptionTest extends QpidTestCase
         session.unsubscribe("testDurableWithInvalidDestinationsub");
     }
     
+    /**
+     * Tests QPID-1202
+     * Creates a durable subscription with a selector, then changes that selector on resubscription
+     * @throws Exception 
+     */
+    public void testResubscribeWithChangedSelector() throws Exception
+    {
+        Connection conn = getConnection();
+        conn.start();
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        AMQTopic topic = new AMQTopic((AMQConnection) conn, "testResubscribeWithChangedSelector");
+        MessageProducer producer = session.createProducer(topic);
+        
+        // Create durable subscriber that matches A
+        TopicSubscriber subA = session.createDurableSubscriber(topic, 
+                "testResubscribeWithChangedSelector",
+                "Match = True", false);
+
+        // Send 1 matching message and 1 non-matching message
+        sendMatchingAndNonMatchingMessage(session, producer);
+
+        Message rMsg = subA.receive(1000);
+        assertNotNull(rMsg);
+        assertEquals("Content was wrong", 
+                     "testResubscribeWithChangedSelector1",
+                     ((TextMessage) rMsg).getText());
+        
+        rMsg = subA.receive(250);
+        assertNull(rMsg);
+        
+        // Disconnect subscriber
+        subA.close();
+        
+        // Reconnect with new selector that matches B
+        TopicSubscriber subB = session.createDurableSubscriber(topic, 
+                "testResubscribeWithChangedSelector","Match = False", false);
+        
+        
+        // Check messages are recieved properly
+        sendMatchingAndNonMatchingMessage(session, producer);
+        rMsg = subB.receive(1000);
+        assertNotNull(rMsg);
+        assertEquals("Content was wrong", 
+                     "testResubscribeWithChangedSelector2",
+                     ((TextMessage) rMsg).getText());
+        
+        rMsg = subB.receive(250);
+        assertNull(rMsg);
+    }
+
+    private void sendMatchingAndNonMatchingMessage(Session session, MessageProducer producer) throws JMSException
+    {
+        TextMessage msg = session.createTextMessage("testResubscribeWithChangedSelector1");
+        msg.setBooleanProperty("Match", true);
+        producer.send(msg);
+        msg = session.createTextMessage("testResubscribeWithChangedSelector2");
+        msg.setBooleanProperty("Match", false);
+        producer.send(msg);
+    }
+    
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(DurableSubscriptionTest.class);
