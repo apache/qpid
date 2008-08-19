@@ -61,8 +61,11 @@ abs_top_srcdir=@abs_top_srcdir@
 
 # Build the examples - copy sources to the build tree in VPATH build.
 all-local:
-	test -d examples || cp -R $(srcdir)/examples .
+	test -d examples || cp -R $(srcdir)/examples . && chmod +w -R examples
 	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I$(abs_top_srcdir)/src -I$(abs_top_srcdir)/src/gen -I$(abs_top_builddir)/src -I$(abs_top_builddir)/src/gen -L$(abs_top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
+
+distclean-local:
+	rm -rf examples
 
 if !HAVE_XML
 exclude_examples_regexp="xml"	# Exclude XML examples.

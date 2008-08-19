@@ -9,7 +9,7 @@ nobase_sysconf_DATA = \
 
 if HAVE_SASL
 SASL_DB = qpidd.sasldb
-
+DISTCLEANFILES=$(SASL_DB)
 nobase_sysconf_DATA += \
 	$(SASL_CONF)
 
