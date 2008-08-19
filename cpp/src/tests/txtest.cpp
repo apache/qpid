@@ -245,7 +245,6 @@ struct Controller : public Client
                 framing::StructHelper decoder;
                 framing::Xid xid;
                 // abort even, commit odd transactions
-//                for (std::vector<std::string>::const_iterator i = inDoubtXids.begin(), int cnt = 1; i < inDoubtXids.end(); i++, cnt++) {
                 for (unsigned i = 0; i < inDoubtXids.size(); i++) {
                     decoder.decode(xid, inDoubtXids[i]);
                     std::cout << (i%2 ? " * aborting " : " * committing ");
