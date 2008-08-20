@@ -394,8 +394,9 @@ public class DurableSubscriptionTest extends QpidTestCase
                      "testResubscribeWithChangedSelector2",
                      ((TextMessage) rMsg).getText());
         
-        rMsg = subB.receive(250);
+        rMsg = subB.receive(1000);
         assertNull(rMsg);
+        session.unsubscribe("testResubscribeWithChangedSelector");
     }
 
     private void sendMatchingAndNonMatchingMessage(Session session, MessageProducer producer) throws JMSException
