@@ -216,17 +216,20 @@ public class TopicExchange extends AbstractExchange
             if(filters != null)
             {
                 Integer instances = filters.get(filter);
-                if(instances == 1)
+                if(instances != null)
                 {
-                    filters.remove(filter);
-                    if(filters.isEmpty())
+                    if(instances == 1)
                     {
-                        _filteredQueues.remove(queue);
+                        filters.remove(filter);
+                        if(filters.isEmpty())
+                        {
+                            _filteredQueues.remove(queue);
+                        }
                     }
-                }
-                else if(instances != null)
-                {
-                    filters.put(filter, instances - 1);
+                    else 
+                    {
+                        filters.put(filter, instances - 1);
+                    }
                 }
 
             }
