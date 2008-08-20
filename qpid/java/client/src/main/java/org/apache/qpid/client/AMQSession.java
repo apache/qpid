@@ -1194,7 +1194,29 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return new TopicSubscriberAdaptor(dest, (C) createExclusiveConsumer(dest, messageSelector, noLocal));
     }
 
-    public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
+    public TemporaryQueue createTemporaryQueue() throws JMSException
+    {
+        checkNotClosed();
+        try
+        {
+            AMQTemporaryQueue result = new AMQTemporaryQueue(this);
+
+            // this is done so that we can produce to a temporary queue before we create a consumer
+            result.setQueueName(result.getRoutingKey());
+            createQueue(result.getAMQQueueName(), result.isAutoDelete(), 
+                        result.isDurable(), result.isExclusive());
+            bindQueue(result.getAMQQueueName(), result.getRoutingKey(), 
+                    new FieldTable(), result.getExchangeName(), result);
+            return result;
+        }
+        catch (Exception e)
+        {
+           JMSException ex = new JMSException("Cannot create temporary queue");
+           ex.setLinkedException(e);
+           e.printStackTrace();
+           throw ex;
+        }
+    }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {

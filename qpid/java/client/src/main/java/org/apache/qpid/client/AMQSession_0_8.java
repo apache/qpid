@@ -418,13 +418,6 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         getProtocolHandler().syncWrite(frame, TxRollbackOkBody.class);
     }
 
-     public TemporaryQueue createTemporaryQueue() throws JMSException
-    {
-        checkNotClosed();
-
-        return new AMQTemporaryQueue(this);
-    }
-
     public  TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
 
