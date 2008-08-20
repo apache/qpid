@@ -63,17 +63,6 @@ namespace qpid {
             typedef qpid::InlineVector<Consumer*, 5> Listeners;
             typedef std::deque<QueuedMessage> Messages;
 
-            class Guard 
-            {
-                qpid::sys::Condition condition;
-                size_t count;
-              public:
-                Guard();
-                void lock();
-                void unlock();
-                void wait(sys::Mutex&);
-            };
-
             const string name;
             const bool autodelete;
             MessageStore* store;
@@ -88,7 +77,6 @@ namespace qpid {
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
             mutable qpid::sys::Mutex ownershipLock;
-            Guard notifierLock;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;
