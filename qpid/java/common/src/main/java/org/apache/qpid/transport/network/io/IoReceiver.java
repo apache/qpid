@@ -67,7 +67,14 @@ final class IoReceiver extends Thread
         {
             try
             {
-                socket.shutdownInput();
+                if (((String) System.getProperties().get("os.name")).matches("(?i).*windows.*"))
+                {
+                   socket.close();
+                }
+                else
+                {
+                    socket.shutdownInput();
+                }
                 if (Thread.currentThread() != this)
                 {
                     join(timeout);
