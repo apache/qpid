@@ -623,28 +623,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
-
-     public TemporaryQueue createTemporaryQueue() throws JMSException
-    {
-        checkNotClosed();
-        AMQTemporaryQueue result = new AMQTemporaryQueue(this);
-        try
-        {
-            // this is done so that we can produce to a temporary queue beofre we create a consumer
-            sendCreateQueue(result.getRoutingKey(), result.isAutoDelete(), result.isDurable(), result.isExclusive(),null);
-            sendQueueBind(result.getRoutingKey(), result.getRoutingKey(), new FieldTable(), result.getExchangeName(),result);
-            result.setQueueName(result.getRoutingKey());
-        }
-        catch (Exception e)
-        {
-           throw new JMSException("Cannot create temporary queue" );
-        }
-        return result;
-    }
-
-
-
-
     //------ Inner classes
     /**
      * Lstener for qpid protocol exceptions

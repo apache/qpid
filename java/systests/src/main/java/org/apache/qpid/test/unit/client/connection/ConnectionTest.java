@@ -23,11 +23,15 @@ package org.apache.qpid.test.unit.client.connection;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
 
 import javax.jms.Connection;
@@ -92,6 +96,21 @@ public class ConnectionTest extends QpidTestCase
                                      + "&temporaryQueueExchange='tmp.direct'"
                                      + "&temporaryTopicExchange='tmp.topic'");
 
+
+            AMQSession sess = (AMQSession) conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            
+            sess.declareExchange(new AMQShortString("test.direct"), 
+                    ExchangeDefaults.DIRECT_EXCHANGE_CLASS, false);
+
+            sess.declareExchange(new AMQShortString("tmp.direct"), 
+                    ExchangeDefaults.DIRECT_EXCHANGE_CLASS, false);
+
+            sess.declareExchange(new AMQShortString("tmp.topic"), 
+                    ExchangeDefaults.TOPIC_EXCHANGE_CLASS, false);
+
+            sess.declareExchange(new AMQShortString("test.topic"), 
+                    ExchangeDefaults.TOPIC_EXCHANGE_CLASS, false);
+
             QueueSession queueSession = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
             AMQQueue queue = (AMQQueue) queueSession.createQueue("MyQueue");
@@ -105,7 +124,7 @@ public class ConnectionTest extends QpidTestCase
             queueSession.close();
 
             TopicSession topicSession = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
+            
             AMQTopic topic = (AMQTopic) topicSession.createTopic("silly.topic");
 
             assertEquals(topic.getExchangeName().toString(), "test.topic");

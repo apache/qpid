@@ -22,6 +22,7 @@
 package org.apache.qpid.test.unit.client.temporaryqueue;
 
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -32,12 +33,16 @@ import junit.framework.Assert;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.jms.ConnectionListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
 
-public class TemporaryQueueTest extends QpidTestCase
+public class TemporaryQueueTest extends QpidTestCase implements ExceptionListener
 {
+    private List<Exception> _exceptions = new ArrayList<Exception>();
+
     protected void setUp() throws Exception
     {
         super.setUp();
@@ -53,7 +58,7 @@ public class TemporaryQueueTest extends QpidTestCase
         return  getConnection("guest", "guest");
     }
 
-    public void testTempoaryQueue() throws Exception
+    public void testTemporaryQueue() throws Exception
     {
         Connection conn = createConnection();
         Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -212,9 +217,42 @@ public class TemporaryQueueTest extends QpidTestCase
         }
     }
 
+    public void testQPID1217() throws Exception
+    {
+        Connection conA = getConnection();
+        conA.setExceptionListener(this);
+        Session sessA = conA.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue temp = sessA.createTemporaryQueue();
+        
+        MessageProducer prod = sessA.createProducer(temp);
+        prod.send(sessA.createTextMessage("hi"));
 
+        Thread.sleep(500);
+        assertTrue("Exception received", _exceptions.isEmpty());
+        
+        Connection conB = getConnection();
+        Session sessB = conB.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        
+        JMSException ex = null;
+        try
+        {
+            MessageConsumer consB = sessB.createConsumer(temp);
+        } 
+        catch (JMSException e)
+        {
+            ex = e; 
+        }
+        assertNotNull(ex);
+    }
+    
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(TemporaryQueueTest.class);
     }
+
+    public void onException(JMSException arg0)
+    {
+        _exceptions.add(arg0);
+    }
+
 }
