@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.exchange.Exchange;
@@ -207,4 +209,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     {
         public void doTask(AMQQueue queue) throws AMQException;
     }
+
+    void configure(Configuration virtualHostDefaultQueueConfiguration);
 }

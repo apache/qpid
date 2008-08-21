@@ -40,6 +40,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.Notification;
@@ -47,6 +48,7 @@ import javax.management.Notification;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collections;
+import java.util.Set;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
@@ -251,6 +253,26 @@ public class AMQQueueAlertTest extends TestCase
         assertEquals(new Long(0), new Long(_queueMBean.getQueueDepth()));
     }
 
+    public void testAlertConfiguration() throws AMQException
+    {
+        // Setup configuration
+        CompositeConfiguration config = new CompositeConfiguration();
+        config.setProperty("maximumMessageSize", new Long(23));
+        config.setProperty("maximumMessageCount", new Long(24));
+        config.setProperty("maximumQueueDepth", new Long(25));
+        config.setProperty("maximumMessageAge", new Long(26));
+
+        // Create queue and set config
+        _queue = getNewQueue();
+        _queue.configure(config);
+
+        // Check alerts and notifications
+        Set<NotificationCheck> checks = _queue.getNotificationChecks();
+        assertNotNull("No checks found", checks);
+        assertFalse("Checks should not be empty", checks.isEmpty());
+        assertEquals("Wrong number of checks", 4, checks.size());
+    }
+    
     protected IncomingMessage message(final boolean immediate, long size) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()

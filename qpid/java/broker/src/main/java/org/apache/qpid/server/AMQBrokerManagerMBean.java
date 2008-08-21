@@ -183,13 +183,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 _messageStore.createQueue(queue);
             }
 
-            Configuration virtualHostDefaultQueueConfiguration =
-                VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
-            if (virtualHostDefaultQueueConfiguration != null)
-            {
-                Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
-            }
-
             _queueRegistry.registerQueue(queue);
         }
         catch (AMQException ex)

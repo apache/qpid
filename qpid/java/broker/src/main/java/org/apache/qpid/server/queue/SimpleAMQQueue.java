@@ -3,6 +3,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MessageStore;
@@ -14,6 +15,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.configuration.Configured;
+import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 
 import javax.management.JMException;
@@ -160,12 +162,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throw new AMQException("AMQQueue MBean creation has failed ", e);
         }
 
+        resetNotifications();
+
+    }
+
+    private void resetNotifications()
+    {
         // This ensure that the notification checks for the configured alerts are created.
         setMaximumMessageAge(_maximumMessageAge);
         setMaximumMessageCount(_maximumMessageCount);
         setMaximumMessageSize(_maximumMessageSize);
         setMaximumQueueDepth(_maximumQueueDepth);
-
     }
 
     // ------ Getters and Setters
@@ -1634,5 +1641,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             ids.add(it.getNode().getMessage().getMessageId());
         }
         return ids;
+    }
+
+    public void configure(Configuration queueConfiguration)
+    {
+        Configurator.configure(this, queueConfiguration);
+        resetNotifications();
     }
 }
