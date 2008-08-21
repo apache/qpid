@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -35,12 +36,15 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.File;
 
-public class SimpleACLTest extends TestCase implements ConnectionListener
+public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 {
     private String BROKER = "vm://:1";//"tcp://localhost:5672";
 
     public void setUp() throws Exception
     {
+        //Shutdown the QTC broker
+        stopBroker();
+
         // Initialise ACLs.
         final String QpidExampleHome = System.getProperty("QPID_EXAMPLE_HOME");
         final File defaultaclConfigFile = new File(QpidExampleHome, "etc/acl.config.xml");
@@ -426,7 +430,32 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateTemporyQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateTemporaryQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    {
+        try
+        {
+            Connection conn = new AMQConnection(createConnectionString("server", "guest", BROKER));
+
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            conn.start();
+
+            session.createTemporaryQueue();
+                    
+            fail("Test failed as creation succeded.");
+            //conn will be automatically closed
+        }
+        catch (JMSException e)
+        {
+            Throwable cause = e.getLinkedException();
+
+            assertNotNull("There was no liked exception", cause);
+            assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
+            assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        }
+    }
+
+    public void testServerCreateAutoDeleteQueueInvalid() throws JMSException, URLSyntaxException, AMQException
     {
         try
         {
