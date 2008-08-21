@@ -298,7 +298,7 @@ void Cluster::dispatch(sys::DispatchHandle& h) {
 void Cluster::disconnect(sys::DispatchHandle& h) {
     h.stopWatch();
     QPID_LOG(critical, "Disconnected from cluster, shutting down");
-    broker.shutdown();
+    broker->shutdown();
 }
 
 }} // namespace qpid::cluster
