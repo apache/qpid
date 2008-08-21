@@ -1,9 +1,14 @@
-package org.apache.qpid.transport;
+package $(pkg);
 
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.transport.Future;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Struct;
 
 public abstract class Invoker {
 

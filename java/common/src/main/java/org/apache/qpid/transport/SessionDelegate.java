@@ -42,7 +42,7 @@ public abstract class SessionDelegate
     public void command(Session ssn, Method method) {
         ssn.identify(method);
         method.dispatch(ssn, this);
-        if (!method.hasPayload())
+        if (!method.hasPayloadSegment())
         {
             ssn.processed(method);
         }

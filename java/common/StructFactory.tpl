@@ -1,4 +1,6 @@
-package org.apache.qpid.transport;
+package $(pkg);
+
+import org.apache.qpid.transport.Struct;
 
 class StructFactory {
 

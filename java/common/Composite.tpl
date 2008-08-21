@@ -1,4 +1,4 @@
-package org.apache.qpid.transport;
+package $(pkg);
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -6,6 +6,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.transport.Future;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Struct;
 
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encodable;
@@ -68,7 +73,7 @@ public final class $name extends $base {
         return $pack;
     }
 
-    public final boolean hasPayload() {
+    public final boolean hasPayloadSegment() {
         return $payload;
     }
 
@@ -130,7 +135,7 @@ if options or base == "Method":
 }
     }
 
-    public <C> void dispatch(C context, MethodDelegate<C> delegate) {
+    public final <C> void dispatch(C context, MethodDelegate<C> delegate) {
         delegate.$(dromedary(name))(context, this);
     }
 

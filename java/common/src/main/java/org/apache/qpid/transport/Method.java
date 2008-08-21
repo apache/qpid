@@ -75,7 +75,7 @@ public abstract class Method extends Struct implements ProtocolEvent
         return sync;
     }
 
-    final void setSync(boolean value)
+    protected final void setSync(boolean value)
     {
         this.sync = value;
     }
@@ -85,12 +85,12 @@ public abstract class Method extends Struct implements ProtocolEvent
         return batch;
     }
 
-    final void setBatch(boolean value)
+    protected final void setBatch(boolean value)
     {
         this.batch = value;
     }
 
-    public abstract boolean hasPayload();
+    public abstract boolean hasPayloadSegment();
 
     public Header getHeader()
     {
@@ -114,7 +114,16 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     public abstract byte getEncodedTrack();
 
-    public abstract <C> void dispatch(C context, MethodDelegate<C> delegate);
+    public <C> void dispatch(C context, MethodDelegate<C> delegate)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public <C> void dispatch
+        (C context, org.apache.qpid.transport.v1_0.MethodDelegate<C> delegate)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {

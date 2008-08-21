@@ -198,7 +198,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
         byte flags = FIRST_SEG;
 
-        boolean payload = method.hasPayload();
+        boolean payload = method.hasPayloadSegment();
         if (!payload)
         {
             flags |= LAST_SEG;
