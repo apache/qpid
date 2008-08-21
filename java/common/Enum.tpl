@@ -1,4 +1,4 @@
-package org.apache.qpid.transport;
+package $(pkg);
 
 public enum $name {
 ${

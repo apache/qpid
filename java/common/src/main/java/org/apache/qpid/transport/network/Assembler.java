@@ -189,7 +189,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             dec.readUint16();
             command = Method.create(commandType);
             command.read(dec);
-            if (command.hasPayload())
+            if (command.hasPayloadSegment())
             {
                 incomplete[channel] = command;
             }
