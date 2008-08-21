@@ -230,7 +230,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                     _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
                 }
 
-                closeProtocolSession();
+
+//                closeProtocolSession();
                 return;
             }
         }
@@ -272,7 +273,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
         catch (AMQException e)
         {
-            _logger.error("Received incorrect protocol initiation", e);
+            _logger.info("Received incorrect protocol initiation:" + e.getMessage());
 
             _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
 
@@ -356,7 +357,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
             _logger.error("Unexpected exception while processing frame.  Closing connection.", e);
 
-            closeProtocolSession();
+//            closeProtocolSession();
         }
     }
 
@@ -655,9 +656,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public void closeProtocolSession(boolean waitLast)
     {
-        _logger.debug("Waiting for last write to join.");
         if (waitLast && (_lastWriteFuture != null))
         {
+            _logger.debug("Waiting for last write to join.");
             _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         }
 
