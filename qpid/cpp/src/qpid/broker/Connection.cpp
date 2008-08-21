@@ -79,7 +79,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 void Connection::requestIOProcessing(boost::function0<void> callback)
 {
     ioCallback = callback;
-    out->activateOutput();
+    out.activateOutput();
 }
 
 Connection::~Connection()
@@ -178,7 +178,6 @@ void Connection::closedImpl(){ // Physically closed, suspend open sessions.
     try {
         while (!channels.empty()) 
             ptr_map_ptr(channels.begin())->handleDetach();
-        // FIXME aconway 2008-07-15: exclusive is per-session not per-connection in 0-10.
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();
@@ -245,7 +244,7 @@ Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&)
     case management::Connection::METHOD_CLOSE :
         mgmtClosing = true;
         if (mgmtObject != 0) mgmtObject->set_closing(1);
-        out->activateOutput();
+        out.activateOutput();
         status = Manageable::STATUS_OK;
         break;
     }

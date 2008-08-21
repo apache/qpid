@@ -78,7 +78,7 @@ ClusterFixture::ClusterFixture(size_t n) : name(Uuid(true).str()) {
         ::sleep(1);
         --retry;
     }
-    BOOST_CHECK_EQUAL(n, getGlobalCluster()->size());
+    BOOST_REQUIRE_EQUAL(n, getGlobalCluster()->size());
 }
 
 void ClusterFixture::add() {

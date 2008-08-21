@@ -44,6 +44,7 @@ struct Args : public qpid::TestOptions {
     uint size;
     uint count;
     uint rate;
+    bool sync;
     uint reportFrequency;
     uint timeLimit;
     uint queues;
@@ -65,6 +66,7 @@ struct Args : public qpid::TestOptions {
             ("queues", optValue(queues, "N"), "number of queues")
             ("count", optValue(count, "N"), "number of messages to send")
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
+            ("sync", optValue(sync), "send messages synchronously")
             ("report-frequency", optValue(reportFrequency, "N"), 
              "number of milliseconds to wait between reports (ignored unless rate specified)")
             ("time-limit", optValue(timeLimit, "N"), 
@@ -143,6 +145,7 @@ class Sender : public Client
     void sendByRate();
     void sendByCount();
     Receiver& receiver;
+    const string data;
 public:
     Sender(const string& queue, Receiver& receiver);
     void test();
@@ -285,7 +288,7 @@ void Stats::reset()
     totalLatency = maxLatency = minLatency = 0;           
 }
 
-Sender::Sender(const string& q, Receiver& receiver) : Client(q), receiver(receiver) {}
+Sender::Sender(const string& q, Receiver& receiver) : Client(q), receiver(receiver), data(generateData(opts.size)) {}
 
 void Sender::test()
 {
@@ -295,7 +298,7 @@ void Sender::test()
 
 void Sender::sendByCount()
 {
-    Message msg(generateData(opts.size), queue);
+    Message msg(data, queue);
     if (opts.durable) {
         msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
     }
@@ -303,15 +306,15 @@ void Sender::sendByCount()
     for (uint i = 0; i < opts.count; i++) {
         uint64_t sentAt(current_time());
         msg.getDeliveryProperties().setTimestamp(sentAt);
-        //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
+        if (opts.sync) session.sync();
     }
     session.sync();
 }
 
 void Sender::sendByRate()
 {
-    Message msg(generateData(opts.size), queue);
+    Message msg(data, queue);
     if (opts.durable) {
         msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
     }
@@ -324,9 +327,9 @@ void Sender::sendByRate()
     while (true) {
         uint64_t start_msg(current_time());
         msg.getDeliveryProperties().setTimestamp(start_msg);
-        //msg.getHeaders().setTimestamp("sent-at", sentAt);//TODO add support for uint64_t to field tables
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
-
+        if (opts.sync) session.sync();
+        
 	uint64_t now = current_time();
 
 	if (timeLimit != 0 && (now - start) > timeLimit) {
