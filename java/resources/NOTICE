@@ -4,7 +4,7 @@
 // ------------------------------------------------------------------
 
 Apache Qpid
-Copyright 2006-2007 Apache Software Foundation
+Copyright 2006-2008 Apache Software Foundation
 
 This product includes software developed at
 Apache Software Foundation (http://www.apache.org/)
@@ -102,4 +102,41 @@ License: BSD License (http://www.dom4j.org/license.html)
 This product includes/uses software, Saxon - saxpath:saxpath:jar:1.0-FCS
 developed by Michael Kay (http://saxon.sourceforge.net/)
 License: Mozilla Public License v1.0, (http://www.opensource.org/licenses/mozilla1.0.php)
+
+This product includes/uses software, Felix (http://felix.apache.org)
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product uses/references the following software from Eclipse.
+License: Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)
+(Note: the versions are ommited and only the name is specified.)
+org.eclipse.jface
+org.eclipse.core.*
+org.eclipse.equinox.* 
+org.eclipse.osgi
+org.eclipse.swt
+Source available from : http://archive.eclipse.org/eclipse/downloads/drops/R-3.2-200606291905/index.php
+
+This product includes/uses software, ICU4J - ICU4J 3.4.4
+developed by the ICU Project (http://icu-project.org/)
+License: http://source.icu-project.org/repos/icu/icu/trunk/license.html
+
+This product includes software developed at
+The OSGi Alliance (http://www.osgi.org/).
+Copyright 2006 The OSGi Alliance.
+Licensed under the Apache License 2.0.
+
+This product includes/uses software, Javacc - javacc.jar
+License: BSD License (https://javacc.dev.java.net/)
+
+This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
+developed by QOS.ch  (http://www.qos.ch)
+Source included with binary builds at : http://slf4j.org/dist
+License: MIT License (http://www.slf4j.org/license.html)
+
+This product includes/uses software, JUnit Toolkit (http://sourceforge.net/projects/junit-toolkit/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache Log4j (http://logging.apache.org/log4j/1.2)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
