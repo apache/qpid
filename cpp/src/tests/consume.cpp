@@ -42,13 +42,15 @@ struct Args : public qpid::TestOptions {
     uint count;
     uint ack;
     string queue;
-
+    bool declare;
+    
     Args() : count(0), ack(1)
     {
         addOptions()
             ("count", optValue(count, "N"), "number of messages to publish")
             ("ack-frequency", optValue(ack, "N"), "ack every N messages (0 means use no-ack mode)")
-            ("queue", optValue(queue, "<queue name>"), "queue to consume from");
+            ("queue", optValue(queue, "<queue name>"), "queue to consume from")
+            ("declare", optValue(declare), "declare the queue");
     }
 };
 
@@ -67,7 +69,8 @@ struct Client
 
     void consume()
     {
-        
+        if (opts.declare)
+            session.queueDeclare(opts.queue);
         SubscriptionManager subs(session);
         LocalQueue lq(AckPolicy(opts.ack));
         subs.setAcceptMode(opts.ack > 0 ? 0 : 1);
@@ -77,7 +80,7 @@ struct Client
         Message msg;
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
-            std::cout << "Received: " << msg.getMessageProperties().getCorrelationId() << std::endl;
+            QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
         }
         if (opts.ack != 0)
             subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
