@@ -290,7 +290,9 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
 
             // Test the connection with a valid consumer
             // This may fail as the session may be closed before the queue or the consumer created.
-            session.createConsumer(session.createTemporaryQueue()).close();
+            Queue temp = session.createTemporaryQueue();
+
+            session.createConsumer(temp).close();
 
             //Connection should now be closed and will throw the exception caused by the above send
             conn.close();
@@ -300,6 +302,10 @@ public class SimpleACLTest extends TestCase implements ConnectionListener
         catch (JMSException e)
         {
             Throwable cause = e.getLinkedException();
+            if (!(cause instanceof AMQAuthenticationException))
+            {
+                e.printStackTrace();
+            }
             assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }

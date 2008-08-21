@@ -658,6 +658,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 }
 
                 _frameListeners.add(listener);
+                //FIXME: At this point here we should check or before add we should check _stateManager is in an open
+                // state so as we don't check we are likely just to time out here as I believe is being seen in QPID-1255 
             }
             _protocolSession.writeFrame(frame);
 
