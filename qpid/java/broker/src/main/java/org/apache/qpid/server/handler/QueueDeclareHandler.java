@@ -203,13 +203,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
             });
         }// if exclusive and not durable
-
-        Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
-        if (virtualHostDefaultQueueConfiguration != null)
-        {
-            Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
-        }
-
+        
         return queue;
     }
 }
