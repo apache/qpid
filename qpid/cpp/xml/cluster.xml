@@ -26,12 +26,18 @@
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 
     <control name = "notify" code="0x1">
+      <role name="server" implement="MUST" />
       <field name="url" type="str16" />
     </control>
 
-    <control name="connection-close" code="0x2"/>
+    <control name="connection-close" code="0x2">
+      <role name="server" implement="MUST" />
+    </control>
 
-    <control name="connection-do-output" code="0x3"/>
+    <control name="connection-do-output" code="0x3">
+      <role name="server" implement="MUST" />
+      <field name="bytes" type="uint32"/>
+    </control>
 
   </class>
 </amqp>

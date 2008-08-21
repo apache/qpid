@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "qpid/sys/AggregateOutput.h"
-#include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/ConnectionOutputHandlerPtr.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
 #include "Broker.h"
@@ -34,11 +34,14 @@ namespace broker {
 
 class ConnectionState : public ConnectionToken, public management::Manageable
 {
+  protected:
+    sys::ConnectionOutputHandlerPtr out;
+
   public:
-    ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) : 
+    ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) :
+        out(o),
         broker(b), 
-        outputTasks(*o),
-        out(o), 
+        outputTasks(out),
         framemax(65535), 
         heartbeat(0),
         stagingThreshold(broker.getStagingThreshold())
@@ -67,14 +70,13 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     //contained output tasks
     sys::AggregateOutput outputTasks;
 
-    sys::ConnectionOutputHandler& getOutput() const { return *out; }
+    sys::ConnectionOutputHandlerPtr& getOutput() { return out; }
     framing::ProtocolVersion getVersion() const { return version; }
 
-    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out = o; }
+    void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
 
   protected:
     framing::ProtocolVersion version;
-    sys::ConnectionOutputHandler* out;
     uint32_t framemax;
     uint16_t heartbeat;
     uint64_t stagingThreshold;

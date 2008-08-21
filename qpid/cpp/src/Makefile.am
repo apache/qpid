@@ -546,6 +546,7 @@ nobase_include_HEADERS = \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
   qpid/sys/ConnectionOutputHandler.h \
+  qpid/sys/ConnectionOutputHandlerPtr.h \
   qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
   qpid/sys/IOHandle.h \
