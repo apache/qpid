@@ -130,13 +130,13 @@ public class VirtualHostConfiguration
         }
     }
 
-    public static CompositeConfiguration getDefaultQueueConfiguration(AMQQueue queue)
+    public static CompositeConfiguration getDefaultQueueConfiguration(VirtualHost host)
     {
         CompositeConfiguration queueConfiguration = null;
         if (_config == null)
             return null;
 
-        Configuration vHostConfiguration = _config.subset(VIRTUALHOST_PROPERTY_BASE + queue.getVirtualHost().getName());
+        Configuration vHostConfiguration = _config.subset(VIRTUALHOST_PROPERTY_BASE + host.getName());
 
         if (vHostConfiguration == null)
             return null;
@@ -193,7 +193,10 @@ public class VirtualHostConfiguration
                 queue = AMQQueueFactory.createAMQQueueImpl(queueName,
                         durable,
                         owner == null ? null : new AMQShortString(owner) /* These queues will have no owner */,
-                        autodelete /* Therefore autodelete makes no sence */, virtualHost, arguments);
+                        autodelete /* Therefore autodelete makes no sence */, 
+                        virtualHost, 
+                        arguments,
+                        queueConfiguration);
 
                 if (queue.isDurable())
                 {
@@ -247,10 +250,6 @@ public class VirtualHostConfiguration
             }
 
         }
-
-
-
-        Configurator.configure(queue, queueConfiguration);
     }
 
 
