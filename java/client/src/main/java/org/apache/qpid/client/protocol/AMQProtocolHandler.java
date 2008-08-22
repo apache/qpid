@@ -162,7 +162,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     private FailoverException _lastFailoverException;
 
     /** Defines the default timeout to use for synchronous protocol commands. */
-    private final long DEFAULT_SYNC_TIMEOUT = 1000 * 30;
+    private final long DEFAULT_SYNC_TIMEOUT = Long.getLong("amqj.default_syncwrite_timeout", 1000 * 30);
 
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
