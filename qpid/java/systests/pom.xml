@@ -96,6 +96,10 @@
                             <name>QPID_HOME</name>
                             <value>${basedir}/${topDirectoryLocation}/broker</value>
                         </property>                        
+                        <property>
+                            <name>amqj.logging.level</name>
+                            <value>${amqj.logging.level}</value>
+                        </property>
                     </systemProperties>
 
                     <excludes>
