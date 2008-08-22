@@ -33,14 +33,16 @@
   <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
+  <property name="resources"     value="${project.root}/resources"/>
+  
   <map property="release.excludes" value="${modules}">
     <globmapper from="*" to="*/\*\*"/>
   </map>
 
-  <property name="release.zip"          location="${release}/${project.namever}.zip"/>
-  <property name="release.tar"          location="${release}/${project.namever}.tar"/>
-  <property name="release.tgz"          location="${release}/${project.namever}.tar.gz"/>
-  <property name="release.bz2"          location="${release}/${project.namever}.tar.bz2"/>
+  <property name="release.zip"          location="${release}/${project.namever}-java.zip"/>
+  <property name="release.tar"          location="${release}/${project.namever}-java.tar"/>
+  <property name="release.tgz"          location="${release}/${project.namever}-java.tar.gz"/>
+  <property name="release.bz2"          location="${release}/${project.namever}-java.tar.bz2"/>
 
   <macrodef name="iterate">
     <attribute name="target"/>
@@ -116,6 +118,7 @@
       <manifest>
         <attribute name="Class-Path" value="${qpid.jar.classpath}"/>
       </manifest>
+      <metainf dir="${project.root}/resources/"/>
     </jar>
 
     <touch file="${qpid.jar}"/>
@@ -144,7 +147,14 @@
       <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}" filemode="644" dirmode="755">
         <exclude name="bin/**"/>
 	<exclude name="**/*.class"/>
+        <exclude name="broker/**"/>
+        <exclude name="common/**"/>
+        <exclude name="client/**"/>
+        <exclude name="perftests/**"/>
+        <exclude name="systests/**"/>
       </zipfileset>
+
+      <zipfileset dir="${resources}" prefix="${project.namever}" filemode="644"/>
     </zip>
   </target>
 
