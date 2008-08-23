@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_CONNECTIONPLUGIN_H
-#define QPID_CLUSTER_CONNECTIONPLUGIN_H
+#ifndef QPID_CLUSTER_CONNECTIONINTERCEPTOR_H
+#define QPID_CLUSTER_CONNECTIONINTERCEPTOR_H
 
 /*
  *
@@ -23,6 +23,8 @@
  */
 
 #include "Cluster.h"
+#include "WriteEstimate.h"
+#include "OutputInterceptor.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 
@@ -41,42 +43,46 @@ class ConnectionInterceptor {
     
     Cluster::ShadowConnectionId getShadowId() const { return shadowId; }
 
-    bool isLocal() const { return shadowId == Cluster::ShadowConnectionId(0,0); }
-
+    bool isShadow() const { return shadowId != Cluster::ShadowConnectionId(0,0); }
+    bool isLocal() const { return !isShadow(); }
+    bool getClosed() const { return isClosed; }
+    
     // self-delivery of intercepted extension points.
     void deliver(framing::AMQFrame& f);
     void deliverClosed();
-    void deliverDoOutput();
+    void deliverDoOutput(size_t requested);
 
     void dirtyClose();
 
+    Cluster& getCluster() { return cluster; }
+    
   private:
     struct NullConnectionHandler : public qpid::sys::ConnectionOutputHandler {
         void close() {}
         void send(framing::AMQFrame&) {}
-        void doOutput() {}
         void activateOutput() {}
     };
 
-    bool isShadow() { return shadowId != Cluster::ShadowConnectionId(0,0); }
-    
     // Functions to intercept to Connection extension points.
     void received(framing::AMQFrame&);
     void closed();
     bool doOutput();
+    void activateOutput();
+
+    void sendDoOutput();
 
     boost::function<void (framing::AMQFrame&)> receivedNext;
     boost::function<void ()> closedNext;
-    boost::function<bool ()> doOutputNext;
 
     boost::intrusive_ptr<broker::Connection> connection;
     Cluster& cluster;
     NullConnectionHandler discardHandler;
     bool isClosed;
     Cluster::ShadowConnectionId shadowId;
+    WriteEstimate writeEstimate;
+    OutputInterceptor output;
 };
 
 }} // namespace qpid::cluster
 
-#endif  /*!QPID_CLUSTER_CONNECTIONPLUGIN_H*/
-
+#endif  /*!QPID_CLUSTER_CONNECTIONINTERCEPTOR_H*/

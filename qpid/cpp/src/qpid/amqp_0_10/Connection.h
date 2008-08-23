@@ -26,7 +26,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/broker/Connection.h"
 #include <boost/intrusive_ptr.hpp>
-#include <queue>
+#include <deque>
 #include <memory>
 
 namespace qpid {
@@ -36,7 +36,9 @@ namespace amqp_0_10 {
 class Connection  : public sys::ConnectionCodec,
                     public sys::ConnectionOutputHandler
 {
-    std::queue<framing::AMQFrame> frameQueue;
+    typedef std::deque<framing::AMQFrame> FrameQueue;
+
+    FrameQueue frameQueue;
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
@@ -44,7 +46,8 @@ class Connection  : public sys::ConnectionCodec,
     std::string identifier;
     bool initialized;
     bool isClient;
-    
+    size_t buffered;
+
   public:
     Connection(sys::OutputControl&, broker::Broker&, const std::string& id, bool isClient = false);
     size_t decode(const char* buffer, size_t size);
@@ -56,6 +59,7 @@ class Connection  : public sys::ConnectionCodec,
     void close();               // closing from this end.
     void send(framing::AMQFrame&);
     framing::ProtocolVersion getVersion() const;
+    size_t getBuffered() const;
 };
 
 }} // namespace qpid::amqp_0_10

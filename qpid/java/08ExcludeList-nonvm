@@ -25,3 +25,6 @@ org.apache.qpid.test.client.failover.FailoverTest#*
 // QPID-1225 : Temporary remove this test until the problem has been addressed
 org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 
+// InVM Broker tests
+org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+

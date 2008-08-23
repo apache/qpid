@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +36,7 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +51,8 @@ public class QpidTestCase extends TestCase
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
     protected long RECEIVE_TIMEOUT = 1000l;
+
+    private Map<String, String> _setProperties = new HashMap<String, String>();
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -130,6 +134,8 @@ public class QpidTestCase extends TestCase
     private static final String VERSION_010 = "0-10";
 
     private static final String QPID_HOME = "QPID_HOME";
+
+    protected int DEFAULT_VM_PORT = 1;
 
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
@@ -282,12 +288,26 @@ public class QpidTestCase extends TestCase
         }
     }
 
+    public void startBroker(int port, ConfigurationFileApplicationRegistry config) throws Exception
+    {
+        ApplicationRegistry.initialise(config, port);
+        startBroker(port);
+    }
+
     public void startBroker() throws Exception
+    {
+        startBroker(0);
+    }
+
+    public void startBroker(int port) throws Exception
     {
         if (_broker.equals(VM))
         {
+            //If we are starting on port 0 use the default VM_PORT
+            port = port == 0 ? DEFAULT_VM_PORT : port;
+
             // create an in_VM broker
-            TransportConnection.createVMBroker(1);
+            TransportConnection.createVMBroker(port);
         }
         else if (!_broker.equals(EXTERNAL))
         {
@@ -362,6 +382,11 @@ public class QpidTestCase extends TestCase
 
     public void stopBroker() throws Exception
     {
+        stopBroker(0);
+    }
+
+    public void stopBroker(int port) throws Exception
+    {
         _logger.info("stopping broker: " + _broker);
         if (_brokerProcess != null)
         {
@@ -372,10 +397,38 @@ public class QpidTestCase extends TestCase
         }
         else if (_broker.equals(VM))
         {
-            TransportConnection.killAllVMBrokers();
-            ApplicationRegistry.removeAll();
+            port = port == 0 ? DEFAULT_VM_PORT : port;
+
+            TransportConnection.killVMBroker(port);
+            ApplicationRegistry.remove(port);
         }
         _brokerStarted = false;
+    }
+
+    protected void setSystemProperty(String property, String value)
+    {
+        if (!_setProperties.containsKey(property))
+        {
+            _setProperties.put(property, System.getProperty(property));
+        }
+
+        System.setProperty(property, value);
+    }
+
+    protected void revertSystemProperties()
+    {
+        for (String key : _setProperties.keySet())
+        {
+            String value = _setProperties.get(key);
+            if (value != null)
+            {
+                System.setProperty(key, value);
+            }
+            else
+            {
+                System.clearProperty(key);
+            }
+        }
     }
 
     /**
@@ -395,8 +448,13 @@ public class QpidTestCase extends TestCase
 
     public void restartBroker() throws Exception
     {
-        stopBroker();
-        startBroker();
+        restartBroker(0);
+    }
+
+    public void restartBroker(int port) throws Exception
+    {
+        stopBroker(port);
+        startBroker(port);
     }
 
     /**
@@ -508,6 +566,8 @@ public class QpidTestCase extends TestCase
                 c.close();
             }
         }
+
+        revertSystemProperties();
     }
 
 }
