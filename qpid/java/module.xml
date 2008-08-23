@@ -279,7 +279,9 @@
   </target>
 
   <target name="jar.nomanifest" depends="compile" unless="module.manifest">
-    <jar destfile="${module.jar}" basedir="${module.classes}"/>
+    <jar destfile="${module.jar}" basedir="${module.classes}">
+       <metainf dir="${project.root}/resources/" />
+    </jar>
   </target>
 
   <target name="jar" depends="jar.manifest,jar.nomanifest" description="create jar"/>
