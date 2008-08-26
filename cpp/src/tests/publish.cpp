@@ -34,9 +34,9 @@
 using namespace qpid;
 using namespace qpid::client;
 using namespace qpid::sys;
-using std::string;
+using namespace std;
 
-typedef std::vector<std::string> StringSet;
+typedef vector<string> StringSet;
 
 struct Args : public qpid::TestOptions {
     uint size;
@@ -44,15 +44,18 @@ struct Args : public qpid::TestOptions {
     bool durable;
     string destination;
     string routingKey;
+    bool summary;
+    bool id;
 
-    Args() : size(256), count(1000), durable(true)
-    {
+    Args() : size(256), count(1000), durable(true), routingKey("publish-consume"), summary(false), id(false) {
         addOptions()
             ("size", optValue(size, "N"), "message size")
             ("count", optValue(count, "N"), "number of messages to publish")
             ("durable", optValue(durable, "yes|no"), "use durable messages")
             ("destination", optValue(destination, "<exchange name>"), "destination to publish to")
-            ("routing-key", optValue(routingKey, "<key>"), "routing key to publish with");
+            ("routing-key", optValue(routingKey, "<key>"), "routing key to publish with")
+            ("summary,s", optValue(summary), "Output only the rate.")
+            ("id", optValue(id), "Add unique correlation ID");
     }
 };
 
@@ -69,26 +72,35 @@ struct Client
         session = connection.newSession();
     }
 
-    std::string id(uint i)
-    {
-        std::stringstream s;
-        s << "msg" << i;
-        return s.str();
+    // Cheap hex calculation, avoid expensive ostrstream and string
+    // creation to generate correlation ids in message loop.
+    char hex(char i) { return i<10 ? '0'+i : 'A'+i-10; }
+    void hex(char i, string& s) { 
+        s[0]=hex(i>>24); s[1]=hex(i>>16); s[2]=hex(i>>8); s[3]=i;
     }
 
     void publish()
     {
+        AbsTime begin=now();
         Message msg(string(opts.size, 'X'), opts.routingKey);
+        string correlationId = "0000";
         if (opts.durable)
             msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
         
         for (uint i = 0; i < opts.count; i++) {
-            msg.getMessageProperties().setCorrelationId(id(i + 1));
+            if (opts.id) {
+                hex(i+1, correlationId);
+                msg.getMessageProperties().setCorrelationId(correlationId);
+            }
             session.messageTransfer(arg::destination=opts.destination,
                                     arg::content=msg,
                                     arg::acceptMode=1);
         }
         session.sync();
+        AbsTime end=now();
+        double secs(double(Duration(begin,end))/TIME_SEC);
+        if (opts.summary) cout << opts.count/secs << endl;
+        else cout << "Time: " << secs << "s Rate: " << opts.count/secs << endl;
     }
 
     ~Client() 
@@ -96,8 +108,8 @@ struct Client
         try{
             session.close();
             connection.close();
-        } catch(const std::exception& e) {
-            std::cout << e.what() << std::endl;
+        } catch(const exception& e) {
+            cout << e.what() << endl;
         }
     }
 };
@@ -109,8 +121,8 @@ int main(int argc, char** argv)
         Client client;
         client.publish();
         return 0;
-    } catch(const std::exception& e) {
-	std::cout << e.what() << std::endl;
+    } catch(const exception& e) {
+	cout << e.what() << endl;
     }
     return 1;
 }
