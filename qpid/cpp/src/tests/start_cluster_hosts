@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Start a cluster of brokers on local host, put the list of host port addresses
+# in cluster.ports
+#
+# Arguments: [-k] [-p port] HOST [HOST...]
+#  -p port to start broker on, can be 0. Actual ports recorded in cluster.addr.
+#  -k kill any qpidd processes owned by this user before starting.
+# Start a broker on each named host. Name a host twice to start multiple brokers.
+#
+# You must be able to ssh to each host and have primary group ais.
+# qpidd must exist in the same directory `pwd`/.. as on this host.
+#
+
+ADDR_FILE=cluster.addr
+
+while getopts "kp:" ARG ; do
+    case $ARG in
+	k) KILL=yes ; rm -f $ADDR_FILE ;;
+	p) PORT="$OPTARG" ;;
+	*) echo "Error parsing options: $ARG"; exit 1 ;;
+    esac
+done
+shift `expr $OPTIND - 1`
+test -n "$PORT" && PORTOPT="-p $PORT"
+test -n $KILL && KILL="../qpidd -q $PORTOPT ;"
+
+test -z "$*" && { echo Must specify at least one host; exit 1; }
+test -f $ADDR_FILE && { echo "$ADDR_FILE file already exists" ; exit 1; }
+CLUSTER=$USER			# User name is cluster name.
+OPTS="-d $PORTOPT --load-module ../.libs/libqpidcluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no --log-output=syslog"
+
+num=0
+for h in $*; do
+    num=`expr $num + 1`	      # Give a unique log prefix to each node.
+    cmd="cd $PWD; $KILL ../qpidd $OPTS --log-prefix $num.$h"
+    out=`ssh $h "$cmd"` || { echo $out ; exit 1; }
+    if [ "$PORT" = 0 ] ; then p=$out; else p=$PORT; fi
+    echo "$h $p" | tee -a $ADDR_FILE
+done
+
