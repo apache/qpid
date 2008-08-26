@@ -99,6 +99,10 @@ check_PROGRAMS+=latencytest
 latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
 latencytest_LDADD=$(lib_client) 
 
+check_PROGRAMS+=echotest
+echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
+echotest_LDADD=$(lib_client) 
+
 check_PROGRAMS+=client_test
 client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
 client_test_LDADD=$(lib_client) 
