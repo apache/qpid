@@ -119,7 +119,7 @@ void Listener::received(Message& response)
         async(session).messageTransfer(arg::content=request);
     } else {
         subscriptions.cancel(queue);
-        if (summary) cout << min << " " << max << " " << total/limit << endl;
+        if (summary) cout << min << "\t" << max << "\t" << total/limit << endl;
         else cout << "min: " << min << " max: " <<  max << " average: " << total/limit << endl;
     }
 }

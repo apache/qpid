@@ -1,0 +1,43 @@
+#!/bin/sh
+# A basic "benchmark" to generate performacne samples of throughput and latency.
+# Must be run in the qpid src/tests build directory.
+# 
+SAMPLES=${SAMPLES:-10}
+CLIENTS=${CLIENTS:-mrg8}		# Client hosts
+CLIENTS=($CLIENTS)		# Array
+COUNT=${COUNT:-10000}
+ECHO=${ECHO:-100}
+BROKER=${BROKER:-mrg7}
+
+srcdir=`dirname $0`
+ADDPATH=$PWD:$PWD/../../../src/tests
+PATH=$ADDPATH:$PATH
+
+trap "rm -f $FILES" EXIT
+
+dosamples() {
+    FILE=`mktemp`
+    FILES="$FILES $FILE"
+    TABS=`echo "$HEADING" | sed s'/[^	]//g'`
+    {
+	echo "\"$*\"$TABS"
+	echo "$HEADING" 
+	for (( i=0; i<$SAMPLES; ++i)) ; do echo "`$@`" ; done
+	echo
+    } | tee $FILE
+}
+
+HEADING="pub	sub	total	Mb"
+dosamples perfdist -b $BROKER --count $COUNT -s -- ${CLIENTS[*]}
+HEADING="pub"
+dosamples ssh ${CLIENTS[0]} $PWD/publish --routing-key perftest0 -s -b $BROKER --count $COUNT
+HEADING="sub"
+dosamples ssh ${CLIENTS[0]} $PWD/consume --queue perftest0 -s -b $BROKER --count $COUNT
+HEADING="min	max	avg"
+dosamples echotest --count $ECHO -s
+HEADING="pub	sub	total	Mb"
+dosamples perfdist -b $BROKER --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]}
+echo
+echo "Tab separated spreadsheet:"
+echo
+paste $FILES | tee benchmark.tab
