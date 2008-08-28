@@ -33,16 +33,24 @@ while test $# -gt 0; do
 	--publish|--subscribe|--setup|--control) usage "Don't pass perftest action flags: $1" ;;
 	--npubs) collect $1 $2; NPUBS=$2; shift 2 ;;
 	--nsubs) collect $1 $2; NSUBS=$2; shift 2 ;;
+	-s|--summary) collect $1; QUIET=yes; shift 1 ;;
 	--) COLLECT=HOSTS; shift ;; 
 	*) collect $1; shift ;;
     esac
 done
+
 if [ -z "$HOSTS" ]; then usage "No hosts listed after --"; fi
-PATH="`dirname $0`:$PATH"	
-PERFTEST="`which perftest` $ARGS" || usage "Can't find perftest executable"
+ADDPATH="$PWD"
+PATH=$ADDPATH:$PATH
+which perftest>/dev/null || exit 1
+PERFTEST="perftest $ARGS"
 
 HOSTS=($HOSTS)
-start() { ssh ${HOSTS[i % ${#HOSTS[*]}]} $PERFTEST $*& }
+start() {
+    HOST=${HOSTS[i % ${#HOSTS[*]}]}
+    test -z "$QUIET" && echo "Client $i on $HOST $*"
+    ssh -fT $HOST "PATH=$ADDPATH:\$PATH" $PERFTEST "$@"
+}
 
 $PERFTEST --setup
 for (( i=0 ; i < $NPUBS ; ++i)); do start --publish; done

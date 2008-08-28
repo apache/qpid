@@ -16,7 +16,6 @@ AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 AC_PREREQ(2.59)
 
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([qpidc.spec.in])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
@@ -321,7 +320,6 @@ fi
 
 # Files to generate	
 AC_CONFIG_FILES([
-  qpidc.spec
   Makefile
   examples/Makefile
   examples/direct/Makefile
