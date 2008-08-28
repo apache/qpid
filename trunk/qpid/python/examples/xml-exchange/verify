@@ -1,0 +1,3 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+clients ./declare_queues.py ./xml_producer.py ./xml_consumer.py
+outputs ./declare_queues.py.out ./xml_producer.py.out ./xml_consumer.py.out

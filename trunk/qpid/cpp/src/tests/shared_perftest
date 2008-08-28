@@ -1,0 +1,2 @@
+#!/bin/sh
+exec `dirname $0`/run_perftest 100000 --mode shared  --npubs 16 --nsubs 16

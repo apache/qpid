@@ -1,0 +1,64 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Apache.Qpid.Sasl</RootNamespace>
+    <AssemblyName>Apache.Qpid.Sasl</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\net-2.0\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Callbacks.cs" />
+    <Compile Include="Configuration\SaslConfiguration.cs" />
+    <Compile Include="Configuration\SaslConfigurationSectionHandler.cs" />
+    <Compile Include="MD5HMAC.cs" />
+    <Compile Include="Mechanisms\ExternalSaslClient.cs" />
+    <Compile Include="SaslException.cs" />
+    <Compile Include="Mechanisms\AnonymousSaslClient.cs" />
+    <Compile Include="Mechanisms\DigestSaslClient.cs" />
+    <Compile Include="Sasl.cs" />
+    <Compile Include="DefaultClientFactory.cs" />
+    <Compile Include="ISaslCallbackHandler.cs" />
+    <Compile Include="ISaslClientFactory.cs" />
+    <Compile Include="Mechanisms\CramMD5SaslClient.cs" />
+    <Compile Include="SaslProperties.cs" />
+    <Compile Include="ISaslClient.cs" />
+    <Compile Include="Mechanisms\PlainSaslClient.cs" />
+    <Compile Include="SaslClient.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

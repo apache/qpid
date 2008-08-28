@@ -1,0 +1,15 @@
+#!/bin/bash
+cd src
+echo "--------- Building gentools ----------"
+echo "Clearing out old build files..."
+for f in org/apache/qpid/gentools/*.class; do
+	if [ -e $f ]; then
+		rm $f
+    fi
+done
+echo "Compiling..."
+javac -source=1.5 -target=1.5 org/apache/qpid/gentools/*.java
+echo "Done. Try it out..."
+java org.apache.qpid.gentools.Main
+echo "--------- Building gentools completed ----------"
+cd ..

@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Library names (without path or .so) and CppUnit test paths can be
+# specified on the command line or in env var UNIT_TESTS. For example:
+#
+# Selected test classes:
+# ./run-unit-tests ValueTest ClientChannelTest
+# 
+# Individual test method
+# ./run-unit-tests ValueTest :ValueTest::testStringValueEquals
+# 
+# Build and run selected tests:
+# make check TESTS=run-unit-tests UNIT_TESTS=ClientChannelTest
+#
+
+for u in $* $UNIT_TESTS ; do
+    case $u in
+	:*) TEST_ARGS="$TEST_ARGS $u" ;; # A test path.
+	*) TEST_ARGS="$TEST_ARGS .libs/$u.so" ;; # A test library.
+    esac
+done
+test -z "$TEST_ARGS" && TEST_ARGS=".libs/*Test.so"
+
+test -z "$srcdir" && srcdir=.
+
+# libdlclose_noop prevents unloading symbols needed for valgrind output.
+export LD_PRELOAD=.libs/libdlclose_noop.so
+source $srcdir/run_test DllPlugInTester -c -b $TEST_ARGS

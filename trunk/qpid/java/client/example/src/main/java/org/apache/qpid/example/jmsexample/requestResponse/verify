@@ -1,0 +1,15 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+cpp=$CPP/pub-sub
+
+client_java(){
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Client
+}
+
+server_java(){
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Server
+}
+
+background "can receive messages" server_java
+clients client_java
+kill %%
+outputs "client_java.out | remove_uuid" "server_java.out | remove_uuid"

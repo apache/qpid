@@ -1,0 +1,69 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Apache.Qpid.Messaging</RootNamespace>
+    <AssemblyName>Apache.Qpid.Messaging</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\net-2.0\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\net-2.0\release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AcknowledgeMode.cs" />
+    <Compile Include="ChannelLimitReachedException.cs" />
+    <Compile Include="DeliveryMode.cs" />
+    <Compile Include="ExchangeClassConstants.cs" />
+    <Compile Include="ExchangeNameDefaults.cs" />
+    <Compile Include="IBytesMessage.cs" />
+    <Compile Include="IConnection.cs" />
+    <Compile Include="IConnectionFactory.cs" />
+    <Compile Include="IConnectionListener.cs" />
+    <Compile Include="IFieldTable.cs" />
+    <Compile Include="IHeaders.cs" />
+    <Compile Include="IMessage.cs" />
+    <Compile Include="IMessageConsumer.cs" />
+    <Compile Include="IMessagePublisher.cs" />
+    <Compile Include="IChannel.cs" />
+    <Compile Include="ITextMessage.cs" />
+    <Compile Include="MessageConsumerBuilder.cs" />
+    <Compile Include="MessageNotReadableException.cs" />
+    <Compile Include="MessageNotWritableException.cs" />
+    <Compile Include="MessagePublisherBuilder.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QpidException.cs" />
+    <Compile Include="ResourceAllocationException.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

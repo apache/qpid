@@ -1,0 +1,3 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+clients ./declare_queues.py ./direct_producer.py ./direct_consumer.py
+outputs ./declare_queues.py.out ./direct_producer.py.out ./direct_consumer.py.out

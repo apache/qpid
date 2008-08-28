@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# qpidd        Startup script for the Qpid messaging daemon.
+#
+
+### BEGIN INIT INFO
+# Provides: qpidd
+# Required-Start: $local_fs
+# Required-Stop: $local_fs
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: start or stop qpidd
+# Description: Qpidd is an AMQP broker. It receives, stores, routes and	forwards messages using the AMQP protcol.
+### END INIT INFO
+
+# chkconfig: - 85 15
+# description: Qpidd is an AMQP broker. It receives, stores, routes and forwards messages using the AMQP protcol.
+# processname: qpidd
+
+prog=qpidd
+lockfile=/var/lock/subsys/$prog
+pidfile=/var/run/qpidd.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/$prog ] ; then
+	. /etc/sysconfig/$prog
+fi
+
+RETVAL=0
+
+start() {
+	echo -n $"Starting Qpid AMQP daemon: "
+	daemon --pidfile $pidfile --check $prog --user qpidd /usr/sbin/$prog --daemon --pid-dir /var/run/qpidd --data-dir /var/lib/qpidd $QPIDD_OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && touch $lockfile
+	if [ $RETVAL = 0 ]; then
+	    touch $pidfile
+	    chown qpidd.qpidd $pidfile
+	    runuser -s /bin/sh qpidd -c "/usr/sbin/$prog --check --pid-dir /var/run/qpidd > $pidfile"
+	fi
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping Qpid AMQP daemon: "
+	killproc -p ${pidfile} $prog
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+
+reload() {
+	echo 1>&2 $"$0: reload not supported"
+	exit 3
+}
+
+restart() {
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+  start|stop|restart|reload)
+	$1
+	;;
+  status)
+	status $prog
+	RETVAL=$?
+	;;
+  force-reload)
+	restart
+	;;
+  try-restart)
+	[ -e $lockfile ] && restart || :
+	;;
+  *)
+	echo 1>&2 $"Usage: $0 {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

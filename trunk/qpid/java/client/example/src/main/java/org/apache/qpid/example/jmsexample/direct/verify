@@ -1,0 +1,15 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+# The JMS producer doesn't create qeueues so utilising the c++ declare_queues
+cpp=$CPP/direct
+
+direct_consumer_java()
+{
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Consumer
+}
+
+direct_producer_java(){
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
+}
+
+clients $cpp/declare_queues direct_producer_java direct_consumer_java
+outputs $cpp/declare_queues.out ./direct_producer_java.out ./direct_consumer_java.out
