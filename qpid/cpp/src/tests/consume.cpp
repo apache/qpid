@@ -34,23 +34,26 @@
 using namespace qpid;
 using namespace qpid::client;
 using namespace qpid::sys;
-using std::string;
+using namespace std;
 
-typedef std::vector<std::string> StringSet;
+typedef vector<string> StringSet;
 
 struct Args : public qpid::TestOptions {
     uint count;
     uint ack;
     string queue;
     bool declare;
+    bool summary;
     
-    Args() : count(0), ack(1)
+    Args() : count(1000), ack(0), queue("publish-consume"),
+             declare(false), summary(false)
     {
         addOptions()
             ("count", optValue(count, "N"), "number of messages to publish")
             ("ack-frequency", optValue(ack, "N"), "ack every N messages (0 means use no-ack mode)")
             ("queue", optValue(queue, "<queue name>"), "queue to consume from")
-            ("declare", optValue(declare), "declare the queue");
+            ("declare", optValue(declare), "declare the queue")
+            ("s,summary", optValue(summary), "Print undecorated rate.");
     }
 };
 
@@ -78,12 +81,17 @@ struct Client
                             false);
         subs.subscribe(lq, opts.queue);
         Message msg;
+        AbsTime begin=now();        
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
             QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
         }
         if (opts.ack != 0)
             subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
+        AbsTime end=now();
+        double secs(double(Duration(begin,end))/TIME_SEC);
+        if (opts.summary) cout << opts.count/secs << endl;
+        else cout << "Time: " << secs << "s Rate: " << opts.count/secs << endl;
     }
 
     ~Client() 
@@ -91,8 +99,8 @@ struct Client
         try{
             session.close();
             connection.close();
-        } catch(const std::exception& e) {
-            std::cout << e.what() << std::endl;
+        } catch(const exception& e) {
+            cout << e.what() << endl;
         }
     }
 };
@@ -104,8 +112,8 @@ int main(int argc, char** argv)
         Client client;
         client.consume();
         return 0;
-    } catch(const std::exception& e) {
-	std::cout << e.what() << std::endl;
+    } catch(const exception& e) {
+	cout << e.what() << endl;
     }
     return 1;
 }

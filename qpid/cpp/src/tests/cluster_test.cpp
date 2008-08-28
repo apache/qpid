@@ -68,6 +68,10 @@ struct ClusterFixture : public vector<uint16_t>  {
     void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
     void add();
     void setup();
+    void kill(size_t n) {
+        if (n) forkedBrokers[n-1]->stop();
+        else broker0.shutdown();
+    }
 };
 
 ClusterFixture::ClusterFixture(size_t n) : name(Uuid(true).str()) {
@@ -126,41 +130,6 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     o << "}";
     return o;
 }
-
-struct Callback : public Cpg::Handler {
-    Callback(const string group_) : group(group_) {}
-    string group;
-    vector<string> delivered;
-    vector<int> configChanges;
-
-    void deliver (
-        cpg_handle_t /*handle*/,
-        struct cpg_name *grp,
-        uint32_t /*nodeid*/,
-        uint32_t /*pid*/,
-        void* msg,
-        int msg_len)
-    {
-        BOOST_CHECK_EQUAL(group, Cpg::str(*grp));
-        delivered.push_back(string((char*)msg,msg_len));
-    }
-
-    void configChange(
-        cpg_handle_t /*handle*/,
-        struct cpg_name *grp,
-        struct cpg_address */*members*/, int nMembers,
-        struct cpg_address */*left*/, int nLeft,
-        struct cpg_address */*joined*/, int nJoined
-    )
-    {
-        BOOST_CHECK_EQUAL(group, Cpg::str(*grp));
-        configChanges.push_back(nMembers);
-        BOOST_MESSAGE("configChange: "<<
-                      nLeft<<" left "<<
-                      nJoined<<" joined "<<
-                      nMembers<<" members.");
-    }
-};
 
 QPID_AUTO_TEST_CASE(testForkedBroker) {
     // Verify the ForkedBroker works as expected.
