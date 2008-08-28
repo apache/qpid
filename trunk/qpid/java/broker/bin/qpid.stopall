@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# qpid.stopall script
+# 
+# Script attempts to stop all PROGRAMs running under the current user 
+#  Utilises qpid.stop to perform the actual stopping
+#
+
+PROGRAM="DQPID"
+
+#
+# grep ps for instances of $PROGRAM and collect PIDs
+#
+lookup()
+{
+#pids=`ps o pid,command  | grep $PROGRAM | grep -v grep | cut -d ' ' -f 1`
+pids=`ps -ef |grep $USER | grep $PROGRAM | grep -v grep | awk '{print $2}'`
+result=`echo -n $pids | wc -w`
+}
+
+
+#
+# Show the PS output for given set of pids
+#
+showPids()
+{
+ps -o user,pid,args -p $pids
+}
+
+
+#
+# Main Run
+#
+
+lookup
+
+if [[ $[$result] == 0 ]] ; then
+ echo "No Qpid Brokers found running under user '$USER'"
+ exit 0
+fi
+
+for pid in $pids ; do
+
+qpid.stop $pid
+
+done
+
+# Check we have quit all
+lookup
+
+if [[ $[$result] == 0 ]] ; then
+ echo "All Qpid brokers successfully quit"
+else
+ echo "Some brokers were not quit"
+ showPids $pids
+fi

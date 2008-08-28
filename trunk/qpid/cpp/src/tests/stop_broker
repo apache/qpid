@@ -1,0 +1,21 @@
+#!/bin/sh
+# Stop the broker, check for errors.
+# 
+QPID_PORT=`cat qpidd.port`
+export QPID_PORT
+rm -f qpidd.port
+
+../qpidd --quit || ERROR=1
+
+# Check qpidd.log.
+egrep 'warning\|error\|critical' qpidd.log && {
+    echo "WARNING: Suspicious broker log entries in qpidd.log, above."
+}
+
+# Check valgrind log.
+if test -n "$VALGRIND"; then
+    . `dirname $0`/vg_check $VG_LOG*
+    vg_check qpidd.vglog* || ERROR=1
+fi
+
+exit $ERROR

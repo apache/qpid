@@ -1,0 +1,5 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+background "Request server running" ./server.py
+clients ./client.py
+kill %% 			# Must kill the server.
+outputs "./client.py.out | remove_uuid" " server.py.out | remove_uuid"

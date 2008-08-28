@@ -1,0 +1,14 @@
+Apache Incubator Qpid Ruby M3 Release Notes
+---------------------------------------------
+
+The Qpid M3 release of the ruby client contains support the for AMQP
+0-8 specification (as well as support for the non-WIP portion of the
+0-9 specification). See:
+
+http://jira.amqp.org/confluence/display/AMQP/Download
+
+For full details of Qpid capabilities, as they currently stand, see
+our project page at:
+
+http://cwiki.apache.org/confluence/display/qpid/Index
+

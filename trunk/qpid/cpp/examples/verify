@@ -1,0 +1,86 @@
+#!/bin/sh
+# Driver script to verify installed examples (also used for build tests.)
+#
+# Usage: verify example_dir [ example_dir ...]
+# Where each example_dir must contain a verify sub-script to include.
+#
+# If $QPIDD is set, run a private QPIDD and use it.
+# If $QPID_HOST or $QPID_PORT are set, use them to connect.
+#
+
+QPID_DATA_DIR=
+export QPID_DATA_DIR
+
+cleanup() {
+    test -n "$QPIDD" &&  $QPIDD -q # Private broker
+    kill %% > /dev/null 2>&1	# Leftover background jobs
+}
+
+trap cleanup EXIT
+
+ARGS="${QPID_HOST:-localhost} $QPID_PORT"
+
+outfile() {
+    file=$1
+    while [ -f $file.out ]; do file="${file}X"; done
+    echo $file.out
+ }
+
+fail() { test -n "$*" && echo $* 1>&2 ; FAIL=1; return 1; }
+
+client() { "$@" $ARGS > `outfile $*` || fail; }
+
+clients() { for cmd in "$@"; do client $cmd; done; }
+
+waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; } 
+
+background() {
+    pattern=$1; shift
+    out=`outfile $*`
+    eval "$* $ARGS > $out &" || { fail; return 1; }
+    waitfor $out "$pattern"
+}
+
+name() {
+    for x in $*; do name="$name `basename $x`"; done
+    echo $name;
+}
+
+outputs() {
+    wait 2> /dev/null		# Wait for all backgroud processes to complete
+    rm -f $script.out
+    for f in "$@"; do
+	{ echo "==== `name $f`"; eval "cat $f"; } >> $script.out || fail
+    done
+}
+
+verify() {
+    FAIL=
+    if [ -d $1 ]; then dir=$1; script=verify;
+    else dir=`dirname $1`; script=`basename $1`; fi
+    cd $dir || return 1
+    rm -f *.out
+    { source ./$script && diff -ac $script.out $script.in ; } || fail
+    test -z "$FAIL" && rm -f *.out
+    return $FAIL
+}
+
+HEX="[a-fA-F0-9]"
+remove_uuid() {
+    sed "s/$HEX\{8\}-$HEX\{4\}-$HEX\{4\}-$HEX\{4\}-$HEX\{12\}//g" $*
+}
+remove_uuid64() {
+    sed 's/[-A-Za-z0-9_]\{22\}==//g' $*
+}
+
+# Start private broker if QPIDD is set.
+if [ -n "$QPIDD" ] ; then
+    export QPID_PORT=`$QPIDD -dp0` || { echo "Cannot start $QPIDD" ; exit 1; }
+    trap "$QPIDD -q" EXIT
+fi
+
+for example in "$@"; do
+    echo "== $example "
+    if ( verify $example; ) then echo "PASS";  else echo "FAIL"; RET=1; fi
+     done
+exit $RET

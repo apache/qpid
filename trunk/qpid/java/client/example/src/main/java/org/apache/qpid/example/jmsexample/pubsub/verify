@@ -1,0 +1,14 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+cpp=$CPP/pub-sub
+
+topic_listener_java(){
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Listener
+}
+
+topic_publisher_java(){
+java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.pubsub.Publisher
+}
+
+background "can receive messages" topic_listener_java
+clients topic_publisher_java
+outputs ./topic_publisher_java.out "topic_listener_java.out | remove_uuid | sort"
