@@ -486,7 +486,8 @@ public class ConnectionURLTest extends TestCase
             assertNotNull(curl.getBrokerDetails(0));
             assertEquals(BrokerDetails.SOCKET, curl.getBrokerDetails(0).getTransport());
             assertEquals("VM-Unique-socketID", curl.getBrokerDetails(0).getHost());
-            assertEquals("URL does not toString as expected", url, curl.toString());
+            assertEquals("URL does not toString as expected",
+                         url.replace(":guest", ":********"), curl.toString());
         }
         catch (URLSyntaxException e)
         {
