@@ -67,4 +67,4 @@ org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFil
 org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 // InVM Broker tests
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
-
+org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
