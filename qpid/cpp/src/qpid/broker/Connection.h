@@ -44,7 +44,6 @@
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Connection.h"
-#include "qpid/Plugin.h"
 #include "qpid/RefCounted.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
@@ -56,7 +55,6 @@ class LinkRegistry;
 
 class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionState,
-                   public Plugin::Target,
                    public RefCounted
 {
   public:
@@ -95,18 +93,9 @@ class Connection : public sys::ConnectionInputHandler,
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
 
-    // Extension points: allow plugins to insert additional functionality.
-    boost::function<void(framing::AMQFrame&)> receivedFn;
-    boost::function<void ()> closedFn;
-    boost::function<bool ()> doOutputFn;
-
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
-
-    void receivedImpl(framing::AMQFrame& frame);
-    void closedImpl();
-    bool doOutputImpl();
 
     ChannelMap channels;
     framing::AMQP_ClientProxy::Connection* client;

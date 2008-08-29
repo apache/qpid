@@ -16,10 +16,13 @@
  *
  */
 
-#include "ConnectionInterceptor.h"
+#include "Connection.h"
+#include "ConnectionCodec.h"
+
+#include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/ConnectionCodec.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/cluster/Cluster.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
@@ -63,35 +66,24 @@ struct ClusterPlugin : public Plugin {
     ClusterValues values;
     ClusterOptions options;
     boost::intrusive_ptr<Cluster> cluster;
+    boost::scoped_ptr<ConnectionCodec::Factory> factory;
 
     ClusterPlugin() : options(values) {}
 
     Options* getOptions() { return &options; }
 
-    void init(broker::Broker& b) {
-        if (values.name.empty()) return;  // Only if --cluster-name option was specified.
+    void initialize(Plugin::Target& target) {
+        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
+        if (!broker || values.name.empty()) return;  // Only if --cluster-name option was specified.
         if (cluster) throw Exception("Cluster plugin cannot be initialized twice in one process.");
-        cluster = new Cluster(values.name, values.getUrl(b.getPort()), b);
-        b.addFinalizer(boost::bind(&ClusterPlugin::shutdown, this));
-    }
-
-    template <class T> void init(T& t) {
-        if (cluster) cluster->initialize(t);
-    }
-    
-    template <class T> bool init(Plugin::Target& target) {
-        T* t = dynamic_cast<T*>(&target);
-        if (t) init(*t);
-        return t;
+        cluster = new Cluster(values.name, values.getUrl(broker->getPort()), *broker);
+        broker->addFinalizer(boost::bind(&ClusterPlugin::shutdown, this));
+        broker->setConnectionFactory(
+            boost::shared_ptr<sys::ConnectionCodec::Factory>(
+                new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
     }
 
     void earlyInitialize(Plugin::Target&) {}
-
-    void initialize(Plugin::Target& target) {
-        if (init<broker::Broker>(target)) return;
-        if (!cluster) return;   // Remaining plugins only valid if cluster initialized.
-        if (init<broker::Connection>(target)) return;
-    }
 
     void shutdown() { cluster = 0; }
 };

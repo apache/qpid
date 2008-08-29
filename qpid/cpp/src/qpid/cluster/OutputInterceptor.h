@@ -31,14 +31,14 @@ namespace qpid {
 namespace framing { class AMQFrame; }
 namespace cluster {
 
-class ConnectionInterceptor;
+class Connection;
 
 /**
  * Interceptor for connection OutputHandler, manages outgoing message replication.
  */
 class OutputInterceptor : public sys::ConnectionOutputHandler {
   public:
-    OutputInterceptor(ConnectionInterceptor& p, sys::ConnectionOutputHandler& h);
+    OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h);
 
     // sys::ConnectionOutputHandler functions
     void send(framing::AMQFrame& f);
@@ -51,9 +51,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
     // Intercept doOutput requests on Connection.
     bool doOutput();
 
-    boost::function<bool ()> doOutputNext;
-    
-    ConnectionInterceptor& parent;
+    cluster::Connection& parent;
     
   private:
     typedef sys::Mutex::ScopedLock Locker;

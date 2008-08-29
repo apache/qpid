@@ -53,12 +53,12 @@ class ForkedBroker {
     }
 
     ~ForkedBroker() {
-        try { stop(); } catch(const std::exception& e) {
-            QPID_LOG(error, QPID_MSG("Stopping forked broker: " << e.what()));
+        try { kill(); } catch(const std::exception& e) {
+            QPID_LOG(error, QPID_MSG("Killing forked broker: " << e.what()));
         }
     }
 
-    void stop() {
+    void kill() {
         using qpid::ErrnoException;
         if (pid == 0) return;
         if (::kill(pid, SIGINT) < 0) throw ErrnoException("kill failed");
