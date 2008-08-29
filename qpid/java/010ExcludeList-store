@@ -60,3 +60,4 @@ org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueS
 
 // InVM Broker tests
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
