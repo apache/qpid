@@ -19,9 +19,10 @@
  *
  */
 #include "OutputInterceptor.h"
-#include "ConnectionInterceptor.h"
-#include "qpid/framing/ClusterConnectionDoOutputBody.h"
+#include "Connection.h"
+#include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/log/Statement.h"
 #include <boost/current_function.hpp>
 
 
@@ -30,7 +31,7 @@ namespace cluster {
 
 using namespace framing;
 
-OutputInterceptor::OutputInterceptor(ConnectionInterceptor& p, sys::ConnectionOutputHandler& h)
+OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h)
     : parent(p), next(h), sent(), moreOutput(), doingOutput()
 {}
 
@@ -57,8 +58,6 @@ bool  OutputInterceptor::doOutput() {
 // which stocks up the write buffers with data.
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
-    if (parent.getClosed()) return;
-
     Locker l(lock);
     size_t buf = next.getBuffered();
     if (parent.isLocal())
@@ -68,7 +67,7 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
     sent = 0;
     do {
         sys::Mutex::ScopedUnlock u(lock);
-        moreOutput = doOutputNext(); // Calls send()
+        moreOutput = parent.getBrokerConnection().doOutput();
     } while (sent < requested && moreOutput);
     sent += buf;                // Include buffered data in the sent total.
 
@@ -88,8 +87,8 @@ void OutputInterceptor::startDoOutput() {
 // Send a doOutput request if one is not already in flight.
 void OutputInterceptor::sendDoOutput() {
     // Call with lock held.
-    if (parent.isShadow() || parent.getClosed())
-        return;
+    // FIXME aconway 2008-08-28: used to  have || parent.getClosed())
+    if (!parent.isLocal()) return;
 
     doingOutput = true;
     size_t request = writeEstimate.sending(getBuffered());
@@ -98,8 +97,8 @@ void OutputInterceptor::sendDoOutput() {
     // Send it anyway to keep the doOutput chain going until we are sure there's no more output
     // (in deliverDoOutput)
     // 
-    parent.getCluster().send(AMQFrame(in_place<ClusterConnectionDoOutputBody>(
-                                          framing::ProtocolVersion(), request)), &parent);
+    parent.getCluster().send(AMQFrame(in_place<ClusterConnectionDeliverDoOutputBody>(
+                                          framing::ProtocolVersion(), request)), parent.getId());
     QPID_LOG(trace, &parent << "Send doOutput request for " << request);
 }
 

@@ -19,22 +19,16 @@
  *
  */
 
+#include "qpid/cluster/types.h"
 #include "qpid/cluster/Cpg.h"
-#include "qpid/cluster/ShadowConnectionOutputHandler.h"
 #include "qpid/cluster/PollableQueue.h"
+#include "qpid/cluster/NoOpConnectionOutputHandler.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/broker/Connection.h"
-#include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/log/Logger.h"
+#include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/Url.h"
-#include "qpid/RefCounted.h"
 
-#include <boost/optional.hpp>
-#include <boost/function.hpp>
 #include <boost/intrusive_ptr.hpp>
 
 #include <map>
@@ -43,24 +37,15 @@
 namespace qpid {
 namespace cluster {
 
-class ConnectionInterceptor;
+class Connection;
 
 /**
  * Connection to the cluster.
  * Keeps cluster membership data.
  */
-class Cluster : private Cpg::Handler, public RefCounted
+class Cluster : public RefCounted, private Cpg::Handler
 {
   public:
-    typedef boost::tuple<Cpg::Id, void*> ShadowConnectionId;
-
-    /** Details of a cluster member */
-    struct Member {
-        Cpg::Id  id;
-        Url url;
-    };
-    
-    typedef std::vector<Member> MemberList;
 
     /**
      * Join a cluster.
@@ -71,11 +56,11 @@ class Cluster : private Cpg::Handler, public RefCounted
 
     virtual ~Cluster();
 
-    /** Initialize interceptors for a new connection */
-    void initialize(broker::Connection&);
+    void insert(const boost::intrusive_ptr<Connection>&); // Insert a local connection
+    void erase(ConnectionId);          // Erase a connection.
     
-    /** Get the current cluster membership. */
-    MemberList getMembers() const;
+    /** Get the URLs of current cluster members. */
+    std::vector<Url> getUrls() const;
 
     /** Number of members in the cluster. */
     size_t size() const;
@@ -83,33 +68,27 @@ class Cluster : private Cpg::Handler, public RefCounted
     bool empty() const { return size() == 0; }
     
     /** Send frame to the cluster */
-    void send(const framing::AMQFrame&, ConnectionInterceptor*);
+    void send(const framing::AMQFrame&, const ConnectionId&);
 
     /** Leave the cluster */
     void leave();
     
-    // Cluster frame handing functions
-    void notify(const std::string& url);
-    void connectionClose();
+    void joined(const MemberId&, const std::string& url);
 
+    broker::Broker& getBroker() { assert(broker); return *broker; }
+
+    MemberId getSelf() const { return self; }
+    
   private:
-    typedef Cpg::Id Id;
-    typedef std::map<Id, Member>  MemberMap;
-    typedef std::map<ShadowConnectionId, ConnectionInterceptor*> ShadowConnectionMap;
-    typedef std::set<ConnectionInterceptor*> LocalConnectionSet;
+    typedef std::map<MemberId, Url>  UrlMap;
+    typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
 
     /** Message sent over the cluster. */
-    struct Message {
-        framing::AMQFrame frame; Id from; void* connection;
-        Message(const framing::AMQFrame& f, const Id i, void* c)
-            : frame(f), from(i), connection(c) {}
-    };
+    typedef std::pair<framing::AMQFrame, ConnectionId> Message;
     typedef PollableQueue<Message> MessageQueue;
 
     boost::function<void()> shutdownNext;
     
-    void notify();              ///< Notify cluster of my details.
-
     /** CPG deliver callback. */
     void deliver(
         cpg_handle_t /*handle*/,
@@ -142,9 +121,9 @@ class Cluster : private Cpg::Handler, public RefCounted
     /** Callback if CPG fd is disconnected. */
     void disconnect(sys::DispatchHandle&);
 
-    void handleMethod(Id from, ConnectionInterceptor* connection, framing::AMQMethodBody& method);
+    void handleMethod(MemberId from, cluster::Connection* connection, framing::AMQMethodBody& method);
 
-    ConnectionInterceptor* getShadowConnection(const Cpg::Id&, void*);
+    boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker* broker;
@@ -152,18 +131,17 @@ class Cluster : private Cpg::Handler, public RefCounted
     Cpg cpg;
     Cpg::Name name;
     Url url;
-    MemberMap members;
-    Id self;
-    ShadowConnectionMap shadowConnectionMap;
-    LocalConnectionSet localConnectionSet;
-    ShadowConnectionOutputHandler shadowOut;
+    UrlMap urls;
+    MemberId self;
+    ConnectionMap connections;
+    NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
     MessageQueue deliverQueue;
     MessageQueue mcastQueue;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
-  friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
-  friend std::ostream& operator <<(std::ostream&, const MemberMap&);
+  friend std::ostream& operator <<(std::ostream&, const UrlMap::value_type&);
+  friend std::ostream& operator <<(std::ostream&, const UrlMap&);
 };
 
 }} // namespace qpid::cluster

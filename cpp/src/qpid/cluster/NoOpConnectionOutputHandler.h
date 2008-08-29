@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_NOOPCONNECTIONOUTPUTHANDLER_H
+#define QPID_CLUSTER_NOOPCONNECTIONOUTPUTHANDLER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,27 +21,26 @@
  * under the License.
  *
  */
-#ifndef _ConnectionInputHandler_
-#define _ConnectionInputHandler_
-
-#include "qpid/framing/InputHandler.h"
-#include "OutputTask.h"
-#include "TimeoutHandler.h"
+#include <qpid/sys/ConnectionOutputHandler.h>
 
 namespace qpid {
-namespace sys {
 
-    class ConnectionInputHandler :
-        public qpid::framing::InputHandler, 
-        public TimeoutHandler, public OutputTask
-    {
-    public:
+namespace framing { class AMQFrame; }
 
-        virtual void closed() = 0;
-    };
+namespace cluster {
 
-}
-}
+/**
+ * Output handler for frames sent to noop connections.
+ * Simply discards frames.
+ */
+class NoOpConnectionOutputHandler : public sys::ConnectionOutputHandler
+{
+  public:
+    virtual void send(framing::AMQFrame&) {}
+    virtual void close() {}
+    virtual void activateOutput() {}
+};
 
+}} // namespace qpid::cluster
 
-#endif
+#endif  /*!QPID_CLUSTER_NOOPCONNECTIONOUTPUTHANDLER_H*/

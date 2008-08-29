@@ -76,7 +76,9 @@ struct Url : public std::vector<Address> {
     /** Parse url, throw InvalidUrl if invalid. */
     explicit Url(const char* url) { parse(url); }
 
-    template<class T> Url& operator=(T s) { parse(s); return *this; }
+    Url& operator=(const Url& u) { this->std::vector<Address>::operator=(u); cache=u.cache; return *this; }
+    Url& operator=(const char* s) { parse(s); return *this; }
+    Url& operator=(const std::string& s) { parse(s); return *this; }
     
     /** Throw InvalidUrl if the URL does not contain any addresses. */
     void throwIfEmpty() const;
