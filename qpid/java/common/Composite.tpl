@@ -170,7 +170,13 @@ if not f.empty:
 }
 ${
 if pack > 0:
-  out("        packing_flags |= $(f.flag_mask(pack));")
+  if f.empty:
+    out("        if (value)\\n")
+    out("            packing_flags |= $(f.flag_mask(pack));\\n")
+    out("        else\\n")
+    out("            packing_flags &= ~$(f.flag_mask(pack));")
+  else:
+    out("        packing_flags |= $(f.flag_mask(pack));")
 }
         this.dirty = true;
         return this;
