@@ -49,9 +49,6 @@ namespace broker {
 
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink_) :
     ConnectionState(out_, broker_),
-    receivedFn(boost::bind(&Connection::receivedImpl, this, _1)),
-    closedFn(boost::bind(&Connection::closedImpl, this)),
-    doOutputFn(boost::bind(&Connection::doOutputImpl, this)),
     adapter(*this, isLink_),
     isLink(isLink_),
     mgmtClosing(false),
@@ -72,8 +69,6 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
             mgmtObject = new management::Connection(agent, this, parent, mgmtId, !isLink);
         agent->addObject(mgmtObject);
     }
-
-    Plugin::initializeAll(*this); // Let plug-ins update extension points.
 }
 
 void Connection::requestIOProcessing(boost::function0<void> callback)
@@ -90,9 +85,7 @@ Connection::~Connection()
         links.notifyClosed(mgmtId);
 }
 
-void Connection::received(framing::AMQFrame& frame) { receivedFn(frame); }
-
-void Connection::receivedImpl(framing::AMQFrame& frame){
+void Connection::received(framing::AMQFrame& frame) {
     if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {
@@ -172,9 +165,7 @@ void Connection::idleOut(){}
 
 void Connection::idleIn(){}
 
-void Connection::closed() { closedFn(); }
-
-void Connection::closedImpl(){ // Physically closed, suspend open sessions.
+void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
         while (!channels.empty()) 
             ptr_map_ptr(channels.begin())->handleDetach();
@@ -194,9 +185,7 @@ void Connection::closedImpl(){ // Physically closed, suspend open sessions.
 
 bool Connection::hasOutput() { return outputTasks.hasOutput(); }
 
-bool Connection::doOutput() { return doOutputFn(); }
-
-bool Connection::doOutputImpl() {    
+bool Connection::doOutput() {    
     try{
         if (ioCallback)
             ioCallback(); // Lend the IO thread for management processing

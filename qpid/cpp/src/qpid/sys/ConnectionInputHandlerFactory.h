@@ -42,7 +42,8 @@ class ConnectionInputHandlerFactory : private boost::noncopyable
      *@param id identify the connection for management purposes.
      */
     virtual ConnectionInputHandler* create(ConnectionOutputHandler* out,
-                                           const std::string& id) = 0;
+                                           const std::string& id,
+                                           bool isClient) = 0;
     
     virtual ~ConnectionInputHandlerFactory(){}
 };

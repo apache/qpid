@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_SHADOWCONNECTIONOUTPUTHANDLER_H
-#define QPID_CLUSTER_SHADOWCONNECTIONOUTPUTHANDLER_H
+#ifndef QPID_CLUSTER_PROXYINPUTHANDLER_H
+#define QPID_CLUSTER_PROXYINPUTHANDLER_H
 
 /*
  *
@@ -21,7 +21,9 @@
  * under the License.
  *
  */
-#include <qpid/sys/ConnectionOutputHandler.h>
+
+#include "qpid/sys/ConnectionInputHandler.h"
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 
@@ -30,17 +32,26 @@ namespace framing { class AMQFrame; }
 namespace cluster {
 
 /**
- * Output handler for frames sent to shadow connections.
- * Simply discards frames.
+ * Proxies ConnectionInputHandler functions and ensures target.closed() 
+ * is called, on deletion if not before.
  */
-class ShadowConnectionOutputHandler : public sys::ConnectionOutputHandler
+class ProxyInputHandler : public sys::ConnectionInputHandler
 {
   public:
-    virtual void send(framing::AMQFrame&) {}
-    virtual void close() {}
-    virtual void activateOutput() {}
+    ProxyInputHandler(boost::intrusive_ptr<cluster::Connection> t) : target(t) {}
+    ~ProxyInputHandler() { closed(); }
+    
+    void received(framing::AMQFrame& f) { target->received(f); }
+    void closed() { if (target) target->closed(); target = 0; }
+    void idleOut() { target->idleOut(); }
+    void idleIn() { target->idleIn(); }
+    bool doOutput() { return target->doOutput(); }
+    bool hasOutput() { return target->hasOutput(); }
+    
+  private:
+    boost::intrusive_ptr<cluster::Connection> target;
 };
 
 }} // namespace qpid::cluster
 
-#endif  /*!QPID_CLUSTER_SHADOWCONNECTIONOUTPUTHANDLER_H*/
+#endif  /*!QPID_CLUSTER_PROXYINPUTHANDLER_H*/

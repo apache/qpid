@@ -133,7 +133,7 @@ Broker::Broker(const Broker::Options& conf) :
 	acl(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     links(this),
-    factory(*this),
+    factory(new ConnectionFactory(*this)),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.
@@ -372,7 +372,7 @@ uint16_t Broker::getPort() const  {
 // TODO: This should iterate over all protocolFactories
 void Broker::accept() {
     for (unsigned int i = 0; i < protocolFactories.size(); ++i)
-        protocolFactories[i]->accept(poller, &factory);
+        protocolFactories[i]->accept(poller, factory.get());
 }
 
 
@@ -382,7 +382,7 @@ void Broker::connect(
     boost::function2<void, int, std::string> failed,
     sys::ConnectionCodec::Factory* f)
 {
-    getProtocolFactory()->connect(poller, host, port, f ? f : &factory, failed);
+    getProtocolFactory()->connect(poller, host, port, f ? f : factory.get(), failed);
 }
 
 void Broker::connect(

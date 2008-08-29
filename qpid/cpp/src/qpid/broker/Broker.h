@@ -103,7 +103,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;
-    ConnectionFactory factory;
+    boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
     management::ManagementAgent* managementAgent;
@@ -178,7 +178,10 @@ class Broker : public sys::Runnable, public Plugin::Target,
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
 
     /** Expose poller so plugins can register their descriptors. */
-    boost::shared_ptr<sys::Poller> getPoller(); 
+    boost::shared_ptr<sys::Poller> getPoller();
+
+    boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
+    void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
 };
 
 }}
