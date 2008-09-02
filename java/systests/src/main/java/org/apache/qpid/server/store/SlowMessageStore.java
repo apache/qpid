@@ -48,6 +48,7 @@ public class SlowMessageStore implements MessageStore
 
     public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
     {
+        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
         Configuration delays = config.subset(base + "." + DELAYS);
 
         configureDelays(delays);
@@ -119,13 +120,27 @@ public class SlowMessageStore implements MessageStore
     {
         if (delay > 0)
         {
+            long start = System.nanoTime();
             try
             {
+
                 Thread.sleep(delay);
             }
             catch (InterruptedException e)
             {
                 _logger.warn("Interrupted : " + e);
+            }
+
+            long slept = (System.nanoTime() - start) / 1000000;
+            
+            if (slept >= delay)
+            {
+                _logger.info("Done sleep for:" + slept+":"+delay);
+            }
+            else
+            {
+                _logger.info("Only sleep for:" + slept + " re-sleeping");
+                doDelay(delay - slept);
             }
         }
     }
