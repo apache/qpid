@@ -301,11 +301,20 @@ public class VirtualHost implements Accessable
 
     public void close() throws Exception
     {
+        //Stop the Queues processing
+        if (_queueRegistry != null)
+        {
+            for (AMQQueue queue : _queueRegistry.getQueues())
+            {
+                queue.stop();
+            }
+        }        
+
         //Stop Housekeeping
         if (_houseKeepingTimer != null)
         {
             _houseKeepingTimer.cancel();
-        }
+        }        
 
         //Stop Connections
         _connectionRegistry.close();
