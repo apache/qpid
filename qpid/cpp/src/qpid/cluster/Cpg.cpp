@@ -18,7 +18,6 @@
 
 #include "Cpg.h"
 #include "qpid/sys/Mutex.h"
-// Note cpg is currently unix-specific. Refactor if availble on other platforms.
 #include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/log/Statement.h"
 
@@ -170,27 +169,50 @@ std::string Cpg::cantMcastMsg(const Name& group) {
     return "Cannot mcast to CPG group "+group.str();
 }
 
-Cpg::Id Cpg::self() const {
+MemberId Cpg::self() const {
     unsigned int nodeid;
     check(cpg_local_get(handle, &nodeid), "Cannot get local CPG identity");
-    return Id(nodeid, getpid());
+    return MemberId(nodeid, getpid());
 }
 
-ostream& operator<<(ostream& o, std::pair<cpg_address*,int> a) {
-    ostream_iterator<Cpg::Id> i(o, " ");
-    std::copy(a.first, a.first+a.second, i);
-    return o;
+ostream& operator <<(ostream& out, const MemberId& id) {
+    return out << std::hex << id.first << ":" << std::dec << id.second;
 }
 
-ostream& operator <<(ostream& out, const Cpg::Id& id) {
-    return out << id.getNodeId() << "-" << id.getPid();
+ostream& operator<<(ostream& o, const ConnectionId& c) {
+    return o << c.first << "-" << c.second;
 }
 
-ostream& operator <<(ostream& out, const cpg_name& name) {
-    return out << string(name.value, name.length);
+ostream& operator<<(ostream& o, const cpg_name& name) {
+    return o << string(name.value, name.length);
 }
 
 }} // namespace qpid::cluster
 
+
+// In proper namespace for ADL.
+
+std::ostream& operator<<(std::ostream& o, const ::cpg_address& a) {
+    const char* reasonString;
+    switch (a.reason) {
+      case CPG_REASON_JOIN: reasonString = "joined"; break;
+      case CPG_REASON_LEAVE: reasonString = "left";break;
+      case CPG_REASON_NODEDOWN: reasonString = "node-down";break;
+      case CPG_REASON_NODEUP: reasonString = "node-up";break;
+      case CPG_REASON_PROCDOWN: reasonString = "process-down";break;
+      default:
+        assert(0);
+        reasonString = "";
+    }
+    return o << qpid::cluster::MemberId(a.nodeid, a.pid) << " " << reasonString;
+}
+
+namespace std {
+ostream& operator<<(ostream& o, std::pair<cpg_address*,int> a) {
+    for (cpg_address* p = a.first; p < a.first+a.second; ++p)
+        o << *p << " ";
+    return o;
+}
+}
 
 

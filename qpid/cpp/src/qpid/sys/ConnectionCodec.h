@@ -22,13 +22,13 @@
  *
  */
 #include "qpid/framing/ProtocolVersion.h"
-#include "OutputControl.h"
-#include <memory>
-#include <map>
 
 namespace qpid {
 
 namespace sys {
+
+class InputHandlerFactory;
+class OutputControl;
 
 /**
  * Interface of coder/decoder for a connection of a specific protocol

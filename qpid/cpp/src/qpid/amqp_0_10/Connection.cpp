@@ -21,16 +21,22 @@
 #include "Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 namespace qpid {
 namespace amqp_0_10 {
 
 using sys::Mutex;
 
-Connection::Connection(sys::OutputControl& o, broker::Broker& broker, const std::string& id, bool _isClient)
-    : frameQueueClosed(false), output(o),
-      connection(new broker::Connection(this, broker, id, _isClient)),
-      identifier(id), initialized(false), isClient(_isClient), buffered(0) {}
+Connection::Connection(sys::OutputControl& o, const std::string& id, bool _isClient)
+    : frameQueueClosed(false), output(o), identifier(id), initialized(false), isClient(_isClient), buffered(0)
+{}
+
+void Connection::setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c) {
+    connection = c;
+}
 
 size_t  Connection::decode(const char* buffer, size_t size) {
     framing::Buffer in(const_cast<char*>(buffer), size);

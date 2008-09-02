@@ -33,6 +33,7 @@ namespace sys {
         public TimeoutHandler, public OutputTask
     {
     public:
+
         virtual void closed() = 0;
     };
 
