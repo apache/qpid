@@ -90,7 +90,7 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     batch.swap(queue);
     condition.clear();
     ScopedUnlock u(lock);
-    callback(batch.begin(), batch.end()); // Process the batch outside the lock.
+    callback(batch.begin(), batch.end()); // Process outside the lock to allow concurrent push.
     h.rewatch();
 }
 

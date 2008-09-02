@@ -27,7 +27,8 @@ namespace qpid {
 namespace broker {
 class Broker;
 
-class ConnectionFactory : public sys::ConnectionCodec::Factory {
+class ConnectionFactory : public sys::ConnectionCodec::Factory
+{
   public:
     ConnectionFactory(Broker& b);
             

@@ -69,8 +69,8 @@ struct ClusterFixture : public vector<uint16_t>  {
     void add();
     void setup();
     void kill(size_t n) {
-        if (n) forkedBrokers[n-1]->stop();
-        else broker0.shutdown();
+        if (n) forkedBrokers[n-1].kill();
+        else broker0->broker->shutdown();
     }
 };
 
@@ -137,6 +137,14 @@ QPID_AUTO_TEST_CASE(testForkedBroker) {
     ForkedBroker broker(sizeof(argv)/sizeof(argv[0]), argv);
     Client c(broker.getPort());
     BOOST_CHECK_EQUAL("direct", c.session.exchangeQuery("amq.direct").getType()); 
+}
+
+QPID_AUTO_TEST_CASE(testSingletonCluster) {
+    // Test against a singleton cluster, verify basic operation.
+    ClusterFixture cluster(1);
+    Client c(cluster[0]);
+    BOOST_CHECK(c.session.queueQuery("q").getQueue().empty());
+    BOOST_CHECK(c.session.exchangeQuery("ex").getType().empty()); 
 }
 
 QPID_AUTO_TEST_CASE(testWiringReplication) {

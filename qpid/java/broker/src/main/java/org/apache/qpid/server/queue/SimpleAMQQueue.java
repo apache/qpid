@@ -1102,10 +1102,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
 
             _deleteTaskList.clear();
-            ReferenceCountingExecutorService.getInstance().releaseExecutorService();
+            stop();
         }
         return getMessageCount();
 
+    }
+
+    public void stop()
+    {
+        ReferenceCountingExecutorService.getInstance().releaseExecutorService();
     }
 
     public void deliverAsync()

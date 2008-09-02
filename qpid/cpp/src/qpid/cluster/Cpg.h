@@ -19,12 +19,12 @@
  *
  */
 
-#include "qpid/Exception.h"
-#include "qpid/sys/IOHandle.h"
+#include "qpid/cluster/types.h"
 #include "qpid/cluster/Dispatchable.h"
 
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
+#include "qpid/Exception.h"
+#include "qpid/sys/IOHandle.h"
+
 #include <boost/scoped_ptr.hpp>
 
 #include <cassert>
@@ -63,14 +63,6 @@ class Cpg : public sys::IOHandle {
         }
 
         std::string str() const { return std::string(value, length); }
-    };
-
-    // boost::tuple gives us == and < for free.
-    struct Id : public boost::tuple<uint32_t, uint32_t>  {
-        Id(uint32_t n=0, uint32_t p=0) : boost::tuple<uint32_t, uint32_t>(n, p) {}
-        Id(const cpg_address& addr) : boost::tuple<uint32_t, uint32_t>(addr.nodeid, addr.pid) {}
-        uint32_t getNodeId() const { return boost::get<0>(*this); }
-        uint32_t getPid() const { return boost::get<1>(*this); }
     };
 
     static std::string str(const cpg_name& n) {
@@ -127,7 +119,7 @@ class Cpg : public sys::IOHandle {
 
     cpg_handle_t getHandle() const { return handle; }
 
-    Id self() const;
+    MemberId self() const;
 
     int getFd();
     
@@ -166,9 +158,7 @@ class Cpg : public sys::IOHandle {
     bool isShutdown;
 };
 
-std::ostream& operator <<(std::ostream& out, const cpg_name& name);
-std::ostream& operator <<(std::ostream& out, const Cpg::Id& id);
-std::ostream& operator <<(std::ostream& out, const std::pair<cpg_address*,int> addresses);
+std::ostream& operator <<(std::ostream& out, const MemberId& id);
 
 inline bool operator==(const cpg_name& a, const cpg_name& b) {
     return a.length==b.length &&  strncmp(a.value, b.value, a.length) == 0;
@@ -176,6 +166,13 @@ inline bool operator==(const cpg_name& a, const cpg_name& b) {
 inline bool operator!=(const cpg_name& a, const cpg_name& b) { return !(a == b); }
 
 }} // namespace qpid::cluster
+
+// In proper namespaces for ADL
+std::ostream& operator <<(std::ostream& out, const cpg_name& name);
+std::ostream& operator<<(std::ostream& o, const cpg_address& a);
+namespace std {
+std::ostream& operator <<(std::ostream& out, std::pair<cpg_address*,int> addresses);
+}
 
 
 #endif  /*!CPG_H*/

@@ -22,15 +22,19 @@
  *
  */
 #include "qpid/sys/ConnectionCodec.h"
+#include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/broker/Connection.h"
 #include <boost/intrusive_ptr.hpp>
-#include <deque>
 #include <memory>
+#include <deque>
 
 namespace qpid {
-namespace broker { class Broker; }
+
+namespace sys {
+class ConnectionInputHandlerFactory;
+}
+
 namespace amqp_0_10 {
 
 class Connection  : public sys::ConnectionCodec,
@@ -42,14 +46,15 @@ class Connection  : public sys::ConnectionCodec,
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
-    boost::intrusive_ptr<broker::Connection> connection;
+    std::auto_ptr<sys::ConnectionInputHandler> connection;
     std::string identifier;
     bool initialized;
     bool isClient;
     size_t buffered;
 
   public:
-    Connection(sys::OutputControl&, broker::Broker&, const std::string& id, bool isClient = false);
+    Connection(sys::OutputControl&, const std::string& id, bool isClient);
+    void setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c);
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool isClosed() const;
