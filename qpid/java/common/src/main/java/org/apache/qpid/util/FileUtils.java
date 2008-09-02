@@ -192,4 +192,35 @@ public class FileUtils
             throw new RuntimeException(e);
         }
     }
+
+    /*
+     * Deletes a given file
+     */
+     public static void deleteFile(String filePath) throws IOException
+     {
+         delete(new File(filePath), false);
+     }
+
+     /**
+      * Delete a given file, if a directory is specified and recursive set then delete the whole tree
+      * @param filePath the File object to start at
+      * @param recursive boolean to recurse if a directory is specified.
+      * @throws IOException
+      */
+     public static void delete(File filePath, boolean recursive) throws IOException
+     {
+         if (filePath.isDirectory())
+         {
+             if (recursive)
+             {
+                 for (File subFile : filePath.listFiles())
+                 {
+                     delete(subFile, true);
+                 }
+             }
+         }
+
+         filePath.delete();
+     }
+    
 }
