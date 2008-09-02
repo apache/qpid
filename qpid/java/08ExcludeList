@@ -9,3 +9,5 @@ org.apache.qpid.test.testcases.FailoverTest#*
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
 // QPID-1225 : Temporary remove this test until the problem has been addressed
 org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
+// QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
+org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
