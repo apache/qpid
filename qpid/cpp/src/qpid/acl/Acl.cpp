@@ -16,8 +16,8 @@
  *
  */
 
-#include "Acl.h"
-
+#include "qpid/acl/Acl.h"
+#include "qpid/acl/AclData.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
@@ -41,79 +41,43 @@ using namespace std;
 
    }
 
-   std::string Acl::printAction(acl::Action action)
-   {
-      switch (action)
-	  {
-	   case CONSUME: return "Consume";
-	   case PUBLISH: return "Publish";
-	   case CREATE: return "Create";
-	   case ACCESS: return "Access";
-	   case BIND: return "Bind";
-	   case UNBIND: return "Unbind";
-	   case DELETE: return "Delete";
-	   case PURGE: return "Purge";
-	   case UPDATE: return "Update";
-	   default: return "Unknown";
-	  }
-   }
-   
-   std::string Acl::printObjType(acl::ObjectType objType)
-   {
-      switch (objType)
-	  {
-      case QUEUE: return "Queue";
-	  case EXCHANGE: return "Exchnage";
-	  case BROKER: return "Broker";
-	  case LINK: return "Link";
-	  case ROUTE: return "Route";
-	  default: return "Unknown";
-	  }
-   }
-
-   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>*
-   /*params*/)
+   bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
       if (aclValues.noEnforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
       
-      // only use dataLocal here...
-   
       // add real ACL check here... 
-      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
+      AclResult aclreslt = dataLocal->lookup(id,action,objType,name,params);
 	  
 	  
 	  return result(aclreslt, id, action, objType, name); 
    }
 
-   bool Acl::authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string /*RoutingKey*/)
+   bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
    {
       if (aclValues.noEnforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
       
       // only use dataLocal here...
-   
-      // add real ACL check here... 
-      AclResult aclreslt = ALLOWLOG;  // hack to test, set based on real decision.
-	  
+      AclResult aclreslt = dataLocal->lookup(id,action,objType,ExchangeName,RoutingKey);  
 	  
 	  return result(aclreslt, id, action, objType, ExchangeName); 
    }
 
    
-   bool Acl::result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name)
+   bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name)
    {
 	  switch (aclreslt)
 	  {
 	  case ALLOWLOG:
-          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name );  
+          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );  
 	  case ALLOW:
 	      return true;
-	  case DENYNOLOG:
-	      return false;
 	  case DENY:
+	      return false;
+	  case DENYLOG:
 	  default:
-	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << printAction(action) << " ObjectType:" << printObjType(objType) << " Name:" << name);  
+	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);  
 	      return false;
 	  }
       return false;  
@@ -125,12 +89,14 @@ using namespace std;
       return readAclFile(aclValues.aclFile);
    }
 
-   bool Acl::readAclFile(std::string aclFile) {
+   bool Acl::readAclFile(std::string& aclFile) {
       boost::shared_ptr<AclData> d(new AclData);
-      if (AclReader::read(aclFile, d))
+      AclReader ar;
+      if (ar.read(aclFile, d))
           return false;
  
       data = d;
+	  transferAcl = data->transferAcl; // any transfer ACL
       return true;
    }
 
