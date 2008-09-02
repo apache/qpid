@@ -67,4 +67,5 @@ org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFil
 org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 // InVM Broker tests
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+// QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
