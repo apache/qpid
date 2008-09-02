@@ -56,11 +56,11 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
-        std::map<std::string, std::string> params;
-		params.insert(make_pair("TYPE", type));
-		params.insert(make_pair("ALT", alternateExchange));
-		params.insert(make_pair("PAS", std::string(passive ? "Y" : "N") ));
-		params.insert(make_pair("DURA", std::string(durable ? "Y" : "N")));
+        std::map<acl::Property, std::string> params;
+		params.insert(make_pair(acl::TYPE, type));
+		params.insert(make_pair(acl::ALTERNATE, alternateExchange));
+		params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
+		params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
 	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchange,&params) )
 	        throw NotAllowedException("ACL denied exhange declare request");
     }
@@ -182,9 +182,9 @@ SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
-        std::map<std::string, std::string> params;
-		params.insert(make_pair("QN", queueName));
-		params.insert(make_pair("RKEY", routingKey));
+        std::map<acl::Property, std::string> params;
+		params.insert(make_pair(acl::QUEUENAME, queueName));
+		params.insert(make_pair(acl::ROUTINGKEY, routingKey));
 	    if (!acl->authorise(getConnection().getUserId(),acl::UNBIND,acl::EXCHANGE,exchangeName,&params) )
 	        throw NotAllowedException("ACL denied exchange unbind request");
     }
@@ -211,9 +211,9 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
-        std::map<std::string, std::string> params;
-		params.insert(make_pair("QUEUE", queueName));
-		params.insert(make_pair("RKEY", queueName));
+        std::map<acl::Property, std::string> params;
+		params.insert(make_pair(acl::QUEUENAME, queueName));
+		params.insert(make_pair(acl::ROUTINGKEY, key));
 	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchangeName,&params) )
 	        throw NotAllowedException("ACL denied exhange bound request");
     }
@@ -310,12 +310,12 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
 	AclModule* acl = getBroker().getAcl();
 	if (acl)
 	{
-        std::map<std::string, std::string> params;
-		params.insert(make_pair("ALT", alternateExchange));
-		params.insert(make_pair("PAS", std::string(passive ? "Y" : "N") ));
-		params.insert(make_pair("DURA", std::string(durable ? "Y" : "N")));
-		params.insert(make_pair("EXCLUS", std::string(exclusive ? "Y" : "N")));
-		params.insert(make_pair("AUTOD", std::string(autoDelete ? "Y" : "N")));
+        std::map<acl::Property, std::string> params;
+		params.insert(make_pair(acl::ALTERNATE, alternateExchange));
+		params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
+		params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
+		params.insert(make_pair(acl::EXCLUSIVE, std::string(exclusive ? "true" : "false")));
+		params.insert(make_pair(acl::AUTODELETE, std::string(autoDelete ? "true" : "false")));
 	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::QUEUE,name,&params) )
 	        throw NotAllowedException("ACL denied queue create request");
     }

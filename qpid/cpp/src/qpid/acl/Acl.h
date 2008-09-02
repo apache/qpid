@@ -63,16 +63,14 @@ public:
    inline virtual bool doTransferAcl() {return transferAcl;};
    
    // create specilied authorise methods for cases that need faster matching as needed.
-   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string name, std::map<std::string, std::string>* params);
-   virtual bool authorise(std::string id, acl::Action action, acl::ObjectType objType, std::string ExchangeName, std::string RoutingKey);
+   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params);
+   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName,const std::string& RoutingKey);
 
    virtual ~Acl();
 private:
-   std::string printAction(acl::Action action);
-   std::string printObjType(acl::ObjectType objType);
-   bool result(AclResult aclreslt, std::string id, acl::Action action, acl::ObjectType objType, std::string name);
+   bool result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name);
    bool readAclFile();
-   bool readAclFile(std::string aclFile);      
+   bool readAclFile(std::string& aclFile);      
 };
 
 
