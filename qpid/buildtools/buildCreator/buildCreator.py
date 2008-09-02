@@ -171,7 +171,6 @@ def main():
 
     checkSystemRequirements()
 
-
     if (len(args) > 2):
         showUsage()
         sys.exit(1)
@@ -279,7 +278,7 @@ def prepareEnvironment(env):
 
     if _rootDir == "":
         verbose (ROOTDIR+" value is empty. Please specify a value for "+ ROOTDIR)
-        doExit(0)
+        attemptExit(0)
 
     if (os.path.exists(_rootDir)):
         verbose ("Using Existing root dir: "+_rootDir)
@@ -545,7 +544,7 @@ def postProcess(item, destination):
                     if firstline.find(TAR_DATA) != -1:
                        extractcommand=TAR_BIN+" -vxf "+root+PATH_SEP+file+" -C "+ builddir
 
-                    if firstline.find(DIFF_FILE) != -1:
+                    if firstline.find(DIFF_FILE) != -1 or firstline.find("text"):
                        extractcommand=CP_BIN+" -r "+root+PATH_SEP+file+" "+ builddir
 
 
@@ -762,7 +761,7 @@ def runScript(script):
 
         warn("Script Failed")
 
-        doExit(1)
+        attemptExit(1)
         
 
 ################################################################################
@@ -878,7 +877,7 @@ def getIncludeValue(include):
     else:
         for line in stderr:
             warn(line)
-        doExit(1)
+        attemptExit(1)
 
 #
 # Given a file name parse the XML. Any trailing '\n's that the ls command may have added are removed here.
@@ -1030,7 +1029,7 @@ def runCommandShowError(command):
         while current != lines:
             log (last20[current])
             current = current + 1
-        doExit(1)
+        attemptExit(1)
 
 #
 # Runs the given command if showOutput is true then stdout/stderr is shown on screen
@@ -1100,6 +1099,7 @@ def runCommand(command, showOutput):
             logWaitingDone()
         else:
             logWaitingFailed("Failed")
+	    attemptExit(1)
             if not showOutput:
                 last20[0]=index
                 return last20
@@ -1108,7 +1108,7 @@ def runCommand(command, showOutput):
 
     except IOError:
         logWaitingFailed ("Error running command.")
-        doExit(1)
+        attemptExit(1)
 
 #
 # Runs the given command if showOutput is true then stdout/stderr is shown on screen
@@ -1161,9 +1161,11 @@ def runCommandWithOutput(command):
 #
 # Check _ignoreErrors value and exit if false
 #
-def doExit(code):
+def attemptExit(code):
     if not _ignoreErrors:
         sys.exit(code)
+    else:
+	print ("Ignoring Errors")
 
 #
 # Check that the required binaries are present for this tool.
@@ -1296,7 +1298,7 @@ def warn (string):
 
 def fatal(string):
     print string
-    doExit(1)
+    attemptExit(1)
 
 def log_no_newline (string):
     if _log:
