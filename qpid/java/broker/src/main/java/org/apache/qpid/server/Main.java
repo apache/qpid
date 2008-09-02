@@ -198,21 +198,29 @@ public class Main
             {
                 System.out.println(e.getMessage());
                 _brokerLogger.error("Initialisation Error : " + e.getMessage());
-
+                shutdown(1);
             }
             catch (ConfigurationException e)
             {
                 System.out.println("Error configuring message broker: " + e);
                 _brokerLogger.error("Error configuring message broker: " + e);
                 e.printStackTrace();
+                shutdown(1);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
-                System.out.println("Error intialising message broker: " + e);
-                _brokerLogger.error("Error intialising message broker: " + e);
+                System.out.println("Error initialising message broker: " + e);
+                _brokerLogger.error("Error initialising message broker: " + e);
                 e.printStackTrace();
+                shutdown(1);
             }
         }
+    }
+
+    protected void shutdown(int status)
+    {
+        ApplicationRegistry.removeAll();
+        System.exit(status);
     }
 
     protected void startup() throws InitException, ConfigurationException, Exception
