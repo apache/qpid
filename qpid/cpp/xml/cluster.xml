@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+o<?xml version="1.0"?>
 <!--
 -
 - Licensed to the Apache Software Foundation (ASF) under one
@@ -25,8 +25,8 @@
   <class name = "cluster" code = "0x80" label="Qpid clustering extensions.">
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 
-    <control name = "joined" code="0x1">
-      <field name="url" type="str16" />
+    <control name = "url-notice" code="0x1">
+      <field name="url-notice" type="str16" />
     </control>
   </class>
 

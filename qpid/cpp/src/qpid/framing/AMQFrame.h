@@ -104,7 +104,10 @@ class AMQFrame : public AMQDataBlock
     bool getEos() const { return eos; }
     void setEos(bool isEos) { eos = isEos; }
 
+    static uint16_t DECODE_SIZE_MIN;
     static uint32_t frameOverhead();
+    /** Must point to at least DECODE_SIZE_MIN bytes of data */
+    static uint16_t decodeSize(char* data);
   private:
     void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
 

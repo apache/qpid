@@ -183,10 +183,6 @@ ostream& operator<<(ostream& o, const ConnectionId& c) {
     return o << c.first << "-" << c.second;
 }
 
-ostream& operator<<(ostream& o, const cpg_name& name) {
-    return o << string(name.value, name.length);
-}
-
 }} // namespace qpid::cluster
 
 
@@ -195,16 +191,18 @@ ostream& operator<<(ostream& o, const cpg_name& name) {
 std::ostream& operator<<(std::ostream& o, const ::cpg_address& a) {
     const char* reasonString;
     switch (a.reason) {
-      case CPG_REASON_JOIN: reasonString = "joined"; break;
-      case CPG_REASON_LEAVE: reasonString = "left";break;
-      case CPG_REASON_NODEDOWN: reasonString = "node-down";break;
-      case CPG_REASON_NODEUP: reasonString = "node-up";break;
-      case CPG_REASON_PROCDOWN: reasonString = "process-down";break;
-      default:
-        assert(0);
-        reasonString = "";
+      case CPG_REASON_JOIN: reasonString = " joined"; break;
+      case CPG_REASON_LEAVE: reasonString = " left";break;
+      case CPG_REASON_NODEDOWN: reasonString = " node-down";break;
+      case CPG_REASON_NODEUP: reasonString = " node-up";break;
+      case CPG_REASON_PROCDOWN: reasonString = " process-down";break;
+      default: reasonString = "";
     }
-    return o << qpid::cluster::MemberId(a.nodeid, a.pid) << " " << reasonString;
+    return o << qpid::cluster::MemberId(a.nodeid, a.pid) << reasonString;
+}
+
+std::ostream& operator<<(std::ostream& o, const cpg_name& name) {
+    return o << std::string(name.value, name.length);
 }
 
 namespace std {

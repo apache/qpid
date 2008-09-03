@@ -74,6 +74,7 @@ class Buffer
     uint32_t getSize() { return size; }
     uint32_t getPosition() { return position; }
     Iterator getIterator() { return Iterator(*this); }
+    char* getPointer() { return data; }
         
     void putOctet(uint8_t i);
     void putShort(uint16_t i);
