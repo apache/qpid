@@ -61,18 +61,16 @@
   ===============================================================
   -->
   <class name="Broker">
-    <property name="systemRef"            type="objId"  references="System" access="RC" index="y" desc="System ID" parentRef="y"/>
-    <property name="port"                 type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
-    <property name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
-    <property name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
-    <property name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
-    <property name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
-    <property name="mgmtPubInterval"      type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
-    <property name="clusterName"          type="sstr"   access="RO"
-                   desc="Name of cluster this server is a member of"/>
-    <property name="version"              type="sstr"   access="RO" desc="Running software version"/>
-    <property name="dataDirEnabled"       type="bool"   access="RO" desc="Persistent configuration storage enabled"/>
-    <property name="dataDir"              type="sstr"   access="RO" desc="Persistent configuration storage location"/>
+    <property name="systemRef"        type="objId"  references="System" access="RC" index="y" desc="System ID" parentRef="y"/>
+    <property name="port"             type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
+    <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
+    <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
+    <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
+    <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
+    <property name="clusterName"      type="sstr"   access="RO" desc="Name of cluster this server is a member of"/>
+    <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
+    <property name="dataDir"          type="sstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
 
     <method name="joinCluster">
       <arg name="clusterName" dir="I" type="sstr"/>
@@ -94,6 +92,17 @@
       <arg name="username"      dir="I" type="sstr"/>
       <arg name="password"      dir="I" type="sstr"/>
     </method>
+
+    <event name="agentConnect" desc="QMF Management Agent has connected to the broker">
+      <arg name="remoteAddress" type="sstr"/>
+      <arg name="label"         type="sstr"/>
+      <arg name="brokerBank"    type="uint32"/>
+      <arg name="agentBank"     type="uint32"/>
+    </event>
+
+    <event name="agentDisconnect" desc="QMF Management Agent has disconnected from the broker">
+      <arg name="remoteAddress" type="sstr"/>
+    </event>
   </class>
 
   <!--

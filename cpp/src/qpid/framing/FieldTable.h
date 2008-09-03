@@ -58,6 +58,7 @@ class FieldTable
     int count() const;
     void set(const std::string& name, const ValuePtr& value);
     ValuePtr get(const std::string& name) const;
+    bool isSet(const std::string& name) const { return get(name).get() != 0; }
 
     void setString(const std::string& name, const std::string& value);
     void setInt(const std::string& name, int value);

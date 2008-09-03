@@ -71,14 +71,14 @@ class ManagementData:
   #
 
   def registerObjId (self, objId):
-    if not objId in self.idBackMap:
-      self.idBackMap[objId]   = self.nextId
+    if not objId.index() in self.idBackMap:
+      self.idBackMap[objId.index()] = self.nextId
       self.idMap[self.nextId] = objId
       self.nextId += 1
 
-  def displayObjId (self, objId):
-    if objId in self.idBackMap:
-      return self.idBackMap[objId]
+  def displayObjId (self, objIdIndex):
+    if objIdIndex in self.idBackMap:
+      return self.idBackMap[objIdIndex]
     else:
       return 0
 
@@ -86,7 +86,7 @@ class ManagementData:
     if displayId in self.idMap:
       return self.idMap[displayId]
     else:
-      return 0
+      return None
 
   def displayClassName (self, cls):
     (packageName, className, hash) = cls
@@ -102,19 +102,20 @@ class ManagementData:
         self.tables[className] = {}
 
       # Register the ID so a more friendly presentation can be displayed
-      id = long (list[0][1])
-      self.registerObjId (id)
+      objId = list[0][1]
+      oidx  = objId.index()
+      self.registerObjId (objId)
 
       # If this object hasn't been seen before, create a new object record with
       # the timestamps and empty lists for configuration and instrumentation data.
-      if id not in self.tables[className]:
-        self.tables[className][id] = (timestamps, [], [])
+      if oidx not in self.tables[className]:
+        self.tables[className][oidx] = (timestamps, [], [])
 
-      (unused, oldConf, oldInst) = self.tables[className][id]
+      (unused, oldConf, oldInst) = self.tables[className][oidx]
 
       # For config updates, simply replace old config list with the new one.
       if   context == 0: #config
-        self.tables[className][id] = (timestamps, list, oldInst)
+        self.tables[className][oidx] = (timestamps, list, oldInst)
 
       # For instrumentation updates, carry the minimum and maximum values for
       # "hi-lo" stats forward.
@@ -132,7 +133,7 @@ class ManagementData:
               if oldInst[idx][1] < value:
                 value = oldInst[idx][1]
             newInst.append ((key, value))
-        self.tables[className][id] = (timestamps, oldConf, newInst)
+        self.tables[className][oidx] = (timestamps, oldConf, newInst)
 
     finally:
       self.lock.release ()
@@ -211,11 +212,13 @@ class ManagementData:
     pass
 
   def refName (self, oid):
-    if oid == 0:
+    if oid == None:
       return "NULL"
-    return str (self.displayObjId (oid))
+    return str (self.displayObjId (oid.index()))
 
   def valueDisplay (self, classKey, key, value):
+    if value == None:
+      return "<NULL>"
     for kind in range (2):
       schema = self.schema[classKey][kind]
       for item in schema:
@@ -437,7 +440,7 @@ class ManagementData:
         if classKey in self.tables:
           ids = self.listOfIds(classKey, tokens[1:])
           for objId in ids:
-            (ts, config, inst) = self.tables[classKey][self.rawObjId(objId)]
+            (ts, config, inst) = self.tables[classKey][self.rawObjId(objId).index()]
             createTime  = self.disp.timestamp (ts[1])
             destroyTime = "-"
             if ts[2] > 0:
@@ -486,32 +489,32 @@ class ManagementData:
 
       rows = []
       timestamp = None
-      config = self.tables[classKey][ids[0]][1]
+      config = self.tables[classKey][ids[0].index()][1]
       for eIdx in range (len (config)):
         key = config[eIdx][0]
         if key != "id":
           row   = ("property", key)
           for id in ids:
             if timestamp == None or \
-               timestamp < self.tables[classKey][id][0][0]:
-              timestamp = self.tables[classKey][id][0][0]
-            (key, value) = self.tables[classKey][id][1][eIdx]
+               timestamp < self.tables[classKey][id.index()][0][0]:
+              timestamp = self.tables[classKey][id.index()][0][0]
+            (key, value) = self.tables[classKey][id.index()][1][eIdx]
             row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
-      inst = self.tables[classKey][ids[0]][2]
+      inst = self.tables[classKey][ids[0].index()][2]
       for eIdx in range (len (inst)):
         key = inst[eIdx][0]
         if key != "id":
           row = ("statistic", key)
           for id in ids:
-            (key, value) = self.tables[classKey][id][2][eIdx]
+            (key, value) = self.tables[classKey][id.index()][2][eIdx]
             row = row + (self.valueDisplay (classKey, key, value),)
           rows.append (row)
 
       titleRow = ("Type", "Element")
       for id in ids:
-        titleRow = titleRow + (self.refName (id),)
+        titleRow = titleRow + (self.refName(id),)
       caption = "Object of type %s.%s:" % (classKey[0], classKey[1])
       if timestamp != None:
         caption = caption + " (last sample time: " + self.disp.timestamp (timestamp) + ")"
@@ -563,13 +566,15 @@ class ManagementData:
           access   = self.accessName (config[4])
           extra    = ""
           if config[5] == 1:
-            extra = extra + "index "
+            extra += "index "
           if config[6] != None:
-            extra = extra + "Min: " + str (config[6])
+            extra += "Min: " + str(config[6]) + " "
           if config[7] != None:
-            extra = extra + "Max: " + str (config[7])
+            extra += "Max: " + str(config[7]) + " "
           if config[8] != None:
-            extra = extra + "MaxLen: " + str (config[8])
+            extra += "MaxLen: " + str(config[8]) + " "
+          if config[9] == 1:
+            extra += "optional "
           rows.append ((name, typename, unit, access, extra, desc))
         
       for config in self.schema[classKey][1]:
@@ -613,7 +618,7 @@ class ManagementData:
   def getClassForId (self, objId):
     """ Given an object ID, return the class key for the referenced object """
     for classKey in self.tables:
-      if objId in self.tables[classKey]:
+      if objId.index() in self.tables[classKey]:
         return classKey
     return None
 
@@ -659,14 +664,19 @@ class ManagementData:
 
   def makeIdRow (self, displayId):
     if displayId in self.idMap:
-      rawId = self.idMap[displayId]
+      objId = self.idMap[displayId]
     else:
       return None
-    return (displayId,
-            rawId,
-            (rawId & 0x7FFF000000000000) >> 48,
-            (rawId & 0x0000FFFFFF000000) >> 24,
-            (rawId & 0x0000000000FFFFFF))
+    if objId.getFlags() == 0:
+      flags = ""
+    else:
+      flags = str(objId.getFlags())
+    seq = objId.getSequence()
+    if seq == 0:
+      seqText = "<durable>"
+    else:
+      seqText = str(seq)
+    return (displayId, flags, seqText, objId.getBroker(), objId.getBank(), hex(objId.getObject()))
 
   def listIds (self, select):
     rows = []
@@ -683,7 +693,7 @@ class ManagementData:
         return
       rows.append(row)
     self.disp.table("Translation of Display IDs:",
-                    ("DisplayID", "RawID", "BootSequence", "Bank", "Object"),
+                    ("DisplayID", "Flags", "BootSequence", "Broker", "Bank", "Object"),
                     rows)
 
   def do_list (self, data):

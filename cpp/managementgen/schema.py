@@ -79,7 +79,7 @@ class SchemaType:
   def getName (self):
     return self.name
 
-  def genAccessor (self, stream, varName, changeFlag = None):
+  def genAccessor (self, stream, varName, changeFlag = None, optional = False):
     if self.perThread:
       prefix = "getThreadStats()->"
       if self.style == "wm":
@@ -87,11 +87,13 @@ class SchemaType:
     else:
       prefix = ""
     if self.accessor == "direct":
-      stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
+      stream.write ("    inline void set_" + varName + " (" + self.cpp + " val) {\n");
       if not self.perThread:
         stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
       if self.style != "mma":
-        stream.write ("        " + prefix + varName + " = val;\n");
+        stream.write ("        " + prefix + varName + " = val;\n")
+        if optional:
+          stream.write ("        presenceMask[presenceByte_%s] |= presenceMask_%s;\n" % (varName, varName))
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low  > val)\n")
         stream.write ("            " + varName + "Low  = val;\n")
@@ -106,9 +108,24 @@ class SchemaType:
         stream.write ("            " + prefix + varName + "Max = val;\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
-      stream.write ("    }\n");
+      stream.write ("    }\n")
+      if self.style != "mma":
+        stream.write ("    inline " + self.cpp + "& get_" + varName + "() {\n");
+        if not self.perThread:
+          stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        return " + prefix + varName + ";\n")
+        stream.write ("    }\n")
+      if optional:
+        stream.write ("    inline void clr_" + varName + "() {\n")
+        stream.write ("        presenceMask[presenceByte_%s] &= ~presenceMask_%s;\n" % (varName, varName))
+        if changeFlag != None:
+          stream.write ("        " + changeFlag + " = true;\n")
+        stream.write ("    }\n")
+        stream.write ("    inline bool isSet_" + varName + "() {\n")
+        stream.write ("        return presenceMask[presenceByte_%s] & presenceMask_%s != 0;\n" % (varName, varName))
+        stream.write ("    }\n")
     elif self.accessor == "counter":
-      stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1){\n");
+      stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1) {\n");
       if not self.perThread:
         stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " += by;\n")
@@ -118,7 +135,7 @@ class SchemaType:
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
-      stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1){\n");
+      stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1) {\n");
       if not self.perThread:
         stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " -= by;\n")
@@ -146,22 +163,22 @@ class SchemaType:
       stream.write ("        threadStats->" + varName + "Min   = std::numeric_limits<" + cpptype + ">::max();\n")
       stream.write ("        threadStats->" + varName + "Max   = std::numeric_limits<" + cpptype + ">::min();\n")
 
-  def genWrite (self, stream, varName):
+  def genWrite (self, stream, varName, indent="    "):
     if self.style != "mma":
-      stream.write ("    " + self.encode.replace ("@", "buf").replace ("#", varName) + ";\n")
+      stream.write (indent + self.encode.replace ("@", "buf").replace ("#", varName) + ";\n")
     if self.style == "wm":
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "High") + ";\n")
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Low") + ";\n")
     if self.style == "mma":
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Count") + ";\n")
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Count ? " + varName + "Min : 0") + ";\n")
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Max") + ";\n")
-      stream.write ("    " + self.encode.replace ("@", "buf") \
+      stream.write (indent + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Count ? " + varName + "Total / " +
                               varName + "Count : 0") + ";\n")
 
@@ -207,7 +224,7 @@ class Type:
 #=====================================================================================
 #
 #=====================================================================================
-class SchemaConfig:
+class SchemaProperty:
   def __init__ (self, node, typespec):
     self.name         = None
     self.type         = None
@@ -216,6 +233,7 @@ class SchemaConfig:
     self.isIndex      = 0
     self.isParentRef  = 0
     self.isGeneralRef = 0
+    self.isOptional   = 0
     self.unit         = None
     self.min          = None
     self.max          = None
@@ -255,6 +273,11 @@ class SchemaConfig:
           raise ValueError ("Expected 'y' in isGeneralReference attribute")
         self.isGeneralRef = 1
         
+      elif key == 'optional':
+        if val != 'y':
+          raise ValueError ("Expected 'y' in optional attribute")
+        self.isOptional = 1
+        
       elif key == 'unit':
         self.unit = val
         
@@ -273,6 +296,9 @@ class SchemaConfig:
       else:
         raise ValueError ("Unknown attribute in property '%s'" % key)
 
+    if self.access == "RC" and self.isOptional == 1:
+      raise ValueError ("Properties with ReadCreate access must not be optional (%s)" % self.name)
+
     if self.name == None:
       raise ValueError ("Missing 'name' attribute in property")
     if self.type == None:
@@ -289,18 +315,19 @@ class SchemaConfig:
   def genDeclaration (self, stream, prefix="    "):
     stream.write (prefix + self.type.type.cpp + " " + self.name + ";\n")
 
-  def genFormalParam (self, stream):
+  def genFormalParam (self, stream, variables):
     stream.write (self.type.type.cpp + " _" + self.name)
 
   def genAccessor (self, stream):
-    self.type.type.genAccessor (stream, self.name, "configChanged")
+    self.type.type.genAccessor (stream, self.name, "configChanged", self.isOptional == 1)
 
   def genSchema (self, stream):
     stream.write ("    ft = FieldTable ();\n")
-    stream.write ("    ft.setString (NAME,   \"" + self.name + "\");\n")
-    stream.write ("    ft.setInt    (TYPE,   TYPE_" + self.type.type.base +");\n")
+    stream.write ("    ft.setString (NAME, \"" + self.name + "\");\n")
+    stream.write ("    ft.setInt    (TYPE, TYPE_" + self.type.type.base +");\n")
     stream.write ("    ft.setInt    (ACCESS, ACCESS_" + self.access + ");\n")
-    stream.write ("    ft.setInt    (INDEX,  " + str (self.isIndex) + ");\n")
+    stream.write ("    ft.setInt    (INDEX, " + str (self.isIndex) + ");\n")
+    stream.write ("    ft.setInt    (OPTIONAL, " + str (self.isOptional) + ");\n")
     if self.unit != None:
       stream.write ("    ft.setString (UNIT,   \"" + self.unit   + "\");\n")
     if self.min != None:
@@ -314,13 +341,19 @@ class SchemaConfig:
     stream.write ("    buf.put (ft);\n\n")
 
   def genWrite (self, stream):
-    self.type.type.genWrite (stream, self.name)
+    indent = "    "
+    if self.isOptional:
+      stream.write("    if (presenceMask[presenceByte_%s] & presenceMask_%s) {\n" % (self.name, self.name))
+      indent = "        "
+    self.type.type.genWrite (stream, self.name, indent)
+    if self.isOptional:
+      stream.write("    }\n")
 
 
 #=====================================================================================
 #
 #=====================================================================================
-class SchemaInst:
+class SchemaStatistic:
   def __init__ (self, node, typespec):
     self.name   = None
     self.type   = None
@@ -523,24 +556,29 @@ class SchemaArg:
   def getDir (self):
     return self.dir
 
-  def genSchema (self, stream):
+  def genSchema (self, stream, event=False):
     stream.write ("    ft = FieldTable ();\n")
     stream.write ("    ft.setString (NAME,    \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (TYPE,    TYPE_" + self.type.type.base +");\n")
-    stream.write ("    ft.setString (DIR,     \"" + self.dir + "\");\n")
+    if (not event):
+      stream.write ("    ft.setString (DIR,     \"" + self.dir + "\");\n")
     if self.unit != None:
       stream.write ("    ft.setString (UNIT,    \"" + self.unit   + "\");\n")
-    if self.min != None:
-      stream.write ("    ft.setInt    (MIN,     " + self.min    + ");\n")
-    if self.max != None:
-      stream.write ("    ft.setInt    (MAX,     " + self.max    + ");\n")
-    if self.maxLen != None:
-      stream.write ("    ft.setInt    (MAXLEN,  " + self.maxLen + ");\n")
+    if not event:
+      if self.min != None:
+        stream.write ("    ft.setInt    (MIN,     " + self.min    + ");\n")
+      if self.max != None:
+        stream.write ("    ft.setInt    (MAX,     " + self.max    + ");\n")
+      if self.maxLen != None:
+        stream.write ("    ft.setInt    (MAXLEN,  " + self.maxLen + ");\n")
+      if self.default != None:
+        stream.write ("    ft.setString (DEFAULT, \"" + self.default + "\");\n")
     if self.desc != None:
       stream.write ("    ft.setString (DESC,    \"" + self.desc + "\");\n")
-    if self.default != None:
-      stream.write ("    ft.setString (DEFAULT, \"" + self.default + "\");\n")
     stream.write ("    buf.put (ft);\n\n")
+
+  def genFormalParam (self, stream, variables):
+    stream.write ("%s _%s" % (self.type.type.cpp, self.name))
 
 #=====================================================================================
 #
@@ -649,6 +687,50 @@ class SchemaEvent:
   def getArgCount (self):
     return len (self.args)
 
+  def genMethodBody (self, stream, variables, classObject):
+    stream.write("void ")
+    classObject.genNameCap(stream, variables)
+    stream.write("::event_%s(" % self.name)
+    count = 0
+    for arg in self.args:
+      arg.genFormalParam(stream, variables)
+      count += 1
+      if count < len(self.args):
+        stream.write(", ")
+    stream.write(") {\n")
+    stream.write("    sys::Mutex::ScopedLock mutex(getMutex());\n")
+    stream.write("    Buffer* buf = startEventLH();\n")
+    stream.write("    objectId.encode(*buf);\n")
+    stream.write("    buf->putShortString(packageName);\n")
+    stream.write("    buf->putShortString(className);\n")
+    stream.write("    buf->putBin128(md5Sum);\n")
+    stream.write("    buf->putShortString(\"%s\");\n" % self.name)
+    for arg in self.args:
+      stream.write("    %s;\n" % arg.type.type.encode.replace("@", "(*buf)").replace("#", "_" + arg.name))
+    stream.write("    finishEventLH(buf);\n")
+    stream.write("}\n\n")
+
+  def genMethodDecl (self, stream, variables):
+    stream.write("    void event_%s(" % self.name)
+    count = 0
+    for arg in self.args:
+      arg.genFormalParam(stream, variables)
+      count += 1
+      if count < len(self.args):
+        stream.write(", ")
+    stream.write(");\n")
+
+  def genSchema(self, stream, variables):
+    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
+    stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
+    if self.desc != None:
+      stream.write ("    ft.setString (DESC,     \"" + self.desc + "\");\n")
+    stream.write ("    buf.put (ft);\n\n")
+    for arg in self.args:
+      arg.genSchema (stream, True)
+
+
 
 class SchemaClass:
   def __init__ (self, package, node, typespec, fragments, options):
@@ -669,11 +751,11 @@ class SchemaClass:
     for child in children:
       if child.nodeType == Node.ELEMENT_NODE:
         if   child.nodeName == 'property':
-          sub = SchemaConfig (child, typespec)
+          sub = SchemaProperty (child, typespec)
           self.properties.append (sub)
 
         elif child.nodeName == 'statistic':
-          sub = SchemaInst (child, typespec)
+          sub = SchemaStatistic (child, typespec)
           self.statistics.append (sub)
 
         elif child.nodeName == 'method':
@@ -758,6 +840,12 @@ class SchemaClass:
   # Code Generation Functions.  The names of these functions (minus the leading "gen")
   # match the substitution keywords in the template files.
   #===================================================================================
+  def testExistOptionals (self, variables):
+    for prop in self.properties:
+      if prop.isOptional == 1:
+        return True
+    return False
+
   def testExistPerThreadStats (self, variables):
     for inst in self.statistics:
       if inst.type.type.perThread:
@@ -794,17 +882,13 @@ class SchemaClass:
     for element in self.properties:
       element.genDeclaration (stream)
 
-  def genConfigElementSchema (self, stream, variables):
-    for config in self.properties:
-      config.genSchema (stream)
-
   def genConstructorArgs (self, stream, variables):
     # Constructor args are config elements with read-create access
     result = ""
     for element in self.properties:
       if element.isConstructorArg ():
         stream.write (", ")
-        element.genFormalParam (stream)
+        element.genFormalParam (stream, variables)
 
   def genConstructorInits (self, stream, variables):
     for element in self.properties:
@@ -831,8 +915,17 @@ class SchemaClass:
   def genEventCount (self, stream, variables):
     stream.write ("%d" % len (self.events))
 
+  def genEventMethodBodies (self, stream, variables):
+    for event in self.events:
+      event.genMethodBody (stream, variables, self)
+
+  def genEventMethodDecls (self, stream, variables):
+    for event in self.events:
+      event.genMethodDecl (stream, variables)
+
   def genEventSchema (self, stream, variables):
-    pass ###########################################################################
+    for event in self.events:
+      event.genSchema (stream, variables)
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
@@ -884,10 +977,6 @@ class SchemaClass:
       if element.type.type.perThread:
         element.genDeclaration (stream, "        ")
 
-  def genInstElementSchema (self, stream, variables):
-    for inst in self.statistics:
-      inst.genSchema (stream)
-
   def genMethodArgIncludes (self, stream, variables):
     for method in self.methods:
       if method.getArgCount () > 0:
@@ -898,7 +987,7 @@ class SchemaClass:
 
   def genMethodHandlers (self, stream, variables):
     for method in self.methods:
-      stream.write ("\n    if (methodName == \"" + method.getName () + "\")\n    {\n")
+      stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
       if method.getArgCount () == 0:
         stream.write ("        ArgsNone ioArgs;\n")
       else:
@@ -922,10 +1011,36 @@ class SchemaClass:
                                                     arg.name, "outBuf") + ";\n")
       stream.write ("        return;\n    }\n")
 
+  def genPresenceMaskBytes (self, stream, variables):
+    count = 0
+    for prop in self.properties:
+      if prop.isOptional == 1:
+        count += 1
+    if count == 0:
+      stream.write("0")
+    else:
+      stream.write (str(((count - 1) / 8) + 1))
+
+  def genPresenceMaskConstants (self, stream, variables):
+    count = 0
+    for prop in self.properties:
+      if prop.isOptional == 1:
+        stream.write("    static const uint8_t presenceByte_%s = %d;\n" % (prop.name, count / 8))
+        stream.write("    static const uint8_t presenceMask_%s = %d;\n" % (prop.name, 1 << (count % 8)))
+        count += 1
+
+  def genPropertySchema (self, stream, variables):
+    for prop in self.properties:
+      prop.genSchema (stream)
+
   def genSetGeneralReferenceDeclaration (self, stream, variables):
     for prop in self.properties:
       if prop.isGeneralRef:
-        stream.write ("void setReference(uint64_t objectId) { " + prop.name + " = objectId; }\n")
+        stream.write ("void setReference(ObjectId objectId) { " + prop.name + " = objectId; }\n")
+
+  def genStatisticSchema (self, stream, variables):
+    for stat in self.statistics:
+      stat.genSchema (stream)
 
   def genMethodIdDeclarations (self, stream, variables):
     number = 1
@@ -983,13 +1098,13 @@ class SchemaClass:
       if inst.type.type.perThread:
         inst.genAssign (stream)
 
-  def genWriteConfig (self, stream, variables):
-    for config in self.properties:
-      config.genWrite (stream)
+  def genWriteProperties (self, stream, variables):
+    for prop in self.properties:
+      prop.genWrite (stream)
 
-  def genWriteInst (self, stream, variables):
-    for inst in self.statistics:
-      inst.genWrite (stream)
+  def genWriteStatistics (self, stream, variables):
+    for stat in self.statistics:
+      stat.genWrite (stream)
 
 
 
@@ -1046,15 +1161,9 @@ class PackageSchema:
 
   def genClassRegisters (self, stream, variables):
     for _class in self.classes:
-      stream.write ("agent->RegisterClass (")
+      stream.write ("    ")
       _class.genNameCap (stream, variables)
-      stream.write ("::packageName, ")
-      _class.genNameCap (stream, variables)
-      stream.write ("::className, ")
-      _class.genNameCap (stream, variables)
-      stream.write ("::md5Sum, ")
-      _class.genNameCap (stream, variables)
-      stream.write ("::writeSchema);\n")
+      stream.write ("::registerClass(agent);\n")
 
 
 #=====================================================================================

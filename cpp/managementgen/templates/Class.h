@@ -37,6 +37,10 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     static std::string packageName;
     static std::string className;
     static uint8_t     md5Sum[16];
+/*MGEN:IF(Class.ExistOptionals)*/
+    uint8_t presenceMask[/*MGEN:Class.PresenceMaskBytes*/];
+/*MGEN:Class.PresenceMaskConstants*/
+/*MGEN:ENDIF*/
 
     // Properties
 /*MGEN:Class.ConfigDeclarations*/
@@ -78,14 +82,13 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 /*MGEN:ENDIF*/
   public:
 
-    friend class Package/*MGEN:Class.NamePackageCap*/;
-
     /*MGEN:Class.NameCap*/ (ManagementAgent* agent,
                             Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
+    static void  registerClass  (ManagementAgent* agent);
     std::string& getPackageName (void) { return packageName; }
     std::string& getClassName   (void) { return className; }
     uint8_t*     getMd5Sum      (void) { return md5Sum; }
@@ -94,6 +97,8 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 /*MGEN:Class.MethodIdDeclarations*/
     // Accessor Methods
 /*MGEN:Class.AccessorMethods*/
+    // Event Methods
+/*MGEN:Class.EventMethodDecls*/
 };
 
 }}

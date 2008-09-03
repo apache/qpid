@@ -69,6 +69,53 @@ class mgmtObject (object):
     for cell in row:
       setattr (self, cell[0], cell[1])
 
+class objectId(object):
+  """ Object that represents QMF object identifiers """
+
+  def __init__(self, codec):
+    self.first  = codec.read_uint64()
+    self.second = codec.read_uint64()
+
+  def __cmp__(self, other):
+    if other == None:
+      return 1
+    if self.first < other.first:
+      return -1
+    if self.first > other.first:
+      return 1
+    if self.second < other.second:
+      return -1
+    if self.second > other.second:
+      return 1
+    return 0
+
+
+  def index(self):
+    return (self.first, self.second)
+
+  def getFlags(self):
+    return (self.first & 0xF000000000000000) >> 60
+
+  def getSequence(self):
+    return (self.first & 0x0FFF000000000000) >> 48
+
+  def getBroker(self):
+    return (self.first & 0x0000FFFFF0000000) >> 28
+
+  def getBank(self):
+    return self.first & 0x000000000FFFFFFF
+
+  def getObject(self):
+    return self.second
+
+  def isDurable(self):
+    return self.getSequence() == 0
+
+  def encode(self, codec):
+    codec.write_uint64(self.first)
+    codec.write_uint64(self.second)
+
+
 class methodResult:
   """ Object that contains the result of a method call """
 
@@ -308,6 +355,8 @@ class managementClient:
       self.handleClassInd (ch, codec)
     elif hdr[0] == 'h':
       self.handleHeartbeat (ch, codec)
+    elif hdr[0] == 'e':
+      self.handleEvent (ch, codec)
     else:
       self.parse (ch, codec, hdr[0], hdr[1])
     ch.accept(msg)
@@ -386,7 +435,7 @@ class managementClient:
     elif typecode == 9:  # DELTATIME
       codec.write_uint64 (long (value))
     elif typecode == 10: # REF
-      codec.write_uint64 (long (value))
+      value.encode(codec)
     elif typecode == 11: # BOOL
       codec.write_uint8  (int  (value))
     elif typecode == 12: # FLOAT
@@ -429,7 +478,7 @@ class managementClient:
     elif typecode == 9:  # DELTATIME
       data = codec.read_uint64 ()
     elif typecode == 10: # REF
-      data = codec.read_uint64 ()
+      data = objectId(codec)
     elif typecode == 11: # BOOL
       data = codec.read_uint8 ()
     elif typecode == 12: # FLOAT
@@ -551,9 +600,9 @@ class managementClient:
       ch.send ("qpid.management", smsg)
 
   def handleClassInd (self, ch, codec):
-    pname = str (codec.read_str8 ())
-    cname = str (codec.read_str8 ())
-    hash  = codec.read_bin128   ()
+    pname = str (codec.read_str8())
+    cname = str (codec.read_str8())
+    hash  = codec.read_bin128()
     if pname not in self.packages:
       return
 
@@ -573,6 +622,32 @@ class managementClient:
     timestamp = codec.read_uint64()
     if self.ctrlCb != None:
       self.ctrlCb (ch.context, self.CTRL_HEARTBEAT, timestamp)
+
+  def handleEvent (self, ch, codec):
+    if self.eventCb == None:
+      return
+    timestamp = codec.read_uint64()
+    objId = objectId(codec)
+    packageName = str(codec.read_str8())
+    className   = str(codec.read_str8())
+    hash        = codec.read_bin128()
+    name        = str(codec.read_str8())
+    classKey    = (packageName, className, hash)
+    if classKey not in self.schema:
+      return;
+    schemaClass = self.schema[classKey]
+    row = []
+    es = schemaClass['E']
+    arglist = None
+    for ename in es:
+      (edesc, eargs) = es[ename]
+      if ename == name:
+        arglist = eargs
+    if arglist == None:
+      return
+    for arg in arglist:
+      row.append((arg[0], self.decodeValue(codec, arg[1])))
+    self.eventCb(ch.context, classKey, objId, name, row)
 
   def parseSchema (self, ch, codec):
     """ Parse a received schema-description message. """
@@ -597,22 +672,23 @@ class managementClient:
     configs = []
     insts   = []
     methods = {}
-    events  = []
+    events  = {}
 
     configs.append (("id", 4, "", "", 1, 1, None, None, None, None, None))
     insts.append   (("id", 4, None, None))
 
     for idx in range (configCount):
       ft = codec.read_map ()
-      name   = str (ft["name"])
-      type   = ft["type"]
-      access = ft["access"]
-      index  = ft["index"]
-      unit   = None
-      min    = None
-      max    = None
-      maxlen = None
-      desc   = None
+      name     = str (ft["name"])
+      type     = ft["type"]
+      access   = ft["access"]
+      index    = ft["index"]
+      optional = ft["optional"]
+      unit     = None
+      min      = None
+      max      = None
+      maxlen   = None
+      desc     = None
 
       for key, value in ft.items ():
         if   key == "unit":
@@ -626,7 +702,7 @@ class managementClient:
         elif key == "desc":
           desc = str (value)
 
-      config = (name, type, unit, desc, access, index, min, max, maxlen)
+      config = (name, type, unit, desc, access, index, min, max, maxlen, optional)
       configs.append (config)
 
     for idx in range (instCount):
@@ -685,6 +761,33 @@ class managementClient:
         args.append (arg)
       methods[mname] = (mdesc, args)
 
+    for idx in range (eventCount):
+      ft = codec.read_map ()
+      ename    = str (ft["name"])
+      argCount = ft["argCount"]
+      if "desc" in ft:
+        edesc = str (ft["desc"])
+      else:
+        edesc = None
+
+      args = []
+      for aidx in range (argCount):
+        ft = codec.read_map ()
+        name    = str (ft["name"])
+        type    = ft["type"]
+        unit    = None
+        desc    = None
+
+        for key, value in ft.items ():
+          if   key == "unit":
+            unit = str (value)
+          elif key == "desc":
+            desc = str (value)
+
+        arg = (name, type, unit, desc)
+        args.append (arg)
+      events[ename] = (edesc, args)
+
     schemaClass = {}
     schemaClass['C'] = configs
     schemaClass['I'] = insts
@@ -694,6 +797,22 @@ class managementClient:
 
     if self.schemaCb != None:
       self.schemaCb (ch.context, classKey, configs, insts, methods, events)
+
+  def parsePresenceMasks(self, codec, schemaClass):
+    """ Generate a list of not-present properties """
+    excludeList = []
+    bit = 0
+    for element in schemaClass['C'][1:]:
+      if element[9] == 1:
+        if bit == 0:
+          mask = codec.read_uint8()
+          bit  = 1
+        if (mask & bit) == 0:
+          excludeList.append(element[0])
+        bit = bit * 2
+        if bit == 256:
+          bit = 0
+    return excludeList
 
   def parseContent (self, ch, cls, codec, seq=0):
     """ Parse a received content message. """
@@ -716,21 +835,26 @@ class managementClient:
     timestamps.append (codec.read_uint64 ())  # Current Time
     timestamps.append (codec.read_uint64 ())  # Create Time
     timestamps.append (codec.read_uint64 ())  # Delete Time
-
+    objId = objectId(codec)
     schemaClass = self.schema[classKey]
     if cls == 'C' or cls == 'B':
-      for element in schemaClass['C'][:]:
+      notPresent = self.parsePresenceMasks(codec, schemaClass)
+
+    if cls == 'C' or cls == 'B':
+      row.append(("id", objId))
+      for element in schemaClass['C'][1:]:
         tc   = element[1]
         name = element[0]
-        data = self.decodeValue (codec, tc)
-        row.append ((name, data))
+        if name in notPresent:
+          row.append((name, None))
+        else:
+          data = self.decodeValue(codec, tc)
+          row.append((name, data))
 
     if cls == 'I' or cls == 'B':
-      if cls == 'B':
-        start = 1
-      else:
-        start = 0
-      for element in schemaClass['I'][start:]:
+      if cls == 'I':
+        row.append(("id", objId))
+      for element in schemaClass['I'][1:]:
         tc   = element[1]
         name = element[0]
         data = self.decodeValue (codec, tc)
@@ -763,9 +887,12 @@ class managementClient:
     codec = Codec (self.spec)
     sequence = self.seqMgr.reserve ((userSequence, classId, methodName))
     self.setHeader (codec, ord ('M'), sequence)
-    codec.write_uint64 (objId)       # ID of object
+    objId.encode(codec)
+    codec.write_str8 (classId[0])
+    codec.write_str8 (classId[1])
+    codec.write_bin128 (classId[2])
     codec.write_str8 (methodName)
-    bank = (objId & 0x0000FFFFFF000000) >> 24
+    bank = objId.getBank()
 
     # Encode args according to schema
     if classId not in self.schema:
