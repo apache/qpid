@@ -301,6 +301,10 @@ public class VirtualHost implements Accessable
 
     public void close() throws Exception
     {
+
+        //Stop Connections
+        _connectionRegistry.close();
+
         //Stop the Queues processing
         if (_queueRegistry != null)
         {
@@ -315,9 +319,6 @@ public class VirtualHost implements Accessable
         {
             _houseKeepingTimer.cancel();
         }        
-
-        //Stop Connections
-        _connectionRegistry.close();
 
         //Close MessageStore
         if (_messageStore != null)

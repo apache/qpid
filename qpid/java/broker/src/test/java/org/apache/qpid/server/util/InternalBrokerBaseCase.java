@@ -56,7 +56,8 @@ public class InternalBrokerBaseCase extends TestCase
         super.setUp();
         _registry = new TestApplicationRegistry();
         ApplicationRegistry.initialise(_registry);
-        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
+        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");        
+
         _messageStore = _virtualHost.getMessageStore();
 
         QUEUE_NAME = new AMQShortString("test");
@@ -80,7 +81,7 @@ public class InternalBrokerBaseCase extends TestCase
 
     public void tearDown() throws Exception
     {
-        ApplicationRegistry.removeAll();
+        ApplicationRegistry.remove(1);
         super.tearDown();
     }
 
