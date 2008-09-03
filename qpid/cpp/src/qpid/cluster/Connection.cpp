@@ -86,7 +86,7 @@ void Connection::deliverClose () {
 // Delivery of doOutput allows us to run the real connection doOutput()
 // which stocks up the write buffers with data.
 // 
-void Connection::deliverDoOutput(size_t requested) {
+void Connection::deliverDoOutput(uint32_t requested) {
     output.deliverDoOutput(requested);
 }
 
