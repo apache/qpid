@@ -160,4 +160,13 @@ public class ReferenceCountingExecutorService
     {
         return _pool;
     }
+
+    /**
+     * Return the ReferenceCount to this ExecutorService
+     * @return reference count
+     */
+    public int getReferenceCount()
+    {
+        return _refCount;
+    }
 }

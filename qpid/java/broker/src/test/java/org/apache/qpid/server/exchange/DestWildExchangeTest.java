@@ -60,10 +60,15 @@ public class DestWildExchangeTest extends TestCase
         _protocolSession = new InternalTestProtocolSession();
     }
 
+    public void tearDown()
+    {
+        ApplicationRegistry.remove(1); 
+    }
+
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);        
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
