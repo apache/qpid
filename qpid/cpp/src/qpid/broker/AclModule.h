@@ -89,6 +89,7 @@ class AclHelper {
           case METHOD: return "method";
           default: assert(false); // should never get here
         }
+        return "";
     }
     static inline Action getAction(const std::string& str) {
         if (str.compare("consume") == 0) return CONSUME;
@@ -115,6 +116,7 @@ class AclHelper {
           case UPDATE: return "update";
           default: assert(false); // should never get here
         }
+        return "";
     }
     static inline Property getProperty(const std::string& str) {
         if (str.compare("name") == 0) return NAME;
@@ -147,6 +149,7 @@ class AclHelper {
           case SCHEMACLASS: return "schemaclass";
           default: assert(false); // should never get here
         }
+        return "";
     }
     static inline AclResult getAclResult(const std::string& str) {
         if (str.compare("allow") == 0) return ALLOW;
@@ -163,6 +166,7 @@ class AclHelper {
           case DENYLOG: return "deny-log";
           default: assert(false); // should never get here
         }
+        return "";
     }
 
     typedef std::set<Property> propSet;
