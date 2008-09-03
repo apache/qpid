@@ -618,7 +618,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
     if (mgmtObject != 0 && persistenceId == 0)
     {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-        agent->addObject (mgmtObject, _persistenceId, 3);
+        agent->addObject (mgmtObject, 0x3000000000000000LL + _persistenceId);
 
         if (externalQueueStore) {
             ManagementObject* childObj = externalQueueStore->GetManagementObject();

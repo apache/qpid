@@ -158,10 +158,12 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_stagingThreshold (conf.stagingThreshold);
         mgmtObject->set_mgmtPubInterval  (conf.mgmtPubInterval);
         mgmtObject->set_version          (PACKAGE_VERSION);
-        mgmtObject->set_dataDirEnabled   (dataDir.isEnabled ());
-        mgmtObject->set_dataDir          (dataDir.getPath ());
+        if (dataDir.isEnabled())
+            mgmtObject->set_dataDir(dataDir.getPath());
+        else
+            mgmtObject->clr_dataDir();
         
-        managementAgent->addObject (mgmtObject, 2, 1);
+        managementAgent->addObject (mgmtObject, 0x1000000000000002LL);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the

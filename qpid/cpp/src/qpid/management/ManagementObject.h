@@ -32,6 +32,34 @@ namespace management {
 
 class Manageable;
 class ManagementAgent;
+class ObjectId;
+
+
+class AgentAttachment {
+    friend class ObjectId;
+private:
+    uint64_t first;
+public:
+    AgentAttachment() : first(0) {}
+    void setBanks(uint32_t broker, uint32_t bank);
+};
+
+
+class ObjectId {
+private:
+    const AgentAttachment* agent;
+    uint64_t first;
+    uint64_t second;
+public:
+    ObjectId() : agent(0), first(0), second(0) {}
+    ObjectId(framing::Buffer& buf) : agent(0) { decode(buf); }
+    ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object);
+    ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object);
+    bool operator==(const ObjectId &other) const;
+    bool operator<(const ObjectId &other) const;
+    void encode(framing::Buffer& buffer);
+    void decode(framing::Buffer& buffer);
+};
 
 class ManagementObject
 {
@@ -39,7 +67,7 @@ class ManagementObject
     
     uint64_t         createTime;
     uint64_t         destroyTime;
-    uint64_t         objectId;
+    ObjectId         objectId;
     bool             configChanged;
     bool             instChanged;
     bool             deleted;
@@ -84,11 +112,15 @@ class ManagementObject
     int  getThreadIndex();
     void writeTimestamps (qpid::framing::Buffer& buf);
 
+    sys::Mutex& getMutex();
+    framing::Buffer* startEventLH();
+    void finishEventLH(framing::Buffer* buf);
+
   public:
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
     ManagementObject (ManagementAgent* _agent, Manageable* _core) :
-        destroyTime(0), objectId (0), configChanged(true),
+        destroyTime(0), configChanged(true),
         instChanged(true), deleted(false), coreObject(_core), agent(_agent)
     { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
     virtual ~ManagementObject () {}
@@ -100,14 +132,14 @@ class ManagementObject
     virtual void doMethod       (std::string            methodName,
                                  qpid::framing::Buffer& inBuf,
                                  qpid::framing::Buffer& outBuf) = 0;
-    virtual void setReference   (uint64_t objectId);
+    virtual void setReference   (ObjectId objectId);
 
     virtual std::string& getClassName   (void) = 0;
     virtual std::string& getPackageName (void) = 0;
     virtual uint8_t*     getMd5Sum      (void) = 0;
 
-    void         setObjectId      (uint64_t oid) { objectId = oid; }
-    uint64_t     getObjectId      (void) { return objectId; }
+    void         setObjectId      (ObjectId oid) { objectId = oid; }
+    ObjectId     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
     virtual bool getInstChanged   (void) { return instChanged; }
     inline  void setAllChanged    (void) {
@@ -120,10 +152,9 @@ class ManagementObject
         deleted     = true;
     }
     inline bool isDeleted (void) { return deleted; }
-    inline sys::Mutex& getLock() { return accessLock; }
 };
 
-typedef std::map<uint64_t,ManagementObject*> ManagementObjectMap;
+typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;
 
 }}
             

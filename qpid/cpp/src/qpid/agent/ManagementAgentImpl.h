@@ -22,7 +22,7 @@
 
 #include "ManagementAgent.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/Dispatcher.h"
+#include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/Message.h"
@@ -30,10 +30,10 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/Condition.h"
 #include "qpid/framing/Uuid.h"
 #include <iostream>
 #include <sstream>
+#include <deque>
 
 namespace qpid { 
 namespace management {
@@ -49,14 +49,14 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void init(std::string brokerHost        = "localhost",
               uint16_t    brokerPort        = 5672,
               uint16_t    intervalSeconds   = 10,
-              bool        useExternalThread = false);
+              bool        useExternalThread = false,
+              std::string storeFile         = "");
     void RegisterClass(std::string packageName,
                        std::string className,
                        uint8_t*    md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
-    uint64_t addObject     (management::ManagementObject* objectPtr,
-                            uint32_t          persistId   = 0,
-                            uint32_t          persistBank = 4);
+    ObjectId addObject     (management::ManagementObject* objectPtr,
+                            uint64_t          persistId = 0);
     uint32_t pollCallbacks (uint32_t callLimit = 0);
     int      getSignalFd   (void);
 
@@ -64,14 +64,12 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
   private:
 
-    struct SchemaClassKey
-    {
+    struct SchemaClassKey {
         std::string name;
         uint8_t     hash[16];
     };
 
-    struct SchemaClassKeyComp
-    {
+    struct SchemaClassKeyComp {
         bool operator() (const SchemaClassKey& lhs, const SchemaClassKey& rhs) const
         {
             if (lhs.name != rhs.name)
@@ -84,53 +82,95 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
         }
     };
 
-    struct SchemaClass
-    {
+    struct SchemaClass {
         management::ManagementObject::writeSchemaCall_t writeSchemaCall;
 
         SchemaClass () : writeSchemaCall(0) {}
     };
 
+    struct QueuedMethod {
+        QueuedMethod(uint32_t _seq, std::string _reply, std::string _body) :
+            sequence(_seq), replyTo(_reply), body(_body) {}
+
+        uint32_t    sequence;
+        std::string replyTo;
+        std::string body;
+    };
+
+    typedef std::deque<QueuedMethod*> MethodQueue;
     typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
     typedef std::map<std::string, ClassMap> PackageMap;
 
     PackageMap                       packages;
+    AgentAttachment                  attachment;
     management::ManagementObjectMap  managementObjects;
     management::ManagementObjectMap  newManagementObjects;
+    MethodQueue                      methodQueue;
 
     void received (client::Message& msg);
 
     uint16_t          interval;
     bool              extThread;
+    int               writeFd;
+    int               readFd;
     uint64_t          nextObjectId;
+    std::string       storeFile;
     sys::Mutex        agentLock;
     sys::Mutex        addLock;
-    framing::Uuid     sessionId;
     framing::Uuid     systemId;
+    std::string       host;
+    uint16_t          port;
 
-    int signalFdIn, signalFdOut;
-    client::Connection   connection;
-    client::Session      session;
-    client::Dispatcher*  dispatcher;
     bool                 clientWasAdded;
-    uint64_t    objIdPrefix;
-    std::stringstream queueName;
+    uint32_t             requestedBank;
+    uint32_t             assignedBank;
+    uint32_t             brokerBank;
+    uint16_t             bootSequence;
 #   define MA_BUFFER_SIZE 65536
     char outputBuffer[MA_BUFFER_SIZE];
+    char eventBuffer[MA_BUFFER_SIZE];
 
-    class BackgroundThread : public sys::Runnable
+    friend class ConnectionThread;
+    class ConnectionThread : public sys::Runnable
+    {
+        bool operational;
+        ManagementAgentImpl& agent;
+        framing::Uuid        sessionId;
+        client::Connection   connection;
+        client::Session      session;
+        client::SubscriptionManager* subscriptions;
+        std::stringstream queueName;
+        sys::Mutex        connLock;
+        void run();
+    public:
+        ConnectionThread(ManagementAgentImpl& _agent) :
+            operational(false), agent(_agent), subscriptions(0) {}
+        ~ConnectionThread();
+        void sendBuffer(qpid::framing::Buffer& buf,
+                        uint32_t               length,
+                        std::string            exchange,
+                        std::string            routingKey);
+        void bindToBank(uint32_t agentBank);
+    };
+
+    class PublishThread : public sys::Runnable
     {
         ManagementAgentImpl& agent;
         void run();
     public:
-        BackgroundThread(ManagementAgentImpl& _agent) : agent(_agent) {}
+        PublishThread(ManagementAgentImpl& _agent) : agent(_agent) {}
     };
 
-    BackgroundThread bgThread;
-    sys::Thread      thread;
-    sys::Condition   startupCond;
-    bool             startupWait;
+    ConnectionThread connThreadBody;
+    sys::Thread      connThread;
+    PublishThread    pubThreadBody;
+    sys::Thread      pubThread;
 
+    static const std::string storeMagicNumber;
+
+    void startProtocol();
+    void storeData(bool requested=false);
+    void retrieveData();
     PackageMap::iterator FindOrAddPackage (std::string name);
     void moveNewObjectsLH();
     void AddClassLocal (PackageMap::iterator  pIter,
@@ -144,16 +184,19 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                 ClassMap::iterator     cIter);
     void EncodeHeader (qpid::framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     bool CheckHeader  (qpid::framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
-    void SendBuffer         (qpid::framing::Buffer&  buf,
-                             uint32_t                length,
-                             std::string             exchange,
-                             std::string             routingKey);
+    void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
+                               uint32_t code = 0, std::string text = std::string("OK"));
     void handleAttachResponse (qpid::framing::Buffer& inBuffer);
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
     void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence);
+    void invokeMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
+    void handleGetQuery       (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
     void handleMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
     void handleConsoleAddedIndication();
+    sys::Mutex& getMutex();
+    framing::Buffer* startEventLH();
+    void finishEventLH(framing::Buffer* outBuffer);
 };
 
 }}

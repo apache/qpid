@@ -57,9 +57,9 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
             if (!durable) {
                 if (name == "")
-                    agent->addObject (mgmtExchange, 4, 1);  // Special default exchange ID
+                    agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
                 else if (name == "qpid.management")
-                    agent->addObject (mgmtExchange, 5, 1);  // Special management exchange ID
+                    agent->addObject (mgmtExchange, 0x1000000000000005LL);  // Special management exchange ID
                 else
                     agent->addObject (mgmtExchange);
             }
@@ -78,7 +78,7 @@ void Exchange::setPersistenceId(uint64_t id) const
     if (mgmtExchange != 0 && persistenceId == 0)
     {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-        agent->addObject (mgmtExchange, id, 2);
+        agent->addObject (mgmtExchange, 0x2000000000000000LL + id);
     }
     persistenceId = id;
 }
@@ -130,7 +130,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
             ManagementObject* mo = queue->GetManagementObject();
             if (mo != 0)
             {
-                uint64_t queueId = mo->getObjectId();
+                management::ObjectId queueId = mo->getObjectId();
                 mgmtBinding = new management::Binding (agent, this, (Manageable*) parent, queueId, key, args);
                 agent->addObject (mgmtBinding);
             }

@@ -31,6 +31,7 @@ std::string Manageable::StatusText (status_t status)
     case STATUS_NOT_IMPLEMENTED         : return "NotImplemented";
     case STATUS_INVALID_PARAMETER       : return "InvalidParameter";
     case STATUS_FEATURE_NOT_IMPLEMENTED : return "FeatureNotImplemented";
+    case STATUS_FORBIDDEN               : return "Forbidden";
     }
 
     return "??";

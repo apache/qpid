@@ -37,6 +37,14 @@
       <arg name="name"     dir="I" type="sstr"/>
       <arg name="childRef" dir="O" type="objId"/>
     </method>
+
+    <event name="childCreated">
+      <arg name="name" type="sstr"/>
+    </event>
+
+    <event name="childDestroyed">
+      <arg name="name" type="sstr"/>
+    </event>
   </class>
 
 
