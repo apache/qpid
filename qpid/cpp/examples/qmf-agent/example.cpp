@@ -89,9 +89,10 @@ public:
 
 CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent(_agent)
 {
+    static uint64_t persistId = 0x111222333444555LL;
     mgmtObject = new Parent(agent, this, name);
 
-    agent->addObject(mgmtObject);
+    agent->addObject(mgmtObject, persistId++);
     mgmtObject->set_state("IDLE");
 }
 
@@ -128,6 +129,8 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args)
 
         children.push_back(child);
 
+        mgmtObject->event_childCreated(ioArgs.i_name);
+
         return STATUS_OK;
     }
 
@@ -145,7 +148,8 @@ ChildClass::ChildClass(ManagementAgent* agent, CoreClass* parent, string name)
 //==============================================================
 // Main program
 //==============================================================
-int main(int argc, char** argv) {
+int main_int(int argc, char** argv)
+{
     ManagementAgent::Singleton singleton;
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
@@ -158,7 +162,7 @@ int main(int argc, char** argv) {
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker
-    agent->init(string(host), port);
+    agent->init(string(host), port, 5, false, ".magentdata");
 
     // Allocate some core objects
     CoreClass core1(agent, "Example Core Object #1");
@@ -168,4 +172,12 @@ int main(int argc, char** argv) {
     core1.doLoop();
 }
 
+int main(int argc, char** argv)
+{
+    try {
+        return main_int(argc, argv);
+    } catch(std::exception& e) {
+        cout << "Top Level Exception: " << e.what() << endl;
+    }
+}
 

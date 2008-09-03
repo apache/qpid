@@ -32,7 +32,7 @@ Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
         if (agent != 0)
         {
             mgmtObject = new management::Vhost (agent, this, parentBroker, "/");
-            agent->addObject (mgmtObject, 3, 1);
+            agent->addObject (mgmtObject, 0x1000000000000003LL);
         }
     }
 }

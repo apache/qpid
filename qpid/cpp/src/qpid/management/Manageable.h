@@ -44,6 +44,7 @@ class Manageable
     static const status_t STATUS_NOT_IMPLEMENTED         = 3;
     static const status_t STATUS_INVALID_PARAMETER       = 4;
     static const status_t STATUS_FEATURE_NOT_IMPLEMENTED = 5;
+    static const status_t STATUS_FORBIDDEN               = 6;
 
     //  Every "Manageable" object must hold a reference to exactly one
     //  management object.  This object is always of a class derived from

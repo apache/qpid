@@ -33,9 +33,11 @@ namespace qpid {
 
 namespace acl {
 
-enum ObjectType {QUEUE, EXCHANGE, BROKER, LINK, ROUTE,OBJECTSIZE};
-enum Action {CONSUME, PUBLISH, CREATE, ACCESS, BIND, UNBIND, DELETE, PURGE, UPDATE, ACTIONSIZE};
-enum Property {NAME, DURABLE, OWNER, ROUTINGKEY, PASSIVE, AUTODELETE, EXCLUSIVE, TYPE, ALTERNATE, QUEUENAME};
+enum ObjectType {QUEUE, EXCHANGE, BROKER, LINK, ROUTE, METHOD, OBJECTSIZE}; // OBJECTSIZE must be last in list
+enum Action {CONSUME, PUBLISH, CREATE, ACCESS, BIND, UNBIND, DELETE, PURGE,
+             UPDATE, ACTIONSIZE}; // ACTIONSIZE must be last in list
+enum Property {NAME, DURABLE, OWNER, ROUTINGKEY, PASSIVE, AUTODELETE, EXCLUSIVE, TYPE, ALTERNATE,
+               QUEUENAME, SCHEMAPACKAGE, SCHEMACLASS};
 enum AclResult {ALLOW, ALLOWLOG, DENY, DENYLOG};	
 
 } // namespace acl
@@ -74,6 +76,7 @@ class AclHelper {
         if (str.compare("broker") == 0) return BROKER;
         if (str.compare("link") == 0) return LINK;
         if (str.compare("route") == 0) return ROUTE;
+        if (str.compare("method") == 0) return METHOD;
         throw str;
     }
     static inline std::string getObjectTypeStr(const ObjectType o) {
@@ -83,6 +86,7 @@ class AclHelper {
           case BROKER: return "broker";
           case LINK: return "link";
           case ROUTE: return "route";
+          case METHOD: return "method";
           default: assert(false); // should never get here
         }
     }
@@ -123,6 +127,8 @@ class AclHelper {
         if (str.compare("type") == 0) return TYPE;
         if (str.compare("alternate") == 0) return ALTERNATE;
         if (str.compare("queuename") == 0) return QUEUENAME;
+        if (str.compare("schemapackage") == 0) return SCHEMAPACKAGE;
+        if (str.compare("schemaclass") == 0) return SCHEMACLASS;
         throw str;
     }
     static inline std::string getPropertyStr(const Property p) {
@@ -137,6 +143,8 @@ class AclHelper {
           case TYPE: return "type";
           case ALTERNATE: return "alternate";
           case QUEUENAME: return "queuename";
+          case SCHEMAPACKAGE: return "schemapackage";
+          case SCHEMACLASS: return "schemaclass";
           default: assert(false); // should never get here
         }
     }
@@ -231,6 +239,17 @@ class AclHelper {
         a3->insert(actionPair(DELETE,  p0));
         
         map->insert(objectPair(ROUTE, a3));
+
+        // == Method ==
+
+        propSetPtr p5(new propSet);
+        p5->insert(SCHEMAPACKAGE);
+        p5->insert(SCHEMACLASS);
+
+        actionMapPtr a4(new actionMap);
+        a4->insert(actionPair(ACCESS, p5));
+
+        map->insert(objectPair(METHOD, a4));
     }
 };
 

@@ -42,6 +42,11 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
 {
     /*MGEN:Class.ParentRefAssignment*/
 /*MGEN:Class.InitializeElements*/
+/*MGEN:IF(Class.ExistOptionals)*/
+    // Optional properties start out not-present
+    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
+        presenceMask[idx] = 0;
+/*MGEN:ENDIF*/
 /*MGEN:IF(Class.ExistPerThreadStats)*/
     maxThreads = agent->getMaxThreads();
     perThreadStatsArray = new struct PerThreadStats*[maxThreads];
@@ -65,6 +70,7 @@ namespace {
     const string TYPE("type");
     const string ACCESS("access");
     const string INDEX("index");
+    const string OPTIONAL("optional");
     const string UNIT("unit");
     const string MIN("min");
     const string MAX("max");
@@ -74,6 +80,11 @@ namespace {
     const string ARGS("args");
     const string DIR("dir");
     const string DEFAULT("default");
+}
+
+void /*MGEN:Class.NameCap*/::registerClass(ManagementAgent* agent)
+{
+    agent->RegisterClass(packageName, className, md5Sum, writeSchema);
 }
 
 void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
@@ -90,9 +101,9 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
     buf.putShort       (/*MGEN:Class.EventCount*/); // Event Count
 
     // Properties
-/*MGEN:Class.ConfigElementSchema*/
+/*MGEN:Class.PropertySchema*/
     // Statistics
-/*MGEN:Class.InstElementSchema*/
+/*MGEN:Class.StatisticSchema*/
     // Methods
 /*MGEN:Class.MethodSchema*/
     // Events
@@ -118,7 +129,11 @@ void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
     configChanged = false;
 
     writeTimestamps (buf);
-/*MGEN:Class.WriteConfig*/
+/*MGEN:IF(Class.ExistOptionals)*/
+    for (uint8_t idx = 0; idx < /*MGEN:Class.PresenceMaskBytes*/; idx++)
+        buf.putOctet(presenceMask[idx]);
+/*MGEN:ENDIF*/
+/*MGEN:Class.WriteProperties*/
 }
 
 void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
@@ -140,7 +155,7 @@ void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
 /*MGEN:Class.Assign*/
     if (!skipHeaders)
         writeTimestamps (buf);
-/*MGEN:Class.WriteInst*/
+/*MGEN:Class.WriteStatistics*/
 
     // Maintenance of hi-lo statistics
 /*MGEN:Class.HiLoStatResets*/
@@ -162,3 +177,4 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
     outBuf.putShortString (Manageable::StatusText (status));
 }
 
+/*MGEN:Class.EventMethodBodies*/

@@ -47,7 +47,7 @@ class ManagementBroker : public ManagementAgent
     ManagementBroker ();
     virtual ~ManagementBroker ();
 
-    void configure       (std::string dataDir, uint16_t interval, Manageable* broker, int threadPoolSize);
+    void configure       (std::string dataDir, uint16_t interval, broker::Broker* broker, int threadPoolSize);
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
                           broker::Exchange::shared_ptr directExchange);
@@ -56,16 +56,15 @@ class ManagementBroker : public ManagementAgent
                           std::string className,
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
-    uint64_t addObject   (ManagementObject* object,
-                          uint32_t          persistId   = 0,
-                          uint32_t          persistBank = 4);
+    ObjectId addObject   (ManagementObject* object,
+                          uint64_t          persistId = 0);
     void clientAdded     (void);
     bool dispatchCommand (broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
 
     // Stubs for remote management agent calls
-    void init (std::string, uint16_t, uint16_t, bool) { assert(0); }
+    void init (std::string, uint16_t, uint16_t, bool, std::string) { assert(0); }
     uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
     int getSignalFd () { assert(0); return -1; }
 
@@ -88,7 +87,7 @@ class ManagementBroker : public ManagementAgent
     {
         uint32_t          objIdBank;
         std::string       routingKey;
-        uint64_t          connectionRef;
+        ObjectId          connectionRef;
         Agent*            mgmtObject;
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
@@ -97,7 +96,7 @@ class ManagementBroker : public ManagementAgent
     // TODO: Eventually replace string with entire reply-to structure.  reply-to
     //       currently assumes that the exchange is "amq.direct" even though it could
     //       in theory be specified differently.
-    typedef std::map<uint64_t, RemoteAgent*> RemoteAgentMap;
+    typedef std::map<ObjectId, RemoteAgent*> RemoteAgentMap;
     typedef std::vector<std::string>         ReplyToVector;
 
     //  Storage for known schema classes:
@@ -133,12 +132,15 @@ class ManagementBroker : public ManagementAgent
         size_t   bufferLen;
         uint8_t* buffer;
 
-        SchemaClass () : writeSchemaCall(0), pendingSequence(0), bufferLen(0), buffer(0) {}
+        SchemaClass(uint32_t seq) :
+            writeSchemaCall(0), pendingSequence(seq), bufferLen(0), buffer(0) {}
+        SchemaClass(ManagementObject::writeSchemaCall_t call) :
+            writeSchemaCall(call), pendingSequence(0), bufferLen(0), buffer(0) {}
         bool hasSchema () { return (writeSchemaCall != 0) || (buffer != 0); }
         void appendSchema (framing::Buffer& buf);
     };
 
-    typedef std::map<SchemaClassKey, SchemaClass*, SchemaClassKeyComp> ClassMap;
+    typedef std::map<SchemaClassKey, SchemaClass, SchemaClassKeyComp> ClassMap;
     typedef std::map<std::string, ClassMap> PackageMap;
 
     RemoteAgentMap               remoteAgents;
@@ -157,10 +159,10 @@ class ManagementBroker : public ManagementAgent
     broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;
     uint16_t                     interval;
-    Manageable*                  broker;
+    broker::Broker*              broker;
     uint16_t                     bootSequence;
-    uint32_t                     localBank;
     uint32_t                     nextObjectId;
+    uint32_t                     brokerBank;
     uint32_t                     nextRemoteBank;
     uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
@@ -168,6 +170,7 @@ class ManagementBroker : public ManagementAgent
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];
     char outputBuffer[MA_BUFFER_SIZE];
+    char eventBuffer[MA_BUFFER_SIZE];
 
     void writeData ();
     void PeriodicProcessing (void);
@@ -179,7 +182,8 @@ class ManagementBroker : public ManagementAgent
                              std::string                  routingKey);
     void moveNewObjectsLH();
 
-    void dispatchAgentCommandLH (broker::Message& msg);
+    bool authorizeAgentMessageLH(broker::Message& msg);
+    void dispatchAgentCommandLH(broker::Message& msg);
 
     PackageMap::iterator FindOrAddPackageLH(std::string name);
     void AddClass(PackageMap::iterator         pIter,
@@ -206,9 +210,12 @@ class ManagementBroker : public ManagementAgent
     void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
+    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const broker::ConnectionToken* connToken);
 
     size_t ValidateSchema(framing::Buffer&);
+    sys::Mutex& getMutex();
+    framing::Buffer* startEventLH();
+    void finishEventLH(framing::Buffer* outBuffer);
 };
 
 }}
