@@ -193,9 +193,10 @@
 }
 
 {
-  CPG related errors - seem benign but should invesgitate.
+  CPG error - seems benign.
    Memcheck:Param
    socketcall.sendmsg(msg.msg_iov[i])
-   fun:sendmsg
-   obj:/usr/lib/openais/libcpg.so.2.0.0
+   obj:*
+   obj:*/libcpg.so.2.0.0
 }
+

@@ -58,7 +58,7 @@ class ConnectionCodec : public sys::ConnectionCodec {
     ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& c);
     ~ConnectionCodec();
 
-    // ConnectionCodec functions delegate to the codecOutput
+    // ConnectionCodec functions.
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
     bool canEncode();

@@ -34,6 +34,9 @@ namespace cluster {
 
 class Connection;
 
+/** Types of cluster messages. */
+enum EventType { DATA, CONTROL };
+
 /** first=node-id, second=pid */
 struct MemberId : std::pair<uint32_t, uint32_t> {
     MemberId(uint32_t node=0, uint32_t pid=0) : std::pair<uint32_t,uint32_t>(node, pid) {}
@@ -51,6 +54,7 @@ struct ConnectionId : public std::pair<MemberId, Connection*>  {
     MemberId getMember() const { return first; }
     Connection* getConnectionPtr() const { return second; }
 };
+
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 
 }} // namespace qpid::cluster

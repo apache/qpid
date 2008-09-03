@@ -45,6 +45,13 @@ uint32_t AMQFrame::frameOverhead() {
     return 12 /*frame header*/;
 }
 
+uint16_t AMQFrame::DECODE_SIZE_MIN=4;
+
+uint16_t AMQFrame::decodeSize(char* data) {
+    Buffer buf(data+2, DECODE_SIZE_MIN);
+    return buf.getShort();
+}
+
 void AMQFrame::encode(Buffer& buffer) const
 {
     //set track first (controls on track 0, everything else on 1):

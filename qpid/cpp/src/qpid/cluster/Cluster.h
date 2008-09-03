@@ -68,17 +68,18 @@ class Cluster : public RefCounted, private Cpg::Handler
     bool empty() const { return size() == 0; }
     
     /** Send frame to the cluster */
-    void send(const framing::AMQFrame&, const ConnectionId&);
+    void mcastFrame(const framing::AMQFrame&, const ConnectionId&);
+    void mcastBuffer(const char*, size_t, const ConnectionId&);
 
     /** Leave the cluster */
     void leave();
     
-    void joined(const MemberId&, const std::string& url);
+    void urlNotice(const MemberId&, const std::string& url);
 
     broker::Broker& getBroker() { assert(broker); return *broker; }
 
     MemberId getSelf() const { return self; }
-    
+
   private:
     typedef std::map<MemberId, Url>  UrlMap;
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
@@ -88,6 +89,11 @@ class Cluster : public RefCounted, private Cpg::Handler
     typedef PollableQueue<Message> MessageQueue;
 
     boost::function<void()> shutdownNext;
+
+    /** Handle a delivered frame */
+    void deliverFrame(framing::AMQFrame&, const ConnectionId&);
+
+    void deliverBuffer(const char*, size_t, const ConnectionId&);
     
     /** CPG deliver callback. */
     void deliver(
@@ -106,15 +112,6 @@ class Cluster : public RefCounted, private Cpg::Handler
         struct cpg_address */*left*/, int /*nLeft*/,
         struct cpg_address */*joined*/, int /*nJoined*/
     );
-
-    /** Callback to handle delivered frames from the deliverQueue. */
-    void deliverQueueCb(const MessageQueue::iterator& begin,
-                      const MessageQueue::iterator& end);
-
-    /** Callback to multi-cast frames from mcastQueue */
-    void mcastQueueCb(const MessageQueue::iterator& begin,
-                    const MessageQueue::iterator& end);
-
 
     /** Callback to dispatch CPG events. */
     void dispatch(sys::DispatchHandle&);
@@ -136,8 +133,6 @@ class Cluster : public RefCounted, private Cpg::Handler
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-    MessageQueue deliverQueue;
-    MessageQueue mcastQueue;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const UrlMap::value_type&);

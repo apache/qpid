@@ -27,6 +27,7 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/log/Logger.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -87,7 +88,7 @@ ClusterFixture::ClusterFixture(size_t n) : name(Uuid(true).str()) {
 
 void ClusterFixture::add() {
     std::ostringstream os;
-    os << "broker" << size();
+    os << "fork" << size();
     std::string prefix = os.str();
 
     const char* argv[] = {
@@ -105,6 +106,7 @@ void ClusterFixture::add() {
     }
     else {                      // First broker, run in this process.
         Broker::Options opts;
+        qpid::log::Logger::instance().setPrefix("main");
         Plugin::addOptions(opts); // Pick up cluster options.
         opts.parse(argc, argv, "", true); // Allow-unknown for --load-module
         broker0.reset(new BrokerFixture(opts));
@@ -144,7 +146,8 @@ QPID_AUTO_TEST_CASE(testSingletonCluster) {
     ClusterFixture cluster(1);
     Client c(cluster[0]);
     BOOST_CHECK(c.session.queueQuery("q").getQueue().empty());
-    BOOST_CHECK(c.session.exchangeQuery("ex").getType().empty()); 
+    BOOST_CHECK(c.session.exchangeQuery("ex").getType().empty());
+    // FIXME aconway 2008-09-01: leaks if aisexec not running, investigate.
 }
 
 QPID_AUTO_TEST_CASE(testWiringReplication) {
