@@ -122,7 +122,7 @@ class SchemaType:
           stream.write ("        " + changeFlag + " = true;\n")
         stream.write ("    }\n")
         stream.write ("    inline bool isSet_" + varName + "() {\n")
-        stream.write ("        return presenceMask[presenceByte_%s] & presenceMask_%s != 0;\n" % (varName, varName))
+        stream.write ("        return (presenceMask[presenceByte_%s] & presenceMask_%s) != 0;\n" % (varName, varName))
         stream.write ("    }\n")
     elif self.accessor == "counter":
       stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1) {\n");
