@@ -70,6 +70,9 @@ public class AMQQueueFactory
         {
             q.configure(queueConfiguration);
         }
+
+        //Register the new queue
+        virtualHost.getQueueRegistry().registerQueue(q);
         return q;
     }
 }

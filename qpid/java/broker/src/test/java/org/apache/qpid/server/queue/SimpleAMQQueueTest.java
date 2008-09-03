@@ -41,6 +41,7 @@ public class SimpleAMQQueueTest extends TestCase
 {
 
     private SimpleAMQQueue _queue;
+    private VirtualHost _virtualHost;
     private MessageStore store = new TestableMemoryMessageStore();
     private TransactionalContext ctx = new NonTransactionalContext(store, new StoreContext(), null, null);
     private MessageHandleFactory factory = new MessageHandleFactory();
@@ -79,11 +80,14 @@ public class SimpleAMQQueueTest extends TestCase
     {
         super.setUp();
         //Create Application Registry for test
-        ApplicationRegistry.getInstance(1);
+        ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance(1);
 
         AMQShortString qname = new AMQShortString("qname");
         AMQShortString owner = new AMQShortString("owner");
-        _queue = new SimpleAMQQueue(qname, false, owner, false, new VirtualHost("vhost", store));
+        _virtualHost = new VirtualHost("vhost", store);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(qname, false, owner, false, _virtualHost, null);
+        
+        applicationRegistry .getVirtualHostRegistry().registerVirtualHost(_virtualHost);
     }
 
     @Override
