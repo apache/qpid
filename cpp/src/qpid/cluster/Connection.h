@@ -61,7 +61,7 @@ class Connection :
     // self-delivery of intercepted extension points.
     void deliver(framing::AMQFrame& f);
     void deliverClose();
-    void deliverDoOutput(size_t requested);
+    void deliverDoOutput(uint32_t requested);
 
     void codecDeleted();
     
