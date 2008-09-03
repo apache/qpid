@@ -244,6 +244,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         public TestQueue(AMQShortString name) throws AMQException
         {
             super(name, false, new AMQShortString("test"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"));
+            ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry().registerQueue(this);
         }
 
         /**
