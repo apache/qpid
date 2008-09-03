@@ -102,6 +102,7 @@ public class MessageStoreTest extends TestCase
         try
         {
             _virtualHost = new VirtualHost(virtualHostName, configuration, null);
+            ApplicationRegistry.getInstance().getVirtualHostRegistry().registerVirtualHost(_virtualHost);
         }
         catch (Exception e)
         {

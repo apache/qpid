@@ -117,6 +117,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _stateChangeCount = new AtomicLong(Long.MIN_VALUE);
     private AtomicReference _asynchronousRunner = new AtomicReference(null);
     private AtomicInteger _deliveredMessages = new AtomicInteger();
+    private AtomicBoolean _stopped = new AtomicBoolean(false);
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -1110,7 +1111,17 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void stop()
     {
-        ReferenceCountingExecutorService.getInstance().releaseExecutorService();
+        if (!_stopped.getAndSet(true))
+        {
+            ReferenceCountingExecutorService.getInstance().releaseExecutorService();
+        }
+        else
+        {
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Queue " + getName() + " already stopped");
+            }
+        }
     }
 
     public void deliverAsync()
