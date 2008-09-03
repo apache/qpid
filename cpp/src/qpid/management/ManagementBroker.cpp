@@ -602,7 +602,7 @@ void ManagementBroker::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
-        ClassMap cMap = pIter->second;
+        ClassMap& cMap = pIter->second;
         ClassMap::iterator cIter = cMap.find(key);
         if (cIter != cMap.end()) {
             Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
@@ -639,7 +639,7 @@ void ManagementBroker::handleSchemaResponseLH(Buffer& inBuffer, string /*replyTo
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
-        ClassMap cMap = pIter->second;
+        ClassMap& cMap = pIter->second;
         ClassMap::iterator cIter = cMap.find(key);
         if (cIter != cMap.end() && cIter->second.pendingSequence == sequence) {
             size_t length = ValidateSchema(inBuffer);
