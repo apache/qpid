@@ -22,6 +22,7 @@
 #include "Connection.h"
 #include "ProxyInputHandler.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/log/Statement.h"
 #include "qpid/memory.h"
 
 namespace qpid {
@@ -54,7 +55,11 @@ ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id,
 ConnectionCodec::~ConnectionCodec() {}
 
 // ConnectionCodec functions delegate to the codecOutput
-size_t ConnectionCodec::decode(const char* buffer, size_t size) { return codec.decode(buffer, size); }
+size_t ConnectionCodec::decode(const char* buffer, size_t size) {
+    return interceptor->decode(buffer, size);
+}
+
+// FIXME aconway 2008-09-02: delegate to interceptor?
 size_t ConnectionCodec::encode(const char* buffer, size_t size) { return codec.encode(buffer, size); }
 bool ConnectionCodec::canEncode() { return codec.canEncode(); }
 void ConnectionCodec::closed() { codec.closed(); }

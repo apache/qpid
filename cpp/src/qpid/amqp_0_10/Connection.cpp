@@ -59,7 +59,7 @@ size_t  Connection::decode(const char* buffer, size_t size) {
 
 bool Connection::canEncode() {
     if (!frameQueueClosed) connection->doOutput();
-        Mutex::ScopedLock l(frameQueueLock);
+    Mutex::ScopedLock l(frameQueueLock);
     return (!isClient && !initialized) || !frameQueue.empty();
 }
 

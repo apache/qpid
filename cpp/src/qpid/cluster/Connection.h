@@ -31,6 +31,8 @@
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/framing/FrameDecoder.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
 
@@ -56,16 +58,16 @@ class Connection :
     ~Connection();
     
     ConnectionId getId() const { return self; }
+    broker::Connection& getBrokerConnection() { return connection; }
     bool isLocal() const { return self.second == this; }
 
-    // self-delivery of intercepted extension points.
+    Cluster& getCluster() { return cluster; }
+
+    // self-delivery of multicast data.
     void deliver(framing::AMQFrame& f);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
-
-    void codecDeleted();
-    
-    Cluster& getCluster() { return cluster; }
+    void deliverBuffer(framing::Buffer&);
 
     // ConnectionOutputHandler methods
     void close() {}
@@ -78,13 +80,15 @@ class Connection :
     void closed();
     bool doOutput();
     bool hasOutput() { return connection.hasOutput(); }
-    void idleOut() { idleOut(); }
-    void idleIn() { idleIn(); }
+    void idleOut() { connection.idleOut(); }
+    void idleIn() { connection.idleIn(); }
+
+    // ConnectionCodec methods
+    size_t decode(const char* buffer, size_t size);
 
     // ConnectionInputHandlerFactory
     sys::ConnectionInputHandler* create(sys::ConnectionOutputHandler* out, const std::string& id, bool isClient);
 
-    broker::Connection& getBrokerConnection() { return connection; }
   private:
     void sendDoOutput();
 
@@ -93,7 +97,10 @@ class Connection :
     NoOpConnectionOutputHandler discardHandler;
     WriteEstimate writeEstimate;
     OutputInterceptor output;
+    framing::FrameDecoder decoder;
     broker::Connection connection;
+    framing::SequenceNumber mcastSeq;
+    framing::SequenceNumber deliverSeq;
 };
 
 }} // namespace qpid::cluster

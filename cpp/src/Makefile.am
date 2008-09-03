@@ -209,6 +209,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/FieldTable.cpp \
   qpid/framing/FieldValue.cpp \
   qpid/framing/FrameSet.cpp \
+  qpid/framing/FrameDecoder.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
   qpid/framing/SendContent.cpp \
@@ -493,7 +494,7 @@ nobase_include_HEADERS = \
   qpid/framing/FieldTable.h \
   qpid/framing/FieldValue.h \
   qpid/framing/FrameDefaultVisitor.h \
-  qpid/framing/FrameHandler.h \
+  qpid/framing/FrameDecoder.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/FrameSet.h \
   qpid/framing/Handler.h \
