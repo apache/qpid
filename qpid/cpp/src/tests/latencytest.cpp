@@ -21,6 +21,7 @@
 
 
 #include <algorithm>
+#include <limits>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -237,13 +238,13 @@ void Receiver::received(Message& msg)
 void Stats::update(double latency)
 {
     Mutex::ScopedLock l(lock);
-    if (!count || minLatency > latency) minLatency = latency;
-    if (!count || maxLatency < latency) maxLatency = latency;
     count++;
+    minLatency = std::min(minLatency, latency);
+    maxLatency = std::max(maxLatency, latency);
     totalLatency += latency;
 }
 
-Stats::Stats() : count(0), minLatency(0), maxLatency(0), totalLatency(0) {}
+Stats::Stats() : count(0), minLatency(std::numeric_limits<double>::max()), maxLatency(0), totalLatency(0) {}
 
 void Stats::print()
 {
