@@ -40,7 +40,7 @@ struct AclOptions : public Options {
 
     AclOptions(AclValues& v) : Options("ACL Options"), values(v) {
         addOptions()
-            ("no-enforce-acl", optValue(values.noEnforce), "Do not enforce ACL")
+            ("enforce-acl", optValue(values.enforce), "Enforce ACL")
             ("acl-file", optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir")
             ;
     }
@@ -57,7 +57,7 @@ struct AclPlugin : public Plugin {
     Options* getOptions() { return &options; }
 
     void init(broker::Broker& b) {
-        if (values.noEnforce){
+        if (!values.enforce){
 		    QPID_LOG(info, "ACL Disabled, no ACL checking being done.");
 			return;  
 		}
