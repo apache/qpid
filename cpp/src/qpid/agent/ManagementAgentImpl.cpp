@@ -170,7 +170,7 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
     }
 
     uint8_t rbuf[100];
-    while (read(readFd, rbuf, 100) > 0); // Consume all signaling bytes
+    while (read(readFd, rbuf, 100) > 0) ; // Consume all signaling bytes
     return methodQueue.size();
 }
 
