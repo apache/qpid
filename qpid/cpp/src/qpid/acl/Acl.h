@@ -38,10 +38,10 @@ class Broker;
 namespace acl {
 
 struct AclValues {
-	bool noEnforce;
+	bool enforce;
     std::string aclFile;
 
-    AclValues() {noEnforce = false; aclFile = "policy.acl"; }
+    AclValues() {enforce = false; aclFile = "policy.acl"; }
 };
 
 
