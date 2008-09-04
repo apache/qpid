@@ -43,7 +43,7 @@ using namespace std;
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
-      if (aclValues.noEnforce) return true;
+      if (!aclValues.enforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
       
       // add real ACL check here... 
@@ -55,7 +55,7 @@ using namespace std;
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
    {
-      if (aclValues.noEnforce) return true;
+      if (!aclValues.enforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
       
       // only use dataLocal here...
