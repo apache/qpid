@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
-  LICENSE NOTICE README RELEASE_NOTES DESIGN\
+  LICENSE NOTICE README RELEASE_NOTES DESIGN DISCLAIMER\
   xml/cluster.xml
 
 SUBDIRS = managementgen etc src docs/api docs/man examples
