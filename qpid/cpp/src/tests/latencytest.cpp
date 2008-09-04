@@ -237,9 +237,9 @@ void Receiver::received(Message& msg)
 void Stats::update(double latency)
 {
     Mutex::ScopedLock l(lock);
+    if (!count || minLatency > latency) minLatency = latency;
+    if (!count || maxLatency < latency) maxLatency = latency;
     count++;
-    if (minLatency == 0 || minLatency > latency) minLatency = latency;
-    if (maxLatency == 0 || maxLatency < latency) maxLatency = latency;
     totalLatency += latency;
 }
 
@@ -249,13 +249,13 @@ void Stats::print()
 {
     static bool already_have_stats = false;
     uint value;
-    double aux_avg = (totalLatency / count);
 
     if (opts.rate)
         value = opts.rate;
     else
         value = opts.count;
     Mutex::ScopedLock l(lock);
+    double aux_avg = (totalLatency / count);
     if (!opts.cumulative) {
         if (!opts.csv) {
             std::cout << "Latency(ms): min=" << minLatency << ", max=" <<
