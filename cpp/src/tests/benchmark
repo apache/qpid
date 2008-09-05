@@ -31,11 +31,13 @@ EOF
 }
 # Defaults
 TESTDIR=${TESTDIR:-$PWD}    # Absolute path to test exes on all hosts.
-SCRIPTDIR=${SCRIPTDIR:-$PWD/`dirname $0`}    # Absolute path to test scripts on all hosts.
+SCRIPTDIR=${SCRIPTDIR:-`dirname $0`} #  Path to local test scripts directory.
 SAMPLES=10			# Runs of each test.
 COUNT=${COUNT:-10000}		# Count for pub/sub tests.
 SIZE=${SIZE:-600}		# Size of messages
 ECHO=${ECHO:-1000}		# Count for echo test.
+NSUBS=${NSUBS:-4}
+NPUBS=${NPUBS:-4}
 
 collect() { eval $COLLECT=\""\$$COLLECT $*"\"; }
 COLLECT=ARGS
@@ -44,8 +46,10 @@ while test $# -gt 0; do
 	--testdir) TESTDIR=$2 ; shift 2 ;;
 	--samples) SAMPLES=$2 ; shift 2 ;;
 	--count) COUNT=$2 ; shift 2 ;;
-	--echos) ECHO==$2 ; shift 2 ;;
-	--size) SIZE==$2 ; shift 2 ;;
+	--echos) ECHO=$2 ; shift 2 ;;
+	--size) SIZE=$2 ; shift 2 ;;
+	--nsubs) NSUBS=$2 ; shift 2 ;;
+	--npubs) NPUBS=$2 ; shift 2 ;;
 	--) COLLECT=CLIENTARG; shift ;;
 	---) COLLECT=BROKERARG; shift;;
 	*) collect $1; shift ;;
@@ -74,10 +78,11 @@ dosamples() {
     } | tee $FILE
 }
 
+echo "benchmark $*" | tee benchmark.tab
 HEADING="pub	sub	total	Mb"
-dosamples $SCRIPTDIR/perfdist --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]} --- ${BROKERS[*]}
+dosamples $SCRIPTDIR/perfdist --size $SIZE --count $COUNT --nsubs $NSUBS --npubs $NPUBS -s -- ${CLIENTS[*]} --- ${BROKERS[*]}
 HEADING="pub"
-dosamples ssh -A ${CLIENTS[0]} $TESTDIR/publish --routing-key perftest0 --count $COUNT -s -b ${BROKERS[0]} 
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/publish --routing-key perftest0 --size $SIZE --count $COUNT -s -b ${BROKERS[0]} 
 HEADING="sub"
 dosamples ssh -A ${CLIENTS[0]} $TESTDIR/consume --queue perftest0 -s --count $COUNT -b ${BROKERS[0]} 
 HEADING="min	max	avg"
@@ -86,4 +91,4 @@ dosamples ssh -A ${CLIENTS[0]} $TESTDIR/echotest --count $ECHO -s -b ${BROKERS[0
 echo
 echo "Tab separated spreadsheet (also stored in benchmark.tab):"
 echo
-paste $FILES | tee benchmark.tab
+paste $FILES | tee -a benchmark.tab
