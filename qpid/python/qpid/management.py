@@ -72,9 +72,13 @@ class mgmtObject (object):
 class objectId(object):
   """ Object that represents QMF object identifiers """
 
-  def __init__(self, codec):
-    self.first  = codec.read_uint64()
-    self.second = codec.read_uint64()
+  def __init__(self, codec, first=0, second=0):
+    if codec:
+      self.first  = codec.read_uint64()
+      self.second = codec.read_uint64()
+    else:
+      self.first = first
+      self.second = second
 
   def __cmp__(self, other):
     if other == None:
