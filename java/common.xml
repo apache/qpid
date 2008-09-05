@@ -203,6 +203,15 @@
 
       ${release}
 
+  ant release-bin
+    
+    The release-bin target generates binary distribution archives for 
+    modules that have a specific binary package configured.
+    To enable for other modules create a target "release-bin" that 
+    depends on target "release-bin-tasks". The output is placed in: 
+
+      ${module.release}
+
   ant clean
 
     The clean target removes build artifacts. When invoked from the
@@ -212,6 +221,8 @@
       ${build}
         and
       ${release}
+	and
+      ${module.release}
 
     When invoked from a specific module, the clean target will delete
     that modules build root from underneath the project build root:
