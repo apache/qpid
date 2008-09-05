@@ -26,6 +26,7 @@
   <property name="project.version"       value="incubating-M3"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
+  <property name="resources"             location="${project.root}/resources"/>
   <property name="build"                 location="${project.root}/build"/>
   <property name="build.bin"             location="${build}/bin"/>
   <property name="build.etc"             location="${build}/etc"/>
@@ -37,6 +38,7 @@
   <property name="build.release.prepare" location="${build.release}/prepare"/>
   <property name="build.data"            location="${build}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
+
 
   <property name="java.target"           value="1.5"/>
   <property name="java.source"           value="1.5"/>

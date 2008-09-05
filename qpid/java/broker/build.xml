@@ -20,18 +20,38 @@
  -->
 <project name="AMQ Broker" default="build">
 
-  <property name="module.depends" value="common"/>
-  <property name="module.main" value="org.apache.qpid.server.Main"/>
+    <property name="module.depends" value="common"/>
+    <property name="module.main" value="org.apache.qpid.server.Main"/>
 
-  <import file="../module.xml"/>
+    <import file="../module.xml"/>
 
-  <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
+    <property name="output.dir" value="${module.precompiled}/org/apache/qpid/server/filter/jms/selector"/>
 
-  <target name="precompile">
-    <mkdir dir="${output.dir}"/>
-    <javacc target="src/main/grammar/SelectorParser.jj"
-            outputdirectory="${output.dir}"
-            javacchome="${project.root}/lib"/>
-  </target>
+
+    <target name="precompile">
+        <mkdir dir="${output.dir}"/>
+        <javacc target="src/main/grammar/SelectorParser.jj"
+                outputdirectory="${output.dir}"
+                javacchome="${project.root}/lib"/>
+    </target>
+
+    <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
+      <copy todir="${module.release}/etc" failonerror="false" flatten="true">
+          <fileset dir="${module.etc}" excludes="mstool-log4j.xml,*.conf,*.jpp"/>
+      </copy>
+    </target>
+
+    <target name="copy-bin-release" description="copy dependencies into module release">
+        <copy todir="${module.release}/bin" failonerror="true">
+            <fileset dir="${module.bin}" includes="qpid*"/>
+        </copy>
+        <copy todir="${module.release}/bin" failonerror="true" flatten="true">
+            <fileset dir="${basedir}/../common/bin" includes="qpid-run"/>
+        </copy>
+        <chmod dir="${module.release}/bin" perm="ugo+rx" includes="**/*"/>
+
+    </target>
+
+    <target name="release-bin" depends="release-bin-tasks"/>
 
 </project>
