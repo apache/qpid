@@ -134,16 +134,25 @@ class SubscriptionManager : public sys::Runnable
     /** Cancel a subscription. */
     void cancel(const std::string tag);
 
-    /** Deliver messages until stop() is called. */
+    /** Deliver messages in the current thread until stop() is called.
+     * Only one thread may be running in a SubscriptionManager at a time.
+     * @see run
+     */
     void run();
 
+    /** Start a new thread to deliver messages.
+     * Only one thread may be running in a SubscriptionManager at a time.
+     * @see start
+     */
+    void start();
+    
     /** If set true, run() will stop when all subscriptions
      * are cancelled. If false, run will only stop when stop()
      * is called. True by default.
      */
     void setAutoStop(bool set=true);
 
-    /** Cause run() to return */
+    /** Stop delivery. Causes run() to return, or the thread started with start() to exit. */
     void stop();
 
     static const uint32_t UNLIMITED=0xFFFFFFFF;
