@@ -55,11 +55,12 @@ start() {
     CLIENT=${CLIENTS[i % ${#CLIENTS[*]}]}
     BROKER=${BROKERS[i % ${#BROKERS[*]}]}
     ARGS="$* --broker $BROKER"
-    test -z "$QUIET" && echo "Client $i on $CLIENT: $ARGS"
-    ssh -fT $CLIENT $PERFTEST "$@"
+    cmd="ssh -n $CLIENT $PERFTEST $ARGS"
+    test -z "$QUIET" && echo "Client $i: $cmd"
+    $cmd &
 }
 
-$PERFTEST --setup
+$PERFTEST --setup -b ${BROKERS[0]}
 for (( i=0 ; i < $NPUBS ; ++i)); do start --publish; done
 for (( ; i < $NPUBS+$NSUBS ; ++i)); do start --subscribe; done
-$PERFTEST --control
+$PERFTEST --control  -b ${BROKERS[0]}
