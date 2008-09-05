@@ -107,10 +107,10 @@ class Makefile:
   def genGenSources (self, stream, variables):
     mdir = variables["mgenDir"]
     sdir = variables["specDir"]
-    stream.write (mdir + "/main.py \\\n")
-    stream.write ("    " + mdir + "/generate.py \\\n")
-    stream.write ("    " + mdir + "/schema.py \\\n")
-    stream.write ("    " + sdir + "/management-types.xml \\\n")
+    stream.write (mdir + "/qmf-gen \\\n")
+    stream.write ("    " + mdir + "/qmf/generate.py \\\n")
+    stream.write ("    " + mdir + "/qmf/schema.py \\\n")
+    stream.write ("    " + mdir + "/management-types.xml \\\n")
     stream.write ("    " + sdir + "/management-schema.xml \\\n")
     first = True
     for template in self.templateFiles:

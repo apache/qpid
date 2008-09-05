@@ -318,6 +318,8 @@ if test $poller = xno; then
   AC_MSG_ERROR([Polling mechanism not implemented for $host])
 fi
 
+AM_PATH_PYTHON()
+
 # Files to generate	
 AC_CONFIG_FILES([
   Makefile

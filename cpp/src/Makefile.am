@@ -28,10 +28,8 @@ $(rgen_generator):
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/main.py -m $(srcdir)/managementgen.mk \
-	$(top_srcdir)/../specs/management-schema.xml \
-	$(top_srcdir)/../specs/management-types.xml \
-	$(mgen_dir)/templates gen/qpid/management
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
+	$(top_srcdir)/../specs/management-schema.xml gen/qpid/management
 
 $(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
 mgen.timestamp: $(mgen_generator)
@@ -100,6 +98,7 @@ lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
 include cluster.mk
 include acl.mk
+include qmf.mk
 
 # The logger library uses boost::date_time to format time.
 # We have to disable the unused parameters warning to get around
@@ -325,7 +324,6 @@ libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
-  qpid/agent/ManagementAgentImpl.cpp \
   qpid/client/AckPolicy.cpp			\
   qpid/client/Bounds.cpp			\
   qpid/client/ConnectionImpl.cpp		\
