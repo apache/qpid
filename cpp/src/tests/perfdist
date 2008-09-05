@@ -7,17 +7,16 @@
 set -e
 usage() {
 cat <<EOF
-usage: $0 <perftest-args> -- <client-hosts ...> 
+usage: $0 <perftest-args> -- <client-hosts ...> [ --- <broker hosts...> ]
+Client & broker hosts can also be set in env vars CLIENTS and BROKERS.
 
-Run perftest with clients running on the listed hosts.  Clients are
-assigned to hosts publishers first, then subscribers the host list is
-used round-robin if there are more clients than hosts. perftest-args should
-include a --host <brokerhost>  flag (and --port if necessary).
+Run perftest with clients running on the clients and brokers running
+on the specified hosts. Clients are assigned to client hosts round
+robin: publishers first, then subscribers. If there are multiple
+brokers (for cluster tests) clients connect to them round robin.
 
-Do not pass preftest action flags: --setup, --control, --publish, --subscribe.
-The script will pass them to the appropriate client processes.
-
-Note all perftest args must come before  --.
+Broker hosts can be listed with -b in perftest-args or after ---
+at the end of the arguments.
 
 Error: $*
 EOF
@@ -36,19 +35,28 @@ while test $# -gt 0; do
 	--npubs) collect $1 $2; NPUBS=$2; shift 2 ;;
 	--nsubs) collect $1 $2; NSUBS=$2; shift 2 ;;
 	-s|--summary) collect $1; QUIET=yes; shift 1 ;;
-	--) COLLECT=HOSTS; shift ;; 
+	-b|--broker) BROKERS="$BROKERS $2"; shift 2;;
+	--) COLLECT=CLIENTARG; shift ;;
+	---) COLLECT=BROKERARG; shift;;
 	*) collect $1; shift ;;
     esac
 done
 
-if [ -z "$HOSTS" ]; then usage "No hosts listed after --"; fi
+CLIENTS=${CLIENTARG:-$CLIENTS}
+if [ -z "$CLIENTS" ]; then usage "No client hosts listed after --"; fi
+BROKERS=${BROKERARG:-$BROKERS}
+if [ -z "$BROKERS" ]; then usage "No brokers specified"; fi
+
 PERFTEST="$TESTDIR/perftest $ARGS"
 
-HOSTS=($HOSTS)
+CLIENTS=($CLIENTS)
+BROKERS=($BROKERS)
 start() {
-    HOST=${HOSTS[i % ${#HOSTS[*]}]}
-    test -z "$QUIET" && echo "Client $i on $HOST $*"
-    ssh -fT $HOST "PATH=$ADDPATH:\$PATH" $PERFTEST "$@"
+    CLIENT=${CLIENTS[i % ${#CLIENTS[*]}]}
+    BROKER=${BROKERS[i % ${#BROKERS[*]}]}
+    ARGS="$* --broker $BROKER"
+    test -z "$QUIET" && echo "Client $i on $CLIENT: $ARGS"
+    ssh -fT $CLIENT $PERFTEST "$@"
 }
 
 $PERFTEST --setup

@@ -19,7 +19,6 @@
  *
  */
 
-#include "qpid/cluster/types.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/PollableQueue.h"
 #include "qpid/cluster/NoOpConnectionOutputHandler.h"

@@ -89,9 +89,13 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     batch.clear();
     batch.swap(queue);
     condition.clear();
-    ScopedUnlock u(lock);
-    callback(batch.begin(), batch.end()); // Process outside the lock to allow concurrent push.
-    h.rewatch();
+    {
+        // Process outside the lock to allow concurrent push.
+        ScopedUnlock u(lock);
+        callback(batch.begin(), batch.end()); 
+        h.rewatch();
+    }
+    batch.clear();
 }
 
 }} // namespace qpid::cluster

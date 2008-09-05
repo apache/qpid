@@ -25,7 +25,9 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/WriteEstimate.cpp \
   qpid/cluster/OutputInterceptor.h \
   qpid/cluster/OutputInterceptor.cpp \
-  qpid/cluster/ProxyInputHandler.h
+  qpid/cluster/ProxyInputHandler.h \
+  qpid/cluster/Event.h \
+  qpid/cluster/Event.cpp
 
 libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la
 

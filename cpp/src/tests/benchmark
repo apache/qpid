@@ -21,33 +21,45 @@
 # and latency against a single cluster member while they are replicating.
 #
 # Must be run in the qpid src/tests build directory.
-#
+# 
 
+usage() {
+cat <<EOF
+Usage: $0 [options] -- client hosts --- broker hosts
+Read the script for options.
+EOF
+}
 # Defaults
 TESTDIR=${TESTDIR:-$PWD}    # Absolute path to test exes on all hosts.
-SCRIPTDIR=${SCRIPTDIR:-$PWD/`dirname $0`}    # Absolute path to test exes on all hosts.
-SAMPLES=10		    # Runs of each test.
-COUNT=${COUNT:-10000}	    # Count for pub/sub tests. 
-ECHO=${ECHO:-1000}	    # Count for echo test.
-BROKER_FLAGS=
+SCRIPTDIR=${SCRIPTDIR:-$PWD/`dirname $0`}    # Absolute path to test scripts on all hosts.
+SAMPLES=10			# Runs of each test.
+COUNT=${COUNT:-10000}		# Count for pub/sub tests.
+SIZE=${SIZE:-600}		# Size of messages
+ECHO=${ECHO:-1000}		# Count for echo test.
 
-while getopts "t:b:p:s:c:n:e" opt ; do
-    case $opt in
-	t) TESTDIR=$OPTARG ;;
-	b) BROKER_FLAGS="$BROKER_FLAGS -b $OPTARG" ;;
-	p) BROKER_FLAGS="$BROKER_FLAGS -p $OPTARG" ;;
-	s) SAMPLES=$OPTARG ;;
-	c) CLIENTS="$CLIENTS $OPTARG" ;;
-	n) COUNT="$OPTARG" ;;
-	e) ECHO="$OPTARG" ;;
+collect() { eval $COLLECT=\""\$$COLLECT $*"\"; }
+COLLECT=ARGS
+while test $# -gt 0; do
+    case $1 in
+	--testdir) TESTDIR=$2 ; shift 2 ;;
+	--samples) SAMPLES=$2 ; shift 2 ;;
+	--count) COUNT=$2 ; shift 2 ;;
+	--echos) ECHO==$2 ; shift 2 ;;
+	--size) SIZE==$2 ; shift 2 ;;
+	--) COLLECT=CLIENTARG; shift ;;
+	---) COLLECT=BROKERARG; shift;;
+	*) collect $1; shift ;;
     esac
 done
 
+CLIENTS=${CLIENTARG:-$CLIENTS}
+BROKERS=${BROKERARG:-$BROKERS}
 test -z "$CLIENTS" && { echo "Must specify at least one client host."; exit 1; }
-test -z "$BROKER_FLAGS" && { echo "Must specify a broker host."; exit 1; } 
+test -z "$BROKERS" && { echo "Must specify at least one broker host."; exit 1; } 
 
 export TESTDIR			# For perfdist
 CLIENTS=($CLIENTS)		# Convert to array
+BROKERS=($BROKERS)
 trap "rm -f $FILES" EXIT
 
 dosamples() {
@@ -63,13 +75,13 @@ dosamples() {
 }
 
 HEADING="pub	sub	total	Mb"
-dosamples $SCRIPTDIR/perfdist $BROKER_FLAGS --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]}
+dosamples $SCRIPTDIR/perfdist --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]} --- ${BROKERS[*]}
 HEADING="pub"
-dosamples ssh -A ${CLIENTS[0]} $TESTDIR/publish --routing-key perftest0 -s $BROKER_FLAGS --count $COUNT
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/publish --routing-key perftest0 --count $COUNT -s -b ${BROKERS[0]} 
 HEADING="sub"
-dosamples ssh -A ${CLIENTS[0]} $TESTDIR/consume --queue perftest0 -s $BROKER_FLAGS --count $COUNT
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/consume --queue perftest0 -s --count $COUNT -b ${BROKERS[0]} 
 HEADING="min	max	avg"
-dosamples ssh -A ${CLIENTS[0]} $TESTDIR/echotest --count $ECHO -s
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/echotest --count $ECHO -s -b ${BROKERS[0]} 
 
 echo
 echo "Tab separated spreadsheet (also stored in benchmark.tab):"
