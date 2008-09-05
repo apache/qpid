@@ -124,6 +124,12 @@ void SubscriptionManager::run()
     dispatcher.run();
 }
 
+void SubscriptionManager::start()
+{
+    dispatcher.setAutoStop(autoStop);
+    dispatcher.start();
+}
+
 void SubscriptionManager::stop()
 {
     dispatcher.stop();
