@@ -27,12 +27,10 @@ CC           = gcc
 LIB_DIR      = $(QPID_DIR)/cpp/src/.libs
 CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/src -I$(QPID_DIR)/cpp/src/gen -I$(GEN_DIR)
 CC_FLAGS     = -g -O3
-LD_FLAGS     = -lqpidclient -lqpidcommon -L$(LIB_DIR)
+LD_FLAGS     = -lqmfagent -L$(LIB_DIR)
 SPEC_DIR     = $(QPID_DIR)/specs
-TYPE_FILE    = $(SPEC_DIR)/management-types.xml
 MGEN_DIR     = $(QPID_DIR)/cpp/managementgen
-TEMPLATE_DIR = $(MGEN_DIR)/templates
-MGEN         = $(MGEN_DIR)/main.py
+MGEN         = $(MGEN_DIR)/qmf-gen
 
 vpath %.cpp $(SRC_DIR):$(GEN_DIR)
 vpath %.d   $(OBJ_DIR)
@@ -53,7 +51,7 @@ all: gen
 	@$(MAKE)
 
 gen:
-	$(MGEN) $(SCHEMA_FILE) $(TYPE_FILE) $(TEMPLATE_DIR) $(GEN_DIR)
+	$(MGEN) $(SCHEMA_FILE) $(GEN_DIR)
 
 clean:
 	rm -rf $(GEN_DIR) $(OUT_FILE) *.d *.o

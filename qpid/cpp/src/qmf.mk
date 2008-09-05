@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -19,8 +17,15 @@
 # under the License.
 #
 
-import sys
+#
+# qmf agent library makefile fragment, to be included in Makefile.am
+# 
+lib_LTLIBRARIES += libqmfagent.la
 
-sys.path.append("/usr/share/managementgen")
+libqmfagent_la_SOURCES = \
+  qpid/agent/ManagementAgent.h \
+  qpid/agent/ManagementAgentImpl.cpp \
+  qpid/agent/ManagementAgentImpl.h
 
-import main
+libqmfagent_la_LIBADD = libqpidclient.la
+
