@@ -158,21 +158,11 @@ class Cpg : public sys::IOHandle {
     bool isShutdown;
 };
 
-std::ostream& operator <<(std::ostream& out, const MemberId& id);
-
 inline bool operator==(const cpg_name& a, const cpg_name& b) {
     return a.length==b.length &&  strncmp(a.value, b.value, a.length) == 0;
 }
 inline bool operator!=(const cpg_name& a, const cpg_name& b) { return !(a == b); }
 
 }} // namespace qpid::cluster
-
-// In proper namespaces for ADL
-std::ostream& operator <<(std::ostream& out, const cpg_name& name);
-std::ostream& operator<<(std::ostream& o, const cpg_address& a);
-namespace std {
-std::ostream& operator <<(std::ostream& out, std::pair<cpg_address*,int> addresses);
-}
-
 
 #endif  /*!CPG_H*/

@@ -184,33 +184,3 @@ ostream& operator<<(ostream& o, const ConnectionId& c) {
 }
 
 }} // namespace qpid::cluster
-
-
-// In proper namespace for ADL.
-
-std::ostream& operator<<(std::ostream& o, const ::cpg_address& a) {
-    const char* reasonString;
-    switch (a.reason) {
-      case CPG_REASON_JOIN: reasonString = " joined"; break;
-      case CPG_REASON_LEAVE: reasonString = " left";break;
-      case CPG_REASON_NODEDOWN: reasonString = " node-down";break;
-      case CPG_REASON_NODEUP: reasonString = " node-up";break;
-      case CPG_REASON_PROCDOWN: reasonString = " process-down";break;
-      default: reasonString = "";
-    }
-    return o << qpid::cluster::MemberId(a.nodeid, a.pid) << reasonString;
-}
-
-std::ostream& operator<<(std::ostream& o, const cpg_name& name) {
-    return o << std::string(name.value, name.length);
-}
-
-namespace std {
-ostream& operator<<(ostream& o, std::pair<cpg_address*,int> a) {
-    for (cpg_address* p = a.first; p < a.first+a.second; ++p)
-        o << *p << " ";
-    return o;
-}
-}
-
-

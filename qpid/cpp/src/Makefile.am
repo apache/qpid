@@ -237,6 +237,8 @@ libqpidcommon_la_SOURCES = \
   qpid/DataDir.cpp \
   qpid/Options.cpp \
   qpid/log/Options.cpp \
+  qpid/RefCountedBuffer.h \
+  qpid/RefCountedBuffer.cpp \
   qpid/log/Selector.cpp \
   qpid/log/Statement.cpp \
   qpid/pointer_to_other.h

@@ -16,14 +16,14 @@
 
 QPIDD=${QPIDD:-$PWD/../qpidd}
 LIBQPIDCLUSTER=${LIBQPIDCLUSTER:-$PWD/../.libs/libqpidcluster.so}
-CLUSTER=$USER			# User name is default cluster name.
+NAME=$USER			# User name is default cluster name.
 RESTART=NO
 
-while getopts "kp:c:q:r" ARG ; do
+while getopts "kp:n:q:r" ARG ; do
     case $ARG in
 	k) KILL=yes ;; 
 	p) PORT="$OPTARG" ;;
-	c) CLUSTER=$OPTARG ;;
+	n) NAME=$OPTARG ;;
 	q) QPIDD=$OPTARG ;;
 	l) LIBQPIDCLUSTER=$OPTARG ;;
 	r) RESTART=yes ;;
@@ -33,17 +33,17 @@ done
 shift `expr $OPTIND - 1`
 test -n "$PORT" && PORTOPT="-p $PORT"
 test "$KILL" = yes && KILL="$QPIDD -q $PORTOPT ;"
-test -z "$*" && { echo Must specify at least one host; exit 1; }
+CLUSTER=${*:-$CLUSTER}		# Use args or env
+test -z "$CLUSTER" && { echo Must specify at least one host; exit 1; }
 
 
-OPTS="-d $PORTOPT --load-module $LIBQPIDCLUSTER --cluster-name=$CLUSTER --no-data-dir --auth=no --log-output=syslog"
+OPTS="-d $PORTOPT --load-module $LIBQPIDCLUSTER --cluster-name=$NAME --no-data-dir --auth=no --log-output=syslog --log-enable=info+"
 
 num=0
-for h in $*; do
+for h in $CLUSTER; do
     num=`expr $num + 1`	      # Give a unique log prefix to each node.
     cmd="$KILL $QPIDD $OPTS --log-prefix $num.$h"
-    echo == $h
-    out=`echo "$cmd" | ssh $h newgrp ais` || { echo $out ; exit 1; }
+    out=`echo "$cmd" | ssh $h newgrp ais` || { echo == $h error: $out ; exit 1; }
     if [ "$PORT" = 0 ] ; then p=$out; else p=$PORT; fi
     echo "$h $p" 
 done
