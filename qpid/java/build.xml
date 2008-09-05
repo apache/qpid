@@ -96,6 +96,11 @@
     <iterate target="doc"/>
   </target>
 
+  <target name="release-bin" description="build a binary release artifact" depends="build">
+      <iterate  target="release-bin"/>
+  </target>
+
+
   <target name="check-manifest">
     <uptodate property="manifest.done" targetfile="${qpid.jar}">
       <srcfiles dir="${build.lib}" includes="**/*.jar" excludes="**/${qpid.jar.name}"/>
@@ -175,6 +180,7 @@
   <target name="release" depends="zip,gzip" description="build all release archives except .bz2"/>
 
   <target name="release-all" depends="zip,gzip,bzip2" description="build all release archives"/>
+
 
   <target name="clean" description="remove build and release artifacts">
     <iterate target="clean"/>
