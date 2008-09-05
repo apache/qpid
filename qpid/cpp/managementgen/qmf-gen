@@ -24,16 +24,16 @@ from qmf.schema   import PackageSchema, SchemaClass
 from qmf.generate import Generator
 from optparse     import OptionParser
 
-dataPath = os.path.dirname(sys.argv[0])
+dataPath = os.path.dirname(sys.argv[0]) + "/qmf/"
 
 # Set command line options
 usage  = "usage: %prog [options] schema-document out-directory"
 parser = OptionParser (usage=usage)
 parser.add_option ("-m", "--makefile", dest="makefile", metavar="FILE",
                    help="Makefile fragment")
-parser.add_option ("-t", "--typefile", dest="typefile", metavar="FILE", default=dataPath + "/management-types.xml",
+parser.add_option ("-t", "--typefile", dest="typefile", metavar="FILE", default=dataPath + "management-types.xml",
                    help="Type descriptor file")
-parser.add_option ("-d", "--templatedir", dest="templatedir", metavar="DIR", default=dataPath + "/templates",
+parser.add_option ("-d", "--templatedir", dest="templatedir", metavar="DIR", default=dataPath + "templates",
                    help="Template directory")
 
 (opts, args) = parser.parse_args ()
