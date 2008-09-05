@@ -17,20 +17,37 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# A basic "benchmark" to generate performacne samples of throughput and latency.
+# A basic "benchmark" to generate performacne samples of throughput
+# and latency against a single cluster member while they are replicating.
+#
 # Must be run in the qpid src/tests build directory.
-# 
-SAMPLES=${SAMPLES:-10}
-CLIENTS=${CLIENTS:-mrg8}		# Client hosts
-CLIENTS=($CLIENTS)		# Array
-COUNT=${COUNT:-10000}
-ECHO=${ECHO:-100}
-BROKER=${BROKER:-mrg7}
+#
 
-srcdir=`dirname $0`
-ADDPATH=$PWD:$PWD/../../../src/tests
-PATH=$ADDPATH:$PATH
+# Defaults
+TESTDIR=${TESTDIR:-$PWD}    # Absolute path to test exes on all hosts.
+SCRIPTDIR=${SCRIPTDIR:-$PWD/`dirname $0`}    # Absolute path to test exes on all hosts.
+SAMPLES=10		    # Runs of each test.
+COUNT=${COUNT:-10000}	    # Count for pub/sub tests. 
+ECHO=${ECHO:-1000}	    # Count for echo test.
+BROKER_FLAGS=
 
+while getopts "t:b:p:s:c:n:e" opt ; do
+    case $opt in
+	t) TESTDIR=$OPTARG ;;
+	b) BROKER_FLAGS="$BROKER_FLAGS -b $OPTARG" ;;
+	p) BROKER_FLAGS="$BROKER_FLAGS -p $OPTARG" ;;
+	s) SAMPLES=$OPTARG ;;
+	c) CLIENTS="$CLIENTS $OPTARG" ;;
+	n) COUNT="$OPTARG" ;;
+	e) ECHO="$OPTARG" ;;
+    esac
+done
+
+test -z "$CLIENTS" && { echo "Must specify at least one client host."; exit 1; }
+test -z "$BROKER_FLAGS" && { echo "Must specify a broker host."; exit 1; } 
+
+export TESTDIR			# For perfdist
+CLIENTS=($CLIENTS)		# Convert to array
 trap "rm -f $FILES" EXIT
 
 dosamples() {
@@ -40,22 +57,21 @@ dosamples() {
     {
 	echo "\"$*\"$TABS"
 	echo "$HEADING" 
-	for (( i=0; i<$SAMPLES; ++i)) ; do echo "`$@`" ; done
+	for (( i=0; i<$SAMPLES; ++i)) ; do echo "`$*`" ; done
 	echo
     } | tee $FILE
 }
 
 HEADING="pub	sub	total	Mb"
-dosamples perfdist -b $BROKER --count $COUNT -s -- ${CLIENTS[*]}
+dosamples $SCRIPTDIR/perfdist $BROKER_FLAGS --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]}
 HEADING="pub"
-dosamples ssh ${CLIENTS[0]} $PWD/publish --routing-key perftest0 -s -b $BROKER --count $COUNT
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/publish --routing-key perftest0 -s $BROKER_FLAGS --count $COUNT
 HEADING="sub"
-dosamples ssh ${CLIENTS[0]} $PWD/consume --queue perftest0 -s -b $BROKER --count $COUNT
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/consume --queue perftest0 -s $BROKER_FLAGS --count $COUNT
 HEADING="min	max	avg"
-dosamples echotest --count $ECHO -s
-HEADING="pub	sub	total	Mb"
-dosamples perfdist -b $BROKER --count $COUNT --nsubs 2 --npubs 2 --qt 2 -s -- ${CLIENTS[*]}
+dosamples ssh -A ${CLIENTS[0]} $TESTDIR/echotest --count $ECHO -s
+
 echo
-echo "Tab separated spreadsheet:"
+echo "Tab separated spreadsheet (also stored in benchmark.tab):"
 echo
 paste $FILES | tee benchmark.tab

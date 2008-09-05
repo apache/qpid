@@ -12,7 +12,7 @@ usage: $0 <perftest-args> -- <client-hosts ...>
 Run perftest with clients running on the listed hosts.  Clients are
 assigned to hosts publishers first, then subscribers the host list is
 used round-robin if there are more clients than hosts. perftest-args should
-include a --host <brokerhost>  flag.
+include a --host <brokerhost>  flag (and --port if necessary).
 
 Do not pass preftest action flags: --setup, --control, --publish, --subscribe.
 The script will pass them to the appropriate client processes.
@@ -23,6 +23,8 @@ Error: $*
 EOF
 exit 1
 }
+
+TESTDIR=${TESTDIR:-$PWD}	# Absolute path to test exes on all hosts.
 
 collect() { eval $COLLECT=\""\$$COLLECT $*"\"; }
 NPUBS=1
@@ -40,10 +42,7 @@ while test $# -gt 0; do
 done
 
 if [ -z "$HOSTS" ]; then usage "No hosts listed after --"; fi
-ADDPATH="$PWD"
-PATH=$ADDPATH:$PATH
-which perftest>/dev/null || exit 1
-PERFTEST="perftest $ARGS"
+PERFTEST="$TESTDIR/perftest $ARGS"
 
 HOSTS=($HOSTS)
 start() {
