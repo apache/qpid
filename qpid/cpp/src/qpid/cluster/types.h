@@ -34,7 +34,7 @@ namespace cluster {
 
 class Connection;
 
-/** Types of cluster messages. */
+/** Types of cluster event. */
 enum EventType { DATA, CONTROL };
 
 /** first=node-id, second=pid */

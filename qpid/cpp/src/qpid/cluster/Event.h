@@ -25,6 +25,7 @@
 #include "types.h"
 #include "Cpg.h"
 #include "qpid/RefCountedBuffer.h"
+#include "qpid/framing/Buffer.h"
 
 namespace qpid {
 namespace cluster {
@@ -39,11 +40,11 @@ namespace cluster {
  */
 struct Event {
   public:
-    /** Create an event with for mcasting, with size bytes of space. */
-    Event(EventType t, const ConnectionId c, size_t size);
+    /** Create an event to mcast with a buffer of size bytes. */
+    Event(EventType t=DATA, const ConnectionId c=ConnectionId(), size_t size=0);
 
-    /** Create an event from delivered data. */
-    Event(const MemberId& m, const char* data, size_t size);
+    /** Create an event copied from delivered data. */
+    static Event delivered(const MemberId& m, void* data, size_t size);
     
     void mcast(const Cpg::Name& name, Cpg& cpg);
     
@@ -51,6 +52,9 @@ struct Event {
     ConnectionId getConnection() const { return connection; }
     size_t getSize() const { return size; }
     char* getData() { return data->get(); }
+    const char* getData() const { return data->get(); }
+
+    operator framing::Buffer() const { return framing::Buffer(const_cast<char*>(getData()), getSize()); }
 
   private:
     static const size_t OVERHEAD;

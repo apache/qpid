@@ -25,6 +25,7 @@
 
 namespace qpid {
 namespace cluster {
+
 using framing::Buffer;
 
 const size_t Event::OVERHEAD = 1 /*type*/ + 8 /*64-bit pointr*/;
@@ -32,10 +33,14 @@ const size_t Event::OVERHEAD = 1 /*type*/ + 8 /*64-bit pointr*/;
 Event::Event(EventType t, const ConnectionId c, const size_t s)
     : type(t), connection(c), size(s), data(RefCountedBuffer::create(s)) {}
 
-Event::Event(const MemberId& m, const char* d, size_t s)
-    : connection(m, 0), size(s-OVERHEAD), data(RefCountedBuffer::create(size))
-{
-    memcpy(data->get(), d, s);
+Event Event::delivered(const MemberId& m, void* d, size_t s) {
+    Buffer buf(static_cast<char*>(d), s);
+    EventType type((EventType)buf.getOctet()); 
+    ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
+    assert(buf.getPosition() == OVERHEAD);
+    Event e(type, connection, s-OVERHEAD);
+    memcpy(e.getData(), static_cast<char*>(d)+OVERHEAD, s-OVERHEAD);
+    return e;
 }
     
 void Event::mcast(const Cpg::Name& name, Cpg& cpg) {
