@@ -26,6 +26,7 @@
 #include "Cpg.h"
 #include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/Buffer.h"
+#include <iosfwd>
 
 namespace qpid {
 namespace cluster {
@@ -46,24 +47,25 @@ struct Event {
     /** Create an event copied from delivered data. */
     static Event delivered(const MemberId& m, void* data, size_t size);
     
-    void mcast(const Cpg::Name& name, Cpg& cpg);
+    void mcast(const Cpg::Name& name, Cpg& cpg) const;
     
     EventType getType() const { return type; }
     ConnectionId getConnection() const { return connection; }
     size_t getSize() const { return size; }
-    char* getData() { return data->get(); }
-    const char* getData() const { return data->get(); }
+    char* getData() { return data; }
+    const char* getData() const { return data; }
 
-    operator framing::Buffer() const { return framing::Buffer(const_cast<char*>(getData()), getSize()); }
+    operator framing::Buffer() const;
 
   private:
     static const size_t OVERHEAD;
     EventType type;
     ConnectionId connection;
     size_t size;
-    RefCountedBuffer::intrusive_ptr data;
+    RefCountedBuffer::pointer data;
 };
 
+std::ostream& operator << (std::ostream&, const Event&);
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_EVENT_H*/
