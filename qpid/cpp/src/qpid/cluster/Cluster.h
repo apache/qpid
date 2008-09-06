@@ -67,10 +67,11 @@ class Cluster : public RefCounted, private Cpg::Handler
 
     bool empty() const { return size() == 0; }
     
-    /** Send frame to the cluster */
+    /** Send to the cluster */
     void mcastFrame(const framing::AMQFrame&, const ConnectionId&);
     void mcastBuffer(const char*, size_t, const ConnectionId&);
-
+    void mcastEvent(const Event& e);
+    
     /** Leave the cluster */
     void leave();
     

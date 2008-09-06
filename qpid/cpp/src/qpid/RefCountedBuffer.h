@@ -27,7 +27,7 @@
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
-
+// FIXME aconway 2008-09-06: easy to add alignment
 /**
  * Reference-counted byte buffer.
  * No alignment guarantees.
@@ -39,11 +39,32 @@ class RefCountedBuffer : boost::noncopyable {
     char* addr() const;
 
 public:
+    /** Smart char pointer to a reference counted buffer */
+    class pointer {
+        boost::intrusive_ptr<RefCountedBuffer> p;
+        char* cp() const;
+        pointer(RefCountedBuffer* x);
+      friend class RefCountedBuffer;
 
-    typedef boost::intrusive_ptr<RefCountedBuffer> intrusive_ptr;
+      public:
+        pointer();
+        pointer(const pointer&);
+        ~pointer();
+        pointer& operator=(const pointer&);
+        
+        char* get() { return cp(); }
+        operator char*() { return cp(); }
+        char& operator*() { return *cp(); }
+        char& operator[](size_t i) { return cp()[i]; }
 
+        const char* get() const { return cp(); }
+        operator const char*() const { return cp(); }
+        const char& operator*() const { return *cp(); }
+        const char& operator[](size_t i) const { return cp()[i]; }
+    };
+    
     /** Create a reference counted buffer of size n */
-    static intrusive_ptr create(size_t n);
+    static pointer create(size_t n);
 
     /** Get a pointer to the start of the buffer. */
     char* get() { return addr(); }
