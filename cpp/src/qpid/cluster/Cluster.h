@@ -20,6 +20,7 @@
  */
 
 #include "qpid/cluster/Cpg.h"
+#include "qpid/cluster/Event.h"
 #include "qpid/cluster/PollableQueue.h"
 #include "qpid/cluster/NoOpConnectionOutputHandler.h"
 
@@ -85,7 +86,7 @@ class Cluster : public RefCounted, private Cpg::Handler
 
     /** Message sent over the cluster. */
     typedef std::pair<framing::AMQFrame, ConnectionId> Message;
-    typedef PollableQueue<Message> MessageQueue;
+    typedef PollableQueue<Event> EventQueue;
 
     boost::function<void()> shutdownNext;
 
@@ -93,6 +94,8 @@ class Cluster : public RefCounted, private Cpg::Handler
     void deliverFrame(framing::AMQFrame&, const ConnectionId&);
 
     void deliverBuffer(const char*, size_t, const ConnectionId&);
+
+    void deliverEvent(const Event&);
     
     /** CPG deliver callback. */
     void deliver(
@@ -132,7 +135,8 @@ class Cluster : public RefCounted, private Cpg::Handler
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-
+    PollableQueue<Event> deliverQueue;
+    
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const UrlMap::value_type&);
   friend std::ostream& operator <<(std::ostream&, const UrlMap&);

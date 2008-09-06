@@ -27,6 +27,7 @@
 #include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <algorithm>
 #include <deque>
 
 namespace qpid {
@@ -53,6 +54,15 @@ class PollableQueue {
     /** Callback to process a range of items. */
     typedef boost::function<void (const iterator&, const iterator&)> Callback;
 
+    /** Functor tempalate to create a Callback from a functor that handles a single item. */
+    template <class F> struct ForEach {
+        F handleOne;
+        ForEach(const F& f) : handleOne(f) {}
+        void operator()(const iterator& i, const iterator& j) const { std::for_each(i, j, handleOne); }
+    };
+    /** Function to create ForEach instances */
+    template <class F> static ForEach<F> forEach(const F& f) { return ForEach<F>(f); }
+    
     /** When the queue is selected by the poller, values are passed to callback cb. */
     explicit PollableQueue(const Callback& cb);
 
