@@ -34,12 +34,19 @@ char* RefCountedBuffer::addr() const {
     return const_cast<char*>(reinterpret_cast<const char*>(this)+sizeof(RefCountedBuffer));
 }
 
-RefCountedBuffer::intrusive_ptr RefCountedBuffer::create(size_t n) {
+RefCountedBuffer::pointer RefCountedBuffer::create(size_t n) {
     char* store=::new char[n+sizeof(RefCountedBuffer)];
     new(store) RefCountedBuffer;
-    return reinterpret_cast<RefCountedBuffer*>(store);
+    return pointer(reinterpret_cast<RefCountedBuffer*>(store));
 }
 
+RefCountedBuffer::pointer::pointer() {}
+RefCountedBuffer::pointer::pointer(RefCountedBuffer* x) : p(x) {}
+RefCountedBuffer::pointer::pointer(const pointer& x) : p(x.p) {}
+RefCountedBuffer::pointer::~pointer() {}
+RefCountedBuffer::pointer& RefCountedBuffer::pointer::operator=(const RefCountedBuffer::pointer& x) { p = x.p; return *this; }
+
+char* RefCountedBuffer::pointer::cp() const { return p ? p->get() : 0; }
 } // namespace qpid
 
 
