@@ -78,7 +78,6 @@ dosamples() {
     } | tee $FILE
 }
 
-echo "benchmark $*" | tee benchmark.tab
 HEADING="pub	sub	total	Mb"
 dosamples $SCRIPTDIR/perfdist --size $SIZE --count $COUNT --nsubs $NSUBS --npubs $NPUBS -s -- ${CLIENTS[*]} --- ${BROKERS[*]}
 HEADING="pub"
@@ -89,6 +88,8 @@ HEADING="min	max	avg"
 dosamples ssh -A ${CLIENTS[0]} $TESTDIR/echotest --count $ECHO -s -b ${BROKERS[0]} 
 
 echo
-echo "Tab separated spreadsheet (also stored in benchmark.tab):"
+echo "Tab separated spreadsheet (also saved as benchmark.tab):"
 echo
+
+echo "benchmark -- ${CLIENTS[*]} --- ${BROKERS[*]} " | tee benchmark.tab
 paste $FILES | tee -a benchmark.tab
