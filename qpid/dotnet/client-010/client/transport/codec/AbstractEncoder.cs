@@ -281,7 +281,7 @@ namespace org.apache.qpid.transport.codec
             Type klass = value.GetType();
             Code type = resolve(klass);
 
-            if (type == null)
+            if (type == Code.VOID)
             {
                 throw new Exception
                     ("unable to resolve type: " + klass + ", " + value);
@@ -294,17 +294,18 @@ namespace org.apache.qpid.transport.codec
 
         private static Code resolve(Type klass)
         {
-            Code type = ENCODINGS[klass];
-            if (type != null)
+            Code type;
+            if(ENCODINGS.ContainsKey(klass))
             {
-                return type;
+                return ENCODINGS[klass];
             }
+            
             Type sup = klass.BaseType;
             if (sup != null)
             {
                 type = resolve(sup);
 
-                if (type != null)
+                if (type != Code.VOID)
                 {
                     return type;
                 }
@@ -312,7 +313,7 @@ namespace org.apache.qpid.transport.codec
             foreach (Type iface in klass.GetInterfaces())
             {
                 type = resolve(iface);
-                if (type != null)
+                if (type != Code.VOID)
                 {
                     return type;
                 }

@@ -15,9 +15,7 @@ namespace WindowsClient
         static void Main(string[] args)
         {
              XmlConfigurator.Configure(new FileInfo("..\\..\\log.xml"));
-            // DOMConfigurator.Configure();
-
-            Console.WriteLine("befing");
+            // DOMConfigurator.Configure()            
             Client client = new Client();
             Console.WriteLine("Client created");
             client.connect("192.168.1.14", 5673, "test", "guest", "guest");
