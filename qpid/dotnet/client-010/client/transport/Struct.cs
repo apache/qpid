@@ -32,7 +32,7 @@ namespace org.apache.qpid.transport
 
     public abstract class Struct : Encodable
     {
-        public static Struct create(int type)
+        public  static Struct create(int type)
         {
             return StructFactory.create(type);
         }

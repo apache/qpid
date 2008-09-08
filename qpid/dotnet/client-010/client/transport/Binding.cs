@@ -29,6 +29,6 @@ namespace org.apache.qpid.transport
     {
         E endpoint(Sender<T> sender);
 
-        Receiver<T> receiver<T>(E endpoint) where T : EventArgs;
+        Receiver<R> receiver<R>(E endpoint) where R : EventArgs;
     }
 }

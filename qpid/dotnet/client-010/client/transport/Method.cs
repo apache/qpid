@@ -30,7 +30,7 @@ namespace org.apache.qpid.transport
     /// </summary>
     public abstract class Method : Struct, ProtocolEvent
     {
-        public static Method create(int type)
+        public new static Method create(int type)
         {
             return (Method) StructFactory.createInstruction(type);
         }
