@@ -73,22 +73,12 @@ std::string HeadersExchange::getMatch(const FieldTable* args)
 }
 
 bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args){
-    RWlock::ScopedWlock locker(lock);
     std::string what = getMatch(args);
     if (what != all && what != any)
         throw InternalErrorException(QPID_MSG("Invalid x-match value binding to headers exchange."));
 
-    Bindings::iterator i;
-
-    for (i = bindings.begin(); i != bindings.end(); i++)
-        if (i->first == *args && i->second->queue == queue)
-            break;
-
-    if (i == bindings.end()) {
-        Binding::shared_ptr binding (new Binding (bindingKey, queue, this, *args));
-        HeaderMap headerMap(*args, binding);
-
-        bindings.push_back(headerMap);
+    Binding::shared_ptr binding (new Binding (bindingKey, queue, this, *args));
+    if (bindings.add_unless(binding, MatchArgs(queue, args))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
             ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
@@ -99,21 +89,8 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     }
 }
 
-bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable* args){
-    RWlock::ScopedWlock locker(lock);
-    Bindings::iterator i;
-    for (i = bindings.begin(); i != bindings.end(); i++) {
-        if (bindingKey.empty() && args) {
-            if (i->first == *args && i->second->queue == queue)
-                break;
-        } else {
-            if (i->second->key == bindingKey && i->second->queue == queue)
-                break;
-        }
-    }
-
-    if (i != bindings.end()) {
-        bindings.erase(i);
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable*){
+    if (bindings.remove_if(MatchKey(queue, bindingKey))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
             ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
@@ -128,13 +105,13 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
     if (!args) return;//can't match if there were no headers passed in
 
-    RWlock::ScopedRlock locker(lock);
     uint32_t count(0);
 
-    for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i, count++) {
-        if (match(i->first, *args)) msg.deliverTo(i->second->queue);
-        if (i->second->mgmtBinding != 0)
-            i->second->mgmtBinding->inc_msgMatched ();
+    Bindings::ConstPtr p = bindings.snapshot();
+    for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++) {
+        if (match((*i)->args, *args)) msg.deliverTo((*i)->queue);
+        if ((*i)->mgmtBinding != 0)
+            (*i)->mgmtBinding->inc_msgMatched ();
     }
 
     if (mgmtExchange != 0)
@@ -157,8 +134,9 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
 
 bool HeadersExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const args)
 {
-    for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if ( (!args || equal(i->first, *args)) && (!queue || i->second->queue == queue)) {
+    Bindings::ConstPtr p = bindings.snapshot();
+    for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
+        if ( (!args || equal((*i)->args, *args)) && (!queue || (*i)->queue == queue)) {
             return true;
         }
     }
@@ -227,5 +205,15 @@ bool HeadersExchange::equal(const FieldTable& a, const FieldTable& b) {
     return true;
 }
 
+HeadersExchange::MatchArgs::MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a) : queue(q), args(a) {}
+bool HeadersExchange::MatchArgs::operator()(Exchange::Binding::shared_ptr b)
+{
+    return b->queue == queue && b->args == *args;
+}
 
+HeadersExchange::MatchKey::MatchKey(Queue::shared_ptr q, const std::string& k) : queue(q), key(k) {}
 
+bool HeadersExchange::MatchKey::operator()(Exchange::Binding::shared_ptr b)
+{
+    return b->queue == queue && b->key == key;
+}

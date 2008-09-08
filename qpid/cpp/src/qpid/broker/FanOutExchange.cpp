@@ -40,18 +40,10 @@ FanOutExchange::FanOutExchange(const std::string& _name, bool _durable,
         mgmtExchange->set_type (typeName);
 }
 
-bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
-    RWlock::ScopedWlock locker(lock);
-    std::vector<Binding::shared_ptr>::iterator i;
-
-    // Add if not already present.
-    for (i = bindings.begin (); i != bindings.end(); i++)
-        if ((*i)->queue == queue)
-            break;
-
-    if (i == bindings.end()) {
-        Binding::shared_ptr binding (new Binding ("", queue, this));
-        bindings.push_back(binding);
+bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* /*args*/)
+{
+    Binding::shared_ptr binding (new Binding ("", queue, this));
+    if (bindings.add_unless(binding, MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
             ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
@@ -62,16 +54,9 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/,
     }
 }
 
-bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
-    RWlock::ScopedWlock locker(lock);
-    std::vector<Binding::shared_ptr>::iterator i;
-
-    for (i = bindings.begin (); i != bindings.end(); i++)
-        if ((*i)->queue == queue)
-            break;
-
-    if (i != bindings.end()) {
-        bindings.erase(i);
+bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* /*args*/)
+{
+    if (bindings.remove_if(MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
             ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
@@ -83,10 +68,10 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
 }
 
 void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
-    RWlock::ScopedRlock locker(lock);
     uint32_t count(0);
 
-    for(std::vector<Binding::shared_ptr>::iterator i = bindings.begin(); i != bindings.end(); ++i, count++){
+    BindingsArray::ConstPtr p = bindings.snapshot();
+    for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++){
         msg.deliverTo((*i)->queue);
         if ((*i)->mgmtBinding != 0)
             (*i)->mgmtBinding->inc_msgMatched ();
@@ -111,13 +96,8 @@ void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const
 
 bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const)
 {
-    std::vector<Binding::shared_ptr>::iterator i;
-
-    for (i = bindings.begin (); i != bindings.end(); i++)
-        if ((*i)->queue == queue)
-            break;
-
-    return i != bindings.end();
+    BindingsArray::ConstPtr ptr = bindings.snapshot();
+    return ptr && std::find_if(ptr->begin(), ptr->end(), MatchQueue(queue)) != ptr->end();
 }
 
 

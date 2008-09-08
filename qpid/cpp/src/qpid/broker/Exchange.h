@@ -62,6 +62,12 @@ namespace qpid {
                 management::ManagementObject* GetManagementObject () const;
                 management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args);
             };
+            struct MatchQueue
+            {
+                const Queue::shared_ptr queue;        
+                MatchQueue(Queue::shared_ptr q);
+                bool operator()(Exchange::Binding::shared_ptr b);
+            };
 
             management::Exchange* mgmtExchange;
 
