@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<project name="qpid.client.tests" default="build">
+    <!--
+		Properties that come from master build file
+		- build.dir: root directory for build
+		- build.debug: true if building debug release
+		- build.defines: variables to define during build
+    -->
+
+    <target name="build">
+        <csc target="library" 
+				define="${build.defines}" 
+				debug="${build.debug}" 
+				output="${build.dir}/${project::get-name()}.dll">
+			
+			<sources>
+			   <include name="**/*.cs" />
+         </sources>
+         <references>
+            <include name="${build.dir}/log4net.dll" />	
+            <include name="${build.dir}/nunit.framework.dll" />	
+            <include name="${build.dir}/qpid.client.dll" />	
+         </references>
+        </csc>
+    </target>
+    
+    <target name="test" depends="build">
+         <nunit2>
+            <formatter type="${nant.formatter}" usefile="false" />
+            <test assemblyname="${build.dir}/qpid.client.tests.dll" />
+         </nunit2>
+    </target>
+</project>
+

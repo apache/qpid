@@ -28,7 +28,6 @@ namespace org.apache.qpid.client
     public class Client : ClientInterface
     {
         private Connection _conn;
-        private ClientSession _session; 
         private static readonly Logger _log = Logger.get(typeof (Client));
         private const long timeout = 60000;
         private bool _closed;
