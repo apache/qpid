@@ -76,9 +76,9 @@ QPID_AUTO_TEST_CASE(testIsBound)
     string k3("xyz");
 
     FanOutExchange fanout("fanout");
-    fanout.bind(a, "", 0);
-    fanout.bind(b, "", 0);
-    fanout.bind(c, "", 0);
+    BOOST_CHECK(fanout.bind(a, "", 0));
+    BOOST_CHECK(fanout.bind(b, "", 0));
+    BOOST_CHECK(fanout.bind(c, "", 0));
 
     BOOST_CHECK(fanout.isBound(a, 0, 0));
     BOOST_CHECK(fanout.isBound(b, 0, 0));
@@ -86,10 +86,10 @@ QPID_AUTO_TEST_CASE(testIsBound)
     BOOST_CHECK(!fanout.isBound(d, 0, 0));
 
     DirectExchange direct("direct");
-    direct.bind(a, k1, 0);
-    direct.bind(a, k3, 0);
-    direct.bind(b, k2, 0);
-    direct.bind(c, k1, 0);
+    BOOST_CHECK(direct.bind(a, k1, 0));
+    BOOST_CHECK(direct.bind(a, k3, 0));
+    BOOST_CHECK(direct.bind(b, k2, 0));
+    BOOST_CHECK(direct.bind(c, k1, 0));
 
     BOOST_CHECK(direct.isBound(a, 0, 0));
     BOOST_CHECK(direct.isBound(a, &k1, 0));
@@ -104,10 +104,10 @@ QPID_AUTO_TEST_CASE(testIsBound)
     BOOST_CHECK(!direct.isBound(d, &k3, 0));
 
     TopicExchange topic("topic");
-    topic.bind(a, k1, 0);
-    topic.bind(a, k3, 0);
-    topic.bind(b, k2, 0);
-    topic.bind(c, k1, 0);
+    BOOST_CHECK(topic.bind(a, k1, 0));
+    BOOST_CHECK(topic.bind(a, k3, 0));
+    BOOST_CHECK(topic.bind(b, k2, 0));
+    BOOST_CHECK(topic.bind(c, k1, 0));
 
     BOOST_CHECK(topic.isBound(a, 0, 0));
     BOOST_CHECK(topic.isBound(a, &k1, 0));
