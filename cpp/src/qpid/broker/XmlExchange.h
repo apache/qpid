@@ -23,6 +23,7 @@
 
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/CopyOnWriteArray.h"
 #include "qpid/sys/Monitor.h"
 #include "Queue.h"
 
@@ -42,7 +43,7 @@ class XmlExchange : public virtual Exchange {
 
     struct XmlBinding : public Exchange::Binding {
         typedef boost::shared_ptr<XmlBinding> shared_ptr;
-        typedef std::vector<XmlBinding::shared_ptr> vector;
+        typedef qpid::sys::CopyOnWriteArray<XmlBinding::shared_ptr> vector;
 
         boost::shared_ptr<XQQuery> xquery;
 

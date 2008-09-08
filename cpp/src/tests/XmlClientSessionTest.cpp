@@ -146,6 +146,36 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
   BOOST_CHECK_EQUAL(m, m2.getData());  
 }
 
+/**
+ * Ensure that multiple queues can be bound using the same routing key
+ */
+QPID_AUTO_TEST_CASE(testBindMultipleQueues) {
+    ClientSessionFixture f;
+
+    f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
+    f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true);
+    f.session.queueDeclare(arg::queue="red", arg::exclusive=true, arg::autoDelete=true);
+
+    FieldTable blue;
+    blue.setString("xquery", "./colour = 'blue'");
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-colour", arg::arguments=blue); 
+    FieldTable red;
+    red.setString("xquery", "./colour = 'red'");
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-colour", arg::arguments=red); 
+
+    Message sent1("<colour>blue</colour>", "by-colour");
+    f.session.messageTransfer(arg::content=sent1,  arg::destination="xml");
+
+    Message sent2("<colour>red</colour>", "by-colour");
+    f.session.messageTransfer(arg::content=sent2,  arg::destination="xml");
+
+    Message received;
+    BOOST_CHECK(f.subs.get(received, "blue"));
+    BOOST_CHECK_EQUAL(sent1.getData(), received.getData());
+    BOOST_CHECK(f.subs.get(received, "red"));
+    BOOST_CHECK_EQUAL(sent2.getData(), received.getData());
+}
+
 //### Test: Bad XML does not kill the server
 
 //### Test: Bad XQuery does not kill the server
