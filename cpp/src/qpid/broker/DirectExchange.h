@@ -25,16 +25,17 @@
 #include <vector>
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/CopyOnWriteArray.h"
+#include "qpid/sys/Mutex.h"
 #include "Queue.h"
 
 namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
-        typedef std::vector<Binding::shared_ptr> Queues;
+        typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Queues;
         typedef std::map<string, Queues> Bindings;
         Bindings bindings;
-        qpid::sys::RWlock lock;
+        qpid::sys::Mutex lock;
 
     public:
         static const std::string typeName;

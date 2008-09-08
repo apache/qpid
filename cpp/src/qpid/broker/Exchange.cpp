@@ -153,3 +153,11 @@ Manageable::status_t Exchange::Binding::ManagementMethod (uint32_t, Args&)
 {
     return Manageable::STATUS_UNKNOWN_METHOD;
 }
+
+
+Exchange::MatchQueue::MatchQueue(Queue::shared_ptr q) : queue(q) {}
+
+bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
+{
+    return b->queue == queue;
+}

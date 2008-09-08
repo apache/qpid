@@ -25,16 +25,15 @@
 #include <vector>
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/CopyOnWriteArray.h"
 #include "Queue.h"
 
 namespace qpid {
 namespace broker {
 
 class FanOutExchange : public virtual Exchange {
-    std::vector<Binding::shared_ptr> bindings;
-    qpid::sys::RWlock lock;
-
+    typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> BindingsArray;
+    BindingsArray bindings;
   public:
     static const std::string typeName;
         

@@ -24,7 +24,8 @@
 #include <vector>
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/CopyOnWriteArray.h"
+#include "qpid/sys/Mutex.h"
 #include "Queue.h"
 
 namespace qpid {
@@ -33,10 +34,25 @@ namespace broker {
 
 class HeadersExchange : public virtual Exchange {    
     typedef std::pair<qpid::framing::FieldTable, Binding::shared_ptr> HeaderMap;
-    typedef std::vector<HeaderMap> Bindings;
+    typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Bindings;
+
+    struct MatchArgs
+    {
+        const Queue::shared_ptr queue;        
+        const qpid::framing::FieldTable* args;
+        MatchArgs(Queue::shared_ptr q, const qpid::framing::FieldTable* a);
+        bool operator()(Exchange::Binding::shared_ptr b);        
+    };
+    struct MatchKey
+    {
+        const Queue::shared_ptr queue;        
+        const std::string& key;
+        MatchKey(Queue::shared_ptr q, const std::string& k);
+        bool operator()(Exchange::Binding::shared_ptr b);        
+    };
 
     Bindings bindings;
-    qpid::sys::RWlock lock;
+    qpid::sys::Mutex lock;
 
     static std::string getMatch(const framing::FieldTable* args);
 

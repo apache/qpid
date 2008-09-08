@@ -542,6 +542,7 @@ nobase_include_HEADERS = \
   qpid/sys/AtomicValue_gcc.h \
   qpid/sys/AtomicValue_mutex.h \
   qpid/sys/BlockingQueue.h \
+  qpid/sys/CopyOnWriteArray.h \
   qpid/sys/Condition.h \
   qpid/sys/ConnectionCodec.h \
   qpid/sys/ConnectionInputHandler.h \
