@@ -24,7 +24,7 @@
 #include "SessionImpl.h"
 
 #include "qpid/log/Statement.h"
-#include "qpid/framing/constants.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
 
 #include <boost/bind.hpp>
@@ -32,6 +32,7 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
+using namespace qpid::framing::connection;
 using namespace qpid::sys;
 
 using namespace qpid::framing::connection;//for connection error codes
@@ -46,7 +47,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
-                                  NORMAL, std::string());
+                                  CLOSE_CODE_NORMAL, std::string());
     connector->setInputHandler(&handler);
     connector->setShutdownHandler(this);
 
@@ -115,7 +116,7 @@ void ConnectionImpl::close()
 {
     if (!handler.isOpen()) return;
     handler.close();
-    closed(NORMAL, "Closed by client");
+    closed(CLOSE_CODE_NORMAL, "Closed by client");
 }
 
 
@@ -139,10 +140,10 @@ static const std::string CONN_CLOSED("Connection closed by broker");
 void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
     // FIXME aconway 2008-06-06: exception use, connection-forced is incorrect here.
-    setException(new ConnectionException(CONNECTION_FORCED, CONN_CLOSED));
+    setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     if (handler.isClosed()) return;
     handler.fail(CONN_CLOSED);
-    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONNECTION_FORCED, CONN_CLOSED));
+    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

@@ -22,7 +22,7 @@
 #include "Queue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "qpid/framing/constants.h"
+#include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
 #include "qpid/framing/SequenceSet.h"
@@ -35,6 +35,7 @@ namespace broker {
 
 using namespace qpid;
 using namespace qpid::framing;
+using namespace qpid::framing::dtx;
 
 typedef std::vector<Queue::shared_ptr> QueueVector;
 
@@ -595,7 +596,7 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
             if (suspend) {
                 throw CommandInvalidException(QPID_MSG("End and suspend cannot both be set."));
             } else {
-                return XaResult(XA_RBROLLBACK);
+                return XaResult(XA_STATUS_XA_RBROLLBACK);
             }
         } else {
             if (suspend) {
@@ -603,10 +604,10 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
             } else {
                 state.endDtx(convert(xid), false);
             }
-            return XaResult(XA_OK);
+            return XaResult(XA_STATUS_XA_OK);
         }
     } catch (const DtxTimeoutException& e) {
-        return XaResult(XA_RBTIMEOUT);        
+        return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
 
@@ -623,9 +624,9 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
         } else {
             state.startDtx(convert(xid), getBroker().getDtxManager(), join);
         }
-        return XaResult(XA_OK);
+        return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& e) {
-        return XaResult(XA_RBTIMEOUT);        
+        return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
 
@@ -633,9 +634,9 @@ XaResult SessionAdapter::DtxHandlerImpl::prepare(const Xid& xid)
 {
     try {
         bool ok = getBroker().getDtxManager().prepare(convert(xid));
-        return XaResult(ok ? XA_OK : XA_RBROLLBACK);
+        return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        return XaResult(XA_RBTIMEOUT);        
+        return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
 
@@ -644,9 +645,9 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
 {
     try {
         bool ok = getBroker().getDtxManager().commit(convert(xid), onePhase);
-        return XaResult(ok ? XA_OK : XA_RBROLLBACK);
+        return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        return XaResult(XA_RBTIMEOUT);        
+        return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
 
@@ -655,9 +656,9 @@ XaResult SessionAdapter::DtxHandlerImpl::rollback(const Xid& xid)
 {
     try {
         getBroker().getDtxManager().rollback(convert(xid));
-        return XaResult(XA_OK);
+        return XaResult(XA_STATUS_XA_OK);
     } catch (const DtxTimeoutException& e) {
-        return XaResult(XA_RBTIMEOUT);        
+        return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
 

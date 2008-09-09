@@ -26,7 +26,7 @@
 #include "Connection.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
-#include "qpid/framing/constants.h"
+#include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 
 using namespace qpid;
@@ -125,7 +125,7 @@ void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyTe
         QPID_LOG(warning, "Client closed connection with " << replyCode << ": " << replyText);
     }
 
-    if (replyCode == framing::connection::CONNECTION_FORCED)
+    if (replyCode == framing::connection::CLOSE_CODE_CONNECTION_FORCED)
         connection.notifyConnectionForced(replyText);
 
     client.closeOk();
