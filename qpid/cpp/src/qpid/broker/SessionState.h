@@ -25,7 +25,6 @@
 #include "qpid/SessionState.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
-#include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/Session.h"
@@ -117,7 +116,6 @@ class SessionState : public qpid::SessionState,
     Broker& broker;
     SessionHandler* handler;    
     sys::AbsTime expiry;        // Used by SessionManager.
-    sys::Mutex lock;
     bool ignoring;
     std::string name;
     SemanticState semanticState;
