@@ -47,7 +47,7 @@ namespace qpid {
         class Consumer {
             const bool acquires;
         public:
-            typedef shared_ptr<Consumer> shared_ptr;            
+            typedef boost::shared_ptr<Consumer> shared_ptr;            
 
             framing::SequenceNumber position;
 
