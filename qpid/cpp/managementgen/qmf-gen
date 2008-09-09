@@ -24,27 +24,12 @@ from qmf.schema   import PackageSchema, SchemaClass
 from qmf.generate import Generator
 from optparse     import OptionParser
 
-dataPath = os.path.dirname(sys.argv[0]) + "/qmf/"
-defaultTypeFile    = dataPath + "management-types.xml"
-defaultTemplateDir = dataPath + "templates"
-found = True
-
-try:
-  s = os.stat(defaultTypeFile)
-except:
-  found = False
-
-if not found:
-  path = sys.path
-  for item in path:
-    if os.path.basename(item) == "site-packages":
-      found = True
-      dataPath = item + "/qmf/"
-      defaultTypeFile    = dataPath + "management-types.xml"
-      defaultTemplateDir = dataPath + "templates"
+dataPath = os.path.dirname(Generator.getModulePath())
+defaultTypeFile    = dataPath + "/management-types.xml"
+defaultTemplateDir = dataPath + "/templates"
 
 # Set command line options
-usage  = "usage: %prog [options] schema-document out-directory"
+usage  = "usage: %prog [options] schema-document..."
 parser = OptionParser (usage=usage)
 parser.add_option ("-m", "--makefile", dest="makefile", metavar="FILE",
                    help="Makefile fragment")
@@ -52,26 +37,28 @@ parser.add_option ("-t", "--typefile", dest="typefile", metavar="FILE", default=
                    help="Type descriptor file")
 parser.add_option ("-d", "--templatedir", dest="templatedir", metavar="DIR", default=defaultTemplateDir,
                    help="Template directory")
+parser.add_option ("-o", "--outputdir", dest="outputdir", metavar="DIR", default="./",
+                   help="Output directory")
 
 (opts, args) = parser.parse_args ()
 
-if len (args) < 2:
-  parser.error ("Too few arguments")
-
 typefile    = opts.typefile
 templatedir = opts.templatedir
+outdir      = opts.outputdir
+gen         = Generator (outdir, templatedir)
 
-schemafile  = args[0]
-outdir      = args[1]
+if len(args) == 0:
+  print "no input files"
+  parser.exit()
 
-gen    = Generator     (outdir,   templatedir)
-schema = PackageSchema (typefile, schemafile, opts)
+for schemafile in args:
+  schema = PackageSchema (typefile, schemafile, opts)
 
-gen.makeClassFiles  ("Class.h",     schema)
-gen.makeClassFiles  ("Class.cpp",   schema)
-gen.makeMethodFiles ("Args.h",      schema)
-gen.makePackageFile ("Package.h",   schema)
-gen.makePackageFile ("Package.cpp", schema)
+  gen.makeClassFiles  ("Class.h",     schema)
+  gen.makeClassFiles  ("Class.cpp",   schema)
+  gen.makeMethodFiles ("Args.h",      schema)
+  gen.makePackageFile ("Package.h",   schema)
+  gen.makePackageFile ("Package.cpp", schema)
 
 if opts.makefile != None:
   gen.makeSingleFile ("Makefile.mk", opts.makefile, force=True)

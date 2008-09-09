@@ -656,6 +656,7 @@ class SchemaEvent:
     self.name   = None
     self.desc   = None
     self.args   = []
+    self.defaultSeverity = None
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -666,6 +667,9 @@ class SchemaEvent:
 
       elif key == 'desc':
         self.desc = val
+
+      elif key == 'defaultSeverity':
+        self.defaultSeverity = val
 
       else:
         raise ValueError ("Unknown attribute in event '%s'" % key)
