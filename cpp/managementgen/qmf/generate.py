@@ -299,7 +299,7 @@ class Generator:
     stream = template.expand (makefile)
     self.writeIfChanged (stream, target, force)
 
-  @staticmethod
   def getModulePath():
     return __file__
 
+  getModulePath = staticmethod(getModulePath)
