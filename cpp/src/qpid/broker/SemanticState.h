@@ -37,6 +37,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/shared_ptr.h"
 #include "AclModule.h"
 
@@ -58,8 +59,10 @@ class SessionContext;
 class SemanticState : public sys::OutputTask,
                       private boost::noncopyable
 {
-    class ConsumerImpl : public Consumer, public sys::OutputTask
+    class ConsumerImpl : public Consumer, public sys::OutputTask,
+                         public boost::enable_shared_from_this<ConsumerImpl>
     {
+        qpid::sys::Mutex lock;
         SemanticState* const parent;
         const DeliveryToken::shared_ptr token;
         const string name;
@@ -71,11 +74,14 @@ class SemanticState : public sys::OutputTask,
         bool windowing;
         uint32_t msgCredit;
         uint32_t byteCredit;
+        bool notifyEnabled;
 
         bool checkCredit(boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
 
       public:
+        typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
+
         ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
                      bool ack, bool nolocal, bool acquire);
@@ -84,6 +90,9 @@ class SemanticState : public sys::OutputTask,
         bool deliver(QueuedMessage& msg);            
         bool filter(boost::intrusive_ptr<Message> msg);            
         bool accept(boost::intrusive_ptr<Message> msg);            
+
+        void disableNotify();
+        void enableNotify();
         void notify();
 
         void setWindowMode();
@@ -100,7 +109,7 @@ class SemanticState : public sys::OutputTask,
         bool doOutput();
     };
 
-    typedef boost::ptr_map<std::string,ConsumerImpl> ConsumerImplMap;
+    typedef std::map<std::string, ConsumerImpl::shared_ptr> ConsumerImplMap;
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
     SessionContext& session;
@@ -130,7 +139,7 @@ class SemanticState : public sys::OutputTask,
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void requestDispatch(ConsumerImpl&);
-    void cancel(ConsumerImpl&);
+    void cancel(ConsumerImpl::shared_ptr);
 
   public:
     SemanticState(DeliveryAdapter&, SessionContext&);
@@ -187,6 +196,9 @@ class SemanticState : public sys::OutputTask,
     //final 0-10 spec (completed and accepted are distinct):
     void completed(DeliveryId deliveryTag, DeliveryId endTag);
     void accepted(DeliveryId deliveryTag, DeliveryId endTag);
+
+    void attached();
+    void detached();
 };
 
 }} // namespace qpid::broker

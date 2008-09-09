@@ -78,7 +78,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     Queue::shared_ptr queue(new Queue("my_test_queue", true));
     intrusive_ptr<Message> received;
     
-    TestConsumer c1;
+    TestConsumer::shared_ptr c1(new TestConsumer());
     queue->consume(c1);
     
     
@@ -88,7 +88,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     queue->process(msg1);
     sleep(2);
     
-    BOOST_CHECK(!c1.received);
+    BOOST_CHECK(!c1->received);
     msg1->enqueueComplete();
     
     received = queue->get().payload;
@@ -114,8 +114,8 @@ QPID_AUTO_TEST_CASE(testConsumers){
     Queue::shared_ptr queue(new Queue("my_queue", true));
     
     //Test adding consumers:
-    TestConsumer c1;
-    TestConsumer c2;
+    TestConsumer::shared_ptr c1(new TestConsumer());
+    TestConsumer::shared_ptr c2(new TestConsumer());
     queue->consume(c1);
     queue->consume(c2);
     
@@ -128,16 +128,16 @@ QPID_AUTO_TEST_CASE(testConsumers){
     
     queue->deliver(msg1);
     BOOST_CHECK(queue->dispatch(c1));
-    BOOST_CHECK_EQUAL(msg1.get(), c1.last.get());
+    BOOST_CHECK_EQUAL(msg1.get(), c1->last.get());
     
     queue->deliver(msg2);
     BOOST_CHECK(queue->dispatch(c2));
-    BOOST_CHECK_EQUAL(msg2.get(), c2.last.get());
+    BOOST_CHECK_EQUAL(msg2.get(), c2->last.get());
     
-    c1.received = false;
+    c1->received = false;
     queue->deliver(msg3);
     BOOST_CHECK(queue->dispatch(c1));
-    BOOST_CHECK_EQUAL(msg3.get(), c1.last.get());        
+    BOOST_CHECK_EQUAL(msg3.get(), c1->last.get());        
     
     //Test cancellation:
     queue->cancel(c1);
@@ -187,13 +187,13 @@ QPID_AUTO_TEST_CASE(testDequeue){
     BOOST_CHECK_EQUAL(msg2.get(), received.get());
     BOOST_CHECK_EQUAL(uint32_t(1), queue->getMessageCount());
 
-    TestConsumer consumer;
+    TestConsumer::shared_ptr consumer(new TestConsumer());
     queue->consume(consumer);
     queue->dispatch(consumer);
-    if (!consumer.received)
+    if (!consumer->received)
         sleep(2);
 
-    BOOST_CHECK_EQUAL(msg3.get(), consumer.last.get());
+    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
     BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
 
     received = queue->get().payload;

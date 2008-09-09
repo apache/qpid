@@ -92,9 +92,8 @@ bool SessionState::isLocal(const ConnectionToken* t) const
 }
 
 void SessionState::detach() {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
     QPID_LOG(debug, getId() << ": detached on broker.");
+    semanticState.detached();//prevents further activateOutput calls until reattached
     getConnection().outputTasks.removeOutputTask(&semanticState);
     handler = 0;
     if (mgmtObject != 0)
@@ -102,8 +101,6 @@ void SessionState::detach() {
 }
 
 void SessionState::attach(SessionHandler& h) {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
     QPID_LOG(debug, getId() << ": attached on broker.");
     handler = &h;
     if (mgmtObject != 0)
@@ -115,8 +112,6 @@ void SessionState::attach(SessionHandler& h) {
 }
 
 void SessionState::activateOutput() {
-    // activateOutput can be called in a different thread, lock to protect attached status
-    Mutex::ScopedLock l(lock);
     if (isAttached()) 
         getConnection().outputTasks.activateOutput();
 }
@@ -273,6 +268,7 @@ void SessionState::senderCompleted(const SequenceSet& commands) {
 void SessionState::readyToSend() {
     QPID_LOG(debug, getId() << ": ready to send, activating output.");
     assert(handler);
+    semanticState.attached();
     sys::AggregateOutput& tasks = handler->getConnection().outputTasks;
     tasks.addOutputTask(&semanticState);
     tasks.activateOutput();
