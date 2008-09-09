@@ -34,6 +34,7 @@
 #include "qpid/management/Queue.h"
 #include "qpid/framing/amqp_types.h"
 
+#include <list>
 #include <vector>
 #include <memory>
 #include <deque>
@@ -60,7 +61,8 @@ namespace qpid {
          */
         class Queue : public boost::enable_shared_from_this<Queue>,
             public PersistableQueue, public management::Manageable {
-            typedef qpid::InlineVector<Consumer*, 5> Listeners;
+
+            typedef std::list<Consumer::shared_ptr> Listeners;
             typedef std::deque<QueuedMessage> Messages;
 
             const string name;
@@ -88,14 +90,13 @@ namespace qpid {
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
-            bool seek(QueuedMessage& msg, Consumer& position);
-            bool getNextMessage(QueuedMessage& msg, Consumer& c);
-            bool consumeNextMessage(QueuedMessage& msg, Consumer& c);
-            bool browseNextMessage(QueuedMessage& msg, Consumer& c);
+            bool seek(QueuedMessage& msg, Consumer::shared_ptr position);
+            bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
+            bool consumeNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
+            bool browseNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
 
-            void notify();
-            void removeListener(Consumer&);
-            void addListener(Consumer&);
+            void removeListener(Consumer::shared_ptr);
+            void addListener(Consumer::shared_ptr);
 
             bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
@@ -115,14 +116,14 @@ namespace qpid {
                   management::Manageable* parent = 0);
             ~Queue();
 
-            bool dispatch(Consumer&);
+            bool dispatch(Consumer::shared_ptr);
             /**
              * Check whether there would be a message available for
              * dispatch to this consumer. If not, the consumer will be
              * notified of events that may have changed this
              * situation.
              */
-            bool checkForMessages(Consumer&);
+            bool checkForMessages(Consumer::shared_ptr);
 
             void create(const qpid::framing::FieldTable& settings);
             void configure(const qpid::framing::FieldTable& settings);
@@ -154,8 +155,8 @@ namespace qpid {
              */
             void recover(boost::intrusive_ptr<Message>& msg);
 
-            void consume(Consumer& c, bool exclusive = false);
-            void cancel(Consumer& c);
+            void consume(Consumer::shared_ptr c, bool exclusive = false);
+            void cancel(Consumer::shared_ptr c);
 
             uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
 
