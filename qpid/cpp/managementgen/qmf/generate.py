@@ -298,3 +298,8 @@ class Generator:
     self.templateFiles.append (templateFile)
     stream = template.expand (makefile)
     self.writeIfChanged (stream, target, force)
+
+  @staticmethod
+  def getModulePath():
+    return __file__
+
