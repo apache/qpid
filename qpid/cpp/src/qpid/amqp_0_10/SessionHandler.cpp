@@ -23,6 +23,7 @@
 #include "qpid/SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AllInvoker.h"
+#include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 
 
@@ -92,16 +93,16 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
     catch(const std::exception& e) {
         QPID_LOG(error, "Unexpected exception: " << e.what());
-        connectionException(connection::FRAMING_ERROR, e.what());
+        connectionException(connection::CLOSE_CODE_FRAMING_ERROR, e.what());
     }
 }
 
 namespace {
 bool isControl(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == framing::CONTROL;
+    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_CONTROL;
 }
 bool isCommand(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == framing::COMMAND;
+    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_COMMAND;
 }
 } // namespace
 
@@ -146,14 +147,14 @@ void SessionHandler::attached(const std::string& name) {
 
 void SessionHandler::detach(const std::string& name) {
     checkName(name);
-    peer.detached(name, session::NORMAL);
+    peer.detached(name, session::DETACH_CODE_NORMAL);
     handleDetach();
 }
 
 void SessionHandler::detached(const std::string& name, uint8_t code) {
     checkName(name);
     ignoring = false;
-    if (code != session::NORMAL)
+    if (code != session::DETACH_CODE_NORMAL)
         channelException(code, "session.detached from peer.");
     else {
         handleDetach();

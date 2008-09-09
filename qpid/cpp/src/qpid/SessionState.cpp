@@ -22,6 +22,7 @@
 #include "SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <numeric>
@@ -37,10 +38,10 @@ using framing::FramingErrorException;
 
 namespace {
 bool isControl(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == framing::CONTROL;
+    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_CONTROL;
 }
 bool isCommand(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == framing::COMMAND;
+    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_COMMAND;
 }
 } // namespace
 
