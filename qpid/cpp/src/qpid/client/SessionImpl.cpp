@@ -26,7 +26,7 @@
 
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
-#include "qpid/framing/constants.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceSet.h"
@@ -41,7 +41,7 @@ namespace qpid {
 namespace client {
 
 using namespace qpid::framing;
-using namespace qpid::framing::session;//for detach codes
+using namespace qpid::framing::session; //for detach codes
 
 typedef sys::Monitor::ScopedLock  Lock;
 typedef sys::Monitor::ScopedUnlock  UnLock;
@@ -52,7 +52,7 @@ SessionImpl::SessionImpl(const std::string& name,
                          shared_ptr<ConnectionImpl> conn,
                          uint16_t ch, uint64_t _maxFrameSize)
     : error(OK),
-      code(NORMAL),
+      code(DETACH_CODE_NORMAL),
       text(EMPTY),
       state(INACTIVE),
       detachedLifetime(0),

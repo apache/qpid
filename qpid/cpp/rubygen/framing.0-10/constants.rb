@@ -30,7 +30,8 @@ class ConstantsGen < CppGen
 
   def constants_h()
     h_file("#{@dir}/constants") {
-      namespace(@namespace) { 
+      namespace(@namespace) {
+        # Constants for class/method names.
         scope("enum AmqpConstant {","};") {
           l=[]
           l.concat @amqp.constants.map { |c| "#{c.name.shout}=#{c.value}" }
@@ -41,35 +42,42 @@ class ConstantsGen < CppGen
           }
           genl l.join(",\n")
         }
-        define_constants_for(@amqp.domain("segment-type").enum)
-        namespace("execution") {
-          define_constants_for(@amqp.class_("execution").domain("error-code").enum)
-        }
-        namespace("connection") {
-          define_constants_for(@amqp.class_("connection").domain("close-code").enum)
-        }
-        namespace("session") {
-          define_constants_for(@amqp.class_("session").domain("detach-code").enum)
-        }
-        define_constants_for(@amqp.class_("dtx").domain("xa-status").enum)        
       }
     }
   end
 
-  def define_constants_for(enum)
-    scope("enum #{enum.parent.name.caps} {","};") {
-      genl enum.choices.collect { |c| "#{c.name.shout}=#{c.value}" }.join(",\n")
+  def enum_h()
+    h_file("#{@dir}/enum") {
+      # Constants for enum domains.
+      namespace(@namespace) {
+        @amqp.domains.each { |d| define_enum(d.enum) if d.enum }
+        @amqp.classes.each { |c|
+          enums=c.collect_all(AmqpEnum)
+          if !enums.empty? then
+            namespace(c.nsname) { enums.each { |e| define_enum(e) } }
+          end
+        }
+      }
+    }
+  end
+
+  def define_enum(enum)
+    # Generated like this: enum containing_class::Foo { FOO_X, FOO_Y; }
+    name="#{enum.parent.name.caps}"
+    prefix=enum.parent.name.shout+"_" 
+    scope("enum #{name} {","};") {
+      genl enum.choices.collect { |c| "#{prefix}#{c.name.shout}=#{c.value}" }.join(",\n")
     }
   end
 
   def define_exception(c, base, package)
-      name=c.name.caps+"Exception"
-      genl
-      doxygen_comment { genl c.doc }
-      struct(c.name.caps+"Exception", base) {
+    name=c.name.caps+"Exception"
+    genl
+    doxygen_comment { genl c.doc }
+    struct(c.name.caps+"Exception", base) {
       genl "std::string getPrefix() const { return \"#{c.name}\"; }"
       genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{c.value}, \"\"+msg) {}"
-      }
+    }
   end
 
   def define_exceptions_for(class_name, domain_name, base)
@@ -119,6 +127,7 @@ class ConstantsGen < CppGen
 
   def generate()
     constants_h
+    enum_h
     reply_exceptions_h
     reply_exceptions_cpp
   end
