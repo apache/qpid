@@ -65,7 +65,7 @@ public:
     { return mgmtObject; }
 
     void doLoop();
-    status_t ManagementMethod (uint32_t methodId, Args& args);
+    status_t ManagementMethod (uint32_t methodId, Args& args, string& text);
 };
 
 class ChildClass : public Manageable
@@ -116,7 +116,7 @@ void CoreClass::doLoop()
     }
 }
 
-Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args)
+Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, string& /*text*/)
 {
     Mutex::ScopedLock _lock(vectorLock);
 

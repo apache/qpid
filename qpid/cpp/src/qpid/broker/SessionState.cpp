@@ -122,7 +122,8 @@ ManagementObject* SessionState::GetManagementObject (void) const
 }
 
 Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
-                                                     Args&    /*args*/)
+                                                     Args&    /*args*/,
+                                                     string&  /*text*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 

@@ -20,9 +20,13 @@
 #include "Manageable.h"
 
 using namespace qpid::management;
+using std::string;
 
-std::string Manageable::StatusText (status_t status)
+string Manageable::StatusText (status_t status, string text)
 {
+    if ((status & STATUS_USER) == STATUS_USER)
+        return text;
+
     switch (status)
     {
     case STATUS_OK                      : return "OK";
@@ -37,7 +41,7 @@ std::string Manageable::StatusText (status_t status)
     return "??";
 }
 
-Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&)
+Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&, std::string&)
 {
     return STATUS_UNKNOWN_METHOD;
 }

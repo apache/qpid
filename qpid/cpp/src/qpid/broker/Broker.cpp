@@ -321,7 +321,8 @@ Manageable* Broker::GetVhostObject(void) const
 }
 
 Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
-                                               Args&    args)
+                                               Args&    args,
+                                               string&)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
@@ -332,7 +333,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     case management::Broker::METHOD_ECHO :
         status = Manageable::STATUS_OK;
         break;
-      case management::Broker::METHOD_CONNECT : {
+    case management::Broker::METHOD_CONNECT : {
         management::ArgsBrokerConnect& hp=
             dynamic_cast<management::ArgsBrokerConnect&>(args);
 

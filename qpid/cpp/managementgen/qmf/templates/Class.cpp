@@ -172,9 +172,10 @@ void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
 void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+    std::string          text;
 /*MGEN:Class.MethodHandlers*/
-    outBuf.putLong        (status);
-    outBuf.putShortString (Manageable::StatusText (status));
+    outBuf.putLong(status);
+    outBuf.putShortString(Manageable::StatusText(status, text));
 }
 
 /*MGEN:Class.EventMethodBodies*/
