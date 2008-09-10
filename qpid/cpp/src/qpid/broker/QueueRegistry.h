@@ -21,10 +21,12 @@
 #ifndef _QueueRegistry_
 #define _QueueRegistry_
 
-#include <map>
-#include "qpid/sys/Mutex.h"
 #include "Queue.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
+#include <boost/bind.hpp>
+#include <algorithm>
+#include <map>
 
 namespace qpid {
 namespace broker {
@@ -98,11 +100,18 @@ class QueueRegistry{
      * Register the manageable parent for declared queues
      */
     void setParent (management::Manageable* _parent) { parent = _parent; }
+
+    /** Call f for each queue in the registry. */
+    template <class F> void eachQueue(const F& f) const {
+        qpid::sys::RWlock::ScopedWlock l(lock);
+        std::for_each(queues.begin(), queues.end(),
+                      boost::bind(f, boost::bind(&QueueMap::value_type::second, _1)));
+    }
     
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
-    qpid::sys::RWlock lock;
+    mutable qpid::sys::RWlock lock;
     int counter;
     MessageStore* store;
     management::Manageable* parent;
@@ -112,8 +121,7 @@ private:
 };
 
     
-}
-}
+}} // namespace qpid::broker
 
 
 #endif

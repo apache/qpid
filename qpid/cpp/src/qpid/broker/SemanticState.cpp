@@ -353,8 +353,14 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     //TODO: the following should be hidden behind message (using MessageAdapter or similar)
+
+    // Do not replace the delivery-properties.exchange if it is is already set.
+    // This is used internally (by the cluster) to force the exchange name on a message.
+    // The client library ensures this is always empty for messages from normal clients.
     if (msg->isA<MessageTransferBody>()) {
-        msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
+        if (!msg->hasProperties<DeliveryProperties>() ||
+            msg->getProperties<DeliveryProperties>()->getExchange().empty()) 
+            msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
@@ -392,11 +398,6 @@ void SemanticState::requestDispatch(ConsumerImpl& c)
 {    
     if(c.isBlocked())
         outputTasks.activateOutput();
-    // TODO aconway 2008-07-16:  we could directly call
-    //  c.doOutput();
-    // since we are in the connections thread but for consistency
-    // activateOutput() will set it up to be called in the next write idle.
-    // Current cluster code depends on this, review cluster code to change.
 }
 
 void SemanticState::complete(DeliveryRecord& delivery)

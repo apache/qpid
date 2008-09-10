@@ -89,6 +89,18 @@ class Connection :
     // ConnectionInputHandlerFactory
     sys::ConnectionInputHandler* create(sys::ConnectionOutputHandler* out, const std::string& id, bool isClient);
 
+    // State dump methods.
+    virtual void sessionState(const framing::SequenceNumber& /*replayId*/,
+                              const framing::SequenceNumber& /*sendId*/,
+                              const framing::SequenceSet& /*sentIncomplete*/,
+                              const framing::SequenceNumber& /*expectedId*/,
+                              const framing::SequenceNumber& /*receivedId*/,
+                              const framing::SequenceSet& /*unknownCompleted*/,
+                              const framing::SequenceSet& /*receivedIncomplete*/) {}
+    
+    virtual void shadowReady(uint64_t /*clusterId*/,
+                             const std::string& /*userId*/) {}
+
   private:
     void sendDoOutput();
 

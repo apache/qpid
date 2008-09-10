@@ -24,9 +24,7 @@
 namespace qpid {
 namespace client {
 
-Message::Message(const std::string& data_,
-                 const std::string& routingKey,
-                 const std::string& exchange) : TransferContent(data_, routingKey, exchange) {}
+Message::Message(const std::string& data, const std::string& routingKey) : TransferContent(data, routingKey) {}
 
 std::string Message::getDestination() const 
 { 
