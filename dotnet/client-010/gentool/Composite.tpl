@@ -183,7 +183,7 @@ if pack > 0:
 
 ${
 if segments:
-    out("""    public  Header Header {
+    out("""    public override Header Header {
         get { return _header;}
         set { _header = value;}
 	      }
@@ -193,13 +193,13 @@ if segments:
         return this;
     }
 
-    public  MemoryStream Body
+    public  override MemoryStream Body
     {
        get{ return _body;}
        set{ _body = value;}
     }
 
-    public  $name body(MemoryStream body)
+    public  $name  body(MemoryStream body)
     {
         Body = body;
         return this;
