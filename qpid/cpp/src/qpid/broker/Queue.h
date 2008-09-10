@@ -34,14 +34,15 @@
 #include "qpid/management/Queue.h"
 #include "qpid/framing/amqp_types.h"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/intrusive_ptr.hpp>
+
 #include <list>
 #include <vector>
 #include <memory>
 #include <deque>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/intrusive_ptr.hpp>
+#include <algorithm>
 
 namespace qpid {
     namespace broker {
@@ -172,6 +173,8 @@ namespace qpid {
             inline const framing::FieldTable& getSettings() const { return settings; }
             inline bool isAutoDelete() const { return autodelete; }
             bool canAutoDelete() const;
+            const QueueBindings& getBindings() const { return bindings; }
+
 
             bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**
@@ -205,6 +208,17 @@ namespace qpid {
             management::ManagementObject* GetManagementObject (void) const;
             management::Manageable::status_t
             ManagementMethod (uint32_t methodId, management::Args& args);
+
+            /** Apply f to each Message on the queue. */
+            template <class F> void eachMessage(const F& f) const {
+                sys::Mutex::ScopedLock l(messageLock);
+                std::for_each(messages.begin(), messages.end(), f);
+            }
+
+            /** Apply f to each QueueBinding on the queue */
+            template <class F> void eachBinding(const F& f) {
+                bindings.eachBinding(f);
+            }
         };
     }
 }

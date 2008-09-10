@@ -36,9 +36,7 @@ class TransferContent : public MethodContent
     AMQHeaderBody header;
     std::string data;
 public:
-    TransferContent(const std::string& data = std::string(),
-                    const std::string& routingKey = std::string(),
-                    const std::string& exchange = std::string());
+    TransferContent(const std::string& data = std::string(), const std::string& key=std::string());
 
     ///@internal
     AMQHeaderBody getHeader() const;

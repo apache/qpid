@@ -45,7 +45,11 @@ inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
 std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
 
 /** Address is a variant of all address types, more coming in future. */
-typedef boost::variant<TcpAddress> Address;
+struct Address : public boost::variant<TcpAddress> {
+    template <class T> Address(const T& t) : boost::variant<TcpAddress>(t) {}
+    template <class T> T* get() { return boost::get<T>(this); }
+    template <class T> const T* get() const { return boost::get<T>(this); }
+};
 
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {

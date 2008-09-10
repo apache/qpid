@@ -1,5 +1,5 @@
-#ifndef _client_Connection_
-#define _client_Connection_
+#ifndef QPID_CLIENT_CONNECTION_H
+#define QPID_CLIENT_CONNECTION_H
 
 /*
  *
@@ -26,6 +26,9 @@
 #include "qpid/client/Session.h"
 
 namespace qpid {
+
+class Url;
+
 namespace client {
 
 class ConnectionSettings;
@@ -72,6 +75,28 @@ class Connection
      * within a single broker).
      */
     void open(const std::string& host, int port = 5672, 
+              const std::string& uid = "guest",
+              const std::string& pwd = "guest", 
+              const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
+
+    /**
+     * Opens a connection to a broker using a URL.
+     * If the URL contains multiple addresses, try each in turn
+     * till connection is successful.
+     * 
+     * @url address of the broker to connect to.
+     *
+     * @param uid the userid to connect with.
+     *
+     * @param pwd the password to connect with (currently SASL
+     * PLAIN is the only authentication method supported so this
+     * is sent in clear text).
+     * 
+     * @param virtualhost the AMQP virtual host to use (virtual
+     * hosts, where implemented(!), provide namespace partitioning
+     * within a single broker).
+     */
+    void open(const Url& url,
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
@@ -146,4 +171,4 @@ class Connection
 }} // namespace qpid::client
 
 
-#endif
+#endif  /*!QPID_CLIENT_CONNECTION_H*/

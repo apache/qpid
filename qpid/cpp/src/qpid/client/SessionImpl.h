@@ -81,6 +81,7 @@ public:
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
+    Future send(const framing::AMQBody& command, const framing::FrameSet& content);
 
     Demux& getDemux();
     void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
