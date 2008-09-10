@@ -724,8 +724,7 @@ ManagementObject* Queue::GetManagementObject (void) const
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Queue::ManagementMethod (uint32_t methodId,
-                                              Args&    args)
+Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, string&)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 

@@ -222,7 +222,7 @@ ManagementObject* Connection::GetManagementObject(void) const
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&)
+Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&, string&)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 

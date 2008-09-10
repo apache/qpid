@@ -178,7 +178,9 @@ management::ManagementObject* Bridge::GetManagementObject (void) const
     return (management::ManagementObject*) mgmtObject;
 }
 
-management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId, management::Args& /*args*/)
+management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId,
+                                                          management::Args& /*args*/,
+                                                          string&)
 {
     if (methodId == management::Bridge::METHOD_CLOSE) {  
         //notify that we are closed
