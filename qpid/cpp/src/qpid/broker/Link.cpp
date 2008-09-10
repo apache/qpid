@@ -324,7 +324,7 @@ ManagementObject* Link::GetManagementObject (void) const
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args)
+Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args, string&)
 {
     switch (op)
     {

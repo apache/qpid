@@ -1004,9 +1004,9 @@ class SchemaClass:
                                                    arg.name, "inBuf") + ";\n")
 
       stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
-                    method.getName().upper() + ", ioArgs);\n")
+                    method.getName().upper() + ", ioArgs, text);\n")
       stream.write ("        outBuf.putLong        (status);\n")
-      stream.write ("        outBuf.putShortString (Manageable::StatusText (status));\n")
+      stream.write ("        outBuf.putShortString (Manageable::StatusText (status, text));\n")
       for arg in method.args:
         if arg.getDir () == "O" or arg.getDir () == "IO":
           stream.write ("        " +\

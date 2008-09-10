@@ -60,7 +60,6 @@ namespace qpid {
                         framing::FieldTable args = framing::FieldTable ());
                 ~Binding ();
                 management::ManagementObject* GetManagementObject () const;
-                management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args);
             };
             struct MatchQueue
             {
@@ -104,9 +103,7 @@ namespace qpid {
             static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
             // Manageable entry points
-            management::ManagementObject* GetManagementObject (void) const;
-            management::Manageable::status_t
-                ManagementMethod (uint32_t, management::Args&) { return management::Manageable::STATUS_UNKNOWN_METHOD; }
+            management::ManagementObject* GetManagementObject(void) const;
         };
     }
 }

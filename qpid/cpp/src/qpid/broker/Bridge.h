@@ -54,7 +54,9 @@ public:
     bool isDurable() { return args.i_durable; }
 
     management::ManagementObject* GetManagementObject() const;
-    management::Manageable::status_t ManagementMethod(uint32_t methodId, management::Args& args);
+    management::Manageable::status_t ManagementMethod(uint32_t methodId,
+                                                      management::Args& args,
+                                                      std::string& text);
 
     // PersistableConfig:
     void     setPersistenceId(uint64_t id) const;

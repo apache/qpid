@@ -207,7 +207,7 @@ namespace qpid {
             // Manageable entry points
             management::ManagementObject* GetManagementObject (void) const;
             management::Manageable::status_t
-            ManagementMethod (uint32_t methodId, management::Args& args);
+                ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
             /** Apply f to each Message on the queue. */
             template <class F> void eachMessage(const F& f) const {

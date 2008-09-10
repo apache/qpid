@@ -31,12 +31,12 @@ class Manageable
 {
   public:
 
-    virtual ~Manageable (void) = 0;
+    virtual ~Manageable(void) = 0;
 
     //  status_t is a type used to pass completion status from the method handler.
     //
     typedef uint32_t status_t;
-    static std::string StatusText (status_t status);
+    static std::string StatusText(status_t status, std::string text = std::string());
 
     static const status_t STATUS_OK                      = 0;
     static const status_t STATUS_UNKNOWN_OBJECT          = 1;
@@ -45,6 +45,7 @@ class Manageable
     static const status_t STATUS_INVALID_PARAMETER       = 4;
     static const status_t STATUS_FEATURE_NOT_IMPLEMENTED = 5;
     static const status_t STATUS_FORBIDDEN               = 6;
+    static const status_t STATUS_USER                    = 0x00010000;
 
     //  Every "Manageable" object must hold a reference to exactly one
     //  management object.  This object is always of a class derived from
@@ -52,17 +53,17 @@ class Manageable
     //
     //  This accessor function returns a pointer to the management object.
     //
-    virtual ManagementObject* GetManagementObject (void) const = 0;
+    virtual ManagementObject* GetManagementObject(void) const = 0;
 
     //  Every "Manageable" object must implement ManagementMethod.  This
     //  function is called when a remote management client invokes a method
     //  on this object.  The input and output arguments are specific to the
     //  method being called and must be down-cast to the appropriate sub class
     //  before use.
-    virtual status_t ManagementMethod (uint32_t methodId, Args& args);
+    virtual status_t ManagementMethod(uint32_t methodId, Args& args, std::string& text);
 };
 
-inline Manageable::~Manageable (void) {}
+inline Manageable::~Manageable(void) {}
 
 }}
 

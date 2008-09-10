@@ -123,8 +123,8 @@ namespace qpid {
             static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
             // Manageable entry points
-            management::ManagementObject*    GetManagementObject (void) const;
-            management::Manageable::status_t ManagementMethod (uint32_t, management::Args&);
+            management::ManagementObject*    GetManagementObject(void) const;
+            management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
         };
     }
 }

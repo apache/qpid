@@ -156,7 +156,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     management::ManagementObject*     GetManagementObject (void) const;
     management::Manageable*           GetVhostObject      (void) const;
-    management::Manageable::status_t  ManagementMethod (uint32_t methodId, management::Args& args);
+    management::Manageable::status_t  ManagementMethod (uint32_t methodId,
+                                                        management::Args& args,
+                                                        std::string& text);
     
     /** Add to the broker's protocolFactorys */
     void registerProtocolFactory(boost::shared_ptr<sys::ProtocolFactory>);
