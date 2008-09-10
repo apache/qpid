@@ -22,51 +22,64 @@
  *
  */
 
-#include <map>
-#include <boost/function.hpp>
 #include "Exchange.h"
 #include "MessageStore.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"
 
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
+#include <algorithm>
+#include <map>
+
 namespace qpid {
 namespace broker {
-    struct UnknownExchangeTypeException{};
 
-    class ExchangeRegistry{
-     public:
-        typedef boost::function4<Exchange::shared_ptr, const std::string&, 
-                                 bool, const qpid::framing::FieldTable&, qpid::management::Manageable*> FactoryFunction;
+struct UnknownExchangeTypeException{};
 
-        ExchangeRegistry () : parent(0) {}
-        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
-            throw(UnknownExchangeTypeException);
-        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
-                                                      bool durable, const qpid::framing::FieldTable& args = framing::FieldTable())
-            throw(UnknownExchangeTypeException);
-        void destroy(const std::string& name);
-        Exchange::shared_ptr get(const std::string& name);
-        Exchange::shared_ptr getDefault();
+class ExchangeRegistry{
+  public:
+    typedef boost::function4<Exchange::shared_ptr, const std::string&, 
+                             bool, const qpid::framing::FieldTable&, qpid::management::Manageable*> FactoryFunction;
 
-        /**
-         * Register the manageable parent for declared exchanges
-         */
-        void setParent (management::Manageable* _parent) { parent = _parent; }
+    ExchangeRegistry () : parent(0) {}
+    std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
+        throw(UnknownExchangeTypeException);
+    std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
+                                                  bool durable, const qpid::framing::FieldTable& args = framing::FieldTable())
+        throw(UnknownExchangeTypeException);
+    void destroy(const std::string& name);
+    Exchange::shared_ptr get(const std::string& name);
+    Exchange::shared_ptr getDefault();
 
-        void registerType(const std::string& type, FactoryFunction);
-      private:
-        typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
-        typedef std::map<std::string, FactoryFunction > FunctionMap;
+    /**
+     * Register the manageable parent for declared exchanges
+     */
+    void setParent (management::Manageable* _parent) { parent = _parent; }
 
-        ExchangeMap exchanges;
-        FunctionMap factory;
-        qpid::sys::RWlock lock;
-        management::Manageable* parent;
+    void registerType(const std::string& type, FactoryFunction);
 
-    };
-}
-}
+    /** Call f for each exchange in the registry. */
+    template <class F> void eachExchange(const F& f) const {
+        qpid::sys::RWlock::ScopedWlock l(lock);
+        std::for_each(exchanges.begin(), exchanges.end(),
+                      boost::bind(f, boost::bind(&ExchangeMap::value_type::second, _1)));
+    }
+        
+  private:
+    typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
+    typedef std::map<std::string, FactoryFunction > FunctionMap;
+
+    ExchangeMap exchanges;
+    FunctionMap factory;
+    mutable qpid::sys::RWlock lock;
+    management::Manageable* parent;
+
+};
+
+}} // namespace qpid::broker
 
 
 #endif  /*!_broker_ExchangeRegistry_h*/

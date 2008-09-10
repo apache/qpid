@@ -25,7 +25,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AllInvoker.h"
-#include "qpid/framing/ClusterUrlNoticeBody.h"
+#include "qpid/framing/ClusterJoiningBody.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/log/Statement.h"
@@ -50,7 +50,13 @@ struct ClusterOperations : public AMQP_AllOperations::ClusterHandler {
     Cluster& cluster;
     MemberId member;
     ClusterOperations(Cluster& c, const MemberId& id) : cluster(c), member(id) {}
-    void urlNotice(const std::string& u) { cluster.urlNotice (member, u); }
+    void joining(const std::string& u) { cluster.joining (member, u); }
+    void ready() { cluster.ready(member); }
+
+    void members(const framing::FieldTable& , const framing::FieldTable& , const framing::FieldTable& ) {
+        assert(0); // Not passed to cluster, used to start a brain dump over TCP.
+    }
+
     bool invoke(AMQFrame& f) { return framing::invoke(*this, *f.getBody()).wasHandled(); }
 };
 
@@ -237,7 +243,7 @@ void Cluster::configChange(
     
     if (nJoined)                // Notfiy new members of my URL.
         mcastFrame(
-            AMQFrame(in_place<ClusterUrlNoticeBody>(ProtocolVersion(), url.str())),
+            AMQFrame(in_place<ClusterJoiningBody>(ProtocolVersion(), url.str())),
             ConnectionId(self,0));
 
 
@@ -261,11 +267,15 @@ void Cluster::disconnect(sys::DispatchHandle& h) {
     broker->shutdown();
 }
 
-void Cluster::urlNotice(const MemberId& m, const string& url) {
+void Cluster::joining(const MemberId& m, const string& url) {
     QPID_LOG(notice, "Cluster member " << m << " has URL " << url);
     urls.insert(UrlMap::value_type(m,Url(url)));
 }
 
+void Cluster::ready(const MemberId& ) {
+    // FIXME aconway 2008-09-08: TODO
+}
+    
 }} // namespace qpid::cluster
 
 

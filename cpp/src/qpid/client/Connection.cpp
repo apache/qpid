@@ -23,6 +23,7 @@
 #include "Message.h"
 #include "SessionImpl.h"
 #include "SessionBase_0_10Access.h"
+#include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
@@ -46,6 +47,37 @@ namespace client {
 Connection::Connection() : channelIdCounter(0), version(framing::highestProtocolVersion) {}
 
 Connection::~Connection(){ }
+
+void Connection::open(
+    const Url& url,
+    const std::string& uid, const std::string& pwd, 
+    const std::string& vhost,
+    uint16_t maxFrameSize)
+{
+    if (url.empty())
+        throw Exception(QPID_MSG("Attempt to open URL with no addresses."));
+    Url::const_iterator i = url.begin();
+    do {
+        const TcpAddress* tcp = i->get<TcpAddress>();
+        i++;
+        if (tcp) {
+            try {
+                ConnectionSettings settings;
+                settings.host = tcp->host;
+                settings.port = tcp->port;
+                settings.username = uid;
+                settings.password = pwd;
+                settings.virtualhost = vhost;
+                settings.maxFrameSize = maxFrameSize;
+                open(settings);
+                break;
+            }
+            catch (const Exception& e) {
+                if (i == url.end()) throw;
+            }
+        }
+    } while (i != url.end());
+}
 
 void Connection::open(
     const std::string& host, int port,

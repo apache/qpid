@@ -28,9 +28,11 @@
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/FrameSet.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/DeliveryProperties.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
@@ -272,6 +274,41 @@ Future SessionImpl::send(const AMQBody& command, const MethodContent& content)
     return sendCommand(command, &content);
 }
 
+namespace {
+// Functor for FrameSet::map to send header + content frames but, not method frames.
+struct SendContentFn {
+    FrameHandler& handler;
+    void operator()(const AMQFrame& f) {
+        if (!f.getMethod()) 
+            handler(const_cast<AMQFrame&>(f));
+    }
+    SendContentFn(FrameHandler& h) : handler(h) {}
+};
+}
+    
+Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
+    Acquire a(sendLock);
+    SequenceNumber id = nextOut++;
+    {
+        Lock l(state);
+        checkOpen();    
+        incompleteOut.add(id);
+    }
+    Future f(id);
+    if (command.getMethod()->resultExpected()) {        
+        Lock l(state);
+        //result listener must be set before the command is sent
+        f.setFutureResult(results.listenForResult(id));
+    }
+    AMQFrame frame(command);
+    frame.setEof(false);
+    handleOut(frame);
+
+    SendContentFn send(out);
+    content.map(send);
+    return f;
+}
+
 Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* content)
 {
     Acquire a(sendLock);
@@ -297,9 +334,16 @@ Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* con
     }
     return f;
 }
+
 void SessionImpl::sendContent(const MethodContent& content)
 {
     AMQFrame header(content.getHeader());
+
+    // Client is not allowed to set the delivery-properties.exchange.
+    AMQHeaderBody* headerp = static_cast<AMQHeaderBody*>(header.getBody());
+    if (headerp && headerp->get<DeliveryProperties>())
+        headerp->get<DeliveryProperties>(true)->clearExchangeFlag();
+
     header.setFirstSegment(false);
     uint64_t data_length = content.getData().length();
     if(data_length > 0){

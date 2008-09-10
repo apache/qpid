@@ -40,11 +40,9 @@ public:
     /** Create a Message.
      *@param data Data for the message body.
      *@param routingKey Passed to the exchange that routes the message.
-     *@param exchange Name of the exchange that should route the message.
      */
     Message(const std::string& data=std::string(),
-            const std::string& routingKey=std::string(),
-            const std::string& exchange=std::string());
+            const std::string& routingKey=std::string());
 
     /** The destination of messages sent to the broker is the exchange
      * name.  The destination of messages received from the broker is

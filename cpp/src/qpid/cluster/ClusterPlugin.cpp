@@ -26,6 +26,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/utility/in_place_factory.hpp>
 
@@ -75,7 +76,7 @@ struct ClusterPlugin : public Plugin {
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (!broker || values.name.empty()) return;  // Only if --cluster-name option was specified.
-        if (cluster) throw Exception("Cluster plugin cannot be initialized twice in one process.");
+        QPID_LOG_IF(warning, cluster, "Ignoring multiple initialization of cluster plugin.");
         cluster = new Cluster(values.name, values.getUrl(broker->getPort()), *broker);
         broker->addFinalizer(boost::bind(&ClusterPlugin::shutdown, this));
         broker->setConnectionFactory(

@@ -75,7 +75,8 @@ class Cluster : public RefCounted, private Cpg::Handler
     /** Leave the cluster */
     void leave();
     
-    void urlNotice(const MemberId&, const std::string& url);
+    void joining(const MemberId&, const std::string& url);
+    void ready(const MemberId&);
 
     broker::Broker& getBroker() { assert(broker); return *broker; }
 
