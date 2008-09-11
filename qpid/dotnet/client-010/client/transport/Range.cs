@@ -32,66 +32,66 @@ namespace org.apache.qpid.transport
 
     public sealed class Range
     {
-        private int lower;
-        private int upper;
+        private int _lower;
+        private int _upper;
 
         public Range(int lower, int upper)
         {
-            this.lower = lower;
-            this.upper = upper;
+            _lower = lower;
+            _upper = upper;
         }
 
         public int Lower
         {
-            get { return lower; }
-            set { lower = value; }
+            get { return _lower; }
+            set { _lower = value; }
         }
         public int Upper
         {
-            get { return upper; }
-            set { upper = value; }
+            get { return _upper; }
+            set { _upper = value; }
         }
 
         public bool includes(int value)
         {
-            return Serial.le(lower, value) && Serial.le(value, upper);
+            return Serial.le(_lower, value) && Serial.le(value, _upper);
         }
 
         public bool includes(Range range)
         {
-            return includes(range.lower) && includes(range.upper);
+            return includes(range._lower) && includes(range._upper);
         }
 
         public bool intersects(Range range)
         {
-            return (includes(range.lower) || includes(range.upper) ||
-                    range.includes(lower) || range.includes(upper));
+            return (includes(range._lower) || includes(range._upper) ||
+                    range.includes(_lower) || range.includes(_upper));
         }
 
         public bool touches(Range range)
         {
             return (intersects(range) ||
-                    includes(range.upper + 1) || includes(range.lower - 1) ||
-                    range.includes(upper + 1) || range.includes(lower - 1));
+                    includes(range._upper + 1) || includes(range._lower - 1) ||
+                    range.includes(_upper + 1) || range.includes(_lower - 1));
         }
 
         public Range span(Range range)
         {
-            return new Range(Serial.min(lower, range.lower), Serial.max(upper, range.upper));
+            return new Range(Serial.min(_lower, range._lower), Serial.max(_upper, range._upper));
         }
 
         public List<Range> subtract(Range range)
         {
             List<Range> result = new List<Range>();
 
-            if (includes(range.lower) && Serial.le(lower, range.lower - 1))
+            if (includes(range._lower) && Serial.le(_lower, range._lower - 1))
             {
-                result.Add(new Range(lower, range.lower - 1));
+                result.Add(new Range(_lower, range._lower - 1));
             }
 
-            if (includes(range.upper) && Serial.le(range.upper + 1, upper))
+            if (includes(range._upper) && Serial.le(range._upper + 1, _upper))
             {
-                result.Add(new Range(range.upper + 1, upper));
+                result.Add(new Range(range._upper + 1, _upper));
             }
 
             if (result.Count == 0 && !range.includes(this))
@@ -104,14 +104,14 @@ namespace org.apache.qpid.transport
 
         public Range intersect(Range range)
         {
-            int l = Serial.max(lower, range.lower);
-            int r = Serial.min(upper, range.upper);
+            int l = Serial.max(_lower, range._lower);
+            int r = Serial.min(_upper, range._upper);
             return Serial.gt(l, r) ? null : new Range(l, r);
         }
 
         public String toString()
         {
-            return "[" + lower + ", " + upper + "]";
+            return "[" + _lower + ", " + _upper + "]";
         }
     }
 }

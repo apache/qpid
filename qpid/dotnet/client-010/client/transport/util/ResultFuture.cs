@@ -5,12 +5,12 @@ using org.apache.qpid.transport.util;
 
 namespace common.org.apache.qpid.transport.util
 {
-    public class ResultFuture<T> : Future<T> where T : Struct 
+    public class ResultFuture : Future
     {
         const long _timeout = 60000;
         private Struct _result;
         private Session _session;
-        private static readonly Logger log = Logger.get(typeof(ResultFuture<T>));
+        private static readonly Logger log = Logger.get(typeof(ResultFuture));
 
         public Struct get(long timeout)
         {
@@ -32,9 +32,9 @@ namespace common.org.apache.qpid.transport.util
            return _result;
         }
 
-        public T Result
+        public Struct Result
         {
-            get { return (T) get(_timeout); }
+            get { return get(_timeout); }
             set
             {
                 lock (this)

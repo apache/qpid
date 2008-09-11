@@ -24,9 +24,9 @@ namespace org.apache.qpid.transport
     /// <summary> 
     /// Future
     /// </summary>
-    public interface Future<T>
+    public interface Future
     {
-        T Result
+        Struct Result
         {
             get; set;
         }

@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using common.org.apache.qpid.transport.util;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
 using Frame = org.apache.qpid.transport.network.Frame;
@@ -77,7 +78,7 @@ namespace org.apache.qpid.transport
         private int _maxComplete = - 1;
         private bool _needSync = false;
         private bool _closed;
-        private readonly Dictionary<int, Future<Struct>> _results = new Dictionary<int, Future<Struct>>();
+        private readonly Dictionary<int, Future> _results = new Dictionary<int, Future>();
         private readonly List<ExecutionException> _exceptions = new List<ExecutionException>();
 
 
@@ -383,7 +384,7 @@ namespace org.apache.qpid.transport
 
         public void result(int command, Struct result)
         {
-            Future<Struct> future;
+            Future future;
             lock (_results)
             {
                 if (_results.ContainsKey(command))
@@ -422,7 +423,7 @@ namespace org.apache.qpid.transport
             }
         }
 
-        public override Future<T> invoke<T>(Method m, Future<T> future)
+        public override Future invoke(Method m, Future future)     
         {
             lock (_commands)
             {
@@ -430,7 +431,7 @@ namespace org.apache.qpid.transport
                 int command = _commandsOut;
                 lock (_results)
                 {
-                    _results.Add(command, (Future<Struct>) future);
+                    _results.Add(command, future);
                 }
                 invoke(m);
             }
@@ -493,7 +494,7 @@ namespace org.apache.qpid.transport
             }
             lock (_results)
             {
-                foreach (Future<Struct> result in _results.Values)
+                foreach (Future result in _results.Values)
                 {
                     lock (result)
                     {
