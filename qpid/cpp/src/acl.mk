@@ -1,9 +1,9 @@
 #
 # acl library makefile fragment, to be included in Makefile.am
 # 
-lib_LTLIBRARIES += libqpidacl.la
+dmodule_LTLIBRARIES += acl.la
 
-libqpidacl_la_SOURCES = \
+acl_la_SOURCES = \
   qpid/acl/Acl.cpp \
   qpid/acl/Acl.h \
   qpid/acl/AclData.cpp \
@@ -12,6 +12,5 @@ libqpidacl_la_SOURCES = \
   qpid/acl/AclReader.cpp \
   qpid/acl/AclReader.h
 
-libqpidacl_la_LIBADD = libqpidbroker.la
-
-
+acl_la_LIBADD= libqpidbroker.la
+acl_la_LDFLAGS = $(PLUGINLDFLAGS)

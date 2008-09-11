@@ -69,7 +69,7 @@ class ConnectionImpl : public Bounds,
     ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
     
-    void open(const std::string& host, int port);
+    void open();
     bool isOpen() const;
 
     void addSession(const boost::shared_ptr<SessionImpl>&);
