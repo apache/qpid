@@ -137,8 +137,8 @@ void SessionImpl::suspend() //user thread
 void SessionImpl::detach() //call with lock held 
 {
     if (state == ATTACHED) {
-        proxy.detach(id.getName());
         setState(DETACHING);
+        proxy.detach(id.getName());
     }
 }
 
@@ -630,7 +630,8 @@ inline void SessionImpl::setState(State s) //call with lock held
 inline void SessionImpl::waitFor(State s) //call with lock held
 {
     // We can be DETACHED at any time
-    state.waitFor(States(s, DETACHED));
+    if (s == DETACHED) state.waitFor(DETACHED);
+    else state.waitFor(States(s, DETACHED));
     check();
 }
 

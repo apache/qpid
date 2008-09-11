@@ -12,5 +12,5 @@ acl_la_SOURCES = \
   qpid/acl/AclReader.cpp \
   qpid/acl/AclReader.h
 
-acl_la_LIBADD= libqpidbroker.la
+acl_la_LIBADD = libqpidbroker.la
 acl_la_LDFLAGS = $(PLUGINLDFLAGS)

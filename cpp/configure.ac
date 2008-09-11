@@ -278,7 +278,7 @@ AC_ARG_WITH([rdma],
      ;;
    esac],
   [
-   with_RDMA=no
+   with_RDMA=yes
    AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[with_RDMA=no])
    AC_CHECK_LIB([rdmacm],[rdma_create_id],,[with_RDMA=no])
    AC_CHECK_HEADERS([infiniband/verbs.h],,[with_RDMA=no])

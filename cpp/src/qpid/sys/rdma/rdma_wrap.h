@@ -31,6 +31,8 @@
 
 #include <fcntl.h>
 
+#include <netdb.h>
+
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -43,15 +45,7 @@ namespace Rdma {
     const int DEFAULT_BACKLOG = 100;
     const int DEFAULT_CQ_ENTRIES = 256;
     const int DEFAULT_WR_ENTRIES = 64;
-    const ::rdma_conn_param DEFAULT_CONNECT_PARAM = {
-        0,    // .private_data
-        0,    // .private_data_len
-        4,    // .responder_resources
-        4,    // .initiator_depth
-        0,    // .flow_control
-        5,    // .retry_count
-        7     // .rnr_retry_count
-    };
+    extern const ::rdma_conn_param DEFAULT_CONNECT_PARAM;
 
     struct Buffer {
         friend class QueuePair;
@@ -115,6 +109,14 @@ namespace Rdma {
             return dir != NONE;
         }
 
+        bool immPresent() const {
+            return wc.wc_flags & IBV_WC_WITH_IMM;
+        }
+        
+        uint32_t getImm() const {
+            return ntohl(wc.imm_data);
+        }
+
         QueueDirection getDirection() const {
             return dir;
         }
@@ -137,15 +139,12 @@ namespace Rdma {
     // Wrapper for a queue pair - this has the functionality for
     // putting buffers on the receive queue and for sending buffers
     // to the other end of the connection.
-    //
-    // Currently QueuePairs are contained inside Connections and have no
-    // separate lifetime
     class QueuePair : public qpid::sys::IOHandle, public qpid::RefCounted {
         boost::shared_ptr< ::ibv_pd > pd;
         boost::shared_ptr< ::ibv_comp_channel > cchannel;
         boost::shared_ptr< ::ibv_cq > scq;
         boost::shared_ptr< ::ibv_cq > rcq;
-        boost::shared_ptr< ::rdma_cm_id > id;
+        boost::shared_ptr< ::ibv_qp > qp;
         int outstandingSendEvents;
         int outstandingRecvEvents;
 
@@ -207,6 +206,7 @@ namespace Rdma {
 
         void postRecv(Buffer* buf);
         void postSend(Buffer* buf);
+        void postSend(uint32_t imm, Buffer* buf);
         void notifyRecv();
         void notifySend();
     };
@@ -233,14 +233,7 @@ namespace Rdma {
             return event->event;
         }
 
-        ::rdma_conn_param getConnectionParam() const {
-            if (event->event == RDMA_CM_EVENT_CONNECT_REQUEST) {
-                return event->param.conn;
-            } else {
-                ::rdma_conn_param p = {};
-                return p;
-            }
-        }
+        ::rdma_conn_param getConnectionParam() const;
 
         boost::intrusive_ptr<Connection> getConnection () const {
             return id;
@@ -290,6 +283,11 @@ namespace Rdma {
         {
             impl->fd = channel->fd;
 	}
+
+        ~Connection() {
+            // Reset the id context in case someone else has it
+            id->context = 0;
+        }
 
         // Default destructor fine
 
@@ -445,51 +443,37 @@ namespace Rdma {
 
             return qp;
         }
+        
+        std::string getLocalName() const {
+            ::sockaddr* addr = ::rdma_get_local_addr(id.get());
+            char hostName[NI_MAXHOST];
+            char portName[NI_MAXSERV];
+            CHECK_IBV(::getnameinfo(
+                addr, sizeof(::sockaddr_storage),
+                hostName, sizeof(hostName),
+                portName, sizeof(portName),
+                NI_NUMERICHOST | NI_NUMERICSERV));
+            std::string r(hostName);
+            r += ":";
+            r += portName;
+            return r;
+        }
+        
+        std::string getPeerName() const {
+            ::sockaddr* addr = ::rdma_get_peer_addr(id.get());
+            char hostName[NI_MAXHOST];
+            char portName[NI_MAXSERV];
+            CHECK_IBV(::getnameinfo(
+                addr, sizeof(::sockaddr_storage),
+                hostName, sizeof(hostName),
+                portName, sizeof(portName),
+                NI_NUMERICHOST | NI_NUMERICSERV));
+            std::string r(hostName);
+            r += ":";
+            r += portName;
+            return r;
+        }
     };
-
-    inline QueuePair::QueuePair(boost::shared_ptr< ::rdma_cm_id > i) :
-        qpid::sys::IOHandle(new qpid::sys::IOHandlePrivate),
-        pd(allocPd(i->verbs)),
-        cchannel(mkCChannel(i->verbs)),
-        scq(mkCq(i->verbs, DEFAULT_CQ_ENTRIES, 0, cchannel.get())),
-        rcq(mkCq(i->verbs, DEFAULT_CQ_ENTRIES, 0, cchannel.get())),
-        id(i),
-        outstandingSendEvents(0),
-        outstandingRecvEvents(0)
-    {
-        impl->fd = cchannel->fd;
-
-        // Set cq context to this QueuePair object so we can find
-        // ourselves again
-        scq->cq_context = this;
-        rcq->cq_context = this;
-
-        ::ibv_qp_init_attr qp_attr = {};
-
-        // TODO: make a default struct for this
-        qp_attr.cap.max_send_wr  = DEFAULT_WR_ENTRIES;
-        qp_attr.cap.max_send_sge = 4;
-        qp_attr.cap.max_recv_wr  = DEFAULT_WR_ENTRIES;
-        qp_attr.cap.max_recv_sge = 4;
-
-        qp_attr.send_cq      = scq.get();
-        qp_attr.recv_cq      = rcq.get();
-        qp_attr.qp_type      = IBV_QPT_RC;
-
-        CHECK(::rdma_create_qp(id.get(), pd.get(), &qp_attr));
-
-        // Set the qp context to this so we can find ourselves again
-        id->qp->qp_context = this;
-    }
-
-    inline QueuePair::~QueuePair() {
-        if (outstandingSendEvents > 0)
-            ::ibv_ack_cq_events(scq.get(), outstandingSendEvents);
-        if (outstandingRecvEvents > 0)
-            ::ibv_ack_cq_events(rcq.get(), outstandingRecvEvents);
-
-        ::rdma_destroy_qp(id.get());
-    }
 
     inline void QueuePair::notifyRecv() {
         CHECK_IBV(ibv_req_notify_cq(rcq.get(), 0));
@@ -497,44 +481,6 @@ namespace Rdma {
 
     inline void QueuePair::notifySend() {
         CHECK_IBV(ibv_req_notify_cq(scq.get(), 0));
-    }
-
-    inline void QueuePair::postRecv(Buffer* buf) {
-        ::ibv_recv_wr rwr = {};
-        ::ibv_sge sge;
-
-        sge.addr = (uintptr_t) buf->bytes+buf->dataStart;
-        sge.length = buf->dataCount;
-        sge.lkey = buf->mr->lkey;
-
-        rwr.wr_id = reinterpret_cast<uint64_t>(buf);
-        rwr.sg_list = &sge;
-        rwr.num_sge = 1;
-
-        ::ibv_recv_wr* badrwr = 0;
-        CHECK_IBV(::ibv_post_recv(id->qp, &rwr, &badrwr));
-        if (badrwr)
-            throw std::logic_error("ibv_post_recv(): Bad rwr");
-    }
-
-    inline void QueuePair::postSend(Buffer* buf) {
-        ::ibv_send_wr swr = {};
-        ::ibv_sge sge;
-
-        sge.addr = (uintptr_t) buf->bytes+buf->dataStart;
-        sge.length = buf->dataCount;
-        sge.lkey = buf->mr->lkey;
-
-        swr.wr_id = reinterpret_cast<uint64_t>(buf);
-        swr.opcode = IBV_WR_SEND;
-        swr.send_flags = IBV_SEND_SIGNALED;
-        swr.sg_list = &sge;
-        swr.num_sge = 1;
-
-        ::ibv_send_wr* badswr = 0;
-        CHECK_IBV(::ibv_post_send(id->qp, &swr, &badswr));
-        if (badswr)
-            throw std::logic_error("ibv_post_send(): Bad swr");
     }
 
     inline ConnectionEvent::ConnectionEvent(::rdma_cm_event* e) :
@@ -545,26 +491,6 @@ namespace Rdma {
     {}
 }
 
-inline std::ostream& operator<<(std::ostream& o, ::rdma_cm_event_type t) {
-#   define CHECK_TYPE(t) case t: o << #t; break;
-    switch(t) {
-        CHECK_TYPE(RDMA_CM_EVENT_ADDR_RESOLVED)
-        CHECK_TYPE(RDMA_CM_EVENT_ADDR_ERROR)
-        CHECK_TYPE(RDMA_CM_EVENT_ROUTE_RESOLVED)
-        CHECK_TYPE(RDMA_CM_EVENT_ROUTE_ERROR)
-        CHECK_TYPE(RDMA_CM_EVENT_CONNECT_REQUEST)
-        CHECK_TYPE(RDMA_CM_EVENT_CONNECT_RESPONSE)
-        CHECK_TYPE(RDMA_CM_EVENT_CONNECT_ERROR)
-        CHECK_TYPE(RDMA_CM_EVENT_UNREACHABLE)
-        CHECK_TYPE(RDMA_CM_EVENT_REJECTED)
-        CHECK_TYPE(RDMA_CM_EVENT_ESTABLISHED)
-        CHECK_TYPE(RDMA_CM_EVENT_DISCONNECTED)
-        CHECK_TYPE(RDMA_CM_EVENT_DEVICE_REMOVAL)
-        CHECK_TYPE(RDMA_CM_EVENT_MULTICAST_JOIN)
-        CHECK_TYPE(RDMA_CM_EVENT_MULTICAST_ERROR)
-    }
-#   undef CHECK_TYPE
-    return o;
-}
+std::ostream& operator<<(std::ostream& o, ::rdma_cm_event_type t);
 
 #endif // RDMA_WRAP_H

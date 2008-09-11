@@ -35,6 +35,7 @@ namespace Rdma {
     void deallocPd(::ibv_pd* p) throw ();
     void destroyCChannel(::ibv_comp_channel* c) throw ();
     void destroyCq(::ibv_cq* cq) throw ();
+    void destroyQp(::ibv_qp* qp) throw ();
 
     inline boost::shared_ptr< ::rdma_event_channel > mkEChannel() {
         return
