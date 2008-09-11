@@ -27,14 +27,14 @@
 // 
 
 #include "qpid/sys/posix/PrivatePosix.h"
-#include "qpid/cluster/PollableCondition.h"
+#include "qpid/sys/PollableCondition.h"
 #include "qpid/Exception.h"
 
 #include <unistd.h>
 #include <fcntl.h>
 
 namespace qpid {
-namespace cluster {
+namespace sys {
 
 PollableCondition::PollableCondition() : IOHandle(new sys::IOHandlePrivate) {
     int fds[2];
@@ -67,13 +67,13 @@ void PollableCondition::set() {
 
 #if 0
 // FIXME aconway 2008-08-12: More efficient Linux implementation using
-// eventfd system call.  Do a configure.ac test to enable this when
-// eventfd is available.
+// eventfd system call.  Move to separate file & do configure.ac test
+// to enable this when ::eventfd() is available.
 
 #include <sys/eventfd.h>
 
 namespace qpid {
-namespace cluster {
+namespace sys {
 
 PollableCondition::PollableCondition() : IOHandle(new sys::IOHandlePrivate) {
     impl->fd = ::eventfd(0, 0);
@@ -95,6 +95,6 @@ void PollableCondition::set() {
     
 #endif
 
-}} // namespace qpid::cluster
+}} // namespace qpid::sys
 
 #endif  /*!QPID_SYS_LINUX_POLLABLECONDITION_CPP*/

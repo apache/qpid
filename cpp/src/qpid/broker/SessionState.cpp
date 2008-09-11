@@ -70,8 +70,6 @@ SessionState::SessionState(
 }
 
 SessionState::~SessionState() {
-    // Remove ID from active session list.
-    broker.getSessionManager().forget(getId());
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
 }

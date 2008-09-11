@@ -66,10 +66,10 @@ struct ClusterPlugin : public Plugin {
 
     ClusterValues values;
     ClusterOptions options;
-    boost::intrusive_ptr<Cluster> cluster;
+    Cluster* cluster;
     boost::scoped_ptr<ConnectionCodec::Factory> factory;
 
-    ClusterPlugin() : options(values) {}
+    ClusterPlugin() : options(values), cluster(0) {}
 
     Options* getOptions() { return &options; }
 
@@ -78,20 +78,17 @@ struct ClusterPlugin : public Plugin {
         if (!broker || values.name.empty()) return;  // Only if --cluster-name option was specified.
         QPID_LOG_IF(warning, cluster, "Ignoring multiple initialization of cluster plugin.");
         cluster = new Cluster(values.name, values.getUrl(broker->getPort()), *broker);
-        broker->addFinalizer(boost::bind(&ClusterPlugin::shutdown, this));
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
     }
 
     void earlyInitialize(Plugin::Target&) {}
-
-    void shutdown() { cluster = 0; }
 };
 
 static ClusterPlugin instance; // Static initialization.
 
 // For test purposes.
-boost::intrusive_ptr<Cluster> getGlobalCluster() { return instance.cluster; }
+Cluster& getGlobalCluster() { assert(instance.cluster); return *instance.cluster; }
     
 }} // namespace qpid::cluster

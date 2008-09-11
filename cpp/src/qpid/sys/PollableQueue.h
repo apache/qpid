@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_POLLABLEQUEUE_H
-#define QPID_CLUSTER_POLLABLEQUEUE_H
+#ifndef QPID_SYS_POLLABLEQUEUE_H
+#define QPID_SYS_POLLABLEQUEUE_H
 
 /*
  *
@@ -22,7 +22,7 @@
  *
  */
 
-#include "qpid/cluster/PollableCondition.h"
+#include "qpid/sys/PollableCondition.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>
@@ -34,7 +34,7 @@ namespace qpid {
 
 namespace sys { class Poller; }
 
-namespace cluster {
+namespace sys {
 
 // FIXME aconway 2008-08-11: this could be of more general interest,
 // move to common lib.
@@ -108,6 +108,6 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     batch.clear();
 }
 
-}} // namespace qpid::cluster
+}} // namespace qpid::sys
 
-#endif  /*!QPID_CLUSTER_POLLABLEQUEUE_H*/
+#endif  /*!QPID_SYS_POLLABLEQUEUE_H*/

@@ -264,6 +264,9 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AggregateOutput.cpp \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
+  qpid/sys/PollableCondition.h \
+  qpid/sys/PollableCondition.cpp \
+  qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
   qpid/sys/SystemInfo.cpp \
   qpid/sys/Shlib.cpp \

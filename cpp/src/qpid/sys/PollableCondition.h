@@ -29,7 +29,7 @@
 // 
 
 namespace qpid {
-namespace cluster {
+namespace sys {
 
 /**
  * A pollable condition to integrate in-process conditions with IO
@@ -55,6 +55,6 @@ class PollableCondition : public sys::IOHandle {
   private:
     int writeFd;
 };
-}} // namespace qpid::cluster
+}} // namespace qpid::sys
 
 #endif  /*!QPID_SYS_POLLABLECONDITION_H*/
