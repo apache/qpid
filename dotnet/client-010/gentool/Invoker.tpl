@@ -9,7 +9,7 @@ namespace org.apache.qpid.transport
 public abstract class Invoker {
 
     protected abstract void invoke(Method method);
-    public abstract Future<T> invoke<T>(Method method, Future<T> resultClass);
+    public abstract Future invoke(Method method, Future resultClass);
 
 ${
 from dotnetgenutil import *
@@ -25,9 +25,9 @@ for c in composites:
       rname = cname(result["struct"])
     else:
       rname = cname(result, "@type")
-    jresult = "Future<%s>" % rname
+    jresult = "Future" 
     jreturn = "return "
-    jclass = ", new ResultFuture<%s>()" % rname
+    jclass = ", new ResultFuture()" 
     jinvoke = "invoke"
   else:
     jinvoke = "invoke"
