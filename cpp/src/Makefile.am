@@ -125,6 +125,7 @@ if RDMA
 librdmawrap_la_SOURCES = \
   qpid/sys/rdma/rdma_exception.h \
   qpid/sys/rdma/rdma_factories.cpp \
+  qpid/sys/rdma/rdma_factories.h \
   qpid/sys/rdma/RdmaIO.cpp \
   qpid/sys/rdma/RdmaIO.h \
   qpid/sys/rdma/rdma_wrap.cpp \
