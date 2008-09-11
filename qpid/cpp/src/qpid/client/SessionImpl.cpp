@@ -649,7 +649,7 @@ void SessionImpl::checkOpen() const  //call with lock held.
 {
     check();
     if (state != ATTACHED) {
-        throw NotAttachedException("Session isn't attached");
+        throw NotAttachedException(QPID_MSG("Session " << getId() << " isn't attached"));
     }
 }
 

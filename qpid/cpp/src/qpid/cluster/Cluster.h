@@ -21,7 +21,7 @@
 
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/Event.h"
-#include "qpid/cluster/PollableQueue.h"
+#include "qpid/sys/PollableQueue.h"
 #include "qpid/cluster/NoOpConnectionOutputHandler.h"
 
 #include "qpid/broker/Broker.h"
@@ -43,7 +43,7 @@ class Connection;
  * Connection to the cluster.
  * Keeps cluster membership data.
  */
-class Cluster : public RefCounted, private Cpg::Handler
+class Cluster : private Cpg::Handler
 {
   public:
 
@@ -78,17 +78,16 @@ class Cluster : public RefCounted, private Cpg::Handler
     void joining(const MemberId&, const std::string& url);
     void ready(const MemberId&);
 
-    broker::Broker& getBroker() { assert(broker); return *broker; }
-
     MemberId getSelf() const { return self; }
 
+    void shutdown();
+
+    broker::Broker& getBroker();
+    
   private:
     typedef std::map<MemberId, Url>  UrlMap;
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
-
-    /** Message sent over the cluster. */
-    typedef std::pair<framing::AMQFrame, ConnectionId> Message;
-    typedef PollableQueue<Event> EventQueue;
+    typedef sys::PollableQueue<Event> EventQueue;
 
     boost::function<void()> shutdownNext;
 
@@ -127,7 +126,7 @@ class Cluster : public RefCounted, private Cpg::Handler
     boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
     mutable sys::Monitor lock;  // Protect access to members.
-    broker::Broker* broker;
+    broker::Broker& broker;
     boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
     Cpg::Name name;
@@ -137,7 +136,7 @@ class Cluster : public RefCounted, private Cpg::Handler
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-    PollableQueue<Event> deliverQueue;
+    EventQueue deliverQueue;
     
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const UrlMap::value_type&);

@@ -69,19 +69,20 @@ o<?xml version="1.0"?>
     -->
     <control name="session-state" code="0x4" label="Set session state during a brain dump.">
       <!-- Target session deduced from channel number.  -->
-      <field name="replay-id" type="sequence-no"/>
-      <field name="send-id" type="sequence-no"/>
-      <field name="sent-incomplete" type="sequence-set"/>
 
-      <field name="expected-id" type="sequence-no"/>
-      <field name="received-id" type="sequence-no"/>
-      <field name="unknown-completed" type="sequence-set"/>
-      <field name="received-incomplete" type="sequence-set"/>
+      <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
+      <field name="sent-incomplete" type="sequence-set"/>      <!-- Commands sent and incomplete. -->
+
+      <field name="expected" type="sequence-no"/>	       <!-- Idempotence barrier -->
+      <field name="received" type="sequence-no"/>	       <!-- Received up to here > expected-->
+      <field name="unknown-completed" type="sequence-set"/>    <!-- Completed but not known to peer. -->
+      <field name="received-incomplete" type="sequence-set"/>  <!-- Received and incomplete -->
     </control>
 
     <control name="shadow-ready" code="0x5" label="End of shadow connection dump.">
-      <field name="cluster-id" type="uint64"/>
-      <field name="user-id" type="vbin16"/>
+      <field name="member-id" type="uint64"/>
+      <field name="connection-id" type="uint64"/>
     </control>
+
   </class>
 </amqp>

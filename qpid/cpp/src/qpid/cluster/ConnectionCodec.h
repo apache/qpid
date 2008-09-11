@@ -50,7 +50,8 @@ class ConnectionCodec : public sys::ConnectionCodec {
     struct Factory : public sys::ConnectionCodec::Factory {
         boost::shared_ptr<sys::ConnectionCodec::Factory> next;
         Cluster& cluster;
-        Factory(boost::shared_ptr<sys::ConnectionCodec::Factory> f, Cluster& c) : next(f), cluster(c) {}
+        Factory(boost::shared_ptr<sys::ConnectionCodec::Factory> f, Cluster& c)
+            : next(f), cluster(c) {}
         sys::ConnectionCodec* create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
         sys::ConnectionCodec* create(sys::OutputControl&, const std::string& id);
     };
