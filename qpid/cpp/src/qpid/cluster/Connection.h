@@ -40,9 +40,7 @@ namespace framing { class AMQFrame; }
 
 namespace cluster {
 
-/**
- * Plug-in associated with broker::Connections, both local and shadow.
- */
+/** Intercept broker::Connection calls for shadow and local cluster connections. */
 class Connection :
         public RefCounted,
         public sys::ConnectionInputHandler,
@@ -90,16 +88,13 @@ class Connection :
     sys::ConnectionInputHandler* create(sys::ConnectionOutputHandler* out, const std::string& id, bool isClient);
 
     // State dump methods.
-    virtual void sessionState(const framing::SequenceNumber& /*replayId*/,
-                              const framing::SequenceNumber& /*sendId*/,
-                              const framing::SequenceSet& /*sentIncomplete*/,
-                              const framing::SequenceNumber& /*expectedId*/,
-                              const framing::SequenceNumber& /*receivedId*/,
-                              const framing::SequenceSet& /*unknownCompleted*/,
-                              const framing::SequenceSet& /*receivedIncomplete*/) {}
+    virtual void sessionState(const SequenceNumber& replayStart,
+                              const SequenceSet& sentIncomplete,
+                              const SequenceNumber& expected,
+                              const SequenceNumber& received,
+                              const SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
     
-    virtual void shadowReady(uint64_t /*clusterId*/,
-                             const std::string& /*userId*/) {}
+    virtual void shadowReady(uint64_t memberId, uint64_t connectionId);
 
   private:
     void sendDoOutput();

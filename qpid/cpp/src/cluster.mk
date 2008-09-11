@@ -18,9 +18,6 @@ cluster_la_SOURCES = \
   qpid/cluster/Connection.h \
   qpid/cluster/Connection.cpp \
   qpid/cluster/NoOpConnectionOutputHandler.h \
-  qpid/cluster/PollableCondition.h \
-  qpid/cluster/PollableCondition.cpp \
-  qpid/cluster/PollableQueue.h \
   qpid/cluster/WriteEstimate.h \
   qpid/cluster/WriteEstimate.cpp \
   qpid/cluster/OutputInterceptor.h \

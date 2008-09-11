@@ -106,5 +106,21 @@ void Connection::deliverBuffer(Buffer& buf) {
         deliver(decoder.frame); // FIXME aconway 2008-09-01: Queue frames for delivery in separate thread.
 }
 
+
+void Connection::sessionState(const SequenceNumber& /*replayStart*/,
+                  const SequenceSet& /*sentIncomplete*/,
+                  const SequenceNumber& /*expected*/,
+                  const SequenceNumber& /*received*/,
+                  const SequenceSet& /*unknownCompleted*/,
+                  const SequenceSet& /*receivedIncomplete*/)
+{
+    // FIXME aconway 2008-09-10: TODO
+}
+    
+void Connection::shadowReady(uint64_t /*memberId*/, uint64_t /*connectionId*/)
+{
+    // FIXME aconway 2008-09-10: TODO
+}
+
 }} // namespace qpid::cluster
 

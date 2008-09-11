@@ -30,16 +30,16 @@ namespace cluster {
 
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(framing::ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
-    if (v == framing::ProtocolVersion(0, 10)) 
+    if (v == framing::ProtocolVersion(0, 10))
         return new ConnectionCodec(out, id, cluster);
     return 0;
 }
 
+// FIXME aconway 2008-08-27: outbound connections need to be made
+// with proper qpid::client code for failover, get rid of this
+// broker-side hack.
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id) {
-    // FIXME aconway 2008-08-27: outbound connections need to be made
-    // with proper qpid::client code for failover, get rid of this
-    // broker-side hack.
     return next->create(out, id);
 }
 
