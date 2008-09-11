@@ -21,7 +21,6 @@
 using System;
 using org.apache.qpid.transport.network;
 using org.apache.qpid.transport.util;
-using SessionDelegate=org.apache.qpid.transport.SessionDelegate;
 
 namespace org.apache.qpid.transport
 {
@@ -162,7 +161,7 @@ namespace org.apache.qpid.transport
             method(m);
         }
 
-        public override Future<T> invoke<T>(Method m, Future<T> future)
+        public override Future invoke(Method m, Future future)
         {
             throw new Exception("UnsupportedOperation");
         }

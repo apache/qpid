@@ -27,127 +27,124 @@ using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.transport
 {
-	
-	
-	/// <summary> 
+    /// <summary> 
     /// RangeSet
-	/// </summary>
-
-    public sealed class RangeSet : IEnumerable<Range> 
-	{
-		    private readonly LinkedList<Range> ranges = new LinkedList<Range>();
-
-	    IEnumerator IEnumerable.GetEnumerator()
-	    {
-	        return GetEnumerator();
-	    }
-
-	    public IEnumerator<Range> GetEnumerator()
-	    {
-	        return ranges.GetEnumerator();
-	    }
-
-
-	    public int size()
+    /// </summary>
+    public sealed class RangeSet : IEnumerable<Range>
     {
-	        return ranges.Count;
-    }
+        private readonly List<Range> _ranges = new List<Range>();
 
-   
-
-    public Range getFirst()
-    {
-        return ranges.First.Value;
-    }
-
-    public bool includes(Range range)
-    {
-        foreach (Range r in this)
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            if (r.includes(range))
-            {
-                return true;
-            }
+            return GetEnumerator();
         }
 
-        return false;
-    }
-
-    public bool includes(int n)
-    {
-        foreach (Range r in this)
+        public IEnumerator<Range> GetEnumerator()
         {
-            if (r.includes(n))
-            {
-                return true;
-            }
+            return _ranges.GetEnumerator();
         }
 
-        return false;
-    }
 
-    public void add(Range range)
-    {
-         foreach (Range r in ranges)
+        public int size()
         {
-            if (range.touches(r))
-            {
-                ranges.Remove(r);
-                range = range.span(r);
-            }
-            else if (Serial.lt(range.Upper, r.Lower ))
-            {                               
-                ranges.AddBefore(ranges.Find(r), range);
-                return;
-            }
+            return _ranges.Count;
         }
-        ranges.AddLast(range);
-    }
 
-    public void add(int lower, int upper)
-    {
-        add(new Range(lower, upper));
-    }
 
-    public void add(int value)
-    {
-        add(value, value);
-    }
-
-    public void clear()
-    {
-        ranges.Clear();
-    }
-
-    public RangeSet copy()
-    {
-        RangeSet copy = new RangeSet();
-        foreach( Range r in ranges)
+        public Range getFirst()
         {
-            copy.ranges.AddLast(r);
-        }        
-        return copy;
-    }
-
-    public String toString()
-    {
-        StringBuilder str = new StringBuilder();
-        str.Append("{");
-        bool first = true;
-        foreach (Range range in ranges)
-        {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                str.Append(", ");
-            }
-            str.Append(range);
+            return _ranges[0];
         }
-        str.Append("}");
-        return str.ToString();
+
+        public bool includes(Range range)
+        {
+            foreach (Range r in this)
+            {
+                if (r.includes(range))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool includes(int n)
+        {
+            foreach (Range r in this)
+            {
+                if (r.includes(n))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void add(Range range)
+        {
+            for (int i = 0; i < _ranges.Count; i++)
+            {
+                Range r = _ranges[i];
+                if (range.touches(r))
+                {
+                    _ranges.Remove(r);
+                    range = range.span(r);
+                }
+                else if (Serial.lt(range.Upper, r.Lower))
+                {
+                    _ranges.Insert(i - 1 , range);
+                    return;
+                }
+            }
+            _ranges.Add(range);
+        }
+
+        public void add(int lower, int upper)
+        {
+            add(new Range(lower, upper));
+        }
+
+        public void add(int value)
+        {
+            add(value, value);
+        }
+
+        public void clear()
+        {
+            _ranges.Clear();
+        }
+
+        public RangeSet copy()
+        {
+            RangeSet copy = new RangeSet();
+            foreach (Range r in _ranges)
+            {
+                copy._ranges.Add(r);
+            }
+            return copy;
+        }
+
+        public String toString()
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append("{");
+            bool first = true;
+            foreach (Range range in _ranges)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    str.Append(", ");
+                }
+                str.Append(range);
+            }
+            str.Append("}");
+            return str.ToString();
+        }
     }
-	}
 }

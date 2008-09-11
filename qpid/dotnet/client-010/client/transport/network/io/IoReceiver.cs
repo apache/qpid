@@ -168,8 +168,7 @@ namespace org.apache.qpid.transport.network.io
                 log.debug("Receiver thread terminating");
             }
             catch (Exception t)
-            {
-                Console.WriteLine(t);
+            {                
                 if (ExceptionReading != null)
                 {
                     ExceptionReading(this, new ExceptionArgs(t));
