@@ -2,7 +2,7 @@ SASL_CONF = sasl2/qpidd.conf
 
 EXTRA_DIST = \
 	$(SASL_CONF) \
-	qpidd qpidd.conf
+	qpidd qpidd.conf qpidc.conf
 
 confdir=$(sysconfdir)/qpid
 nobase_conf_DATA=\
