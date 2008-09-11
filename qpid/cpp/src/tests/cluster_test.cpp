@@ -208,12 +208,12 @@ QPID_AUTO_TEST_CASE(testDumpClientSharedState) {
         BOOST_CHECK_EQUAL(qq.getQueue(), "qa");
         BOOST_CHECK_EQUAL(qq.getAlternateExchange(), "");
         BOOST_CHECK_EQUAL(qq.getArguments().getString("x"), "y");
-        BOOST_CHECK_EQUAL(qq.getMessageCount(), 1);
+        BOOST_CHECK_EQUAL(qq.getMessageCount(), (unsigned)1);
 
         qq = r.session.queueQuery("qb");
         BOOST_CHECK_EQUAL(qq.getQueue(), "qb");
         BOOST_CHECK_EQUAL(qq.getAlternateExchange(), "amq.direct");
-        BOOST_CHECK_EQUAL(qq.getMessageCount(), 2);
+        BOOST_CHECK_EQUAL(qq.getMessageCount(), (unsigned)2);
 
         // Verify messages
         Message m;
