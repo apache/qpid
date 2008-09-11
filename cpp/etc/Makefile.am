@@ -4,6 +4,10 @@ EXTRA_DIST = \
 	$(SASL_CONF) \
 	qpidd qpidd.conf
 
+confdir=$(sysconfdir)/qpid
+nobase_conf_DATA=\
+	qpidc.conf
+
 nobase_sysconf_DATA = \
 	qpidd.conf
 

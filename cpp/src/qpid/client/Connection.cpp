@@ -105,7 +105,7 @@ void Connection::open(const ConnectionSettings& settings)
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
     impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
-    impl->open(settings.host, settings.port);
+    impl->open();
     max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
 }
 

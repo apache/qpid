@@ -52,6 +52,11 @@ struct ConnectionSettings {
     virtual void configureSocket(qpid::sys::Socket&) const;
 
     /**
+     * The protocol used for the connection (defaults to 'tcp')
+     */
+    std::string protocol;
+
+    /**
      * The host (or ip address) to connect to (defaults to 'localhost').
      */
     std::string host;

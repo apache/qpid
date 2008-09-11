@@ -1,11 +1,11 @@
 #
 # Cluster library makefile fragment, to be included in Makefile.am
 # 
-lib_LTLIBRARIES += libqpidcluster.la
+dmodule_LTLIBRARIES += cluster.la
 
 if CPG
 
-libqpidcluster_la_SOURCES = \
+cluster_la_SOURCES = \
   qpid/cluster/types.h \
   qpid/cluster/Cluster.cpp \
   qpid/cluster/Cluster.h \
@@ -31,10 +31,12 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/DumpClient.h \
   qpid/cluster/DumpClient.cpp
 
-libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
+cluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
 
 else
 # Empty stub library to satisfy rpm spec file.
-libqpidcluster_la_SOURCES = 
+cluster_la_SOURCES = 
 
 endif
+
+cluster_la_LDFLAGS = $(PLUGINLDFLAGS)

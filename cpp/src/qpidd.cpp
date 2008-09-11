@@ -34,7 +34,6 @@
 #include <fstream>
 #include <signal.h>
 #include <unistd.h>
-#include <sys/utsname.h>
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -47,14 +46,8 @@ struct ModuleOptions : public qpid::Options {
     string         loadDir;
     vector<string> load;
     bool           noLoad;
-    ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
+    ModuleOptions() : qpid::Options("Module options"), loadDir(MODULE_DIR), noLoad(false)
     {
-        struct utsname _uname;
-        if (::uname(&_uname) == 0) {
-            if (string(_uname.machine) == "x86_64")
-                loadDir = "/usr/lib64/qpidd";
-        }
-
         addOptions()
             ("module-dir",    optValue(loadDir, "DIR"),  "Load all .so modules in this directory")
             ("load-module",   optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
@@ -97,7 +90,7 @@ struct QpiddOptions : public qpid::Options {
     DaemonOptions daemon;
     qpid::log::Options log;
     
-    QpiddOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
+    QpiddOptions(const char* argv0) : qpid::Options("Options"), common("", CONF_FILE), log(argv0) {
         add(common);
         add(module);
         add(broker);
@@ -121,7 +114,7 @@ struct BootstrapOptions : public qpid::Options {
     ModuleOptions module;
     qpid::log::Options log;     
 
-    BootstrapOptions(const char* argv0) : qpid::Options("Options"), common("", "/etc/qpidd.conf"), log(argv0) {
+    BootstrapOptions(const char* argv0) : qpid::Options("Options"), common("", CONF_FILE), log(argv0) {
         add(common);
         add(module);
         add(log);
