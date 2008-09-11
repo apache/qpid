@@ -272,7 +272,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
         catch (AMQException e)
         {
-            _logger.error("Received incorrect protocol initiation", e);
+            _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
             _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
 
