@@ -56,4 +56,9 @@ namespace Rdma {
             (void) ::ibv_destroy_cq(cq);
     }
 
+    void destroyQp(::ibv_qp* qp) throw () {
+        if (qp)
+            (void) ::ibv_destroy_qp(qp);
+    }
+
 }
