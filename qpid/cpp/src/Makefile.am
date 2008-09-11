@@ -127,6 +127,7 @@ librdmawrap_la_SOURCES = \
   qpid/sys/rdma/rdma_factories.cpp \
   qpid/sys/rdma/RdmaIO.cpp \
   qpid/sys/rdma/RdmaIO.h \
+  qpid/sys/rdma/rdma_wrap.cpp \
   qpid/sys/rdma/rdma_wrap.h
 librdmawrap_la_LIBADD = \
   libqpidcommon.la \
@@ -139,11 +140,31 @@ lib_LTLIBRARIES += \
 librdmawrap_la_LDFLAGS = \
   -no-undefined
 
+rdma_la_SOURCES = \
+  qpid/sys/RdmaIOPlugin.cpp
+rdma_la_LIBADD = \
+  libqpidbroker.la \
+  librdmawrap.la
+rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
+rdma_la_CXXFLAGS = \
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+dmodule_LTLIBRARIES += \
+  rdma.la
+
+rdmaconnector_la_SOURCES = \
+  qpid/client/RdmaConnector.cpp
+rdmaconnector_la_LIBADD = \
+  libqpidclient.la \
+  librdmawrap.la
+rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
+rdmaconnector_la_CXXFLAGS = \
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+cmodule_LTLIBRARIES += \
+  rdmaconnector.la
+
 # RDMA test/sample programs
 noinst_PROGRAMS += RdmaServer RdmaClient
 RdmaServer_SOURCES = qpid/sys/rdma/RdmaServer.cpp
-RdmaServer_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
 RdmaServer_LDADD = \
   librdmawrap.la libqpidcommon.la
 RdmaClient_SOURCES = qpid/sys/rdma/RdmaClient.cpp
