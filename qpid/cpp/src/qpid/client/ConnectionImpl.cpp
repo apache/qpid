@@ -40,7 +40,6 @@ using namespace qpid::framing::connection;//for connection error codes
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
     : Bounds(settings.maxFrameSize * settings.bounds),
       handler(settings, v),
-      connector(new Connector(v, settings, this)), 
       version(v)
 {
     QPID_LOG(debug, "ConnectionImpl created for " << version);
@@ -48,8 +47,6 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   CLOSE_CODE_NORMAL, std::string());
-    connector->setInputHandler(&handler);
-    connector->setShutdownHandler(this);
 
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
@@ -59,7 +56,7 @@ ConnectionImpl::~ConnectionImpl() {
     // Important to close the connector first, to ensure the
     // connector thread does not call on us while the destructor
     // is running.
-    connector->close(); 
+    if (connector) connector->close(); 
 }
 
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session)
@@ -93,9 +90,16 @@ bool ConnectionImpl::isOpen() const
 }
 
 
-void ConnectionImpl::open(const std::string& host, int port)
+void ConnectionImpl::open()
 {
-    QPID_LOG(info, "Connecting to " << host << ":" << port);
+    const std::string& protocol = handler.protocol;
+    const std::string& host = handler.host;
+    int port = handler.port;
+    QPID_LOG(info, "Connecting to " << protocol << ":" << host << ":" << port);
+
+    connector.reset(Connector::create(protocol, version, handler, this)); 
+    connector->setInputHandler(&handler);
+    connector->setShutdownHandler(this);
     connector->connect(host, port);
     connector->init();
     handler.waitForOpen();    

@@ -3,7 +3,7 @@ if CPG
 # Cluster tests makefile fragment, to be included in Makefile.am
 # 
 
-lib_cluster = $(abs_builddir)/../libqpidcluster.la
+lib_cluster = $(abs_builddir)/../cluster.la
 
 # NOTE: Programs using the openais library must be run with gid=ais
 # You should do "newgrp ais" before running the tests to run these.

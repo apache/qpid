@@ -51,12 +51,13 @@ BUILT_SOURCES=qpid/framing/MaxMethodBodySize.h
 DISTCLEANFILES=qpid/framing/MaxMethodBodySize.h
 
 ## Compiler flags
-
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
 
 ## Automake macros to build libraries and executables.
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DMODULE_DIR=\"$(dmoduledir)\" -DCONF_FILE=\"$(sysconfdir)/qpidd.conf\"
+libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DMODULE_DIR=\"$(cmoduledir)\" -DCONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -95,7 +96,15 @@ endif
 platform_src = $(posix_plat_src) $(poller)
 platform_hdr = $(posix_plat_hdr)
 
-lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la 
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
+
+# Definitions for client and daemon plugins
+PLUGINLDFLAGS=-no-undefined -module -avoid-version
+confdir=$(sysconfdir)/qpid
+dmoduledir=$(libdir)/qpid/daemon
+cmoduledir=$(libdir)/qpid/client
+dmodule_LTLIBRARIES =
+cmodule_LTLIBRARIES = 
 
 include cluster.mk
 include acl.mk
@@ -113,33 +122,35 @@ libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 if RDMA
 
 # RDMA (Infiniband) protocol code
-libqpidrdma_la_SOURCES = \
+librdmawrap_la_SOURCES = \
   qpid/sys/rdma/rdma_exception.h \
   qpid/sys/rdma/rdma_factories.cpp \
   qpid/sys/rdma/RdmaIO.cpp \
   qpid/sys/rdma/RdmaIO.h \
   qpid/sys/rdma/rdma_wrap.h
-libqpidrdma_la_LIBADD = \
+librdmawrap_la_LIBADD = \
+  libqpidcommon.la \
   -lrdmacm \
   -libverbs
-libqpidrdma_la_CXXFLAGS = \
+librdmawrap_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
-noinst_LTLIBRARIES += \
-  libqpidrdma.la
-qpidd_LDADD += \
-  libqpidrdma.la
+lib_LTLIBRARIES += \
+  librdmawrap.la
+librdmawrap_la_LDFLAGS = \
+  -no-undefined
 
+# RDMA test/sample programs
 noinst_PROGRAMS += RdmaServer RdmaClient
 RdmaServer_SOURCES = qpid/sys/rdma/RdmaServer.cpp
 RdmaServer_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 RdmaServer_LDADD = \
-  libqpidrdma.la libqpidcommon.la
+  librdmawrap.la libqpidcommon.la
 RdmaClient_SOURCES = qpid/sys/rdma/RdmaClient.cpp
 RdmaClient_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
 RdmaClient_LDADD = \
-  libqpidrdma.la libqpidcommon.la
+  librdmawrap.la libqpidcommon.la
 
 endif
 
@@ -329,16 +340,17 @@ libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
   qpid/client/AckPolicy.cpp			\
   qpid/client/Bounds.cpp			\
-  qpid/client/ConnectionImpl.cpp		\
-  qpid/client/Connector.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
+  qpid/client/ConnectionImpl.cpp \
   qpid/client/ConnectionSettings.cpp		\
+  qpid/client/Connector.cpp	\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
+  qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
@@ -578,7 +590,6 @@ nobase_include_HEADERS = \
 if HAVE_XML
 nobase_include_HEADERS += qpid/broker/XmlExchange.h
 endif
-
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

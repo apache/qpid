@@ -28,6 +28,7 @@ namespace qpid {
 namespace client {
 
 ConnectionSettings::ConnectionSettings() :
+    protocol("tcp"),
     host("localhost"), 
     port(TcpAddress::DEFAULT_PORT),
     username("guest"), 
