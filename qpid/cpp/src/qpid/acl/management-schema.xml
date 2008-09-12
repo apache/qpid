@@ -16,7 +16,7 @@
  * limitations under the License.
 -->
 
-  <class name="plugin">
+  <class name="acl">
     <property name="brokerRef"     type="objId"   references="qpid.Broker" access="RO" index="y" parentRef="y"/>
     <property name="policyFile"    type="sstr"    access="RO"              desc="Name of the policy file"/>
     <property name="enforcingAcl"  type="bool"    access="RO"              desc="Currently Enforcing ACL"/>
