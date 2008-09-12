@@ -26,8 +26,8 @@
 // move to common lib.
 // 
 
+#include "PollableCondition.h"
 #include "qpid/sys/posix/PrivatePosix.h"
-#include "qpid/sys/PollableCondition.h"
 #include "qpid/Exception.h"
 
 #include <unistd.h>

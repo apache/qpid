@@ -75,7 +75,8 @@ posix_plat_src = \
   qpid/sys/posix/Shlib.cpp \
   qpid/sys/posix/Mutex.cpp \
   qpid/sys/posix/Fork.cpp \
-  qpid/sys/posix/StrError.cpp
+  qpid/sys/posix/StrError.cpp \
+  qpid/sys/posix/PollableCondition.cpp
 
 posix_plat_hdr = \
   qpid/sys/posix/check.h \
@@ -83,7 +84,8 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
-  qpid/sys/posix/LockFile.h
+  qpid/sys/posix/LockFile.h \
+  qpid/sys/posix/PollableCondition.h 
 
 if HAVE_EPOLL 
   poller = qpid/sys/epoll/EpollPoller.cpp
@@ -266,7 +268,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/PollableCondition.h \
-  qpid/sys/PollableCondition.cpp \
   qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
   qpid/sys/SystemInfo.cpp \
