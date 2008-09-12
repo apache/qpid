@@ -22,39 +22,7 @@
  *
  */
 
-#include "qpid/sys/IOHandle.h"
-
-// FIXME aconway 2008-08-11: this could be of more general interest,
-// move to sys namespace in common lib. 
-// 
-
-namespace qpid {
-namespace sys {
-
-/**
- * A pollable condition to integrate in-process conditions with IO
- * conditions in a polling loop.
- *
- * Setting the condition makes it readable for a poller.
- * 
- * Writable/disconnected conditions are undefined and should not be
- * polled for.
- */
-class PollableCondition : public sys::IOHandle {
-  public:
-    PollableCondition();
-
-    /** Set the condition, triggers readable in a poller. */ 
-    void set();
-
-    /** Get the current state of the condition, then clear it.
-     *@return The state of the condition before it was cleared.
-     */
-    bool clear();
-
-  private:
-    int writeFd;
-};
-}} // namespace qpid::sys
+// Currently only has a posix implementation, add #ifdefs for other platforms as needed.
+#include "posix/PollableCondition.h"
 
 #endif  /*!QPID_SYS_POLLABLECONDITION_H*/

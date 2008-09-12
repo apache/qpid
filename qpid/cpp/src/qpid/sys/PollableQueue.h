@@ -31,13 +31,9 @@
 #include <deque>
 
 namespace qpid {
-
-namespace sys { class Poller; }
-
 namespace sys {
 
-// FIXME aconway 2008-08-11: this could be of more general interest,
-// move to common lib.
+class Poller;
 
 /**
  * A queue that can be polled by sys::Poller.  Any thread can push to
