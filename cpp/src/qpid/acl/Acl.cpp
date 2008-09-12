@@ -24,6 +24,7 @@
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/log/Logger.h"
+#include "qpid/management/PackageACL.h"
 
 #include <map>
 
@@ -33,12 +34,28 @@ namespace qpid {
 namespace acl {
 
 using namespace std;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
 
    Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
    {
-       if (!readAclFile()) throw Exception("Could not read ACL file");
-	   QPID_LOG(info, "ACL Plugin loaded");
+	   
+	   ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
 
+       if (agent != 0){
+            management::PackageACL  packageInit(agent);
+            mgmtObject = new management::Acl (agent, this, broker);
+			agent->addObject (mgmtObject);
+       }
+
+       if (!readAclFile()){
+	       throw Exception("Could not read ACL file");
+		   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
+	   }
+	   QPID_LOG(info, "ACL Plugin loaded");
+	   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
    }
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
@@ -74,10 +91,16 @@ using namespace std;
 	  case ALLOW:
 	      return true;
 	  case DENY:
+	      if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
 	      return false;
 	  case DENYLOG:
+	      if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
 	  default:
 	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);  
+		  if (mgmtObject!=0){
+		      framing::FieldTable _params;
+		      mgmtObject->event_aclEvent(1, id, AclHelper::getActionStr(action),AclHelper::getObjectTypeStr(objType),name, _params);
+		  }
 	      return false;
 	  }
       return false;  
@@ -92,16 +115,44 @@ using namespace std;
    bool Acl::readAclFile(std::string& aclFile) {
       boost::shared_ptr<AclData> d(new AclData);
       AclReader ar;
-      if (ar.read(aclFile, d))
+      if (ar.read(aclFile, d)){
+		  mgmtObject->event_fileNotLoaded("","See log for file load reason failure");
           return false;
- 
+      }
+	  
       data = d;
 	  transferAcl = data->transferAcl; // any transfer ACL
+	  if (mgmtObject!=0){
+	      mgmtObject->set_transferAcl(transferAcl?1:0);
+		  mgmtObject->set_policyFile(aclFile);
+		  sys::AbsTime now = sys::AbsTime::now();
+          int64_t ns = sys::Duration(now);
+		  mgmtObject->set_lastAclLoad(ns);
+		  mgmtObject->event_fileLoaded("");
+	  }
       return true;
    }
 
    Acl::~Acl(){}
 
+   ManagementObject* Acl::GetManagementObject(void) const
+   {
+       return (ManagementObject*) mgmtObject;
+   }
+   
+   Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string&)
+   {
+      Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+      QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
 
-    
+      switch (methodId)
+      {
+      case management::Acl::METHOD_RELOADACLFILE :
+          readAclFile();
+          status = Manageable::STATUS_OK;
+          break;
+      }
+
+    return status;
+}    
 }} // namespace qpid::acl
