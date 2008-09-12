@@ -32,6 +32,7 @@
 
   <property name="module.build"        location="${build}/${module}"/>
   <property name="module.classes"      location="${module.build}/classes"/>
+  <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
   <property name="module.precompiled"  location="${module.build}/src"/>
   <property name="module.api"          location="${module.build}/api"/>
   <property name="module.test.classes" location="${module.build}/test/classes"/>
@@ -41,7 +42,6 @@
   <property name="module.test.src"     location="src/test/java"/>
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
-
     
   <property name="module.namever"              value="${project.name}-${module}-${project.version}"/>
   <property name="module.release.base"	       value="${basedir}/release"/>
@@ -55,6 +55,9 @@
   <property name="module.qpid.jar"     location="${module.release.lib}/qpid-incubating.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
 
+  <property name="module.coverage"     location="${module.build}/coverage"/>
+  <property name="cobertura.datafile"  location="${module.instrumented}/cobetura.ser"/>
+  
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
@@ -447,6 +450,76 @@
     <delete dir="${module.build}"/>
     <delete dir="${module.results}"/>
     <delete dir="${module.release.base}"/>
+    <delete dir="${module.instrumented}"/>
   </target>
 
+  <target name="instrument">
+    <cobertura-instrument todir="${module.instrumented}"
+                          datafile="${cobertura.datafile}">
+      <fileset dir="${module.classes}">
+        <include name="**/*.class"/>
+      </fileset>
+      <fileset dir="${module.test.classes}">
+        <include name="**/*.class"/>
+      </fileset>      
+    </cobertura-instrument>
+  </target>
+
+  <target name="cover-test" depends="instrument">
+    <mkdir dir="${build.coveragereport}" />
+    <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
+           haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
+           failureproperty="test.failures" printsummary="on" timeout="600000" >
+
+      <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
+      <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
+      <sysproperty key="log4j.debug" value="${log4j.debug}"/>
+      <sysproperty key="root.logging.level" value="${root.logging.level}"/>
+      <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
+      <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
+      <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
+      <sysproperty key="broker" value="${broker}"/>
+      <sysproperty key="broker.clean" value="${broker.clean}"/>
+      <sysproperty key="broker.version" value="${broker.version}"/>
+      <sysproperty key="broker.ready" value="${broker.ready}" />
+      <sysproperty key="test.excludes" value="${test.excludes}"/>
+      <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
+      <sysproperty key="test.output" value="${module.results}"/>
+      <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
+      <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
+      <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
+      <sysproperty key="QPID_HOME" value="${project.root}/build"/>
+
+      <sysproperty key="net.sourceforge.cobertura.datafile"
+		file="${cobertura.datafile}" />
+      
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+
+      <classpath path="${module.instrumented}"/>
+      <classpath>
+        <fileset dir="${build}">
+	  <include name="**/classes-instrumented/*.class"/>
+	</fileset>
+      </classpath>
+      <classpath refid="module.test.path"/>
+      <classpath refid="cobertura.classpath"/>      
+
+      <batchtest todir="${module.results}">
+        <fileset dir="${module.test.src}" excludes="${module.test.excludes}">
+          <include name="**/${test}.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="coverage-report">
+      <echo message="${cobertura.datafile}"/>
+      <cobertura-report format="html"
+                      destdir="${module.coverage}"
+		      datafile="${cobertura.datafile}">
+      <fileset dir="${module.src}" includes="**/*.java" />
+    </cobertura-report>
+  </target>
+  
 </project>
