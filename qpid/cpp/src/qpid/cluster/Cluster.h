@@ -75,10 +75,13 @@ class Cluster : private Cpg::Handler
     /** Leave the cluster */
     void leave();
     
-    void joining(const MemberId&, const std::string& url);
+    void urlNotice(const MemberId&, const std::string& url);
     void ready(const MemberId&);
 
     MemberId getSelf() const { return self; }
+
+    void stall();
+    void unStall();
 
     void shutdown();
 
@@ -88,15 +91,13 @@ class Cluster : private Cpg::Handler
     typedef std::map<MemberId, Url>  UrlMap;
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
     typedef sys::PollableQueue<Event> EventQueue;
+    enum State {
+        DISCARD,                // Initially discard connection events up to my own join message.
+        READY,                  // Normal processing.
+        STALL                   // Stalled while a new member joins.
+    };
 
-    boost::function<void()> shutdownNext;
-
-    /** Handle a delivered frame */
-    void deliverFrame(framing::AMQFrame&, const ConnectionId&);
-
-    void deliverBuffer(const char*, size_t, const ConnectionId&);
-
-    void deliverEvent(const Event&);
+    void connectionEvent(const Event&);
     
     /** CPG deliver callback. */
     void deliver(
@@ -136,7 +137,8 @@ class Cluster : private Cpg::Handler
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-    EventQueue deliverQueue;
+    EventQueue connectionEventQueue;
+    State state;
     
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const UrlMap::value_type&);

@@ -15,7 +15,7 @@
 # 
 
 QPIDD=${QPIDD:-$PWD/../qpidd}
-LIBQPIDCLUSTER=${LIBQPIDCLUSTER:-$PWD/../.libs/libqpidcluster.so}
+LIBQPIDCLUSTER=${LIBQPIDCLUSTER:-$PWD/../.libs/cluster.so}
 NAME=$USER			# User name is default cluster name.
 RESTART=NO
 

@@ -18,4 +18,7 @@ check_PROGRAMS+=cluster_test
 cluster_test_SOURCES=unit_test.cpp cluster_test.cpp
 cluster_test_LDADD=$(lib_client) $(lib_cluster) -lboost_unit_test_framework
 
+unit_test_SOURCES+=ClusterMapTest.cpp
+unit_test_LDADD+=$(lib_cluster)
+
 endif

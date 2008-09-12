@@ -23,9 +23,9 @@
  */
 
 #include "types.h"
-#include "Cluster.h"
 #include "WriteEstimate.h"
 #include "OutputInterceptor.h"
+#include "NoOpConnectionOutputHandler.h"
 
 #include "qpid/broker/Connection.h"
 #include "qpid/amqp_0_10/Connection.h"
@@ -39,6 +39,7 @@ namespace qpid {
 namespace framing { class AMQFrame; }
 
 namespace cluster {
+class Cluster;
 
 /** Intercept broker::Connection calls for shadow and local cluster connections. */
 class Connection :
