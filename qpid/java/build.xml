@@ -34,7 +34,7 @@
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
   <property name="resources"     value="${project.root}/resources"/>
-  
+
   <map property="release.excludes" value="${modules}">
     <globmapper from="*" to="*/\*\*"/>
   </map>
@@ -189,4 +189,29 @@
     <delete dir="${tasks.classes}"/>
   </target>
 
+  <target name="coverage-report" description="generate coverage report">
+    <cobertura-merge datafile="${build.coveragereport}/cobertura.ser">
+      <!-- merge all module coverage reports -->
+      <fileset dir="${build}">
+        <include name="**/*.ser"/>
+      </fileset>
+    </cobertura-merge>
+    <cobertura-report format="html"
+                      destdir="${build.coveragereport}"
+		      datafile="${build.coveragereport}/cobertura.ser"
+		      >
+      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
+      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
+      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
+    </cobertura-report>
+  </target>
+
+  <target name="instrument" description="instrument for artifacts">
+    <iterate target="instrument"/>
+  </target>
+  
+  <target name="cover-test" description="run tests and generate coverage information">
+    <iterate target="cover-test"/>
+  </target>
+    
 </project>
