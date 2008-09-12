@@ -43,18 +43,16 @@ namespace test.interop
             // populate default properties
             _properties.Add("UserName", "guest");
             _properties.Add("Password", "guest");
-            _properties.Add("Host", "192.168.1.14");
-            _properties.Add("Port", "5673");
+            _properties.Add("Host", "localhost");
+            _properties.Add("Port", "5672");
             _properties.Add("VirtualHost", "test");
              //Read the test config file  
             XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + ".\\test.config");
             while (reader.Read())
-            {
-                XmlNodeType nType = reader.NodeType;               
+            {                
                 // if node type is an element
                 if (reader.NodeType == XmlNodeType.Element && reader.Name.Equals("add"))
                 {
-                    Console.WriteLine("Element:" + reader.Name.ToString());
                     if (_properties.ContainsKey(reader.GetAttribute("key")))
                     {
                         _properties[reader.GetAttribute("key")] = reader.GetAttribute("value");

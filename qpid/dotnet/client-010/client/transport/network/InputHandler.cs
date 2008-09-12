@@ -127,7 +127,11 @@ namespace org.apache.qpid.transport.network
         public void On_ReceivedBuffer(object sender, ReceivedPayload<MemoryStream> payload)
         {
             MemoryStream buf = payload.Payload;
-            int remaining = (int)buf.Length;
+            int remaining = (int) buf.Length;
+            if( input != null )
+            {
+                remaining += (int) input.Length;
+            }
             try
             {
                 while (remaining > 0)
@@ -136,10 +140,9 @@ namespace org.apache.qpid.transport.network
                     {                        
                         if (input != null)
                         {
-                            remaining += (int) input.Length;
-                            byte[] tmp = new byte[remaining];
-                            buf.Read(tmp, 0, remaining);
-                            input.Write(tmp, 0, remaining);
+                            byte[] tmp = new byte[buf.Length];
+                            buf.Read(tmp, 0, tmp.Length);
+                            input.Write(tmp, 0, tmp.Length);
                             input.Seek(0, SeekOrigin.Begin);
                             buf = input;    
                         }                      
@@ -155,13 +158,19 @@ namespace org.apache.qpid.transport.network
                     }
                     else
                     {
+                        byte[] tmp;
                         if (input == null)
                         {
                             input = new MemoryStream();
+                            tmp = new byte[remaining];                            
                         }
-                        byte[] tmp = new byte[remaining];
-                        buf.Read(tmp, 0, remaining);
-                        input.Write(tmp, 0, remaining);                       
+                        else
+                        {
+                            // this is a full buffer 
+                            tmp = new byte[buf.Length];
+                        }
+                        buf.Read(tmp, 0, tmp.Length);
+                        input.Write(tmp, 0, tmp.Length);
                         remaining = 0;
                     }
                 }
