@@ -61,3 +61,15 @@ target/
 *.iml
 *.ipr
 *.iws
+# Emacs
+*~
+# Microsoft Visual Studio artifacts
+*.vcproj.*.*.user
+*.ncb
+*.suo
+*.ilk
+*.pdb
+# Windows build results
+*.exe
+*.lib
+*.dll
