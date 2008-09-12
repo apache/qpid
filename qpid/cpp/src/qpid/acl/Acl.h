@@ -26,6 +26,9 @@
 #include "qpid/shared_ptr.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Acl.h"
+
 #include <map>
 #include <string>
 
@@ -45,7 +48,7 @@ struct AclValues {
 };
 
 
-class Acl : public broker::AclModule, public RefCounted 
+class Acl : public broker::AclModule, public RefCounted, public management::Manageable
 {
 
 private:
@@ -53,6 +56,7 @@ private:
    broker::Broker* broker;
    bool transferAcl;
    boost::shared_ptr<AclData> data;
+   management::Acl* mgmtObject; // mgnt owns lifecycle
 
 
 public:
@@ -70,7 +74,10 @@ public:
 private:
    bool result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name);
    bool readAclFile();
-   bool readAclFile(std::string& aclFile);      
+   bool readAclFile(std::string& aclFile); 
+   virtual qpid::management::ManagementObject* GetManagementObject(void) const;
+   virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+  
 };
 
 
