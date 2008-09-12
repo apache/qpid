@@ -19,6 +19,7 @@
  *
  */
 #include "Connection.h"
+#include "Cluster.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Invoker.h"
 #include "qpid/framing/AllInvoker.h"

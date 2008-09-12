@@ -20,6 +20,7 @@
  */
 #include "OutputInterceptor.h"
 #include "Connection.h"
+#include "Cluster.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"

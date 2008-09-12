@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "Cpg.h"
+#include "Connection.h"
 #include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/Buffer.h"
 #include <iosfwd>
@@ -39,7 +40,7 @@ namespace cluster {
  * Events are sent to/received from the cluster.
  * Refcounted so they can be stored on queues.
  */
-struct Event {
+class Event {
   public:
     /** Create an event to mcast with a buffer of size bytes. */
     Event(EventType t=DATA, const ConnectionId c=ConnectionId(), size_t size=0);
@@ -50,17 +51,21 @@ struct Event {
     void mcast(const Cpg::Name& name, Cpg& cpg) const;
     
     EventType getType() const { return type; }
-    ConnectionId getConnection() const { return connection; }
+    ConnectionId getConnectionId() const { return connectionId; }
     size_t getSize() const { return size; }
     char* getData() { return data; }
     const char* getData() const { return data; }
+
+    boost::intrusive_ptr<Connection> getConnection() const { return connection; }
+    void setConnection(const boost::intrusive_ptr<Connection>& c) { connection=c; }
 
     operator framing::Buffer() const;
 
   private:
     static const size_t OVERHEAD;
     EventType type;
-    ConnectionId connection;
+    ConnectionId connectionId;
+    boost::intrusive_ptr<Connection> connection;
     size_t size;
     RefCountedBuffer::pointer data;
 };

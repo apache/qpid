@@ -26,7 +26,9 @@ cluster_la_SOURCES = \
   qpid/cluster/Event.h \
   qpid/cluster/Event.cpp \
   qpid/cluster/DumpClient.h \
-  qpid/cluster/DumpClient.cpp
+  qpid/cluster/DumpClient.cpp \
+  qpid/cluster/ClusterMap.h \
+  qpid/cluster/ClusterMap.cpp
 
 cluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
 
