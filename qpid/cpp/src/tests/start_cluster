@@ -12,7 +12,7 @@ test -f cluster.ports && { echo "cluster.ports file already exists" ; exit 1; }
 rm -f cluster*.log
 SIZE=$1; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
-OPTS="-d --load-module ../.libs/libqpidcluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $*"
+OPTS="-d --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $*"
 
 if test "$SIZE" = "one"; then	# Special case of singleton cluster, use default port.
     ../qpidd -q

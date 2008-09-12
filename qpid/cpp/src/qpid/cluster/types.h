@@ -23,6 +23,8 @@
  */
 #include <utility>
 #include <iosfwd>
+#include <string>
+
 #include <stdint.h>
 
 extern "C" {
@@ -39,10 +41,15 @@ enum EventType { DATA, CONTROL };
 
 /** first=node-id, second=pid */
 struct MemberId : std::pair<uint32_t, uint32_t> {
-    MemberId(uint32_t node=0, uint32_t pid=0) : std::pair<uint32_t,uint32_t>(node, pid) {}
+    explicit MemberId(uint32_t node=0, uint32_t pid=0) : std::pair<uint32_t,uint32_t>(node, pid) {}
     MemberId(const cpg_address& caddr) : std::pair<uint32_t,uint32_t>(caddr.nodeid, caddr.pid) {}
+    MemberId(const std::string&); // Decode from string.
     uint32_t getNode() const { return first; }
     uint32_t getPid() const { return second; }
+    operator bool() const { return first || second; }
+
+    // Encode as string, network byte order.
+    std::string str() const;
 };
 
 inline bool operator==(const cpg_address& caddr, const MemberId& id) { return id == MemberId(caddr); }
@@ -53,6 +60,13 @@ struct ConnectionId : public std::pair<MemberId, Connection*>  {
     ConnectionId(const MemberId& m=MemberId(), Connection* c=0) :  std::pair<MemberId, Connection*> (m,c) {}
     MemberId getMember() const { return first; }
     Connection* getConnectionPtr() const { return second; }
+};
+
+/** State of a cluster member */
+enum State {
+    DISCARD, // Initially discard connection events up to my own join message.
+    STALL,   // All members stall while a new member joins.
+    READY    // Normal processing.
 };
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);

@@ -20,6 +20,7 @@
  */
 #include "ConnectionCodec.h"
 #include "Connection.h"
+#include "Cluster.h"
 #include "ProxyInputHandler.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"

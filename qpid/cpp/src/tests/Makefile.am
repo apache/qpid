@@ -28,7 +28,7 @@ CLEANFILES=
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
-	$(lib_client) $(lib_broker) # $(lib_amqp_0_10)
+	$(lib_client) $(lib_broker)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	BrokerFixture.h SocketProxy.h \

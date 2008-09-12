@@ -76,7 +76,6 @@ struct ClusterPlugin : public Plugin {
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (!broker || values.name.empty()) return;  // Only if --cluster-name option was specified.
-        QPID_LOG_IF(warning, cluster, "Ignoring multiple initialization of cluster plugin.");
         cluster = new Cluster(values.name, values.getUrl(broker->getPort()), *broker);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(

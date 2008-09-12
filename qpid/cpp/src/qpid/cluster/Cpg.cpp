@@ -183,4 +183,15 @@ ostream& operator<<(ostream& o, const ConnectionId& c) {
     return o << c.first << "-" << c.second;
 }
 
+std::string MemberId::str() const  {
+    char s[8];
+    reinterpret_cast<uint32_t&>(s[0]) = htonl(first);
+    reinterpret_cast<uint32_t&>(s[4]) = htonl(second);
+    return std::string(s,8);
+}
+
+MemberId::MemberId(const std::string& s) {
+    first = ntohl(reinterpret_cast<const uint32_t&>(s[0]));
+    second = ntohl(reinterpret_cast<const uint32_t&>(s[4]));
+}
 }} // namespace qpid::cluster
