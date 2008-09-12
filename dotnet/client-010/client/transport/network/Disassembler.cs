@@ -30,7 +30,7 @@ namespace org.apache.qpid.transport.network
     /// </summary>
     public sealed class Disassembler : Sender<ProtocolEvent>, ProtocolDelegate<Object>
     {
-        private readonly Sender<MemoryStream> _sender;
+        private readonly IIOSender<MemoryStream> _sender;
         private readonly int _maxPayload;
         private readonly MemoryStream _header;
         private readonly BinaryWriter _writer;
@@ -38,7 +38,7 @@ namespace org.apache.qpid.transport.network
         [ThreadStatic] static MSEncoder _encoder;
 
 
-        public Disassembler(Sender<MemoryStream> sender, int maxFrame)
+        public Disassembler(IIOSender<MemoryStream> sender, int maxFrame)
         {
             if (maxFrame <= Frame.HEADER_SIZE || maxFrame >= 64*1024)
             {
@@ -120,8 +120,8 @@ namespace org.apache.qpid.transport.network
                 _writer.Write((byte)0);
                _writer.Write((byte)0);
                 _sender.send(_header);
-                _header.Seek(0, SeekOrigin.Begin);
-                _sender.send(buf);
+                _header.Seek(0, SeekOrigin.Begin);               
+                _sender.send(buf, size);
             }
         }
 
@@ -129,13 +129,13 @@ namespace org.apache.qpid.transport.network
         {
             byte typeb = (byte) type;
             byte track = mevent.EncodedTrack == Frame.L4 ? (byte) 1 : (byte) 0;
-
             int remaining = (int) buf.Length;
+            buf.Seek(0, SeekOrigin.Begin);
             bool first = true;
             while (true)
             {
                 int size = Math.Min(_maxPayload, remaining);
-                remaining -= size;
+                remaining -= size;              
 
                 byte newflags = flags;
                 if (first)
@@ -146,7 +146,7 @@ namespace org.apache.qpid.transport.network
                 if (remaining == 0)
                 {
                     newflags |= Frame.LAST_FRAME;
-                }
+                }                
 
                 frame(newflags, typeb, track, mevent.Channel, size, buf);
 

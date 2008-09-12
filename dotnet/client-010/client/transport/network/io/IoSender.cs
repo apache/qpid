@@ -17,7 +17,6 @@
 * under the License.
 */
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -26,7 +25,7 @@ using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.transport.network.io
 {
-    public sealed class IoSender : Sender<MemoryStream>
+    public sealed class IoSender : IIOSender<MemoryStream>
     {
         private static readonly Logger log = Logger.get(typeof (IoReceiver));
         private readonly NetworkStream bufStream;
@@ -35,12 +34,12 @@ namespace org.apache.qpid.transport.network.io
         private readonly CircularBuffer<byte[]> queue;
         private readonly Thread thread;
         private readonly int timeout;
-        private MemoryStream _tobeSent = new MemoryStream();
+        private readonly MemoryStream _tobeSent = new MemoryStream();
         public IoSender(IoTransport transport, int queueSize, int timeout)
         {
             this.timeout = timeout;
             bufStream = transport.Stream;
-            queue = new CircularBuffer<byte[]>(2);
+            queue = new CircularBuffer<byte[]>(queueSize);
             thread = new Thread(Go);
             log.debug("Creating IoSender thread");
             thread.Name = String.Format("IoSender - {0}", transport.Socket) ;
@@ -48,20 +47,24 @@ namespace org.apache.qpid.transport.network.io
             thread.Start();
         }
 
-
         public void send(MemoryStream str)
+        {
+            int pos = (int) str.Position;
+            str.Seek(0, SeekOrigin.Begin);
+            send(str, pos);
+        }
+
+        public void send(MemoryStream str, int size)
         {
             mutClosed.WaitOne();
             if (closed)
             {
                 throw new TransportException("sender is closed");
             }
-            mutClosed.ReleaseMutex();
-            int length = (int)str.Position;
-            str.Seek(0, SeekOrigin.Begin);           
-            byte[] buf = new byte[length];
-            str.Read(buf, 0, length);
-            _tobeSent.Write(buf, 0, length);          
+            mutClosed.ReleaseMutex();                    
+            byte[] buf = new byte[size];
+            str.Read(buf, 0, size);
+            _tobeSent.Write(buf, 0, size);          
         }
 
         public void flush()
