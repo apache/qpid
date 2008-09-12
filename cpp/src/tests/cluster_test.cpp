@@ -252,10 +252,10 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testCatchUpSharedState, 1) {
     BOOST_CHECK_EQUAL(m.getData(), "foo");
     BOOST_CHECK(c1.subs.get(m, "q", TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "bar");
-    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0);
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), (unsigned)0);
     BOOST_CHECK(c1.subs.get(m, "p", TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "poo");
-    BOOST_CHECK_EQUAL(c1.session.queueQuery("p").getMessageCount(), 0);
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("p").getMessageCount(), (unsigned)0);
 }
 
 QPID_AUTO_TEST_CASE(testStall) {
@@ -276,7 +276,7 @@ QPID_AUTO_TEST_CASE(testStall) {
     // But it should not be on broker 0.
     boost::shared_ptr<broker::Queue> q0 = cluster.broker0->broker->getQueues().find("q");
     BOOST_REQUIRE(q0);
-    BOOST_CHECK_EQUAL(q0->getMessageCount(), 0);
+    BOOST_CHECK_EQUAL(q0->getMessageCount(), (unsigned)0);
     // Now unstall and we should get the message.
     getGlobalCluster().unStall();
     Message m;
@@ -310,7 +310,7 @@ QPID_AUTO_TEST_CASE(testDumpConsumers) {
 
     // Verify that the queue has been drained on both brokers.
     // This proves that the consumer was replicated when the second broker joined.
-    BOOST_CHECK_EQUAL(a.session.queueQuery("q").getMessageCount(), 0);
+    BOOST_CHECK_EQUAL(a.session.queueQuery("q").getMessageCount(), (unsigned)0);
 }
 
 
