@@ -35,7 +35,7 @@ namespace org.apache.qpid.transport.network
     public class Assembler : NetworkDelegate, Receiver<ReceivedPayload<ProtocolEvent>>
     {
         private static readonly Logger log = Logger.get(typeof (Assembler));
-        private readonly Dictionary<int, List<Frame>> segments;
+        private readonly Dictionary<int, List<byte[]>> segments;
         private readonly Method[] incomplete;
         [ThreadStatic] static MSDecoder _decoder;
         private readonly Object m_objectLock = new object();
@@ -101,7 +101,7 @@ namespace org.apache.qpid.transport.network
 
         public Assembler()
         {
-            segments = new Dictionary<int, List<Frame>>();
+            segments = new Dictionary<int, List<byte[]>>();
             incomplete = new Method[64*1024];
         }
 
@@ -133,27 +133,28 @@ namespace org.apache.qpid.transport.network
             }
             else
             {
-                List<Frame> frames;
+                List<byte[]> frames;
                 if (frame.isFirstFrame())
                 {
-                    frames = new List<Frame>();
+                    frames = new List<byte[]>();
                     setSegment(frame, frames);
                 }
                 else
                 {
                     frames = getSegment(frame);
                 }
-
-                frames.Add(frame);
+                byte[] tmp = new byte[frame.BodySize];
+                frame.Body.Read(tmp, 0, tmp.Length);
+                frames.Add(tmp);
 
                 if (frame.isLastFrame())
                 {
                     clearSegment(frame);
                     segment = new MemoryStream();
                     BinaryWriter w = new BinaryWriter(segment);
-                    foreach (Frame f in frames)
+                    foreach (byte[] f in frames)
                     {
-                        w.Write(f.Body.ToArray());
+                        w.Write(f);
                     }
                     assemble(frame, segment);
                 }
@@ -219,13 +220,9 @@ namespace org.apache.qpid.transport.network
                     }
                     break;
                 case SegmentType.BODY:
-                    command = incomplete[channel];
-                    byte[] b = new byte[frame.BodySize];
-                    MemoryStream body = new MemoryStream();
-                    segment.Read(b, 0, b.Length);
-                    body.Write(b, 0, b.Length);
-                    body.Seek(0, SeekOrigin.Begin);
-                    command.Body = body;
+                    command = incomplete[channel];                  
+                    segment.Seek(0, SeekOrigin.Begin);
+                    command.Body = segment;
                     incomplete[channel] = null;
                     Emit(channel, command);
                     break;
@@ -239,12 +236,12 @@ namespace org.apache.qpid.transport.network
             return (frame.Track + 1)*frame.Channel;
         }
 
-        private List<Frame> getSegment(Frame frame)
+        private List<byte[]> getSegment(Frame frame)
         {
             return segments[segmentKey(frame)];
         }
 
-        private void setSegment(Frame frame, List<Frame> segment)
+        private void setSegment(Frame frame, List<byte[]> segment)
         {
             int key = segmentKey(frame);
             if (segments.ContainsKey(key))

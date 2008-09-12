@@ -21,7 +21,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using TransportException = org.apache.qpid.transport.TransportException;
 using Logger = org.apache.qpid.transport.util.Logger;
 
 
