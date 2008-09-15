@@ -140,94 +140,6 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     return o;
 }
 
-// FIXME aconway 2008-09-11: This test has to be first otherwise
-// it picks up the cluster name from a previous test and runs the
-// brokers as cluster nodes. Something wrong with option parsing...
-// 
-QPID_AUTO_TEST_CASE(testDumpClientSharedState) {
-    // In this test we don't want the cluster plugin to initialize, so set --cluster-name=""
-    const char* argv[] = { "--cluster-name", "" };
-    Broker::Options opts = parseOpts(sizeof(argv)/sizeof(*argv), argv);
-
-    BrokerFixture donor(opts), receiver(opts);
-    {
-        Client c(donor.getPort());
-        FieldTable args;
-        args.setString("x", "y");
-        c.session.queueDeclare("qa", arg::arguments=args);
-        c.session.queueDeclare("qb", arg::alternateExchange="amq.direct");
-
-        c.session.exchangeDeclare(arg::exchange="exd", arg::type="direct", arg::arguments=args);
-        c.session.exchangeBind(arg::exchange="exd", arg::queue="qa", arg::bindingKey="foo");
-        c.session.messageTransfer(arg::destination="exd", arg::content=Message("one", "foo"));
-
-        c.session.exchangeDeclare("ext", arg::type="topic");
-        c.session.exchangeBind(arg::exchange="ext", arg::queue="qb", arg::bindingKey="bar");
-        c.subs.subscribe(c.lq, "qa", FlowControl::messageCredit(0));
-        c.session.messageTransfer(arg::destination="ext", arg::content=Message("one", "bar"));
-        c.session.messageTransfer(arg::destination="ext", arg::content=Message("two", "bar"));
-
-        c.session.close();
-        c.connection.close();
-    }
-    qpid::cluster::DumpClient dump(Url::getIpAddressesUrl(receiver.getPort()));
-    dump.dump(*donor.broker);
-    {
-        Client r(receiver.getPort());
-        // Verify exchanges
-        ExchangeQueryResult ex=r.session.exchangeQuery("exd");
-        BOOST_CHECK_EQUAL(ex.getType(), "direct");
-        BOOST_CHECK_EQUAL(ex.getDurable(), false);
-        BOOST_CHECK_EQUAL(ex.getNotFound(), false);
-        BOOST_CHECK_EQUAL(ex.getArguments().getString("x"), "y");
-
-        ex = r.session.exchangeQuery("ext");
-        BOOST_CHECK_EQUAL(ex.getType(), "topic");
-        BOOST_CHECK_EQUAL(ex.getNotFound(), false);
-
-        // Verify queues
-        QueueQueryResult qq = r.session.queueQuery("qa");
-        BOOST_CHECK_EQUAL(qq.getQueue(), "qa");
-        BOOST_CHECK_EQUAL(qq.getAlternateExchange(), "");
-        BOOST_CHECK_EQUAL(qq.getArguments().getString("x"), "y");
-        BOOST_CHECK_EQUAL(qq.getMessageCount(), (unsigned)1);
-
-        qq = r.session.queueQuery("qb");
-        BOOST_CHECK_EQUAL(qq.getQueue(), "qb");
-        BOOST_CHECK_EQUAL(qq.getAlternateExchange(), "amq.direct");
-        BOOST_CHECK_EQUAL(qq.getMessageCount(), (unsigned)2);
-
-        // Verify messages
-        Message m;
-        BOOST_CHECK(r.subs.get(m, "qa", TIME_SEC));
-        BOOST_CHECK_EQUAL(m.getData(), "one");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getExchange(), "exd");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getRoutingKey(), "foo");
-
-        BOOST_CHECK(r.subs.get(m, "qb", TIME_SEC));
-        BOOST_CHECK_EQUAL(m.getData(), "one");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getExchange(), "ext");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getRoutingKey(), "bar");
-
-        BOOST_CHECK(r.subs.get(m, "qb", TIME_SEC));
-        BOOST_CHECK_EQUAL(m.getData(), "two");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getExchange(), "ext");
-        BOOST_CHECK_EQUAL(m.getDeliveryProperties().getRoutingKey(), "bar");
-
-        // Verify bindings
-        r.session.messageTransfer(arg::destination="exd", arg::content=Message("xxx", "foo"));
-        BOOST_CHECK(r.subs.get(m, "qa"));
-        BOOST_CHECK_EQUAL(m.getData(), "xxx");
-        
-        r.session.messageTransfer(arg::destination="ext", arg::content=Message("yyy", "bar"));
-        BOOST_CHECK(r.subs.get(m, "qb"));
-        BOOST_CHECK_EQUAL(m.getData(), "yyy");
-
-        r.session.close();
-        r.connection.close();
-    }
-}
-
 
 // FIXME aconway 2008-09-12: finish the new join protocol.
 QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testCatchUpSharedState, 1) {
@@ -278,7 +190,7 @@ QPID_AUTO_TEST_CASE(testStall) {
     BOOST_REQUIRE(q0);
     BOOST_CHECK_EQUAL(q0->getMessageCount(), (unsigned)0);
     // Now unstall and we should get the message.
-    getGlobalCluster().unStall();
+    getGlobalCluster().ready();
     Message m;
     BOOST_CHECK(c0.subs.get(m, "q", TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "foo");

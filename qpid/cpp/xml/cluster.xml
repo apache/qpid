@@ -29,11 +29,19 @@ o<?xml version="1.0"?>
 
     <!-- Cluster membership -->
 
-    <control name = "url-notice" code="0x1" label="Url to use for a cluster member">
+    <control name = "dump-request" code="0x1" label="Url to use for a cluster member">
       <field name="url" type="str16" label="URL for brain dump to new member."/>
     </control>
 
-    <control name="map" code="0x3" label="Cluster map sent to new members.">
+    <control name = "dump-error" code="0x2" label="Error while dumping to new member">
+      <field name="dumpee" type="uint64"/>
+    </control>
+
+    <control name = "ready" code="0x3" label="Cluster member ready at URL">
+      <field name="url" type="str16" label="URL for client connections."/>
+    </control>
+
+    <control name="map" code="0x4" label="Cluster map sent to new members.">
       <field name="members" type="map"/>     <!-- member-id -> URL -->
       <field name="dumpees" type="map"/> <!-- dumpee-id -> braindump URL -->
       <field name="dumps" type="map"/>	<!-- dumpee-id -> donor-id -->

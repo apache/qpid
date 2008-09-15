@@ -62,13 +62,6 @@ struct ConnectionId : public std::pair<MemberId, Connection*>  {
     Connection* getConnectionPtr() const { return second; }
 };
 
-/** State of a cluster member */
-enum State {
-    DISCARD, // Initially discard connection events up to my own join message.
-    STALL,   // All members stall while a new member joins.
-    READY    // Normal processing.
-};
-
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 
 }} // namespace qpid::cluster

@@ -29,6 +29,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/sys/Runnable.h"
 #include <boost/shared_ptr.hpp>
 
 
@@ -51,12 +52,12 @@ namespace cluster {
 /**
  * A client that dumps the contents of a local broker to a remote one using AMQP.
  */
-class DumpClient {
+class DumpClient : public sys::Runnable {
   public:
-    DumpClient(const Url& receiver);
+    DumpClient(const Url& url, broker::Broker& donor, const boost::function<void(const char*)>& onFail);
     ~DumpClient();
-    
-    void dump(broker::Broker& donor);
+    void dump();
+    void run();                 // Will delete this when finished.
 
   private:
     void dumpQueue(const boost::shared_ptr<broker::Queue>&);
@@ -67,6 +68,8 @@ class DumpClient {
   private:
     client::Connection connection;
     client::AsyncSession session;
+    broker::Broker& donor;
+    boost::function<void(const char*)> failed;
 };
 
 }} // namespace qpid::cluster
