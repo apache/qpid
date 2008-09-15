@@ -25,9 +25,11 @@
 #include "types.h"
 #include "qpid/framing/ClusterMapBody.h"
 #include "qpid/Url.h"
-#include <boost/optional.hpp>
+#include <boost/function.hpp>
 #include <vector>
+#include <deque>
 #include <map>
+#include <iosfwd>
 
 namespace qpid {
 namespace cluster {
@@ -41,20 +43,21 @@ class ClusterMap
 {
   public:
     ClusterMap();
-    
-    /** Update map for url-notice event.
-     *@param from Member that sent the notice.
-     *@param url  URL for from.
-     *@return MemberId of member that should dump to URL, or a null
-     * MemberId() if no dump is needed.
-     */
-    MemberId urlNotice(const MemberId& from, const Url& url);
 
-    /** Dump failed notice */
-    void dumpFailed(const MemberId&);
+    MemberId dumpRequest(const MemberId& from, const Url& url);
+
+    void dumpError(const MemberId&);
+
+    void ready(const MemberId& from, const Url& url);
     
-    /** Update map for leave event */
+    /** Update map for cpg leave event */
     void leave(const MemberId&);
+
+    /** Instead of updating the map, queue the updates for unstall */
+    void stall();
+
+    /** Apply queued updates */
+    void unstall();
 
     /** Number of unfinished dumps for member. */
     int dumps(const MemberId&) const;
@@ -63,12 +66,19 @@ class ClusterMap
     framing::ClusterMapBody toControl() const;
 
     /** Initialize map contents from a cluster control body. */
+    void init(const framing::FieldTable& members,
+              const framing::FieldTable& dumpees,
+              const framing::FieldTable& dumps);
+    
     void fromControl(const framing::ClusterMapBody&);
 
     size_t memberCount() const { return members.size(); }    
     size_t dumpeeCount() const { return dumpees.size(); }    
+
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }  
     bool isDumpee(const MemberId& id) const { return dumpees.find(id) != dumpees.end(); }
+
+    std::vector<Url> memberUrls() const;
 
   private:
     struct Dumpee { Url url; MemberId dumper; };
@@ -80,7 +90,14 @@ class ClusterMap
 
     MemberMap members;
     DumpeeMap dumpees;
+    bool stalled;
+    std::deque<boost::function<void()> > stallq;
+
+  friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
+  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::DumpeeMap::value_type& dv);
+  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::MemberMap::value_type& mv);
 };
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_CLUSTERMAP_H*/

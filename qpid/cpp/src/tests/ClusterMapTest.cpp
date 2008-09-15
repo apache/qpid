@@ -38,13 +38,13 @@ Url url(const char* host) { return Url(TcpAddress(host)); }
 
 QPID_AUTO_TEST_CASE(testNotice) {
     ClusterMap m;
-    BOOST_CHECK(!m.urlNotice(id(0), url("0-ready"))); // id(0) member, no dump.
+    m.ready(id(0), url("0-ready")); // id(0) member, no dump.
     BOOST_CHECK(m.isMember(id(0)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 0);
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)1);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
 
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(1), url("1-dump"))); // Newbie, needs dump
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(1), url("1-dump"))); // Newbie, needs dump
     BOOST_CHECK(m.isMember(id(0)));
     BOOST_CHECK(m.isDumpee(id(1)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 1);
@@ -52,7 +52,7 @@ QPID_AUTO_TEST_CASE(testNotice) {
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)1);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)1);
 
-    BOOST_CHECK(!m.urlNotice(id(1), url("1-ready"))); // id(1) is ready.
+    m.ready(id(1), url("1-ready")); // id(1) is ready.
     BOOST_CHECK(m.isMember(id(0)));
     BOOST_CHECK(m.isMember(id(1)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 0);
@@ -60,25 +60,25 @@ QPID_AUTO_TEST_CASE(testNotice) {
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
 
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(2), url("2-dump"))); // id(2) needs dump
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(2), url("2-dump"))); // id(2) needs dump
     BOOST_CHECK(m.isDumpee(id(2)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 1);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)1);
 
-    BOOST_CHECK_EQUAL(id(1), m.urlNotice(id(3), url("3-dump"))); // 0 busy, dump to id(1).
+    BOOST_CHECK_EQUAL(id(1), m.dumpRequest(id(3), url("3-dump"))); // 0 busy, dump to id(1).
     BOOST_CHECK(m.isDumpee(id(3)));    
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 1);
     BOOST_CHECK_EQUAL(m.dumps(id(1)), 1);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)2);
 
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(4), url("4-dump"))); // Equally busy, 0 is first on list.
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(4), url("4-dump"))); // Equally busy, 0 is first on list.
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 2);
     BOOST_CHECK_EQUAL(m.dumps(id(1)), 1);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)3);    
 
     // My dumpees both complete
-    BOOST_CHECK(!m.urlNotice(id(2), url("2-ready"))); 
-    BOOST_CHECK(!m.urlNotice(id(4), url("4-ready"))); 
+    m.ready(id(2), url("2-ready")); 
+    m.ready(id(4), url("4-ready")); 
     BOOST_CHECK(m.isMember(id(2)));
     BOOST_CHECK(m.isMember(id(4)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 0);    
@@ -86,7 +86,7 @@ QPID_AUTO_TEST_CASE(testNotice) {
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)1);
 
     // Final dumpee completes.
-    BOOST_CHECK(!m.urlNotice(id(3), url("3-ready")));
+    m.ready(id(3), url("3-ready"));
     BOOST_CHECK(m.isMember(id(3)));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 0);    
     BOOST_CHECK_EQUAL(m.dumps(id(1)), 0);    
@@ -96,11 +96,11 @@ QPID_AUTO_TEST_CASE(testNotice) {
 
 QPID_AUTO_TEST_CASE(testLeave) {
     ClusterMap m;
-    BOOST_CHECK(!m.urlNotice(id(0), url("0-ready")));
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(1), url("1-dump")));
-    BOOST_CHECK(!m.urlNotice(id(1), url("1-ready")));
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(2), url("2-dump")));
-    BOOST_CHECK(!m.urlNotice(id(2), url("2-ready")));
+    m.ready(id(0), url("0-ready"));
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(1), url("1-dump")));
+    m.ready(id(1), url("1-ready"));
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(2), url("2-dump")));
+    m.ready(id(2), url("2-ready"));
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)3);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
     
@@ -110,13 +110,13 @@ QPID_AUTO_TEST_CASE(testLeave) {
     BOOST_CHECK(m.isMember(id(0)));
     BOOST_CHECK(m.isMember(id(2)));
 
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(4), url("4-dump")));
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(4), url("4-dump")));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 1);
     BOOST_CHECK(m.isDumpee(id(4)));
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)1);
 
-    m.dumpFailed(id(4));        // Dumper detected a failure.
+    m.dumpError(id(4));        // Dumper detected a failure.
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 0);
     BOOST_CHECK(!m.isDumpee(id(4)));
     BOOST_CHECK(!m.isMember(id(4)));
@@ -127,7 +127,7 @@ QPID_AUTO_TEST_CASE(testLeave) {
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
 
-    BOOST_CHECK_EQUAL(id(0), m.urlNotice(id(5), url("5-dump")));
+    BOOST_CHECK_EQUAL(id(0), m.dumpRequest(id(5), url("5-dump")));
     BOOST_CHECK_EQUAL(m.dumps(id(0)), 1);
     BOOST_CHECK(m.isDumpee(id(5)));
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
@@ -140,19 +140,19 @@ QPID_AUTO_TEST_CASE(testLeave) {
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
 
-    m.dumpFailed(id(5));        // Dumper reports failure - no op, we already know.
+    m.dumpError(id(5));        // Dumper reports failure - no op, we already know.
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)0);
 }
 
 QPID_AUTO_TEST_CASE(testToControl) {
     ClusterMap m;
-    m.urlNotice(id(0), url("0"));
-    m.urlNotice(id(1), url("1dump"));
-    m.urlNotice(id(1), url("1"));
-    m.urlNotice(id(2), url("2dump"));
-    m.urlNotice(id(3), url("3dump"));
-    m.urlNotice(id(4), url("4dump"));
+    m.ready(id(0), url("0"));
+    m.dumpRequest(id(1), url("1dump"));
+    m.ready(id(1), url("1"));
+    m.dumpRequest(id(2), url("2dump"));
+    m.dumpRequest(id(3), url("3dump"));
+    m.dumpRequest(id(4), url("4dump"));
 
     BOOST_CHECK_EQUAL(m.memberCount(), (unsigned)2);
     BOOST_CHECK_EQUAL(m.dumpeeCount(), (unsigned)3);
@@ -187,5 +187,31 @@ QPID_AUTO_TEST_CASE(testToControl) {
     // Verify a round-trip encoding produces identical results.
     BOOST_CHECK_EQUAL(s,s2);
 }
+
+QPID_AUTO_TEST_CASE(testStall) {
+    ClusterMap m;
+    m.ready(id(0), url("0"));
+    BOOST_CHECK_EQUAL(m.memberCount(), 1);
+    BOOST_CHECK_EQUAL(m.dumpeeCount(), 0);
+    m.stall();
+
+    m.dumpRequest(id(1), url("1dump"));
+    m.ready(id(1), url("1"));
+    m.leave(id(0));
+    m.dumpRequest(id(2), url("2dump"));
+    m.ready(id(2), url("2"));
+    m.dumpRequest(id(3), url("3dump"));
+    BOOST_CHECK_EQUAL(m.memberCount(), 1);
+    BOOST_CHECK_EQUAL(m.dumpeeCount(), 0);
+
+    m.unstall();
+    BOOST_CHECK_EQUAL(m.memberCount(), 2);
+    BOOST_CHECK_EQUAL(m.dumpeeCount(), 1);
+    BOOST_CHECK(!m.isMember(id(0)));
+    BOOST_CHECK(m.isMember(id(1)));
+    BOOST_CHECK(m.isMember(id(2)));
+    BOOST_CHECK(m.isDumpee(id(3)));
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
