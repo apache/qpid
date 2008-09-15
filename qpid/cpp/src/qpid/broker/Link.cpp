@@ -24,7 +24,6 @@
 #include "Broker.h"
 #include "Connection.h"
 #include "qpid/agent/ManagementAgent.h"
-#include "qpid/management/Link.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
 
@@ -36,6 +35,7 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 Link::Link(LinkRegistry*  _links,
            MessageStore*  _store,
@@ -62,7 +62,7 @@ Link::Link(LinkRegistry*  _links,
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
-            mgmtObject = new management::Link(agent, this, parent, _host, _port, _useSsl, _durable);
+            mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _useSsl, _durable);
             if (!durable)
                 agent->addObject(mgmtObject);
         }
@@ -328,14 +328,14 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args
 {
     switch (op)
     {
-    case management::Link::METHOD_CLOSE :
+    case _qmf::Link::METHOD_CLOSE :
         closing = true;
         if (state != STATE_CONNECTING)
             destroy();
         return Manageable::STATUS_OK;
 
-    case management::Link::METHOD_BRIDGE :
-        management::ArgsLinkBridge& iargs = (management::ArgsLinkBridge&) args;
+    case _qmf::Link::METHOD_BRIDGE :
+        _qmf::ArgsLinkBridge& iargs = (_qmf::ArgsLinkBridge&) args;
 
         // Durable bridges are only valid on durable links
         if (iargs.i_durable && !durable)

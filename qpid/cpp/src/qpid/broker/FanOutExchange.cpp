@@ -24,6 +24,7 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 FanOutExchange::FanOutExchange(const std::string& _name, Manageable* _parent) :
     Exchange(_name, _parent)
@@ -46,7 +47,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     if (bindings.add_unless(binding, MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     } else {
@@ -59,7 +60,7 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, cons
     if (bindings.remove_if(MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {

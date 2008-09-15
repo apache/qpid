@@ -25,17 +25,17 @@
 
 #include "qpid/agent/ManagementAgent.h"
 
-namespace qpid {
-namespace management {
+namespace qmf {
+/*MGEN:Class.OpenNamespaces*/
 
-class Package/*MGEN:Schema.PackageNameCap*/
+class Package
 {
   public:
-    Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent* agent);
-    ~Package/*MGEN:Schema.PackageNameCap*/ () {}
+    Package (::qpid::management::ManagementAgent* agent);
+    ~Package () {}
 };
 
-}}
+}/*MGEN:Class.CloseNamespaces*/
             
 
 #endif  /*!_MANAGEMENT_PACKAGE_/*MGEN:Schema.PackageNameUpper*/_*/

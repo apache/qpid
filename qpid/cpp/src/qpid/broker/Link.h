@@ -29,7 +29,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Link.h"
+#include "qmf/org/apache/qpid/broker/Link.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace qpid {
@@ -53,7 +53,7 @@ namespace qpid {
             string        username;
             string        password;
             mutable uint64_t    persistenceId;
-            management::Link*   mgmtObject;
+            qmf::org::apache::qpid::broker::Link* mgmtObject;
             Broker* broker;
             int     state;
             uint32_t visitCount;

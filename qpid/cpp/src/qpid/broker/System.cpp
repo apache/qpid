@@ -27,6 +27,7 @@
 using qpid::management::ManagementAgent;
 using namespace qpid::broker;
 using namespace std;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 System::System (string _dataDir) : mgmtObject(0)
 {
@@ -62,7 +63,7 @@ System::System (string _dataDir) : mgmtObject(0)
             }
         }
 
-        mgmtObject = new management::System (agent, this, systemId);
+        mgmtObject = new _qmf::System (agent, this, systemId);
         struct utsname _uname;
         if (uname (&_uname) == 0)
         {

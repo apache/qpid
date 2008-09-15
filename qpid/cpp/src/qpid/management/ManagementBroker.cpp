@@ -39,6 +39,7 @@ using namespace qpid::management;
 using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace std;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 Mutex            ManagementAgent::Singleton::lock;
 bool             ManagementAgent::Singleton::disabled = false;
@@ -113,7 +114,8 @@ ManagementBroker::~ManagementBroker ()
     }
 }
 
-void ManagementBroker::configure(string _dataDir, uint16_t _interval, broker::Broker* _broker, int _threads)
+void ManagementBroker::configure(string _dataDir, uint16_t _interval,
+                                 qpid::broker::Broker* _broker, int _threads)
 {
     dataDir        = _dataDir;
     interval       = _interval;
@@ -170,8 +172,8 @@ void ManagementBroker::writeData ()
     }
 }
 
-void ManagementBroker::setExchange (broker::Exchange::shared_ptr _mexchange,
-                                    broker::Exchange::shared_ptr _dexchange)
+void ManagementBroker::setExchange (qpid::broker::Exchange::shared_ptr _mexchange,
+                                    qpid::broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
@@ -261,7 +263,7 @@ bool ManagementBroker::CheckHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
 
 void ManagementBroker::SendBuffer (Buffer&  buf,
                                    uint32_t length,
-                                   broker::Exchange::shared_ptr exchange,
+                                   qpid::broker::Exchange::shared_ptr exchange,
                                    string   routingKey)
 {
     if (exchange.get() == 0)
@@ -448,7 +450,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
     EncodeHeader(outBuffer, 'm', sequence);
 
     if (acl != 0) {
-        string userId = ((const broker::ConnectionState*) connToken)->getUserId();
+        string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
         std::map<acl::Property, string> params;
         params[acl::SCHEMAPACKAGE] = packageName;
         params[acl::SCHEMACLASS]   = className;
@@ -748,7 +750,7 @@ void ManagementBroker::handleAttachRequestLH (Buffer& inBuffer, string replyToKe
     agent->objIdBank  = assignedBank;
     agent->routingKey = replyToKey;
     agent->connectionRef = connectionRef;
-    agent->mgmtObject = new management::Agent (this, agent);
+    agent->mgmtObject = new _qmf::Agent (this, agent);
     agent->mgmtObject->set_connectionRef(agent->connectionRef);
     agent->mgmtObject->set_label        (label);
     agent->mgmtObject->set_registeredTo (broker->GetManagementObject()->getObjectId());
@@ -831,7 +833,7 @@ bool ManagementBroker::authorizeAgentMessageLH(Message& msg)
         if (acl == 0)
             return true;
 
-        string  userId = ((const broker::ConnectionState*) msg.getPublisher())->getUserId();
+        string  userId = ((const qpid::broker::ConnectionState*) msg.getPublisher())->getUserId();
         string  packageName;
         string  className;
         uint8_t hash[16];

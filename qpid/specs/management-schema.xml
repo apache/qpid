@@ -1,4 +1,4 @@
-<schema package="qpid">
+<schema package="org.apache.qpid.broker">
 
 <!--
   Licensed to the Apache Software Foundation (ASF) under one

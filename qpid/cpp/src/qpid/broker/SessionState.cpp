@@ -44,6 +44,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
     Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config) 
@@ -60,7 +61,8 @@ SessionState::SessionState(
     if (parent != 0) {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0) {
-            mgmtObject = new management::Session (agent, this, parent, getId().getName());
+            mgmtObject = new _qmf::Session
+                (agent, this, parent, getId().getName());
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             agent->addObject (mgmtObject);
@@ -127,15 +129,14 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
 
     switch (methodId)
     {
-      case management::Session::METHOD_DETACH :
-        if (handler != 0)
-        {
+    case _qmf::Session::METHOD_DETACH :
+        if (handler != 0) {
             handler->sendDetach();
         }
         status = Manageable::STATUS_OK;
         break;
 
-      case management::Session::METHOD_CLOSE :
+    case _qmf::Session::METHOD_CLOSE :
         /*
           if (handler != 0)
           {
@@ -145,8 +146,8 @@ Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
           break;
         */
 
-      case management::Session::METHOD_SOLICITACK :
-      case management::Session::METHOD_RESETLIFESPAN :
+    case _qmf::Session::METHOD_SOLICITACK :
+    case _qmf::Session::METHOD_RESETLIFESPAN :
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }

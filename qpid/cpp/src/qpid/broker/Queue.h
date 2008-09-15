@@ -31,7 +31,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Queue.h"
+#include "qmf/org/apache/qpid/broker/Queue.h"
 #include "qpid/framing/amqp_types.h"
 
 #include <boost/shared_ptr.hpp>
@@ -87,7 +87,7 @@ namespace qpid {
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
-            management::Queue* mgmtObject;
+            qmf::org::apache::qpid::broker::Queue* mgmtObject;
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);

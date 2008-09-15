@@ -21,7 +21,7 @@
 //
 
 #include "qpid/management/Manageable.h"
-#include "qpid/management/System.h"
+#include "qmf/org/apache/qpid/broker/System.h"
 #include <boost/shared_ptr.hpp>
 #include <string>
 
@@ -32,7 +32,7 @@ class System : public management::Manageable
 {
   private:
 
-    management::System* mgmtObject;
+    qmf::org::apache::qpid::broker::System* mgmtObject;
 
   public:
 
