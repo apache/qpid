@@ -28,6 +28,7 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/enum.h"
+#include "qpid/log/Statement.h"
 #include "qpid/Url.h"
 #include <boost/bind.hpp>
 
@@ -43,7 +44,9 @@ using namespace framing::message;
 
 using namespace client;
 
-DumpClient::DumpClient(const Url& url) {
+DumpClient::DumpClient(const Url& url, Broker& b, const boost::function<void(const char*)>& f)
+  : donor(b), failed(f)
+{
     connection.open(url);
     session = connection.newSession();
 }
@@ -57,14 +60,22 @@ DumpClient::~DumpClient() {
 static const char CATCH_UP_CHARS[] = "\000qpid-dump-exchange";
 static const std::string CATCH_UP(CATCH_UP_CHARS, sizeof(CATCH_UP_CHARS)); 
 
-void DumpClient::dump(Broker& donor) {
-    // TODO aconway 2008-09-08: Caller must handle exceptions
+void DumpClient::dump() {
     // FIXME aconway 2008-09-08: send cluster map frame first.
     donor.getExchanges().eachExchange(boost::bind(&DumpClient::dumpExchange, this, _1));
     // Catch-up exchange is used to route messages to the proper queue without modifying routing key.
     session.exchangeDeclare(arg::exchange=CATCH_UP, arg::type="fanout", arg::autoDelete=true);
     donor.getQueues().eachQueue(boost::bind(&DumpClient::dumpQueue, this, _1));
     session.sync();
+}
+
+void DumpClient::run() {
+    try {
+        dump();
+    } catch (const Exception& e) {
+        failed(e.what());
+    }
+    delete this;
 }
 
 void DumpClient::dumpExchange(const boost::shared_ptr<Exchange>& ex) {

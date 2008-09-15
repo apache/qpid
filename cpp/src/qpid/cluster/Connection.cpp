@@ -79,7 +79,7 @@ void Connection::closed() {
         // handler will be deleted.
         // 
         connection.setOutputHandler(&discardHandler); 
-        cluster.mcastFrame(AMQFrame(in_place<ClusterConnectionDeliverCloseBody>()), self);
+        cluster.mcastControl(ClusterConnectionDeliverCloseBody(), this);
         ++mcastSeq;
     }
     catch (const std::exception& e) {
@@ -93,7 +93,6 @@ void Connection::deliverClose () {
 }
 
 size_t Connection::decode(const char* buffer, size_t size) { 
-    QPID_LOG(trace, "mcastBuffer " << self << " " << mcastSeq << " " << size);
     ++mcastSeq;
     cluster.mcastBuffer(buffer, size, self);
     // FIXME aconway 2008-09-01: deserialize?
@@ -101,7 +100,6 @@ size_t Connection::decode(const char* buffer, size_t size) {
 }
 
 void Connection::deliverBuffer(Buffer& buf) {
-    QPID_LOG(trace, "deliverBuffer " << self << " " << deliverSeq << " " << buf.available());
     ++deliverSeq;
     while (decoder.decode(buf))
         deliver(decoder.frame); // FIXME aconway 2008-09-01: Queue frames for delivery in separate thread.

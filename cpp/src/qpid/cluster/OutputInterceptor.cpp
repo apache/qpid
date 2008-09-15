@@ -98,8 +98,7 @@ void OutputInterceptor::sendDoOutput() {
     // Send it anyway to keep the doOutput chain going until we are sure there's no more output
     // (in deliverDoOutput)
     // 
-    parent.getCluster().mcastFrame(AMQFrame(in_place<ClusterConnectionDeliverDoOutputBody>(
-                                          framing::ProtocolVersion(), request)), parent.getId());
+    parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), &parent);
     QPID_LOG(trace, &parent << "Send doOutput request for " << request);
 }
 
