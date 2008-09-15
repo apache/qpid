@@ -24,39 +24,38 @@
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/log/Logger.h"
-#include "qpid/management/PackageACL.h"
+#include "qmf/org/apache/qpid/acl/Package.h"
 
 #include <map>
 
 #include <boost/utility/in_place_factory.hpp>
 
-namespace qpid {
-namespace acl {
-
 using namespace std;
+using namespace qpid::acl;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::acl;
 
-   Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
-   {
+Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
+{
 	   
-	   ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
 
-       if (agent != 0){
-            management::PackageACL  packageInit(agent);
-            mgmtObject = new management::Acl (agent, this, broker);
-			agent->addObject (mgmtObject);
-       }
+    if (agent != 0){
+        _qmf::Package  packageInit(agent);
+        mgmtObject = new _qmf::Acl (agent, this, broker);
+        agent->addObject (mgmtObject);
+    }
 
-       if (!readAclFile()){
-	       throw Exception("Could not read ACL file");
-		   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
-	   }
-	   QPID_LOG(info, "ACL Plugin loaded");
+    if (!readAclFile()){
+        throw Exception("Could not read ACL file");
+        if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
+    }
+    QPID_LOG(info, "ACL Plugin loaded");
 	   if (mgmtObject!=0) mgmtObject->set_enforcingAcl(1);
-   }
+}
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
@@ -147,7 +146,7 @@ using qpid::management::Args;
 
       switch (methodId)
       {
-      case management::Acl::METHOD_RELOADACLFILE :
+      case _qmf::Acl::METHOD_RELOADACLFILE :
           readAclFile();
           status = Manageable::STATUS_OK;
           break;
@@ -155,4 +154,3 @@ using qpid::management::Args;
 
     return status;
 }    
-}} // namespace qpid::acl

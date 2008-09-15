@@ -35,8 +35,8 @@
 #include "System.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementBroker.h"
-#include "qpid/management/Broker.h"
-#include "qpid/management/ArgsBrokerConnect.h"
+#include "qmf/org/apache/qpid/broker/Broker.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/DataDir.h"
@@ -107,7 +107,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager dtxManager;
     SessionManager sessionManager;
     management::ManagementAgent* managementAgent;
-    management::Broker*          mgmtObject;
+    qmf::org::apache::qpid::broker::Broker* mgmtObject;
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
 

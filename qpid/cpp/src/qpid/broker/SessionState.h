@@ -27,7 +27,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Session.h"
+#include "qmf/org/apache/qpid/broker/Session.h"
 #include "SessionAdapter.h"
 #include "DeliveryAdapter.h"
 #include "IncompleteMessageList.h"
@@ -122,7 +122,7 @@ class SessionState : public qpid::SessionState,
     MessageBuilder msgBuilder;
     IncompleteMessageList incomplete;
     IncompleteMessageList::CompletionListener enqueuedOp;
-    management::Session* mgmtObject;
+    qmf::org::apache::qpid::broker::Session* mgmtObject;
 
   friend class SessionManager;
 };

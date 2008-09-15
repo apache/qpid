@@ -30,9 +30,9 @@
 #include "TopicExchange.h"
 #include "Link.h"
 
-#include "qpid/management/PackageQpid.h"
+#include "qmf/org/apache/qpid/broker/Package.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
 #include "qpid/management/ManagementExchange.h"
-#include "qpid/management/ArgsBrokerEcho.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -70,7 +70,7 @@ using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
-using qpid::management::ArgsBrokerEcho;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
@@ -146,12 +146,12 @@ Broker::Broker(const Broker::Options& conf) :
         ((ManagementBroker*) managementAgent)->configure
             (dataDir.isEnabled () ? dataDir.getPath () : string (),
              conf.mgmtPubInterval, this, conf.workerThreads + 3);
-        qpid::management::PackageQpid packageInitializer (managementAgent);
+        _qmf::Package packageInitializer (managementAgent);
 
         System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
         systemObject = System::shared_ptr (system);
 
-        mgmtObject = new management::Broker (managementAgent, this, system, conf.port);
+        mgmtObject = new _qmf::Broker (managementAgent, this, system, conf.port);
         mgmtObject->set_workerThreads    (conf.workerThreads);
         mgmtObject->set_maxConns         (conf.maxConnections);
         mgmtObject->set_connBacklog      (conf.connectionBacklog);
@@ -330,12 +330,12 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 
     switch (methodId)
     {
-    case management::Broker::METHOD_ECHO :
+    case _qmf::Broker::METHOD_ECHO :
         status = Manageable::STATUS_OK;
         break;
-    case management::Broker::METHOD_CONNECT : {
-        management::ArgsBrokerConnect& hp=
-            dynamic_cast<management::ArgsBrokerConnect&>(args);
+    case _qmf::Broker::METHOD_CONNECT : {
+        _qmf::ArgsBrokerConnect& hp=
+            dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
         if (hp.i_useSsl)
             return Manageable::STATUS_FEATURE_NOT_IMPLEMENTED;

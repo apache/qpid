@@ -29,8 +29,8 @@
 #include "PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Exchange.h"
-#include "qpid/management/Binding.h"
+#include "qmf/org/apache/qpid/broker/Exchange.h"
+#include "qmf/org/apache/qpid/broker/Binding.h"
 
 namespace qpid {
     namespace broker {
@@ -54,7 +54,7 @@ namespace qpid {
                 Queue::shared_ptr         queue;
                 const std::string         key;
                 const framing::FieldTable args;
-                management::Binding* mgmtBinding;
+                qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
                 Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
                         framing::FieldTable args = framing::FieldTable ());
@@ -68,7 +68,7 @@ namespace qpid {
                 bool operator()(Exchange::Binding::shared_ptr b);
             };
 
-            management::Exchange* mgmtExchange;
+            qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
 
         public:
             typedef boost::shared_ptr<Exchange> shared_ptr;

@@ -21,7 +21,7 @@
 //
 
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Vhost.h"
+#include "qmf/org/apache/qpid/broker/Vhost.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid { 
@@ -31,7 +31,7 @@ class Vhost : public management::Manageable
 {
   private:
 
-    management::Vhost* mgmtObject;
+    qmf::org::apache::qpid::broker::Vhost* mgmtObject;
 
   public:
 

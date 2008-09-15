@@ -27,9 +27,12 @@
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 
-using namespace qpid::management;
-using namespace qpid::sys;
+using namespace qmf::/*MGEN:Class.Namespace*/;
 using namespace qpid::framing;
+using           qpid::management::ManagementAgent;
+using           qpid::management::Manageable;
+using           qpid::management::ManagementObject;
+using           qpid::management::Args;
 using           std::string;
 
 string  /*MGEN:Class.NameCap*/::packageName  = string ("/*MGEN:Class.NamePackageLower*/");
@@ -125,7 +128,7 @@ void /*MGEN:Class.NameCap*/::aggregatePerThreadStats(struct PerThreadStats* tota
 
 void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
 {
-    sys::Mutex::ScopedLock mutex(accessLock);
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     configChanged = false;
 
     writeTimestamps (buf);
@@ -138,7 +141,7 @@ void /*MGEN:Class.NameCap*/::writeProperties (Buffer& buf)
 
 void /*MGEN:Class.NameCap*/::writeStatistics (Buffer& buf, bool skipHeaders)
 {
-    sys::Mutex::ScopedLock mutex(accessLock);
+    ::qpid::sys::Mutex::ScopedLock mutex(accessLock);
     instChanged = false;
 /*MGEN:IF(Class.ExistPerThreadAssign)*/
     for (int idx = 0; idx < maxThreads; idx++) {

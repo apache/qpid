@@ -43,7 +43,7 @@
 #include "ConnectionState.h"
 #include "SessionHandler.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/Connection.h"
+#include "qmf/org/apache/qpid/broker/Connection.h"
 #include "qpid/RefCounted.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
@@ -104,7 +104,7 @@ class Connection : public sys::ConnectionInputHandler,
     bool mgmtClosing;
     const std::string mgmtId;
     boost::function0<void> ioCallback;
-    management::Connection* mgmtObject;
+    qmf::org::apache::qpid::broker::Connection* mgmtObject;
     LinkRegistry& links;
 };
 

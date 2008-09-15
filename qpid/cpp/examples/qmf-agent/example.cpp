@@ -26,7 +26,7 @@
 #include "Parent.h"
 #include "Child.h"
 #include "ArgsParentCreate_child.h"
-#include "PackageQmf_example.h"
+#include "Package.h"
 
 #include <unistd.h>
 #include <cstdlib>
@@ -34,13 +34,13 @@
 
 #include <sstream>
 
-using namespace qpid::management;
-using namespace qpid::sys;
 using namespace std;
+using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
+namespace _qmf = qmf::org::apache::qpid::agent::example;
 
 class ChildClass;
 
@@ -52,7 +52,7 @@ class CoreClass : public Manageable
 {
     string           name;
     ManagementAgent* agent;
-    Parent* mgmtObject;
+    _qmf::Parent* mgmtObject;
     std::vector<ChildClass*> children;
     Mutex vectorLock;
 
@@ -71,7 +71,7 @@ public:
 class ChildClass : public Manageable
 {
     string name;
-    Child* mgmtObject;
+    _qmf::Child* mgmtObject;
 
 public:
 
@@ -90,7 +90,7 @@ public:
 CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent(_agent)
 {
     static uint64_t persistId = 0x111222333444555LL;
-    mgmtObject = new Parent(agent, this, name);
+    mgmtObject = new _qmf::Parent(agent, this, name);
 
     agent->addObject(mgmtObject, persistId++);
     mgmtObject->set_state("IDLE");
@@ -102,7 +102,7 @@ void CoreClass::doLoop()
     while (1) {
         sleep(1);
         mgmtObject->inc_count();
-        mgmtObject->set_state("IN LOOP");
+        mgmtObject->set_state("IN_LOOP");
 
         {
             Mutex::ScopedLock _lock(vectorLock);
@@ -121,8 +121,8 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
     Mutex::ScopedLock _lock(vectorLock);
 
     switch (methodId) {
-    case Parent::METHOD_CREATE_CHILD:
-        ArgsParentCreate_child& ioArgs = (ArgsParentCreate_child&) args;
+    case _qmf::Parent::METHOD_CREATE_CHILD:
+        _qmf::ArgsParentCreate_child& ioArgs = (_qmf::ArgsParentCreate_child&) args;
 
         ChildClass *child = new ChildClass(agent, this, ioArgs.i_name);
         ioArgs.o_childRef = child->GetManagementObject()->getObjectId();
@@ -139,7 +139,7 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
 
 ChildClass::ChildClass(ManagementAgent* agent, CoreClass* parent, string name)
 {
-    mgmtObject = new Child(agent, this, parent, name);
+    mgmtObject = new _qmf::Child(agent, this, parent, name);
 
     agent->addObject(mgmtObject);
 }
@@ -158,7 +158,7 @@ int main_int(int argc, char** argv)
     ManagementAgent* agent = singleton.getInstance();
 
     // Register the Qmf_example schema with the agent
-    PackageQmf_example packageInit(agent);
+    _qmf::Package packageInit(agent);
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker

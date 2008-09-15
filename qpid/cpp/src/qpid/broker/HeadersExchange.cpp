@@ -28,6 +28,7 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 // TODO aconway 2006-09-20: More efficient matching algorithm.
 // The current search algorithm really sucks.
@@ -81,7 +82,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     if (bindings.add_unless(binding, MatchArgs(queue, args))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     } else {
@@ -93,7 +94,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
     if (bindings.remove_if(MatchKey(queue, bindingKey))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {

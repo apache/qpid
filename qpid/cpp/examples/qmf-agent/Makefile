@@ -25,7 +25,7 @@ OUT_FILE    = $(SRC_DIR)/qmf-agent
 
 CC           = gcc
 LIB_DIR      = $(QPID_DIR)/cpp/src/.libs
-CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/src -I$(QPID_DIR)/cpp/src/gen -I$(GEN_DIR)
+CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/src -I$(QPID_DIR)/cpp/src/gen -I$(GEN_DIR)/org/apache/qpid/agent/example
 CC_FLAGS     = -g -O3
 LD_FLAGS     = -lqmfagent -L$(LIB_DIR)
 SPEC_DIR     = $(QPID_DIR)/specs
@@ -37,7 +37,7 @@ vpath %.d   $(OBJ_DIR)
 vpath %.o   $(OBJ_DIR)
 
 cpps    = $(wildcard $(SRC_DIR)/*.cpp)
-cpps   += $(wildcard $(GEN_DIR)/*.cpp)
+cpps   += $(wildcard $(GEN_DIR)/org/apache/qpid/agent/example/*.cpp)
 deps    = $(addsuffix .d, $(basename $(cpps)))
 objects = $(addsuffix .o, $(basename $(cpps)))
 

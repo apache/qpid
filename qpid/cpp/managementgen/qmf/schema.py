@@ -35,6 +35,7 @@ class SchemaType:
     self.accessor  = None
     self.init      = "0"
     self.perThread = False
+    self.byRef     = False
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -69,12 +70,22 @@ class SchemaType:
           raise ValueError ("Expected 'y' in perThread attribute")
         self.perThread = True
 
+      elif key == 'byRef':
+        if val != 'y':
+          raise ValueError ("Expected 'y' in byRef attribute")
+        self.byRef = True
+
       else:
         raise ValueError ("Unknown attribute in type '%s'" % key)
 
     if self.name == None or self.base == None or self.cpp == None or \
        self.encode == None or self.decode == None:
       raise ValueError ("Missing required attribute(s) in type")
+
+    if self.byRef:
+      self.asArg = "const " + self.cpp + "&"
+    else:
+      self.asArg = self.cpp
 
   def getName (self):
     return self.name
@@ -87,9 +98,9 @@ class SchemaType:
     else:
       prefix = ""
     if self.accessor == "direct":
-      stream.write ("    inline void set_" + varName + " (" + self.cpp + " val) {\n");
+      stream.write ("    inline void set_" + varName + " (" + self.asArg + " val) {\n");
       if not self.perThread:
-        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
       if self.style != "mma":
         stream.write ("        " + prefix + varName + " = val;\n")
         if optional:
@@ -110,9 +121,9 @@ class SchemaType:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n")
       if self.style != "mma":
-        stream.write ("    inline " + self.cpp + "& get_" + varName + "() {\n");
+        stream.write ("    inline " + self.asArg + " get_" + varName + "() {\n");
         if not self.perThread:
-          stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+          stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
         stream.write ("        return " + prefix + varName + ";\n")
         stream.write ("    }\n")
       if optional:
@@ -125,9 +136,9 @@ class SchemaType:
         stream.write ("        return (presenceMask[presenceByte_%s] & presenceMask_%s) != 0;\n" % (varName, varName))
         stream.write ("    }\n")
     elif self.accessor == "counter":
-      stream.write ("    inline void inc_" + varName + " (" + self.cpp + " by = 1) {\n");
+      stream.write ("    inline void inc_" + varName + " (" + self.asArg + " by = 1) {\n");
       if not self.perThread:
-        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " += by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "High < " + varName + ")\n")
@@ -135,9 +146,9 @@ class SchemaType:
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
-      stream.write ("    inline void dec_" + varName + " (" + self.cpp + " by = 1) {\n");
+      stream.write ("    inline void dec_" + varName + " (" + self.asArg + " by = 1) {\n");
       if not self.perThread:
-        stream.write ("        sys::Mutex::ScopedLock mutex(accessLock);\n")
+        stream.write ("        ::qpid::sys::Mutex::ScopedLock mutex(accessLock);\n")
       stream.write ("        " + prefix + varName + " -= by;\n")
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low > " + varName + ")\n")
@@ -316,7 +327,7 @@ class SchemaProperty:
     stream.write (prefix + self.type.type.cpp + " " + self.name + ";\n")
 
   def genFormalParam (self, stream, variables):
-    stream.write (self.type.type.cpp + " _" + self.name)
+    stream.write (self.type.type.asArg + " _" + self.name)
 
   def genAccessor (self, stream):
     self.type.type.genAccessor (stream, self.name, "configChanged", self.isOptional == 1)
@@ -578,7 +589,7 @@ class SchemaArg:
     stream.write ("    buf.put (ft);\n\n")
 
   def genFormalParam (self, stream, variables):
-    stream.write ("%s _%s" % (self.type.type.cpp, self.name))
+    stream.write ("%s _%s" % (self.type.type.asArg, self.name))
 
 #=====================================================================================
 #
@@ -631,11 +642,20 @@ class SchemaMethod:
   def genNameCamel (self, stream, variables):
     stream.write (self.getFullName ())
 
+  def genOpenNamespaces (self, stream, variables):
+    self.parent.genOpenNamespaces(stream, variables)
+
+  def genCloseNamespaces (self, stream, variables):
+    self.parent.genCloseNamespaces(stream, variables)
+
   def genArguments (self, stream, variables):
     for arg in self.args:
       ctype  = arg.type.type.cpp
       dirTag = arg.dir.lower() + "_"
       stream.write ("    " + ctype + " " + dirTag + arg.getName () + ";\n")
+
+  def genNamePackageLower (self, stream, variables):
+    self.parent.genNamePackageLower(stream, variables)
 
   def genSchema (self, stream, variables):
     stream.write ("    ft = FieldTable ();\n")
@@ -702,7 +722,7 @@ class SchemaEvent:
       if count < len(self.args):
         stream.write(", ")
     stream.write(") {\n")
-    stream.write("    sys::Mutex::ScopedLock mutex(getMutex());\n")
+    stream.write("    ::qpid::sys::Mutex::ScopedLock mutex(getMutex());\n")
     stream.write("    Buffer* buf = startEventLH();\n")
     stream.write("    objectId.encode(*buf);\n")
     stream.write("    buf->putShortString(packageName);\n")
@@ -879,6 +899,10 @@ class SchemaClass:
       if inst.assign == None:
         inst.genAccessor (stream)
 
+  def genCloseNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("}")
+
   def genConfigCount (self, stream, variables):
     stream.write ("%d" % len (self.properties))
 
@@ -981,6 +1005,9 @@ class SchemaClass:
       if element.type.type.perThread:
         element.genDeclaration (stream, "        ")
 
+  def genNamespace (self, stream, variables):
+    stream.write("::".join(self.packageName.split(".")))
+
   def genMethodArgIncludes (self, stream, variables):
     for method in self.methods:
       if method.getArgCount () > 0:
@@ -993,7 +1020,7 @@ class SchemaClass:
     for method in self.methods:
       stream.write ("\n    if (methodName == \"" + method.getName () + "\") {\n")
       if method.getArgCount () == 0:
-        stream.write ("        ArgsNone ioArgs;\n")
+        stream.write ("        ::qpid::management::ArgsNone ioArgs;\n")
       else:
         stream.write ("        Args" + method.getFullName () + " ioArgs;\n")
       for arg in method.args:
@@ -1006,7 +1033,7 @@ class SchemaClass:
       stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
       stream.write ("        outBuf.putLong        (status);\n")
-      stream.write ("        outBuf.putShortString (Manageable::StatusText (status, text));\n")
+      stream.write ("        outBuf.putShortString (::qpid::management::Manageable::StatusText (status, text));\n")
       for arg in method.args:
         if arg.getDir () == "O" or arg.getDir () == "IO":
           stream.write ("        " +\
@@ -1014,6 +1041,10 @@ class SchemaClass:
                                                     arg.dir.lower () + "_" +\
                                                     arg.name, "outBuf") + ";\n")
       stream.write ("        return;\n    }\n")
+
+  def genOpenNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("namespace %s {\n" % item)
 
   def genPresenceMaskBytes (self, stream, variables):
     count = 0
@@ -1040,7 +1071,7 @@ class SchemaClass:
   def genSetGeneralReferenceDeclaration (self, stream, variables):
     for prop in self.properties:
       if prop.isGeneralRef:
-        stream.write ("void setReference(ObjectId objectId) { " + prop.name + " = objectId; }\n")
+        stream.write ("void setReference(::qpid::management::ObjectId objectId) { " + prop.name + " = objectId; }\n")
 
   def genStatisticSchema (self, stream, variables):
     for stat in self.statistics:
@@ -1075,7 +1106,7 @@ class SchemaClass:
   def genParentArg (self, stream, variables):
     for config in self.properties:
       if config.isParentRef == 1:
-        stream.write (", Manageable* _parent")
+        stream.write (", ::qpid::management::Manageable* _parent")
         return
 
   def genParentRefAssignment (self, stream, variables):
@@ -1112,7 +1143,7 @@ class SchemaClass:
 
 
 
-class PackageSchema:
+class SchemaPackage:
   def __init__ (self, typefile, schemafile, options):
 
     self.classes   = []
@@ -1124,7 +1155,9 @@ class PackageSchema:
     if document.tagName != 'schema':
       raise ValueError ("Expected 'schema' node")
     attrs = document.attributes
-    self.packageName = makeValidCppSymbol(attrs['package'].nodeValue)
+    pname = attrs['package'].nodeValue
+    namelist = pname.split('.')
+    self.packageName = ".".join(namelist)
 
     children = document.childNodes
     for child in children:
@@ -1148,14 +1181,29 @@ class PackageSchema:
   def getPackageNameCap (self):
     return capitalize(self.packageName)
 
+  def getPackageNameLower (self):
+    return self.packageName.lower()
+
   def getClasses (self):
     return self.classes
 
-  def genPackageNameUpper (self, stream, variables):
-    stream.write (self.packageName.upper ())
+  def genCloseNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("}")
 
-  def genPackageNameCap (self, stream, variables):
-    stream.write (self.getPackageNameCap ())
+  def genNamespace (self, stream, variables):
+    stream.write("::".join(self.packageName.split(".")))
+
+  def genOpenNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("namespace %s {\n" % item)
+
+  def genPackageNameUpper (self, stream, variables):
+    up = "_".join(self.packageName.split("."))
+    stream.write (up.upper())
+
+  def genNamePackageLower (self, stream, variables):
+    stream.write (self.packageName.lower ())
 
   def genClassIncludes (self, stream, variables):
     for _class in self.classes:

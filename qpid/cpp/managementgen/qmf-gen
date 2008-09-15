@@ -20,7 +20,7 @@
 #
 import sys
 import os
-from qmf.schema   import PackageSchema, SchemaClass
+from qmf.schema   import SchemaPackage, SchemaClass
 from qmf.generate import Generator
 from optparse     import OptionParser
 
@@ -52,13 +52,14 @@ if len(args) == 0:
   parser.exit()
 
 for schemafile in args:
-  schema = PackageSchema (typefile, schemafile, opts)
+  package = SchemaPackage (typefile, schemafile, opts)
 
-  gen.makeClassFiles  ("Class.h",     schema)
-  gen.makeClassFiles  ("Class.cpp",   schema)
-  gen.makeMethodFiles ("Args.h",      schema)
-  gen.makePackageFile ("Package.h",   schema)
-  gen.makePackageFile ("Package.cpp", schema)
+  gen.setPackage      (package.packageName)
+  gen.makeClassFiles  ("Class.h",     package)
+  gen.makeClassFiles  ("Class.cpp",   package)
+  gen.makeMethodFiles ("Args.h",      package)
+  gen.makePackageFile ("Package.h",   package)
+  gen.makePackageFile ("Package.cpp", package)
 
 if opts.makefile != None:
   gen.makeSingleFile ("Makefile.mk", opts.makefile, force=True)

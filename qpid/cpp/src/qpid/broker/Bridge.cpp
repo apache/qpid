@@ -31,20 +31,22 @@ using qpid::framing::FieldTable;
 using qpid::framing::Uuid;
 using qpid::framing::Buffer;
 using qpid::management::ManagementAgent;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
 
 Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
-               const management::ArgsLinkBridge& _args) : 
+               const _qmf::ArgsLinkBridge& _args) : 
     link(_link), id(_id), args(_args), mgmtObject(0),
     listener(l), name(Uuid(true).str()), persistenceId(0)
 {
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0) {
-        mgmtObject = new management::Bridge(agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
-                                            args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
-                                            args.i_tag, args.i_excludes);
+        mgmtObject = new _qmf::Bridge
+            (agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
+             args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
+             args.i_tag, args.i_excludes);
         if (!args.i_durable)
             agent->addObject(mgmtObject);
     }
@@ -182,7 +184,7 @@ management::Manageable::status_t Bridge::ManagementMethod(uint32_t methodId,
                                                           management::Args& /*args*/,
                                                           string&)
 {
-    if (methodId == management::Bridge::METHOD_CLOSE) {  
+    if (methodId == _qmf::Bridge::METHOD_CLOSE) {  
         //notify that we are closed
         destroy();
         return management::Manageable::STATUS_OK;

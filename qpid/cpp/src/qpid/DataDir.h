@@ -41,8 +41,8 @@ class DataDir
     DataDir (std::string path);
     ~DataDir ();
 
-    bool        isEnabled () { return enabled; }
-    std::string getPath   () { return dirPath; }
+    bool isEnabled() { return enabled; }
+    const std::string& getPath() { return dirPath; }
 };
  
 } // namespace qpid

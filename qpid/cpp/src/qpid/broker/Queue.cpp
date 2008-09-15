@@ -31,7 +31,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
-#include "qpid/management/ArgsQueuePurge.h"
+#include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 
 #include <iostream>
 #include <algorithm>
@@ -49,6 +49,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 using std::for_each;
 using std::mem_fun;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 Queue::Queue(const string& _name, bool _autodelete, 
              MessageStore* const _store,
@@ -72,7 +73,7 @@ Queue::Queue(const string& _name, bool _autodelete,
 
         if (agent != 0)
         {
-            mgmtObject = new management::Queue (agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
+            mgmtObject = new _qmf::Queue(agent, this, parent, _name, _store != 0, _autodelete, _owner != 0);
 
             // Add the object to the management agent only if this queue is not durable.
             // If it's durable, we will add it later when the queue is assigned a persistenceId.
@@ -732,8 +733,8 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
 
     switch (methodId)
     {
-    case management::Queue::METHOD_PURGE :
-      management::ArgsQueuePurge iargs = dynamic_cast<const management::ArgsQueuePurge&>(args);
+    case _qmf::Queue::METHOD_PURGE :
+        _qmf::ArgsQueuePurge& iargs = (_qmf::ArgsQueuePurge&) args;
         purge (iargs.i_request);
         status = Manageable::STATUS_OK;
         break;

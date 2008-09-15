@@ -22,6 +22,7 @@
 
 using namespace qpid::broker;
 using qpid::management::ManagementAgent;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
 {
@@ -31,7 +32,7 @@ Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
 
         if (agent != 0)
         {
-            mgmtObject = new management::Vhost (agent, this, parentBroker, "/");
+            mgmtObject = new _qmf::Vhost(agent, this, parentBroker, "/");
             agent->addObject (mgmtObject, 0x1000000000000003LL);
         }
     }

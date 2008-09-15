@@ -168,14 +168,19 @@ class Generator:
     return newpath + "/"
   
   def __init__ (self, destDir, templateDir):
-    self.dest      = self.normalize (destDir)
-    self.input     = self.normalize (templateDir)
-    self.filelists = {}
+    self.dest        = self.normalize (destDir)
+    self.input       = self.normalize (templateDir)
+    self.packagePath = self.dest
+    self.filelists   = {}
     self.filelists["h"]   = []
     self.filelists["cpp"] = []
     self.filelists["mk"]  = []
     self.templateFiles    = []
     self.variables        = {}
+
+  def setPackage (self, packageName):
+    path = "/".join(packageName.split("."))
+    self.packagePath = self.normalize(self.dest + path)
 
   def genDisclaimer (self, stream, variables):
     prefix = variables["commentPrefix"]
@@ -191,7 +196,7 @@ class Generator:
   def writeIfChanged (self, stream, target, force=False):
     ext = self.fileExt (target)
     self.filelists[ext].append (target)
-    tempFile = self.dest + "gen.tmp"
+    tempFile = self.packagePath + "gen.tmp"
     fd = open (tempFile, "w")
     fd.write  (stream.getvalue ())
     fd.close  ()
@@ -216,7 +221,7 @@ class Generator:
     if dot == -1:
       raise ValueError ("Invalid template file name %s" % templateFile)
     extension = templateFile[dot:len (templateFile)]
-    path = self.dest + "Package" + schema.getPackageNameCap() + extension
+    path = self.packagePath + "Package" + extension
     return path
 
   def targetClassFile (self, _class, templateFile):
@@ -224,7 +229,7 @@ class Generator:
     if dot == -1:
       raise ValueError ("Invalid template file name %s" % templateFile)
     extension = templateFile[dot:len (templateFile)]
-    path = self.dest + _class.getNameCap () + extension
+    path = self.packagePath + _class.getNameCap () + extension
     return path
 
   def targetMethodFile (self, method, templateFile):
@@ -233,7 +238,7 @@ class Generator:
     if dot == -1:
       raise ValueError ("Invalid template file name %s" % templateFile)
     extension = templateFile[dot:]
-    path = self.dest + "Args" + method.getFullName () + extension
+    path = self.packagePath + "Args" + method.getFullName () + extension
     return path
 
   def initExpansion (self):

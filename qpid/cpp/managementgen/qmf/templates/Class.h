@@ -27,10 +27,10 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 
-namespace qpid {
-namespace management {
+namespace qmf {
+/*MGEN:Class.OpenNamespaces*/
 
-class /*MGEN:Class.NameCap*/ : public ManagementObject
+class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 {
   private:
 
@@ -68,13 +68,13 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
     void aggregatePerThreadStats(struct PerThreadStats*);
 /*MGEN:ENDIF*/
     // Private Methods
-    static void writeSchema (qpid::framing::Buffer& buf);
-    void writeProperties    (qpid::framing::Buffer& buf);
-    void writeStatistics    (qpid::framing::Buffer& buf,
+    static void writeSchema (::qpid::framing::Buffer& buf);
+    void writeProperties    (::qpid::framing::Buffer& buf);
+    void writeStatistics    (::qpid::framing::Buffer& buf,
                              bool skipHeaders = false);
     void doMethod           (std::string            methodName,
-                             qpid::framing::Buffer& inBuf,
-                             qpid::framing::Buffer& outBuf);
+                             ::qpid::framing::Buffer& inBuf,
+                             ::qpid::framing::Buffer& outBuf);
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
     // Stub for getInstChanged.  There are no statistics in this class.
@@ -82,13 +82,13 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 /*MGEN:ENDIF*/
   public:
 
-    /*MGEN:Class.NameCap*/ (ManagementAgent* agent,
-                            Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
+    /*MGEN:Class.NameCap*/ (::qpid::management::ManagementAgent* agent,
+                            ::qpid::management::Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
     ~/*MGEN:Class.NameCap*/ (void);
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
-    static void  registerClass  (ManagementAgent* agent);
+    static void  registerClass  (::qpid::management::ManagementAgent* agent);
     std::string& getPackageName (void) { return packageName; }
     std::string& getClassName   (void) { return className; }
     uint8_t*     getMd5Sum      (void) { return md5Sum; }
@@ -101,6 +101,6 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
 /*MGEN:Class.EventMethodDecls*/
 };
 
-}}
+}/*MGEN:Class.CloseNamespaces*/
 
 #endif  /*!_MANAGEMENT_/*MGEN:Class.NameUpper*/_*/

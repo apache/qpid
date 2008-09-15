@@ -26,6 +26,7 @@ using namespace qpid::sys;
 using std::pair;
 using std::stringstream;
 using boost::intrusive_ptr;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 #define LINK_MAINT_INTERVAL 2
 
@@ -107,7 +108,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
     BridgeMap::iterator b = bridges.find(bridgeKey);
     if (b == bridges.end())
     {
-        management::ArgsLinkBridge args;
+        _qmf::ArgsLinkBridge args;
         Bridge::shared_ptr bridge;
 
         args.i_durable    = durable;
