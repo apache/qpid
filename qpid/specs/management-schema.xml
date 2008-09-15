@@ -68,15 +68,8 @@
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
-    <property name="clusterName"      type="sstr"   access="RO" desc="Name of cluster this server is a member of"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
     <property name="dataDir"          type="sstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
-
-    <method name="joinCluster">
-      <arg name="clusterName" dir="I" type="sstr"/>
-    </method>
-
-    <method name="leaveCluster"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
@@ -218,9 +211,10 @@
     <property name="vhostRef" type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
+    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation ,...)"/>
 
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
-    <statistic name="authIdentity"     type="sstr"/>
+    <statistic name="authIdentity"     type="sstr" desc="authId of connection if authentication enabled"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
     <statistic name="bytesFromClient"  type="count64"/>
