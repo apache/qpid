@@ -100,9 +100,10 @@ class Template:
 
 class Makefile:
   """ Object representing a makefile fragment """
-  def __init__ (self, filelists, templateFiles):
+  def __init__ (self, filelists, templateFiles, packagelist):
     self.filelists     = filelists
     self.templateFiles = templateFiles
+    self.packagelist   = packagelist
 
   def genGenSources (self, stream, variables):
     mdir = variables["mgenDir"]
@@ -138,6 +139,21 @@ class Makefile:
       else:
         stream.write (" \\\n    ")
       stream.write (file)
+
+  def genHeaderInstalls (self, stream, variables):
+    for package in self.packagelist:
+      name = "_".join(package.split("/"))
+      stream.write(name + "dir = $(includedir)/qmf/" + package + "\n")
+      stream.write("dist_" + name + "_HEADERS = ")
+      first = True
+      for file in self.filelists["h"]:
+        if file.find("gen/qmf/" + package) == 0:
+          if first:
+            first = False
+          else:
+            stream.write (" \\\n    ")
+          stream.write(file)
+      stream.write("\n\n")
 
 
 class Generator:
@@ -175,11 +191,13 @@ class Generator:
     self.filelists["h"]   = []
     self.filelists["cpp"] = []
     self.filelists["mk"]  = []
+    self.packagelist      = []
     self.templateFiles    = []
     self.variables        = {}
 
   def setPackage (self, packageName):
     path = "/".join(packageName.split("."))
+    self.packagelist.append(path)
     self.packagePath = self.normalize(self.dest + path)
 
   def genDisclaimer (self, stream, variables):
@@ -298,7 +316,7 @@ class Generator:
 
   def makeSingleFile (self, templateFile, target, force=False):
     """ Generate a single expanded template """
-    makefile = Makefile (self.filelists, self.templateFiles)
+    makefile = Makefile (self.filelists, self.templateFiles, self.packagelist)
     template = Template (self.input + templateFile, self)
     self.templateFiles.append (templateFile)
     stream = template.expand (makefile)
