@@ -64,9 +64,11 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     if (parent != 0)
     {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-
+		
+		
+        // TODO set last bool true if system connection
         if (agent != 0)
-            mgmtObject = new management::Connection(agent, this, parent, mgmtId, !isLink);
+            mgmtObject = new management::Connection(agent, this, parent, mgmtId, !isLink,false);
         agent->addObject(mgmtObject);
     }
 }
