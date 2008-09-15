@@ -26,9 +26,7 @@ mgen_generator=/*MGEN:Makefile.GenSources*/
 mgen_broker_cpp=/*MGEN:Makefile.GenCppFiles*/
 
 # Header file install rules.
-qpid_managementdir = $(includedir)/qmf
-nobase_dist_qpid_management_HEADERS = /*MGEN:Makefile.GenHFiles*/
-
+/*MGEN:Makefile.HeaderInstalls*/
 if GENERATE
 $(srcdir)/managementgen.mk: $(mgen_generator)
 	$(mgen_cmd)
