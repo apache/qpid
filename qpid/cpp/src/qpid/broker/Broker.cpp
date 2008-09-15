@@ -349,8 +349,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         status = Manageable::STATUS_OK;
         break;
       }
-    case management::Broker::METHOD_JOINCLUSTER :
-    case management::Broker::METHOD_LEAVECLUSTER :
+   default:
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }
