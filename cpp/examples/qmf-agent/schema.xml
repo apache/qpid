@@ -1,4 +1,4 @@
-<schema package="qmf_example">
+<schema package="org.apache.qpid.agent.example">
 
 <!--
   Licensed to the Apache Software Foundation (ASF) under one

@@ -30,7 +30,7 @@
 #include "qpid/agent/ManagementAgent.h"
 #include "ManagementObject.h"
 #include "Manageable.h"
-#include "qpid/management/Agent.h"
+#include "qmf/org/apache/qpid/broker/Agent.h"
 #include <qpid/framing/AMQFrame.h>
 
 namespace qpid {
@@ -47,10 +47,10 @@ class ManagementBroker : public ManagementAgent
     ManagementBroker ();
     virtual ~ManagementBroker ();
 
-    void configure       (std::string dataDir, uint16_t interval, broker::Broker* broker, int threadPoolSize);
+    void configure       (std::string dataDir, uint16_t interval, qpid::broker::Broker* broker, int threadPoolSize);
     void setInterval     (uint16_t _interval) { interval = _interval; }
-    void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
-                          broker::Exchange::shared_ptr directExchange);
+    void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
+                          qpid::broker::Exchange::shared_ptr directExchange);
     int  getMaxThreads   () { return threadPoolSize; }
     void RegisterClass   (std::string packageName,
                           std::string className,
@@ -59,7 +59,7 @@ class ManagementBroker : public ManagementAgent
     ObjectId addObject   (ManagementObject* object,
                           uint64_t          persistId = 0);
     void clientAdded     (void);
-    bool dispatchCommand (broker::Deliverable&       msg,
+    bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
 
@@ -71,7 +71,7 @@ class ManagementBroker : public ManagementAgent
   private:
     friend class ManagementAgent;
 
-    struct Periodic : public broker::TimerTask
+    struct Periodic : public qpid::broker::TimerTask
     {
         ManagementBroker& broker;
 
@@ -88,7 +88,7 @@ class ManagementBroker : public ManagementAgent
         uint32_t          objIdBank;
         std::string       routingKey;
         ObjectId          connectionRef;
-        Agent*            mgmtObject;
+        qmf::org::apache::qpid::broker::Agent*    mgmtObject;
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
     };
@@ -154,12 +154,12 @@ class ManagementBroker : public ManagementAgent
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
     sys::Mutex                   userLock;
-    broker::Timer                timer;
-    broker::Exchange::shared_ptr mExchange;
-    broker::Exchange::shared_ptr dExchange;
+    qpid::broker::Timer                timer;
+    qpid::broker::Exchange::shared_ptr mExchange;
+    qpid::broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;
     uint16_t                     interval;
-    broker::Broker*              broker;
+    qpid::broker::Broker*              broker;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;
@@ -178,12 +178,12 @@ class ManagementBroker : public ManagementAgent
     bool CheckHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void SendBuffer         (framing::Buffer&             buf,
                              uint32_t                     length,
-                             broker::Exchange::shared_ptr exchange,
+                             qpid::broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
     void moveNewObjectsLH();
 
-    bool authorizeAgentMessageLH(broker::Message& msg);
-    void dispatchAgentCommandLH(broker::Message& msg);
+    bool authorizeAgentMessageLH(qpid::broker::Message& msg);
+    void dispatchAgentCommandLH(qpid::broker::Message& msg);
 
     PackageMap::iterator FindOrAddPackageLH(std::string name);
     void AddClass(PackageMap::iterator         pIter,
@@ -208,9 +208,9 @@ class ManagementBroker : public ManagementAgent
     void handleClassIndLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleSchemaRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleSchemaResponseLH (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const broker::ConnectionToken* connToken);
+    void handleAttachRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
-    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const broker::ConnectionToken* connToken);
+    void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
 
     size_t ValidateSchema(framing::Buffer&);
     sys::Mutex& getMutex();

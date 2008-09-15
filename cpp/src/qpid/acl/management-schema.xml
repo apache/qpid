@@ -1,4 +1,4 @@
-<schema package="ACL">
+<schema package="org.apache.qpid.acl">
 
 <!--
  * Copyright (c) 2008 The Apache Software Foundation

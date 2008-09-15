@@ -26,8 +26,8 @@
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ArgsLinkBridge.h"
-#include "qpid/management/Bridge.h"
+#include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
+#include "qmf/org/apache/qpid/broker/Bridge.h"
 
 #include <boost/function.hpp>
 #include <memory>
@@ -45,7 +45,8 @@ public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
     typedef boost::function<void(Bridge*)> CancellationListener;
 
-    Bridge(Link* link, framing::ChannelId id, CancellationListener l, const management::ArgsLinkBridge& args);
+    Bridge(Link* link, framing::ChannelId id, CancellationListener l,
+           const qmf::org::apache::qpid::broker::ArgsLinkBridge& args);
     ~Bridge();
 
     void create(ConnectionState& c);
@@ -73,8 +74,8 @@ private:
 
     Link* link;
     framing::ChannelId          id;
-    management::ArgsLinkBridge  args;
-    management::Bridge*         mgmtObject;
+    qmf::org::apache::qpid::broker::ArgsLinkBridge args;
+    qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
     CancellationListener        listener;
     std::string name;
     mutable uint64_t  persistenceId;

@@ -30,6 +30,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 Exchange::Exchange (const string& _name, Manageable* parent) :
     name(_name), durable(false), persistenceId(0), mgmtExchange(0)
@@ -39,7 +40,7 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
-            mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
+            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
             agent->addObject (mgmtExchange);
         }
     }
@@ -54,7 +55,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
-            mgmtExchange = new management::Exchange (agent, this, parent, _name, durable);
+            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
             if (!durable) {
                 if (name == "")
                     agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
@@ -131,7 +132,8 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
             if (mo != 0)
             {
                 management::ObjectId queueId = mo->getObjectId();
-                mgmtBinding = new management::Binding (agent, this, (Manageable*) parent, queueId, key, args);
+                mgmtBinding = new _qmf::Binding
+                    (agent, this, (Manageable*) parent, queueId, key, args);
                 agent->addObject (mgmtBinding);
             }
         }

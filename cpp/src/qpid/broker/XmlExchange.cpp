@@ -40,6 +40,7 @@
 using namespace qpid::framing;
 using namespace qpid::sys;
 using qpid::management::Manageable;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
@@ -92,7 +93,7 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
 	    
 	    if (mgmtExchange != 0) {
 	        mgmtExchange->inc_bindingCount();
-		((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
 	    }
 	    return true;
 	} else {
@@ -113,7 +114,7 @@ bool XmlExchange::unbind(Queue::shared_ptr queue, const string& routingKey, cons
     if (bindingsMap[routingKey].remove_if(MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {

@@ -20,12 +20,12 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "Package/*MGEN:Schema.PackageNameCap*/.h"
+#include "Package.h"
 /*MGEN:Schema.ClassIncludes*/
 
-using namespace qpid::management;
+using namespace qmf::/*MGEN:Schema.Namespace*/;
 
-Package/*MGEN:Schema.PackageNameCap*/::Package/*MGEN:Schema.PackageNameCap*/ (ManagementAgent* agent)
+Package::Package (::qpid::management::ManagementAgent* agent)
 {
 /*MGEN:Schema.ClassRegisters*/
 }

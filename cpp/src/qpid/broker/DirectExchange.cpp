@@ -26,6 +26,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 using qpid::management::Manageable;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 DirectExchange::DirectExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
 {
@@ -47,7 +48,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
     if (bindings[routingKey].add_unless(b, MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         return true;
     } else {
@@ -60,7 +61,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
     if (bindings[routingKey].remove_if(MatchQueue(queue))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            ((management::Queue*) queue->GetManagementObject())->dec_bindingCount();
+            ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {

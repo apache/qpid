@@ -26,15 +26,15 @@
 #include "qpid/management/Args.h"
 #include <string>
 
-namespace qpid { 
-namespace management {
+namespace qmf { 
+/*MGEN:Method.OpenNamespaces*/
 
-class Args/*MGEN:Method.NameCamel*/ : public Args
+    class Args/*MGEN:Method.NameCamel*/ : public ::qpid::management::Args
 {
   public:
 /*MGEN:Method.Arguments*/
 };
 
-}}
+}/*MGEN:Method.CloseNamespaces*/
 
 #endif  /*!_ARGS_/*MGEN:Method.NameUpper*/_*/

@@ -43,6 +43,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
@@ -68,7 +69,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 		
         // TODO set last bool true if system connection
         if (agent != 0)
-            mgmtObject = new management::Connection(agent, this, parent, mgmtId, !isLink,false);
+            mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
         agent->addObject(mgmtObject);
     }
 }
@@ -232,7 +233,7 @@ Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&, stri
 
     switch (methodId)
     {
-    case management::Connection::METHOD_CLOSE :
+    case _qmf::Connection::METHOD_CLOSE :
         mgmtClosing = true;
         if (mgmtObject != 0) mgmtObject->set_closing(1);
         out.activateOutput();
