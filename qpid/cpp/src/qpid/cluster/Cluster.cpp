@@ -244,8 +244,7 @@ void Cluster::disconnect(sys::DispatchHandle& ) {
     // FIXME aconway 2008-09-11: this should be logged as critical,
     // when we provide admin option to shut down cluster and let
     // members leave cleanly.
-    QPID_LOG(notice, self << " disconnected from cluster " << name.str());
-    broker.shutdown();
+    stopClusterNode();
 }
 
 void Cluster::configChange(
@@ -385,6 +384,8 @@ Manageable::status_t Cluster::ManagementMethod (uint32_t methodId, Args& /*args*
 
 void Cluster::stopClusterNode(void)
 {
+    QPID_LOG(notice, self << " disconnected from cluster " << name.str());
+    broker.shutdown();
 }
 
 void Cluster::stopFullCluster(void)
