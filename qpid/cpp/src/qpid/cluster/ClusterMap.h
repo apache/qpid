@@ -41,39 +41,39 @@ namespace cluster {
  * A dumper is an established member that is sending catch-up data.
  * A dumpee is an aspiring member that is receiving catch-up data.
  */
-class ClusterMap : public std::map<MemberId, Url> {
+class ClusterMap {
   public:
+    typedef std::map<MemberId, Url> Members;
+    Members members;
+    MemberId dumper;
+
     ClusterMap();
     
     /** First member of the cluster in ID order, gets to perform one-off tasks. */
-    MemberId first();
+    MemberId first() const;
 
-    /** Update for CPG config change. */
-    void configChange(const cpg_address* addrs, size_t size);
+    /** Update for members leaving. */
+    void left(const cpg_address* addrs, size_t size);
 
-
-    /** Convert map contents to a cluster control body. */
+    /** Convert map contents to a cluster update body. */
     framing::ClusterUpdateBody toControl() const;
 
-    /** Update with first member. */
-    using std::map<MemberId, Url>::insert;
-    void insert(const MemberId& id, const Url& url) { insert(value_type(id,url)); }
-    void setDumping(bool d) { dumping = d; }
+    /** Add a new member. */
+    void add(const MemberId& id, const Url& url);
 
     /** Apply update delivered from clsuter. */
-    void update(const framing::FieldTable& members, bool dumping);
-    void fromControl(const framing::ClusterUpdateBody&);
+    void update(const framing::FieldTable& members, uint64_t dumper);
 
-    bool isMember(const MemberId& id) const { return find(id) != end(); }
-    bool isDumping() const { return dumping; }
+    bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
 
+    bool sendUpdate(const MemberId& id) const; // True if id should send an update.
     std::vector<Url> memberUrls() const;
-
+    size_t size() const { return members.size(); }
+    
   private:
-    bool dumping;
 
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
-  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::value_type& mv);
+  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::Members::value_type& mv);
 };
 
 }} // namespace qpid::cluster

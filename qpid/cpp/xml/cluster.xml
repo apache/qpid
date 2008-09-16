@@ -27,15 +27,18 @@ o<?xml version="1.0"?>
   <class name = "cluster" code = "0x80" label="Qpid clustering extensions.">
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 
-    <control name="update" code="0x4" label="Cluster status update.">
+    <control name="update" code="0x1" label="Cluster status update.">
       <field name="members" type="map"/>     <!-- member-id -> URL -->
-      <field name="dumping" type="boolean"/> <!-- currently dumping state to new member. -->
+      <field name="dumper" type="uint64"/>   <!-- member currently dumping state. -->
     </control>
 
-    <control name = "dump-request" code="0x1" label="New meber requests brain dump">
+    <control name = "dump-request" code="0x2" label="New meber requests brain dump">
       <field name="url" type="str16" label="Url for brain dump."/>
     </control>
 
+    <control name="ready" code="0x3" label="New member is ready.">
+      <field name="url" type="str16" label="Url for brain dump."/>
+    </control>
   </class>
 
   <!-- TODO aconway 2008-09-10: support for un-attached connections. -->
