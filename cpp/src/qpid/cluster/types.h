@@ -41,12 +41,13 @@ enum EventType { DATA, CONTROL };
 
 /** first=node-id, second=pid */
 struct MemberId : std::pair<uint32_t, uint32_t> {
+    explicit MemberId(uint64_t n) : std::pair<uint32_t,uint32_t>( n >> 32, n & 0xffffffff) {}
     explicit MemberId(uint32_t node=0, uint32_t pid=0) : std::pair<uint32_t,uint32_t>(node, pid) {}
     MemberId(const cpg_address& caddr) : std::pair<uint32_t,uint32_t>(caddr.nodeid, caddr.pid) {}
     MemberId(const std::string&); // Decode from string.
     uint32_t getNode() const { return first; }
     uint32_t getPid() const { return second; }
-    operator bool() const { return first || second; }
+    operator uint64_t() const { return (uint64_t(first)<<32ull) + second; }
 
     // Encode as string, network byte order.
     std::string str() const;

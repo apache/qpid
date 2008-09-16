@@ -32,56 +32,58 @@ using namespace framing;
 
 namespace cluster {
 
-ClusterMap::ClusterMap() : dumping(false) {}
+ClusterMap::ClusterMap() {}
 
-MemberId ClusterMap::first() {
-    return (empty()) ?  MemberId() : begin()->first;
+MemberId ClusterMap::first() const {
+    return (members.empty()) ?  MemberId() : members.begin()->first;
 }
 
-void ClusterMap::configChange(const cpg_address* addrs, size_t size) {
-    iterator i = begin();
-    while (i != end()) { // Remove members that are no longer in addrs.
-        if (std::find(addrs, addrs+size, i->first) == addrs+size)
-            erase(i++);
-        else
-            ++i;
-    }
+void ClusterMap::left(const cpg_address* addrs, size_t size) {
+    size_t (Members::*erase)(const MemberId&) = &Members::erase;
+    std::for_each(addrs, addrs+size, boost::bind(erase, &members, _1));
+    if (dumper && !isMember(dumper))
+        dumper = MemberId();
 }
 
 framing::ClusterUpdateBody ClusterMap::toControl() const {
     framing::ClusterUpdateBody b;
-    for (const_iterator i = begin(); i != end(); ++i) 
+    for (Members::const_iterator i = members.begin(); i != members.end(); ++i) 
         b.getMembers().setString(i->first.str(), i->second.str());
-    b.setDumping(dumping);
+    b.setDumper(dumper);
     return b;
 }
 
-void ClusterMap::update(const FieldTable& ftMembers, bool dump) {
-    dumping = dump;
+void ClusterMap::update(const FieldTable& ftMembers, uint64_t dumper_) {
     FieldTable::ValueMap::const_iterator i;
     for (i = ftMembers.begin(); i != ftMembers.end(); ++i) 
-        (*this)[i->first] = Url(i->second->get<std::string>());
-}
-
-void ClusterMap::fromControl(const framing::ClusterUpdateBody& b) {
-    update(b.getMembers(), b.getDumping());
+        members[i->first] = Url(i->second->get<std::string>());
+    dumper = MemberId(dumper_);
 }
 
 std::vector<Url> ClusterMap::memberUrls() const {
     std::vector<Url> result(size());
-    std::transform(begin(), end(), result.begin(),
-                   boost::bind(&value_type::second, _1));
+    std::transform(members.begin(), members.end(), result.begin(),
+                   boost::bind(&Members::value_type::second, _1));
     return result;        
 }
 
-std::ostream& operator<<(std::ostream& o, const ClusterMap::value_type& mv) {
+std::ostream& operator<<(std::ostream& o, const ClusterMap::Members::value_type& mv) {
     return o << mv.first << "=" << mv.second;
 }
 
 std::ostream& operator<<(std::ostream& o, const ClusterMap& m) {
-    std::ostream_iterator<ClusterMap::value_type> im(o, "\n    ");
-    std::copy(m.begin(), m.end(), im);
+    std::ostream_iterator<ClusterMap::Members::value_type> im(o, "\n    ");
+    o << "dumper=" << m.dumper << ", members:\n    ";
+    std::copy(m.members.begin(), m.members.end(), im);
     return o;
+}
+
+bool ClusterMap::sendUpdate(const MemberId& id) const {
+    return dumper==id || (!dumper && first() == id);
+}
+
+void ClusterMap::add(const MemberId& id, const Url& url) {
+    members[id] = url;
 }
 
 }} // namespace qpid::cluster

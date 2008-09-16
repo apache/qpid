@@ -140,9 +140,7 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     return o;
 }
 
-
-// FIXME aconway 2008-09-12: finish the new join protocol.
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testCatchUpSharedState, 1) {
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testCatchupSharedState, 1) {
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
     // Create some shared state.
