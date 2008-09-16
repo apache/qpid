@@ -280,7 +280,7 @@ QPID_AUTO_TEST_CASE(testMessageEnqueue) {
 
 QPID_AUTO_TEST_CASE(testMessageDequeue) {
     // Enqueue on one broker, dequeue on two others.
-    ClusterFixture cluster (3);
+    ClusterFixture cluster(3);
     Client c0(cluster[0], "c0");
     c0.session.queueDeclare("q");
     c0.session.messageTransfer(arg::content=Message("foo", "q"));
