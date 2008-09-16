@@ -74,12 +74,12 @@ namespace org.apache.qpid.client
             ch.connectionClose(ConnectionCloseCode.NORMAL, "client is closing");
             lock (CloseOk)
             {
-                long start = DateTime.Now.Millisecond;
+                DateTime start = DateTime.Now;
                 long elapsed = 0;
                 while (!Closed && elapsed < timeout)
                 {
                     Monitor.Wait(CloseOk, (int) (timeout - elapsed));
-                    elapsed = DateTime.Now.Millisecond - start;
+                    elapsed = DateTime.Now.Subtract(start).Milliseconds;
                 }
                 if (!Closed)
                 {
