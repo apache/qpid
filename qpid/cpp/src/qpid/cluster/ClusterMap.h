@@ -23,7 +23,7 @@
  */
 
 #include "types.h"
-#include "qpid/framing/ClusterMapBody.h"
+#include "qpid/framing/ClusterUpdateBody.h"
 #include "qpid/Url.h"
 #include <boost/function.hpp>
 #include <vector>
@@ -34,68 +34,46 @@
 namespace qpid {
 namespace cluster {
 
+// FIXME aconway 2008-09-15: rename cluster status?
+
 /**
  * Map of established cluster members and brain-dumps in progress.
  * A dumper is an established member that is sending catch-up data.
  * A dumpee is an aspiring member that is receiving catch-up data.
  */
-class ClusterMap
-{
+class ClusterMap : public std::map<MemberId, Url> {
   public:
     ClusterMap();
-
-    MemberId dumpRequest(const MemberId& from, const Url& url);
-
-    void dumpError(const MemberId&);
-
-    void ready(const MemberId& from, const Url& url);
     
-    /** Update map for cpg leave event */
-    void leave(const MemberId&);
+    /** First member of the cluster in ID order, gets to perform one-off tasks. */
+    MemberId first();
 
-    /** Instead of updating the map, queue the updates for unstall */
-    void stall();
+    /** Update for CPG config change. */
+    void configChange(const cpg_address* addrs, size_t size);
 
-    /** Apply queued updates */
-    void unstall();
-
-    /** Number of unfinished dumps for member. */
-    int dumps(const MemberId&) const;
 
     /** Convert map contents to a cluster control body. */
-    framing::ClusterMapBody toControl() const;
+    framing::ClusterUpdateBody toControl() const;
 
-    /** Initialize map contents from a cluster control body. */
-    void init(const framing::FieldTable& members,
-              const framing::FieldTable& dumpees,
-              const framing::FieldTable& dumps);
-    
-    void fromControl(const framing::ClusterMapBody&);
+    /** Update with first member. */
+    using std::map<MemberId, Url>::insert;
+    void insert(const MemberId& id, const Url& url) { insert(value_type(id,url)); }
+    void setDumping(bool d) { dumping = d; }
 
-    size_t memberCount() const { return members.size(); }    
-    size_t dumpeeCount() const { return dumpees.size(); }    
+    /** Apply update delivered from clsuter. */
+    void update(const framing::FieldTable& members, bool dumping);
+    void fromControl(const framing::ClusterUpdateBody&);
 
-    bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }  
-    bool isDumpee(const MemberId& id) const { return dumpees.find(id) != dumpees.end(); }
+    bool isMember(const MemberId& id) const { return find(id) != end(); }
+    bool isDumping() const { return dumping; }
 
     std::vector<Url> memberUrls() const;
 
   private:
-    struct Dumpee { Url url; MemberId dumper; };
-    typedef std::map<MemberId, Url> MemberMap;
-    typedef std::map<MemberId, Dumpee> DumpeeMap;
-    struct MatchDumper;
-    
-    MemberId nextDumper() const;
-
-    MemberMap members;
-    DumpeeMap dumpees;
-    bool stalled;
-    std::deque<boost::function<void()> > stallq;
+    bool dumping;
 
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
-  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::DumpeeMap::value_type& dv);
-  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::MemberMap::value_type& mv);
+  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::value_type& mv);
 };
 
 }} // namespace qpid::cluster
