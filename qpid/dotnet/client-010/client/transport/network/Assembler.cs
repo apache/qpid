@@ -127,9 +127,13 @@ namespace org.apache.qpid.transport.network
         {
             MemoryStream segment;
             if (frame.isFirstFrame() && frame.isLastFrame())
-            {
-                segment = frame.Body;
-                assemble(frame, segment);
+            {                
+                byte[] tmp = new byte[frame.BodySize];
+                frame.Body.Read(tmp, 0, tmp.Length);
+                segment = new MemoryStream();
+                BinaryWriter w = new BinaryWriter(segment);
+                w.Write(tmp);
+                assemble(frame, new MemoryStream(tmp));
             }
             else
             {
