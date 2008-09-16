@@ -354,7 +354,7 @@ namespace org.apache.qpid.transport
                     executionSync(Option.SYNC);
                 }
 
-                long start = DateTime.Now.Millisecond;
+                DateTime start = DateTime.Now;
                 long elapsed = 0;
 
                 while (! Closed && elapsed < timeout && Serial.lt(_maxComplete, point))
@@ -362,7 +362,7 @@ namespace org.apache.qpid.transport
                     log.debug("{0}   waiting for[{1}]: {2}, {3}", this, point,
                               _maxComplete, _commands);
                     Monitor.Wait(_commands, (int) (timeout - elapsed));
-                    elapsed = DateTime.Now.Millisecond - start;
+                    elapsed = DateTime.Now.Subtract(start).Milliseconds;
                 }
 
                 if (Serial.lt(_maxComplete, point))
@@ -469,13 +469,13 @@ namespace org.apache.qpid.transport
             sessionDetach(_name);
             lock (_commands)
             {
-                long start = DateTime.Now.Millisecond;
+                DateTime start = DateTime.Now;
                 long elapsed = 0;
 
                 while (! Closed && elapsed < _timeout)
                 {
                     Monitor.Wait(_commands, (int) (_timeout - elapsed));
-                    elapsed = DateTime.Now.Millisecond - start;
+                    elapsed = DateTime.Now.Subtract(start).Milliseconds;
                 }
             }
         }

@@ -16,13 +16,13 @@ namespace common.org.apache.qpid.transport.util
         {
             lock (this)
             {
-                long start = DateTime.Now.Millisecond;
+                DateTime start = DateTime.Now;
                 long elapsed = 0;
                 while (! _session.Closed && _timeout - elapsed > 0 && _result == null)
                 {
                         log.debug("{0} waiting for result: {1}", _session, this );
                         Monitor.Wait(this, (int) (timeout - elapsed));
-                        elapsed = DateTime.Now.Millisecond - start;                   
+                        elapsed = DateTime.Now.Subtract( start ).Milliseconds;                   
                 }
             }
             if( _session.Closed )
