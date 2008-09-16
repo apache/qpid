@@ -76,11 +76,7 @@ class Cluster : private Cpg::Handler
     void leave();
     
     void dumpRequest(const MemberId&, const std::string& url);
-    void dumpError(const MemberId& dumper, const MemberId& dumpee);
-    void ready(const MemberId&, const std::string& url);
-    void mapInit(const framing::FieldTable& members,
-                 const framing::FieldTable& dumpees,
-                 const framing::FieldTable& dumps);
+    void update(const framing::FieldTable& members, bool dumping);
 
     MemberId getSelf() const { return self; }
 
@@ -95,7 +91,8 @@ class Cluster : private Cpg::Handler
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
     typedef sys::PollableQueue<Event> EventQueue;
     enum State {
-        DISCARD,         // Discard updates up to catchup point.
+        START,      // Have not yet received first cluster update.
+        DISCARD,    // Discard updates up to dump start point.
         HAVE_DUMP,       // Received state dump, waiting for catchup point.
         CATCHUP,         // Stalled at catchup point, waiting for dump.
         DUMPING,         // Stalled while sending a state dump.
@@ -130,9 +127,6 @@ class Cluster : private Cpg::Handler
     void handleMethod(MemberId from, cluster::Connection* connection, framing::AMQMethodBody& method);
 
     boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
-
-    void dumpTo(const Url&);
-    void dumpError(const MemberId&, const Url&, const char* msg);
 
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker& broker;
