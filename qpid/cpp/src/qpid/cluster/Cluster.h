@@ -74,9 +74,11 @@ class Cluster : private Cpg::Handler
     
     /** Leave the cluster */
     void leave();
-    
+
+    // Cluster controls.
+    void update(const framing::FieldTable& members, uint64_t dumping);
     void dumpRequest(const MemberId&, const std::string& url);
-    void update(const framing::FieldTable& members, bool dumping);
+    void ready(const MemberId&, const std::string& url);
 
     MemberId getSelf() const { return self; }
 
@@ -91,12 +93,11 @@ class Cluster : private Cpg::Handler
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
     typedef sys::PollableQueue<Event> EventQueue;
     enum State {
-        START,      // Have not yet received first cluster update.
+        START,      // Start state, no cluster update received yet.
         DISCARD,    // Discard updates up to dump start point.
-        HAVE_DUMP,       // Received state dump, waiting for catchup point.
-        CATCHUP,         // Stalled at catchup point, waiting for dump.
-        DUMPING,         // Stalled while sending a state dump.
-        READY            // Normal processing.
+        CATCHUP,    // Stalled at catchup point, waiting for dump.
+        DUMPING,    // Stalled while sending a state dump.
+        READY       // Normal processing.
     };
 
     void connectionEvent(const Event&);
