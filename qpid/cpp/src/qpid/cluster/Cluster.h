@@ -29,6 +29,8 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/Url.h"
+#include "qpid/management/Manageable.h"
+#include "qmf/org/apache/qpid/cluster/Cluster.h"
 
 #include <boost/intrusive_ptr.hpp>
 
@@ -43,7 +45,7 @@ class Connection;
  * Connection to the cluster.
  * Keeps cluster membership data.
  */
-class Cluster : private Cpg::Handler
+class Cluster : private Cpg::Handler, public management::Manageable
 {
   public:
 
@@ -129,6 +131,11 @@ class Cluster : private Cpg::Handler
 
     boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
+    virtual qpid::management::ManagementObject* GetManagementObject(void) const;
+    virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+    void stopClusterNode(void);
+    void stopFullCluster(void);
+
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker& broker;
     boost::shared_ptr<sys::Poller> poller;
@@ -142,6 +149,7 @@ class Cluster : private Cpg::Handler
     sys::DispatchHandle cpgDispatchHandle;
     EventQueue connectionEventQueue;
     State state;
+    qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
 };
 
 }} // namespace qpid::cluster

@@ -33,6 +33,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/memory.h"
 #include "qpid/shared_ptr.h"
+#include "qmf/org/apache/qpid/cluster/Package.h"
 
 #include <boost/bind.hpp>
 #include <boost/cast.hpp>
@@ -47,6 +48,12 @@ namespace cluster {
 using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace std;
+using namespace qpid::cluster;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::cluster;
 
 struct ClusterOperations : public AMQP_AllOperations::ClusterHandler {
     Cluster& cluster;
@@ -74,6 +81,15 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
     connectionEventQueue(EventQueue::forEach(boost::bind(&Cluster::connectionEvent, this, _1))),
     state(START)
 {
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    if (agent != 0){
+        _qmf::Package  packageInit(agent);
+        mgmtObject = new _qmf::Cluster (agent, this, &broker,name.str());
+        agent->addObject (mgmtObject);
+		mgmtObject->set_status("JOINING");
+		
+		// if first cluster up set new UUID to set_clusterID() else set UUID of cluster being joined.
+    }
     QPID_LOG(notice, self << " joining cluster " << name.str());
     broker.addFinalizer(boost::bind(&Cluster::shutdown, this));
     cpgDispatchHandle.startWatch(poller);
@@ -344,5 +360,35 @@ void Cluster::shutdown() {
     delete this;
 }
 
+ManagementObject* Cluster::GetManagementObject(void) const
+{
+   return (ManagementObject*) mgmtObject;
+}
+
+Manageable::status_t Cluster::ManagementMethod (uint32_t methodId, Args& /*args*/, string&)
+{
+  Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+  QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
+
+  switch (methodId)
+  {
+  case _qmf::Cluster::METHOD_STOPCLUSTERNODE:
+      stopClusterNode();
+      break;
+  case _qmf::Cluster::METHOD_STOPFULLCLUSTER:
+      stopFullCluster();
+      break;
+  }
+
+  return status;
+}    
+
+void Cluster::stopClusterNode(void)
+{
+}
+
+void Cluster::stopFullCluster(void)
+{
+}
 
 }} // namespace qpid::cluster
