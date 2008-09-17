@@ -100,11 +100,10 @@ class Template:
 
 class Makefile:
   """ Object representing a makefile fragment """
-  def __init__ (self, filelists, templateFiles, packagelist, inputList):
+  def __init__ (self, filelists, templateFiles, packagelist):
     self.filelists     = filelists
     self.templateFiles = templateFiles
     self.packagelist   = packagelist
-    self.inputList     = inputList
 
   def genGenSources (self, stream, variables):
     mdir = variables["mgenDir"]
@@ -113,16 +112,15 @@ class Makefile:
     stream.write ("    " + mdir + "/qmf/generate.py \\\n")
     stream.write ("    " + mdir + "/qmf/schema.py \\\n")
     stream.write ("    " + mdir + "/qmf/management-types.xml \\\n")
+    stream.write ("    " + sdir + "/management-schema.xml \\\n")
     first = True
     for template in self.templateFiles:
       if first:
         first = False
-        stream.write("    ")
+        stream.write ("    ")
       else:
-        stream.write(" \\\n    ")
-      stream.write(mdir + "/qmf/templates/" + template)
-    for input in self.inputList:
-      stream.write(" \\\n    $(srcdir)/" + input)
+        stream.write (" \\\n    ")
+      stream.write (mdir + "/qmf/templates/" + template)
 
   def genGenCppFiles (self, stream, variables):
     first = True
@@ -194,12 +192,10 @@ class Generator:
     self.filelists["cpp"] = []
     self.filelists["mk"]  = []
     self.packagelist      = []
-    self.inputList        = []
     self.templateFiles    = []
     self.variables        = {}
 
-  def setPackage (self, packageName, schemaFile):
-    self.inputList.append(schemaFile)
+  def setPackage (self, packageName):
     path = "/".join(packageName.split("."))
     self.packagelist.append(path)
     self.packagePath = self.normalize(self.dest + path)
@@ -320,7 +316,7 @@ class Generator:
 
   def makeSingleFile (self, templateFile, target, force=False):
     """ Generate a single expanded template """
-    makefile = Makefile (self.filelists, self.templateFiles, self.packagelist, self.inputList)
+    makefile = Makefile (self.filelists, self.templateFiles, self.packagelist)
     template = Template (self.input + templateFile, self)
     self.templateFiles.append (templateFile)
     stream = template.expand (makefile)
