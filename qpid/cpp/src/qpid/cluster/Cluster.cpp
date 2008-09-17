@@ -87,7 +87,6 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
         mgmtObject = new _qmf::Cluster (agent, this, &broker,name.str(),url.str());
         agent->addObject (mgmtObject);
 		mgmtObject->set_status("JOINING");
-		mgmtObject->set_clusterSize(1);
 		
 		// if first cluster up set new UUID to set_clusterID() else set UUID of cluster being joined.
     }
@@ -275,6 +274,7 @@ void Cluster::configChange(
             map.add(self, url);
             ready();
         }
+	    updateMemberStats();
         return;                 
     }
 
@@ -285,13 +285,7 @@ void Cluster::configChange(
         mcastControl(map.toControl(), 0);
 
     //update mgnt stats
-	if (mgmtObject!=0){
-	    mgmtObject->set_clusterSize(size()+1); // cluster size is other nodes +me
-		// copy urls to fieldtable ? how is the ftable packed?
-		//::qpid::framing::FieldTable val;
-		//std::vector<Url> vectUrl = getUrls();
-		//mgmtObject->set_members(val);
-	}
+	updateMemberStats();
 }
 
 void Cluster::update(const FieldTable& members, uint64_t dumper) {
@@ -405,5 +399,23 @@ void Cluster::stopClusterNode(void)
 void Cluster::stopFullCluster(void)
 {
 }
+
+void Cluster::updateMemberStats(void)
+{
+    //update mgnt stats
+	if (mgmtObject!=0){
+	    mgmtObject->set_clusterSize(size()); 
+		std::vector<Url> vectUrl = getUrls();
+        string urlstr;
+        for(std::vector<Url>::iterator iter = vectUrl.begin(); iter != vectUrl.end(); iter++ ) {
+		    if (iter != vectUrl.begin()) urlstr += ";";
+			urlstr += iter->str();
+		}
+		mgmtObject->set_members(urlstr);
+	}
+
+}
+
+
 
 }} // namespace qpid::cluster
