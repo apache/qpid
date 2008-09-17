@@ -135,6 +135,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     void stopClusterNode(void);
     void stopFullCluster(void);
+	void updateMemberStats(void);
 
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker& broker;
