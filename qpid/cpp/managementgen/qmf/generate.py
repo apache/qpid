@@ -122,12 +122,7 @@ class Makefile:
         stream.write(" \\\n    ")
       stream.write(mdir + "/qmf/templates/" + template)
     for input in self.inputList:
-      if first:
-        first = False
-        srteam.write("    ")
-      else:
-        stream.write(" \\\n    ")
-      stream.write("$(srcdir)/" + input)
+      stream.write(" \\\n    $(srcdir)/" + input)
 
   def genGenCppFiles (self, stream, variables):
     first = True
