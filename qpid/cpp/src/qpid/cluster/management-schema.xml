@@ -44,13 +44,14 @@
     <property name="publishedURL"     type="sstr"   access="RC" desc="URL this node advertizes itself as"/>
     <property name="clusterSize"      type="uint16" access="RO" desc="Number of brokers currently in the cluster"/>
     <property name="status"           type="sstr"   access="RO" desc="Cluster node status (STALLED,ACTIVE,JOINING)"/>
-	<property name="members"          type="map"    access="RO" desc="List of 'host:port' of member nodes in the cluster"/>
+	<property name="members"          type="lstr"    access="RO" desc="List of 'host:port' of member nodes in the cluster delimited by ';'"/>
 	
 
     <method name="stopClusterNode"/>
     <method name="stopFullCluster"/>
 
   </class>
+
 
 
 </schema>
