@@ -54,7 +54,7 @@ if len(args) == 0:
 for schemafile in args:
   package = SchemaPackage (typefile, schemafile, opts)
 
-  gen.setPackage      (package.packageName)
+  gen.setPackage      (package.packageName, schemafile)
   gen.makeClassFiles  ("Class.h",     package)
   gen.makeClassFiles  ("Class.cpp",   package)
   gen.makeMethodFiles ("Args.h",      package)
