@@ -84,9 +84,10 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0){
         _qmf::Package  packageInit(agent);
-        mgmtObject = new _qmf::Cluster (agent, this, &broker,name.str());
+        mgmtObject = new _qmf::Cluster (agent, this, &broker,name.str(),url.str());
         agent->addObject (mgmtObject);
 		mgmtObject->set_status("JOINING");
+		mgmtObject->set_clusterSize(1);
 		
 		// if first cluster up set new UUID to set_clusterID() else set UUID of cluster being joined.
     }
@@ -282,6 +283,15 @@ void Cluster::configChange(
 
     if (nJoined && map.sendUpdate(self))  // New members need update
         mcastControl(map.toControl(), 0);
+
+    //update mgnt stats
+	if (mgmtObject!=0){
+	    mgmtObject->set_clusterSize(size()+1); // cluster size is other nodes +me
+		// copy urls to fieldtable ? how is the ftable packed?
+		//::qpid::framing::FieldTable val;
+		//std::vector<Url> vectUrl = getUrls();
+		//mgmtObject->set_members(val);
+	}
 }
 
 void Cluster::update(const FieldTable& members, uint64_t dumper) {
@@ -337,6 +347,8 @@ void Cluster::stall() {
     // FIXME aconway 2008-09-11: Flow control, we should slow down or
     // stop reading from local connections while stalled to avoid an
     // unbounded queue.
+	if (mgmtObject!=0)
+	    mgmtObject->set_status("STALLED");
 }
 
 void Cluster::ready() {
@@ -345,6 +357,8 @@ void Cluster::ready() {
     state = READY;
     connectionEventQueue.start(poller);
     // FIXME aconway 2008-09-15: stall/unstall map?
+	if (mgmtObject!=0)
+	    mgmtObject->set_status("ACTIVE");
 }
 
 // Called from Broker::~Broker when broker is shut down.  At this
