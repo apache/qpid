@@ -36,9 +36,7 @@ ConnectionCodec::Factory::create(framing::ProtocolVersion v, sys::OutputControl&
     return 0;
 }
 
-// FIXME aconway 2008-08-27: outbound connections need to be made
-// with proper qpid::client code for failover, get rid of this
-// broker-side hack.
+// Used for outgoing Link connections, we don't care.
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id) {
     return next->create(out, id);
@@ -60,7 +58,6 @@ size_t ConnectionCodec::decode(const char* buffer, size_t size) {
     return interceptor->decode(buffer, size);
 }
 
-// FIXME aconway 2008-09-02: delegate to interceptor?
 size_t ConnectionCodec::encode(const char* buffer, size_t size) { return codec.encode(buffer, size); }
 bool ConnectionCodec::canEncode() { return codec.canEncode(); }
 void ConnectionCodec::closed() { codec.closed(); }

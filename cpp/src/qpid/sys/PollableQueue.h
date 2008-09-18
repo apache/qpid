@@ -71,6 +71,9 @@ class PollableQueue {
 
     /** Stop polling and wait for the current callback, if any, to complete. */
     void stop();
+
+    /** Are we currently stopped?*/
+    bool isStopped() const;
     
   private:
     typedef sys::Monitor::ScopedLock ScopedLock;
@@ -78,7 +81,7 @@ class PollableQueue {
 
     void dispatch(sys::DispatchHandle&);
     
-    sys::Monitor lock;
+    mutable sys::Monitor lock;
     Callback callback;
     PollableCondition condition;
     sys::DispatchHandle handle;
@@ -128,6 +131,11 @@ template <class T> void PollableQueue<T>::stop() {
     handle.stopWatch();
     stopped = true;
     while (dispatching) lock.wait();
+}
+
+template <class T> bool PollableQueue<T>::isStopped() const {
+   ScopedLock l(lock);
+   return stopped;
 }
 
 }} // namespace qpid::sys

@@ -34,8 +34,6 @@
 namespace qpid {
 namespace cluster {
 
-// FIXME aconway 2008-09-15: rename cluster status?
-
 /**
  * Map of established cluster members and brain-dumps in progress.
  * A dumper is an established member that is sending catch-up data.
@@ -58,8 +56,8 @@ class ClusterMap {
     /** Convert map contents to a cluster update body. */
     framing::ClusterUpdateBody toControl() const;
 
-    /** Add a new member. */
-    void add(const MemberId& id, const Url& url);
+    /** Add a new member or dump complete if id == dumper. */
+    void ready(const MemberId& id, const Url& url);
 
     /** Apply update delivered from clsuter. */
     void update(const framing::FieldTable& members, uint64_t dumper);
@@ -70,6 +68,7 @@ class ClusterMap {
     std::vector<Url> memberUrls() const;
     size_t size() const { return members.size(); }
     
+    bool empty() const { return members.empty(); }
   private:
 
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
