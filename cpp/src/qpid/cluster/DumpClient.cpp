@@ -27,12 +27,21 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/ClusterConnectionDumpCompleteBody.h"
 #include "qpid/framing/enum.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
+
+namespace client {
+struct ConnectionAccess {
+    static void setVersion(Connection& c, const framing::ProtocolVersion& v) { c.version = v; }
+};
+} // namespace client
+
 namespace cluster {
 
 using broker::Broker;
@@ -40,16 +49,18 @@ using broker::Exchange;
 using broker::Queue;
 using broker::QueueBinding;
 using broker::Message;
+using namespace framing;
 using namespace framing::message;
-
 using namespace client;
+
 
 DumpClient::DumpClient(const Url& url, Broker& b,
                        const boost::function<void()>& ok,
                        const boost::function<void(const std::exception&)>& fail)
     : donor(b), done(ok), failed(fail)
 {
-    // FIXME aconway 2008-09-16: Identify as DumpClient connection.
+    // Special version identifies this as a catch-up connectionn.
+    client::ConnectionAccess::setVersion(connection, ProtocolVersion(0x80 , 0x80 + 10));
     connection.open(url);
     session = connection.newSession();
 }
@@ -65,9 +76,10 @@ void DumpClient::dump() {
     // Catch-up exchange is used to route messages to the proper queue without modifying routing key.
     session.exchangeDeclare(arg::exchange=CATCH_UP, arg::type="fanout", arg::autoDelete=true);
     donor.getQueues().eachQueue(boost::bind(&DumpClient::dumpQueue, this, _1));
+    SessionBase_0_10Access sb(session);
+    // FIXME aconway 2008-09-18: inidicate successful end-of-dump.
     session.sync();
     session.close();
-    // FIXME aconway 2008-09-17: send dump complete indication.
     connection.close();
 }
 

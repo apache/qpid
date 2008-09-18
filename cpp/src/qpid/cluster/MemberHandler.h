@@ -35,6 +35,7 @@ class MemberHandler : public ClusterHandler
 {
   public:
     MemberHandler(Cluster& c);
+    ~MemberHandler();
     
     void configChange(
         struct cpg_address */*members*/, int /*nMembers*/,
@@ -48,8 +49,10 @@ class MemberHandler : public ClusterHandler
     void dumpRequest(const MemberId&, const std::string& url);
     void ready(const MemberId&, const std::string& url);
 
-    void dumpDone();
+    void dumpSent();
     void dumpError(const std::exception&);
+
+    void insert(const boost::intrusive_ptr<Connection>& c);
 
   public:
     sys::Thread dumpThread;

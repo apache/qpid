@@ -32,7 +32,9 @@ namespace cluster {
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(framing::ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
     if (v == framing::ProtocolVersion(0, 10))
-        return new ConnectionCodec(out, id, cluster);
+        return new ConnectionCodec(out, id, cluster, false);
+    else if (v == framing::ProtocolVersion(0x80 + 0, 0x80 + 10))
+        return new ConnectionCodec(out, id, cluster, true); // Catch-up connection
     return 0;
 }
 
@@ -42,9 +44,9 @@ ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id)
     return next->create(out, id);
 }
 
-ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster)
+ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp)
     : codec(out, id, false),
-      interceptor(new Connection(cluster, codec, id, cluster.getSelf()))
+      interceptor(new Connection(cluster, codec, id, cluster.getSelf(), catchUp))
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
@@ -55,7 +57,10 @@ ConnectionCodec::~ConnectionCodec() {}
 
 // ConnectionCodec functions delegate to the codecOutput
 size_t ConnectionCodec::decode(const char* buffer, size_t size) {
-    return interceptor->decode(buffer, size);
+    if (interceptor->isCatchUp())
+        return codec.decode(buffer, size);
+    else
+        return interceptor->decode(buffer, size);
 }
 
 size_t ConnectionCodec::encode(const char* buffer, size_t size) { return codec.encode(buffer, size); }

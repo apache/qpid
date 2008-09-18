@@ -46,9 +46,14 @@ class JoiningHandler : public ClusterHandler
     void dumpRequest(const MemberId&, const std::string& url);
     void ready(const MemberId&, const std::string& url);
 
+    void insert(const boost::intrusive_ptr<Connection>& c);
+    
   private:
-    enum { START, DUMP_REQUESTED, STALLED, DUMP_COMPLETE } state;
     void checkDumpRequest();
+    void dumpComplete();
+
+    enum { START, DUMP_REQUESTED, STALLED, DUMP_COMPLETE } state;
+    size_t catchUpConnections;
 
 };
 }} // namespace qpid::cluster

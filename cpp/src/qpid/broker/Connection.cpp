@@ -26,6 +26,7 @@
 #include "qpid/ptr_map.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/agent/ManagementAgent.h"
+#include "qpid/framing/enum.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -195,14 +196,14 @@ bool Connection::doOutput() {
         ioCallback = 0;
 
         if (mgmtClosing)
-            close(403, "Closed by Management Request", 0, 0);
+            close(execution::ERROR_CODE_UNAUTHORIZED_ACCESS, "Closed by Management Request", 0, 0);
         else
             //then do other output as needed:
             return outputTasks.doOutput();
     }catch(ConnectionException& e){
         close(e.code, e.getMessage(), 0, 0);
     }catch(std::exception& e){
-        close(541/*internal error*/, e.what(), 0, 0);
+        close(execution::ERROR_CODE_INTERNAL_ERROR, e.what(), 0, 0);
     }
     return false;
 }

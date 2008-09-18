@@ -166,6 +166,9 @@ class Connection
     void resume(Session& session);
 
     bool isOpen() const;
+
+    
+  friend class ConnectionAccess; ///<@internal
 };
 
 }} // namespace qpid::client
