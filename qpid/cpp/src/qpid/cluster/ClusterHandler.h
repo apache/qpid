@@ -24,6 +24,7 @@
 
 #include "Cpg.h"
 #include "types.h"
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 
@@ -31,6 +32,7 @@ namespace framing { class AMQFrame; }
 
 namespace cluster {
 
+class Connection;
 class Cluster;
 class Event;
 
@@ -44,6 +46,8 @@ class ClusterHandler
     ClusterHandler(Cluster& c);
     virtual ~ClusterHandler();
 
+    bool invoke(const MemberId&, framing::AMQFrame& f);
+
     virtual void update(const MemberId&, const framing::FieldTable& members, uint64_t dumping) = 0;
     virtual void dumpRequest(const MemberId&, const std::string& url) = 0;
     virtual void ready(const MemberId&, const std::string& url) = 0;
@@ -54,7 +58,7 @@ class ClusterHandler
                               cpg_address *left, int nLeft,
                               cpg_address *joined, int nJoined) = 0;
 
-    bool invoke(const MemberId&, framing::AMQFrame& f);
+    virtual void insert(const boost::intrusive_ptr<Connection>& c) = 0;
 
   protected:
     Cluster& cluster;

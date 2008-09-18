@@ -91,6 +91,8 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void shutdown();
 
     broker::Broker& getBroker();
+
+    void setDumpComplete();
     
   private:
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;

@@ -43,13 +43,15 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
     // sys::ConnectionOutputHandler functions
     void send(framing::AMQFrame& f);
     void activateOutput();
-    void close() { Locker l(lock); next.close(); }
-    size_t getBuffered() const { Locker l(lock); return next.getBuffered(); }
+    void close() { Locker l(lock); next->close(); }
+    size_t getBuffered() const { Locker l(lock); return next->getBuffered(); }
 
     // Delivery point for doOutput requests.
     void deliverDoOutput(size_t requested);
     // Intercept doOutput requests on Connection.
     bool doOutput();
+
+    void setOutputHandler(sys::ConnectionOutputHandler& h);
 
     cluster::Connection& parent;
     
@@ -60,7 +62,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
     void sendDoOutput();
 
     mutable sys::Mutex lock;
-    sys::ConnectionOutputHandler& next;
+    sys::ConnectionOutputHandler* next;
     size_t sent;
     WriteEstimate writeEstimate;
     bool moreOutput;

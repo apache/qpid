@@ -51,21 +51,21 @@ class Connection :
 {
   public:
     /** Local connection, use this in ConnectionId */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId);
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId, bool catchUp);
     /** Shadow connection */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, ConnectionId);
     ~Connection();
     
     ConnectionId getId() const { return self; }
     broker::Connection& getBrokerConnection() { return connection; }
-    bool isLocal() const { return self.second == this; }
+    bool isLocal() const;
+
+    /** True if the connection is in "catch-up" mode: building initial state */
+    bool isCatchUp() const { return catchUp; }
+    bool isExCatchUp() const { return exCatchUp; }
+
 
     Cluster& getCluster() { return cluster; }
-
-    // self-delivery of multicast data.
-    void deliverClose();
-    void deliverDoOutput(uint32_t requested);
-    void deliverBuffer(framing::Buffer&);
 
     // ConnectionOutputHandler methods
     void close() {}
@@ -84,19 +84,27 @@ class Connection :
     // ConnectionCodec methods
     size_t decode(const char* buffer, size_t size);
 
-    // ConnectionInputHandlerFactory
-    sys::ConnectionInputHandler* create(sys::ConnectionOutputHandler* out, const std::string& id, bool isClient);
+    // Called by cluster to deliver a buffer from CPG.
+    void deliverBuffer(framing::Buffer&);
 
+
+    // ==== Used in catch-up mode to build initial state.
+    // 
     // State dump methods.
-    virtual void sessionState(const SequenceNumber& replayStart,
+    void sessionState(const SequenceNumber& replayStart,
                               const SequenceSet& sentIncomplete,
                               const SequenceNumber& expected,
                               const SequenceNumber& received,
                               const SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
     
-    virtual void shadowReady(uint64_t memberId, uint64_t connectionId);
+    void shadowReady(uint64_t memberId, uint64_t connectionId);
+
+    void dumpComplete();
 
   private:
+
+    void deliverClose();
+    void deliverDoOutput(uint32_t requested);
     void sendDoOutput();
 
     Cluster& cluster;
@@ -108,6 +116,8 @@ class Connection :
     broker::Connection connection;
     framing::SequenceNumber mcastSeq;
     framing::SequenceNumber deliverSeq;
+    bool catchUp;
+    bool exCatchUp;
 };
 
 }} // namespace qpid::cluster
