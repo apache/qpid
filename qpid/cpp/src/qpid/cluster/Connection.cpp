@@ -21,11 +21,9 @@
 #include "Connection.h"
 #include "Cluster.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/Invoker.h"
-#include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/log/Statement.h"
-
+#include "qpid/framing/AllInvoker.h"
 #include <boost/current_function.hpp>
 
 namespace qpid {
@@ -47,11 +45,6 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 
 Connection::~Connection() {}
 
-void Connection::received(framing::AMQFrame& ) {
-    // FIXME aconway 2008-09-02: not called, codec sends straight to deliver
-    assert(0);
-}
-
 bool Connection::doOutput() { return output.doOutput(); }
 
 // Delivery of doOutput allows us to run the real connection doOutput()
@@ -62,7 +55,7 @@ void Connection::deliverDoOutput(uint32_t requested) {
 }
 
 // Handle frames delivered from cluster.
-void Connection::deliver(framing::AMQFrame& f) {
+void Connection::received(framing::AMQFrame& f) {
     QPID_LOG(trace, "DLVR [" << self << "]: " << f);
     // Handle connection controls, deliver other frames to connection.
     if (!framing::invoke(*this, *f.getBody()).wasHandled())
@@ -95,14 +88,13 @@ void Connection::deliverClose () {
 size_t Connection::decode(const char* buffer, size_t size) { 
     ++mcastSeq;
     cluster.mcastBuffer(buffer, size, self);
-    // FIXME aconway 2008-09-01: deserialize?
     return size;
 }
 
 void Connection::deliverBuffer(Buffer& buf) {
     ++deliverSeq;
     while (decoder.decode(buf))
-        deliver(decoder.frame); // FIXME aconway 2008-09-01: Queue frames for delivery in separate thread.
+        received(decoder.frame);
 }
 
 

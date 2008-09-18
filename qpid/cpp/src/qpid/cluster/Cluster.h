@@ -23,11 +23,12 @@
 #include "Event.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "ClusterMap.h"
+#include "JoiningHandler.h"
+#include "MemberHandler.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/Url.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
@@ -78,7 +79,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void leave();
 
     // Cluster controls.
-    void update(const framing::FieldTable& members, uint64_t dumping);
+    void update(const MemberId&, const framing::FieldTable& members, uint64_t dumping);
     void dumpRequest(const MemberId&, const std::string& url);
     void ready(const MemberId&, const std::string& url);
 
@@ -127,8 +128,6 @@ class Cluster : private Cpg::Handler, public management::Manageable
     /** Callback if CPG fd is disconnected. */
     void disconnect(sys::DispatchHandle&);
 
-    void handleMethod(MemberId from, cluster::Connection* connection, framing::AMQMethodBody& method);
-
     boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
     virtual qpid::management::ManagementObject* GetManagementObject(void) const;
@@ -151,6 +150,14 @@ class Cluster : private Cpg::Handler, public management::Manageable
     EventQueue connectionEventQueue;
     State state;
     qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
+
+    // Handlers for different states.
+    ClusterHandler* handler;
+    JoiningHandler joiningHandler;
+    MemberHandler memberHandler;
+
+  friend class JoiningHandler;
+  friend class MemberHandler;
 };
 
 }} // namespace qpid::cluster

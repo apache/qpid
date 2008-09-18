@@ -54,7 +54,10 @@ namespace cluster {
  */
 class DumpClient : public sys::Runnable {
   public:
-    DumpClient(const Url& url, broker::Broker& donor, const boost::function<void(const char*)>& onFail);
+    DumpClient(const Url& url, broker::Broker& donor,
+               const boost::function<void()>& done,
+               const boost::function<void(const std::exception&)>& fail);
+
     ~DumpClient();
     void dump();
     void run();                 // Will delete this when finished.
@@ -69,7 +72,8 @@ class DumpClient : public sys::Runnable {
     client::Connection connection;
     client::AsyncSession session;
     broker::Broker& donor;
-    boost::function<void(const char*)> failed;
+    boost::function<void()> done;
+    boost::function<void(const std::exception& e)> failed;
 };
 
 }} // namespace qpid::cluster

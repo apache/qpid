@@ -44,36 +44,39 @@ using namespace framing::message;
 
 using namespace client;
 
-DumpClient::DumpClient(const Url& url, Broker& b, const boost::function<void(const char*)>& f)
-  : donor(b), failed(f)
+DumpClient::DumpClient(const Url& url, Broker& b,
+                       const boost::function<void()>& ok,
+                       const boost::function<void(const std::exception&)>& fail)
+    : donor(b), done(ok), failed(fail)
 {
+    // FIXME aconway 2008-09-16: Identify as DumpClient connection.
     connection.open(url);
     session = connection.newSession();
 }
 
-DumpClient::~DumpClient() {
-    session.close();
-    connection.close();
-}
+DumpClient::~DumpClient() {}
 
 // Catch-up exchange name: an illegal AMQP exchange name to avoid clashes.
 static const char CATCH_UP_CHARS[] = "\000qpid-dump-exchange";
 static const std::string CATCH_UP(CATCH_UP_CHARS, sizeof(CATCH_UP_CHARS)); 
 
 void DumpClient::dump() {
-    // FIXME aconway 2008-09-08: send cluster map frame first.
     donor.getExchanges().eachExchange(boost::bind(&DumpClient::dumpExchange, this, _1));
     // Catch-up exchange is used to route messages to the proper queue without modifying routing key.
     session.exchangeDeclare(arg::exchange=CATCH_UP, arg::type="fanout", arg::autoDelete=true);
     donor.getQueues().eachQueue(boost::bind(&DumpClient::dumpQueue, this, _1));
     session.sync();
+    session.close();
+    // FIXME aconway 2008-09-17: send dump complete indication.
+    connection.close();
 }
 
 void DumpClient::run() {
     try {
         dump();
-    } catch (const Exception& e) {
-        failed(e.what());
+        done();
+    } catch (const std::exception& e) {
+        failed(e);
     }
     delete this;
 }
