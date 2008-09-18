@@ -227,7 +227,7 @@ struct Controller : public Client
         }
     }
 
-    void check() 
+    int check() 
     {
         SubscriptionManager subs(session);
         subs.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
@@ -289,7 +289,8 @@ struct Controller : public Client
         set_difference(drained.begin(), drained.end(), ids.begin(), ids.end(), back_inserter(extra)); 
 
         if (missing.empty() && extra.empty()) {
-            std::cout << "All expected messages were retrieved." << std::endl;            
+            std::cout << "All expected messages were retrieved." << std::endl;
+            return 0;
         } else {
             if (!missing.empty()) {
                 std::cout << "The following ids were missing:" << std::endl;
@@ -303,6 +304,7 @@ struct Controller : public Client
                     std::cout << "    '" << *i << "'" << std::endl;     
                 }            
             }
+            return 1;
         }
     }
 };
@@ -314,10 +316,10 @@ int main(int argc, char** argv)
         Controller controller;
         if (opts.init) controller.init(); 
         if (opts.transfer) controller.transfer();
-        if (opts.check) controller.check();
+        if (opts.check) return controller.check();
         return 0;
     } catch(const std::exception& e) {
 	std::cout << e.what() << std::endl;
     }
-    return 1;
+    return 2;
 }
