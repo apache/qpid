@@ -33,12 +33,12 @@ namespace cluster {
 using namespace framing;
 
 OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h)
-    : parent(p), next(h), sent(), moreOutput(), doingOutput()
+    : parent(p), next(&h), sent(), moreOutput(), doingOutput()
 {}
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
     Locker l(lock); 
-    next.send(f);
+    next->send(f);
     sent += f.size();
 }
 
@@ -60,7 +60,7 @@ bool  OutputInterceptor::doOutput() {
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
     Locker l(lock);
-    size_t buf = next.getBuffered();
+    size_t buf = next->getBuffered();
     if (parent.isLocal())
         writeEstimate.delivered(sent, buf); // Update the estimate.
 
@@ -99,6 +99,11 @@ void OutputInterceptor::sendDoOutput() {
     // 
     parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), &parent);
     QPID_LOG(trace, &parent << "Send doOutput request for " << request);
+}
+
+void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {
+    Locker l(lock);
+    next = &h;
 }
 
 }} // namespace qpid::cluster

@@ -60,7 +60,8 @@ o<?xml version="1.0"?>
 	 - attach sessions, create consumers, set flow with normal AMQP cokmmands.
 	 - reset session state by sending session-state for each session.
 	  - frames following session-state are replay frames.
-	 - send shadow-ready to mark end of dump.
+	 - send shadow-ready to mark end of shadow dump.
+	 - send dump-complete when entire dump is complete.
     -->
     <control name="session-state" code="0x4" label="Set session state during a brain dump.">
       <!-- Target session deduced from channel number.  -->
@@ -79,5 +80,6 @@ o<?xml version="1.0"?>
       <field name="connection-id" type="uint64"/>
     </control>
 
+    <control name="dump-complete" code="0x6" label="End of brain dump."/>
   </class>
 </amqp>

@@ -89,7 +89,7 @@ Cluster::~Cluster() {}
 
 void Cluster::insert(const boost::intrusive_ptr<Connection>& c) {
     Mutex::ScopedLock l(lock);
-    connections.insert(ConnectionMap::value_type(ConnectionId(self, c.get()), c));
+    handler->insert(c);
 }
 
 void Cluster::erase(ConnectionId id) {
@@ -186,8 +186,10 @@ void Cluster::connectionEvent(const Event& e) {
         e.getConnection()->deliverBuffer(buf);
     else {              // control
         AMQFrame frame;
-        while (frame.decode(buf))
+        while (frame.decode(buf)) {
+            QPID_LOG(trace, "DLVR [" << self << "]: " << frame);
             e.getConnection()->received(frame);
+        }
     }
 }
 
@@ -274,6 +276,7 @@ broker::Broker& Cluster::getBroker(){ return broker; }
 
 void Cluster::stall() {
     Mutex::ScopedLock l(lock);
+    QPID_LOG(debug, self << " stalling.");
     // Stop processing connection events. We still process config changes
     // and cluster controls in deliver()
     connectionEventQueue.stop();
@@ -356,7 +359,5 @@ void Cluster::updateMemberStats(void)
 //     }
 
 }
-
-
 
 }} // namespace qpid::cluster
