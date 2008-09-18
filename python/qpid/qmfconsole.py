@@ -52,9 +52,7 @@ class Console:
 
   def objectProps(self, broker, id, record):
     """ Invoked when an object is updated. """
-    global B
-    if record.getClassKey()[1] == "broker":
-      B = record
+    pass
 
   def objectStats(self, broker, id, record):
     """ Invoked when an object is updated. """
@@ -877,7 +875,7 @@ class Broker:
   def _decOutstanding(self):
     self.cv.acquire()
     self.reqsOutstanding -= 1
-    if self.reqsOutstanding == 0 and not self.topicBound and self.session != None:
+    if self.reqsOutstanding == 0 and not self.topicBound and self.session.console != None:
       self.topicBound = True
       self.amqpSession.exchange_bind(exchange="qpid.management", queue=self.topicName, binding_key="mgmt.#")
     if self.reqsOutstanding == 0 and self.syncInFlight:
@@ -945,9 +943,9 @@ class SequenceManager:
 
 # TEST
 
-c = Console()
-s = Session(c)
-b = s.addBroker()
-cl = s.getClasses("org.apache.qpid.broker")
-sch = s.getSchema(cl[0])
+#c = Console()
+#s = Session(c)
+#b = s.addBroker()
+#cl = s.getClasses("org.apache.qpid.broker")
+#sch = s.getSchema(cl[0])
 
