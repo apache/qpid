@@ -88,7 +88,6 @@ void OutputInterceptor::startDoOutput() {
 // Send a doOutput request if one is not already in flight.
 void OutputInterceptor::sendDoOutput() {
     // Call with lock held.
-    // FIXME aconway 2008-08-28: used to  have || parent.getClosed())
     if (!parent.isLocal()) return;
 
     doingOutput = true;

@@ -63,7 +63,6 @@ class Connection :
     Cluster& getCluster() { return cluster; }
 
     // self-delivery of multicast data.
-    void deliver(framing::AMQFrame& f);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
     void deliverBuffer(framing::Buffer&);

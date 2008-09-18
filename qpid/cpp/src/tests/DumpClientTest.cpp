@@ -61,7 +61,7 @@ QPID_AUTO_TEST_CASE(testDumpClientSharedState) {
         c.connection.close();
     }
     Url url(Url::getIpAddressesUrl(receiver.getPort()));
-    qpid::cluster::DumpClient dump(url, *donor.broker, 0);
+    qpid::cluster::DumpClient dump(url, *donor.broker, 0, 0);
     dump.dump();
     {
         Client r(receiver.getPort());

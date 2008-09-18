@@ -101,9 +101,7 @@ bool Cpg::isFlowControlEnabled() {
     return flowState == CPG_FLOW_CONTROL_ENABLED;
 }
 
-// TODO aconway 2008-08-07: better handling of flow control.
-// Wait for flow control to be disabled.
-// FIXME aconway 2008-08-08: does flow control check involve a round-trip? If so maybe remove...
+// FIXME aconway 2008-08-07: better handling of cpg flow control, no sleeping.
 void Cpg::waitForFlowControl() {
     int delayNs=1000;           // one millisecond
     int tries=8;                // double the delay on each try.

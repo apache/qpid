@@ -53,8 +53,8 @@ framing::ClusterUpdateBody ClusterMap::toControl() const {
     return b;
 }
 
-void ClusterMap::update(const FieldTable& ftMembers, uint64_t dumper_) {
-    FieldTable::ValueMap::const_iterator i;
+void ClusterMap::update(const framing::FieldTable& ftMembers, uint64_t dumper_) {
+    framing:: FieldTable::ValueMap::const_iterator i;
     for (i = ftMembers.begin(); i != ftMembers.end(); ++i) 
         members[i->first] = Url(i->second->get<std::string>());
     dumper = MemberId(dumper_);
@@ -82,8 +82,10 @@ bool ClusterMap::sendUpdate(const MemberId& id) const {
     return dumper==id || (!dumper && first() == id);
 }
 
-void ClusterMap::add(const MemberId& id, const Url& url) {
+void ClusterMap::ready(const MemberId& id, const Url& url) {
     members[id] = url;
+    if (id == dumper)
+        dumper = MemberId();
 }
 
 }} // namespace qpid::cluster
