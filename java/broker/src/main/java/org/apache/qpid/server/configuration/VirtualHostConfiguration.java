@@ -179,12 +179,17 @@ public class VirtualHostConfiguration
                 boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
                 String owner = queueConfiguration.getString("owner", null);
                 FieldTable arguments = null;
-                Integer priorities = queueConfiguration.getInteger("priorities", null);
-                if(priorities != null && priorities.intValue() > 1)
+                boolean priority = queueConfiguration.getBoolean("priority", false);
+                int priorities = queueConfiguration.getInt("priorities", -1);
+                if(priority || priorities > 0)
                 {
                     if(arguments == null)
                     {
                         arguments = new FieldTable();
+                    }
+                    if (priorities < 0)
+                    {
+                        priorities = 10;
                     }
                     arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
                 }
