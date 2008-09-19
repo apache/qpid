@@ -229,14 +229,6 @@ class EncodedValue : public FieldValue::Data {
     void print(std::ostream& o) const { o << "[" << value << "]"; };
 };
 
-template <>
-inline const FieldTable& FieldValue::get<const FieldTable&>() const 
-{ 
-    const EncodedValue<FieldTable>* ev = dynamic_cast< EncodedValue<FieldTable>* >(data.get());    
-    if (ev == 0) throw InvalidConversionException();
-    return ev->getValue(); 
-}
-
 /*
  * Basic string value encodes as iso-8859-15 with 32 bit length
  */ 
@@ -278,6 +270,20 @@ class ArrayValue : public FieldValue {
   public:
     ArrayValue(const Array&);
 };
+
+
+template <class T>
+bool getEncodedValue(FieldTable::ValuePtr vptr, T& value) 
+{
+    if (vptr) {
+        const EncodedValue<T>* ev = dynamic_cast< EncodedValue<T>* >(&(vptr->getData()));    
+        if (ev != 0) {
+            value = ev->getValue(); 
+            return true;
+        }
+    }
+    return false;
+}
 
 }} // qpid::framing
 
