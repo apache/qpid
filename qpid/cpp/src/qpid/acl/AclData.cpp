@@ -59,7 +59,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 	
 	 if (actionList[action] && actionList[action][objType]){
 	      AclData::actObjItr itrRule = actionList[action][objType]->find(id);
-		  if (itrRule != actionList[action][objType]->end())
+		  if (itrRule == actionList[action][objType]->end())
 		       itrRule = actionList[action][objType]->find("*");
 		  if (itrRule != actionList[action][objType]->end() ) {
 			   
@@ -97,7 +97,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 	
 	 if (actionList[action] && actionList[action][objType]){
 	      AclData::actObjItr itrRule = actionList[action][objType]->find(id);
-		  if (itrRule != actionList[action][objType]->end())
+		  if (itrRule == actionList[action][objType]->end())
 		       itrRule = actionList[action][objType]->find("*");
 		  if (itrRule != actionList[action][objType]->end() ) {
 			   
