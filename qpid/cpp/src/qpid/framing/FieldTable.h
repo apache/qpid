@@ -71,8 +71,8 @@ class FieldTable
     std::string getString(const std::string& name) const;
     int getInt(const std::string& name) const;
 //    uint64_t getTimestamp(const std::string& name) const;
-    void getTable(const std::string& name, FieldTable& value) const;
-    void getArray(const std::string& name, Array& value) const;
+    bool getTable(const std::string& name, FieldTable& value) const;
+    bool getArray(const std::string& name, Array& value) const;
 //    //void getDecimal(string& name, xxx& value);
 //    //void erase(const std::string& name);
     
