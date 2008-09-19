@@ -138,6 +138,14 @@ IntegerValue::IntegerValue(int v) :
 {
 }
 
+FloatValue::FloatValue(float v) :
+    FieldValue(0x23, new FixedWidthValue<4>(reinterpret_cast<uint8_t*>(&v)))
+{}
+
+DoubleValue::DoubleValue(double v) :
+    FieldValue(0x33, new FixedWidthValue<8>(reinterpret_cast<uint8_t*>(&v)))
+{}
+
 TimeValue::TimeValue(uint64_t v) :
     FieldValue(0x32, new FixedWidthValue<8>(v))
 {

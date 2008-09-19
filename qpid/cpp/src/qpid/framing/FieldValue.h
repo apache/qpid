@@ -126,6 +126,10 @@ class FixedWidthValue : public FieldValue::Data {
   public:
     FixedWidthValue() {}
     FixedWidthValue(const uint8_t (&data)[width]) : octets(data) {}
+    FixedWidthValue(const uint8_t* const data)
+    {
+        for (int i = 0; i < width; i++) octets[i] = data[i];
+    }
     FixedWidthValue(uint64_t v)
     {
         for (int i = width; i > 0; --i) {
@@ -133,7 +137,6 @@ class FixedWidthValue : public FieldValue::Data {
         }
         octets[0] = (uint8_t) (0xFF & v);
     }
-
     uint32_t size() const { return width; }
     void encode(Buffer& buffer) { buffer.putRawData(octets, width); }
     void decode(Buffer& buffer) { buffer.getRawData(octets, width); }
@@ -152,6 +155,10 @@ class FixedWidthValue : public FieldValue::Data {
         }
         v |= octets[width-1];
         return v;
+    }
+    void copyInto(uint8_t* const data) const
+    {
+        for (uint i = 0; i < width; ++i) data[i] = octets[i];
     }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
@@ -247,6 +254,16 @@ class Struct32Value : public FieldValue {
     Struct32Value(const std::string& v);
 };
 
+class FloatValue : public FieldValue
+{
+  public:
+    FloatValue(float f);
+};
+class DoubleValue : public FieldValue
+{
+  public:
+    DoubleValue(double f);
+};
 
 /*
  * Basic integer value encodes as signed 32 bit
@@ -284,6 +301,7 @@ bool getEncodedValue(FieldTable::ValuePtr vptr, T& value)
     }
     return false;
 }
+
 
 }} // qpid::framing
 
