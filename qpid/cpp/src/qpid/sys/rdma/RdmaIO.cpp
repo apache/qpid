@@ -62,10 +62,20 @@ namespace Rdma {
 
         // Prepost some recv buffers before we go any further
         for (int i = 0; i<recvBufferCount; ++i) {
+            // Allocate recv buffer
             Buffer* b = qp->createBuffer(bufferSize);
             buffers.push_front(b);
             b->dataCount = b->byteCount;
             qp->postRecv(b);
+        }
+            
+        for (int i = 0; i<xmitBufferCount; ++i) {
+            // Allocate xmit buffer
+            Buffer* b = qp->createBuffer(bufferSize);
+            buffers.push_front(b);
+            bufferQueue.push_front(b);
+            b->dataCount = 0;
+            b->dataStart = 0;
         }
     }
 
@@ -378,18 +388,12 @@ namespace Rdma {
 
     Buffer* AsynchIO::getBuffer() {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferQueueLock);
-        if (bufferQueue.empty()) {
-            Buffer* b = qp->createBuffer(bufferSize);
-            buffers.push_front(b);
-            return b;
-        } else {
-            Buffer* b = bufferQueue.front();
-            bufferQueue.pop_front();
-            b->dataCount = 0;
-            b->dataStart = 0;
-            return b;
-        }
-
+        assert(!bufferQueue.empty());
+        Buffer* b = bufferQueue.front();
+        bufferQueue.pop_front();
+        b->dataCount = 0;
+        b->dataStart = 0;
+        return b;
     }
     
     void AsynchIO::returnBuffer(Buffer* b) {
