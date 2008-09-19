@@ -32,8 +32,8 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     @Override
     protected void setUp() throws Exception
     {
-        arguments = new FieldTable();
-        arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, 3);
+        _arguments = new FieldTable();
+        _arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, 3);
         super.setUp();
     }
 
@@ -41,25 +41,25 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     {
 
         // Enqueue messages in order
-        queue.enqueue(null, createMessage(1L, (byte) 10));
-        queue.enqueue(null, createMessage(2L, (byte) 4));
-        queue.enqueue(null, createMessage(3L, (byte) 0));
+        _queue.enqueue(null, createMessage(1L, (byte) 10));
+        _queue.enqueue(null, createMessage(2L, (byte) 4));
+        _queue.enqueue(null, createMessage(3L, (byte) 0));
         
         // Enqueue messages in reverse order
-        queue.enqueue(null, createMessage(4L, (byte) 0));
-        queue.enqueue(null, createMessage(5L, (byte) 4));
-        queue.enqueue(null, createMessage(6L, (byte) 10));
+        _queue.enqueue(null, createMessage(4L, (byte) 0));
+        _queue.enqueue(null, createMessage(5L, (byte) 4));
+        _queue.enqueue(null, createMessage(6L, (byte) 10));
         
         // Enqueue messages out of order
-        queue.enqueue(null, createMessage(7L, (byte) 4));
-        queue.enqueue(null, createMessage(8L, (byte) 10));
-        queue.enqueue(null, createMessage(9L, (byte) 0));
+        _queue.enqueue(null, createMessage(7L, (byte) 4));
+        _queue.enqueue(null, createMessage(8L, (byte) 10));
+        _queue.enqueue(null, createMessage(9L, (byte) 0));
         
         // Register subscriber
-        queue.registerSubscription(subscription, false);
+        _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
         
-        ArrayList<QueueEntry> msgs = subscription.getMessages();
+        ArrayList<QueueEntry> msgs = _subscription.getMessages();
         assertEquals(new Long(1L), msgs.get(0).getMessage().getMessageId());
         assertEquals(new Long(6L), msgs.get(1).getMessage().getMessageId());
         assertEquals(new Long(8L), msgs.get(2).getMessage().getMessageId());
