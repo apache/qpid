@@ -52,12 +52,8 @@ public class AMQPriorityQueue extends SimpleAMQQueue
         while(subIter.advance() && !entry.isAcquired())
         {
             final Subscription subscription = subIter.getNode().getSubscription();
-            if (subIter.getNode().isDeleted())
-            {
-                continue;
-            }
             QueueEntry subnode = subscription.getLastSeenEntry();
-            while(entry.compareTo(subnode) < 0 && !entry.isAcquired())
+            while(subnode != null && entry.compareTo(subnode) < 0 && !entry.isAcquired())
             {
                 if(subscription.setLastSeenEntry(subnode,entry))
                 {
