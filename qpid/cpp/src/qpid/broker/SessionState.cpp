@@ -50,7 +50,6 @@ SessionState::SessionState(
     Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config) 
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
-      ignoring(false),
       semanticState(*this, *this),
       adapter(semanticState),
       msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
@@ -237,7 +236,6 @@ void SessionState::handleIn(AMQFrame& frame) {
         } else {
             getProxy().getExecution().exception(e.code, commandId, 0, 0, 0, e.what(), FieldTable());
         }
-        ignoring = true;
         handler->sendDetach();
     }
 }

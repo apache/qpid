@@ -114,7 +114,6 @@ class SemanticState : public sys::OutputTask,
 
     SessionContext& session;
     DeliveryAdapter& deliveryAdapter;
-    Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
     uint32_t prefetchSize;    
     uint16_t prefetchCount;    
