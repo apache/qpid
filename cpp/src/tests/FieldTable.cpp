@@ -19,6 +19,7 @@
  *
  */
 #include <iostream>
+#include "qpid/framing/Array.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include <alloca.h>
@@ -80,6 +81,45 @@ QPID_AUTO_TEST_CASE(testAssignment)
     }
     BOOST_CHECK(string("CCCC") == d.getString("A"));
     BOOST_CHECK(IntegerValue(1234) == *d.get("B"));
+}
+
+
+QPID_AUTO_TEST_CASE(testNestedValues)
+{
+    char buff[100];
+    {
+        FieldTable a;
+        FieldTable b;
+        std::vector<std::string> items;
+        items.push_back("one");
+        items.push_back("two");
+        Array c(items);
+        
+        a.setString("id", "A");
+        b.setString("id", "B");
+        a.setTable("B", b);
+        a.setArray("C", c);
+
+
+        Buffer wbuffer(buff, 100);
+        wbuffer.put(a);
+    }
+    {
+        Buffer rbuffer(buff, 100);
+        FieldTable a;
+        FieldTable b;
+        Array c;
+        rbuffer.get(a);
+        BOOST_CHECK(string("A") == a.getString("id"));
+        a.getTable("B", b);
+        BOOST_CHECK(string("B") == b.getString("id"));
+        a.getArray("C", c);
+        std::vector<std::string> items;
+        c.collect(items);
+        BOOST_CHECK((uint) 2 == items.size());
+        BOOST_CHECK(string("one") == items[0]);
+        BOOST_CHECK(string("two") == items[1]);
+    }
 }
 
 QPID_AUTO_TEST_SUITE_END()
