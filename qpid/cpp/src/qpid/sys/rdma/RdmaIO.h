@@ -65,6 +65,9 @@ namespace Rdma {
         ErrorCallback errorCallback;
 
     public:
+        // TODO: Instead of specifying a buffer size specify the amount of memory the AsynchIO class can use
+        // for buffers both read and write (allocate half to each up front) and fail if we cannot allocate that much
+        // locked memory
         AsynchIO(
             QueuePair::intrusive_ptr q,
             int size,
@@ -78,6 +81,7 @@ namespace Rdma {
 
         void start(qpid::sys::Poller::shared_ptr poller);
         bool writable() const;
+        bool bufferAvailable() const;
         void queueWrite(Buffer* buff);
         void notifyPendingWrite();
         void queueWriteClose();
@@ -109,6 +113,9 @@ namespace Rdma {
         return outstandingWrites;
     }
 
+    inline bool AsynchIO::bufferAvailable() const {
+        return !bufferQueue.empty();
+    }
     // These are the parameters necessary to start the conversation
     // * Each peer HAS to allocate buffers of the size of the maximum receive from its peer
     // * Each peer HAS to know the initial "credit" it has for transmitting to its peer 
