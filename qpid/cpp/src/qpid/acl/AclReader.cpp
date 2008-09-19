@@ -207,6 +207,7 @@ void AclReader::aclRule::processName(const std::string& name, const groupMap& gr
 
 AclReader::AclReader() : lineNumber(0), contFlag(false), validationMap(new AclHelper::objectMap) {
     AclHelper::loadValidationMap(validationMap);
+	names.insert("*");
 }
 
 AclReader::~AclReader() {}
