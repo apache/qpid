@@ -45,6 +45,9 @@ import java.util.Map;
 /** Test Case provided by client Non-functional Test NF101: heap exhaustion behaviour */
 public class PriorityTest extends TestCase
 {
+    private static final int TIMEOUT = 1500;
+
+
     private static final Logger _logger = Logger.getLogger(PriorityTest.class);
 
 
@@ -190,31 +193,31 @@ public class PriorityTest extends TestCase
         consumer = consumerSession.createConsumer(queue);
         consumerConnection.start();
         
-        Message msg = consumer.receive(500);
+        Message msg = consumer.receive(TIMEOUT);
         assertEquals(1, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(5, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(9, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(12, msg.getIntProperty("msg"));
         
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(2, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(4, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(7, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(11, msg.getIntProperty("msg"));
         
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(3, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(6, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(8, msg.getIntProperty("msg"));
-        msg = consumer.receive(500);
+        msg = consumer.receive(TIMEOUT);
         assertEquals(10, msg.getIntProperty("msg"));
     }
 
