@@ -23,10 +23,10 @@
 #include <qpid/management/ManagementObject.h>
 #include <qpid/agent/ManagementAgent.h>
 #include <qpid/sys/Mutex.h>
-#include "Parent.h"
-#include "Child.h"
-#include "ArgsParentCreate_child.h"
-#include "Package.h"
+#include "qmf/org/apache/qpid/agent/example/Parent.h"
+#include "qmf/org/apache/qpid/agent/example/Child.h"
+#include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
+#include "qmf/org/apache/qpid/agent/example/Package.h"
 
 #include <unistd.h>
 #include <cstdlib>
