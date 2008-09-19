@@ -486,7 +486,7 @@ void AclReader::printRules() const {
 bool AclReader::checkName(const std::string& name) {
     for (unsigned i=0; i<name.size(); i++) {
         const char ch = name.at(i);
-        if (!std::isalnum(ch) && ch != '-' && ch != '_') return false;
+        if (!std::isalnum(ch) && ch != '-' && ch != '_' && ch != '@') return false;
     }
     return true;
 }
