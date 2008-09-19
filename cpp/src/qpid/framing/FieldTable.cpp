@@ -123,21 +123,12 @@ int FieldTable::getInt(const std::string& name) const {
 //    return getValue<uint64_t>(name);
 //}
 
-void FieldTable::getTable(const std::string& name, FieldTable& value) const {
-    FieldTable::ValuePtr vptr = get(name);
-    if (vptr) {
-        value = vptr->get<const FieldTable&>();
-    }
+bool FieldTable::getTable(const std::string& name, FieldTable& value) const {
+    return getEncodedValue<FieldTable>(get(name), value);
 }
 
-void FieldTable::getArray(const std::string& name, Array& value) const {
-    FieldTable::ValuePtr vptr = get(name);
-    if (vptr) {
-        const EncodedValue<Array>* ev = dynamic_cast< EncodedValue<Array>* >(&(vptr->getData()));    
-        if (ev != 0) {
-            value = ev->getValue(); 
-        }
-    }
+bool FieldTable::getArray(const std::string& name, Array& value) const {
+    return getEncodedValue<Array>(get(name), value);
 }
 
 void FieldTable::encode(Buffer& buffer) const{    
