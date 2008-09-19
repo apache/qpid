@@ -116,7 +116,6 @@ class SessionState : public qpid::SessionState,
     Broker& broker;
     SessionHandler* handler;    
     sys::AbsTime expiry;        // Used by SessionManager.
-    bool ignoring;
     SemanticState semanticState;
     SessionAdapter adapter;
     MessageBuilder msgBuilder;
