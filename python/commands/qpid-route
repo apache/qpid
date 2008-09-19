@@ -154,7 +154,7 @@ class RouteManager:
         if res.status == 4:
             raise Exception("Can't create a durable route on a non-durable link")
         if _verbose:
-            print "Bridge method returned:", res.status, res.statusText
+            print "Bridge method returned:", res.status, res.text
 
     def DelRoute (self, srcBroker, exchange, routingKey):
         self.src = qmfconsole.BrokerURL(srcBroker)
@@ -171,7 +171,7 @@ class RouteManager:
                     print "Closing bridge..."
                 res = bridge.close()
                 if res.status != 0:
-                    raise Exception("Error closing bridge: %d - %s" % (res.status, res.statusText))
+                    raise Exception("Error closing bridge: %d - %s" % (res.status, res.text))
                 if len (bridges) == 1 and _dellink:
                     link = self.getLink ()
                     if link == None:
@@ -180,7 +180,7 @@ class RouteManager:
                         print "Last bridge on link, closing link..."
                     res = link.close()
                     if res.status != 0:
-                        raise Exception("Error closing link: %d - %s" % (res.status, res.statusText))
+                        raise Exception("Error closing link: %d - %s" % (res.status, res.text))
                 sys.exit (0)
         if not _quiet:
             raise Exception("Route not found")
@@ -213,7 +213,7 @@ class RouteManager:
                     print "Deleting Bridge: %s:%d %s %s... " % (myLink.host, myLink.port, bridge.dest, bridge.key),
             res = bridge.close()
             if res.status != 0:
-                print "Error: %d - %s" % (res.status, res.statusText)
+                print "Error: %d - %s" % (res.status, res.text)
             elif _verbose:
                 print "Ok"
 
@@ -224,7 +224,7 @@ class RouteManager:
                     print "Deleting Link: %s:%d... " % (link.host, link.port),
                 res = link.close()
                 if res.status != 0:
-                    print "Error: %d - %s" % (res.status, res.statusText)
+                    print "Error: %d - %s" % (res.status, res.text)
                 elif _verbose:
                     print "Ok"
 
