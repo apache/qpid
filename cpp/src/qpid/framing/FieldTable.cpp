@@ -87,6 +87,14 @@ void FieldTable::setArray(const std::string& name, const Array& value)
     values[name] = ValuePtr(new ArrayValue(value));
 }
 
+void FieldTable::setFloat(const std::string& name, float value){
+    values[name] = ValuePtr(new FloatValue(value));
+}
+
+void FieldTable::setDouble(const std::string& name, double value){
+    values[name] = ValuePtr(new DoubleValue(value));
+}
+
 FieldTable::ValuePtr FieldTable::get(const std::string& name) const
 {
     ValuePtr value;
@@ -129,6 +137,27 @@ bool FieldTable::getTable(const std::string& name, FieldTable& value) const {
 
 bool FieldTable::getArray(const std::string& name, Array& value) const {
     return getEncodedValue<Array>(get(name), value);
+}
+
+template <class T, int width, uint8_t typecode>
+bool getRawFixedWidthValue(FieldTable::ValuePtr vptr, T& value) 
+{
+    if (vptr && vptr->getType() == typecode) {
+        FixedWidthValue<width>* fwv = dynamic_cast< FixedWidthValue<width>* >(&vptr->getData());
+        if (fwv) {
+            fwv->copyInto(reinterpret_cast<uint8_t*>(&value));
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FieldTable::getFloat(const std::string& name, float& value) const {    
+    return getRawFixedWidthValue<float, 4, 0x23>(get(name), value);
+}
+
+bool FieldTable::getDouble(const std::string& name, double& value) const {    
+    return getRawFixedWidthValue<double, 8, 0x33>(get(name), value);
 }
 
 void FieldTable::encode(Buffer& buffer) const{    

@@ -122,4 +122,39 @@ QPID_AUTO_TEST_CASE(testNestedValues)
     }
 }
 
+QPID_AUTO_TEST_CASE(testFloatAndDouble)
+{
+    char buff[100];
+    float f = 5.672;
+    double d = 56.720001;
+    {
+        FieldTable a;
+        a.setString("string", "abc");
+        a.setInt("int", 5672);
+        a.setFloat("float", f);
+        a.setDouble("double", d);
+
+        Buffer wbuffer(buff, 100);
+        wbuffer.put(a);
+    }
+    {
+        Buffer rbuffer(buff, 100);
+        FieldTable a;
+        rbuffer.get(a);
+        BOOST_CHECK(string("abc") == a.getString("string"));
+        BOOST_CHECK(5672 == a.getInt("int"));
+        float f2;
+        BOOST_CHECK(!a.getFloat("string", f2));
+        BOOST_CHECK(!a.getFloat("int", f2));
+        BOOST_CHECK(a.getFloat("float", f2));
+        BOOST_CHECK(f2 == f);
+
+        double d2;
+        BOOST_CHECK(!a.getDouble("string", d2));
+        BOOST_CHECK(!a.getDouble("int", d2));
+        BOOST_CHECK(a.getDouble("double", d2));
+        BOOST_CHECK(d2 == d);
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
