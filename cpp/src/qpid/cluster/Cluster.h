@@ -34,8 +34,11 @@
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/bind.hpp>
 
+#include <algorithm>
 #include <vector>
+#include <map>
 
 namespace qpid {
 namespace cluster {
@@ -93,6 +96,11 @@ class Cluster : private Cpg::Handler, public management::Manageable
     broker::Broker& getBroker();
 
     void setDumpComplete();
+
+    template <class F> void eachConnection(const F& f) {
+        std::for_each(connections.begin(), connections.end(),
+                      boost::bind(f, boost::bind(&ConnectionMap::value_type::second, _1)));
+    }
     
   private:
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
