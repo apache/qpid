@@ -85,7 +85,7 @@ public class PriorityTest extends TestCase
 
         context = factory.getInitialContext(env);
         producerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
-        producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        producerSession = producerConnection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
         producerConnection.start();
         
@@ -124,6 +124,7 @@ public class PriorityTest extends TestCase
             producer.setPriority(msg % 10);
             producer.send(nextMessage(msg, false, producerSession, producer));
         }
+        producerSession.commit();
         producer.close();
         producerSession.close();
         producerConnection.close();
@@ -189,7 +190,8 @@ public class PriorityTest extends TestCase
         producer.send(nextMessage(11, false, producerSession, producer));
         producer.setPriority(9);
         producer.send(nextMessage(12, false, producerSession, producer));
-
+        producerSession.commit();
+        
         consumer = consumerSession.createConsumer(queue);
         consumerConnection.start();
         
