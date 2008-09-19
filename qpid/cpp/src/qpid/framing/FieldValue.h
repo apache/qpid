@@ -22,8 +22,9 @@
  */
 
 #include "qpid/Exception.h"
-#include "Buffer.h"
 #include "amqp_types.h"
+#include "Buffer.h"
+#include "FieldTable.h"
 
 #include "assert.h"
 
@@ -34,6 +35,7 @@
 namespace qpid {
 namespace framing {
 
+//class Array;
 /**
  * Exception that is the base exception for all field table errors.
  * 
@@ -199,6 +201,42 @@ class VariableWidthValue : public FieldValue::Data {
     void print(std::ostream& o) const { o << "V" << lenwidth << ":" << octets.size() << ":"; };
 };
 
+template <class T> 
+class EncodedValue : public FieldValue::Data {
+    T value;
+  public:
+
+    EncodedValue() {}
+    EncodedValue(const T& v) : value(v) {}
+
+    T& getValue() { return value; }
+    const T& getValue() const { return value; }
+
+    uint32_t size() const { return value.size(); } 
+
+    void encode(Buffer& buffer) {
+        value.encode(buffer);
+    };
+    void decode(Buffer& buffer) {
+        value.decode(buffer);
+    }
+    bool operator==(const Data& d) const {
+        const EncodedValue<T>* rhs = dynamic_cast< const EncodedValue<T>* >(&d);
+        if (rhs == 0) return false;
+        else return value==rhs->value; 
+    }
+
+    void print(std::ostream& o) const { o << "[" << value << "]"; };
+};
+
+template <>
+inline const FieldTable& FieldValue::get<const FieldTable&>() const 
+{ 
+    const EncodedValue<FieldTable>* ev = dynamic_cast< EncodedValue<FieldTable>* >(data.get());    
+    if (ev == 0) throw InvalidConversionException();
+    return ev->getValue(); 
+}
+
 /*
  * Basic string value encodes as iso-8859-15 with 32 bit length
  */ 
@@ -234,6 +272,11 @@ class TimeValue : public FieldValue {
 class FieldTableValue : public FieldValue {
   public:
     FieldTableValue(const FieldTable&);
+};
+
+class ArrayValue : public FieldValue {
+  public:
+    ArrayValue(const Array&);
 };
 
 }} // qpid::framing
