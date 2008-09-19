@@ -19,6 +19,7 @@
  *
  */
 #include "FieldTable.h"
+#include "Array.h"
 #include "Buffer.h"
 #include "FieldValue.h"
 #include "qpid/Exception.h"
@@ -77,8 +78,13 @@ void FieldTable::setTimestamp(const std::string& name, uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
 }
 
-void FieldTable::setTable(const std::string& name, const FieldTable& value){
+void FieldTable::setTable(const std::string& name, const FieldTable& value)
+{
     values[name] = ValuePtr(new FieldTableValue(value));
+}
+void FieldTable::setArray(const std::string& name, const Array& value)
+{
+    values[name] = ValuePtr(new ArrayValue(value));
 }
 
 FieldTable::ValuePtr FieldTable::get(const std::string& name) const
@@ -116,10 +122,23 @@ int FieldTable::getInt(const std::string& name) const {
 //uint64_t FieldTable::getTimestamp(const std::string& name) const {
 //    return getValue<uint64_t>(name);
 //}
-//
-//void FieldTable::getTable(const std::string& name, FieldTable& value) const {
-//    value = getValue<FieldTable>(name);
-//}
+
+void FieldTable::getTable(const std::string& name, FieldTable& value) const {
+    FieldTable::ValuePtr vptr = get(name);
+    if (vptr) {
+        value = vptr->get<const FieldTable&>();
+    }
+}
+
+void FieldTable::getArray(const std::string& name, Array& value) const {
+    FieldTable::ValuePtr vptr = get(name);
+    if (vptr) {
+        const EncodedValue<Array>* ev = dynamic_cast< EncodedValue<Array>* >(&(vptr->getData()));    
+        if (ev != 0) {
+            value = ev->getValue(); 
+        }
+    }
+}
 
 void FieldTable::encode(Buffer& buffer) const{    
     buffer.putLong(size() - 4);

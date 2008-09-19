@@ -34,6 +34,7 @@ namespace qpid {
      */
 namespace framing {
 
+class Array;
 class FieldValue;
 class Buffer;
 
@@ -64,12 +65,14 @@ class FieldTable
     void setInt(const std::string& name, int value);
     void setTimestamp(const std::string& name, uint64_t value);
     void setTable(const std::string& name, const FieldTable& value);
+    void setArray(const std::string& name, const Array& value);
     //void setDecimal(string& name, xxx& value);
 
     std::string getString(const std::string& name) const;
     int getInt(const std::string& name) const;
 //    uint64_t getTimestamp(const std::string& name) const;
-//    void getTable(const std::string& name, FieldTable& value) const;
+    void getTable(const std::string& name, FieldTable& value) const;
+    void getArray(const std::string& name, Array& value) const;
 //    //void getDecimal(string& name, xxx& value);
 //    //void erase(const std::string& name);
     
