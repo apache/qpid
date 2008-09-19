@@ -44,15 +44,15 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class SimpleAMQQueueTest extends TestCase
 {
 
-    protected SimpleAMQQueue queue;
-    protected VirtualHost virtualHost;
-    protected MessageStore store = new TestableMemoryMessageStore();
-    protected AMQShortString qname = new AMQShortString("qname");
-    protected AMQShortString owner = new AMQShortString("owner");
-    protected AMQShortString routingKey = new AMQShortString("routing key");
-    protected DirectExchange exchange = new DirectExchange();
-    protected MockSubscription subscription = new MockSubscription();
-    protected FieldTable arguments = null;
+    protected SimpleAMQQueue _queue;
+    protected VirtualHost _virtualHost;
+    protected MessageStore _store = new TestableMemoryMessageStore();
+    protected AMQShortString _qname = new AMQShortString("qname");
+    protected AMQShortString _owner = new AMQShortString("owner");
+    protected AMQShortString _routingKey = new AMQShortString("routing key");
+    protected DirectExchange _exchange = new DirectExchange();
+    protected MockSubscription _subscription = new MockSubscription();
+    protected FieldTable _arguments = null;
     
     MessagePublishInfo info = new MessagePublishInfo()
     {
@@ -90,25 +90,25 @@ public class SimpleAMQQueueTest extends TestCase
         //Create Application Registry for test
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance(1);
 
-        virtualHost = new VirtualHost("vhost", store);
-        applicationRegistry.getVirtualHostRegistry().registerVirtualHost(virtualHost);
+        _virtualHost = new VirtualHost("vhost", _store);
+        applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
-        queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(qname, false, owner, false, virtualHost, arguments);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, _virtualHost, _arguments);
     }
 
     @Override
     protected void tearDown()
     {
-        queue.stop();
+        _queue.stop();
         ApplicationRegistry.remove(1);
     }
 
     public void testCreateQueue() throws AMQException
     {
-        queue.stop();
+        _queue.stop();
         try {
-            queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, owner, false, virtualHost, arguments );
-            assertNull("Queue was created", queue);
+            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, _virtualHost, _arguments );
+            assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
         {
@@ -117,8 +117,8 @@ public class SimpleAMQQueueTest extends TestCase
         }
         
         try {
-            queue = new SimpleAMQQueue(qname, false, owner, false, null);
-            assertNull("Queue was created", queue);
+            _queue = new SimpleAMQQueue(_qname, false, _owner, false, null);
+            assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
         {
@@ -126,38 +126,38 @@ public class SimpleAMQQueueTest extends TestCase
                     e.getMessage().contains("Host"));
         }
 
-        queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(qname, false, owner, false, 
-                                                                virtualHost, arguments);
-        assertNotNull("Queue was not created", queue);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, 
+                                                                _virtualHost, _arguments);
+        assertNotNull("Queue was not created", _queue);
     }
     
     public void testGetVirtualHost()
     {
-        assertEquals("Virtual host was wrong", virtualHost, queue.getVirtualHost());
+        assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
     }
     
     public void testBinding()
     {
         try
         {
-            queue.bind(exchange, routingKey, null);
+            _queue.bind(_exchange, _routingKey, null);
             assertTrue("Routing key was not bound", 
-                            exchange.getBindings().containsKey(routingKey));
+                            _exchange.getBindings().containsKey(_routingKey));
             assertEquals("Queue was not bound to key", 
-                        exchange.getBindings().get(routingKey).get(0),
-                        queue);
+                        _exchange.getBindings().get(_routingKey).get(0),
+                        _queue);
             assertEquals("Exchange binding count", 1, 
-                    queue.getExchangeBindings().size());
-            assertEquals("Wrong exchange bound", routingKey, 
-                    queue.getExchangeBindings().get(0).getRoutingKey());
-            assertEquals("Wrong exchange bound", exchange, 
-                    queue.getExchangeBindings().get(0).getExchange());
+                    _queue.getExchangeBindings().size());
+            assertEquals("Wrong exchange bound", _routingKey, 
+                    _queue.getExchangeBindings().get(0).getRoutingKey());
+            assertEquals("Wrong exchange bound", _exchange, 
+                    _queue.getExchangeBindings().get(0).getExchange());
             
-            queue.unBind(exchange, routingKey, null);
+            _queue.unBind(_exchange, _routingKey, null);
             assertFalse("Routing key was still bound", 
-                    exchange.getBindings().containsKey(routingKey));
+                    _exchange.getBindings().containsKey(_routingKey));
             assertNull("Routing key was not empty", 
-                    exchange.getBindings().get(routingKey));
+                    _exchange.getBindings().get(_routingKey));
         }
         catch (AMQException e)
         {
@@ -168,63 +168,63 @@ public class SimpleAMQQueueTest extends TestCase
     public void testSubscription() throws AMQException
     {
         // Check adding a subscription adds it to the queue
-        queue.registerSubscription(subscription, false);
-        assertEquals("Subscription did not get queue", queue, 
-                      subscription.getQueue());
+        _queue.registerSubscription(_subscription, false);
+        assertEquals("Subscription did not get queue", _queue, 
+                      _subscription.getQueue());
         assertEquals("Queue does not have consumer", 1, 
-                     queue.getConsumerCount());
+                     _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1, 
-                queue.getActiveConsumerCount());
+                _queue.getActiveConsumerCount());
         
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
-        queue.enqueue(null, messageA);
-        assertEquals(messageA, subscription.getLastSeenEntry().getMessage());
+        _queue.enqueue(null, messageA);
+        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
         
         // Check removing the subscription removes it's information from the queue
-        queue.unregisterSubscription(subscription);
-        assertTrue("Subscription still had queue", subscription.isClosed());
-        assertFalse("Queue still has consumer", 1 == queue.getConsumerCount());
+        _queue.unregisterSubscription(_subscription);
+        assertTrue("Subscription still had queue", _subscription.isClosed());
+        assertFalse("Queue still has consumer", 1 == _queue.getConsumerCount());
         assertFalse("Queue still has active consumer", 
-                1 == queue.getActiveConsumerCount());
+                1 == _queue.getActiveConsumerCount());
         
         AMQMessage messageB = createMessage(new Long (25));
-        queue.enqueue(null, messageB);
-        QueueEntry entry = subscription.getLastSeenEntry();
+        _queue.enqueue(null, messageB);
+        QueueEntry entry = _subscription.getLastSeenEntry();
         assertNull(entry);
     }
     
     public void testQueueNoSubscriber() throws AMQException, InterruptedException
     {
         AMQMessage messageA = createMessage(new Long(24));
-        queue.enqueue(null, messageA);
-        queue.registerSubscription(subscription, false);
+        _queue.enqueue(null, messageA);
+        _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
-        assertEquals(messageA, subscription.getLastSeenEntry().getMessage());
+        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
     }
 
     public void testExclusiveConsumer() throws AMQException
     {
         // Check adding an exclusive subscription adds it to the queue
-        queue.registerSubscription(subscription, true);
-        assertEquals("Subscription did not get queue", queue, 
-                subscription.getQueue());
+        _queue.registerSubscription(_subscription, true);
+        assertEquals("Subscription did not get queue", _queue, 
+                _subscription.getQueue());
         assertEquals("Queue does not have consumer", 1, 
-                queue.getConsumerCount());
+                _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1, 
-                queue.getActiveConsumerCount());
+                _queue.getActiveConsumerCount());
 
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
-        queue.enqueue(null, messageA);
-        assertEquals(messageA, subscription.getLastSeenEntry().getMessage());
+        _queue.enqueue(null, messageA);
+        assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
         
         // Check we cannot add a second subscriber to the queue
         Subscription subB = new MockSubscription();
         Exception ex = null;
         try
         {
-            queue.registerSubscription(subB, false);
+            _queue.registerSubscription(subB, false);
         }
         catch (AMQException e)
         {
@@ -235,11 +235,11 @@ public class SimpleAMQQueueTest extends TestCase
 
         // Check we cannot add an exclusive subscriber to a queue with an 
         // existing subscription
-        queue.unregisterSubscription(subscription);
-        queue.registerSubscription(subscription, false);
+        _queue.unregisterSubscription(_subscription);
+        _queue.registerSubscription(_subscription, false);
         try
         {
-            queue.registerSubscription(subB, true);
+            _queue.registerSubscription(subB, true);
         }
         catch (AMQException e)
         {
@@ -250,25 +250,25 @@ public class SimpleAMQQueueTest extends TestCase
     
     public void testAutoDeleteQueue() throws Exception 
     {
-       queue.stop();
-       queue = new SimpleAMQQueue(qname, false, owner, true, virtualHost);
-       queue.registerSubscription(subscription, false);
+       _queue.stop();
+       _queue = new SimpleAMQQueue(_qname, false, _owner, true, _virtualHost);
+       _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
-       queue.enqueue(null, message);
-       queue.unregisterSubscription(subscription);
+       _queue.enqueue(null, message);
+       _queue.unregisterSubscription(_subscription);
        assertTrue("Queue was not deleted when subscription was removed",
-                  queue.isDeleted());
+                  _queue.isDeleted());
     }
     
     public void testResend() throws Exception
     {
-        queue.registerSubscription(subscription, false);
+        _queue.registerSubscription(_subscription, false);
         Long id = new Long(26);
         AMQMessage message = createMessage(id);
-        queue.enqueue(null, message);
-        QueueEntry entry = subscription.getLastSeenEntry();
+        _queue.enqueue(null, message);
+        QueueEntry entry = _subscription.getLastSeenEntry();
         entry.setRedelivered(true);
-        queue.resend(entry, subscription);
+        _queue.resend(entry, _subscription);
         
     }
     
@@ -279,9 +279,9 @@ public class SimpleAMQQueueTest extends TestCase
         AMQMessage message = createMessage(messageId);
 
         // Put message on queue
-        queue.enqueue(null, message);
+        _queue.enqueue(null, message);
         // Get message id
-        Long testmsgid = queue.getMessagesOnTheQueue(1).get(0);
+        Long testmsgid = _queue.getMessagesOnTheQueue(1).get(0);
 
         // Check message id
         assertEquals("Message ID was wrong", messageId, testmsgid);
@@ -295,10 +295,10 @@ public class SimpleAMQQueueTest extends TestCase
             Long messageId = new Long(i);
             AMQMessage message = createMessage(messageId);
             // Put message on queue
-            queue.enqueue(null, message);
+            _queue.enqueue(null, message);
         }
         // Get message ids
-        List<Long> msgids = queue.getMessagesOnTheQueue(5);
+        List<Long> msgids = _queue.getMessagesOnTheQueue(5);
 
         // Check message id
         for (int i = 0; i < 5; i++)
@@ -316,10 +316,10 @@ public class SimpleAMQQueueTest extends TestCase
             Long messageId = new Long(i);
             AMQMessage message = createMessage(messageId);
             // Put message on queue
-            queue.enqueue(null, message);
+            _queue.enqueue(null, message);
         }
         // Get message ids
-        List<Long> msgids = queue.getMessagesOnTheQueue(5, 5);
+        List<Long> msgids = _queue.getMessagesOnTheQueue(5, 5);
 
         // Check message id
         for (int i = 0; i < 5; i++)
