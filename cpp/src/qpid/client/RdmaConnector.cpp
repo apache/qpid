@@ -305,6 +305,7 @@ void RdmaConnector::Writer::init(std::string id, Rdma::AsynchIO* a) {
     Mutex::ScopedLock l(lock);
     identifier = id;
     aio = a;
+    assert(aio->bufferAvailable());
     newBuffer();
 }
 void RdmaConnector::Writer::handle(framing::AMQFrame& frame) { 
@@ -346,7 +347,7 @@ void RdmaConnector::Writer::write(Rdma::AsynchIO&) {
     if (lastEof==0)
         return;
     size_t bytesWritten = 0;
-    while (aio->writable() && !frames.empty()) {
+    while (aio->writable() && aio->bufferAvailable() && !frames.empty()) {
         const AMQFrame* frame = &frames.front();        
         uint32_t size = frame->size();
         while (size <= encode.available()) {

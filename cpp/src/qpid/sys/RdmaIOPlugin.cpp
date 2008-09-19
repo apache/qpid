@@ -96,7 +96,7 @@ RdmaIOHandler::~RdmaIOHandler() {
 
 void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 {
-    QPID_LOG(debug, "SENT [" << identifier << "] INIT(" << data << ")");
+    QPID_LOG(debug, "Rdma: SENT [" << identifier << "] INIT(" << data << ")");
     Rdma::Buffer* buff = aio->getBuffer();
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
@@ -113,7 +113,9 @@ void RdmaIOHandler::activateOutput() {
 }
 
 void RdmaIOHandler::idle(Rdma::AsynchIO&) {
-    if (!aio->writable()) {
+    // TODO: Shouldn't need this test as idle() should only ever be called when
+    // the connection is writable anyway
+    if ( !(aio->writable() && aio->bufferAvailable()) ) {
         return;
     }
     if (isClient && codec == 0) {
@@ -138,7 +140,7 @@ void RdmaIOHandler::error(Rdma::AsynchIO&) {
 }
 
 void RdmaIOHandler::full(Rdma::AsynchIO&) {
-    QPID_LOG(debug, "buffer full [" << identifier << "]");
+    QPID_LOG(debug, "Rdma: buffer full [" << identifier << "]");
 }
 
 // The logic here is subtly different from TCP as RDMA is message oriented
@@ -163,7 +165,7 @@ void RdmaIOHandler::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             decoded = in.getPosition();
-            QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "Rdma: RECV [" << identifier << "] INIT(" << protocolInit << ")");
             try {
                 codec = factory->create(protocolInit.getVersion(), *this, identifier);
                 if (!codec) {
@@ -231,19 +233,28 @@ void RdmaIOProtocolFactory::established(Poller::shared_ptr poller, Rdma::Connect
 
 bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp,
         ConnectionCodec::Factory* f) {
-    RdmaIOHandler* async = new RdmaIOHandler(ci, f);
-    Rdma::AsynchIO* aio =
-        new Rdma::AsynchIO(ci->getQueuePair(),
-            cp.maxRecvBufferSize, cp.initialXmitCredit, Rdma::DEFAULT_WR_ENTRIES,
-            boost::bind(&RdmaIOHandler::readbuff, async, _1, _2),
-            boost::bind(&RdmaIOHandler::idle, async, _1),
-            0, // boost::bind(&RdmaIOHandler::full, async, _1),
-            boost::bind(&RdmaIOHandler::error, async, _1));
-    async->init(aio);
+    try {
+        RdmaIOHandler* async = new RdmaIOHandler(ci, f);
+        Rdma::AsynchIO* aio =
+            new Rdma::AsynchIO(ci->getQueuePair(),
+                cp.maxRecvBufferSize, cp.initialXmitCredit, Rdma::DEFAULT_WR_ENTRIES,
+                boost::bind(&RdmaIOHandler::readbuff, async, _1, _2),
+                boost::bind(&RdmaIOHandler::idle, async, _1),
+                0, // boost::bind(&RdmaIOHandler::full, async, _1),
+                boost::bind(&RdmaIOHandler::error, async, _1));
+        async->init(aio);
+    
+        // Record aio so we can get it back from a connection
+        ci->addContext(async);
+        return true;
+    } catch (const Rdma::Exception& e) {
+        QPID_LOG(error, "Rdma: Cannot accept new connection (Rdma excepion): " << e.what());
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Rdma: Cannot accept new connection (unknown exception): " << e.what());
+    }
 
-    // Record aio so we can get it back from a connection
-    ci->addContext(async);
-    return true;
+    // If we get here we caught an exception so reject connection
+    return false;
 }
 
 void RdmaIOProtocolFactory::connectionError(Rdma::Connection::intrusive_ptr&, Rdma::ErrorType) {
@@ -312,7 +323,7 @@ void RdmaIOProtocolFactory::connect(
     string port = ss.str();
     int n = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
     if (n<0) {
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
+        throw Exception(QPID_MSG("Rdma: Cannot resolve " << host << ": " << ::gai_strerror(n)));
     }
 
     Rdma::Connector c(
