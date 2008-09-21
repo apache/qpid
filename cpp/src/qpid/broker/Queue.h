@@ -101,7 +101,7 @@ namespace qpid {
 
             bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
-            void dequeued(boost::intrusive_ptr<Message>& msg);
+            void dequeued(const QueuedMessage& msg);
             void popAndDequeue();
 
         public:
@@ -180,7 +180,7 @@ namespace qpid {
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            bool dequeue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
+            bool dequeue(TransactionContext* ctxt, const QueuedMessage &msg);
 
             /**
              * Gets the next available message 
@@ -219,6 +219,8 @@ namespace qpid {
             template <class F> void eachBinding(const F& f) {
                 bindings.eachBinding(f);
             }
+
+            bool releaseMessageContent(const QueuedMessage&);
         };
     }
 }

@@ -464,6 +464,7 @@ nobase_include_HEADERS = \
   qpid/broker/PersistableQueue.h \
   qpid/broker/Prefetch.h \
   qpid/broker/QueueBindings.h \
+  qpid/broker/QueuedMessage.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.h \
   qpid/broker/RecoverableConfig.h \

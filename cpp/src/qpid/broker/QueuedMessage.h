@@ -18,33 +18,26 @@
  * under the License.
  *
  */
-#ifndef _Consumer_
-#define _Consumer_
+#ifndef _QueuedMessage_
+#define _QueuedMessage_
 
 #include "Message.h"
-#include "QueuedMessage.h"
-#include "OwnershipToken.h"
 
 namespace qpid {
 namespace broker {
 
 class Queue;
 
-class Consumer {
-    const bool acquires;
-  public:
-    typedef boost::shared_ptr<Consumer> shared_ptr;            
-    
+struct QueuedMessage
+{
+    boost::intrusive_ptr<Message> payload;
     framing::SequenceNumber position;
-    
-    Consumer(bool preAcquires = true) : acquires(preAcquires) {}
-    bool preAcquires() const { return acquires; }
-    virtual bool deliver(QueuedMessage& msg) = 0;
-    virtual void notify() = 0;
-    virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
-    virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
-    virtual OwnershipToken* getSession() = 0;
-    virtual ~Consumer(){}
+    Queue* queue;
+
+    QueuedMessage() : queue(0) {}
+    QueuedMessage(Queue* q, boost::intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
+        payload(msg), position(sn), queue(q) {}
+    QueuedMessage(Queue* q) : queue(q) {}
 };
 
 }}
