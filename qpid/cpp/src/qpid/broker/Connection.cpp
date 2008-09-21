@@ -165,6 +165,12 @@ void Connection::close(
     getOutput().close();
 }
 
+// Send a close to the client but keep the channels. Used by cluster.
+void Connection::sendClose() {
+    adapter.close(200, "OK", 0, 0);
+    getOutput().close();
+}
+
 void Connection::idleOut(){}
 
 void Connection::idleIn(){}

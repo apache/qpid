@@ -56,16 +56,12 @@ class Event {
     char* getData() { return data; }
     const char* getData() const { return data; }
 
-    boost::intrusive_ptr<Connection> getConnection() const { return connection; }
-    void setConnection(const boost::intrusive_ptr<Connection>& c) { connection=c; }
-
     operator framing::Buffer() const;
 
   private:
     static const size_t OVERHEAD;
     EventType type;
     ConnectionId connectionId;
-    boost::intrusive_ptr<Connection> connection;
     size_t size;
     RefCountedBuffer::pointer data;
 };

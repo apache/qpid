@@ -28,25 +28,29 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/sys/AggregateOutput.h"
-#include "qpid/sys/ConnectionOutputHandler.h"
-#include "qpid/sys/ConnectionInputHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
-#include "qpid/framing/ProtocolVersion.h"
 #include "Broker.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Exception.h"
 #include "ConnectionHandler.h"
 #include "ConnectionState.h"
 #include "SessionHandler.h"
-#include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Connection.h"
+#include "qpid/Exception.h"
 #include "qpid/RefCounted.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/ptr_map.h"
+#include "qpid/sys/AggregateOutput.h"
+#include "qpid/sys/ConnectionInputHandler.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/Socket.h"
+#include "qpid/sys/TimeoutHandler.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/bind.hpp>
+
+#include <algorithm>
 
 namespace qpid {
 namespace broker {
@@ -93,6 +97,13 @@ class Connection : public sys::ConnectionInputHandler,
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
 
+    template <class F> void eachSessionHandler(const F& f) {
+        for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
+            f(*ptr_map_ptr(i));
+    }
+
+    void sendClose();
+    
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;

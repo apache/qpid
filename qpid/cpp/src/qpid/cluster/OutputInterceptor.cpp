@@ -39,13 +39,18 @@ OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutp
 void OutputInterceptor::send(framing::AMQFrame& f) {
     Locker l(lock); 
     next->send(f);
-    sent += f.size();
+    if (!parent.isCatchUp())
+        sent += f.size();
 }
 
 void OutputInterceptor::activateOutput() {
-    Locker l(lock); 
-    moreOutput = true;
-    sendDoOutput();             
+    Locker l(lock);
+    if (parent.isCatchUp())
+        next->activateOutput();
+    else {
+        moreOutput = true;
+        sendDoOutput();
+    }
 }
 
 // Called in write thread when the IO layer has no more data to write.

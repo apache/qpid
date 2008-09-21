@@ -28,7 +28,7 @@
 namespace qpid {
 
 Exception::Exception(const std::string& msg) throw() : message(msg) {
-    QPID_LOG(debug, "Exception constructed: " << message);
+    QPID_LOG_IF(debug, !msg.empty(), "Exception constructed: " << message);
 }
 
 Exception::~Exception() throw() {}

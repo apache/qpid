@@ -74,7 +74,7 @@ SessionImpl::~SessionImpl() {
     {
         Lock l(state);
         if (state != DETACHED) {
-            QPID_LOG(error, "Session was not closed cleanly");
+            QPID_LOG(warning, "Session was not closed cleanly");
             setState(DETACHED);
             handleClosed();
             state.waitWaiters();

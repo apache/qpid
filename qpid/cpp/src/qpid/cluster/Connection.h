@@ -34,6 +34,8 @@
 #include "qpid/framing/FrameDecoder.h"
 #include "qpid/framing/SequenceNumber.h"
 
+#include <iosfwd>
+
 namespace qpid {
 
 namespace framing { class AMQFrame; }
@@ -59,11 +61,10 @@ class Connection :
     ConnectionId getId() const { return self; }
     broker::Connection& getBrokerConnection() { return connection; }
     bool isLocal() const;
+    bool isShadow() const { return !isLocal(); }
 
     /** True if the connection is in "catch-up" mode: building initial state */
     bool isCatchUp() const { return catchUp; }
-    bool isExCatchUp() const { return exCatchUp; }
-
 
     Cluster& getCluster() { return cluster; }
 
@@ -109,6 +110,7 @@ class Connection :
 
     Cluster& cluster;
     ConnectionId self;
+    bool catchUp;
     NoOpConnectionOutputHandler discardHandler;
     WriteEstimate writeEstimate;
     OutputInterceptor output;
@@ -116,8 +118,8 @@ class Connection :
     broker::Connection connection;
     framing::SequenceNumber mcastSeq;
     framing::SequenceNumber deliverSeq;
-    bool catchUp;
-    bool exCatchUp;
+
+  friend std::ostream& operator<<(std::ostream&, const Connection&);
 };
 
 }} // namespace qpid::cluster

@@ -47,6 +47,7 @@ class JoiningHandler : public ClusterHandler
     void ready(const MemberId&, const std::string& url);
 
     void insert(const boost::intrusive_ptr<Connection>& c);
+    void catchUpClosed(const boost::intrusive_ptr<Connection>& c);
     
   private:
     void checkDumpRequest();
