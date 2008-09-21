@@ -24,11 +24,6 @@
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/AsyncSession.h"
-#include "qpid/broker/Message.h"
-#include "qpid/broker/Queue.h"
-#include "qpid/broker/Exchange.h"
-#include "qpid/broker/QueueRegistry.h"
-#include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/sys/Runnable.h"
 #include <boost/shared_ptr.hpp>
 
@@ -45,16 +40,21 @@ class Exchange;
 class QueueBindings;
 class QueueBinding;
 class QueuedMessage;
+class SessionHandler;
+
 } // namespace broker
 
 namespace cluster {
+
+class Cluster;
+class Connection;
 
 /**
  * A client that dumps the contents of a local broker to a remote one using AMQP.
  */
 class DumpClient : public sys::Runnable {
   public:
-    DumpClient(const Url& url, broker::Broker& donor,
+    DumpClient(const Url& receiver, Cluster& donor,
                const boost::function<void()>& done,
                const boost::function<void(const std::exception&)>& fail);
 
@@ -67,11 +67,14 @@ class DumpClient : public sys::Runnable {
     void dumpExchange(const boost::shared_ptr<broker::Exchange>&);
     void dumpMessage(const broker::QueuedMessage&);
     void dumpBinding(const std::string& queue, const broker::QueueBinding& binding);
+    void dumpConnection(const boost::intrusive_ptr<Connection>& connection);
+    void dumpSession(broker::SessionHandler& s);
 
   private:
-    client::Connection connection;
-    client::AsyncSession session;
-    broker::Broker& donor;
+    Url receiver;
+    Cluster& donor;
+    client::Connection connection, shadowConnection;
+    client::AsyncSession session, shadowSession;
     boost::function<void()> done;
     boost::function<void(const std::exception& e)> failed;
 };

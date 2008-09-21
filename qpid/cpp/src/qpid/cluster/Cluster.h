@@ -64,6 +64,8 @@ class Cluster : private Cpg::Handler, public management::Manageable
 
     void insert(const boost::intrusive_ptr<Connection>&); // Insert a local connection
     void erase(ConnectionId);          // Erase a connection.
+
+    void catchUpClosed(const boost::intrusive_ptr<Connection>&); // Insert a local connection
     
     /** Get the URLs of current cluster members. */
     std::vector<Url> getUrls() const;
@@ -88,8 +90,9 @@ class Cluster : private Cpg::Handler, public management::Manageable
 
     MemberId getSelf() const { return self; }
 
-    void stall();
     void ready();
+    void stall();
+    void unstall();
 
     void shutdown();
 
