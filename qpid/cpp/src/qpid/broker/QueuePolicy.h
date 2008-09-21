@@ -21,40 +21,85 @@
 #ifndef _QueuePolicy_
 #define _QueuePolicy_
 
+#include <deque>
 #include <iostream>
+#include <memory>
+#include "QueuedMessage.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/AtomicValue.h"
+#include "qpid/sys/Mutex.h"
 
 namespace qpid {
-    namespace broker {
-        class QueuePolicy
-        {
-            static const std::string maxCountKey;
-            static const std::string maxSizeKey;
+namespace broker {
+
+class QueuePolicy
+{
+    static uint64_t defaultMaxSize;
+
+    const uint32_t maxCount;
+    const uint64_t maxSize;
+    const std::string type;
+    qpid::sys::AtomicValue<uint32_t> count;
+    qpid::sys::AtomicValue<uint64_t> size;
+    bool policyExceeded;
             
-            static uint64_t defaultMaxSize;
+    static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
+    static std::string getType(const qpid::framing::FieldTable& settings);
 
-            const uint32_t maxCount;
-            const uint64_t maxSize;
-            uint32_t count;
-            uint64_t size;
-            
-            static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
+  public:
+    static const std::string maxCountKey;
+    static const std::string maxSizeKey;
+    static const std::string typeKey;
+    static const std::string REJECT;
+    static const std::string FLOW_TO_DISK;
+    static const std::string RING;
+    static const std::string RING_STRICT;            
 
-        public:
-            QueuePolicy(uint32_t maxCount, uint64_t maxSize);
-            QueuePolicy(const qpid::framing::FieldTable& settings);
-            void enqueued(uint64_t size);
-            void dequeued(uint64_t size);
-            void update(qpid::framing::FieldTable& settings);
-            bool limitExceeded();
-            uint32_t getMaxCount() const { return maxCount; }
-            uint64_t getMaxSize() const { return maxSize; }           
+    virtual ~QueuePolicy() {}
+    void tryEnqueue(const QueuedMessage&);
+    virtual void dequeued(const QueuedMessage&);
+    virtual bool isEnqueued(const QueuedMessage&);
+    virtual bool checkLimit(const QueuedMessage&);
+    void update(qpid::framing::FieldTable& settings);
+    uint32_t getMaxCount() const { return maxCount; }
+    uint64_t getMaxSize() const { return maxSize; }           
 
-            static void setDefaultMaxSize(uint64_t);
-	    friend std::ostream& operator<<(std::ostream&, const QueuePolicy&);
-        };
-    }
-}
+    static std::auto_ptr<QueuePolicy> createQueuePolicy(const qpid::framing::FieldTable& settings);
+    static std::auto_ptr<QueuePolicy> createQueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
+    static void setDefaultMaxSize(uint64_t);
+    friend std::ostream& operator<<(std::ostream&, const QueuePolicy&);
+  protected:
+    QueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
+
+    virtual void enqueued(const QueuedMessage&);
+    void enqueued(uint64_t size);
+    void dequeued(uint64_t size);
+};
+
+
+class FlowToDiskPolicy : public QueuePolicy
+{
+  public:
+    FlowToDiskPolicy(uint32_t maxCount, uint64_t maxSize);
+    bool checkLimit(const QueuedMessage&);
+};
+
+class RingQueuePolicy : public QueuePolicy
+{
+  public:
+    RingQueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = RING);
+    void enqueued(const QueuedMessage&);
+    void dequeued(const QueuedMessage&);
+    bool isEnqueued(const QueuedMessage&);
+    bool checkLimit(const QueuedMessage&);
+  private:
+    typedef std::deque<QueuedMessage> Messages;
+    qpid::sys::Mutex lock;
+    Messages queue;
+    const bool strict;
+};
+
+}}
 
 
 #endif

@@ -130,7 +130,7 @@ void DeliveryRecord::complete()
 
 void DeliveryRecord::accept(TransactionContext* ctxt) {
     if (acquired && !ended) {
-        queue->dequeue(ctxt, msg.payload);
+        queue->dequeue(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }
@@ -138,7 +138,7 @@ void DeliveryRecord::accept(TransactionContext* ctxt) {
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
     if (acquired && !ended) {
-        queue->dequeue(ctxt, msg.payload);
+        queue->dequeue(ctxt, msg);
     }
 }
 

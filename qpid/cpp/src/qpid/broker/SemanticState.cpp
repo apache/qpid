@@ -277,7 +277,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
         parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
     } 
     if (acquire && !ackExpected) {
-        queue->dequeue(0, msg.payload);
+        queue->dequeue(0, msg);
     }
     return true;
 }
