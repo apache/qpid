@@ -47,7 +47,6 @@ void MemberHandler::configChange(
 }
 
 void MemberHandler::deliver(Event& e) {
-    e.setConnection(cluster.getConnection(e.getConnectionId())); 
     cluster.connectionEventQueue.push(e);
 }
 
@@ -64,7 +63,7 @@ void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlSt
     cluster.stall();
 
     if (dumpThread.id()) dumpThread.join(); // Join the last dumpthread.
-    dumpThread = Thread(new DumpClient(Url(urlStr), cluster.broker,
+    dumpThread = Thread(new DumpClient(Url(urlStr), cluster,
                             boost::bind(&MemberHandler::dumpSent, this),
                             boost::bind(&MemberHandler::dumpError, this, _1)));
 }
@@ -90,6 +89,11 @@ void MemberHandler::insert(const boost::intrusive_ptr<Connection>& c) {
         c->getBrokerConnection().close(execution::ERROR_CODE_ILLEGAL_STATE, "Not in catch-up mode.");
     else
         cluster.connections[c->getId()] = c;
+}
+
+void MemberHandler::catchUpClosed(const boost::intrusive_ptr<Connection>& c) {
+    QPID_LOG(warning, "Catch-up connection " << c << " closed in member mode");
+    assert(0);
 }
 
 }} // namespace qpid::cluster

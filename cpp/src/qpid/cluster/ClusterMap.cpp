@@ -21,6 +21,7 @@
 #include "ClusterMap.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <algorithm>
 #include <functional>
@@ -86,6 +87,7 @@ void ClusterMap::ready(const MemberId& id, const Url& url) {
     members[id] = url;
     if (id == dumper)
         dumper = MemberId();
+    QPID_LOG(info, id << " joined cluster: " << *this);
 }
 
 }} // namespace qpid::cluster

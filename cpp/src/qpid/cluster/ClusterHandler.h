@@ -59,6 +59,7 @@ class ClusterHandler
                               cpg_address *joined, int nJoined) = 0;
 
     virtual void insert(const boost::intrusive_ptr<Connection>& c) = 0;
+    virtual void catchUpClosed(const boost::intrusive_ptr<Connection>& c) = 0;
 
   protected:
     Cluster& cluster;

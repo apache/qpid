@@ -25,6 +25,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/memory.h"
+#include <stdexcept>
 
 namespace qpid {
 namespace cluster {
@@ -57,8 +58,18 @@ ConnectionCodec::~ConnectionCodec() {}
 
 // ConnectionCodec functions delegate to the codecOutput
 size_t ConnectionCodec::decode(const char* buffer, size_t size) {
-    if (interceptor->isCatchUp())
-        return codec.decode(buffer, size);
+    if (interceptor->isShadow())
+        throw Exception(QPID_MSG("Unexpected decode for shadow connection " << *interceptor));
+    else if (interceptor->isCatchUp())  {
+        size_t ret = codec.decode(buffer, size);
+        if (interceptor->isShadow()) {
+            // Promoted to shadow, close the codec.
+            // FIXME aconway 2008-09-19: can we close cleanly?
+            // codec.close();
+            throw Exception("Close codec");
+        }
+        return ret;
+    }
     else
         return interceptor->decode(buffer, size);
 }

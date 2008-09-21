@@ -53,6 +53,7 @@ class MemberHandler : public ClusterHandler
     void dumpError(const std::exception&);
 
     void insert(const boost::intrusive_ptr<Connection>& c);
+    void catchUpClosed(const boost::intrusive_ptr<Connection>& );
 
   public:
     sys::Thread dumpThread;

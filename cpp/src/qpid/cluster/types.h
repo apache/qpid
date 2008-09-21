@@ -59,6 +59,8 @@ std::ostream& operator<<(std::ostream&, const MemberId&);
 
 struct ConnectionId : public std::pair<MemberId, Connection*>  {
     ConnectionId(const MemberId& m=MemberId(), Connection* c=0) :  std::pair<MemberId, Connection*> (m,c) {}
+    ConnectionId(uint64_t m, uint64_t c)
+        : std::pair<MemberId, Connection*>(MemberId(m), reinterpret_cast<Connection*>(c)) {}
     MemberId getMember() const { return first; }
     Connection* getConnectionPtr() const { return second; }
 };
