@@ -90,7 +90,12 @@ class ManagementData:
 
   def displayClassName (self, cls):
     (packageName, className, hash) = cls
-    return packageName + "." + className
+    rev = self.schema[cls][4]
+    if rev == 0:
+      suffix = ""
+    else:
+      suffix = ".%d" % rev
+    return packageName + ":" + className + suffix
 
   def dataHandler (self, context, className, list, timestamps):
     """ Callback for configuration and instrumentation data updates """
@@ -270,14 +275,21 @@ class ManagementData:
     return result
 
   def getClassKey (self, className):
-    dotPos = className.find(".")
-    if dotPos == -1:
+    delimPos = className.find(":")
+    if delimPos == -1:
+      schemaRev = 0
+      delim = className.find(".")
+      if delim != -1:
+        schemaRev = int(className[delim + 1:])
+        name      = className[0:delim]
+      else:
+        name = className
       for key in self.schema:
-        if key[1] == className:
+        if key[1] == name and self.schema[key][4] == schemaRev:
           return key
     else:
-      package   = className[0:dotPos]
-      name      = className[dotPos + 1:]
+      package   = className[0:delimPos]
+      name      = className[delimPos + 1:]
       schemaRev = 0
       delim = name.find(".")
       if delim != -1:
@@ -448,7 +460,7 @@ class ManagementData:
             objIndex = self.getObjIndex (classKey, config)
             row = (objId, createTime, destroyTime, objIndex)
             rows.append (row)
-          self.disp.table ("Objects of type %s.%s" % (classKey[0], classKey[1]),
+          self.disp.table ("Objects of type %s" % self.displayClassName(classKey),
                            ("ID", "Created", "Destroyed", "Index"),
                            rows)
     finally:
@@ -515,7 +527,7 @@ class ManagementData:
       titleRow = ("Type", "Element")
       for id in ids:
         titleRow = titleRow + (self.refName(id),)
-      caption = "Object of type %s.%s:" % (classKey[0], classKey[1])
+      caption = "Object of type %s:" % self.displayClassName(classKey)
       if timestamp != None:
         caption = caption + " (last sample time: " + self.disp.timestamp (timestamp) + ")"
       self.disp.table (caption, titleRow, rows)
@@ -533,12 +545,8 @@ class ManagementData:
       sorted.sort ()
       for classKey in sorted:
         tuple = self.schema[classKey]
-        if tuple[4] == 0:
-          suffix = ""
-        else:
-          suffix = ".%d" % tuple[4]
-        className = classKey[0] + "." + classKey[1] + suffix
-        row = (className, len (tuple[0]), len (tuple[1]), len (tuple[2]), len (tuple[3]))
+        row = (self.displayClassName(classKey), len (tuple[0]), len (tuple[1]),
+               len (tuple[2]), len (tuple[3]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",
                        ("Class", "Properties", "Statistics", "Methods", "Events"),
@@ -586,7 +594,7 @@ class ManagementData:
           rows.append ((name, typename, unit, "", "", desc))
 
       titles = ("Element", "Type", "Unit", "Access", "Notes", "Description")
-      self.disp.table ("Schema for class '%s.%s.%d':" % (classKey[0], classKey[1], schemaRev), titles, rows)
+      self.disp.table ("Schema for class '%s':" % self.displayClassName(classKey), titles, rows)
 
       for mname in self.schema[classKey][2]:
         (mdesc, args) = self.schema[classKey][2][mname]
@@ -611,7 +619,7 @@ class ManagementData:
         titles = ("Argument", "Type", "Direction", "Unit", "Notes", "Description")
         self.disp.table (caption, titles, rows)
 
-    except:
+    except Exception,e:
       pass
     self.lock.release ()
 
@@ -631,7 +639,7 @@ class ManagementData:
         raise ValueError ()
 
       if methodName not in self.schema[classKey][2]:
-        print "Method '%s' not valid for class '%s.%s'" % (methodName, classKey[0], classKey[1])
+        print "Method '%s' not valid for class '%s'" % (methodName, self.displayClassName(classKey))
         raise ValueError ()
 
       schemaMethod = self.schema[classKey][2][methodName]
@@ -652,7 +660,7 @@ class ManagementData:
 
       self.methodSeq = self.methodSeq + 1
       self.methodsPending[self.methodSeq] = methodName
-    except:
+    except Exception, e:
       methodOk = False
     self.lock.release ()
     if methodOk:
