@@ -45,6 +45,7 @@
 #include <vector>
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/cast.hpp>
 
 namespace qpid {
 namespace broker {
@@ -58,6 +59,7 @@ class SessionContext;
 class SemanticState : public sys::OutputTask,
                       private boost::noncopyable
 {
+  public:
     class ConsumerImpl : public Consumer, public sys::OutputTask,
                          public boost::enable_shared_from_this<ConsumerImpl>
     {
@@ -106,8 +108,11 @@ class SemanticState : public sys::OutputTask,
 
         bool hasOutput();
         bool doOutput();
+
+        std::string getName() const { return name; }
     };
 
+  private:
     typedef std::map<std::string, ConsumerImpl::shared_ptr> ConsumerImplMap;
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
@@ -190,6 +195,11 @@ class SemanticState : public sys::OutputTask,
 
     void attached();
     void detached();
+
+    template <class F> void eachConsumer(const F& f) {
+        outputTasks.eachOutput(
+            boost::bind(f, boost::bind(&boost::polymorphic_downcast<ConsumerImpl*, OutputTask>, _1)));
+    }
 };
 
 }} // namespace qpid::broker

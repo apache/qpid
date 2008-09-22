@@ -186,8 +186,16 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
     client::Session cs;
     client::SessionBase_0_10Access(cs).set(simpl);
     cs.sync();
+
+    broker::SessionState* ss = sh.getSession();
+    ss->eachConsumer(boost::bind(&DumpClient::dumpConsumer, this, _1));
+    
     // FIXME aconway 2008-09-19: remaining session state.
     QPID_LOG(debug, "Dump done, session " << sh.getSession()->getId());
+}
+
+void DumpClient::dumpConsumer(broker::SemanticState::ConsumerImpl* ci) {
+    QPID_LOG(critical, "DEBUG: dump consumer: " << ci->getName());
 }
 
 }} // namespace qpid::cluster

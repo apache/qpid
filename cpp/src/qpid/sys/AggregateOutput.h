@@ -21,10 +21,12 @@
 #ifndef _AggregateOutput_
 #define _AggregateOutput_
 
-#include <vector>
 #include "Mutex.h"
 #include "OutputControl.h"
 #include "OutputTask.h"
+
+#include <algorithm>
+#include <vector>
 
 namespace qpid {
 namespace sys {
@@ -46,6 +48,11 @@ namespace sys {
         bool hasOutput();
         void addOutputTask(OutputTask* t);
         void removeOutputTask(OutputTask* t);
+
+        /** Apply f to each OutputTask* in the tasks list */
+        template <class F> void eachOutput(const F& f) {
+            std::for_each(tasks.begin(), tasks.end(), f);
+        }
     };
 
 }
