@@ -100,6 +100,8 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
+    template <class F> void eachConsumer(const F& f) { semanticState.eachConsumer(f); }
+    
   private:
 
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);

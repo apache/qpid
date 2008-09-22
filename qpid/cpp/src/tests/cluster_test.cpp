@@ -46,7 +46,7 @@ Cluster& getGlobalCluster(); // Defined in qpid/cluster/ClusterPlugin.cpp
 }} // namespace qpid::cluster
 
 
-QPID_AUTO_TEST_SUITE(CpgTestSuite)
+QPID_AUTO_TEST_SUITE(cluster)
 
 using namespace std;
 using namespace qpid;
@@ -147,8 +147,6 @@ void ClusterFixture::add0(bool init) {
     if (size()) front() = broker0->getPort(); else push_back(broker0->getPort());
 }
 
-// For debugging: op << for CPG types.
-
 ostream& operator<<(ostream& o, const cpg_name* n) {
     return o << qpid::cluster::Cpg::str(*n);
 }
@@ -166,35 +164,35 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     return o;
 }
 
-#if 0                           // FIXME aconway 2008-09-10: finish & enable
-QPID_AUTO_TEST_CASE(testDumpConsumers) {
+#if 0                           // FIXME aconway 2008-09-22: enable.
+QPID_AUTO_TEST_CASE(DumpConsumers) {
     ClusterFixture cluster(1);
-    Client a(cluster[0]);
-    a.session.queueDeclare("q");
-    a.subs.subscribe(a.lq, "q");
-
-    cluster.add();
-    Client b(cluster[1]);
-    try {
-        b.connection.newSession(a.session.getId().getName());
-        BOOST_FAIL("Expected SessionBusyException for " << a.session.getId().getName());
-    } catch (const SessionBusyException&) {}
-
-    // Transfer some messages to the subscription by client a.
+    Client c0(cluster[0]);
+    c0.session.queueDeclare("q");
+    c0.subs.subscribe(c0.lq, "q");
+    c0.session.messageTransfer(arg::content=Message("before", "q"));
     Message m;
-    a.session.messageTransfer(arg::content=Message("aaa", "q"));
-    BOOST_CHECK(a.lq.get(m, TIME_SEC));
+    BOOST_CHECK(c0.lq.get(m, TIME_SEC));
+    BOOST_CHECK_EQUAL(m.getData(), "before");
+
+    // Start new member
+    cluster.add();
+    Client c1(cluster[1]);
+
+    // Transfer some messages to the subscription by client c0.
+    c0.session.messageTransfer(arg::content=Message("aaa", "q"));
+    BOOST_CHECK(c0.lq.get(m, TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "aaa");
 
-    b.session.messageTransfer(arg::content=Message("bbb", "q"));
-    BOOST_CHECK(a.lq.get(m, TIME_SEC));
+    c1.session.messageTransfer(arg::content=Message("bbb", "q"));
+    BOOST_CHECK(c0.lq.get(m, TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "bbb");
 
     // Verify that the queue has been drained on both brokers.
     // This proves that the consumer was replicated when the second broker joined.
-    BOOST_CHECK_EQUAL(a.session.queueQuery("q").getMessageCount(), (unsigned)0);
+    BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
 }
-
 #endif
 
 QPID_AUTO_TEST_CASE(testCatchupSharedState) {
@@ -218,8 +216,8 @@ QPID_AUTO_TEST_CASE(testCatchupSharedState) {
     // Do some work post-join
     cluster.waitFor(2);
     c0.session.messageTransfer(arg::content=Message("pbar","p"));
-    
-    // Verify new broker has all state.
+
+    // Verify new brokers have all state.
     Message m;
 
     Client c1(cluster[1], "c1");

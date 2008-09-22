@@ -24,6 +24,7 @@
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/AsyncSession.h"
+#include "qpid/broker/SemanticState.h"
 #include "qpid/sys/Runnable.h"
 #include <boost/shared_ptr.hpp>
 
@@ -69,7 +70,8 @@ class DumpClient : public sys::Runnable {
     void dumpBinding(const std::string& queue, const broker::QueueBinding& binding);
     void dumpConnection(const boost::intrusive_ptr<Connection>& connection);
     void dumpSession(broker::SessionHandler& s);
-
+    void dumpConsumer(broker::SemanticState::ConsumerImpl*);
+    
   private:
     Url receiver;
     Cluster& donor;

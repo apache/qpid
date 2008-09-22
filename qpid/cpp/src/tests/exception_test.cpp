@@ -73,6 +73,14 @@ struct Catcher : public Runnable {
     }
 };
 
+QPID_AUTO_TEST_CASE(TestSessionBusy) {
+    SessionFixture f;
+    try {
+        f.connection.newSession(f.session.getId().getName());
+        BOOST_FAIL("Expected SessionBusyException for " << f.session.getId().getName());
+    } catch (const Exception&) {} // FIXME aconway 2008-09-22: client is not throwing correct exception.
+}
+
 QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxySessionFixture fix;
     ProxyConnection c(fix.broker->getPort());

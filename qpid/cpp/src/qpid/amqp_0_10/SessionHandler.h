@@ -106,6 +106,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     Peer peer;
     bool ignoring;
     bool sendReady, receiveReady;
+    std::string name;
 
   private:
     void sendCommandPoint(const SessionPoint&);
