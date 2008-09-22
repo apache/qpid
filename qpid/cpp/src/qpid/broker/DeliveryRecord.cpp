@@ -161,25 +161,6 @@ uint32_t DeliveryRecord::getCredit() const
     return credit;
 }
 
-
-void DeliveryRecord::addTo(Prefetch& prefetch) const{
-    if(!pull){
-        //ignore 'pulled' messages (i.e. those that were sent in
-        //response to get) when calculating prefetch
-        prefetch.size += size;
-        prefetch.count++;
-    }    
-}
-
-void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
-    if(!pull){
-        //ignore 'pulled' messages (i.e. those that were sent in
-        //response to get) when calculating prefetch
-        prefetch.size -= size;
-        prefetch.count--;
-    }
-}
-
 void DeliveryRecord::acquire(DeliveryIds& results) {
     if (queue->acquire(msg)) {
         acquired = true;

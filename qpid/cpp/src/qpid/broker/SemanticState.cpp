@@ -59,13 +59,10 @@ using qpid::ptr_map_ptr;
 SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
     : session(ss),
       deliveryAdapter(da),
-      prefetchSize(0),
-      prefetchCount(0),
       tagGenerator("sgen"),
       dtxSelected(false),
       outputTasks(ss)
 {
-    outstanding.reset();
     acl = getSession().getBroker().getAcl();
 }
 
@@ -231,14 +228,6 @@ void SemanticState::checkDtxTimeout()
 void SemanticState::record(const DeliveryRecord& delivery)
 {
     unacked.push_back(delivery);
-    delivery.addTo(outstanding);
-}
-
-bool SemanticState::checkPrefetch(intrusive_ptr<Message>& msg)
-{
-    bool countOk = !prefetchCount || prefetchCount > unacked.size();
-    bool sizeOk = !prefetchSize || prefetchSize > msg->contentSize() + outstanding.size || unacked.empty();
-    return countOk && sizeOk;
 }
 
 SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent, 
@@ -290,7 +279,7 @@ bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message> msg)
 
 bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
 {
-    blocked = !(filter(msg) && checkCredit(msg) && (!ackExpected || parent->checkPrefetch(msg)));
+    blocked = !(filter(msg) && checkCredit(msg));
     return !blocked;
 }
 
@@ -402,7 +391,6 @@ void SemanticState::requestDispatch(ConsumerImpl& c)
 
 void SemanticState::complete(DeliveryRecord& delivery)
 {    
-    delivery.subtractFrom(outstanding);
     ConsumerImplMap::iterator i = consumers.find(delivery.getTag());
     if (i != consumers.end()) {
         i->second->complete(delivery);
@@ -423,7 +411,6 @@ void SemanticState::ConsumerImpl::complete(DeliveryRecord& delivery)
 void SemanticState::recover(bool requeue)
 {
     if(requeue){
-        outstanding.reset();
         //take copy and clear unacked as requeue may result in redelivery to this session
         //which will in turn result in additions to unacked
         std::list<DeliveryRecord> copy = unacked;
