@@ -31,7 +31,6 @@
 #include "DeliveryId.h"
 #include "DeliveryToken.h"
 #include "Message.h"
-#include "Prefetch.h"
 
 namespace qpid {
 namespace broker {
@@ -81,8 +80,6 @@ class DeliveryRecord{
     bool isRedundant() const { return ended && completed; }
 
     uint32_t getCredit() const;
-    void addTo(Prefetch&) const;
-    void subtractFrom(Prefetch&) const;
     const std::string& getTag() const { return tag; } 
     bool isPull() const { return pull; }
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
