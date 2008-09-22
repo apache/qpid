@@ -83,9 +83,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
     catch(const ChannelException& e){
         QPID_LOG(error, "Channel exception: " << e.what());
-        if (getState())
-            peer.detached(getState()->getId().getName(), e.code);
-        channelException(e.code, e.getMessage());
+        peer.detached(name, e.code);
     }
     catch(const ConnectionException& e) {
         QPID_LOG(error, "Connection exception: " << e.what());
@@ -126,11 +124,15 @@ void SessionHandler::checkName(const std::string& name) {
                      << ", expecting: " << getState()->getId().getName()));
 }
 
-void SessionHandler::attach(const std::string& name, bool force) {
+void SessionHandler::attach(const std::string& name_, bool force) {
+    // Save the name for possible session-busy exception. Session-busy
+    // can be thrown before we have attached the handler to a valid
+    // SessionState, and in that case we need the name to send peer.detached
+    name = name_;               
     if (getState() && name == getState()->getId().getName())
         return;                 // Idempotent
     if (getState())
-        throw SessionBusyException(
+        throw TransportBusyException(
             QPID_MSG("Channel " << channel.get() << " already attached to " << getState()->getId()));
     setState(name, force);
     QPID_LOG(debug, "Attached channel " << channel.get() << " to " << getState()->getId());
