@@ -30,7 +30,6 @@
 #include "DtxBuffer.h"
 #include "DtxManager.h"
 #include "NameGenerator.h"
-#include "Prefetch.h"
 #include "TxBuffer.h"
 
 #include "qpid/framing/FrameHandler.h"
@@ -115,9 +114,6 @@ class SemanticState : public sys::OutputTask,
     SessionContext& session;
     DeliveryAdapter& deliveryAdapter;
     ConsumerImplMap consumers;
-    uint32_t prefetchSize;    
-    uint16_t prefetchCount;    
-    Prefetch outstanding;
     NameGenerator tagGenerator;
     std::list<DeliveryRecord> unacked;
     TxBuffer::shared_ptr txBuffer;
@@ -131,7 +127,6 @@ class SemanticState : public sys::OutputTask,
 	
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
-    bool checkPrefetch(boost::intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
     void complete(DeliveryRecord&);
@@ -154,9 +149,6 @@ class SemanticState : public sys::OutputTask,
      */
     Queue::shared_ptr getQueue(const std::string& name) const;
     
-    uint32_t setPrefetchSize(uint32_t size){ return prefetchSize = size; }
-    uint16_t setPrefetchCount(uint16_t n){ return prefetchCount = n; }
-
     bool exists(const string& consumerTag);
 
     /**
