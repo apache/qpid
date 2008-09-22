@@ -332,6 +332,10 @@ class SchemaProperty:
   def genAccessor (self, stream):
     self.type.type.genAccessor (stream, self.name, "configChanged", self.isOptional == 1)
 
+  def genInitialize (self, stream, prefix="", indent="    "):
+    val = self.type.type.init
+    stream.write (indent + prefix + self.name + " = " + val + ";\n")
+
   def genSchema (self, stream):
     stream.write ("    ft = FieldTable ();\n")
     stream.write ("    ft.setString (NAME, \"" + self.name + "\");\n")
@@ -966,6 +970,9 @@ class SchemaClass:
         inst.genPerThreadHiLoStatResets (stream)
 
   def genInitializeElements (self, stream, variables):
+    for prop in self.properties:
+      if not prop.isConstructorArg() and not prop.isParentRef:
+        prop.genInitialize(stream)
     for inst in self.statistics:
       if not inst.type.type.perThread:
         inst.genInitialize (stream)
