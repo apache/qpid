@@ -109,7 +109,7 @@ std::string QueuePolicy::getType(const FieldTable& settings)
         transform(t.begin(), t.end(), t.begin(), tolower);        
         if (t == REJECT || t == FLOW_TO_DISK || t == RING || t == RING_STRICT) return t;
     }
-    return REJECT;
+    return FLOW_TO_DISK;
 }
 
 void QueuePolicy::setDefaultMaxSize(uint64_t s)
