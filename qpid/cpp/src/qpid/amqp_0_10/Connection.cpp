@@ -79,10 +79,11 @@ size_t  Connection::encode(const char* buffer, size_t size) {
     }
     size_t frameSize=0;
     while (!frameQueue.empty() && ((frameSize=frameQueue.front().size()) <= out.available())) {
-            frameQueue.front().encode(out);
-            QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
-            frameQueue.pop_front();
-            buffered -= frameSize;
+        frameQueue.front().encode(out);
+        QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
+        frameQueue.pop_front();
+        buffered -= frameSize;
+        if (frameQueue.empty() && out.available() > 0) connection->doOutput(); 
     }
     assert(frameQueue.empty() || frameQueue.front().size() <= size);
     if (!frameQueue.empty() && frameQueue.front().size() > size)
