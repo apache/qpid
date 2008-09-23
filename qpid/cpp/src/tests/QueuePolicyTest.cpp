@@ -156,5 +156,28 @@ QPID_AUTO_TEST_CASE(testRingPolicy)
     BOOST_CHECK(!f.subs.get(msg, q));
 }
 
+QPID_AUTO_TEST_CASE(testStrictRingPolicy) 
+{
+    FieldTable args;
+    std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy(5, 0, QueuePolicy::RING_STRICT);
+    policy->update(args);
+
+    ProxySessionFixture f;
+    std::string q("my-ring-queue");
+    f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+    LocalQueue incoming(AckPolicy(0));//no automatic acknowledgements
+    f.subs.subscribe(incoming, q);
+    for (int i = 0; i < 5; i++) {
+        f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
+    }
+    for (int i = 0; i < 5; i++) {
+        BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
+    }
+    try {
+        f.session.messageTransfer(arg::content=client::Message("Message_6", q));
+        BOOST_FAIL("Transfer should have failed as ");
+    } catch (const ResourceLimitExceededException&) {}    
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
