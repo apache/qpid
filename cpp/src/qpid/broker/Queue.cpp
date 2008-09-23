@@ -405,10 +405,25 @@ uint32_t Queue::purge(const uint32_t purge_request){
 
     uint32_t count = 0;
     // Either purge them all or just the some (purge_count) while the queue isn't empty.
-    while((!purge_request || purge_count--) && !messages.empty()) 
-    {
+    while((!purge_request || purge_count--) && !messages.empty()) {
         popAndDequeue();
-	count++;
+        count++;
+    }
+    return count;
+}
+
+uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty) {
+    Mutex::ScopedLock locker(messageLock);
+    uint32_t move_count = qty; // only comes into play if  qty >0 
+    uint32_t count = 0; // count how many were moved for returning
+
+    while((!qty || move_count--) && !messages.empty()) {
+        QueuedMessage qmsg = messages.front();
+        boost::intrusive_ptr<Message> msg = qmsg.payload;
+        destq->deliver(msg); // deliver message to the destination queue
+        messages.pop_front();
+        dequeue(0, qmsg);
+        count++;
     }
     return count;
 }
