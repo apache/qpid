@@ -23,6 +23,7 @@
 
 #include "rdma_wrap.h"
 
+#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Mutex.h"
 
@@ -53,8 +54,9 @@ namespace Rdma {
         int outstandingWrites;
         bool closed; // TODO: Perhaps (probably) this state can be merged with the following...
         bool deleting; // TODO: Perhaps (probably) this state can be merged with the following...
-        enum { IDLE, DATA, PENDING_DATA, NOTIFY_WRITE, PENDING_NOTIFY, DELETED } state;
-        qpid::sys::Mutex stateLock;
+        enum State { IDLE, DATA, PENDING_DATA, NOTIFY_WRITE, PENDING_NOTIFY, DELETED };
+        qpid::sys::AtomicValue<State> state;
+        //qpid::sys::Mutex stateLock;
         std::deque<Buffer*> bufferQueue;
         qpid::sys::Mutex bufferQueueLock;
         boost::ptr_deque<Buffer> buffers;
