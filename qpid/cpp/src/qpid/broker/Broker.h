@@ -175,6 +175,13 @@ class Broker : public sys::Runnable, public Plugin::Target,
                  boost::function2<void, int, std::string> failed,
                  sys::ConnectionCodec::Factory* =0);
 
+    /** Move messages from one queue to another.
+        A zero quantity means to move all messages
+    */
+    uint32_t queueMoveMessages( const std::string& srcQueue, 
+			    const std::string& destQueue,
+			    uint32_t  qty); 
+
     // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
     // For the present just return the first ProtocolFactory registered.
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;

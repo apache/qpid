@@ -161,6 +161,9 @@ namespace qpid {
 
             uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
 
+	    //move qty # of messages to destination Queue destq
+	    uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
+
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }

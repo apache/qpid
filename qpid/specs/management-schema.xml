@@ -96,6 +96,13 @@
     <event name="agentDisconnect" desc="QMF Management Agent has disconnected from the broker">
       <arg name="remoteAddress" type="sstr"/>
     </event>
+
+    <method name="queueMoveMessages" desc="Move messages from one queue to another">
+      <arg name="srcQueue"          dir="I" type="sstr" desc="Source queue"/>
+      <arg name="destQueue"         dir="I" type="sstr" desc="Destination queue"/>
+      <arg name="qty"               dir="I" type="uint32" desc="# of messages to move. 0 means all messages"/>
+    </method>
+
   </class>
 
   <!--

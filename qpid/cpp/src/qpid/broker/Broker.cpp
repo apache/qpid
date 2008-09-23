@@ -32,6 +32,7 @@
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
@@ -349,6 +350,15 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         status = Manageable::STATUS_OK;
         break;
       }
+    case _qmf::Broker::METHOD_QUEUEMOVEMESSAGES : {
+        _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
+            dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
+	if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
+	  status = Manageable::STATUS_OK;
+	else
+	  return Manageable::STATUS_INVALID_PARAMETER;
+        break;
+      }
    default:
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
@@ -396,6 +406,22 @@ void Broker::connect(
     TcpAddress addr=boost::get<TcpAddress>(url[0]);
     connect(addr.host, addr.port, false, failed, f);
 }
+
+uint32_t Broker::queueMoveMessages( 
+     const std::string& srcQueue, 
+     const std::string& destQueue,
+     uint32_t  qty)
+{
+  Queue::shared_ptr src_queue = queues.find(srcQueue);
+  if (!src_queue)
+    return 0;
+  Queue::shared_ptr dest_queue = queues.find(destQueue);
+  if (!dest_queue)
+    return 0;
+
+  return src_queue->move(dest_queue, qty);
+}
+
 
 boost::shared_ptr<sys::Poller> Broker::getPoller() { return poller; }
 
