@@ -22,7 +22,7 @@
 #
 
 import sys, re, unittest, os, random, logging, traceback
-import qpid.client, qpid.spec
+import qpid.client, qpid.spec, qpid.qmfconsole
 import Queue
 from fnmatch import fnmatch
 from getopt import getopt, GetoptError
@@ -357,6 +357,11 @@ class TestBase010(unittest.TestCase):
                                username=testrunner.user, password=testrunner.password)
         self.conn.start(timeout=10)        
         self.session = self.conn.session("test-session", timeout=10)
+        self.qmf = None
+
+    def startQmf(self):
+        self.qmf = qpid.qmfconsole.Session()
+        self.qmf_broker = self.qmf.addBroker("%s:%d" % (testrunner.host, testrunner.port))
 
     def connect(self, host=None, port=None):
         spec = testrunner.spec
@@ -367,6 +372,8 @@ class TestBase010(unittest.TestCase):
     def tearDown(self):
         if not self.session.error(): self.session.close(timeout=10)
         self.conn.close(timeout=10)
+        if self.qmf:
+            self.qmf.delBroker(self.qmf_broker)
 
     def subscribe(self, session=None, **keys):
         session = session or self.session
