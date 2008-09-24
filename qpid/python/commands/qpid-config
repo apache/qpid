@@ -268,7 +268,7 @@ nargs = len (cargs)
 bm    = BrokerManager ()
 
 try:
-    bm.SetBroker(qmfconsole.BrokerURL(_host))
+    bm.SetBroker(_host)
     if nargs == 0:
         bm.Overview ()
     else:
@@ -307,6 +307,7 @@ try:
         else:
             Usage ()
 except Exception,e:
+    raise
     print "Failed:", e.message
     sys.exit(1)
 
