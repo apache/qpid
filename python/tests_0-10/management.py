@@ -20,13 +20,14 @@
 from qpid.datatypes import Message, RangedSet
 from qpid.testlib import TestBase010
 from qpid.management import managementChannel, managementClient
+from qpid import qmfconsole
 
 class ManagementTest (TestBase010):
     """
     Tests for the management hooks
     """
 
-    def test_broker_connectivity (self):
+    def test_broker_connectivity_oldAPI (self):
         """
         Call the "echo" method on the broker to verify it is alive and talking.
         """
@@ -51,6 +52,25 @@ class ManagementTest (TestBase010):
             self.assertEqual (res.sequence,   seq)
             self.assertEqual (res.body,       body)
         mc.removeChannel (mch)
+
+    def test_broker_connectivity (self):
+        """
+        Call the "echo" method on the broker to verify it is alive and talking.
+        """
+        session = self.session
+        self.startQmf()
+ 
+        brokers = self.qmf.getObjects(name="broker")
+        self.assertEqual (len(brokers), 1)
+        broker = brokers[0]
+
+        body = "Echo Message Body"
+        for seq in range (1, 10):
+            res = broker.echo(seq, body)
+            self.assertEqual (res.status,   0)
+            self.assertEqual (res.text,     "OK")
+            self.assertEqual (res.sequence, seq)
+            self.assertEqual (res.body,     body)
 
     def test_system_object (self):
         session = self.session
@@ -105,3 +125,80 @@ class ManagementTest (TestBase010):
             if exchange.name == name:
                 return exchange
         return None
+
+    def test_move_queued_messages(self):
+        """
+        Test ability to move messages from the head of one queue to another.
+        Need to test moveing all and N messages.
+        """
+        self.startQmf()
+        session = self.session
+        "Set up source queue"
+        session.queue_declare(queue="src-queue", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="src-queue", exchange="amq.direct", binding_key="routing_key")
+        move_part = "Move Messages "
+        twenty = range(1,21)
+        props = session.delivery_properties(routing_key="routing_key")
+        for count in twenty:
+            body = move_part + 'count'
+            src_msg = Message(props, body)
+            session.message_transfer(destination="amq.direct", message=src_msg)
+
+        "Set up destination queue"
+        session.queue_declare(queue="dest-queue", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="dest-queue", exchange="amq.direct")
+
+        "Get a management agent session interface"
+        #qmf_sess = qmfconsole.Session()
+        #broker = qmf_sess.addBroker("%s:%d" % (testrunner.host, testrunner.port))
+        queues = self.qmf.getObjects(name="queue")
+
+        "Move 10 messages from src-queue to dest-queue"
+        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "dest-queue", 10)
+        self.assertEqual (result.status, 0) 
+
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "src-queue":
+               sq = q 
+            elif q.name == "dest-queue":
+               dq = q 
+
+        self.assertEqual (sq.msgDepth,10)
+        self.assertEqual (dq.msgDepth,10)
+
+        "Move all remaining messages to destination"
+        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "dest-queue", 0)
+        self.assertEqual (result.status,0)
+
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "src-queue":
+               sq = q 
+            elif q.name == "dest-queue":
+               dq = q 
+        self.assertEqual (sq.msgDepth,0)
+        self.assertEqual (dq.msgDepth,20)
+
+        "Use a bad source queue name"
+        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("bad-src-queue", "dest-queue", 0)
+        self.assertEqual (result.status,4)
+
+        "Use a bad destination queue name"
+        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "bad-dest-queue", 0)
+        self.assertEqual (result.status,4)
+
+        " Use a large qty (40) to move from dest-queue back to "
+        " src-queue- should move all "
+        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("dest-queue", "src-queue", 40)
+        self.assertEqual (result.status,0)
+
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "src-queue":
+               sq = q 
+            elif q.name == "dest-queue":
+               dq = q 
+        self.assertEqual (sq.msgDepth,20)
+        self.assertEqual (dq.msgDepth,0)
+
