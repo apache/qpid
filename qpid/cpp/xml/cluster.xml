@@ -67,10 +67,11 @@ o<?xml version="1.0"?>
       <!-- Target session deduced from channel number.  -->
 
       <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
+      <field name="command-point" type="sequence-no"/>	       <!-- Id of next command sent -->
       <field name="sent-incomplete" type="sequence-set"/>      <!-- Commands sent and incomplete. -->
 
-      <field name="expected" type="sequence-no"/>	       <!-- Idempotence barrier -->
-      <field name="received" type="sequence-no"/>	       <!-- Received up to here > expected-->
+      <field name="expected" type="sequence-no"/>	       <!-- Next command expected. -->
+      <field name="received" type="sequence-no"/>	       <!-- Received up to here (>= expected) -->
       <field name="unknown-completed" type="sequence-set"/>    <!-- Completed but not known to peer. -->
       <field name="received-incomplete" type="sequence-set"/>  <!-- Received and incomplete -->
     </control>

@@ -50,6 +50,9 @@ ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, framing::Proto
     ESTABLISHED.insert(FAILED);
     ESTABLISHED.insert(CLOSED);
     ESTABLISHED.insert(OPEN);
+
+    FINISHED.insert(FAILED);
+    FINISHED.insert(CLOSED);
 } 
 
 void ConnectionHandler::incoming(AMQFrame& frame)
@@ -107,7 +110,7 @@ void ConnectionHandler::close()
       case OPEN:
         setState(CLOSING);
         proxy.close(200, OK);
-        waitFor(CLOSED);
+        waitFor(FINISHED);
         break;
         // Nothing to do for CLOSING, CLOSED, FAILED or NOT_STARTED
     }

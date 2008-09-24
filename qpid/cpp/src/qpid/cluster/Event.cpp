@@ -31,17 +31,18 @@ namespace cluster {
 
 using framing::Buffer;
 
-const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t);
+const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(size_t);
 
-Event::Event(EventType t, const ConnectionId c, const size_t s)
-    : type(t), connectionId(c), size(s), data(RefCountedBuffer::create(s)) {}
+Event::Event(EventType t, const ConnectionId& c,  size_t s, size_t i)
+    : type(t), connectionId(c), size(s), data(RefCountedBuffer::create(s)), id(i) {}
 
 Event Event::delivered(const MemberId& m, void* d, size_t s) {
     Buffer buf(static_cast<char*>(d), s);
     EventType type((EventType)buf.getOctet()); 
     ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
+    size_t id = buf.getLong();
     assert(buf.getPosition() == OVERHEAD);
-    Event e(type, connection, s-OVERHEAD);
+    Event e(type, connection, s-OVERHEAD, id);
     memcpy(e.getData(), static_cast<char*>(d)+OVERHEAD, s-OVERHEAD);
     return e;
 }
@@ -51,6 +52,7 @@ void Event::mcast (const Cpg::Name& name, Cpg& cpg) const {
     Buffer b(header, OVERHEAD);
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getConnectionPtr()));
+    b.putLong(id);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
     cpg.mcast(name, iov, sizeof(iov)/sizeof(*iov));
 }
@@ -60,13 +62,12 @@ Event::operator Buffer() const  {
 }
 
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };
+
 std::ostream& operator << (std::ostream& o, const Event& e) {
-    o << "[event: " << e.getConnectionId()
+    o << "[event " << e.getConnectionId() << "/" << e.getId()
       << " " << EVENT_TYPE_NAMES[e.getType()]
-      << " " << e.getSize() << " bytes: ";
-    std::ostream_iterator<char> oi(o,"");
-    std::copy(e.getData(), e.getData()+std::min(e.getSize(), size_t(16)), oi);
-    return o << "...]";
+      << " " << e.getSize() << " bytes]";
+    return o;
 }
 
 }} // namespace qpid::cluster

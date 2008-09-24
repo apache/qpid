@@ -71,6 +71,7 @@ class ConnectionCodec : public sys::ConnectionCodec {
   private:
     amqp_0_10::Connection codec;
     boost::intrusive_ptr<cluster::Connection> interceptor;
+    cluster::ConnectionId id;
 };
 
 }} // namespace qpid::cluster

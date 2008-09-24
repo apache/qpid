@@ -45,10 +45,12 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
 
 void OutputInterceptor::activateOutput() {
     Locker l(lock);
+
     if (parent.isCatchUp())
         next->activateOutput();
     else {
         moreOutput = true;
+        QPID_LOG(trace,  &parent << " activateOutput - sending doOutput");
         sendDoOutput();
     }
 }
@@ -79,15 +81,19 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
 
     QPID_LOG(trace, "Delivered doOutput: requested=" << requested << " output=" << sent << " more=" << moreOutput);
 
-    if (parent.isLocal() && moreOutput) 
+    if (parent.isLocal() && moreOutput)  {
+        QPID_LOG(trace,  &parent << " deliverDoOutput - sending doOutput, more output available.");
         sendDoOutput();
+    }
     else
         doingOutput = false;
 }
 
 void OutputInterceptor::startDoOutput() {
-    if (!doingOutput) 
+    if (!doingOutput)  {
+        QPID_LOG(trace,  &parent << " startDoOutput - sending doOutput, more output available.");
         sendDoOutput();
+    }
 }
 
 // Send a doOutput request if one is not already in flight.
@@ -109,6 +115,16 @@ void OutputInterceptor::sendDoOutput() {
 void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {
     Locker l(lock);
     next = &h;
+}
+
+void OutputInterceptor::close() {
+    Locker l(lock);
+    next->close();
+}
+
+size_t OutputInterceptor::getBuffered() const {
+    Locker l(lock);
+    return next->getBuffered();
 }
 
 }} // namespace qpid::cluster
