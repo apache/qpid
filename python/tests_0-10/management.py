@@ -20,7 +20,6 @@
 from qpid.datatypes import Message, RangedSet
 from qpid.testlib import TestBase010
 from qpid.management import managementChannel, managementClient
-from qpid import qmfconsole
 
 class ManagementTest (TestBase010):
     """
