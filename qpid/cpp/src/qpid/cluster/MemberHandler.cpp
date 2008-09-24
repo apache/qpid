@@ -34,7 +34,8 @@ using namespace framing;
 MemberHandler::MemberHandler(Cluster& c) : ClusterHandler(c) {}
 
 MemberHandler::~MemberHandler() { 
-    if (dumpThread.id()) dumpThread.join(); // Join the last dumpthread.
+    if (dumpThread.id()) 
+        dumpThread.join(); // Join the last dumpthread.
 }
 
 void MemberHandler::configChange(
@@ -62,7 +63,8 @@ void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlSt
     assert(!cluster.connectionEventQueue.isStopped()); // Not currently stalled.
     cluster.stall();
 
-    if (dumpThread.id()) dumpThread.join(); // Join the last dumpthread.
+    if (dumpThread.id()) 
+        dumpThread.join(); // Join the previous dumpthread.
     dumpThread = Thread(new DumpClient(Url(urlStr), cluster,
                             boost::bind(&MemberHandler::dumpSent, this),
                             boost::bind(&MemberHandler::dumpError, this, _1)));

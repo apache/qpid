@@ -44,7 +44,7 @@ class ConnectionHandler : private StateManager,
 {
     typedef framing::AMQP_ClientOperations::ConnectionHandler ConnectionOperations;
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
-    std::set<int> ESTABLISHED;
+    std::set<int> ESTABLISHED, FINISHED;
 
     class Adapter : public framing::FrameHandler
     {

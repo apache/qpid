@@ -43,7 +43,7 @@ namespace cluster {
 class Event {
   public:
     /** Create an event to mcast with a buffer of size bytes. */
-    Event(EventType t=DATA, const ConnectionId c=ConnectionId(), size_t size=0);
+    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0, size_t id=0);
 
     /** Create an event copied from delivered data. */
     static Event delivered(const MemberId& m, void* data, size_t size);
@@ -55,6 +55,7 @@ class Event {
     size_t getSize() const { return size; }
     char* getData() { return data; }
     const char* getData() const { return data; }
+    size_t getId() const { return id; }
 
     operator framing::Buffer() const;
 
@@ -64,6 +65,7 @@ class Event {
     ConnectionId connectionId;
     size_t size;
     RefCountedBuffer::pointer data;
+    size_t id;
 };
 
 std::ostream& operator << (std::ostream&, const Event&);
