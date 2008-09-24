@@ -598,7 +598,7 @@ void SemanticState::ConsumerImpl::enableNotify()
 void SemanticState::ConsumerImpl::disableNotify()
 {
     Mutex::ScopedLock l(lock);
-    notifyEnabled = true;
+    notifyEnabled = false;
 }
 
 void SemanticState::ConsumerImpl::notify()
