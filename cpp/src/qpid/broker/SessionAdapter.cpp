@@ -436,7 +436,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
                               uint8_t acceptMode,
                               uint8_t acquireMode,
                               bool exclusive,
-                              const string& /*resumeId*/,//TODO implement resume behaviour
+                              const string& /*resumeId*/,//TODO implement resume behaviour. Need to update cluster.
                               uint64_t /*resumeTtl*/,
                               const FieldTable& arguments)
 {

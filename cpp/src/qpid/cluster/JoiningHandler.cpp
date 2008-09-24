@@ -46,9 +46,10 @@ void JoiningHandler::configChange(
 
 void JoiningHandler::deliver(Event& e) {
     // Discard connection events unless we are stalled to receive a  dump.
-    if (state == STALLED) {
+    if (state == STALLED) 
         cluster.connectionEventQueue.push(e);
-    }
+    else
+        QPID_LOG(trace, "Discarded pre-join event  " << e);
 }
 
 void JoiningHandler::update(const MemberId&, const framing::FieldTable& members, uint64_t dumper) {
@@ -80,12 +81,13 @@ void JoiningHandler::dumpRequest(const MemberId& dumpee, const std::string& ) {
                 assert(0); break;
 
               case DUMP_REQUESTED: 
-                QPID_LOG(info, cluster.self << " stalling for dump from " << cluster.map.dumper);
+                QPID_LOG(debug, cluster.self << " stalling for dump from " << cluster.map.dumper);
                 state = STALLED;
                 cluster.stall();
                 break;
 
               case DUMP_COMPLETE:
+                QPID_LOG(debug, cluster.self << " at start point and dump complete, ready.");
                 cluster.ready();
                 break;
             }
@@ -107,8 +109,8 @@ void JoiningHandler::insert(const boost::intrusive_ptr<Connection>& c) {
 }
 
 void JoiningHandler::catchUpClosed(const boost::intrusive_ptr<Connection>& c) {
-    QPID_LOG(debug, "Catch-up connection " << *c << " finished, remaining " << catchUpConnections-1);
-    if (c->isShadow())
+    QPID_LOG(debug, "Catch-up complete for " << *c << ", remaining catch-ups: " << catchUpConnections-1);
+    if (c->isShadow()) 
         cluster.connections.insert(Cluster::ConnectionMap::value_type(c->getId(), c));
     if (--catchUpConnections == 0)
         dumpComplete();
@@ -118,10 +120,11 @@ void JoiningHandler::dumpComplete() {
     // FIXME aconway 2008-09-18: need to detect incomplete dump.
     // 
     if (state == STALLED) {
+        QPID_LOG(debug, cluster.self << " received dump and stalled at start point, unstalling.");
         cluster.ready();
     }
     else {
-        QPID_LOG(debug, "Dump complete, waiting for stall point.");
+        QPID_LOG(debug, cluster.self << " received dump, waiting for start point.");
         assert(state == DUMP_REQUESTED);
         state = DUMP_COMPLETE;
     }

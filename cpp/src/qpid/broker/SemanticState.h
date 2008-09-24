@@ -110,6 +110,12 @@ class SemanticState : public sys::OutputTask,
         bool doOutput();
 
         std::string getName() const { return name; }
+
+        bool isAckExpected() const { return ackExpected; }
+        bool isAcquire() const { return acquire; }
+        bool isWindowing() const { return windowing; }
+        uint32_t getMsgCredit() const { return msgCredit; }
+        uint32_t getByteCredit() const { return byteCredit; }
     };
 
   private:

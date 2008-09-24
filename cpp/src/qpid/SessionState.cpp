@@ -237,7 +237,7 @@ SessionState::Configuration::Configuration(size_t flush, size_t hard) :
     replayFlushLimit(flush), replayHardLimit(hard) {}
 
 SessionState::SessionState(const SessionId& i, const Configuration& c)
-  : id(i), timeout(), config(c), stateful()
+    : id(i), timeout(), config(c), stateful()
 {
     QPID_LOG(debug, "SessionState::SessionState " << id << ": " << this);
 }
@@ -248,6 +248,31 @@ SessionState::~SessionState() {}
 
 std::ostream& operator<<(std::ostream& o, const SessionPoint& p) {
     return o << "(" << p.command.getValue() << "+" << p.offset << ")";
+}
+
+void SessionState::setState(
+    const SequenceNumber& replayStart,
+    const SequenceNumber& sendCommandPoint,
+    const SequenceSet& sentIncomplete,
+    const SequenceNumber& expected,
+    const SequenceNumber& received,
+    const SequenceSet& unknownCompleted,
+    const SequenceSet& receivedIncomplete
+)
+{
+    sender.replayPoint = replayStart;
+    sender.flushPoint = sendCommandPoint;
+    sender.sendPoint = sendCommandPoint;
+    sender.unflushedSize = 0;
+    sender.replaySize = 0;      // Replay list will be updated separately.
+    sender.incomplete = sentIncomplete;
+    sender.bytesSinceKnownCompleted = 0;
+
+    receiver.expected = expected;
+    receiver.received = received;
+    receiver.unknownCompleted = unknownCompleted;
+    receiver.incomplete = receivedIncomplete;
+    receiver.bytesSinceKnownCompleted = 0;
 }
 
 } // namespace qpid

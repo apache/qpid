@@ -77,7 +77,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     
     /** Send to the cluster */
     void mcastControl(const framing::AMQBody& controlBody, Connection* cptr);
-    void mcastBuffer(const char*, size_t, const ConnectionId&);
+    void mcastBuffer(const char*, size_t, const ConnectionId&, size_t id);
     void mcastEvent(const Event& e);
     
     /** Leave the cluster */
@@ -89,6 +89,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void ready(const MemberId&, const std::string& url);
 
     MemberId getSelf() const { return self; }
+    MemberId getId() const { return self; }
 
     void ready();
     void stall();
@@ -168,6 +169,8 @@ class Cluster : private Cpg::Handler, public management::Manageable
     ClusterHandler* handler;
     JoiningHandler joiningHandler;
     MemberHandler memberHandler;
+
+    size_t mcastId;
 
   friend class JoiningHandler;
   friend class MemberHandler;

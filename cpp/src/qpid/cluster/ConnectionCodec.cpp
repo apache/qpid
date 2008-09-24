@@ -23,18 +23,23 @@
 #include "Cluster.h"
 #include "ProxyInputHandler.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/framing/ConnectionCloseBody.h"
+#include "qpid/framing/ConnectionCloseOkBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/memory.h"
 #include <stdexcept>
+#include <boost/utility/in_place_factory.hpp>
 
 namespace qpid {
 namespace cluster {
 
+using namespace framing;
+
 sys::ConnectionCodec*
-ConnectionCodec::Factory::create(framing::ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
-    if (v == framing::ProtocolVersion(0, 10))
+ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
+    if (v == ProtocolVersion(0, 10))
         return new ConnectionCodec(out, id, cluster, false);
-    else if (v == framing::ProtocolVersion(0x80 + 0, 0x80 + 10))
+    else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10))
         return new ConnectionCodec(out, id, cluster, true); // Catch-up connection
     return 0;
 }
@@ -47,7 +52,8 @@ ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id)
 
 ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp)
     : codec(out, id, false),
-      interceptor(new Connection(cluster, codec, id, cluster.getSelf(), catchUp))
+      interceptor(new Connection(cluster, codec, id, cluster.getSelf(), catchUp)),
+      id(interceptor->getId())
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
@@ -56,28 +62,18 @@ ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id,
 
 ConnectionCodec::~ConnectionCodec() {}
 
-// ConnectionCodec functions delegate to the codecOutput
 size_t ConnectionCodec::decode(const char* buffer, size_t size) {
-    if (interceptor->isShadow())
-        throw Exception(QPID_MSG("Unexpected decode for shadow connection " << *interceptor));
-    else if (interceptor->isCatchUp())  {
-        size_t ret = codec.decode(buffer, size);
-        if (interceptor->isShadow()) {
-            // Promoted to shadow, close the codec.
-            // FIXME aconway 2008-09-19: can we close cleanly?
-            // codec.close();
-            throw Exception("Close codec");
-        }
-        return ret;
-    }
-    else
-        return interceptor->decode(buffer, size);
+    return interceptor->decode(buffer, size);
 }
 
-size_t ConnectionCodec::encode(const char* buffer, size_t size) { return codec.encode(buffer, size); }
-bool ConnectionCodec::canEncode() { return codec.canEncode(); }
-void ConnectionCodec::closed() { codec.closed(); }
 bool ConnectionCodec::isClosed() const { return codec.isClosed(); }
-framing::ProtocolVersion ConnectionCodec::getVersion() const { return codec.getVersion(); }
+
+size_t ConnectionCodec::encode(const char* buffer, size_t size) { return codec.encode(buffer, size); }
+
+bool ConnectionCodec::canEncode() { return codec.canEncode(); }
+
+void ConnectionCodec::closed() { codec.closed(); }
+
+ProtocolVersion ConnectionCodec::getVersion() const { return codec.getVersion(); }
 
 }} // namespace qpid::cluster

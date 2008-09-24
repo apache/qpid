@@ -130,8 +130,8 @@ class SessionState {
     virtual SessionPoint senderGetReplayPoint() const;
 
     /** Peer expecting commands from this point.
-        virtual *@return Range of frames to be replayed.
-    */
+     *@return Range of frames to be replayed.
+     */
     virtual ReplayRange senderExpected(const SessionPoint& expected);
 
     // ==== Functions for receiver state
@@ -167,6 +167,19 @@ class SessionState {
 
     /** ID of the command currently being handled. */
     virtual SequenceNumber receiverGetCurrent() const;
+
+    /** Set the state variables, used to create a session that will resume
+     *  from some previously established point.
+     */
+    virtual void setState(
+        const SequenceNumber& replayStart,
+        const SequenceNumber& sendCommandPoint,
+        const SequenceSet& sentIncomplete,
+        const SequenceNumber& expected,
+        const SequenceNumber& received,
+        const SequenceSet& unknownCompleted,
+        const SequenceSet& receivedIncomplete
+    );
 
   private:
 

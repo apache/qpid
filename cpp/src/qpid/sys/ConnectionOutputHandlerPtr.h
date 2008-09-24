@@ -36,8 +36,8 @@ namespace sys {
 class ConnectionOutputHandlerPtr : public ConnectionOutputHandler
 {
   public:
-    ConnectionOutputHandlerPtr(ConnectionOutputHandler* p) : next(p) {}
-    void set(ConnectionOutputHandler* p) { next = p; }
+    ConnectionOutputHandlerPtr(ConnectionOutputHandler* p) : next(p) { assert(next); }
+    void set(ConnectionOutputHandler* p) { next = p; assert(next); }
     ConnectionOutputHandler* get() { return next; }
     const ConnectionOutputHandler* get() const { return next; }
 
