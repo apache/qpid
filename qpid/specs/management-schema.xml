@@ -221,6 +221,7 @@
     <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation ,...)"/>
 
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
+    <statistic name="federationLink"   type="bool" desc="Is this a federation link"/>
     <statistic name="authIdentity"     type="sstr" desc="authId of connection if authentication enabled"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
