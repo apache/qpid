@@ -81,6 +81,15 @@ void SessionHandler::handleIn(AMQFrame& f) {
             getInHandler()->handle(f);
         }
     }
+    catch(const SessionException& e) {
+        QPID_LOG(error, "Execution exception: " << e.what());
+        framing::AMQP_AllProxy::Execution  execution(channel);
+        AMQMethodBody* m = f.getMethod();
+        SequenceNumber commandId;
+        if (getState()) commandId =  getState()->receiverGetCurrent();
+        execution.exception(e.code, commandId, m ? m->amqpClassId() : 0, m ? m->amqpMethodId() : 0, 0, e.what(), FieldTable());
+        sendDetach();
+    }
     catch(const ChannelException& e){
         QPID_LOG(error, "Channel exception: " << e.what());
         peer.detached(name, e.code);

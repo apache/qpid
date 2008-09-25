@@ -83,11 +83,6 @@ class Cluster : private Cpg::Handler, public management::Manageable
     /** Leave the cluster */
     void leave();
 
-    // Cluster controls.
-    void update(const MemberId&, const framing::FieldTable& members, uint64_t dumping);
-    void dumpRequest(const MemberId&, const std::string& url);
-    void ready(const MemberId&, const std::string& url);
-
     MemberId getSelf() const { return self; }
     MemberId getId() const { return self; }
 
@@ -95,7 +90,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void stall();
     void unstall();
 
-    void shutdown();
+    void brokerShutdown();
 
     broker::Broker& getBroker();
 
@@ -172,6 +167,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
 
     size_t mcastId;
 
+  friend class ClusterHandler;
   friend class JoiningHandler;
   friend class MemberHandler;
 };
