@@ -116,6 +116,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private boolean _disableMessageId;
 
     private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
+    
+    protected String _userID;  // ref user id used in the connection.
 
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
@@ -138,6 +140,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         _immediate = immediate;
         _mandatory = mandatory;
         _waitUntilSent = waitUntilSent;
+        _userID = connection.getUsername();
     }
 
     void resubscribe() throws AMQException
