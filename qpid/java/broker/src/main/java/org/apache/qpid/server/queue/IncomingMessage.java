@@ -52,6 +52,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private final Long _messageId;
     private final TransactionalContext _txnContext;
 
+    private static final boolean MSG_AUTH = 
+        ApplicationRegistry.getInstance().getConfiguration().getBoolean("security.msg-auth", false);
 
 
     /**
@@ -69,7 +71,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private AMQProtocolSession _publisher;
     private MessageStore _messageStore;
     private long _expiration;
-
+    
     private Exchange _exchange;
 
 
@@ -164,12 +166,21 @@ public class IncomingMessage implements Filterable<RuntimeException>
             _messageHandle.setPublishAndContentHeaderBody(_txnContext.getStoreContext(),
                                                           _messagePublishInfo, getContentHeaderBody());
 
-
+            
+            
             message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
 
             message.setExpiration(_expiration);
             message.setClientIdentifier(_publisher.getSessionIdentifier());
 
+            AMQShortString userID = getContentHeaderBody().properties instanceof BasicContentHeaderProperties ?
+                     ((BasicContentHeaderProperties) getContentHeaderBody().properties).getUserId() : null; 
+            
+            if (MSG_AUTH && !_publisher.getAuthorizedID().getName().equals(userID == null? "" : userID.toString()))
+            {
+                throw new UnauthorizedAccessException("Acccess Refused",message);
+            }
+            
             if ((_destinationQueues == null) || _destinationQueues.size() == 0)
             {
 
@@ -274,7 +285,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
         return getContentHeaderBody().properties instanceof BasicContentHeaderProperties &&
              ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 2;
     }
-
+    
     public boolean isRedelivered()
     {
         return false;
