@@ -1,5 +1,5 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#ifndef QPID_LOG_LOGGER_H
+#define QPID_LOG_LOGGER_H
 
 /*
  *    http://www.apache.org/licenses/LICENSE-2.0
@@ -13,6 +13,7 @@
  */
 
 #include "Selector.h"
+#include "Options.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/noncopyable.hpp>
@@ -20,8 +21,6 @@
 
 namespace qpid {
 namespace log {
-
-class Options;
 
 /**
  * Central logging agent.
@@ -93,10 +92,13 @@ class Logger : private boost::noncopyable {
     /** Set a prefix for all messages */
     void setPrefix(const std::string& prefix);
     
-    /** Reset the logger to it's original state. */
+    /** Reset the logger. */
     void clear();
-    
 
+    /** Get the options used to configure the logger. */
+    const Options& getOptions() const { return options; }
+    
+    
   private:
     typedef boost::ptr_vector<Output> Outputs;
     typedef std::set<Statement*> Statements;
@@ -109,9 +111,10 @@ class Logger : private boost::noncopyable {
     Selector selector;
     int flags;
     std::string prefix;
+    Options options;
 };
 
 }} // namespace qpid::log
 
 
-#endif  /*!LOGGER_H*/
+#endif  /*!QPID_LOG_LOGGER_H*/

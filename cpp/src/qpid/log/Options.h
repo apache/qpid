@@ -36,8 +36,10 @@ std::istream& operator>>(std::istream&, SyslogFacility&);
 /** Logging options for config parser. */
 struct Options : public qpid::Options {
     /** Pass argv[0] for use in syslog output */
-    Options(const std::string& argv0,
+    Options(const std::string& argv0=std::string(),
             const std::string& name="Logging options");
+
+    Options& operator=(const Options&);
 
     std::vector<std::string> selectors;
     std::vector<std::string> outputs;

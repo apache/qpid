@@ -146,6 +146,23 @@ Options::Options(const std::string& argv0, const std::string& name) :
         ("syslog-name", optValue(syslogName, "NAME"), "Name to use in syslog messages")
         ("syslog-facility", optValue(syslogFacility,"LOG_XXX"), "Facility to use in syslog messages")
         ;
-}        
+}
+
+Options& Options::operator=(const Options& x) {
+    if (this != &x) {
+        selectors = x.selectors;
+        outputs = x.outputs;
+        time = x.time;
+        level= x.level;
+        thread = x.thread;
+        source = x.source;
+        function = x.function;
+        trace = x.trace;
+        syslogName = x.syslogName;
+        syslogFacility = x.syslogFacility;
+        prefix = x.prefix;
+    }
+    return *this;
+}
         
 }} // namespace qpid::log

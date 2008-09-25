@@ -20,6 +20,7 @@
  */
 
 #include "unit_test.h"
+#include "test_tools.h"
 #include "BrokerFixture.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Runnable.h"
@@ -51,7 +52,10 @@ struct Catcher : public Runnable {
     ~Catcher() { join(); }
     
     void run() {
-        try { f(); }
+        try { 
+            ScopedSuppressLogging sl; // Suppress messages for expected errors.
+            f();
+        }
         catch(const Ex& e) {
             caught=true;
             BOOST_MESSAGE(string("Caught expected exception: ")+e.what()+"["+typeid(e).name()+"]");
@@ -76,6 +80,7 @@ struct Catcher : public Runnable {
 QPID_AUTO_TEST_CASE(TestSessionBusy) {
     SessionFixture f;
     try {
+        ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.connection.newSession(f.session.getId().getName());
         BOOST_FAIL("Expected SessionBusyException for " << f.session.getId().getName());
     } catch (const Exception&) {} // FIXME aconway 2008-09-22: client is not throwing correct exception.
@@ -99,6 +104,8 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
     ProxyConnection c(fix.broker->getPort());
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(l, "q");
+
+    ScopedSuppressLogging sl; // Suppress messages for expected errors.
     Thread t(fix.subs);
     fix.connection.proxy.close();
     t.join();
@@ -107,6 +114,7 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
     ProxySessionFixture fix;
+    ScopedSuppressLogging sl; // Suppress messages for expected errors.
     BOOST_CHECK_THROW(fix.subs.subscribe(fix.lq, "no such queue"), NotFoundException);
 }
 
