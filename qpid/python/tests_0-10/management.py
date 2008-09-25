@@ -135,11 +135,11 @@ class ManagementTest (TestBase010):
         "Set up source queue"
         session.queue_declare(queue="src-queue", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="src-queue", exchange="amq.direct", binding_key="routing_key")
-        move_part = "Move Messages "
+
         twenty = range(1,21)
         props = session.delivery_properties(routing_key="routing_key")
         for count in twenty:
-            body = move_part + 'count'
+            body = "Move Message %d" % count
             src_msg = Message(props, body)
             session.message_transfer(destination="amq.direct", message=src_msg)
 
@@ -147,9 +147,6 @@ class ManagementTest (TestBase010):
         session.queue_declare(queue="dest-queue", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="dest-queue", exchange="amq.direct")
 
-        "Get a management agent session interface"
-        #qmf_sess = qmfconsole.Session()
-        #broker = qmf_sess.addBroker("%s:%d" % (testrunner.host, testrunner.port))
         queues = self.qmf.getObjects(name="queue")
 
         "Move 10 messages from src-queue to dest-queue"
@@ -200,4 +197,64 @@ class ManagementTest (TestBase010):
                dq = q 
         self.assertEqual (sq.msgDepth,20)
         self.assertEqual (dq.msgDepth,0)
+
+        "Consume the messages of the queue and check they are all there in order"
+        session.message_subscribe(queue="src-queue", destination="tag")
+        session.message_flow(destination="tag", unit=session.credit_unit.message, value=0xFFFFFFFF)
+        session.message_flow(destination="tag", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        queue = session.incoming("tag")
+        for count in twenty:
+            consumed_msg = queue.get(timeout=1)
+            body = "Move Message %d" % count
+            self.assertEqual(body, consumed_msg.body)
+
+    def test_purge_queue(self):
+        """
+        Test ability to purge messages from the head of a queue.
+        Need to test moveing all, 1 (top message) and N messages.
+        """
+        self.startQmf()
+        session = self.session
+        "Set up purge queue"
+        session.queue_declare(queue="purge-queue", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="purge-queue", exchange="amq.direct", binding_key="routing_key")
+
+        twenty = range(1,21)
+        props = session.delivery_properties(routing_key="routing_key")
+        for count in twenty:
+            body = "Purge Message %d" % count
+            msg = Message(props, body)
+            session.message_transfer(destination="amq.direct", message=msg)
+
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "purge-queue":
+               pq = q 
+
+        "Purge top message from purge-queue"
+        result = pq.purge(1)
+        self.assertEqual (result.status, 0) 
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "purge-queue":
+               pq = q 
+        self.assertEqual (pq.msgDepth,19)
+
+        "Purge top 9 messages from purge-queue"
+        result = pq.purge(9)
+        self.assertEqual (result.status, 0) 
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "purge-queue":
+               pq = q 
+        self.assertEqual (pq.msgDepth,10)
+
+        "Purge all messages from purge-queue"
+        result = pq.purge(0)
+        self.assertEqual (result.status, 0) 
+        queues = self.qmf.getObjects(name="queue")
+        for q in queues:
+            if q.name == "purge-queue":
+               pq = q 
+        self.assertEqual (pq.msgDepth,0)
 
