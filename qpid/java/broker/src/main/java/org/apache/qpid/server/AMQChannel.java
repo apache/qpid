@@ -42,6 +42,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.UnauthorizedAccessException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
@@ -115,12 +116,7 @@ public class AMQChannel
 
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
-    private boolean _closing;
-
-    @Configured(path = "advanced.enableJMSXUserID",
-                defaultValue = "false")
-    public boolean ENABLE_JMSXUserID;
-    
+    private boolean _closing; 
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
@@ -180,16 +176,6 @@ public class AMQChannel
                 _log.debug("Content header received on channel " + _channelId);
             }
 
-            if (ENABLE_JMSXUserID)
-            {
-                //Set JMSXUserID
-                BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeaderBody.properties;
-                //fixme: fudge for QPID-677
-                properties.getHeaders().keySet();
-
-                properties.setUserId(_session.getAuthorizedID().getName());
-            }
-
             _currentMessage.setContentHeaderBody(contentHeaderBody);
 
             _currentMessage.setExpiration();
@@ -216,6 +202,10 @@ public class AMQChannel
             catch (NoRouteException e)
             {
                 _returnMessages.add(e);
+            }
+            catch(UnauthorizedAccessException ex)
+            {
+                _returnMessages.add(ex);
             }
             finally
             {
