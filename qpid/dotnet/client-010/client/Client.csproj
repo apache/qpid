@@ -172,6 +172,7 @@
     <Compile Include="transport\network\Assembler.cs" />
     <Compile Include="transport\network\Disassembler.cs" />
     <Compile Include="transport\network\Frame.cs" />
+    <Compile Include="transport\network\IIoSender.cs" />
     <Compile Include="transport\network\InputHandler.cs" />
     <Compile Include="transport\network\io\IoReceiver.cs" />
     <Compile Include="transport\network\io\IoSender.cs" />
