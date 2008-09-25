@@ -43,6 +43,7 @@ void MemberHandler::configChange(
     cpg_address */*left*/, int /*nLeft*/,
     cpg_address */*joined*/, int nJoined)
 {
+    // FIXME aconway 2008-09-24: Called with lock held - volatile
     if (nJoined && cluster.map.sendUpdate(cluster.self))  // New members need update
         cluster.mcastControl(cluster.map.toControl(), 0);
 }
@@ -51,9 +52,13 @@ void MemberHandler::deliver(Event& e) {
     cluster.connectionEventQueue.push(e);
 }
 
-void MemberHandler::update(const MemberId&, const framing::FieldTable& , uint64_t) {}
+void MemberHandler::update(const MemberId&, const framing::FieldTable& , uint64_t) {
+    Mutex::ScopedLock l(cluster.lock);
+    cluster.updateMemberStats();
+}
 
 void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlStr) {
+    Mutex::ScopedLock l(cluster.lock);
     if (cluster.map.dumper) return; // dump in progress, ignore request.
 
     cluster.map.dumper = cluster.map.first();
@@ -76,17 +81,18 @@ void MemberHandler::ready(const MemberId& id, const std::string& url) {
 
 
 void MemberHandler::dumpSent() {
-    QPID_LOG(debug, "Finished sending state dump.");
     Mutex::ScopedLock l(cluster.lock);
+    QPID_LOG(debug, "Finished sending state dump.");
     cluster.ready();
 }
 
 void MemberHandler::dumpError(const std::exception& e) {
-    QPID_LOG(error, "Error sending state dump from " << cluster.self << ": " << e.what());
+    QPID_LOG(error, cluster.self << " error sending state dump: " << e.what());
     dumpSent();
 }
 
 void MemberHandler::insert(const boost::intrusive_ptr<Connection>& c) {
+    Mutex::ScopedLock l(cluster.lock);
     if (c->isCatchUp())         // Not allowed in member mode
         c->getBrokerConnection().close(execution::ERROR_CODE_ILLEGAL_STATE, "Not in catch-up mode.");
     else
@@ -94,6 +100,7 @@ void MemberHandler::insert(const boost::intrusive_ptr<Connection>& c) {
 }
 
 void MemberHandler::catchUpClosed(const boost::intrusive_ptr<Connection>& c) {
+    Mutex::ScopedLock l(cluster.lock);
     QPID_LOG(warning, "Catch-up connection " << c << " closed in member mode");
     assert(0);
 }

@@ -212,31 +212,15 @@ void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
 
 void SessionState::handleIn(AMQFrame& frame) {
     SequenceNumber commandId = receiverGetCurrent();
-    try {
-        //TODO: make command handling more uniform, regardless of whether
-        //commands carry content.
-        AMQMethodBody* m = frame.getMethod();
-        if (m == 0 || m->isContentBearing()) {
-            handleContent(frame, commandId);
-        } else if (frame.getBof() && frame.getEof()) {
-            handleCommand(frame.getMethod(), commandId);                
-        } else {
-            throw InternalErrorException("Cannot handle multi-frame command segments yet");
-        }
-    } catch(const SessionException& e) {
-        //TODO: better implementation of new exception handling mechanism
-
-        //0-10 final changes the types of exceptions, 'model layer'
-        //exceptions will all be session exceptions regardless of
-        //current channel/connection classification
-
-        AMQMethodBody* m = frame.getMethod();
-        if (m) {
-            getProxy().getExecution().exception(e.code, commandId, m->amqpClassId(), m->amqpMethodId(), 0, e.what(), FieldTable());
-        } else {
-            getProxy().getExecution().exception(e.code, commandId, 0, 0, 0, e.what(), FieldTable());
-        }
-        handler->sendDetach();
+    //TODO: make command handling more uniform, regardless of whether
+    //commands carry content.
+    AMQMethodBody* m = frame.getMethod();
+    if (m == 0 || m->isContentBearing()) {
+        handleContent(frame, commandId);
+    } else if (frame.getBof() && frame.getEof()) {
+        handleCommand(frame.getMethod(), commandId);                
+    } else {
+        throw InternalErrorException("Cannot handle multi-frame command segments yet");
     }
 }
 

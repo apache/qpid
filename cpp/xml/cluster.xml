@@ -39,6 +39,8 @@ o<?xml version="1.0"?>
     <control name="ready" code="0x3" label="New member is ready.">
       <field name="url" type="str16" label="Url for brain dump."/>
     </control>
+
+    <control name="shutdown" code="0x4" label="Shut down cluster"/>
   </class>
 
   <!-- TODO aconway 2008-09-10: support for un-attached connections. -->
