@@ -48,7 +48,7 @@ class MemberHandler : public ClusterHandler
     void update(const MemberId&, const framing::FieldTable& members, uint64_t dumping);
     void dumpRequest(const MemberId&, const std::string& url);
     void ready(const MemberId&, const std::string& url);
-
+    
     void dumpSent();
     void dumpError(const std::exception&);
 

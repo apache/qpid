@@ -43,8 +43,6 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
                        public framing::FrameHandler::InOutHandler
 {
   public:
-    typedef framing::AMQP_AllProxy::Session Peer;
-
     SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
     ~SessionHandler();
 
@@ -103,7 +101,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     void checkName(const std::string& name);
 
     framing::ChannelHandler channel;
-    Peer peer;
+    framing::AMQP_AllProxy::Session  peer;
     bool ignoring;
     bool sendReady, receiveReady;
     std::string name;

@@ -51,6 +51,7 @@ class ClusterHandler
     virtual void update(const MemberId&, const framing::FieldTable& members, uint64_t dumping) = 0;
     virtual void dumpRequest(const MemberId&, const std::string& url) = 0;
     virtual void ready(const MemberId&, const std::string& url) = 0;
+    virtual void shutdown(const MemberId&);
 
     virtual void deliver(Event& e) = 0; // Deliver a connection event.
 
