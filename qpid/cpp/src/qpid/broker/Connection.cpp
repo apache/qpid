@@ -157,6 +157,13 @@ void Connection::setUserId(const string& userId)
         mgmtObject->set_authIdentity(userId);
 }
 
+void Connection::setFederationLink(bool b)
+{
+    ConnectionState::setFederationLink(b);
+    if (mgmtObject != 0)
+            mgmtObject->set_federationLink(b);
+}
+
 void Connection::close(
     ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {

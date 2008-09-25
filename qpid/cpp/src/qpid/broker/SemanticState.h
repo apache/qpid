@@ -135,7 +135,9 @@ class SemanticState : public sys::OutputTask,
     boost::shared_ptr<Exchange> cacheExchange;
     sys::AggregateOutput outputTasks;
     AclModule* acl;
-	
+    const bool authMsg;
+    const string userID;
+
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
     void checkDtxTimeout();

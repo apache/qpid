@@ -34,11 +34,12 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 
 
-namespace 
+namespace
 {
 const std::string ANONYMOUS = "ANONYMOUS";
 const std::string PLAIN     = "PLAIN";
 const std::string en_US     = "en_US";
+const std::string QPID_FED_LINK = "qpid.fed_link";
 }
 
 void ConnectionHandler::close(ReplyCode code, const string& text, ClassId, MethodId)
@@ -70,16 +71,16 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : handler(new Handler(connection, isClient)) {}
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
-    client(c.getOutput()), server(c.getOutput()), 
+    client(c.getOutput()), server(c.getOutput()),
     connection(c), serverMode(!isClient)
 {
     if (serverMode) {
         FieldTable properties;
         Array mechanisms(0x95);
-        
+
         authenticator = SaslAuthenticator::createAuthenticator(c);
         authenticator->getMechanisms(mechanisms);
-        
+
         Array locales(0x95);
         boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
         locales.add(l);
@@ -91,26 +92,30 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
 ConnectionHandler::Handler::~Handler() {}
 
 
-void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProperties*/,
-                                         const string& mechanism, 
+void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProperties,
+                                         const string& mechanism,
                                          const string& response,
                                          const string& /*locale*/)
 {
     authenticator->start(mechanism, response);
+    connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
+    if (connection.isFederationLink()){
+		QPID_LOG(info, "Connection is a federation link");
+    }
 }
-        
+
 void ConnectionHandler::Handler::secureOk(const string& response)
 {
     authenticator->step(response);
 }
-        
+
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     uint16_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
     connection.setHeartbeat(heartbeat);
 }
-        
+
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
@@ -143,8 +148,10 @@ void ConnectionHandler::Handler::start(const FieldTable& /*serverProperties*/,
 {
     string mechanism = connection.getAuthMechanism();
     string response  = connection.getAuthCredentials();
-    
-    server.startOk(FieldTable(), mechanism, response, en_US);
+
+    FieldTable ft;
+    ft.setInt(QPID_FED_LINK,1);
+    server.startOk(ft, mechanism, response, en_US);
 }
 
 void ConnectionHandler::Handler::secure(const string& /*challenge*/)
@@ -169,5 +176,5 @@ void ConnectionHandler::Handler::openOk(const framing::Array& /*knownHosts*/)
 
 void ConnectionHandler::Handler::redirect(const string& /*host*/, const framing::Array& /*knownHosts*/)
 {
-    
+
 }

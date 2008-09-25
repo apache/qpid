@@ -40,11 +40,12 @@ class ConnectionState : public ConnectionToken, public management::Manageable
   public:
     ConnectionState(qpid::sys::ConnectionOutputHandler* o, Broker& b) :
         out(o),
-        broker(b), 
+        broker(b),
         outputTasks(out),
-        framemax(65535), 
+        framemax(65535),
         heartbeat(0),
-        stagingThreshold(broker.getStagingThreshold())
+        stagingThreshold(broker.getStagingThreshold()),
+        federationLink(true)
         {}
 
 
@@ -61,12 +62,15 @@ class ConnectionState : public ConnectionToken, public management::Manageable
 
     virtual void setUserId(const string& uid) {  userId = uid; }
     const string& getUserId() const { return userId; }
-    
+
+    void setFederationLink(bool b) {  federationLink = b; }
+    bool isFederationLink() const { return federationLink; }
+
     Broker& getBroker() { return broker; }
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;
-    
+
     //contained output tasks
     sys::AggregateOutput outputTasks;
 
@@ -81,6 +85,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     uint16_t heartbeat;
     uint64_t stagingThreshold;
     string userId;
+    bool federationLink;
 };
 
 }}
