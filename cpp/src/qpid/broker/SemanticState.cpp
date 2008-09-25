@@ -61,7 +61,9 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       deliveryAdapter(da),
       tagGenerator("sgen"),
       dtxSelected(false),
-      outputTasks(ss)
+      outputTasks(ss),
+      authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isFederationLink()),
+      userID(getSession().getConnection().getUserId().substr(0,getSession().getConnection().getUserId().find('@')))
 {
     acl = getSession().getBroker().getAcl();
 }
@@ -348,11 +350,21 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     // The client library ensures this is always empty for messages from normal clients.
     if (msg->isA<MessageTransferBody>()) {
         if (!msg->hasProperties<DeliveryProperties>() ||
-            msg->getProperties<DeliveryProperties>()->getExchange().empty()) 
+            msg->getProperties<DeliveryProperties>()->getExchange().empty())
             msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
+    }
+
+    /* verify the userid if specified: */
+    std::string id =
+    	msg->hasProperties<MessageProperties>()? msg->getProperties<MessageProperties>()->getUserId():"";
+
+    if (authMsg &&  !id.empty() && id != userID )
+    {
+        QPID_LOG(debug, "user id : " << userID << " msgProps.getUserID() " << msg->getProperties<MessageProperties>()->getUserId());
+        throw UnauthorizedAccessException("user id in the message is not the same id used to authenticate the connection");
     }
 
     if (acl && acl->doTransferAcl())

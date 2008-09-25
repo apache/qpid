@@ -96,6 +96,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::string getAuthCredentials();
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
+    void setFederationLink(bool b);
 
     template <class F> void eachSessionHandler(const F& f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
