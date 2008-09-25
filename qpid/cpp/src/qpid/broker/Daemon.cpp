@@ -128,9 +128,8 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
      * Read the child's port number from the pipe.
      */
     int desired_read = sizeof(uint16_t);
-    if ( desired_read > ::read(pipeFds[0], & port, desired_read) ) {
-      throw Exception("Cannot write lock file "+lockFile);
-    }
+    if ( desired_read > ::read(pipeFds[0], & port, desired_read) ) 
+      throw Exception("Cannot read from child process.");
 
     /*
      * If the port number is 0, the child has put an error message
