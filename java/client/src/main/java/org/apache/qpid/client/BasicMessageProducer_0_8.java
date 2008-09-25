@@ -86,6 +86,8 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
         BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
 
+        contentHeaderProperties.setUserId(_userID);
+        
         if (!_disableTimestamps)
         {
             final long currentTime = System.currentTimeMillis();

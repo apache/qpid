@@ -77,6 +77,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         DeliveryProperties deliveryProp = delegate.getDeliveryProperties();
         MessageProperties messageProps = delegate.getMessageProperties();
 
+        // On the receiving side, this will be read in to the JMSXUserID as well.
+        messageProps.setUserId(_userID.getBytes());
+                
         if (messageId != null)
         {
             messageProps.setMessageId(messageId);
@@ -159,6 +162,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             {
                 ssn.sync();
             }
+            
+            
         }
         catch (RuntimeException rte)
         {
