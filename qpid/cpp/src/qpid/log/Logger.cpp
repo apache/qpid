@@ -17,7 +17,6 @@
  */
 
 #include "Logger.h"
-#include "Options.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
 #include <boost/pool/detail/singleton.hpp>
@@ -212,6 +211,7 @@ void Logger::add(Statement& s) {
 }
 
 void Logger::configure(const Options& opts) {
+    options = opts;
     clear();
     Options o(opts);
     if (o.trace)

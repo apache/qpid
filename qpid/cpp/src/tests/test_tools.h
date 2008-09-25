@@ -18,9 +18,9 @@
  * limitations under the License.
  *
  */
+#include "qpid/log/Logger.h"
 
 #include <limits.h>             // Include before boost/test headers.
-
 #include <boost/test/test_tools.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/regex.hpp>
@@ -77,6 +77,18 @@ inline bool regexPredicate(const std::string& re, const std::string& text) {
 
 /** Check if types of two objects (as given by typeinfo::name()) match. */
 #define BOOST_CHECK_TYPEID_EQUAL(a,b) BOOST_CHECK_EQUAL(typeid(a).name(),typeid(b).name())
+
+/**
+ * Supress all logging in a scope, restore to previous configuration in destructor.
+ */
+struct ScopedSuppressLogging {
+    typedef qpid::log::Logger  Logger;
+    ScopedSuppressLogging(Logger& l=Logger::instance()) : logger(l), opts(l.getOptions()) { l.clear(); }
+    ~ScopedSuppressLogging() { logger.configure(opts); }
+    Logger& logger;
+    qpid::log::Options opts;
+};
+
 
 #endif  /*!TEST_TOOLS_H*/
 

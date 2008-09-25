@@ -77,6 +77,7 @@ QPID_AUTO_TEST_CASE(testStatementEnabled) {
     // Verify that the singleton enables and disables static
     // log statements.
     Logger& l = Logger::instance();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(debug));
     static Statement s=QPID_LOG_STATEMENT_INIT(debug);
     BOOST_CHECK(!s.enabled);
@@ -110,7 +111,7 @@ struct TestOutput : public Logger::Output {
 using boost::assign::list_of;
 
 QPID_AUTO_TEST_CASE(testLoggerOutput) {
-    Logger l;
+    Logger l; 
     l.clear();
     l.select(Selector(debug));
     Statement s=QPID_LOG_STATEMENT_INIT(debug);
@@ -133,7 +134,7 @@ QPID_AUTO_TEST_CASE(testLoggerOutput) {
 
 QPID_AUTO_TEST_CASE(testMacro) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(info));
     TestOutput* out=new TestOutput(l);
     QPID_LOG(info, "foo");
@@ -152,6 +153,7 @@ QPID_AUTO_TEST_CASE(testMacro) {
 
 QPID_AUTO_TEST_CASE(testLoggerFormat) {
     Logger& l = Logger::instance();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(critical));
     TestOutput* out=new TestOutput(l);
 
@@ -165,20 +167,16 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
+    BOOST_CHECK_REGEX("void .*testLoggerFormat.*\\(\\): foo\n", out->last());
     
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
     BOOST_CHECK_EQUAL("critical foo\n", out->last());
-
-    l.format(~0);               // Everything
-    QPID_LOG(critical, "foo");
-    string re=".* critical -?\\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
-    BOOST_CHECK_REGEX(re, out->last());
 }
 
 QPID_AUTO_TEST_CASE(testOstreamOutput) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     l.select(Selector(error));
     ostringstream os;
     l.output(os);
@@ -191,6 +189,7 @@ QPID_AUTO_TEST_CASE(testOstreamOutput) {
 #if 0 // This test requires manual intervention. Normally disabled.
 QPID_AUTO_TEST_CASE(testSyslogOutput) {
     Logger& l=Logger::instance();
+    Logger::StateSaver ls(l);
     l.clear();
     l.select(Selector(info));
     l.syslog("qpid_test");
@@ -306,41 +305,9 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
     BOOST_CHECK(s.isEnabled(critical, "foo"));
 }
 
-QPID_AUTO_TEST_CASE(testOptionsFormat) {
-    Logger l;
-    {
-        Options opts("");
-        BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
-        const char* argv[]={
-            0,
-            "--log-time", "no", 
-            "--log-level", "no",
-            "--log-source", "1",
-            "--log-thread",  "1"
-        };
-        opts.parse(ARGC(argv), const_cast<char**>(argv));
-        BOOST_CHECK_EQUAL(
-            Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
-    }
-    {
-        Options opts("");           // Clear.
-        const char* argv[]={
-            0,
-            "--log-level", "no",
-            "--log-thread", "true",
-            "--log-function", "YES",
-            "--log-time", "YES"
-        };
-        opts.parse(ARGC(argv), const_cast<char**>(argv));
-        BOOST_CHECK_EQUAL(
-            Logger::THREAD|Logger::FUNCTION|Logger::TIME,
-            l.format(opts));
-    }
-}
-
-QPID_AUTO_TEST_CASE(testLoggerConfigure) {
+QPID_AUTO_TEST_CASE(testLoggerStateure) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     Options opts("test");
     const char* argv[]={
         0,
@@ -363,7 +330,7 @@ QPID_AUTO_TEST_CASE(testLoggerConfigure) {
 
 QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
-    l.clear();
+    ScopedSuppressLogging ls(l);
     Options opts("test");
     opts.outputs.clear();
     opts.outputs.push_back("logging.tmp");

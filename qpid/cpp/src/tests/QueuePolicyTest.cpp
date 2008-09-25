@@ -18,9 +18,11 @@
  * under the License.
  *
  */
+#include "unit_test.h"
+#include "test_tools.h"
+
 #include "qpid/broker/QueuePolicy.h"
 #include "qpid/sys/Time.h"
-#include "unit_test.h"
 #include "MessageUtils.h"
 #include "BrokerFixture.h"
 
@@ -174,8 +176,9 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
         BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
     }
     try {
+        ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.session.messageTransfer(arg::content=client::Message("Message_6", q));
-        BOOST_FAIL("Transfer should have failed as ");
+        BOOST_FAIL("expecting ResourceLimitExceededException.");
     } catch (const ResourceLimitExceededException&) {}    
 }
 
