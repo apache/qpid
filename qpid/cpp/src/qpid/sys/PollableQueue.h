@@ -53,7 +53,7 @@ class PollableQueue {
     /** @see forEach() */
     template <class F> struct ForEach {
         F handleOne;
-        ForEach(const F& f) : handleOne(f) {}
+        ForEach(F f) : handleOne(f) {}
         void operator()(const iterator& i, const iterator& j) const { std::for_each(i, j, handleOne); }
     };
 

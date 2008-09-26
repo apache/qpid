@@ -77,7 +77,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     
     /** Send to the cluster */
     void mcastControl(const framing::AMQBody& controlBody, Connection* cptr);
-    void mcastBuffer(const char*, size_t, const ConnectionId&, size_t id);
+    void mcastBuffer(const char*, size_t, const ConnectionId&, uint32_t id);
     void mcastEvent(const Event& e);
     
     /** Leave the cluster */
@@ -97,8 +97,8 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void setDumpComplete();
 
     template <class F> void eachConnection(const F& f) {
-        std::for_each(connections.begin(), connections.end(),
-                      boost::bind(f, boost::bind(&ConnectionMap::value_type::second, _1)));
+        for (ConnectionMap::const_iterator i = connections.begin(); i != connections.end(); ++i)
+            f(i->second);
     }
     
   private:
@@ -143,7 +143,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     void stopClusterNode(void);
     void stopFullCluster(void);
-	void updateMemberStats(void);
+    void updateMemberStats(void);
 
     mutable sys::Monitor lock;  // Protect access to members.
     broker::Broker& broker;
@@ -165,7 +165,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     JoiningHandler joiningHandler;
     MemberHandler memberHandler;
 
-    size_t mcastId;
+    uint32_t mcastId;
 
   friend class ClusterHandler;
   friend class JoiningHandler;

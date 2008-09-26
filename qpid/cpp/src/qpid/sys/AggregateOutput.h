@@ -50,7 +50,7 @@ namespace sys {
         void removeOutputTask(OutputTask* t);
 
         /** Apply f to each OutputTask* in the tasks list */
-        template <class F> void eachOutput(const F& f) {
+        template <class F> void eachOutput(F f) {
             std::for_each(tasks.begin(), tasks.end(), f);
         }
     };
