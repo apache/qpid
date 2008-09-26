@@ -22,8 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using common.org.apache.qpid.transport.util;
-using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
 using Frame = org.apache.qpid.transport.network.Frame;
 using Logger = org.apache.qpid.transport.util.Logger;
