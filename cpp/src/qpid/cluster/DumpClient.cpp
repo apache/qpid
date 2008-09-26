@@ -168,6 +168,10 @@ void DumpClient::dumpConnection(const boost::intrusive_ptr<Connection>& dumpConn
     QPID_LOG(debug, donor.getId() << " dumped connection " << *dumpConnection);
 }
 
+// FIXME aconway 2008-09-26: REMOVE
+void foo(broker::SemanticState::ConsumerImpl*) {}
+
+
 void DumpClient::dumpSession(broker::SessionHandler& sh) {
     QPID_LOG(debug, donor.getId() << " dumping session " << &sh.getConnection()  << "[" << sh.getChannel() << "] = "
              << sh.getSession()->getId());
@@ -187,7 +191,8 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
     // Re-create session state on remote connection.
     broker::SessionState* ss = sh.getSession();
 
-    ss->eachConsumer(boost::bind(&DumpClient::dumpConsumer, this, _1));
+    // For reasons unknown, boost::bind does not work here with boost 1.33.
+    ss->eachConsumer(std::bind1st(std::mem_fun(&DumpClient::dumpConsumer),this));
     
     // FIXME aconway 2008-09-19: remaining session state.
 

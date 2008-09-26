@@ -213,13 +213,13 @@ namespace qpid {
                 ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
             /** Apply f to each Message on the queue. */
-            template <class F> void eachMessage(const F& f) const {
+            template <class F> void eachMessage(F f) const {
                 sys::Mutex::ScopedLock l(messageLock);
                 std::for_each(messages.begin(), messages.end(), f);
             }
 
             /** Apply f to each QueueBinding on the queue */
-            template <class F> void eachBinding(const F& f) {
+            template <class F> void eachBinding(F f) {
                 bindings.eachBinding(f);
             }
 

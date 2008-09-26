@@ -31,16 +31,16 @@ namespace cluster {
 
 using framing::Buffer;
 
-const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(size_t);
+const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(uint32_t);
 
-Event::Event(EventType t, const ConnectionId& c,  size_t s, size_t i)
+Event::Event(EventType t, const ConnectionId& c,  size_t s, uint32_t i)
     : type(t), connectionId(c), size(s), data(RefCountedBuffer::create(s)), id(i) {}
 
 Event Event::delivered(const MemberId& m, void* d, size_t s) {
     Buffer buf(static_cast<char*>(d), s);
     EventType type((EventType)buf.getOctet()); 
     ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
-    size_t id = buf.getLong();
+    uint32_t id = buf.getLong();
     assert(buf.getPosition() == OVERHEAD);
     Event e(type, connection, s-OVERHEAD, id);
     memcpy(e.getData(), static_cast<char*>(d)+OVERHEAD, s-OVERHEAD);

@@ -204,10 +204,8 @@ class SemanticState : public sys::OutputTask,
     void attached();
     void detached();
 
-    template <class F> void eachConsumer(const F& f) {
-        outputTasks.eachOutput(
-            boost::bind(f, boost::bind(&boost::polymorphic_downcast<ConsumerImpl*, OutputTask>, _1)));
-    }
+    static ConsumerImpl* castToConsumerImpl(OutputTask* p) { return boost::polymorphic_downcast<ConsumerImpl*>(p); }
+    template <class F> void eachConsumer(F f) { outputTasks.eachOutput(boost::bind(f, boost::bind(castToConsumerImpl, _1))); }
 };
 
 }} // namespace qpid::broker

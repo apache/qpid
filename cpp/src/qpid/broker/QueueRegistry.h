@@ -102,10 +102,10 @@ class QueueRegistry{
     void setParent (management::Manageable* _parent) { parent = _parent; }
 
     /** Call f for each queue in the registry. */
-    template <class F> void eachQueue(const F& f) const {
+    template <class F> void eachQueue(F f) const {
         qpid::sys::RWlock::ScopedWlock l(lock);
-        std::for_each(queues.begin(), queues.end(),
-                      boost::bind(f, boost::bind(&QueueMap::value_type::second, _1)));
+        for (QueueMap::const_iterator i = queues.begin(); i != queues.end(); ++i)
+            f(i->second);
     }
     
 private:

@@ -44,7 +44,7 @@ class QueueBindings
   public:
     
     /** Apply f to each QueueBinding. */
-    template <class F> void eachBinding(const F& f) const { std::for_each(bindings.begin(), bindings.end(), f); }
+    template <class F> void eachBinding(F f) const { std::for_each(bindings.begin(), bindings.end(), f); }
 
     void add(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
     void unbind(ExchangeRegistry& exchanges, boost::shared_ptr<Queue> queue);
