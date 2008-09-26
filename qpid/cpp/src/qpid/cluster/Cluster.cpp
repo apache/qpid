@@ -248,7 +248,7 @@ void Cluster::configChange(
     cpg_address *joined, int nJoined)
 {
     Mutex::ScopedLock l(lock);
-    QPID_LOG(debug, "CPG members: " << AddrList(current, nCurrent) 
+    QPID_LOG(debug, "Process members: " << AddrList(current, nCurrent) 
              << AddrList(left, nLeft, "( ", ")"));
     
     if (find(left, left+nLeft, self) != left+nLeft) { 
@@ -258,7 +258,7 @@ void Cluster::configChange(
         return;
     }
     
-    map.left(left, nLeft);
+    if (map.left(left, nLeft)) updateMemberStats();
     handler->configChange(current, nCurrent, left, nLeft, joined, nJoined);
 }
 
@@ -326,7 +326,7 @@ void Cluster::stopFullCluster(void) {
     mcastControl(ClusterShutdownBody(), 0);
 }
 
-void Cluster::updateMemberStats(void) {
+void Cluster::updateMemberStats() {
     if (mgmtObject) {
         mgmtObject->set_clusterSize(size()); 
         std::vector<Url> vectUrl = getUrls();
