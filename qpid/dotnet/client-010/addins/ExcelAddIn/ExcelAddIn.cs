@@ -23,25 +23,36 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using client.client;
 using Microsoft.Office.Interop.Excel;
 using org.apache.qpid.client;
 using org.apache.qpid.transport;
 
 namespace ExcelAddIn
 {
+    public delegate string ProcessMessage(IMessage m);
+
+    /// <summary>   
+    /// This interface must be implemented so to use a user defined message processor 
+    /// </summary>
+    public interface MessageProcessor
+    {
+        string ProcessMessage(IMessage m);
+    }
+
     [ComVisible(true), ProgId("Qpid")]
     public class ExcelAddIn : IRtdServer 
     {
         private IRTDUpdateEvent _onMessage;
-        private readonly Dictionary<int, MessageTransfer> _topicMessages = new Dictionary<int, MessageTransfer>();
+        private readonly Dictionary<int, IMessage> _topicMessages = new Dictionary<int, IMessage>();
         private readonly Dictionary<string, QpidListener> _queueListener = new Dictionary<string, QpidListener>();
         private readonly Dictionary<int, string> _topicQueueName = new Dictionary<int, string>();
         private Client _client;
-        private ClientSession _session; 
-        
+        private ClientSession _session;
+        private ProcessMessage _messageProcessor;
+
         #region properties
 
         public IRTDUpdateEvent OnMessage
@@ -49,7 +60,7 @@ namespace ExcelAddIn
             get { return _onMessage; }
         }
 
-        public Dictionary<int, MessageTransfer>  TopicMessages
+        public Dictionary<int, IMessage>  TopicMessages
         {
             get { return _topicMessages; }
         }
@@ -78,6 +89,8 @@ namespace ExcelAddIn
             string virtualhost = "test";
             string username = "guest";
             string password = "guest";
+            _messageProcessor = getMessage;
+          
             if( ConfigurationManager.AppSettings["Host"] != null )
             {
                 host = ConfigurationManager.AppSettings["Host"];
@@ -98,6 +111,22 @@ namespace ExcelAddIn
             {
                 password = ConfigurationManager.AppSettings["Password"];
             }
+            if (ConfigurationManager.AppSettings["ProcessorAssembly"] != null)
+            {
+                try
+                {
+                    Assembly a = Assembly.LoadFrom(ConfigurationManager.AppSettings["ProcessorAssembly"]);
+                    Object o = a.CreateInstance(ConfigurationManager.AppSettings["ProcessorClass"]);
+                    MessageProcessor p = (MessageProcessor) o;
+                    _messageProcessor = p.ProcessMessage;
+                }
+                catch (Exception e)
+                {
+                    System.Windows.Forms.MessageBox.Show("Error: \n" + e.StackTrace);         
+                    return 0;
+                }
+            }
+
             System.Windows.Forms.MessageBox.Show("Connection parameters: \n host: " + host + "\n port: " 
                                                  + port + "\n user: " + username);
             try
@@ -195,11 +224,11 @@ namespace ExcelAddIn
 
         public Array RefreshData(ref int TopicCount)
         {
-            Array result = new object[2, _topicMessages.Count];            
-            foreach (KeyValuePair<int, MessageTransfer> pair in _topicMessages)
+            Array result = new object[2, _topicMessages.Count];
+            foreach (KeyValuePair<int, IMessage> pair in _topicMessages)
             {
                 result.SetValue(pair.Key, 0, pair.Key);
-                string value = gerMessage(pair.Value);
+                string value = _messageProcessor(pair.Value);
                 result.SetValue(value, 1, pair.Key);                
             }
             TopicCount = _topicMessages.Count; 
@@ -214,18 +243,21 @@ namespace ExcelAddIn
         #endregion
         //END IRTDServer METHODS
 
-        private string gerMessage(MessageTransfer m)
+        private string getMessage(IMessage m)
         {
+            string res;
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];
             reader.Read(body, 0, body.Length);
             ASCIIEncoding enc = new ASCIIEncoding();            
-            return enc.GetString(body);                
+            res = enc.GetString(body);
+            res = res + " price: " + m.ApplicationHeaders["price"];
+            return res;
         }
 
     }
 
-    class QpidListener : MessageListener
+    class QpidListener : IMessageListener
     {
         private readonly ExcelAddIn _excel;       
         private readonly List<int> _topics = new List<int>();
@@ -240,7 +272,7 @@ namespace ExcelAddIn
             _topics.Add(topic);
         }
 
-        public void messageTransfer(MessageTransfer m)
+        public void messageTransfer(IMessage m)
         {            
             foreach (int i in _topics)
             {
