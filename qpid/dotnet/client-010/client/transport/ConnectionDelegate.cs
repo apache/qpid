@@ -68,8 +68,7 @@ namespace org.apache.qpid.transport
         //           Client side
         //-----------------------------------------------
         public override void connectionStart(Channel context, ConnectionStart mstruct)
-        {
-            // todo SASL 
+        {            
             Dictionary<String, Object> props = new Dictionary<String, Object>();
             context.connectionStartOk(props, null, null, "utf8");
         }
