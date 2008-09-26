@@ -91,9 +91,12 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
 
 Cluster::~Cluster() {}
 
-void Cluster::insert(const boost::intrusive_ptr<Connection>& c) { handler->insert(c); }
+void Cluster::insert(const boost::intrusive_ptr<Connection>& c) {
+    Mutex::ScopedLock l(lock);
+    connections.insert(Cluster::ConnectionMap::value_type(c->getId(), c));
+}
 
-void Cluster::catchUpClosed(const boost::intrusive_ptr<Connection>& c) { handler->catchUpClosed(c); }
+void Cluster::dumpComplete() { handler->dumpComplete(); }
 
 void Cluster::erase(ConnectionId id) {
     Mutex::ScopedLock l(lock);

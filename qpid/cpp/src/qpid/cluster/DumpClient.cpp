@@ -59,6 +59,12 @@ using namespace framing;
 namespace arg=client::arg;
 using client::SessionBase_0_10Access;
 
+struct ClusterConnectionProxy : public AMQP_AllProxy::ClusterConnection {
+    ClusterConnectionProxy(client::Connection& c) :
+        AMQP_AllProxy::ClusterConnection(*client::ConnectionAccess::getImpl(c)) {}
+};
+
+
 // Create a connection with special version that marks it as a catch-up connection.
 client::Connection catchUpConnection() {
     client::Connection c;
@@ -101,7 +107,7 @@ void DumpClient::dump() {
     session.sync();
     session.close();
     donor.eachConnection(boost::bind(&DumpClient::dumpConnection, this, _1));
-    // FIXME aconway 2008-09-18: inidicate successful end-of-dump.
+    ClusterConnectionProxy(connection).dumpComplete();
     connection.close();
     QPID_LOG(debug,  donor.getSelf() << " dumped all state to " << receiver);
 }
@@ -160,10 +166,9 @@ void DumpClient::dumpConnection(const boost::intrusive_ptr<Connection>& dumpConn
     // authentication etc. See ConnectionSettings.
     shadowConnection.open(receiver, bc.getUserId());
     dumpConnection->getBrokerConnection().eachSessionHandler(boost::bind(&DumpClient::dumpSession, this, _1));
-    boost::shared_ptr<client::ConnectionImpl> impl = client::ConnectionAccess::getImpl(shadowConnection);
-    AMQP_AllProxy::ClusterConnection proxy(*impl);
-    proxy.shadowReady(dumpConnection->getId().getMember(),
-                      reinterpret_cast<uint64_t>(dumpConnection->getId().getConnectionPtr()));
+    ClusterConnectionProxy(shadowConnection).shadowReady(
+        dumpConnection->getId().getMember(),
+        reinterpret_cast<uint64_t>(dumpConnection->getId().getConnectionPtr()));
     shadowConnection.close();
     QPID_LOG(debug, donor.getId() << " dumped connection " << *dumpConnection);
 }

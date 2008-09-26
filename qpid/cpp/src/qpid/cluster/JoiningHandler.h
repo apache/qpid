@@ -46,12 +46,10 @@ class JoiningHandler : public ClusterHandler
     void dumpRequest(const MemberId&, const std::string& url);
     void ready(const MemberId&, const std::string& url);
 
-    void insert(const boost::intrusive_ptr<Connection>& c);
-    void catchUpClosed(const boost::intrusive_ptr<Connection>& c);
+    void dumpComplete();
     
   private:
     void checkDumpRequest();
-    void dumpComplete();
 
     enum { START, DUMP_REQUESTED, STALLED, DUMP_COMPLETE } state;
     size_t catchUpConnections;
