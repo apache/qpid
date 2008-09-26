@@ -139,6 +139,7 @@ class Session:
     self.cv                = Condition()
     self.syncSequenceList  = []
     self.getResult         = []
+    self.getSelect         = []
     self.error             = None
     self.bindingKeyList    = self._bindingKeys(rcvObjects, rcvEvents, rcvHeartbeats)
     self.manageConnections = manageConnections
@@ -157,7 +158,7 @@ class Session:
       raise Exception(broker.error)
 
     self.brokers.append(broker)
-    self.getObjects(broker=broker, name="agent")
+    self.getObjects(broker=broker, cls="agent")
     return broker
 
   def delBroker(self, broker):
@@ -220,7 +221,7 @@ class Session:
 
     schema = <schema> - supply a schema object returned from getSchema
     key = <key>       - supply a classKey from the list returned by getClasses
-    name = <name>     - supply a class name as a string
+    cls = <name>      - supply a class name as a string
 
     If objects should be obtained from only one agent, use the following argument.
     Otherwise, the query will go to all agents.
@@ -231,6 +232,10 @@ class Session:
     add the following argument:
 
     broker = <broker> - supply a broker as returned by addBroker
+
+    If additional arguments are supplied, they are used as property selectors.  For example,
+    if the argument name="test" is supplied, only objects whose "name" property is "test"
+    will be returned in the result.
     """
     if "broker" in kwargs:
       brokerList = []
@@ -254,13 +259,18 @@ class Session:
     cname = None
     if   "schema" in kwargs: pname, cname, hash = kwargs["schema"].getKey()
     elif "key"    in kwargs: pname, cname, hash = kwargs["key"]
-    elif "name"   in kwargs: pname, cname, hash = None, kwargs["name"], None
+    elif "cls"    in kwargs: pname, cname, hash = None, kwargs["cls"], None
     if cname == None:
-      raise Exception("No class supplied, use 'schema', 'key', or 'name' argument")
+      raise Exception("No class supplied, use 'schema', 'key', or 'cls' argument")
     map = {}
     map["_class"] = cname
     if pname != None: map["_package"] = pname
     if hash  != None: map["_hash"]    = hash
+
+    self.getSelect = []
+    for item in kwargs:
+      if item != "schema" and item != "key" and item != "cls":
+        self.getSelect.append((item, kwargs[item]))
 
     self.getResult = []
     for agent in agentList:
@@ -453,7 +463,7 @@ class Session:
 
     self.cv.acquire()
     if seq in self.syncSequenceList:
-      if object.getTimestamps()[2] == 0:
+      if object.getTimestamps()[2] == 0 and self._selectMatch(object):
         self.getResult.append(object)
       self.cv.release()
       return
@@ -471,6 +481,14 @@ class Session:
     self.syncSequenceList = []
     self.cv.notify()
     self.cv.release()
+
+  def _selectMatch(self, object):
+    """ Check the object against self.getSelect to check for a match """
+    for key, value in self.getSelect:
+      for prop, propval in object.properties:
+        if key == prop.name and value != propval:
+          return False
+    return True
   
   def _decodeValue(self, codec, typecode):
     """ Decode, from the codec, a value based on its typecode. """

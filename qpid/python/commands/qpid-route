@@ -62,7 +62,7 @@ class RouteManager:
         self.qmf.delBroker(self.broker)
 
     def getLink (self):
-        links = self.qmf.getObjects(name="link")
+        links = self.qmf.getObjects(cls="link")
         for link in links:
             if "%s:%d" % (link.host, link.port) == self.src.name ():
                 return link
@@ -74,7 +74,7 @@ class RouteManager:
             print "Linking broker to itself is not permitted"
             sys.exit(1)
 
-        brokers = self.qmf.getObjects(name="broker")
+        brokers = self.qmf.getObjects(cls="broker")
         broker = brokers[0]
         link = self.getLink()
         if link != None:
@@ -92,7 +92,7 @@ class RouteManager:
 
     def DelLink (self, srcBroker):
         self.src = qmfconsole.BrokerURL(srcBroker)
-        brokers = self.qmf.getObjects(name="broker")
+        brokers = self.qmf.getObjects(cls="broker")
         broker = brokers[0]
         link = self.getLink()
         if link == None:
@@ -103,7 +103,7 @@ class RouteManager:
             print "Close method returned:", res.status, res.text
 
     def ListLinks (self):
-        links = self.qmf.getObjects(name="link")
+        links = self.qmf.getObjects(cls="link")
         if len(links) == 0:
             print "No Links Found"
         else:
@@ -119,7 +119,7 @@ class RouteManager:
         if self.dest.name() == self.src.name():
             raise Exception("Linking broker to itself is not permitted")
 
-        brokers = self.qmf.getObjects(name="broker")
+        brokers = self.qmf.getObjects(cls="broker")
         broker = brokers[0]
 
         link = self.getLink()
@@ -140,7 +140,7 @@ class RouteManager:
         if link == None:
             raise Exception("Protocol Error - Missing link ID")
 
-        bridges = self.qmf.getObjects(name="bridge")
+        bridges = self.qmf.getObjects(cls="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.key == routingKey:
@@ -164,7 +164,7 @@ class RouteManager:
                 raise Exception("No link found from %s to %s" % (self.src.name(), self.dest.name()))
             sys.exit (0)
 
-        bridges = self.qmf.getObjects(name="bridge")
+        bridges = self.qmf.getObjects(cls="bridge")
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and bridge.dest == exchange and bridge.key == routingKey:
                 if _verbose:
@@ -186,8 +186,8 @@ class RouteManager:
             raise Exception("Route not found")
 
     def ListRoutes (self):
-        links   = self.qmf.getObjects(name="link")
-        bridges = self.qmf.getObjects(name="bridge")
+        links   = self.qmf.getObjects(cls="link")
+        bridges = self.qmf.getObjects(cls="bridge")
 
         for bridge in bridges:
             myLink = None
@@ -199,8 +199,8 @@ class RouteManager:
                 print "%s %s:%d %s %s" % (self.dest.name(), myLink.host, myLink.port, bridge.dest, bridge.key)
 
     def ClearAllRoutes (self):
-        links   = self.qmf.getObjects(name="link")
-        bridges = self.qmf.getObjects(name="bridge")
+        links   = self.qmf.getObjects(cls="link")
+        bridges = self.qmf.getObjects(cls="bridge")
 
         for bridge in bridges:
             if _verbose:
@@ -218,7 +218,7 @@ class RouteManager:
                 print "Ok"
 
         if _dellink:
-            links = self.qmf.getObjects(name="link")
+            links = self.qmf.getObjects(cls="link")
             for link in links:
                 if _verbose:
                     print "Deleting Link: %s:%d... " % (link.host, link.port),
