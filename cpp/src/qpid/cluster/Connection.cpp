@@ -109,23 +109,24 @@ void Connection::closed() {
             cluster.catchUpClosed(boost::intrusive_ptr<Connection>(this));
             if (isShadow()) 
                 catchUp = false;
-            else
+            else {
                 connection.closed();
-        }
-        else {
-            // Local network connection has closed.  We need to keep the
-            // connection around but replace the output handler with a
-            // no-op handler as the network output handler will be
-            // deleted.
-            output.setOutputHandler(discardHandler);
-
-            if (isLocal()) {
-                // This was a local replicated connection. Multicast a deliver
-                // closed and process any outstanding frames from the cluster
-                // until self-delivery of deliver-close.
-                cluster.mcastControl(ClusterConnectionDeliverCloseBody(), this);
-                ++mcastSeq;
+                return;
             }
+        }
+
+        // Local network connection has closed.  We need to keep the
+        // connection around but replace the output handler with a
+        // no-op handler as the network output handler will be
+        // deleted.
+        output.setOutputHandler(discardHandler);
+
+        if (isLocal() && !catchUp) {
+            // This was a local replicated connection. Multicast a deliver
+            // closed and process any outstanding frames from the cluster
+            // until self-delivery of deliver-close.
+            cluster.mcastControl(ClusterConnectionDeliverCloseBody(), this);
+            ++mcastSeq;
         }
     }
     catch (const std::exception& e) {
