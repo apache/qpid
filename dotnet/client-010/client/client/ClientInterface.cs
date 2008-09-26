@@ -18,7 +18,6 @@
 */
 
 using System;
-using client.client;
 
 namespace org.apache.qpid.client
 {
