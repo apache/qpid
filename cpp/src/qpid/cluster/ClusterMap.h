@@ -50,17 +50,21 @@ class ClusterMap {
     /** First member of the cluster in ID order, gets to perform one-off tasks. */
     MemberId first() const;
 
-    /** Update for members leaving. */
-    void left(const cpg_address* addrs, size_t size);
+    /** Update for members leaving.
+     *@return true if the cluster membership changed.
+     */
+    bool left(const cpg_address* addrs, size_t size);
 
     /** Convert map contents to a cluster update body. */
     framing::ClusterUpdateBody toControl() const;
 
     /** Add a new member or dump complete if id == dumper. */
-    void ready(const MemberId& id, const Url& url);
+    bool ready(const MemberId& id, const Url& url);
 
-    /** Apply update delivered from clsuter. */
-    void update(const framing::FieldTable& members, uint64_t dumper);
+    /** Apply update delivered from cluster.
+     *@return true if cluster membership changed.
+     **/
+    bool update(const framing::FieldTable& members, uint64_t dumper);
 
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
 
@@ -72,7 +76,6 @@ class ClusterMap {
   private:
 
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
-  friend std::ostream& operator<<(std::ostream& o, const ClusterMap::Members::value_type& mv);
 };
 
 }} // namespace qpid::cluster

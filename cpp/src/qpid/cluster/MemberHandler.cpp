@@ -52,10 +52,8 @@ void MemberHandler::deliver(Event& e) {
     cluster.connectionEventQueue.push(e);
 }
 
-void MemberHandler::update(const MemberId&, const framing::FieldTable& , uint64_t) {
-    Mutex::ScopedLock l(cluster.lock);
-    cluster.updateMemberStats();
-}
+// Updates are for new joiners.
+void MemberHandler::update(const MemberId&, const framing::FieldTable& , uint64_t) {}
 
 void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlStr) {
     Mutex::ScopedLock l(cluster.lock);
@@ -75,8 +73,9 @@ void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlSt
                             boost::bind(&MemberHandler::dumpError, this, _1)));
 }
 
-void MemberHandler::ready(const MemberId& id, const std::string& url) {
-    cluster.map.ready(id, Url(url));
+void MemberHandler::ready(const MemberId& id, const std::string& urlStr) {
+    if (cluster.map.ready(id, Url(urlStr)))
+        cluster.updateMemberStats();
 }
 
 

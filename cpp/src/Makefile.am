@@ -507,7 +507,6 @@ nobase_include_HEADERS = \
   qpid/client/LocalQueue.h \
   qpid/client/Message.h \
   qpid/client/MessageListener.h \
-  qpid/client/MessageQueue.h \
   qpid/client/Results.h \
   qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \

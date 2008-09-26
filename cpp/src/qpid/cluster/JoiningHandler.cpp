@@ -55,10 +55,8 @@ void JoiningHandler::deliver(Event& e) {
 
 void JoiningHandler::update(const MemberId&, const framing::FieldTable& members, uint64_t dumper) {
     Mutex::ScopedLock l(cluster.lock);
-    cluster.map.update(members, dumper);
-    QPID_LOG(debug, "Cluster update: " << cluster.map);
+    if (cluster.map.update(members, dumper)) cluster.updateMemberStats();
     checkDumpRequest();
-    cluster.updateMemberStats();
 }
 
 void JoiningHandler::checkDumpRequest() {
@@ -99,9 +97,10 @@ void JoiningHandler::dumpRequest(const MemberId& dumpee, const std::string& ) {
     }
 }
 
-void JoiningHandler::ready(const MemberId& id, const std::string& url) {
+void JoiningHandler::ready(const MemberId& id, const std::string& urlStr) {
     Mutex::ScopedLock l(cluster.lock);
-    cluster.map.ready(id, Url(url));
+    if (cluster.map.ready(id, Url(urlStr)))
+        cluster.updateMemberStats();
     checkDumpRequest();
 }
 
