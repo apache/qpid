@@ -41,6 +41,7 @@ void JoiningHandler::configChange(
     if (nLeft == 0 && nCurrent == 1 && *current == cluster.self) { // First in cluster.
         QPID_LOG(notice, cluster.self << " first in cluster.");
         cluster.map.ready(cluster.self, cluster.url);
+        cluster.updateMemberStats();
         cluster.unstall();
     }
 }
