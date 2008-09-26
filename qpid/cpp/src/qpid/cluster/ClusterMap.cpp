@@ -45,7 +45,7 @@ bool ClusterMap::left(const cpg_address* addrs, size_t nLeft) {
         changed = members.erase(*a) || changed;
     if (dumper && !isMember(dumper))
         dumper = MemberId();
-    QPID_LOG_IF(debug, changed, *this);
+    QPID_LOG_IF(debug, changed, "Members left. " << *this);
     return changed;
 }
 
@@ -66,7 +66,7 @@ bool ClusterMap::update(const framing::FieldTable& ftMembers, uint64_t dumper_) 
         Url url(i->second->get<std::string>());
         changed = members.insert(Members::value_type(id, url)).second || changed;
     }
-    QPID_LOG_IF(debug, changed, *this);
+    QPID_LOG_IF(debug, changed, "Update: " << *this);
     return changed;
 }
 
@@ -94,12 +94,11 @@ bool ClusterMap::ready(const MemberId& id, const Url& url) {
     bool changed = members.insert(Members::value_type(id,url)).second;
     if (id == dumper) {
         dumper = MemberId();
-        QPID_LOG(info, id << " finished dump.");
+        QPID_LOG(info, id << " finished dump. " << *this);
     }
     else {
-        QPID_LOG(info, id << " joined cluster, url=" << url);
+        QPID_LOG(info, id << " joined, url=" << url << ". " << *this);
     }
-    QPID_LOG_IF(debug, changed, *this);
     return changed;
 }
 

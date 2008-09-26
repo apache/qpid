@@ -62,10 +62,10 @@ class Cluster : private Cpg::Handler, public management::Manageable
 
     virtual ~Cluster();
 
-    void insert(const boost::intrusive_ptr<Connection>&); // Insert a local connection
-    void erase(ConnectionId);          // Erase a connection.
-
-    void catchUpClosed(const boost::intrusive_ptr<Connection>&); // Insert a local connection
+    // FIXME aconway 2008-09-26: thread safety
+    void insert(const boost::intrusive_ptr<Connection>&); 
+    void erase(ConnectionId);       
+    void dumpComplete();
     
     /** Get the URLs of current cluster members. */
     std::vector<Url> getUrls() const;
@@ -93,8 +93,6 @@ class Cluster : private Cpg::Handler, public management::Manageable
     void brokerShutdown();
 
     broker::Broker& getBroker();
-
-    void setDumpComplete();
 
     template <class F> void eachConnection(const F& f) {
         for (ConnectionMap::const_iterator i = connections.begin(); i != connections.end(); ++i)

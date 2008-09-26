@@ -105,27 +105,8 @@ void JoiningHandler::ready(const MemberId& id, const std::string& urlStr) {
     checkDumpRequest();
 }
 
-void JoiningHandler::insert(const boost::intrusive_ptr<Connection>& c) {
-    Mutex::ScopedLock l(cluster.lock);
-    if (c->isCatchUp()) {
-        ++catchUpConnections;
-        QPID_LOG(debug, "Catch-up connection " << *c << " started, total " << catchUpConnections);
-    }
-    cluster.connections.insert(Cluster::ConnectionMap::value_type(c->getId(), c));
-}
-
-void JoiningHandler::catchUpClosed(const boost::intrusive_ptr<Connection>& c) {
-    Mutex::ScopedLock l(cluster.lock);
-    QPID_LOG(debug, "Catch-up complete for " << *c << ", remaining catch-ups: " << catchUpConnections-1);
-    if (c->isShadow()) 
-        cluster.connections.insert(Cluster::ConnectionMap::value_type(c->getId(), c));
-    if (--catchUpConnections == 0)
-        dumpComplete();
-}
-
 void JoiningHandler::dumpComplete() {
-    // FIXME aconway 2008-09-18: need to detect incomplete dump.
-    // Called with lock  - volatile?
+    Mutex::ScopedLock l(cluster.lock);
     if (state == STALLED) {
         QPID_LOG(debug, cluster.self << " received dump and stalled at start point, unstalling.");
         cluster.ready();
@@ -135,6 +116,7 @@ void JoiningHandler::dumpComplete() {
         assert(state == DUMP_REQUESTED);
         state = DUMP_COMPLETE;
     }
+    // FIXME aconway 2008-09-18: need to detect incomplete dump.
 }
 
 
