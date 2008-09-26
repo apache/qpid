@@ -62,10 +62,10 @@ class ExchangeRegistry{
     void registerType(const std::string& type, FactoryFunction);
 
     /** Call f for each exchange in the registry. */
-    template <class F> void eachExchange(const F& f) const {
+    template <class F> void eachExchange(F f) const {
         qpid::sys::RWlock::ScopedWlock l(lock);
-        std::for_each(exchanges.begin(), exchanges.end(),
-                      boost::bind(f, boost::bind(&ExchangeMap::value_type::second, _1)));
+        for (ExchangeMap::const_iterator i = exchanges.begin(); i != exchanges.end(); ++i)
+            f(i->second);
     }
         
   private:

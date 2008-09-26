@@ -98,7 +98,7 @@ class Connection : public sys::ConnectionInputHandler,
     void setUserId(const string& uid);
     void setFederationLink(bool b);
 
-    template <class F> void eachSessionHandler(const F& f) {
+    template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
             f(*ptr_map_ptr(i));
     }

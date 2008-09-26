@@ -115,7 +115,7 @@ void Cluster::mcastControl(const framing::AMQBody& body, Connection* cptr) {
     mcastEvent(e);
 }
 
-void Cluster::mcastBuffer(const char* data, size_t size, const ConnectionId& connection, size_t id) {
+void Cluster::mcastBuffer(const char* data, size_t size, const ConnectionId& connection, uint32_t id) {
     Event e(DATA, connection, size, id);
     memcpy(e.getData(), data, size);
     QPID_LOG(trace, "MCAST " << e);
