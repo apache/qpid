@@ -16,8 +16,6 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-using System;
-using client.client;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
 
@@ -34,8 +32,8 @@ namespace org.apache.qpid.client
         {
             if (((ClientSession) session).MessageListeners.ContainsKey(xfr.getDestination()))
             {
-                MessageListener listener = ((ClientSession) session).MessageListeners[xfr.getDestination()];
-                listener.messageTransfer(xfr);
+                IMessageListener listener = ((ClientSession)session).MessageListeners[xfr.getDestination()];
+                listener.messageTransfer( new Message(xfr));
             }
             else
             {

@@ -1,4 +1,5 @@
 /*
+*
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
 * distributed with this work for additional information
@@ -15,17 +16,31 @@
 * KIND, either express or implied.  See the License for the
 * specific language governing permissions and limitations
 * under the License.
+*
 */
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using org.apache.qpid.transport;
 
 namespace org.apache.qpid.client
 {
-    public interface IMessageListener
+    public interface IMessage
     {
-        /// <summary>
-        /// Inform the listener of the message transfer
-        /// </summary>
-        /// <param name="xfr">The message transfer object</param>
-        void messageTransfer(IMessage xfr);
+        int Id { get; }
+
+        Header Header { get; set; }
+
+        MessageProperties MessageProperties { get; set; }
+
+        DeliveryProperties DeliveryProperties { get; set; }
+
+        Dictionary<String, Object> ApplicationHeaders { get; set; }
+
+        void appendData(byte[] bytes);
+
+        MemoryStream Body { get; }
+
+        void clearData();
     }
 }
