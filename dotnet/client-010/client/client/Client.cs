@@ -57,7 +57,7 @@ namespace org.apache.qpid.client
         {
             _log.debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
                                      port, virtualHost, username));
-            ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this);
+            ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
             ManualResetEvent negotiationComplete = new ManualResetEvent(false);
             connectionDelegate.setCondition(negotiationComplete);
             connectionDelegate.VirtualHost = virtualHost;

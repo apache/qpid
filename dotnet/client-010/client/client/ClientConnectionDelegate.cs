@@ -18,6 +18,9 @@
 */
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
@@ -28,10 +31,14 @@ namespace org.apache.qpid.client
     {
         private static readonly Logger log = Logger.get(typeof (ClientConnectionDelegate));
         private readonly Client _client;
+        private string _username;
+        private string _password;
 
-        public ClientConnectionDelegate(Client client)
+        public ClientConnectionDelegate(Client client, string username, string pasword)
         {
             _client = client;
+            _username = username;
+            _password = pasword;
         }
 
         public override SessionDelegate getSessionDelegate()
@@ -42,6 +49,20 @@ namespace org.apache.qpid.client
         public override void exception(Exception t)
         {
             throw t;
+        }
+
+        public override void connectionStart(Channel context, ConnectionStart mystruct)
+        {
+            const string mechanism = "PLAIN";          
+            MemoryStream stResponse = new MemoryStream();
+            byte[] part = Encoding.UTF8.GetBytes(_username);
+            stResponse.WriteByte(0);
+            stResponse.Write(part, 0, part.Length);
+            stResponse.WriteByte(0);
+            part = Encoding.UTF8.GetBytes(_password);
+            stResponse.Write(part, 0, part.Length);            
+            Dictionary<String, Object> props = new Dictionary<String, Object>();
+            context.connectionStartOk(props, mechanism, stResponse.ToArray(), "utf8");
         }
 
         public override void closed()
@@ -61,7 +82,7 @@ namespace org.apache.qpid.client
             }
         }
 
-        public new void connectionClose(Channel context, ConnectionClose connectionClose)
+        public override void connectionClose(Channel context, ConnectionClose connectionClose)
         {
             base.connectionClose(context, connectionClose);
             ErrorCode errorCode = ErrorCode.getErrorCode((int) connectionClose.getReplyCode());
