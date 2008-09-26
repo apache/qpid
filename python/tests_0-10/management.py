@@ -59,7 +59,7 @@ class ManagementTest (TestBase010):
         session = self.session
         self.startQmf()
  
-        brokers = self.qmf.getObjects(name="broker")
+        brokers = self.qmf.getObjects(cls="broker")
         self.assertEqual (len(brokers), 1)
         broker = brokers[0]
 
@@ -147,54 +147,44 @@ class ManagementTest (TestBase010):
         session.queue_declare(queue="dest-queue", exclusive=True, auto_delete=True)
         session.exchange_bind(queue="dest-queue", exchange="amq.direct")
 
-        queues = self.qmf.getObjects(name="queue")
+        queues = self.qmf.getObjects(cls="queue")
 
         "Move 10 messages from src-queue to dest-queue"
-        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "dest-queue", 10)
+        result = self.qmf.getObjects(cls="broker")[0].queueMoveMessages("src-queue", "dest-queue", 10)
         self.assertEqual (result.status, 0) 
 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "src-queue":
-               sq = q 
-            elif q.name == "dest-queue":
-               dq = q 
+        sq = self.qmf.getObjects(cls="queue", name="src-queue")[0]
+        dq = self.qmf.getObjects(cls="queue", name="dest-queue")[0]
 
         self.assertEqual (sq.msgDepth,10)
         self.assertEqual (dq.msgDepth,10)
 
         "Move all remaining messages to destination"
-        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "dest-queue", 0)
+        result = self.qmf.getObjects(cls="broker")[0].queueMoveMessages("src-queue", "dest-queue", 0)
         self.assertEqual (result.status,0)
 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "src-queue":
-               sq = q 
-            elif q.name == "dest-queue":
-               dq = q 
+        sq = self.qmf.getObjects(cls="queue", name="src-queue")[0]
+        dq = self.qmf.getObjects(cls="queue", name="dest-queue")[0]
+
         self.assertEqual (sq.msgDepth,0)
         self.assertEqual (dq.msgDepth,20)
 
         "Use a bad source queue name"
-        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("bad-src-queue", "dest-queue", 0)
+        result = self.qmf.getObjects(cls="broker")[0].queueMoveMessages("bad-src-queue", "dest-queue", 0)
         self.assertEqual (result.status,4)
 
         "Use a bad destination queue name"
-        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("src-queue", "bad-dest-queue", 0)
+        result = self.qmf.getObjects(cls="broker")[0].queueMoveMessages("src-queue", "bad-dest-queue", 0)
         self.assertEqual (result.status,4)
 
         " Use a large qty (40) to move from dest-queue back to "
         " src-queue- should move all "
-        result = self.qmf.getObjects(name="broker")[0].queueMoveMessages("dest-queue", "src-queue", 40)
+        result = self.qmf.getObjects(cls="broker")[0].queueMoveMessages("dest-queue", "src-queue", 40)
         self.assertEqual (result.status,0)
 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "src-queue":
-               sq = q 
-            elif q.name == "dest-queue":
-               dq = q 
+        sq = self.qmf.getObjects(cls="queue", name="src-queue")[0]
+        dq = self.qmf.getObjects(cls="queue", name="dest-queue")[0]
+
         self.assertEqual (sq.msgDepth,20)
         self.assertEqual (dq.msgDepth,0)
 
@@ -226,35 +216,23 @@ class ManagementTest (TestBase010):
             msg = Message(props, body)
             session.message_transfer(destination="amq.direct", message=msg)
 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "purge-queue":
-               pq = q 
+        pq = self.qmf.getObjects(cls="queue", name="purge-queue")[0]
 
         "Purge top message from purge-queue"
         result = pq.purge(1)
         self.assertEqual (result.status, 0) 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "purge-queue":
-               pq = q 
+        pq = self.qmf.getObjects(cls="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,19)
 
         "Purge top 9 messages from purge-queue"
         result = pq.purge(9)
         self.assertEqual (result.status, 0) 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "purge-queue":
-               pq = q 
+        pq = self.qmf.getObjects(cls="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,10)
 
         "Purge all messages from purge-queue"
         result = pq.purge(0)
         self.assertEqual (result.status, 0) 
-        queues = self.qmf.getObjects(name="queue")
-        for q in queues:
-            if q.name == "purge-queue":
-               pq = q 
+        pq = self.qmf.getObjects(cls="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,0)
 
