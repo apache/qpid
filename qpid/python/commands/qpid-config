@@ -82,8 +82,8 @@ class BrokerManager:
         self.qmf.delBroker(self.broker)
 
     def Overview (self):
-        exchanges = self.qmf.getObjects(name="exchange")
-        queues    = self.qmf.getObjects(name="queue")
+        exchanges = self.qmf.getObjects(cls="exchange")
+        queues    = self.qmf.getObjects(cls="queue")
         print "Total Exchanges: %d" % len (exchanges)
         etype = {}
         for ex in exchanges:
@@ -104,7 +104,7 @@ class BrokerManager:
         print "    non-durable: %d" % (len (queues) - _durable)
 
     def ExchangeList (self, filter):
-        exchanges = self.qmf.getObjects(name="exchange")
+        exchanges = self.qmf.getObjects(cls="exchange")
         print "Durable   Type      Bindings  Exchange Name"
         print "======================================================="
         for ex in exchanges:
@@ -112,9 +112,9 @@ class BrokerManager:
                 print "%4c      %-10s%5d     %s" % (YN (ex.durable), ex.type, ex.bindingCount, ex.name)
 
     def ExchangeListRecurse (self, filter):
-        exchanges = self.qmf.getObjects(name="exchange")
-        bindings  = self.qmf.getObjects(name="binding")
-        queues    = self.qmf.getObjects(name="queue")
+        exchanges = self.qmf.getObjects(cls="exchange")
+        bindings  = self.qmf.getObjects(cls="binding")
+        queues    = self.qmf.getObjects(cls="queue")
         for ex in exchanges:
             if self.match (ex.name, filter):
                 print "Exchange '%s' (%s)" % (ex.name, ex.type)
@@ -128,8 +128,8 @@ class BrokerManager:
             
 
     def QueueList (self, filter):
-        queues   = self.qmf.getObjects(name="queue")
-        journals = self.qmf.getObjects(name="journal")
+        queues   = self.qmf.getObjects(cls="queue")
+        journals = self.qmf.getObjects(cls="journal")
         print "                                      Store Size"
         print "Durable  AutoDel  Excl  Bindings  (files x file pages)  Queue Name"
         print "==========================================================================================="
@@ -149,9 +149,9 @@ class BrokerManager:
                              YN (q.exclusive), q.bindingCount, q.name)
 
     def QueueListRecurse (self, filter):
-        exchanges = self.qmf.getObjects(name="exchange")
-        bindings  = self.qmf.getObjects(name="binding")
-        queues    = self.qmf.getObjects(name="queue")
+        exchanges = self.qmf.getObjects(cls="exchange")
+        bindings  = self.qmf.getObjects(cls="binding")
+        queues    = self.qmf.getObjects(cls="queue")
         for queue in queues:
             if self.match (queue.name, filter):
                 print "Queue '%s'" % queue.name
