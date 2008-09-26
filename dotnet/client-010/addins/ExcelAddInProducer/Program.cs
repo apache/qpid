@@ -22,8 +22,6 @@ using System;
 using System.Text;
 using System.Threading;
 using org.apache.qpid.client;
-using org.apache.qpid.transport;
-using org.apache.qpid.transport.util;
 
 namespace ExcelAddInProducer
 {
@@ -40,13 +38,14 @@ namespace ExcelAddInProducer
             Console.WriteLine("Session created");
             ssn.queueDeclare("queue1", null, null);
             ssn.exchangeBind("queue1", "amq.direct", "queue1", null);
-
+            IMessage message = new Message();
+            message.ApplicationHeaders.Add("price", 0);
             for (int i = 0; i < 100; i++)
             {
-                ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
-                                    new Header(new DeliveryProperties().setRoutingKey("queue1"),
-                                               new MessageProperties().setMessageId(UUID.randomUUID())),
-                                    Encoding.UTF8.GetBytes("test: " + i));
+                message.clearData();
+                message.appendData( Encoding.UTF8.GetBytes("test: " + i));
+                message.ApplicationHeaders["price"] =  i;
+                ssn.messageTransfer("amq.direct", "queue1", message);               
                 Thread.Sleep(1000);
             }
 
