@@ -90,18 +90,6 @@ void MemberHandler::dumpError(const std::exception& e) {
     dumpSent();
 }
 
-void MemberHandler::insert(const boost::intrusive_ptr<Connection>& c) {
-    Mutex::ScopedLock l(cluster.lock);
-    if (c->isCatchUp())         // Not allowed in member mode
-        c->getBrokerConnection().close(execution::ERROR_CODE_ILLEGAL_STATE, "Not in catch-up mode.");
-    else
-        cluster.connections[c->getId()] = c;
-}
-
-void MemberHandler::catchUpClosed(const boost::intrusive_ptr<Connection>& c) {
-    Mutex::ScopedLock l(cluster.lock);
-    QPID_LOG(warning, "Catch-up connection " << c << " closed in member mode");
-    assert(0);
-}
+void MemberHandler::dumpComplete() { assert(0); }
 
 }} // namespace qpid::cluster
