@@ -47,6 +47,7 @@ void JoiningHandler::configChange(
 }
 
 void JoiningHandler::deliver(Event& e) {
+    Mutex::ScopedLock l(cluster.lock);
     // Discard connection events unless we are stalled to receive a  dump.
     if (state == STALLED) 
         cluster.connectionEventQueue.push(e);
@@ -60,7 +61,7 @@ void JoiningHandler::update(const MemberId&, const framing::FieldTable& members,
     checkDumpRequest();
 }
 
-void JoiningHandler::checkDumpRequest() {
+void JoiningHandler::checkDumpRequest() { // Call with lock held
     if (state == START && !cluster.map.dumper) {
         cluster.broker.getPort(); // ensure the broker is listening.
         state = DUMP_REQUESTED;
