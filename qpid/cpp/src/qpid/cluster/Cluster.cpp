@@ -282,6 +282,7 @@ void Cluster::stall() {
 }
 
 void Cluster::ready() {
+    // Called with lock held
     QPID_LOG(debug, self << " ready at " << url);
     unstall();
     mcastControl(ClusterReadyBody(ProtocolVersion(), url.str()), 0);

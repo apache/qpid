@@ -74,6 +74,7 @@ void MemberHandler::dumpRequest(const MemberId& dumpee, const std::string& urlSt
 }
 
 void MemberHandler::ready(const MemberId& id, const std::string& urlStr) {
+    Mutex::ScopedLock l(cluster.lock);
     if (cluster.map.ready(id, Url(urlStr)))
         cluster.updateMemberStats();
 }
