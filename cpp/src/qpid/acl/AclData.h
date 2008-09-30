@@ -57,7 +57,7 @@ public:
    qpid::acl::AclResult decisionMode;  // determines if the rule set is an deny or accept basis. 
    bool transferAcl;
   
-   AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params);
+   AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
    AclResult lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey);
    AclResult getACLResult(bool logOnly, bool log);
   
