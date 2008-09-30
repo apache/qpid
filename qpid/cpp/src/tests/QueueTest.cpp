@@ -24,6 +24,7 @@
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/NullMessageStore.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include <iostream>
 #include "boost/format.hpp"
@@ -235,6 +236,95 @@ QPID_AUTO_TEST_CASE(testBound)
     exchange1->route(deliverable, key, &args);
     exchange3->route(deliverable, key, &args);
 }
+
+QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
+
+    FieldTable args;
+
+    // set queue mode
+	args.setInt("qpid.persist_last_node", 1);
+	
+	Queue::shared_ptr queue(new Queue("my-queue", true));
+    queue->configure(args);
+	
+    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg2 = message("e", "B");
+    intrusive_ptr<Message> msg3 = message("e", "C");
+
+	//enqueue 2 messages
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+	
+	//change mode
+	queue->setLastNodeFailure();
+	
+	//enqueue 1 message
+    queue->deliver(msg3);
+	
+	//check all have persistent ids.
+    BOOST_CHECK(msg1->isPersistent());
+    BOOST_CHECK(msg2->isPersistent());
+    BOOST_CHECK(msg3->isPersistent());
+
+}
+
+class TestMessageStore : public NullMessageStore
+{
+  public:
+    
+    virtual void dequeue(TransactionContext*,
+                 const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
+                 const PersistableQueue& /*queue*/)
+    {
+    }
+
+    virtual void enqueue(TransactionContext*,
+                 const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
+                 const PersistableQueue& /* queue */)
+    {
+    }
+
+    TestMessageStore() : NullMessageStore(false) {}
+    ~TestMessageStore(){}
+};
+
+
+QPID_AUTO_TEST_CASE(testOptimisticConsume){
+
+    FieldTable args;
+	args.setInt("qpid.persist_last_node", 1);
+
+    // set queue mode
+	
+	TestMessageStore store;
+	Queue::shared_ptr queue(new Queue("my-queue", true, &store));
+	queue->setLastNodeFailure();
+	
+    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg2 = message("e", "B");
+    intrusive_ptr<Message> msg3 = message("e", "C");
+	msg1->forcePersistent();
+	msg2->forcePersistent();
+	msg3->forcePersistent();
+
+	//enqueue 2 messages
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+	
+	//change mode
+	args.setInt("qpid.optimistic_consume", 1);
+    queue->configure(args);
+	
+	//enqueue 1 message
+    queue->deliver(msg3);
+	
+	//check all have persistent ids.
+    BOOST_CHECK(!msg1->isEnqueueComplete());
+    BOOST_CHECK(!msg2->isEnqueueComplete());
+    BOOST_CHECK(msg3->isEnqueueComplete());
+
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

@@ -164,6 +164,7 @@ class Cluster : private Cpg::Handler, public management::Manageable
     MemberHandler memberHandler;
 
     uint32_t mcastId;
+	size_t lastSize;
 
   friend class ClusterHandler;
   friend class JoiningHandler;

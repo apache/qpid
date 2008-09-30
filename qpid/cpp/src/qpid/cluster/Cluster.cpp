@@ -22,6 +22,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/QueueRegistry.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ClusterDumpRequestBody.h"
 #include "qpid/framing/ClusterUpdateBody.h"
@@ -71,7 +72,8 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
     handler(&joiningHandler),
     joiningHandler(*this),
     memberHandler(*this),
-    mcastId()
+    mcastId(),
+	lastSize(1)
 {
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0){
@@ -332,7 +334,17 @@ void Cluster::stopFullCluster(void) {
 
 void Cluster::updateMemberStats() {
     if (mgmtObject) {
-        mgmtObject->set_clusterSize(size()); 
+        if (lastSize != size() && size() ==1){
+            QPID_LOG(info, "Last node standing, updating queue policies, size:" <<size());
+		    broker.getQueues().updateQueueClusterState(true);
+			lastSize = size();
+		}else if (lastSize != size() && size() > 1) {
+            QPID_LOG(info, "Recover back from last node standing, updating queue policies, size:" <<size());
+		    broker.getQueues().updateQueueClusterState(false);
+			lastSize = size();
+		}
+		
+		mgmtObject->set_clusterSize(size()); 
         std::vector<Url> vectUrl = getUrls();
         string urlstr;
         for(std::vector<Url>::iterator iter = vectUrl.begin(); iter != vectUrl.end(); iter++ ) {

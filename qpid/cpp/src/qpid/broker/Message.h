@@ -133,6 +133,8 @@ public:
 
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);
+	
+	void forcePersistent();
 
   private:
     mutable sys::Mutex lock;
@@ -142,6 +144,7 @@ public:
     bool redelivered;
     bool loaded;
     bool staged;
+	bool forcePersistentPolicy; // used to force message as durable, via a broker policy
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
 

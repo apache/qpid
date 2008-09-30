@@ -107,6 +107,12 @@ class QueueRegistry{
         for (QueueMap::const_iterator i = queues.begin(); i != queues.end(); ++i)
             f(i->second);
     }
+	
+	/**
+	* Change queue mode when cluster size drops to 1 node, expands again
+	* in practice allows flow queue to disk when last name to be exectuted
+	*/
+	void updateQueueClusterState(bool lastNode);
     
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
@@ -115,6 +121,7 @@ private:
     int counter;
     MessageStore* store;
     management::Manageable* parent;
+	bool lastNode; //used to set mode on queue declare
 
     //destroy impl that assumes lock is already held:
     void destroyLH (const string& name);
