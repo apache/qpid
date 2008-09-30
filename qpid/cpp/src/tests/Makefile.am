@@ -138,7 +138,6 @@ EXTRA_DIST +=								\
   .valgrind.supp							\
   MessageUtils.h							\
   TestMessageStore.h							\
-  MockConnectionInputHandler.h						\
   TxMocks.h								\
   start_cluster stop_cluster restart_cluster
 
