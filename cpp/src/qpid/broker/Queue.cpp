@@ -244,7 +244,7 @@ bool Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
             return false;
         } else {
             QueuedMessage msg = messages.front();
-            if (store && !msg.payload->isEnqueueComplete()) { 
+            if (!optimisticConsume && store && !msg.payload->isEnqueueComplete()) { 
                 QPID_LOG(debug, "Messages not ready to dispatch on queue '" << name << "'");
                 addListener(c);
                 return false;
@@ -482,11 +482,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
     }
 
     if (msg->isPersistent() && store) {
-        if (optimisticConsume){
-		    msg->enqueueComplete(); // (optimistic) allow consume before written to disk
-        } else {
-		    msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
-		}
+	    msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
 		boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg);
         store->enqueue(ctxt, pmsg, *this);
         return true;
@@ -503,11 +499,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
         dequeued(msg);
     }
     if (msg.payload->isPersistent() && store) {
-        if (optimisticConsume) {
-		    msg.payload->dequeueComplete();
-        } else {
-            msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
-        }
+        msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
 		boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
         store->dequeue(ctxt, pmsg, *this);
         return true;
