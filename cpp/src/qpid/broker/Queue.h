@@ -73,6 +73,10 @@ namespace qpid {
             uint32_t consumerCount;
             OwnershipToken* exclusive;
             bool noLocal;
+            bool lastValueQueue;
+            bool optimisticConsume;
+            bool persistLastNode;
+			bool inLastNodeFailure;
             std::string traceId;
             std::vector<std::string> traceExclude;
             Listeners listeners;
@@ -103,6 +107,26 @@ namespace qpid {
 
             void dequeued(const QueuedMessage& msg);
             void popAndDequeue();
+			inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg){
+                if (mgmtObject != 0) {
+                    mgmtObject->inc_msgTotalEnqueues ();
+                    mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
+                    if (msg->isPersistent ()) {
+                	    mgmtObject->inc_msgPersistEnqueues ();
+                	    mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
+					}
+                }
+			};
+			inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg){
+    			if (mgmtObject != 0){
+        			mgmtObject->inc_msgTotalDequeues  ();
+        			mgmtObject->inc_byteTotalDequeues (msg->contentSize());
+        			if (msg->isPersistent ()){
+            			mgmtObject->inc_msgPersistDequeues ();
+            			mgmtObject->inc_bytePersistDequeues (msg->contentSize());
+        			}
+    			}
+			};
 
         public:
 
@@ -178,6 +202,11 @@ namespace qpid {
             bool canAutoDelete() const;
             const QueueBindings& getBindings() const { return bindings; }
 
+            /**
+			* used to take messages from in memory and flush down to disk.
+			*/
+			void setLastNodeFailure();
+			void clearLastNodeFailure();
 
             bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**

@@ -37,10 +37,16 @@ using std::string;
 
 TransferAdapter Message::TRANSFER;
 
-Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), staged(false), publisher(0), adapter(0) {}
+Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false),
+staged(false), forcePersistentPolicy(false), publisher(0), adapter(0) {}
 
 Message::~Message()
 {
+}
+
+void Message::forcePersistent()
+{
+    forcePersistentPolicy = true;
 }
 
 std::string Message::getRoutingKey() const
@@ -73,7 +79,7 @@ const FieldTable* Message::getApplicationHeaders() const
 
 bool Message::isPersistent()
 {
-    return getAdapter().isPersistent(frames);
+    return (getAdapter().isPersistent(frames) || forcePersistentPolicy);
 }
 
 bool Message::requiresAccept()
