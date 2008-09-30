@@ -31,12 +31,13 @@ _fileCount    = 8
 _fileSize     = 24
 _maxQueueSize = None
 _maxQueueCount= None
-
+_policyType   = None
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
 MAX_QUEUE_SIZE  = "qpid.max_size"
 MAX_QUEUE_COUNT  = "qpid.max_count"
+POLICY_TYPE  = "qpid.policy_type"
 
 def Usage ():
     print "Usage:  qpid-config [OPTIONS]"
@@ -61,6 +62,7 @@ def Usage ():
     print "    --file-size  N (24) File size in pages (64Kib/page)"
     print "    --max-queue-size N  Maximum in-memory queue size as bytes"
     print "    --max-queue-count N Maximum in-memory queue size as a number of messages"
+    print "    --policy-type TYPE  Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
     print
     print "Add Exchange Options:"
     print "    --durable           Exchange is durable"
@@ -191,6 +193,8 @@ class BrokerManager:
             declArgs[MAX_QUEUE_SIZE]  = _maxQueueSize
         if _maxQueueCount:
             declArgs[MAX_QUEUE_COUNT]  = _maxQueueCount
+        if _policyType:
+            declArgs[POLICY_TYPE]  = _policyType
 
         self.broker.getAmqpSession().queue_declare (queue=qname, durable=_durable, arguments=declArgs)
 
@@ -243,7 +247,7 @@ def YN (bool):
 ##
 
 try:
-    longOpts = ("durable", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=")
+    longOpts = ("durable", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=")
     (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -263,6 +267,8 @@ for opt in optlist:
         _maxQueueSize = int (opt[1])
     if opt[0] == "--max-queue-count":
         _maxQueueCount = int (opt[1])
+    if opt[0] == "--policy-type":
+        _policyType = opt[1]
 
 nargs = len (cargs)
 bm    = BrokerManager ()
