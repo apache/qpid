@@ -54,7 +54,7 @@ public:
    virtual bool doTransferAcl()=0;
    
    virtual bool authorise(const std::string& id, const acl::Action& action, const acl::ObjectType& objType, const std::string& name, 
-       std::map<acl::Property, std::string>* params)=0;
+       std::map<acl::Property, std::string>* params=0)=0;
    virtual bool authorise(const std::string& id, const acl::Action& action, const acl::ObjectType& objType, const std::string& ExchangeName, 
        const std::string& RoutingKey)=0;
    // create specilied authorise methods for cases that need faster matching as needed.

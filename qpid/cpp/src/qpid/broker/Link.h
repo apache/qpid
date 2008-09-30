@@ -110,6 +110,7 @@ namespace qpid {
             string getAuthMechanism() { return authMechanism; }
             string getUsername()      { return username; }
             string getPassword()      { return password; }
+            Broker* getBroker()       { return broker; }
 
             void notifyConnectionForced(const std::string text);
             
