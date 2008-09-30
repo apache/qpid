@@ -176,6 +176,13 @@ bool RingQueuePolicy::checkLimit(const QueuedMessage& m)
     QueuedMessage oldest;
     {
         qpid::sys::Mutex::ScopedLock l(lock);
+        if (queue.empty()) {
+            QPID_LOG(debug, "Message too large for ring queue " 
+                     << (m.queue ? m.queue->getName() : std::string("unknown queue")) 
+                     << " [" << *this  << "] "
+                     << ": message size = " << m.payload->contentSize() << " bytes");
+            return false;
+        }
         oldest = queue.front();
     }
     if (oldest.queue->acquire(oldest) || !strict) {
