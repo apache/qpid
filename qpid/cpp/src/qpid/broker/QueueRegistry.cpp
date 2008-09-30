@@ -27,7 +27,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 QueueRegistry::QueueRegistry() :
-    counter(1), store(0), parent(0) {}
+    counter(1), store(0), parent(0), lastNode(false) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -43,6 +43,7 @@ QueueRegistry::declare(const string& declareName, bool durable,
     if (i == queues.end()) {
         Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent));
         queues[name] = queue;
+		if (lastNode) queue->setLastNodeFailure();
 
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
@@ -91,3 +92,17 @@ void QueueRegistry::setStore (MessageStore* _store)
 MessageStore* QueueRegistry::getStore() const {
     return store;
 }
+
+void QueueRegistry::updateQueueClusterState(bool _lastNode)
+{
+    RWlock::ScopedRlock locker(lock);
+    for (QueueMap::iterator i = queues.begin(); i != queues.end(); i++) {
+        if (_lastNode){
+		    i->second->setLastNodeFailure();
+		} else {
+		    i->second->clearLastNodeFailure();
+		}
+    }
+	lastNode = _lastNode;
+}
+
