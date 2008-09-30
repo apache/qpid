@@ -402,9 +402,11 @@ bool AclReader::processAclLine(tokList& toks) {
     }
 
     bool actionAllFlag = toks[3].compare("all") == 0;
+    bool userAllFlag   = toks[2].compare("all") == 0;
     Action action;
     if (actionAllFlag) {
-        if (toksSize > 4) {
+
+        if (userAllFlag && toksSize > 4) {
             QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Tokens found after action \"all\".");
             return false;
         }
