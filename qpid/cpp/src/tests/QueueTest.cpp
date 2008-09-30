@@ -268,7 +268,7 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 
 }
 
-class TestMessageStore : public NullMessageStore
+class TestMessageStoreOC : public NullMessageStore
 {
   public:
     
@@ -284,8 +284,8 @@ class TestMessageStore : public NullMessageStore
     {
     }
 
-    TestMessageStore() : NullMessageStore(false) {}
-    ~TestMessageStore(){}
+    TestMessageStoreOC() : NullMessageStore(false) {}
+    ~TestMessageStoreOC(){}
 };
 
 
@@ -296,7 +296,7 @@ QPID_AUTO_TEST_CASE(testOptimisticConsume){
 
     // set queue mode
 	
-	TestMessageStore store;
+	TestMessageStoreOC store;
 	Queue::shared_ptr queue(new Queue("my-queue", true, &store));
 	queue->setLastNodeFailure();
 	
