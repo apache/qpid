@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using org.apache.qpid.transport.util;
 using Frame = org.apache.qpid.transport.network.Frame;
@@ -95,6 +96,15 @@ namespace org.apache.qpid.transport
                 {
                     _closed = value;
                 }
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                ASCIIEncoding enc = new ASCIIEncoding();
+                return enc.GetString(_name);
             }
         }
 
