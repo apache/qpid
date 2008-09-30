@@ -67,7 +67,7 @@ public:
    inline virtual bool doTransferAcl() {return transferAcl;};
    
    // create specilied authorise methods for cases that need faster matching as needed.
-   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params);
+   virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params=0);
    virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName,const std::string& RoutingKey);
 
    virtual ~Acl();
