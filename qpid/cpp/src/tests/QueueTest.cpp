@@ -301,27 +301,23 @@ QPID_AUTO_TEST_CASE(testOptimisticConsume){
 	queue->setLastNodeFailure();
 	
     intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
 	msg1->forcePersistent();
-	msg2->forcePersistent();
-	msg3->forcePersistent();
 
-	//enqueue 2 messages
-    queue->deliver(msg1);
-    queue->deliver(msg2);
-	
 	//change mode
 	args.setInt("qpid.optimistic_consume", 1);
     queue->configure(args);
 	
 	//enqueue 1 message
-    queue->deliver(msg3);
+    queue->deliver(msg1);
 	
-	//check all have persistent ids.
-    BOOST_CHECK(!msg1->isEnqueueComplete());
-    BOOST_CHECK(!msg2->isEnqueueComplete());
-    BOOST_CHECK(msg3->isEnqueueComplete());
+    TestConsumer::shared_ptr consumer(new TestConsumer());
+    queue->consume(consumer);
+    queue->dispatch(consumer);
+    if (!consumer->received)
+        sleep(2);
+
+    BOOST_CHECK_EQUAL(msg1.get(), consumer->last.get());
+    BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
 
 }
 
