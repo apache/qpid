@@ -33,6 +33,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
+#include "AclModule.h"
 
 namespace qpid {
 namespace broker {
@@ -49,35 +50,36 @@ class ConnectionHandler : public framing::FrameHandler
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
-    
+        AclModule* acl;
+
         Handler(Connection& connection, bool isClient);
         ~Handler();
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
-                     const std::string& locale); 
-        void secureOk(const std::string& response); 
-        void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat); 
+                     const std::string& locale);
+        void secureOk(const std::string& response);
+        void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat);
         void heartbeat() {}
         void open(const std::string& virtualHost,
-                  const framing::Array& capabilities, bool insist); 
-        void close(uint16_t replyCode, const std::string& replyText); 
-        void closeOk(); 
+                  const framing::Array& capabilities, bool insist);
+        void close(uint16_t replyCode, const std::string& replyText);
+        void closeOk();
 
 
         void start(const qpid::framing::FieldTable& serverProperties,
                    const framing::Array& mechanisms,
                    const framing::Array& locales);
-        
+
         void secure(const std::string& challenge);
-        
+
         void tune(uint16_t channelMax,
                   uint16_t frameMax,
                   uint16_t heartbeatMin,
                   uint16_t heartbeatMax);
-        
+
         void openOk(const framing::Array& knownHosts);
-        
-        void redirect(const std::string& host, const framing::Array& knownHosts);        
+
+        void redirect(const std::string& host, const framing::Array& knownHosts);
     };
     std::auto_ptr<Handler> handler;
   public:

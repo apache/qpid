@@ -26,10 +26,13 @@
 #include "qpid/agent/ManagementAgent.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
+#include "AclModule.h"
 
 using namespace qpid::broker;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
+using qpid::framing::NotAllowedException;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -153,6 +156,12 @@ void Link::destroy ()
 {
     Mutex::ScopedLock mutex(lock);
     Bridges toDelete;
+
+    AclModule* acl = getBroker()->getAcl();
+    std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
+    if (acl && !acl->authorise(userID,acl::DELETE,acl::LINK,"")){
+    	throw NotAllowedException("ACL denied delete link request");
+    }
 
     QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
     if (connection)

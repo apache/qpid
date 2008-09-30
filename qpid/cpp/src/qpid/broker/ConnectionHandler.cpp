@@ -28,6 +28,7 @@
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
+#include "AclModule.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -72,9 +73,12 @@ ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : h
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
     client(c.getOutput()), server(c.getOutput()),
-    connection(c), serverMode(!isClient)
+    connection(c), serverMode(!isClient), acl(0)
 {
     if (serverMode) {
+
+    	acl =  connection.getBroker().getAcl();
+
         FieldTable properties;
         Array mechanisms(0x95);
 
@@ -100,7 +104,11 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
     authenticator->start(mechanism, response);
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     if (connection.isFederationLink()){
-		QPID_LOG(info, "Connection is a federation link");
+    	if (acl && !acl->authorise(connection.getUserId(),acl::CREATE,acl::LINK,"")){
+             client.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
+    	      return;
+	}
+	QPID_LOG(info, "Connection is a federation link");
     }
 }
 
