@@ -19,10 +19,8 @@
 *
 */
 using System;
-using System.IO;
 using System.Text;
 using System.Threading;
-using client.client;
 using NUnit.Framework;
 using org.apache.qpid.client;
 using org.apache.qpid.transport;
@@ -139,7 +137,7 @@ namespace test.interop
 
 
 
-        private class MyListener : MessageListener
+        private class MyListener : IMessageListener
         {
             private static readonly Logger _log = Logger.get(typeof (MyListener));
             private readonly Object _wl;
@@ -152,7 +150,7 @@ namespace test.interop
                 _count = count;
             }
 
-            public void messageTransfer(MessageTransfer m)
+            public void messageTransfer(IMessage     m)
             {
                 byte[] body = new byte[m.Body.Length - m.Body.Position];                               
                 _log.debug("Got a message of size: " + body.Length + " count = " + _count);

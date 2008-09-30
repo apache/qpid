@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
-using client.client;
 using log4net.Config;
 using org.apache.qpid.client;
 using org.apache.qpid.transport;
@@ -64,7 +63,7 @@ namespace WindowsClient
         }
     }
 
-    class MyListener : MessageListener
+    class MyListener : IMessageListener
     {
         private readonly Object _wl;
         private ClientSession _session;
@@ -77,7 +76,7 @@ namespace WindowsClient
             _count = 0;
         }
 
-        public void messageTransfer(MessageTransfer m)
+        public void messageTransfer(IMessage m)
         {
             BinaryReader reader = new BinaryReader(m.Body, Encoding.UTF8);
             byte[] body = new byte[m.Body.Length - m.Body.Position];
