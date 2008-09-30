@@ -19,9 +19,21 @@
     <!-- Fileset with build files for each 'core' assembly. -->
     <fileset id="src.builds">
         <include name="client/default.build" />
-        <include name="demo/default.build" />
+        <include name="demo/default.build" />       
     </fileset>
 
+    <!-- Fileset with build files for each 'core' assembly. -->
+    <fileset id="examples.builds">
+      <include name="examples/request-response/example-request-response-Client/default.build" />
+      <include name="examples/request-response/example-request-response-Server/default.build" />
+      <include name="examples/direct/example-direct-Listener/default.build" />
+      <include name="examples/direct/example-direct-producer/default.build" />
+      <include name="examples/fanout/example-fanout-Listener/default.build" />
+      <include name="examples/fanout/example-fanout-Producer/default.build" />
+      <include name="examples/pub-sub/example-pub-sub-Listener/default.build" />
+      <include name="examples/pub-sub/example-pub-sub-Publisher/default.build" />
+    </fileset>
+  
     <!-- Fileset with build files for 'integration' test assemblies. -->
     <fileset id="tests.builds">
         <include name="test/default.build" />	
@@ -152,9 +164,14 @@
 
         <!-- Compile test assemblies. -->
         <nant target="build">
+           <buildfiles refid="examples.builds" />
+        </nant>
+      
+        <!-- Compile test assemblies. -->
+        <nant target="build">
             <buildfiles refid="tests.builds" />
         </nant>
-        
+      
         <!-- copy config files over to the output dir -->
         <copy todir="${build.dir}" file="test/test.config"/>
         <copy todir="${build.dir}" file="log.xml"/>
@@ -180,22 +197,40 @@
         <property name="build.date" value="${datetime::now()}"/>
 
         <zip zipfile="${build.dir}/Qpid.NET-${framework::get-target-framework()}-${datetime::get-year(build.date)}${datetime::get-month(build.date)}${datetime::get-day(build.date)}.zip">
-            <fileset basedir="${build.dir}">
+            <fileset basedir="${build.dir}" prefix="qpid/lib">
                 <include name="**/*.*"/>
                 <exclude name="**/*.tests.*"/>
+                <exclude name="**/example*.*"/>
                 <exclude name="**/nunit.framework.dll"/>
-                <exclude name="**/*.exe"/>            
+                <exclude name="**/*.exe"/>
+                <exclude name="**/*.pdb"/>
             </fileset>
-            
-            <fileset basedir="${base.dir}/..">
-                <include name="LICENSE.txt"/>
-                <include name="NOTICE.txt"/>
-                <include name="RELEASE_NOTES.txt"/>
-                <include name="DISCLAIMER"/>
+
+            <fileset basedir="${build.dir}" prefix="qpid/examples/direct">
+               <include name="**/example*direct*.exe"/>            
             </fileset>
-            
-            
-            <fileset basedir="${base.dir}">
+
+            <fileset basedir="${build.dir}" prefix="qpid/examples/fanout">
+              <include name="**/example*fanout*.exe"/>
+            </fileset>
+
+            <fileset basedir="${build.dir}" prefix="qpid/examples/pub-sub">
+              <include name="**/example*pub-sub*.exe"/>
+            </fileset>
+
+          <fileset basedir="${build.dir}" prefix="qpid/examples/request-response">
+            <include name="**/example*request-response*.exe"/>
+          </fileset>
+          
+          <fileset basedir="${base.dir}/.." prefix="qpid">
+              <include name="LICENSE.txt"/>
+              <include name="NOTICE.txt"/>
+              <include name="RELEASE_NOTES.txt"/>
+              <include name="DISCLAIMER"/>
+            </fileset>
+
+
+            <fileset basedir="${base.dir}" prefix="qpid">
                 <include name="README.txt"/>
             </fileset>
         </zip>

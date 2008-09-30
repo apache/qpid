@@ -41,6 +41,8 @@ namespace org.apache.qpid.client
 
         MemoryStream Body { get; }
 
+        string Destination { get; }
+
         void clearData();
     }
 }

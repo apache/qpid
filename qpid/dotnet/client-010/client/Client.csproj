@@ -44,6 +44,8 @@
     <Compile Include="client\ClientInterface.cs" />
     <Compile Include="client\ClosedListenerInterface.cs" />
     <Compile Include="client\ErrorCode.cs" />
+    <Compile Include="client\IMessage.cs" />
+    <Compile Include="client\Message.cs" />
     <Compile Include="client\MessageListenerInterface.cs" />
     <Compile Include="generated\Acquired.cs" />
     <Compile Include="generated\ConnectionClose.cs" />

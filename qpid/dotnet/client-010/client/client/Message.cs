@@ -117,5 +117,10 @@ namespace org.apache.qpid.client
         {
             get { return _message.Id; }
         }
+
+        public string Destination
+        {
+            get{ return _message.getDestination();}
+        }
     }
 }
