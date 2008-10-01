@@ -35,6 +35,7 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.util.Strings;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
 import org.apache.qpid.njms.ExceptionHelper;
 import org.apache.qpid.transport.*;
@@ -45,6 +46,7 @@ import static org.apache.qpid.transport.Option.*;
  */
 public class BasicMessageProducer_0_10 extends BasicMessageProducer
 {
+    private byte[] userIDBytes;
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
@@ -52,6 +54,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate,
               mandatory, waitUntilSent);
+        
+        userIDBytes = Strings.toUTF8(_userID);
     }
 
     void declareDestination(AMQDestination destination)
@@ -78,7 +82,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         MessageProperties messageProps = delegate.getMessageProperties();
 
         // On the receiving side, this will be read in to the JMSXUserID as well.
-        messageProps.setUserId(_userID.getBytes());
+        messageProps.setUserId(userIDBytes);
                 
         if (messageId != null)
         {
