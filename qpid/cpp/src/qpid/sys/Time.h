@@ -22,7 +22,7 @@
  *
  */
 
-#include <stdint.h>
+#include "qpid/sys/IntegerTypes.h"
 #include <limits>
 #include <iosfwd>
 

@@ -34,6 +34,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #include <boost/bind.hpp>
 
