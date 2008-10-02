@@ -46,6 +46,10 @@
     <Compile Include="interop\Message.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="interop\TestCase.cs" />
+    <Compile Include="transport\util\ByteEncoderTest.cs" />
+    <Compile Include="transport\util\CircularBufferTest.cs" />
+    <Compile Include="transport\util\ResultFutureTest.cs" />
+    <Compile Include="transport\util\SerialTest.cs" />
     <Compile Include="transport\util\UUIDTest.cs" />
   </ItemGroup>
   <ItemGroup>
