@@ -47,6 +47,7 @@
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/Url.h"
+#include "qpid/Version.h"
 
 #include <boost/bind.hpp>
 
@@ -131,7 +132,7 @@ Broker::Broker(const Broker::Options& conf) :
     config(conf),
     managementAgentSingleton(!config.enableMgmt),
     store(0),
-	acl(0),
+    acl(0),
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     links(this),
     factory(new ConnectionFactory(*this)),
@@ -158,7 +159,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_connBacklog      (conf.connectionBacklog);
         mgmtObject->set_stagingThreshold (conf.stagingThreshold);
         mgmtObject->set_mgmtPubInterval  (conf.mgmtPubInterval);
-        mgmtObject->set_version          (PACKAGE_VERSION);
+        mgmtObject->set_version          (qpid::version);
         if (dataDir.isEnabled())
             mgmtObject->set_dataDir(dataDir.getPath());
         else
@@ -274,7 +275,7 @@ void Broker::setStore (MessageStore* _store)
 
 void Broker::run() {
     accept();
-	
+
     Dispatcher d(poller);
     int numIOThreads = config.workerThreads;
     std::vector<Thread> t(numIOThreads-1);
@@ -285,7 +286,7 @@ void Broker::run() {
 
     // Run final thread
     d.run();
-	
+
     // Now wait for n-1 io threads to exit
     for (int i=0; i<numIOThreads-1; ++i) {
         t[i].join();

@@ -26,6 +26,7 @@
 #include "qpid/log/Options.h"
 #include "qpid/log/Logger.h"
 #include "qpid/Plugin.h"
+#include "qpid/Version.h"
 #include "qpid/sys/Shlib.h"
 #include "config.h"
 #include <boost/filesystem/operations.hpp>
@@ -206,8 +207,8 @@ int main(int argc, char* argv[])
         // Options that just print information.
         if(options->common.help || options->common.version) {
             if (options->common.version) 
-                cout << "qpidd (" << PACKAGE_NAME << ") version "
-                     << PACKAGE_VERSION << endl;
+                cout << "qpidd (" << qpid::product << ") version "
+                     << qpid::version << endl;
             else if (options->common.help)
                 options->usage();
             return 0;
