@@ -7,6 +7,9 @@ dnl
 dnl This program is distributed in the hope that it will be useful, but
 dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+dnl
+dnl When updating the name/version number here, also update it in
+dnl src/qpid/Version.h
 
 AC_INIT([qpidc], [0.3], [qpid-dev@incubator.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
