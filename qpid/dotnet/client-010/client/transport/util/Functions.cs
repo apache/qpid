@@ -18,7 +18,6 @@
 * under the License.
 *
 */
-using System;
 
 namespace org.apache.qpid.transport.util
 {

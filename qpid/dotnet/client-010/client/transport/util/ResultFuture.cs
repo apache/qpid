@@ -18,11 +18,11 @@ namespace common.org.apache.qpid.transport.util
             {
                 DateTime start = DateTime.Now;
                 long elapsed = 0;
-                while (! _session.Closed && _timeout - elapsed > 0 && _result == null)
+                while (! _session.Closed && timeout - elapsed > 0 && _result == null)
                 {
                         log.debug("{0} waiting for result: {1}", _session, this );
                         Monitor.Wait(this, (int) (timeout - elapsed));
-                        elapsed = DateTime.Now.Subtract( start ).Milliseconds;                   
+                        elapsed = (long) (DateTime.Now.Subtract(start)).TotalMilliseconds;
                 }
             }
             if( _session.Closed )
