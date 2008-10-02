@@ -22,10 +22,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Xml;
+using common.org.apache.qpid.transport.util;
 using log4net.Config;
 using NUnit.Framework;
 using org.apache.qpid.client;
+using org.apache.qpid.transport;
+using org.apache.qpid.transport.util;
 
 namespace test.interop
 {
@@ -85,7 +89,29 @@ namespace test.interop
         public Dictionary<string,string> Properties
         {
             get { return _properties; }
-        }        
+        }
 
+
+        public class SyncListener : IMessageListener
+        {
+            private static readonly Logger _log = Logger.get(typeof(SyncListener));
+            private readonly CircularBuffer<IMessage> _buffer;
+            private readonly RangeSet _range = new RangeSet();
+            private readonly ClientSession _session;
+
+            public SyncListener(ClientSession session, CircularBuffer<IMessage> buffer)
+            {
+                _buffer = buffer;
+                _session = session;
+            }
+
+            public void messageTransfer(IMessage m)
+            {
+                _range.clear();
+                _range.add(m.Id);
+                _session.messageAccept(_range);
+                _buffer.Enqueue(m);
+            }
+        }
     }
 }

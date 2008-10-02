@@ -90,7 +90,7 @@ namespace org.apache.qpid.transport.codec
 
         public override void writeUint64(long l)
         {
-            _writer.Write(ByteEncoder.GetBigEndian((Double) l));
+            _writer.Write(ByteEncoder.GetBigEndian(l));
         }
 
         protected override int beginSize8()

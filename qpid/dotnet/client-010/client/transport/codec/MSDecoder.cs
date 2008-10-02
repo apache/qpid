@@ -76,7 +76,7 @@ namespace org.apache.qpid.transport.codec
 
         public override long readUint64()
 		{
-		    return (long) ByteEncoder.GetBigEndian((Double) reader.ReadInt64());            
+		    return (long) ByteEncoder.GetBigEndian(reader.ReadInt64());            
 		}
 	}
 }
