@@ -24,7 +24,7 @@ using System.Threading;
 
 namespace common.org.apache.qpid.transport.util
 {
-    internal class CircularBuffer<T>
+    public class CircularBuffer<T>
     {
         private readonly T[] buffer;
         private Int32 nrp, nwp;

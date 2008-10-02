@@ -63,7 +63,7 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value">Value to encode.</param>
         /// <returns>Big-endian encoded value.</returns>
-        public static Double GetBigEndian(Double value)
+        public static long GetBigEndian(long value)
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -131,7 +131,7 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value">Value to encode.</param>
         /// <returns>Little-endian encoded value.</returns>
-        public static Double GetLittleEndian(Double value)
+        public static Double GetLittleEndian(long value)
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -187,11 +187,11 @@ namespace org.apache.qpid.transport.util
         /// </summary>
         /// <param name="value"><see cref="Double"/> to swap.</param>
         /// <returns>Byte order swapped <see cref="Double"/> value.</returns>
-        private static Double swapByteOrder(Double value)
+        private static long swapByteOrder(long value)
         {
             Byte[] buffer = BitConverter.GetBytes(value);
             Array.Reverse(buffer, 0, buffer.Length);
-            return BitConverter.ToDouble(buffer, 0);
+            return BitConverter.ToInt64(buffer, 0);
         }
         #endregion
     }

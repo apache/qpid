@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using org.apache.qpid.transport.codec;
 using org.apache.qpid.transport.util;
 
 namespace org.apache.qpid.transport.codec
@@ -482,7 +481,8 @@ namespace org.apache.qpid.transport.codec
                     put((Byte) value);
                     break;
                 case Code.CHAR:
-                    put((byte) value);
+                    byte[] b = BitConverter.GetBytes((char) value);
+                    put(b[0]);
                     break;
                 case Code.BOOLEAN:
                     if ((bool) value)
@@ -516,18 +516,18 @@ namespace org.apache.qpid.transport.codec
                     break;
 
                 case Code.FLOAT:
-                    writeUint32((long) value);
+                    writeUint32(BitConverter.DoubleToInt64Bits((float) value) >> 32);
                     break;
 
                 case Code.BIN64:
                 case Code.UINT64:
-                case Code.INT64:
+                case Code.INT64:                   
                 case Code.DATETIME:
                     writeUint64((long) value);
                     break;
 
                 case Code.DOUBLE:
-                    writeUint64((long) value);
+                    writeUint64( BitConverter.DoubleToInt64Bits((double) value));                    
                     break;
 
                 case Code.UUID:

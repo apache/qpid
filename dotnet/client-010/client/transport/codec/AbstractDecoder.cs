@@ -341,17 +341,17 @@ namespace org.apache.qpid.transport.codec
                 case Code.INT32:
                     return (int) readUint32();
 
-                case Code.FLOAT:
-                    return (float) readUint32();
-
+                case Code.FLOAT:                    
+                    return  (float)BitConverter.Int64BitsToDouble(readUint32() << 32);
+                           
                 case Code.BIN64:
                 case Code.UINT64:
                 case Code.INT64:
                 case Code.DATETIME:
                     return readUint64();
 
-                case Code.DOUBLE:
-                    return (double) readUint64();
+                case Code.DOUBLE:                   
+                    return BitConverter.Int64BitsToDouble(readUint64());
                 case Code.UUID:
                     return readUuid();
                 case Code.STR8:
