@@ -22,7 +22,7 @@
  *
  */
 
-#include <stdint.h>
+#include "qpid/sys/IntegerTypes.h"
 #include "qpid/SharedObject.h"
 #include "ConnectionCodec.h"
 #include <boost/function.hpp>

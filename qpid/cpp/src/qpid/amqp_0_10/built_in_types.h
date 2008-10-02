@@ -23,6 +23,7 @@
 
 #include "qpid/Serializer.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/Time.h"
 #include "Decimal.h"
 #include "SerializableString.h"
@@ -31,7 +32,6 @@
 #include <string>
 #include <ostream>
 #include <vector>
-#include <stdint.h>
 
 /**@file Mapping from built-in AMQP types to C++ types */
 

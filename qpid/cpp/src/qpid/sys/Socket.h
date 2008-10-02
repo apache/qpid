@@ -23,6 +23,7 @@
  */
 
 #include "IOHandle.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #include <string>
 

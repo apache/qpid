@@ -26,17 +26,8 @@
  * in AMQP messages.
  */
 
+#include "qpid/sys/IntegerTypes.h"
 #include <string>
-#ifdef _WINDOWS
-#include "windows.h"
-typedef unsigned char  uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int   uint32_t;
-typedef unsigned __int64 uint64_t;
-#endif
-#ifndef _WINDOWS
-#include <stdint.h>
-#endif
 
 namespace qpid {
 namespace framing {
@@ -53,7 +44,7 @@ typedef uint16_t ReplyCode;
 class Content;
 class FieldTable;
 class SequenceNumberSet;
-class Uuid;
+struct Uuid;
 
 // Useful constants
 
@@ -66,7 +57,7 @@ class FramingContent;
 class FieldTable;
 class SequenceNumberSet;
 class SequenceSet;
-class Uuid;
+struct Uuid;
 
 }} // namespace qpid::framing
 #endif
