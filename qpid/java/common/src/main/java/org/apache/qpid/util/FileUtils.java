@@ -196,31 +196,107 @@ public class FileUtils
     /*
      * Deletes a given file
      */
-     public static void deleteFile(String filePath) throws IOException
+     public static boolean deleteFile(String filePath)
      {
-         delete(new File(filePath), false);
+         return delete(new File(filePath), false);
+     }
+
+    /*
+     * Deletes a given empty directory 
+     */
+     public static boolean deleteDirectory(String directoryPath)
+     {
+         File directory = new File(directoryPath);
+
+         if (directory.isDirectory())
+         {
+           if (directory.listFiles().length == 0)
+           {
+               return delete(directory, true);
+           }
+         }
+
+         return false;
      }
 
      /**
-      * Delete a given file, if a directory is specified and recursive set then delete the whole tree
-      * @param filePath the File object to start at
+      * Delete a given file/directory,
+      * A directory will always require the recursive flag to be set.
+      * if a directory is specified and recursive set then delete the whole tree
+      * @param file the File object to start at
       * @param recursive boolean to recurse if a directory is specified.
-      * @throws IOException
+      * @return <code>true</code> if and only if the file or directory is
+      *          successfully deleted; <code>false</code> otherwise
       */
-     public static void delete(File filePath, boolean recursive) throws IOException
+     public static boolean delete(File file, boolean recursive)
      {
-         if (filePath.isDirectory())
+         boolean success=true;
+
+         if (file.isDirectory())
          {
              if (recursive)
              {
-                 for (File subFile : filePath.listFiles())
-                 {
-                     delete(subFile, true);
+                 for (File subFile : file.listFiles())
+                 {                                     
+                     success = delete(subFile, true) & success ;
                  }
+
+                 return file.delete();
              }
+
+             return false;
          }
 
-         filePath.delete();
+         return success && file.delete();
      }
-    
+
+
+    public static class UnableToCopyException extends Exception
+    {
+        UnableToCopyException(String msg)
+        {
+            super(msg);
+        }
+    }
+
+    public static void copyRecursive(File source, File dst) throws FileNotFoundException, UnableToCopyException
+    {
+
+        if (!source.exists())
+        {
+            throw new FileNotFoundException("Unable to copy '" + source.toString() + "' as it does not exist.");
+        }
+
+        if (dst.exists() && !dst.isDirectory())
+        {
+            throw new IllegalArgumentException("Unable to copy '" + source.toString() + "' to '" + dst + "' a file with same name exists.");
+        }
+
+
+        if (source.isFile())
+        {
+            copy(source, dst);
+        }
+
+        //else we have a source directory
+        if (!dst.isDirectory() && !dst.mkdir())
+        {
+             throw new UnableToCopyException("Unable to create destination directory");
+        }
+
+
+        for (File file : source.listFiles())
+        {
+           if (file.isFile())
+           {
+               copy(file, new File(dst.toString() + File.separator + file.getName()));
+           }
+           else
+           {
+               copyRecursive(file, new File(dst + File.separator + file.getName()));
+           }
+        }
+
+
+    }
 }
