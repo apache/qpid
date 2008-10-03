@@ -89,6 +89,9 @@ class FieldTable
     ValueMap::const_iterator end() const { return values.end(); }
     ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
 
+    std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
+    void clear() { values.clear(); }
+
     // ### Hack Alert
 
     ValueMap::iterator getValues() { return values.begin(); }

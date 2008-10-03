@@ -198,5 +198,7 @@ bool ConnectionHandler::isOpen() const
 bool ConnectionHandler::isClosed() const
 {
     int s = getState();
-    return s == CLOSING || s == CLOSED || s == FAILED;
+    return s == CLOSED || s == FAILED;
 }
+
+bool ConnectionHandler::isClosing() const { return getState() == CLOSING; }

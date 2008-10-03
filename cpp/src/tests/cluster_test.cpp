@@ -89,7 +89,7 @@ struct ClusterFixture : public vector<uint16_t>  {
 
     void waitFor(size_t n) {
         size_t retry=1000;            // TODO aconway 2008-07-16: nasty sleeps, clean this up.
-        while (retry && getGlobalCluster().size() != n) {
+        while (retry && getGlobalCluster().getUrls().size() != n) {
             ::usleep(1000);
             --retry;
         }
@@ -101,7 +101,7 @@ ClusterFixture::ClusterFixture(size_t n, bool init0_) : name(Uuid(true).str()), 
     if (!init0) return;  // Defer initialization of broker0
     // Wait for all n members to join the cluster
     waitFor(n);
-    BOOST_REQUIRE_EQUAL(n, getGlobalCluster().size());
+    BOOST_REQUIRE_EQUAL(n, getGlobalCluster().getUrls().size());
 }
 
 void ClusterFixture::add() {
@@ -227,7 +227,7 @@ QPID_AUTO_TEST_CASE(testCatchupSharedState) {
     BOOST_CHECK_EQUAL(m.getData(), "bar");
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
 
-    // Add & verify another broker.
+    // Add another broker, don't wait for join - should be stalled till ready.
     cluster.add();
     Client c2(cluster[2], "c2");
     BOOST_CHECK(c2.subs.get(m, "p", TIME_SEC));
@@ -319,31 +319,6 @@ QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
     BOOST_CHECK_EQUAL(0u, c0.session.queueQuery("q").getMessageCount());
     BOOST_CHECK_EQUAL(0u, c1.session.queueQuery("q").getMessageCount());
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
-}
-
-QPID_AUTO_TEST_CASE(testStall) {
-    ClusterFixture cluster(2);
-    Client c0(cluster[0], "c0");
-    Client c1(cluster[1], "c1");
-
-    // Declare on all to avoid race condition.
-    c0.session.queueDeclare("q");
-    c1.session.queueDeclare("q");
-    
-    // Stall 0, verify it does not process deliverys while stalled.
-    getGlobalCluster().stall();
-    c1.session.messageTransfer(arg::content=Message("foo","q"));
-    while (c1.session.queueQuery("q").getMessageCount() != 1)
-        ::usleep(1000);         // Wait for message to show up on broker 1.
-    // But it should not be on broker 0.
-    boost::shared_ptr<broker::Queue> q0 = cluster.broker0->broker->getQueues().find("q");
-    BOOST_REQUIRE(q0);
-    BOOST_CHECK_EQUAL(q0->getMessageCount(), (unsigned)0);
-    // Now unstall and we should get the message.
-    getGlobalCluster().ready();
-    Message m;
-    BOOST_CHECK(c0.subs.get(m, "q", TIME_SEC));
-    BOOST_CHECK_EQUAL(m.getData(), "foo");
 }
 
 QPID_AUTO_TEST_SUITE_END()

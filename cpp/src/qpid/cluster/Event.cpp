@@ -22,6 +22,7 @@
 #include "Event.h"
 #include "Cpg.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/AMQFrame.h"
 #include <ostream>
 #include <iterator>
 #include <algorithm>
@@ -46,12 +47,20 @@ Event Event::delivered(const MemberId& m, void* d, size_t s) {
     memcpy(e.getData(), static_cast<char*>(d)+OVERHEAD, s-OVERHEAD);
     return e;
 }
+
+Event Event::control(const framing::AMQBody& body, const ConnectionId& cid, uint32_t id) {
+    framing::AMQFrame f(body);
+    Event e(CONTROL, cid, f.size(), id);
+    Buffer buf(e);
+    f.encode(buf);
+    return e;
+}
     
 void Event::mcast (const Cpg::Name& name, Cpg& cpg) const {
     char header[OVERHEAD];
     Buffer b(header, OVERHEAD);
     b.putOctet(type);
-    b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getConnectionPtr()));
+    b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(id);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
     cpg.mcast(name, iov, sizeof(iov)/sizeof(*iov));

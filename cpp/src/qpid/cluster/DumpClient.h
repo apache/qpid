@@ -22,6 +22,7 @@
  *
  */
 
+#include "ClusterMap.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/broker/SemanticState.h"
@@ -49,13 +50,15 @@ namespace cluster {
 
 class Cluster;
 class Connection;
+class ClusterMap;
 
 /**
  * A client that dumps the contents of a local broker to a remote one using AMQP.
  */
 class DumpClient : public sys::Runnable {
   public:
-    DumpClient(const Url& receiver, Cluster& donor,
+    DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url&,
+               broker::Broker& donor, const ClusterMap& map, const std::vector<boost::intrusive_ptr<Connection> >& ,
                const boost::function<void()>& done,
                const boost::function<void(const std::exception&)>& fail);
 
@@ -73,8 +76,12 @@ class DumpClient : public sys::Runnable {
     void dumpConsumer(broker::SemanticState::ConsumerImpl*);
     
   private:
-    Url receiver;
-    Cluster& donor;
+    MemberId dumperId;
+    MemberId dumpeeId;
+    Url dumpeeUrl;
+    broker::Broker& dumperBroker;
+    ClusterMap map;
+    std::vector<boost::intrusive_ptr<Connection> > connections;
     client::Connection connection, shadowConnection;
     client::AsyncSession session, shadowSession;
     boost::function<void()> done;

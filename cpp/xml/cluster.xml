@@ -1,4 +1,4 @@
-o<?xml version="1.0"?>
+<?xml version="1.0"?>
 <!--
 -
 - Licensed to the Apache Software Foundation (ASF) under one
@@ -27,20 +27,25 @@ o<?xml version="1.0"?>
   <class name = "cluster" code = "0x80" label="Qpid clustering extensions.">
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 
-    <control name="update" code="0x1" label="Cluster status update.">
-      <field name="members" type="map"/>     <!-- member-id -> URL -->
-      <field name="dumper" type="uint64"/>   <!-- member currently dumping state. -->
+    <control name="dump-request" code="0x1" label="URL for a member.">
+      <field name="url" type="str16"/>
     </control>
 
-    <control name = "dump-request" code="0x2" label="New meber requests brain dump">
-      <field name="url" type="str16" label="Url for brain dump."/>
+    <control name = "dump-offer" code="0x2" label="Member offering to be dumper for dumpee.">
+      <field name="dumpee" type="uint64"/>
     </control>
 
-    <control name="ready" code="0x3" label="New member is ready.">
-      <field name="url" type="str16" label="Url for brain dump."/>
+    <control name = "dump-start" code="0x3" label="Used internally by dumper to mark stall point.">
+      <field name="dumpee" type="uint64"/>
+      <field name="url" type="str16"/>      
     </control>
 
-    <control name="shutdown" code="0x4" label="Shut down cluster"/>
+
+    <control name="ready" code="0x10" label="New member is ready.">
+      <field name="url" type="str16"/>
+    </control>
+    
+    <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
   </class>
 
   <!-- TODO aconway 2008-09-10: support for un-attached connections. -->
@@ -83,6 +88,9 @@ o<?xml version="1.0"?>
       <field name="connection-id" type="uint64"/>
     </control>
 
-    <control name="dump-complete" code="0x6" label="End of brain dump."/>
+    <control name="membership" code="0x6" label="Cluster membership details.">
+      <field name="newbies" type="map"/> <!-- member-id -> URL -->
+      <field name="members" type="map"/> <!-- member-id -> state -->
+    </control>
   </class>
 </amqp>
