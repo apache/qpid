@@ -269,7 +269,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AggregateOutput.cpp \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
-  qpid/sys/IntegerTypes.h \
   qpid/sys/PollableCondition.h \
   qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
@@ -592,6 +591,7 @@ nobase_include_HEADERS = \
   qpid/sys/ConnectionOutputHandlerPtr.h \
   qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
+  qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
