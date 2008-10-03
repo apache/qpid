@@ -24,6 +24,8 @@
 
 #ifdef USE_APR_PLATFORM
 #include "apr/Condition.h"
+#elif defined (_WIN32)
+#include "windows/Condition.h"
 #else
 #include "posix/Condition.h"
 #endif

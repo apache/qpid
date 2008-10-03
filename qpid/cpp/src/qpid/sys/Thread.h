@@ -23,6 +23,14 @@
  */
 #include <boost/shared_ptr.hpp>
 
+#ifdef _WIN32
+#  define QPID_TSS __declspec(thread)
+#elif defined (gcc)
+#  define QPID_TSS __thread
+#else
+#  define QPID_TSS
+#endif
+
 namespace qpid {
 namespace sys {
 
