@@ -26,14 +26,14 @@ import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.AMQException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SimpleAMQQueueThreadPoolTest extends TestCase
 {
-    private static final Logger _logger = LoggerFactory.getLogger(VirtualHost.class);
 
-    public void test()
+    public void test() throws AMQException
     {
         VirtualHost test = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHost("test");
 
@@ -50,14 +50,10 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
             assertEquals("References still exist", 0, ReferenceCountingExecutorService.getInstance().getReferenceCount());
 
             assertTrue("Stop did not clean up.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
-
         }
-        catch (Exception e)
+        finally
         {
-            e.printStackTrace();
-            fail(e.getCause() == null ? e.getMessage() : e.getCause().getMessage());
-        }
-       
-        ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove(1);
+        }       
     }
 }
