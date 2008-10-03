@@ -143,11 +143,13 @@ static const std::string CONN_CLOSED("Connection closed by broker");
 
 void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
-    // FIXME aconway 2008-06-06: exception use, connection-forced is incorrect here.
-    setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     if (handler.isClosed()) return;
+    // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
+    // an appropriate close-code. connection-forced is not right.
+    if (!handler.isClosing()) 
+        closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
+    setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     handler.fail(CONN_CLOSED);
-    closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

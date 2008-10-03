@@ -52,17 +52,20 @@ ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id)
 
 ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp)
     : codec(out, id, false),
-      interceptor(new Connection(cluster, codec, id, cluster.getSelf(), catchUp)),
-      id(interceptor->getId())
+      interceptor(new Connection(cluster, codec, id, cluster.getId(), catchUp)),
+      id(interceptor->getId()),
+      localId(id)
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
-    cluster.insert(interceptor);
+    if (!catchUp)               // Don't put catchUp connections in the cluster map.
+        cluster.insert(interceptor);
 }
 
 ConnectionCodec::~ConnectionCodec() {}
 
 size_t ConnectionCodec::decode(const char* buffer, size_t size) {
+    QPID_LOG(trace, "RECVB [" << localId << "]: " << size << " bytes");
     return interceptor->decode(buffer, size);
 }
 

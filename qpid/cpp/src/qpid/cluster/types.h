@@ -21,6 +21,9 @@
  * under the License.
  *
  */
+
+#include <qpid/Url.h>
+
 #include <utility>
 #include <iosfwd>
 #include <string>
@@ -49,7 +52,7 @@ struct MemberId : std::pair<uint32_t, uint32_t> {
     uint32_t getPid() const { return second; }
     operator uint64_t() const { return (uint64_t(first)<<32ull) + second; }
 
-    // Encode as string, network byte order.
+    // AsMethodBody as string, network byte order.
     std::string str() const;
 };
 
@@ -62,7 +65,7 @@ struct ConnectionId : public std::pair<MemberId, Connection*>  {
     ConnectionId(uint64_t m, uint64_t c)
         : std::pair<MemberId, Connection*>(MemberId(m), reinterpret_cast<Connection*>(c)) {}
     MemberId getMember() const { return first; }
-    Connection* getConnectionPtr() const { return second; }
+    Connection* getPointer() const { return second; }
 };
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
