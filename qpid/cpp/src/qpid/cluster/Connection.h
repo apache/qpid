@@ -69,6 +69,8 @@ class Connection :
     /** True if the connection is in "catch-up" mode: building initial broker state. */
     bool isCatchUp() const { return catchUp; }
 
+    bool isDump() const { return self.getPointer() == 0; }
+
     Cluster& getCluster() { return cluster; }
 
     // ConnectionInputHandler methods
@@ -98,7 +100,7 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId);
 
-    void dumpComplete();
+    void membership(const framing::FieldTable&, const framing::FieldTable&);
 
   private:
 

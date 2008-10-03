@@ -23,58 +23,68 @@
  */
 
 #include "types.h"
-#include "qpid/framing/ClusterUpdateBody.h"
 #include "qpid/Url.h"
+#include "qpid/framing/ClusterConnectionMembershipBody.h"
+
 #include <boost/function.hpp>
+#include <boost/optional.hpp>
+
 #include <vector>
 #include <deque>
 #include <map>
+#include <set>
 #include <iosfwd>
 
 namespace qpid {
 namespace cluster {
 
 /**
- * Map of established cluster members and brain-dumps in progress.
- * A dumper is an established member that is sending catch-up data.
- * A dumpee is an aspiring member that is receiving catch-up data.
+ * Map of established cluster members and newbies waiting for a brain dump.
  */
 class ClusterMap {
   public:
-    typedef std::map<MemberId, Url> Members;
-    Members members;
-    MemberId dumper;
+    typedef std::map<MemberId, Url> Map;
+    typedef std::set<MemberId> Set;
 
     ClusterMap();
-    
-    /** First member of the cluster in ID order, gets to perform one-off tasks. */
-    MemberId first() const;
+    ClusterMap(const MemberId& id, const Url& url, bool isReady);
+    ClusterMap(const framing::FieldTable& urls, const framing::FieldTable& states);
 
-    /** Update for members leaving.
-     *@return true if the cluster membership changed.
-     */
-    bool left(const cpg_address* addrs, size_t size);
+    /** Update from config change. */
+    void configChange(
+        cpg_address *current, int nCurrent,
+        cpg_address *left, int nLeft,
+        cpg_address *joined, int nJoined);
 
-    /** Convert map contents to a cluster update body. */
-    framing::ClusterUpdateBody toControl() const;
-
-    /** Add a new member or dump complete if id == dumper. */
-    bool ready(const MemberId& id, const Url& url);
-
-    /** Apply update delivered from cluster.
-     *@return true if cluster membership changed.
-     **/
-    bool update(const framing::FieldTable& members, uint64_t dumper);
-
+    bool isNewbie(const MemberId& id) const { return newbies.find(id) != newbies.end(); }
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
-
-    bool sendUpdate(const MemberId& id) const; // True if id should send an update.
-    std::vector<Url> memberUrls() const;
-    size_t size() const { return members.size(); }
+    bool isAlive(const MemberId& id) const { return alive.find(id) != alive.end(); }
     
-    bool empty() const { return members.empty(); }
-  private:
+    Url getNewbieUrl(const MemberId& id) { return getUrl(newbies, id); }
+    Url getMemberUrl(const MemberId& id) { return getUrl(members, id); }
 
+    /** First newbie in the cluster in ID order, target for offers */
+    MemberId firstNewbie() const;
+
+    /** Convert map contents to a cluster control body. */
+    framing::ClusterConnectionMembershipBody asMethodBody() const;
+
+    size_t aliveCount() const { return alive.size(); }
+    size_t memberCount() const { return members.size(); }
+    std::vector<Url> memberUrls() const;
+
+    bool dumpRequest(const MemberId& id, const std::string& url);       
+    /** Return non-empty Url if accepted */
+    boost::optional<Url> dumpOffer(const MemberId& from, const MemberId& to);
+    void ready(const MemberId& id, const Url&);
+
+  private:
+    Url getUrl(const Map& map, const  MemberId& id);
+    
+    Map newbies, members;
+    Set alive;
+
+  friend std::ostream& operator<<(std::ostream&, const Map&);
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);
 };
 

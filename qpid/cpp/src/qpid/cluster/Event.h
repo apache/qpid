@@ -47,15 +47,21 @@ class Event {
 
     /** Create an event copied from delivered data. */
     static Event delivered(const MemberId& m, void* data, size_t size);
+
+    /** Create an event containing a control */
+    static Event control(const framing::AMQBody&, const ConnectionId&, uint32_t id=0);
     
     void mcast(const Cpg::Name& name, Cpg& cpg) const;
     
     EventType getType() const { return type; }
     ConnectionId getConnectionId() const { return connectionId; }
+    MemberId getMemberId() const { return connectionId.getMember(); }
     size_t getSize() const { return size; }
     char* getData() { return data; }
     const char* getData() const { return data; }
     size_t getId() const { return id; }
+    bool isCluster() const { return connectionId.getPointer() == 0; }
+    bool isConnection() const { return connectionId.getPointer() != 0; }
 
     operator framing::Buffer() const;
 

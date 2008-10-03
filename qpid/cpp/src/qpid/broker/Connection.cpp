@@ -167,6 +167,7 @@ void Connection::setFederationLink(bool b)
 void Connection::close(
     ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {
+    QPID_LOG_IF(error, code != 200, "Connection " << mgmtId << " closed by error: " << text << "(" << code << ")");
     adapter.close(code, text, classId, methodId);
     channels.clear();
     getOutput().close();

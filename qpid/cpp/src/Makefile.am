@@ -595,6 +595,7 @@ nobase_include_HEADERS = \
   qpid/sys/Dispatcher.h \
   qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
+  qpid/sys/LockPtr.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
