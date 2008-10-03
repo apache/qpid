@@ -60,6 +60,8 @@ public class AMQQueueFactoryTest extends TestCase
         {
             AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
                                                _virtualHost, fieldTable);
+
+            //assert you get the right queue back
         }
         catch (AMQException e)
         {
@@ -82,6 +84,7 @@ public class AMQQueueFactoryTest extends TestCase
         {
             AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
                                                virtualHost, null);
+            //assert you get the right queue back
         }
         catch (AMQException e)
         {
