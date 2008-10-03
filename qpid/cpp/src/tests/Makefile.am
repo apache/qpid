@@ -37,6 +37,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
+	QueueOptionsTest.cpp \
 	InlineAllocator.cpp \
 	InlineVector.cpp \
 	ClientSessionTest.cpp \

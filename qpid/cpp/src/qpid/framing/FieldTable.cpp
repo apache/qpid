@@ -199,10 +199,10 @@ bool FieldTable::operator==(const FieldTable& x) const {
     return true;
 }
 
-//void FieldTable::erase(const std::string& name) 
-//{
-//    values.erase(values.find(name));
-//}
+void FieldTable::erase(const std::string& name) 
+{
+    values.erase(values.find(name));
+}
 
 }
 }
