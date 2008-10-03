@@ -82,6 +82,8 @@ class ConditionalScopedLock
     
 #ifdef USE_APR_PLATFORM
 #include "apr/Mutex.h"
+#elif defined (_WIN32)
+#include "windows/Mutex.h"
 #else
 #include "posix/Mutex.h"
 #endif
