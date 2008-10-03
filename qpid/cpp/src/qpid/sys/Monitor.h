@@ -22,7 +22,6 @@
  *
  */
 
-#include <sys/errno.h>
 #include "Condition.h"
 
 namespace qpid {
@@ -33,7 +32,6 @@ namespace sys {
  */
 class Monitor : public Mutex, public Condition {
   public:
-    using Condition::wait;
     inline void wait();
     inline bool wait(const AbsTime& absoluteTime);
 };
