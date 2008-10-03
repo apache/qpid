@@ -1115,13 +1115,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
         }
-        else
-        {
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug("Queue " + getName() + " already stopped");
-            }
-        }
     }
 
     public void deliverAsync()
