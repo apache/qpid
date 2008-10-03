@@ -382,6 +382,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
+  qpid/client/QueueOptions.cpp		\
   qpid/client/Results.cpp			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10.h		\
@@ -506,6 +507,7 @@ nobase_include_HEADERS = \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
   qpid/client/LocalQueue.h \
+  qpid/client/QueueOptions.h \
   qpid/client/Message.h \
   qpid/client/MessageListener.h \
   qpid/client/Results.h \
