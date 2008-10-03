@@ -45,7 +45,7 @@ public class AMQQueueFactoryTest extends TestCase
 
     public void tearDown()
     {
-        assertEquals("Queue was mot registered in virtualhost", 1, _queueRegistry.getQueues().size());
+        assertEquals("Queue was not registered in virtualhost", 1, _queueRegistry.getQueues().size());
         ApplicationRegistry.remove(1);
     }
 
@@ -53,15 +53,14 @@ public class AMQQueueFactoryTest extends TestCase
     public void testPriorityQueueRegistration()
     {
         FieldTable fieldTable = new FieldTable();
-        fieldTable.put(new AMQShortString("x-filter-jms-selector"), "NoddySelector=true");
-
+        fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 5);
 
         try
         {
-            AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
                                                _virtualHost, fieldTable);
 
-            //assert you get the right queue back
+            assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());            
         }
         catch (AMQException e)
         {
@@ -72,19 +71,11 @@ public class AMQQueueFactoryTest extends TestCase
 
     public void testSimpleQueueRegistration()
     {
-        ApplicationRegistry registry = (ApplicationRegistry) ApplicationRegistry.getInstance();
-
-        VirtualHost virtualHost = registry.getVirtualHostRegistry().getVirtualHost("test");
-
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-
-        assertEquals("Queues registered on an empty virtualhost", 0, queueRegistry.getQueues().size());
-
         try
         {
-            AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
-                                               virtualHost, null);
-            //assert you get the right queue back
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
+                                               _virtualHost, null);
+            assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
         }
         catch (AMQException e)
         {
