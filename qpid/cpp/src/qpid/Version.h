@@ -29,7 +29,11 @@ namespace qpid {
 #ifdef HAVE_CONFIG_H
   const std::string product  = PACKAGE_NAME;
   const std::string version  = PACKAGE_VERSION;
+#  if HAVE_SASL
   const std::string saslName = BROKER_SASL_NAME;
+#  else
+  const std::string saslName = "qpidd-no-sasl";
+#  endif
 #else
   const std::string product  = "qpidc";
   const std::string version  = "0.3";
