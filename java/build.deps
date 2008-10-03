@@ -78,3 +78,4 @@ broker.test.libs=${test.libs}
 client.test.libs=${broker.libs} ${test.libs}
 tools.test.libs=${client.test.libs}
 management-eclipse-plugin.test.libs=${systests.libs}
+broker-plugins.test.libs=${test.libs}
