@@ -26,6 +26,7 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include "qpid/client/QueueOptions.h"
 #include <iostream>
 #include "boost/format.hpp"
 

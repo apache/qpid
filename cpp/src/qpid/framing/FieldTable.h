@@ -78,7 +78,7 @@ class FieldTable
     bool getFloat(const std::string& name, float& value) const;
     bool getDouble(const std::string& name, double& value) const;
 //    //void getDecimal(string& name, xxx& value);
-//    //void erase(const std::string& name);
+    void erase(const std::string& name);
     
 
     bool operator==(const FieldTable& other) const;
