@@ -333,7 +333,14 @@ class AmqpAction < AmqpElement
   def initialize(xml,amqp) super; end
   amqp_child_reader :implement, :field, :response
   amqp_attr_reader :code
-  def implement?(role) xml.elements["./implement[@role='#{role}']"] end
+  def implement?(role)
+    # we can't use xpath for this because it triggers a bug in some
+    # versions of ruby, including version 1.8.6.110
+    xml.elements.each {|el|
+      return true if el.name == "implement" and el.attributes["role"] == role
+    }
+    return false
+  end
   def received_by?(client_or_server)
     return (implement?(client_or_server) or implement?("sender") or implement?("receiver"))
   end
