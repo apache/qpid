@@ -29,7 +29,7 @@ felix.libs=${osgi-core} ${felix-framework}
 
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
     ${mina-filter-ssl} ${commons-codec} ${commons-lang} ${commons-collections} \
-    ${commons-configuration}
+    ${commons-configuration} 
 client.libs=${common.libs}  ${geronimo-jms} ${commons-pool-libs}
 tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
@@ -76,6 +76,8 @@ management-eclipse-plugin.libs=${commons-codec} ${ibm-icu} ${ecl-core-jface} \
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
 client.test.libs=${broker.libs} ${test.libs}
+client-example.test.libs=${test.libs}
 tools.test.libs=${client.test.libs}
+testkit.test.libs=${test.libs}
 management-eclipse-plugin.test.libs=${systests.libs}
 broker-plugins.test.libs=${test.libs}
