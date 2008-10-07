@@ -32,7 +32,7 @@ class AMQHeartbeatBody :  public AMQBody
 {
 public:
     virtual ~AMQHeartbeatBody();
-    inline uint32_t size() const { return 0; }
+    inline uint32_t encodedSize() const { return 0; }
     inline uint8_t type() const { return HEARTBEAT_BODY; }
     inline void encode(Buffer& ) const {}
     inline void decode(Buffer& , uint32_t /*size*/) {}

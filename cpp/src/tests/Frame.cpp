@@ -33,7 +33,7 @@ QPID_AUTO_TEST_CASE(testContentBody) {
     Frame f(42, AMQContentBody("foobar"));
     AMQBody* body=f.getBody();
     BOOST_CHECK(dynamic_cast<AMQContentBody*>(body));
-    Buffer b(f.size());
+    Buffer b(f.encodedSize();
     f.encode(b);
     b.flip();
     Frame g;
@@ -50,7 +50,7 @@ QPID_AUTO_TEST_CASE(testMethodBody) {
         42, QueueDeclareBody(ProtocolVersion(), 1, "q", "altex",
                              true, false, true, false, true, args));
     BOOST_CHECK_EQUAL(f.getChannel(), 42);
-    Buffer b(f.size());
+    Buffer b(f.encodedSize();
     f.encode(b);
     b.flip();
     Frame g;

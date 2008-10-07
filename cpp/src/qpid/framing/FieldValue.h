@@ -65,7 +65,7 @@ class FieldValue {
     class Data {
       public:
         virtual ~Data() {};
-        virtual uint32_t size() const = 0;        
+        virtual uint32_t encodedSize() const = 0;        
         virtual void encode(Buffer& buffer) = 0;
         virtual void decode(Buffer& buffer) = 0;
         virtual bool operator==(const Data&) const = 0;
@@ -83,7 +83,7 @@ class FieldValue {
     void setType(uint8_t type);
     uint8_t getType();
     Data& getData() { return *data; }
-    uint32_t size() const { return 1 + data->size(); };
+    uint32_t encodedSize() const { return 1 + data->encodedSize(); };
     bool empty() const { return data.get() == 0; } 
     void encode(Buffer& buffer);
     void decode(Buffer& buffer);
@@ -137,7 +137,7 @@ class FixedWidthValue : public FieldValue::Data {
         }
         octets[0] = (uint8_t) (0xFF & v);
     }
-    uint32_t size() const { return width; }
+    uint32_t encodedSize() const { return width; }
     void encode(Buffer& buffer) { buffer.putRawData(octets, width); }
     void decode(Buffer& buffer) { buffer.getRawData(octets, width); }
     bool operator==(const Data& d) const {
@@ -168,7 +168,7 @@ template <>
 class FixedWidthValue<0> : public FieldValue::Data {
   public:
     // Implicit default constructor is fine
-    uint32_t size() const { return 0; }
+    uint32_t encodedSize() const { return 0; }
     void encode(Buffer&) {};
     void decode(Buffer&) {};
     bool operator==(const Data& d) const {
@@ -186,7 +186,7 @@ class VariableWidthValue : public FieldValue::Data {
     VariableWidthValue() {}
     VariableWidthValue(const std::vector<uint8_t>& data) : octets(data) {}
     VariableWidthValue(const uint8_t* start, const uint8_t* end) : octets(start, end) {}
-    uint32_t size() const { return lenwidth + octets.size(); } 
+    uint32_t encodedSize() const { return lenwidth + octets.size(); } 
     void encode(Buffer& buffer) {
         buffer.putUInt<lenwidth>(octets.size());
         buffer.putRawData(&octets[0], octets.size());
@@ -219,7 +219,7 @@ class EncodedValue : public FieldValue::Data {
     T& getValue() { return value; }
     const T& getValue() const { return value; }
 
-    uint32_t size() const { return value.size(); } 
+    uint32_t encodedSize() const { return value.encodedSize(); } 
 
     void encode(Buffer& buffer) {
         value.encode(buffer);

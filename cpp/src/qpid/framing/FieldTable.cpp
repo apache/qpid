@@ -31,11 +31,11 @@ namespace framing {
 
 FieldTable::~FieldTable() {}
 
-uint32_t FieldTable::size() const {
+uint32_t FieldTable::encodedSize() const {
     uint32_t len(4/*size field*/ + 4/*count field*/);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // shortstr_len_byte + key size + value size
-	len += 1 + (i->first).size() + (i->second)->size();
+	len += 1 + (i->first).size() + (i->second)->encodedSize();
     }
     return len;
 }
@@ -161,7 +161,7 @@ bool FieldTable::getDouble(const std::string& name, double& value) const {
 }
 
 void FieldTable::encode(Buffer& buffer) const{    
-    buffer.putLong(size() - 4);
+    buffer.putLong(encodedSize() - 4);
     buffer.putLong(values.size());
     for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
         buffer.putShortString(i->first);

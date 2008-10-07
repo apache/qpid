@@ -111,7 +111,7 @@ uint32_t Exchange::encodedSize() const
     return name.size() + 1/*short string size*/
         + 1 /*durable*/
         + getType().size() + 1/*short string size*/
-        + args.size(); 
+        + args.encodedSize(); 
 }
 
 ManagementObject* Exchange::GetManagementObject (void) const

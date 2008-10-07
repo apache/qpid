@@ -52,7 +52,7 @@ class AMQBody
 
     virtual void encode(Buffer& buffer) const = 0;
     virtual void decode(Buffer& buffer, uint32_t=0) = 0;
-    virtual uint32_t size() const = 0;
+    virtual uint32_t encodedSize() const = 0;
 
     virtual void print(std::ostream& out) const = 0;
     virtual void accept(AMQBodyConstVisitor&) const = 0;

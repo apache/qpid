@@ -54,7 +54,7 @@ class AMQMethodBody : public AMQBody {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
     }
 
-    virtual uint32_t size() const = 0;
+    virtual uint32_t encodedSize() const = 0;
     virtual uint8_t type() const { return METHOD_BODY; }
 
     virtual bool isSync() const { return false; /*only ModelMethods can have the sync flag set*/ }

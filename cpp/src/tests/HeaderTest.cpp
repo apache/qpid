@@ -39,7 +39,7 @@ QPID_AUTO_TEST_CASE(testGenericProperties)
 
     Buffer rbuffer(buff, 100);
     AMQHeaderBody body2;
-    body2.decode(rbuffer, body.size());
+    body2.decode(rbuffer, body.encodedSize());
     MessageProperties* props =
         body2.get<MessageProperties>(true);
     BOOST_CHECK_EQUAL(

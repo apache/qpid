@@ -90,7 +90,7 @@ void SequenceNumber::decode(Buffer& buffer)
     value = buffer.getLong();
 }
 
-uint32_t SequenceNumber::size() const {
+uint32_t SequenceNumber::encodedSize() const {
     return 4;
 }
 

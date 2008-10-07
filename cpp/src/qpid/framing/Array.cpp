@@ -42,11 +42,11 @@ Array::Array(const std::vector<std::string>& in)
 } 
 
 
-uint32_t Array::size() const {
+uint32_t Array::encodedSize() const {
     //note: size is only included when used as a 'top level' type
     uint32_t len(4/*size*/ + 1/*type*/ + 4/*count*/);
     for(ValueVector::const_iterator i = values.begin(); i != values.end(); ++i) {
-	len += (*i)->getData().size();
+	len += (*i)->getData().encodedSize();
     }
     return len;
 }
@@ -65,7 +65,7 @@ std::ostream& operator<<(std::ostream& out, const Array& t) {
 }
 
 void Array::encode(Buffer& buffer) const{
-    buffer.putLong(size() - 4);//size added only when array is a top-level type
+    buffer.putLong(encodedSize() - 4);//size added only when array is a top-level type
     buffer.putOctet(typeOctet);
     buffer.putLong(count());
     for (ValueVector::const_iterator i = values.begin(); i!=values.end(); ++i) {
@@ -87,9 +87,9 @@ void Array::decode(Buffer& buffer){
         FieldValue dummy;
         dummy.setType(typeOctet);
         available = buffer.available();
-        if (available < count * dummy.getData().size()) {
+        if (available < count * dummy.getData().encodedSize()) {
             throw IllegalArgumentException(QPID_MSG("Not enough data for array, expected " 
-                                                << count << " items of " << dummy.getData().size()
+                                                << count << " items of " << dummy.getData().encodedSize()
                                                 << " bytes each  but only " << available << " bytes available"));
         }
         

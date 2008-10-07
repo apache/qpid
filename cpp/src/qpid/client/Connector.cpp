@@ -318,7 +318,7 @@ void TCPConnector::Writer::write(sys::AsynchIO&) {
     size_t bytesWritten(0);
     for (size_t i = 0; i < lastEof; ++i) {
         AMQFrame& frame = frames[i];
-        uint32_t size = frame.size();
+        uint32_t size = frame.encodedSize();
         if (size > encode.available()) writeOne();
         assert(size <= encode.available());
         frame.encode(encode);
@@ -368,7 +368,7 @@ void TCPConnector::writeDataBlock(const AMQDataBlock& data) {
     AsynchIO::BufferBase* buff = new Buff(maxFrameSize);
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
-    buff->dataCount = data.size();
+    buff->dataCount = data.encodedSize();
     aio->queueWrite(buff);
 }
 

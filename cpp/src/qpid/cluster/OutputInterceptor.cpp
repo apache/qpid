@@ -40,7 +40,7 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
     Locker l(lock); 
     next->send(f);
     if (!parent.isCatchUp())
-        sent += f.size();
+        sent += f.encodedSize();
 }
 
 void OutputInterceptor::activateOutput() {

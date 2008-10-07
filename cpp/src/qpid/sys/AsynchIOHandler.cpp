@@ -70,7 +70,7 @@ void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
         buff = new Buff;
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
-    buff->dataCount = data.size();
+    buff->dataCount = data.encodedSize();
     aio->queueWrite(buff);
 }
 

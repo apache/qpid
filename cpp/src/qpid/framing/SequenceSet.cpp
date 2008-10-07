@@ -56,7 +56,7 @@ void SequenceSet::decode(Buffer& buffer)
     }
 }
 
-uint32_t SequenceSet::size() const {
+uint32_t SequenceSet::encodedSize() const {
     return 2 /*size field*/ + (rangesSize() * RANGE_SIZE);
 }
 

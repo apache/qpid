@@ -41,7 +41,7 @@ public:
     virtual ~ProtocolInitiation();
     virtual void encode(Buffer& buffer) const; 
     virtual bool decode(Buffer& buffer); 
-    inline virtual uint32_t size() const { return 8; }
+    inline virtual uint32_t encodedSize() const { return 8; }
     inline uint8_t getMajor() const { return version.getMajor(); }
     inline uint8_t getMinor() const { return version.getMinor(); }
     inline ProtocolVersion getVersion() const { return version; }
