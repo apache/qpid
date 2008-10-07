@@ -41,9 +41,9 @@ class AMQHeaderBody :  public AMQBody
     template <class T> struct OptProps { boost::optional<T> props; };
     template <class Base, class T>
     struct PropSet : public Base, public OptProps<T> {
-        uint32_t size() const {
+        uint32_t encodedSize() const {
             const boost::optional<T>& p=this->OptProps<T>::props;
-            return (p ? p->size() : 0) + Base::size();
+            return (p ? p->encodedSize() : 0) + Base::encodedSize();
         }
         void encode(Buffer& buffer) const {
             const boost::optional<T>& p=this->OptProps<T>::props;
@@ -68,7 +68,7 @@ class AMQHeaderBody :  public AMQBody
     };
 
     struct Empty {
-        uint32_t size() const { return 0; }
+        uint32_t encodedSize() const { return 0; }
         void encode(Buffer&) const {};
         bool decode(Buffer&, uint32_t, uint16_t) const { return false; };
         void print(std::ostream&) const {}
@@ -83,7 +83,7 @@ public:
 
     inline uint8_t type() const { return HEADER_BODY; }
 
-    uint32_t size() const;
+    uint32_t encodedSize() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer, uint32_t size);
     uint64_t getContentLength() const;

@@ -100,7 +100,7 @@ void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
     Rdma::Buffer* buff = aio->getBuffer();
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
-    buff->dataCount = data.size();
+    buff->dataCount = data.encodedSize();
     aio->queueWrite(buff);
 }
 

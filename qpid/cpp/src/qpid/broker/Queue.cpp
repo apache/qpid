@@ -648,7 +648,7 @@ void Queue::encode(framing::Buffer& buffer) const
 
 uint32_t Queue::encodedSize() const
 {
-    return name.size() + 1/*short string size octet*/ + settings.size();
+    return name.size() + 1/*short string size octet*/ + settings.encodedSize();
 }
 
 Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)

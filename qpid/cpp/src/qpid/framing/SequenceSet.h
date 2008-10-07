@@ -39,7 +39,7 @@ class SequenceSet : public RangeSet<SequenceNumber> {
     
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
-    uint32_t size() const;   
+    uint32_t encodedSize() const;   
 
     bool contains(const SequenceNumber& s) const;
     void add(const SequenceNumber& s);

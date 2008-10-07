@@ -69,11 +69,11 @@ QPID_AUTO_TEST_CASE(testAssignment)
         FieldTable c;
         c = a;
         
-        char* buff = static_cast<char*>(::alloca(c.size()));
-        Buffer wbuffer(buff, c.size());
+        char* buff = static_cast<char*>(::alloca(c.encodedSize()));
+        Buffer wbuffer(buff, c.encodedSize());
         wbuffer.put(c);
 
-        Buffer rbuffer(buff, c.size());
+        Buffer rbuffer(buff, c.encodedSize());
         rbuffer.get(d);
         BOOST_CHECK_EQUAL(c, d);
         BOOST_CHECK(string("CCCC") == c.getString("A"));

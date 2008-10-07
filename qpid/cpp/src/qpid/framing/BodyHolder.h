@@ -69,7 +69,7 @@ class BodyHolder : public RefCounted
 
     void encode(Buffer&) const;
     void decode(uint8_t frameType, Buffer&, uint32_t=0);
-    uint32_t size() const;
+    uint32_t encodedSize() const;
 
     /** Return body pointer or 0 if empty. */
     AMQBody* get() { return blob.get(); }

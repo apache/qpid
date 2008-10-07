@@ -33,7 +33,7 @@ namespace framing {
     public:
 	inline virtual ~HeaderProperties(){}
 	virtual uint8_t classId() const = 0;
-	virtual uint32_t size() const = 0;
+	virtual uint32_t encodedSize() const = 0;
 	virtual void encode(Buffer& buffer) const = 0;
 	virtual void decode(Buffer& buffer, uint32_t size) = 0;
     };

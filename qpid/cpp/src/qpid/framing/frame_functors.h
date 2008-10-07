@@ -36,7 +36,7 @@ class SumFrameSize
     uint64_t size;
 public:
     SumFrameSize() : size(0) {}
-    void operator()(const AMQFrame& f) { size += f.size(); }
+    void operator()(const AMQFrame& f) { size += f.encodedSize(); }
     uint64_t getSize() { return size; }
 };
 
@@ -45,7 +45,7 @@ class SumBodySize
     uint64_t size;
 public:
     SumBodySize() : size(0) {}
-    void operator()(const AMQFrame& f) { size += f.getBody()->size(); }
+    void operator()(const AMQFrame& f) { size += f.getBody()->encodedSize(); }
     uint64_t getSize() { return size; }
 };
 

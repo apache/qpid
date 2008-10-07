@@ -35,7 +35,7 @@ public:
     virtual ~ModelMethod() {}
     virtual void encodeHeader(Buffer& buffer) const { header.encode(buffer); }
     virtual void decodeHeader(Buffer& buffer, uint32_t size=0) { header.decode(buffer, size); }
-    virtual uint32_t headerSize() const { return header.size(); } 
+    virtual uint32_t headerSize() const { return header.encodedSize(); } 
     virtual bool isSync() const { return header.getSync(); }
     virtual void setSync(bool on) const { header.setSync(on); }
     Header& getHeader() { return header; } 

@@ -44,6 +44,12 @@ class StructGen < CppGen
     "timestamp"=>8
   }
 
+  StringSizeMap={
+    "LongString"=>4,
+    "MediumString"=>2,
+    "ShortString"=>1
+  }
+  
   SizeType={
     1=>"Octet",
     2=>"Short",
@@ -171,13 +177,10 @@ class StructGen < CppGen
         genl "total += #{size};//#{f.cppname}"
       elsif (f.cpptype.name == "SequenceNumberSet")
         genl "total += #{f.cppname}.encodedSize();"
-      else 
-        encoded = f.cpptype.encoded
-        gen "total += ("
-        gen "4 + " if encoded == "LongString"
-        gen "2 + " if encoded == "MediumString"
-        gen "1 + " if encoded == "ShortString"
-        genl "#{f.cppname}.size());"
+      elsif (size = StringSizeMap[f.cpptype.encoded])
+        genl "total += #{size} + #{f.cppname}.size();"
+      else
+        genl "total += #{f.cppname}.encodedSize();"
       end
     end
   end
@@ -442,7 +445,7 @@ EOS
     void decode(Buffer&, uint32_t=0);
     void encodeStructBody(Buffer&) const;
     void decodeStructBody(Buffer&, uint32_t=0);
-    uint32_t size() const;
+    uint32_t encodedSize() const;
     uint32_t bodySize() const;
     void print(std::ostream& out) const;
 }; /* class #{classname} */
@@ -546,8 +549,7 @@ EOS
     return total;
 }
 
-uint32_t #{classname}::size() const
-{
+uint32_t #{classname}::encodedSize() const {
     uint32_t total = bodySize();
 EOS
         if (s.kind_of? AmqpStruct)

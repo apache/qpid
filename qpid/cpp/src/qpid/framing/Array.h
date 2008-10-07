@@ -39,7 +39,7 @@ class Array
     typedef boost::shared_ptr<FieldValue> ValuePtr;
     typedef std::vector<ValuePtr> ValueVector;
 
-    uint32_t size() const;
+    uint32_t encodedSize() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
 

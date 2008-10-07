@@ -27,7 +27,7 @@ qpid::framing::AMQContentBody::AMQContentBody(){
 qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
 }
 
-uint32_t qpid::framing::AMQContentBody::size() const{
+uint32_t qpid::framing::AMQContentBody::encodedSize() const{
     return data.size();
 }
 void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
@@ -39,6 +39,6 @@ void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
 
 void qpid::framing::AMQContentBody::print(std::ostream& out) const
 {
-    out << "content (" << size() << " bytes)";
+    out << "content (" << encodedSize() << " bytes)";
     out << " " << data.substr(0,16) << "...";
 }

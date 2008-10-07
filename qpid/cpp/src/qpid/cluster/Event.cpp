@@ -50,7 +50,7 @@ Event Event::delivered(const MemberId& m, void* d, size_t s) {
 
 Event Event::control(const framing::AMQBody& body, const ConnectionId& cid, uint32_t id) {
     framing::AMQFrame f(body);
-    Event e(CONTROL, cid, f.size(), id);
+    Event e(CONTROL, cid, f.encodedSize(), id);
     Buffer buf(e);
     f.encode(buf);
     return e;

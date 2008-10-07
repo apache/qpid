@@ -34,13 +34,13 @@ void qpid::framing::SendContent::operator()(const AMQFrame& f)
        real frame size, hence substract -1 from frameOverhead()*/
     uint16_t maxContentSize = maxFrameSize - (AMQFrame::frameOverhead() - 1);
     const AMQContentBody* body(f.castBody<AMQContentBody>()); 
-    if (body->size() > maxContentSize) {
+    if (body->encodedSize() > maxContentSize) {
         uint32_t offset = 0;
-        for (int chunk = body->size() / maxContentSize; chunk > 0; chunk--) {
-            sendFragment(*body, offset, maxContentSize, first && offset == 0, last && offset + maxContentSize == body->size());
+        for (int chunk = body->encodedSize() / maxContentSize; chunk > 0; chunk--) {
+            sendFragment(*body, offset, maxContentSize, first && offset == 0, last && offset + maxContentSize == body->encodedSize());
             offset += maxContentSize;
         }
-        uint32_t remainder = body->size() % maxContentSize;
+        uint32_t remainder = body->encodedSize() % maxContentSize;
         if (remainder) {
             sendFragment(*body, offset, remainder, first && offset == 0, last);
         }
