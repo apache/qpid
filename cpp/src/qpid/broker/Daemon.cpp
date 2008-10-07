@@ -168,22 +168,14 @@ void Daemon::ready(uint16_t port) { // child
     LockFile lf(lockFile, true);
 
     /*
-     * Rewritten using low-level IO, for compatibility 
-     * with earlier Boost versions, i.e. 103200.
-     */
-    /*
      * Write the PID to the lockfile.
      */
-    pid_t pid = getpid();
-    int desired_write = sizeof(pid_t);
-    if ( desired_write > ::write(lf.fd, & pid, desired_write) ) {
-      throw Exception("Cannot write lock file "+lockFile);
-    }
+    lf.writePid();
 
     /*
      * Write the port number to the parent.
      */
-     desired_write = sizeof(uint16_t);
+     int desired_write = sizeof(uint16_t);
      if ( desired_write > ::write(pipeFds[1], & port, desired_write) ) {
        throw Exception("Error writing to parent." );
      }
@@ -198,16 +190,7 @@ void Daemon::ready(uint16_t port) { // child
 pid_t Daemon::getPid(string _pidDir, uint16_t port) {
     string name = pidFile(_pidDir, port);
     LockFile lf(name, false);
-    pid_t pid;
-
-    /*
-     * Rewritten using low-level IO, for compatibility 
-     * with earlier Boost versions, i.e. 103200.
-     */
-    int desired_read = sizeof(pid_t);
-    if ( desired_read > ::read(lf.fd, & pid, desired_read) ) {
-      throw Exception("Cannot read lock file " + name);
-    }
+    pid_t pid = lf.readPid();
     if (kill(pid, 0) < 0 && errno != EPERM) {
         unlink(name.c_str());
         throw Exception("Removing stale lock file "+name);
