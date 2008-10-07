@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<project name="lahirugsoc2008">
+    <property name="src.dir" value="src"/>
+    <property name="build.dir" value="build"/>
+    <property name="build.src.dir" value="${build.dir}/main/"/>
+    <property name="build.test.dir" value="${build.dir}/test/"/>
+    <property name="build.src.classes.dir" value="${build.src.dir}/classes"/>
+    <property name="build.test.classes.dir" value="${build.test.dir}/classes"/>
+    <property name="jar.dir" value="${build.dir}/jar"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="test.dir" value="test"/>
+    <property name="dependency1" value="jline-0.9.94.jar"/>
+    <property name="dependency2" value="junit-4.4.jar"/>
+    <property name="project.name" value="qpid-cli"/>
+    <property name="project.version" value="1.0"/>
+    <property name="target.name" value="${project.name}-${project.version}.jar"/>
+    <property name="target.jar" location="${jar.dir}/${target.name}"/>
+    <property name="build.failed" location="${build.test.dir}/results/FAILED"/>
+    <property name="test.suite" value="org.apache.qpid.AllTest"/>
+    <property name="test.report.dir" value="${build.test.dir}/reports"/>
+    <target name="init">
+        <mkdir dir="${build.src.classes.dir}" />
+        <mkdir dir="${build.test.classes.dir}"/>
+        <mkdir dir="${jar.dir}"/>
+    </target>
+    <target name="clean">
+        <delete dir="${build.src.dir}"/>
+        <delete dir="${build.test.dir}"/>
+        <delete dir="${jar.dir}"/>
+    </target>
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}"
+               destdir="${build.src.classes.dir}">
+            <classpath>
+                <pathelement path="${lib.dir}/${dependency1}"/>
+            </classpath>
+        </javac>
+    </target>
+    <target name="compile-tests" depends="compile">
+        <javac srcdir="${test.dir}"
+               destdir="${build.test.classes.dir}"
+               debug="true"
+               includeAntRuntime="true">
+            <classpath>
+                <pathelement path="${lib.dir}/${dependency2}"/>
+                <pathelement path="${build.src.classes.dir}"/>
+            </classpath>
+        </javac>
+    </target>
+    <target name="jar" depends="compile">
+        <jar destfile="${target.jar}" duplicate="preserve"
+             compress="true">
+            <fileset dir="${build.src.classes.dir}"/>
+        </jar>
+    </target>
+    <target name="test" depends="compile-tests">
+        <junit printsummary="true">
+            <classpath>
+                <pathelement path="${build.test.classes.dir}"/>
+                <pathelement path="${build.src.classes.dir}"/>
+                <pathelement path="${lib.dir}/${dependency2}"/>
+            </classpath>
+            <formatter type="brief" usefile="false"/>
+            <test name="${test.suite}"/>
+        </junit>
+    </target>
+</project>
+
+
+
+
+
+
