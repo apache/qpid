@@ -250,6 +250,14 @@ class Generator:
     path = self.packagePath + _class.getNameCap () + extension
     return path
 
+  def targetEventFile (self, event, templateFile):
+    dot = templateFile.find(".")
+    if dot == -1:
+      raise ValueError ("Invalid template file name %s" % templateFile)
+    extension = templateFile[dot:len (templateFile)]
+    path = self.packagePath + "Event" + event.getNameCap () + extension
+    return path
+
   def targetMethodFile (self, method, templateFile):
     """ Return the file name for a method file """
     dot = templateFile.rfind(".")
@@ -292,6 +300,16 @@ class Generator:
       target = self.targetClassFile (_class, templateFile)
       stream = template.expand (_class)
       self.writeIfChanged (stream, target, force)
+
+  def makeEventFiles (self, templateFile, schema, force=False):
+    """ Generate an expanded template per schema event """
+    events = schema.getEvents()
+    template = Template (self.input + templateFile, self)
+    self.templateFiles.append (templateFile)
+    for event in events:
+      target = self.targetEventFile(event, templateFile)
+      stream = template.expand(event)
+      self.writeIfChanged(stream, target, force)
 
   def makeMethodFiles (self, templateFile, schema, force=False):
     """ Generate an expanded template per method-with-arguments """

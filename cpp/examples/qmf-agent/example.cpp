@@ -26,6 +26,7 @@
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
 #include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
+#include "qmf/org/apache/qpid/agent/example/EventChildCreated.h"
 #include "qmf/org/apache/qpid/agent/example/Package.h"
 
 #include <unistd.h>
@@ -129,7 +130,7 @@ Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, 
 
         children.push_back(child);
 
-        mgmtObject->event_childCreated(ioArgs.i_name);
+        agent->raiseEvent(_qmf::EventChildCreated(ioArgs.i_name));
 
         return STATUS_OK;
     }

@@ -30,7 +30,7 @@
 <type name="int64"     base="S64"       cpp="int64_t"       encode="@.putInt64(#)"       decode="# = @.getInt64()"     accessor="direct" init="0"/>
 <type name="bool"      base="BOOL"      cpp="uint8_t"       encode="@.putOctet(#?1:0)"   decode="# = @.getOctet()==1"  accessor="direct" init="0"/>
 <type name="sstr"      base="SSTR"      cpp="std::string"   encode="@.putShortString(#)" decode="@.getShortString(#)"  accessor="direct" init='""' byRef="y"/>
-<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putLongString(#)"  decode="@.getLongString(#)"   accessor="direct" init='""' byRef="y"/>
+<type name="lstr"      base="LSTR"      cpp="std::string"   encode="@.putMediumString(#)" decode="@.getMediumString(#)" accessor="direct" init='""' byRef="y"/>
 <type name="absTime"   base="ABSTIME"   cpp="int64_t"       encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  accessor="direct" init="0"/>
 <type name="deltaTime" base="DELTATIME" cpp="uint64_t"      encode="@.putLongLong(#)"    decode="# = @.getLongLong()"  accessor="direct" init="0"/>
 <type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     accessor="direct" init="0."/>

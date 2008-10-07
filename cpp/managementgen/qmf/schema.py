@@ -21,6 +21,32 @@ from xml.dom.minidom import parse, parseString, Node
 from cStringIO       import StringIO
 import md5
 
+class Hash:
+  """ Manage the hash of an XML sub-tree """
+  def __init__(self, node):
+    self.md5Sum = md5.new()
+    self._compute(node)
+
+  def addSubHash(self, hash):
+    """ Use this method to add the hash of a dependend-on XML fragment that is not in the sub-tree """
+    self.md5Sum.update(hash.getDigest())
+
+  def getDigest(self):
+    return self.md5Sum.digest()
+
+  def _compute(self, node):
+    attrs = node.attributes
+    self.md5Sum.update(node.nodeName)
+
+    for idx in range(attrs.length):
+      self.md5Sum.update(attrs.item(idx).nodeName)
+      self.md5Sum.update(attrs.item(idx).nodeValue)
+
+    for child in node.childNodes:
+      if child.nodeType == Node.ELEMENT_NODE:
+        self._compute(child)
+
+
 #=====================================================================================
 #
 #=====================================================================================
@@ -525,6 +551,7 @@ class SchemaArg:
     self.maxLen  = None
     self.desc    = None
     self.default = None
+    self.hash    = Hash(node)
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -675,12 +702,12 @@ class SchemaMethod:
 #
 #=====================================================================================
 class SchemaEvent:
-  def __init__ (self, parent, node, typespec):
-    self.parent = parent
-    self.name   = None
-    self.desc   = None
-    self.args   = []
-    self.defaultSeverity = None
+  def __init__ (self, package, node, typespec, argset):
+    self.packageName = package
+    self.name = None
+    self.desc = None
+    self.args = []
+    self.hash = Hash(node)
 
     attrs = node.attributes
     for idx in range (attrs.length):
@@ -692,72 +719,96 @@ class SchemaEvent:
       elif key == 'desc':
         self.desc = val
 
-      elif key == 'defaultSeverity':
-        self.defaultSeverity = val
+      elif key == 'args':
+        list = val.replace(" ", "").split(",")
+        for item in list:
+          if item not in argset.args:
+            raise Exception("undefined argument '%s' in event" % item)
+          self.args.append(argset.args[item])
+          self.hash.addSubHash(argset.args[item].hash)
 
       else:
         raise ValueError ("Unknown attribute in event '%s'" % key)
 
-    for child in node.childNodes:
-      if child.nodeType == Node.ELEMENT_NODE:
-        if child.nodeName == 'arg':
-          arg = SchemaArg (child, typespec)
-          self.args.append (arg)
-        else:
-          raise ValueError ("Unknown event tag '%s'" % child.nodeName)
-
   def getName (self):
     return self.name
 
+  def getNameCap(self):
+    return capitalize(self.name)
+
   def getFullName (self):
-    return capitalize(self.parent.getName()) + capitalize(self.name)
+    return capitalize(self.package + capitalize(self.name))
 
   def getArgCount (self):
     return len (self.args)
 
-  def genMethodBody (self, stream, variables, classObject):
-    stream.write("void ")
-    classObject.genNameCap(stream, variables)
-    stream.write("::event_%s(" % self.name)
-    count = 0
-    for arg in self.args:
-      arg.genFormalParam(stream, variables)
-      count += 1
-      if count < len(self.args):
-        stream.write(", ")
-    stream.write(") {\n")
-    stream.write("    ::qpid::sys::Mutex::ScopedLock mutex(getMutex());\n")
-    stream.write("    Buffer* buf = startEventLH();\n")
-    stream.write("    objectId.encode(*buf);\n")
-    stream.write("    buf->putShortString(packageName);\n")
-    stream.write("    buf->putShortString(className);\n")
-    stream.write("    buf->putBin128(md5Sum);\n")
-    stream.write("    buf->putShortString(\"%s\");\n" % self.name)
-    for arg in self.args:
-      stream.write("    %s;\n" % arg.type.type.encode.replace("@", "(*buf)").replace("#", "_" + arg.name))
-    stream.write("    finishEventLH(buf);\n")
-    stream.write("}\n\n")
+  def genArgCount (self, stream, variables):
+    stream.write("%d" % len(self.args))
 
-  def genMethodDecl (self, stream, variables):
-    stream.write("    void event_%s(" % self.name)
-    count = 0
+  def genArgDeclarations(self, stream, variables):
     for arg in self.args:
-      arg.genFormalParam(stream, variables)
-      count += 1
-      if count < len(self.args):
-        stream.write(", ")
-    stream.write(");\n")
+      if arg.type.type.byRef:
+        ref = "&"
+      else:
+        ref = ""
+      stream.write("    const %s%s %s;\n" % (arg.type.type.cpp, ref, arg.name))
 
-  def genSchema(self, stream, variables):
-    stream.write ("    ft = FieldTable ();\n")
-    stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
-    stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
-    if self.desc != None:
-      stream.write ("    ft.setString (DESC,     \"" + self.desc + "\");\n")
-    stream.write ("    buf.put (ft);\n\n")
+  def genCloseNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("}")
+
+  def genConstructorArgs(self, stream, variables):
+    pre = ""
     for arg in self.args:
-      arg.genSchema (stream, True)
+      if arg.type.type.byRef:
+        ref = "&"
+      else:
+        ref = ""
+      stream.write("%sconst %s%s _%s" % (pre, arg.type.type.cpp, ref, arg.name))
+      pre = ",\n        "
 
+  def genConstructorInits(self, stream, variables):
+    pre = ""
+    for arg in self.args:
+      stream.write("%s%s(_%s)" % (pre, arg.name, arg.name))
+      pre = ",\n    "
+
+  def genName(self, stream, variables):
+    stream.write(self.name)
+
+  def genNameCap(self, stream, variables):
+    stream.write(capitalize(self.name))
+
+  def genNamespace (self, stream, variables):
+    stream.write("::".join(self.packageName.split(".")))
+
+  def genNameLower(self, stream, variables):
+    stream.write(self.name.lower())
+
+  def genNameUpper(self, stream, variables):
+    stream.write(self.name.upper())
+
+  def genNamePackageLower(self, stream, variables):
+    stream.write(self.packageName.lower())
+
+  def genOpenNamespaces (self, stream, variables):
+    for item in self.packageName.split("."):
+      stream.write ("namespace %s {\n" % item)
+
+  def genArgEncodes(self, stream, variables):
+    for arg in self.args:
+      stream.write("    " + arg.type.type.encode.replace("@", "buf").replace("#", arg.name) + ";\n")
+
+  def genArgSchema(self, stream, variables):
+    for arg in self.args:
+      arg.genSchema(stream, True)
+
+  def genSchemaMD5(self, stream, variables):
+    sum = self.hash.getDigest()
+    for idx in range (len (sum)):
+      if idx != 0:
+        stream.write (",")
+      stream.write (hex (ord (sum[idx])))
 
 
 class SchemaClass:
@@ -768,9 +819,7 @@ class SchemaClass:
     self.methods     = []
     self.events      = []
     self.options     = options
-    self.md5Sum      = md5.new ()
-
-    self.hash (node)
+    self.hash        = Hash(node)
 
     attrs = node.attributes
     self.name = makeValidCppSymbol(attrs['name'].nodeValue)
@@ -789,10 +838,6 @@ class SchemaClass:
         elif child.nodeName == 'method':
           sub = SchemaMethod (self, child, typespec)
           self.methods.append (sub)
-
-        elif child.nodeName == 'event':
-          sub = SchemaEvent (self, child, typespec)
-          self.events.append (sub)
 
         elif child.nodeName == 'group':
           self.expandFragment (child, fragments)
@@ -820,24 +865,12 @@ class SchemaClass:
       result = result[0:pos] + "threadStats->" + result[pos:]
       start = pos + 9 + len(next[1])
 
-  def hash (self, node):
-    attrs = node.attributes
-    self.md5Sum.update (node.nodeName)
-
-    for idx in range (attrs.length):
-      self.md5Sum.update (attrs.item(idx).nodeName)
-      self.md5Sum.update (attrs.item(idx).nodeValue)
-
-    for child in node.childNodes:
-      if child.nodeType == Node.ELEMENT_NODE:
-        self.hash (child)
-
   def expandFragment (self, node, fragments):
     attrs = node.attributes
     name  = attrs['name'].nodeValue
     for fragment in fragments:
       if fragment.name == name:
-        self.md5Sum.update (fragment.md5Sum.digest())
+        self.hash.addSubHash(fragment.hash)
         for config in fragment.properties:
           self.properties.append (config)
         for inst   in fragment.statistics:
@@ -937,27 +970,12 @@ class SchemaClass:
           inArgCount = inArgCount + 1
 
     if methodCount == 0:
-      stream.write ("string, Buffer&, Buffer& outBuf")
+      stream.write ("string&, Buffer&, Buffer& outBuf")
     else:
       if inArgCount == 0:
-        stream.write ("string methodName, Buffer&, Buffer& outBuf")
+        stream.write ("string& methodName, Buffer&, Buffer& outBuf")
       else:
-        stream.write ("string methodName, Buffer& inBuf, Buffer& outBuf")
-
-  def genEventCount (self, stream, variables):
-    stream.write ("%d" % len (self.events))
-
-  def genEventMethodBodies (self, stream, variables):
-    for event in self.events:
-      event.genMethodBody (stream, variables, self)
-
-  def genEventMethodDecls (self, stream, variables):
-    for event in self.events:
-      event.genMethodDecl (stream, variables)
-
-  def genEventSchema (self, stream, variables):
-    for event in self.events:
-      event.genSchema (stream, variables)
+        stream.write ("string& methodName, Buffer& inBuf, Buffer& outBuf")
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
@@ -1124,7 +1142,7 @@ class SchemaClass:
         return
 
   def genSchemaMD5 (self, stream, variables):
-    sum = self.md5Sum.digest ()
+    sum = self.hash.getDigest()
     for idx in range (len (sum)):
       if idx != 0:
         stream.write (",")
@@ -1149,6 +1167,20 @@ class SchemaClass:
       stat.genWrite (stream)
 
 
+class SchemaEventArgs:
+  def __init__(self, package, node, typespec, fragments, options):
+    self.packageName = package
+    self.options     = options
+    self.args        = {}
+
+    children = node.childNodes
+    for child in children:
+      if child.nodeType == Node.ELEMENT_NODE:
+        if child.nodeName == 'arg':
+          arg = SchemaArg(child, typespec)
+          self.args[arg.name] = arg
+        else:
+          raise Exception("Unknown tag '%s' in <eventArguments>" % child.nodeName)
 
 class SchemaPackage:
   def __init__ (self, typefile, schemafile, options):
@@ -1156,6 +1188,8 @@ class SchemaPackage:
     self.classes   = []
     self.fragments = []
     self.typespec  = TypeSpec (typefile)
+    self.eventArgSet = None
+    self.events    = []
 
     dom = parse (schemafile)
     document = dom.documentElement
@@ -1179,6 +1213,15 @@ class SchemaPackage:
                              self.fragments, options)
           self.fragments.append (cls)
 
+        elif child.nodeName == 'eventArguments':
+          if self.eventArgSet:
+            raise Exception("Only one <eventArguments> may appear in a package")
+          self.eventArgSet = SchemaEventArgs(self.packageName, child, self.typespec, self.fragments, options)
+
+        elif child.nodeName == 'event':
+          event = SchemaEvent(self.packageName, child, self.typespec, self.eventArgSet)
+          self.events.append(event)
+
         else:
           raise ValueError ("Unknown schema tag '%s'" % child.nodeName)
 
@@ -1193,6 +1236,9 @@ class SchemaPackage:
 
   def getClasses (self):
     return self.classes
+
+  def getEvents(self):
+    return self.events
 
   def genCloseNamespaces (self, stream, variables):
     for item in self.packageName.split("."):
@@ -1217,12 +1263,20 @@ class SchemaPackage:
       stream.write ("#include \"")
       _class.genNameCap (stream, variables)
       stream.write (".h\"\n")
+    for _event in self.events:
+      stream.write ("#include \"Event")
+      _event.genNameCap(stream, variables)
+      stream.write (".h\"\n")
 
-  def genClassRegisters (self, stream, variables):
+  def genClassRegisters(self, stream, variables):
     for _class in self.classes:
-      stream.write ("    ")
-      _class.genNameCap (stream, variables)
-      stream.write ("::registerClass(agent);\n")
+      stream.write("    ")
+      _class.genNameCap(stream, variables)
+      stream.write("::registerSelf(agent);\n")
+    for _event in self.events:
+      stream.write("    Event")
+      _event.genNameCap(stream, variables)
+      stream.write("::registerSelf(agent);\n")
 
 
 #=====================================================================================

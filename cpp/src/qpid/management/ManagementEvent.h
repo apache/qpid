@@ -1,3 +1,6 @@
+#ifndef _ManagementEvent_
+#define _ManagementEvent_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,17 +21,28 @@
  * under the License.
  *
  */
-package org.apache.qpid.management;
 
-/**
- * Protocol defined constants.
- * 
- * @author Andrea Gazzarini
- */
-public interface Protocol
-{
-    String MAGIC_NUMBER = "AM2";
-    
-    byte [] METHOD_REQUEST_FIRST_FOUR_BYTES = (MAGIC_NUMBER+"M").getBytes();
-    byte [] SCHEMA_REQUEST_FIRST_FOUR_BYTES = (MAGIC_NUMBER+"S").getBytes();  
-}
+#include "ManagementObject.h"
+#include <qpid/framing/Buffer.h>
+#include <string>
+
+namespace qpid {
+namespace management {
+
+class ManagementAgent;
+
+class ManagementEvent : public ManagementItem {
+public:
+    typedef void (*writeSchemaCall_t)(qpid::framing::Buffer&);
+    virtual ~ManagementEvent() {}
+
+    virtual writeSchemaCall_t getWriteSchemaCall(void) = 0;
+    virtual std::string& getEventName() const = 0;
+    virtual std::string& getPackageName() const = 0;
+    virtual uint8_t* getMd5Sum() const = 0;
+    virtual void encode(qpid::framing::Buffer&) const = 0;
+};
+
+}}
+
+#endif  /*!_ManagementEvent_*/

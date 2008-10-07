@@ -58,6 +58,8 @@ for schemafile in args:
   gen.makeClassFiles  ("Class.h",     package)
   gen.makeClassFiles  ("Class.cpp",   package)
   gen.makeMethodFiles ("Args.h",      package)
+  gen.makeEventFiles  ("Event.h",     package)
+  gen.makeEventFiles  ("Event.cpp",   package)
   gen.makePackageFile ("Package.h",   package)
   gen.makePackageFile ("Package.cpp", package)
 
