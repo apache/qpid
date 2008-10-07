@@ -45,7 +45,7 @@ void TxPublish::commit() throw(){
 void TxPublish::rollback() throw(){
 }
 
-void TxPublish::deliverTo(Queue::shared_ptr& queue){
+void TxPublish::deliverTo(const boost::shared_ptr<Queue>& queue){
     if (!queue->isLocal(msg)) {
         queues.push_back(queue);
         delivered = true;
@@ -57,7 +57,7 @@ void TxPublish::deliverTo(Queue::shared_ptr& queue){
 TxPublish::Prepare::Prepare(TransactionContext* _ctxt, intrusive_ptr<Message>& _msg) 
     : ctxt(_ctxt), msg(_msg){}
 
-void TxPublish::Prepare::operator()(Queue::shared_ptr& queue){
+void TxPublish::Prepare::operator()(const boost::shared_ptr<Queue>& queue){
     if (!queue->enqueue(ctxt, msg)){
         /**
 	* if not store then mark message for ack and deleivery once
@@ -70,7 +70,7 @@ void TxPublish::Prepare::operator()(Queue::shared_ptr& queue){
 
 TxPublish::Commit::Commit(intrusive_ptr<Message>& _msg) : msg(_msg){}
 
-void TxPublish::Commit::operator()(Queue::shared_ptr& queue){
+void TxPublish::Commit::operator()(const boost::shared_ptr<Queue>& queue){
     queue->process(msg);
 }
 

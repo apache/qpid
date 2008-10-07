@@ -61,12 +61,12 @@ class Array
         }
     }
     
+    ValueVector::const_iterator begin() const { return values.begin(); }
+    ValueVector::const_iterator end() const { return values.end(); }
+
   private:
     uint8_t typeOctet;
     ValueVector values;
-
-    ValueVector::const_iterator begin() const { return values.begin(); }
-    ValueVector::const_iterator end() const { return values.end(); }
 
     friend std::ostream& operator<<(std::ostream& out, const Array& body);
 };

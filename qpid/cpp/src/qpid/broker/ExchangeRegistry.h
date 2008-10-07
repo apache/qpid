@@ -59,6 +59,11 @@ class ExchangeRegistry{
      */
     void setParent (management::Manageable* _parent) { parent = _parent; }
 
+    /** Register an exchange instance.
+     *@return true if registered, false if exchange with same name is already  registered.
+     */
+    bool registerExchange(const Exchange::shared_ptr&);
+
     void registerType(const std::string& type, FactoryFunction);
 
     /** Call f for each exchange in the registry. */
