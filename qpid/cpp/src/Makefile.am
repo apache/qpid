@@ -71,6 +71,8 @@ posix_plat_src = \
   qpid/sys/posix/IOHandle.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
+  qpid/sys/posix/FileSysDir.cpp \
+  qpid/sys/posix/LockFile.cpp \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
@@ -85,7 +87,6 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
-  qpid/sys/posix/LockFile.h \
   qpid/sys/posix/PollableCondition.h \
   qpid/sys/posix/IntegerTypes.h
 
@@ -593,6 +594,7 @@ nobase_include_HEADERS = \
   qpid/sys/ConnectionOutputHandlerPtr.h \
   qpid/sys/DeletionManager.h \
   qpid/sys/Dispatcher.h \
+  qpid/sys/FileSysDir.h \
   qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
   qpid/sys/LockPtr.h \
