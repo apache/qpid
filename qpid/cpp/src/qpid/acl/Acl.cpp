@@ -25,6 +25,10 @@
 #include "qpid/shared_ptr.h"
 #include "qpid/log/Logger.h"
 #include "qmf/org/apache/qpid/acl/Package.h"
+#include "qmf/org/apache/qpid/acl/EventAllow.h"
+#include "qmf/org/apache/qpid/acl/EventDeny.h"
+#include "qmf/org/apache/qpid/acl/EventFileLoaded.h"
+#include "qmf/org/apache/qpid/acl/EventFileLoadFailed.h"
 
 #include <map>
 
@@ -41,7 +45,7 @@ namespace _qmf = qmf::org::apache::qpid::acl;
 Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
 {
 	   
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    agent = ManagementAgent::Singleton::getInstance();
 
     if (agent != 0){
         _qmf::Package  packageInit(agent);
@@ -86,7 +90,11 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
 	  switch (aclreslt)
 	  {
 	  case ALLOWLOG:
-          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );  
+          QPID_LOG(info, "ACL Allow id:" << id <<" action:" << AclHelper::getActionStr(action) <<
+                   " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name );
+          agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
+                                             AclHelper::getObjectTypeStr(objType),
+                                             name, framing::FieldTable()));
 	  case ALLOW:
 	      return true;
 	  case DENY:
@@ -94,13 +102,12 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
 	      return false;
 	  case DENYLOG:
 	      if (mgmtObject!=0) mgmtObject->inc_aclDenyCount();
-	  default:
-	      QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);  
-		  if (mgmtObject!=0){
-		      framing::FieldTable _params;
-		      mgmtObject->event_aclEvent(1, id, AclHelper::getActionStr(action),AclHelper::getObjectTypeStr(objType),name, _params);
-		  }
-	      return false;
+      default:
+          QPID_LOG(info, "ACL Deny id:" << id << " action:" << AclHelper::getActionStr(action) << " ObjectType:" << AclHelper::getObjectTypeStr(objType) << " Name:" << name);
+          agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
+                                            AclHelper::getObjectTypeStr(objType),
+                                            name, framing::FieldTable()));
+          return false;
 	  }
       return false;  
    }
@@ -115,7 +122,7 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
       boost::shared_ptr<AclData> d(new AclData);
       AclReader ar;
       if (ar.read(aclFile, d)){
-		  mgmtObject->event_fileNotLoaded("","See log for file load reason failure");
+          agent->raiseEvent(_qmf::EventFileLoadFailed("", "See log for file load reason failure"));
           return false;
       }
 	  
@@ -127,7 +134,7 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
 		  sys::AbsTime now = sys::AbsTime::now();
           int64_t ns = sys::Duration(now);
 		  mgmtObject->set_lastAclLoad(ns);
-		  mgmtObject->event_fileLoaded("");
+          agent->raiseEvent(_qmf::EventFileLoaded(""));
 	  }
       return true;
    }

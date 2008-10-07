@@ -38,11 +38,11 @@ namespace management {
 
 class ManagementBroker : public ManagementAgent
 {
-  private:
+private:
 
     int threadPoolSize;
 
-  public:
+public:
 
     ManagementBroker ();
     virtual ~ManagementBroker ();
@@ -52,13 +52,18 @@ class ManagementBroker : public ManagementAgent
     void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
                           qpid::broker::Exchange::shared_ptr directExchange);
     int  getMaxThreads   () { return threadPoolSize; }
-    void RegisterClass   (std::string packageName,
-                          std::string className,
+    void registerClass   (std::string& packageName,
+                          std::string& className,
+                          uint8_t*    md5Sum,
+                          ManagementObject::writeSchemaCall_t schemaCall);
+    void registerEvent   (std::string& packageName,
+                          std::string& eventName,
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject   (ManagementObject* object,
                           uint64_t          persistId = 0);
-    void clientAdded     (void);
+    void raiseEvent(const ManagementEvent& event);
+    void clientAdded     ();
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
@@ -68,7 +73,7 @@ class ManagementBroker : public ManagementAgent
     uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
     int getSignalFd () { assert(0); return -1; }
 
-  private:
+private:
     friend class ManagementAgent;
 
     struct Periodic : public qpid::broker::TimerTask
@@ -127,15 +132,16 @@ class ManagementBroker : public ManagementAgent
 
     struct SchemaClass
     {
+        uint8_t  kind;
         ManagementObject::writeSchemaCall_t writeSchemaCall;
         uint32_t pendingSequence;
         size_t   bufferLen;
         uint8_t* buffer;
 
-        SchemaClass(uint32_t seq) :
-            writeSchemaCall(0), pendingSequence(seq), bufferLen(0), buffer(0) {}
-        SchemaClass(ManagementObject::writeSchemaCall_t call) :
-            writeSchemaCall(call), pendingSequence(0), bufferLen(0), buffer(0) {}
+        SchemaClass(uint8_t _kind, uint32_t seq) :
+            kind(_kind), writeSchemaCall(0), pendingSequence(seq), bufferLen(0), buffer(0) {}
+        SchemaClass(uint8_t _kind, ManagementObject::writeSchemaCall_t call) :
+            kind(_kind), writeSchemaCall(call), pendingSequence(0), bufferLen(0), buffer(0) {}
         bool hasSchema () { return (writeSchemaCall != 0) || (buffer != 0); }
         void appendSchema (framing::Buffer& buf);
     };
@@ -154,12 +160,12 @@ class ManagementBroker : public ManagementAgent
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
     sys::Mutex                   userLock;
-    qpid::broker::Timer                timer;
+    qpid::broker::Timer          timer;
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;
     uint16_t                     interval;
-    qpid::broker::Broker*              broker;
+    qpid::broker::Broker*        broker;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;
@@ -173,10 +179,10 @@ class ManagementBroker : public ManagementAgent
     char eventBuffer[MA_BUFFER_SIZE];
 
     void writeData ();
-    void PeriodicProcessing (void);
-    void EncodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
-    bool CheckHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
-    void SendBuffer         (framing::Buffer&             buf,
+    void periodicProcessing (void);
+    void encodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
+    bool checkHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
+    void sendBuffer         (framing::Buffer&             buf,
                              uint32_t                     length,
                              qpid::broker::Exchange::shared_ptr exchange,
                              std::string                  routingKey);
@@ -185,14 +191,15 @@ class ManagementBroker : public ManagementAgent
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
     void dispatchAgentCommandLH(qpid::broker::Message& msg);
 
-    PackageMap::iterator FindOrAddPackageLH(std::string name);
-    void AddClass(PackageMap::iterator         pIter,
-                  std::string                  className,
-                  uint8_t*                     md5Sum,
-                  ManagementObject::writeSchemaCall_t schemaCall);
-    void EncodePackageIndication (framing::Buffer&     buf,
+    PackageMap::iterator findOrAddPackageLH(std::string name);
+    void addClassLH(uint8_t                      kind,
+                    PackageMap::iterator         pIter,
+                    std::string&                 className,
+                    uint8_t*                     md5Sum,
+                    ManagementObject::writeSchemaCall_t schemaCall);
+    void encodePackageIndication (framing::Buffer&     buf,
                                   PackageMap::iterator pIter);
-    void EncodeClassIndication (framing::Buffer&     buf,
+    void encodeClassIndication (framing::Buffer&     buf,
                                 PackageMap::iterator pIter,
                                 ClassMap::iterator   cIter);
     bool     bankInUse (uint32_t bank);
@@ -212,10 +219,9 @@ class ManagementBroker : public ManagementAgent
     void handleGetQueryLH       (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, std::string replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
 
-    size_t ValidateSchema(framing::Buffer&);
-    sys::Mutex& getMutex();
-    framing::Buffer* startEventLH();
-    void finishEventLH(framing::Buffer* outBuffer);
+    size_t validateSchema(framing::Buffer&, uint8_t kind);
+    size_t validateTableSchema(framing::Buffer&);
+    size_t validateEventSchema(framing::Buffer&);
 };
 
 }}

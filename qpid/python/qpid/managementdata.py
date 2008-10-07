@@ -546,10 +546,10 @@ class ManagementData:
       for classKey in sorted:
         tuple = self.schema[classKey]
         row = (self.displayClassName(classKey), len (tuple[0]), len (tuple[1]),
-               len (tuple[2]), len (tuple[3]))
+               len (tuple[2]))
         rows.append (row)
       self.disp.table ("Classes in Schema:",
-                       ("Class", "Properties", "Statistics", "Methods", "Events"),
+                       ("Class", "Properties", "Statistics", "Methods"),
                        rows)
     finally:
       self.lock.release ()

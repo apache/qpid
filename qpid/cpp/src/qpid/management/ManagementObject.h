@@ -46,7 +46,7 @@ public:
 
 
 class ObjectId {
-private:
+protected:
     const AgentAttachment* agent;
     uint64_t first;
     uint64_t second;
@@ -59,23 +59,11 @@ public:
     bool operator<(const ObjectId &other) const;
     void encode(framing::Buffer& buffer);
     void decode(framing::Buffer& buffer);
+    friend std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
 
-class ManagementObject
-{
-  protected:
-    
-    uint64_t         createTime;
-    uint64_t         destroyTime;
-    ObjectId         objectId;
-    bool             configChanged;
-    bool             instChanged;
-    bool             deleted;
-    Manageable*      coreObject;
-    sys::Mutex       accessLock;
-    ManagementAgent* agent;
-    int              maxThreads;
-
+class ManagementItem {
+public:
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;
     static const uint8_t TYPE_U32       = 3;
@@ -107,14 +95,34 @@ class ManagementObject
     static const uint8_t FLAG_INDEX  = 0x02;
     static const uint8_t FLAG_END    = 0x80;
 
-    static       int nextThreadIndex;
+    const static uint8_t CLASS_KIND_TABLE = 1;
+    const static uint8_t CLASS_KIND_EVENT = 2;
+
+
+
+public:
+    virtual ~ManagementItem() {}
+};
+
+class ManagementObject : public ManagementItem
+{
+  protected:
+    
+    uint64_t         createTime;
+    uint64_t         destroyTime;
+    ObjectId         objectId;
+    bool             configChanged;
+    bool             instChanged;
+    bool             deleted;
+    Manageable*      coreObject;
+    sys::Mutex       accessLock;
+    ManagementAgent* agent;
+    int              maxThreads;
+
+    static int nextThreadIndex;
         
     int  getThreadIndex();
     void writeTimestamps (qpid::framing::Buffer& buf);
-
-    sys::Mutex& getMutex();
-    framing::Buffer* startEventLH();
-    void finishEventLH(framing::Buffer* buf);
 
   public:
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
@@ -129,14 +137,14 @@ class ManagementObject
     virtual void writeProperties(qpid::framing::Buffer& buf) = 0;
     virtual void writeStatistics(qpid::framing::Buffer& buf,
                                  bool skipHeaders = false) = 0;
-    virtual void doMethod       (std::string            methodName,
+    virtual void doMethod       (std::string&           methodName,
                                  qpid::framing::Buffer& inBuf,
                                  qpid::framing::Buffer& outBuf) = 0;
     virtual void setReference   (ObjectId objectId);
 
-    virtual std::string& getClassName   (void) = 0;
-    virtual std::string& getPackageName (void) = 0;
-    virtual uint8_t*     getMd5Sum      (void) = 0;
+    virtual std::string& getClassName   (void) const = 0;
+    virtual std::string& getPackageName (void) const = 0;
+    virtual uint8_t*     getMd5Sum      (void) const = 0;
 
     void         setObjectId      (ObjectId oid) { objectId = oid; }
     ObjectId     getObjectId      (void) { return objectId; }

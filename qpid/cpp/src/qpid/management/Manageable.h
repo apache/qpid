@@ -45,6 +45,7 @@ class Manageable
     static const status_t STATUS_INVALID_PARAMETER       = 4;
     static const status_t STATUS_FEATURE_NOT_IMPLEMENTED = 5;
     static const status_t STATUS_FORBIDDEN               = 6;
+    static const status_t STATUS_EXCEPTION               = 7;
     static const status_t STATUS_USER                    = 0x00010000;
 
     //  Every "Manageable" object must hold a reference to exactly one

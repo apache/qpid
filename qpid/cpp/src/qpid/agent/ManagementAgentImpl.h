@@ -43,24 +43,34 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
   public:
 
     ManagementAgentImpl();
-    virtual ~ManagementAgentImpl();
+    virtual ~ManagementAgentImpl() {};
 
+    //
+    // Methods from ManagementAgent
+    //
     int getMaxThreads() { return 1; }
     void init(std::string brokerHost        = "localhost",
               uint16_t    brokerPort        = 5672,
               uint16_t    intervalSeconds   = 10,
               bool        useExternalThread = false,
               std::string storeFile         = "");
-    void RegisterClass(std::string packageName,
-                       std::string className,
-                       uint8_t*    md5Sum,
+    bool isConnected() { return connected; }
+    std::string& getLastFailure() { return lastFailure; }
+    void registerClass(std::string& packageName,
+                       std::string& className,
+                       uint8_t*     md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
-    ObjectId addObject     (management::ManagementObject* objectPtr,
-                            uint64_t          persistId = 0);
-    uint32_t pollCallbacks (uint32_t callLimit = 0);
-    int      getSignalFd   (void);
+    void registerEvent(std::string& packageName,
+                       std::string& eventName,
+                       uint8_t*     md5Sum,
+                       management::ManagementObject::writeSchemaCall_t schemaCall);
+    ObjectId addObject(management::ManagementObject* objectPtr, uint64_t persistId = 0);
+    void raiseEvent(const management::ManagementEvent& event);
+    uint32_t pollCallbacks(uint32_t callLimit = 0);
+    int getSignalFd();
 
-    void PeriodicProcessing();
+    uint16_t getInterval() { return interval; }
+    void periodicProcessing();
 
   private:
 
@@ -84,8 +94,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     struct SchemaClass {
         management::ManagementObject::writeSchemaCall_t writeSchemaCall;
+        uint8_t kind;
 
-        SchemaClass () : writeSchemaCall(0) {}
+        SchemaClass(const management::ManagementObject::writeSchemaCall_t call,
+                    const uint8_t _kind) : writeSchemaCall(call), kind(_kind) {}
     };
 
     struct QueuedMethod {
@@ -120,12 +132,16 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     framing::Uuid     systemId;
     std::string       host;
     uint16_t          port;
+    bool              connected;
+    std::string       lastFailure;
 
-    bool                 clientWasAdded;
-    uint32_t             requestedBank;
-    uint32_t             assignedBank;
-    uint32_t             brokerBank;
-    uint16_t             bootSequence;
+    bool              clientWasAdded;
+    uint32_t          requestedBrokerBank;
+    uint32_t          requestedAgentBank;
+    uint32_t          assignedBrokerBank;
+    uint32_t          assignedAgentBank;
+    uint16_t          bootSequence;
+
 #   define MA_BUFFER_SIZE 65536
     char outputBuffer[MA_BUFFER_SIZE];
     char eventBuffer[MA_BUFFER_SIZE];
@@ -148,9 +164,9 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
         ~ConnectionThread();
         void sendBuffer(qpid::framing::Buffer& buf,
                         uint32_t               length,
-                        std::string            exchange,
-                        std::string            routingKey);
-        void bindToBank(uint32_t agentBank);
+                        const std::string&     exchange,
+                        const std::string&     routingKey);
+        void bindToBank(uint32_t brokerBank, uint32_t agentBank);
     };
 
     class PublishThread : public sys::Runnable
@@ -171,19 +187,20 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void startProtocol();
     void storeData(bool requested=false);
     void retrieveData();
-    PackageMap::iterator FindOrAddPackage (std::string name);
+    PackageMap::iterator findOrAddPackage(const std::string& name);
     void moveNewObjectsLH();
-    void AddClassLocal (PackageMap::iterator  pIter,
-                        std::string           className,
+    void addClassLocal (uint8_t               classKind,
+                        PackageMap::iterator  pIter,
+                        const std::string&    className,
                         uint8_t*              md5Sum,
                         management::ManagementObject::writeSchemaCall_t schemaCall);
-    void EncodePackageIndication (qpid::framing::Buffer& buf,
+    void encodePackageIndication (framing::Buffer& buf,
                                   PackageMap::iterator   pIter);
-    void EncodeClassIndication (qpid::framing::Buffer& buf,
+    void encodeClassIndication (framing::Buffer& buf,
                                 PackageMap::iterator   pIter,
                                 ClassMap::iterator     cIter);
-    void EncodeHeader (qpid::framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
-    bool CheckHeader  (qpid::framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
+    void encodeHeader (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
+    bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendCommandComplete  (std::string replyToKey, uint32_t sequence,
                                uint32_t code = 0, std::string text = std::string("OK"));
     void handleAttachResponse (qpid::framing::Buffer& inBuffer);
@@ -194,9 +211,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handleGetQuery       (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
     void handleMethodRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, std::string replyTo);
     void handleConsoleAddedIndication();
-    sys::Mutex& getMutex();
-    framing::Buffer* startEventLH();
-    void finishEventLH(framing::Buffer* outBuffer);
 };
 
 }}

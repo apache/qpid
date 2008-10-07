@@ -285,7 +285,7 @@ class managementClient:
     ft = {}
     ft["_class"] = className
     codec.write_map (ft)
-    msg = channel.message(codec.encoded, routing_key="agent.%d" % bank)
+    msg = channel.message(codec.encoded, routing_key="agent.1.%d" % bank)
     channel.send ("qpid.management", msg)
 
   def syncWaitForStable (self, channel):
@@ -398,7 +398,7 @@ class managementClient:
     """ Compose the header of a management message. """
     codec.write_uint8 (ord ('A'))
     codec.write_uint8 (ord ('M'))
-    codec.write_uint8 (ord ('1'))
+    codec.write_uint8 (ord ('2'))
     codec.write_uint8 (opcode)
     codec.write_uint32  (seq)
 
@@ -412,7 +412,7 @@ class managementClient:
     if octet != 'M':
       return None
     octet = chr (codec.read_uint8 ())
-    if octet != '1':
+    if octet != '2':
       return None
     opcode = chr (codec.read_uint8 ())
     seq    = codec.read_uint32 ()
@@ -433,7 +433,7 @@ class managementClient:
     elif typecode == 6:
       codec.write_str8   (value)
     elif typecode == 7:
-      codec.write_vbin32 (value)
+      codec.write_str16 (value)
     elif typecode == 8:  # ABSTIME
       codec.write_uint64 (long (value))
     elif typecode == 9:  # DELTATIME
@@ -476,7 +476,7 @@ class managementClient:
     elif typecode == 6:
       data = str (codec.read_str8 ())
     elif typecode == 7:
-      data = codec.read_vbin32 ()
+      data = codec.read_str16 ()
     elif typecode == 8:  # ABSTIME
       data = codec.read_uint64 ()
     elif typecode == 9:  # DELTATIME
@@ -604,6 +604,9 @@ class managementClient:
       ch.send ("qpid.management", smsg)
 
   def handleClassInd (self, ch, codec):
+    kind  = codec.read_uint8()
+    if kind != 1:  # This API doesn't handle new-style events
+      return
     pname = str (codec.read_str8())
     cname = str (codec.read_str8())
     hash  = codec.read_bin128()
@@ -656,13 +659,15 @@ class managementClient:
   def parseSchema (self, ch, codec):
     """ Parse a received schema-description message. """
     self.decOutstanding (ch)
+    kind  = codec.read_uint8()
+    if kind != 1:  # This API doesn't handle new-style events
+      return
     packageName = str (codec.read_str8 ())
     className   = str (codec.read_str8 ())
     hash        = codec.read_bin128 ()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
     methodCount = codec.read_uint16 ()
-    eventCount  = codec.read_uint16 ()
 
     if packageName not in self.packages:
       return
@@ -676,7 +681,6 @@ class managementClient:
     configs = []
     insts   = []
     methods = {}
-    events  = {}
 
     configs.append (("id", 4, "", "", 1, 1, None, None, None, None, None))
     insts.append   (("id", 4, None, None))
@@ -765,42 +769,14 @@ class managementClient:
         args.append (arg)
       methods[mname] = (mdesc, args)
 
-    for idx in range (eventCount):
-      ft = codec.read_map ()
-      ename    = str (ft["name"])
-      argCount = ft["argCount"]
-      if "desc" in ft:
-        edesc = str (ft["desc"])
-      else:
-        edesc = None
-
-      args = []
-      for aidx in range (argCount):
-        ft = codec.read_map ()
-        name    = str (ft["name"])
-        type    = ft["type"]
-        unit    = None
-        desc    = None
-
-        for key, value in ft.items ():
-          if   key == "unit":
-            unit = str (value)
-          elif key == "desc":
-            desc = str (value)
-
-        arg = (name, type, unit, desc)
-        args.append (arg)
-      events[ename] = (edesc, args)
-
     schemaClass = {}
     schemaClass['C'] = configs
     schemaClass['I'] = insts
     schemaClass['M'] = methods
-    schemaClass['E'] = events
     self.schema[classKey] = schemaClass
 
     if self.schemaCb != None:
-      self.schemaCb (ch.context, classKey, configs, insts, methods, events)
+      self.schemaCb (ch.context, classKey, configs, insts, methods, {})
 
   def parsePresenceMasks(self, codec, schemaClass):
     """ Generate a list of not-present properties """
@@ -896,7 +872,7 @@ class managementClient:
     codec.write_str8 (classId[1])
     codec.write_bin128 (classId[2])
     codec.write_str8 (methodName)
-    bank = objId.getBank()
+    bank = "%d.%d" % (objId.getBroker(), objId.getBank())
 
     # Encode args according to schema
     if classId not in self.schema:
@@ -926,5 +902,5 @@ class managementClient:
 
     packageName = classId[0]
     className   = classId[1]
-    msg = channel.message(codec.encoded, "agent." + str(bank))
+    msg = channel.message(codec.encoded, "agent." + bank)
     channel.send ("qpid.management", msg)

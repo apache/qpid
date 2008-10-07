@@ -84,6 +84,21 @@ void ObjectId::decode(framing::Buffer& buffer)
     second = buffer.getLongLong();
 }
 
+namespace qpid {
+namespace management {
+
+std::ostream& operator<<(std::ostream& out, const ObjectId& i)
+{
+    out << "[" << ((i.first & 0xF000000000000000LL) >> 60) <<
+        "-" << ((i.first & 0x0FFF000000000000LL) >> 48) <<
+        "-" << ((i.first & 0x0000FFFFF0000000LL) >> 32) <<
+        "-" << (i.first & 0x000000000FFFFFFFLL) <<
+        "-" << i.second << "]";
+    return out;
+}
+
+}}
+
 int ManagementObject::nextThreadIndex = 0;
 
 void ManagementObject::writeTimestamps (Buffer& buf)
@@ -108,19 +123,4 @@ int ManagementObject::getThreadIndex() {
             nextThreadIndex++;
     }
     return thisIndex;
-}
-
-Mutex& ManagementObject::getMutex()
-{
-    return agent->getMutex();
-}
-
-Buffer* ManagementObject::startEventLH()
-{
-    return agent->startEventLH();
-}
-
-void ManagementObject::finishEventLH(Buffer* buf)
-{
-    agent->finishEventLH(buf);
 }

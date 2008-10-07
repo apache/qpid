@@ -85,9 +85,9 @@ namespace {
     const string DEFAULT("default");
 }
 
-void /*MGEN:Class.NameCap*/::registerClass(ManagementAgent* agent)
+void /*MGEN:Class.NameCap*/::registerSelf(ManagementAgent* agent)
 {
-    agent->RegisterClass(packageName, className, md5Sum, writeSchema);
+    agent->registerClass(packageName, className, md5Sum, writeSchema);
 }
 
 void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
@@ -95,13 +95,13 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
     FieldTable ft;
 
     // Schema class header:
+    buf.putOctet       (CLASS_KIND_TABLE);
     buf.putShortString (packageName); // Package Name
     buf.putShortString (className);   // Class Name
     buf.putBin128      (md5Sum);      // Schema Hash
     buf.putShort       (/*MGEN:Class.ConfigCount*/); // Config Element Count
     buf.putShort       (/*MGEN:Class.InstCount*/); // Inst Element Count
     buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count
-    buf.putShort       (/*MGEN:Class.EventCount*/); // Event Count
 
     // Properties
 /*MGEN:Class.PropertySchema*/
@@ -109,8 +109,6 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 /*MGEN:Class.StatisticSchema*/
     // Methods
 /*MGEN:Class.MethodSchema*/
-    // Events
-/*MGEN:Class.EventSchema*/
 }
 
 /*MGEN:IF(Class.ExistPerThreadStats)*/
@@ -176,9 +174,8 @@ void /*MGEN:Class.NameCap*/::doMethod (/*MGEN:Class.DoMethodArgs*/)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
     std::string          text;
+
 /*MGEN:Class.MethodHandlers*/
     outBuf.putLong(status);
     outBuf.putShortString(Manageable::StatusText(status, text));
 }
-
-/*MGEN:Class.EventMethodBodies*/

@@ -27,6 +27,7 @@
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qmf/org/apache/qpid/acl/Acl.h"
 
 #include <map>
@@ -57,7 +58,7 @@ private:
    bool transferAcl;
    boost::shared_ptr<AclData> data;
    qmf::org::apache::qpid::acl::Acl* mgmtObject; // mgnt owns lifecycle
-
+   qpid::management::ManagementAgent* agent;
 
 public:
    Acl (AclValues& av, broker::Broker& b);
