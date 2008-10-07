@@ -97,6 +97,10 @@ Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     return i->second;
 }
 
+bool ExchangeRegistry::registerExchange(const Exchange::shared_ptr& ex) {
+    return exchanges.insert(ExchangeMap::value_type(ex->getName(), ex)).second;
+}
+
 void ExchangeRegistry::registerType(const std::string& type, FactoryFunction f)
 {
     factory[type] = f;

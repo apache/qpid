@@ -51,14 +51,14 @@ namespace qpid {
                 boost::intrusive_ptr<Message>& msg;
             public:
                 Prepare(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg);
-                void operator()(Queue::shared_ptr& queue);            
+                void operator()(const boost::shared_ptr<Queue>& queue);            
             };
 
             class Commit{
                 boost::intrusive_ptr<Message>& msg;
             public:
                 Commit(boost::intrusive_ptr<Message>& msg);
-                void operator()(Queue::shared_ptr& queue);            
+                void operator()(const boost::shared_ptr<Queue>& queue);            
             };
 
             boost::intrusive_ptr<Message> msg;
@@ -72,7 +72,7 @@ namespace qpid {
 
 	    virtual Message& getMessage() { return *msg; };
             
-            virtual void deliverTo(Queue::shared_ptr& queue);
+            virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
 
             virtual ~TxPublish(){}
 

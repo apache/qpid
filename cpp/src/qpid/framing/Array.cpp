@@ -117,7 +117,7 @@ bool Array::operator==(const Array& x) const {
 void Array::add(ValuePtr value)
 {
     if (typeOctet != value->getType()) {
-        throw IllegalArgumentException(QPID_MSG("Wrong type of value, expected " << typeOctet));
+        throw IllegalArgumentException(QPID_MSG("Wrong type of value in Array, expected " << typeOctet << " but found " << value->getType()));
     }
     values.push_back(value);
 }

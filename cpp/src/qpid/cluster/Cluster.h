@@ -23,6 +23,7 @@
 #include "Event.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "ClusterMap.h"
+#include "FailoverExchange.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/PollableQueue.h"
@@ -74,6 +75,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // URLs of current cluster members.
     std::vector<Url> getUrls() const;
+    boost::shared_ptr<FailoverExchange> getFailoverExchange() const { return failoverExchange; }
 
     // Leave the cluster
     void leave();
@@ -92,6 +94,11 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
     typedef sys::PollableQueue<Event> PollableEventQueue;
     typedef std::deque<Event> PlainEventQueue;
+
+    // NB: The final Lock& parameter on functions below is used to mark functions
+    // that should only be called by a function that already holds the lock.
+    // The parameter makes it hard to forget since you have to have an instance of
+    // a Lock to call the unlocked functions.
 
     // Unlocked versions of public functions
     void mcastControl(const framing::AMQBody& controlBody, Connection* cptr, Lock&);
@@ -145,9 +152,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     virtual qpid::management::ManagementObject* GetManagementObject() const;
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
-    void stopClusterNode();
-    void stopFullCluster();
-    void updateMemberStats(Lock&);
+
+    void stopClusterNode(Lock&);
+    void stopFullCluster(Lock&);
+    void memberUpdate(Lock&);
 
     // Called in connection IO threads .
     void checkDumpIn(Lock&);
@@ -181,6 +189,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::optional<ClusterMap> dumpedMap;
     
     size_t lastSize;
+    boost::shared_ptr<FailoverExchange> failoverExchange;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

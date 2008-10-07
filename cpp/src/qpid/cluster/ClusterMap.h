@@ -50,8 +50,10 @@ class ClusterMap {
     ClusterMap(const MemberId& id, const Url& url, bool isReady);
     ClusterMap(const framing::FieldTable& urls, const framing::FieldTable& states);
 
-    /** Update from config change. */
-    void configChange(
+    /** Update from config change.
+     *@return true if member set changed.
+     */
+    bool configChange(
         cpg_address *current, int nCurrent,
         cpg_address *left, int nLeft,
         cpg_address *joined, int nJoined);
@@ -76,7 +78,9 @@ class ClusterMap {
     bool dumpRequest(const MemberId& id, const std::string& url);       
     /** Return non-empty Url if accepted */
     boost::optional<Url> dumpOffer(const MemberId& from, const MemberId& to);
-    void ready(const MemberId& id, const Url&);
+
+    /**@return true If this is a new member */ 
+    bool ready(const MemberId& id, const Url&);
 
   private:
     Url getUrl(const Map& map, const  MemberId& id);

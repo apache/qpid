@@ -32,8 +32,8 @@ namespace qpid {
         class DeliverableMessage : public Deliverable{
             boost::intrusive_ptr<Message> msg;
         public:
-            DeliverableMessage(boost::intrusive_ptr<Message>& msg);
-            virtual void deliverTo(Queue::shared_ptr& queue);
+            DeliverableMessage(const boost::intrusive_ptr<Message>& msg);
+            virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
             Message& getMessage();
             uint64_t contentSize();
             virtual ~DeliverableMessage(){}

@@ -72,18 +72,20 @@ ClusterMap::ClusterMap(const FieldTable& newbiesFt, const FieldTable& membersFt)
     std::for_each(members.begin(), members.end(), boost::bind(&insertSet, boost::ref(alive), _1));
 }
 
-void ClusterMap::configChange(
+bool ClusterMap::configChange(
     cpg_address *current, int nCurrent,
     cpg_address *left, int nLeft,
     cpg_address */*joined*/, int /*nJoined*/)
 {
     cpg_address* a;
+    bool memberChange=false;
     for (a = left; a != left+nLeft; ++a) {
-        members.erase(*a);
+        memberChange = members.erase(*a);
         newbies.erase(*a);
     }
     alive.clear();
     std::copy(current, current+nCurrent, std::inserter(alive, alive.end()));
+    return memberChange;
 }
 
 Url ClusterMap::getUrl(const Map& map, const  MemberId& id) {
@@ -133,8 +135,8 @@ bool ClusterMap::dumpRequest(const MemberId& id, const std::string& url) {
     return false;
 }
 
-void ClusterMap::ready(const MemberId& id, const Url& url) {
-    if (isAlive(id)) members[id] = url;
+bool ClusterMap::ready(const MemberId& id, const Url& url) {
+    return isAlive(id) &&  members.insert(Map::value_type(id,url)).second;
 }
 
 boost::optional<Url> ClusterMap::dumpOffer(const MemberId& from, const MemberId& to) {

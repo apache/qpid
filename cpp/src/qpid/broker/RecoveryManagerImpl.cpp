@@ -59,7 +59,7 @@ class RecoverableQueueImpl : public RecoverableQueue
 {
     Queue::shared_ptr queue;
 public:
-    RecoverableQueueImpl(Queue::shared_ptr& _queue) : queue(_queue) {}
+    RecoverableQueueImpl(const boost::shared_ptr<Queue>& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
     void setPersistenceId(uint64_t id);    
 	uint64_t getPersistenceId() const;

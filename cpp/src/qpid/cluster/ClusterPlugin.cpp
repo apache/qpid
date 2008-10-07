@@ -34,6 +34,7 @@ namespace qpid {
 namespace cluster {
 
 using namespace std;
+using broker::Broker;
 
 struct ClusterValues {
     string name;
@@ -74,12 +75,14 @@ struct ClusterPlugin : public Plugin {
     Options* getOptions() { return &options; }
 
     void initialize(Plugin::Target& target) {
-        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
-        if (!broker || values.name.empty()) return;  // Only if --cluster-name option was specified.
+        if (values.name.empty()) return; // Only if --cluster-name option was specified.
+        Broker* broker = dynamic_cast<Broker*>(&target);
+        if (!broker) return;
         cluster = new Cluster(values.name, values.getUrl(broker->getPort()), *broker);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
+        broker->getExchanges().registerExchange(cluster->getFailoverExchange());
     }
 
     void earlyInitialize(Plugin::Target&) {}
