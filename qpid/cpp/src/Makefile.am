@@ -373,9 +373,11 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ConnectionHandler.cpp		\
   qpid/client/ConnectionImpl.cpp \
   qpid/client/ConnectionSettings.cpp		\
-  qpid/client/Connector.cpp	\
+  qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
+  qpid/client/FailoverListener.h		\
+  qpid/client/FailoverListener.cpp		\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
@@ -383,7 +385,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
-  qpid/client/QueueOptions.cpp		\
+  qpid/client/QueueOptions.cpp			\
   qpid/client/Results.cpp			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10.h		\

@@ -57,7 +57,7 @@ class FailOnDeliver : public Deliverable
 {
     Message msg;
 public:
-    void deliverTo(Queue::shared_ptr& queue)
+    void deliverTo(const boost::shared_ptr<Queue>& queue)
     {
         throw Exception(QPID_MSG("Invalid delivery to " << queue->getName()));
     }
