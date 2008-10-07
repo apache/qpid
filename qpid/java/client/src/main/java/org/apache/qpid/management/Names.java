@@ -35,7 +35,7 @@ public interface Names
     String METHOD_REPLY_QUEUE_PREFIX = "reply.";
    
     String AMQ_DIRECT_QUEUE = "amq.direct";
-    String AGENT_ROUTING_KEY = "agent.0";
+    String AGENT_ROUTING_KEY = "agent.1.0";
    
     String BROKER_ROUTING_KEY = "broker";
     

@@ -37,14 +37,6 @@
       <arg name="name"     dir="I" type="sstr"/>
       <arg name="childRef" dir="O" type="objId"/>
     </method>
-
-    <event name="childCreated">
-      <arg name="name" type="sstr"/>
-    </event>
-
-    <event name="childDestroyed">
-      <arg name="name" type="sstr"/>
-    </event>
   </class>
 
 
@@ -59,7 +51,14 @@
 
     <statistic name="count" type="count64" unit="tick" desc="Counter that increases monotonically"/>
 
-    <method name="delete"/> 
+    <method name="delete"/>
   </class>
+
+  <eventArguments>
+    <arg name="childName" type="sstr"/>
+  </eventArguments>
+
+  <event name="ChildCreated"   args="childName"/>
+  <event name="ChildDestroyed" args="childName"/>
 </schema>
 

@@ -28,7 +28,9 @@
 namespace qpid {
 namespace framing {
 
-struct OutOfBounds : qpid::Exception {};
+struct OutOfBounds : qpid::Exception {
+    OutOfBounds() : qpid::Exception(std::string("Out of Bounds")) {}
+};
 
 class Content;
 class FieldTable;

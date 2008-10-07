@@ -30,16 +30,13 @@ class EventConsole(Console):
   def event(self, broker, event):
     print event
 
-  def heartbeat(self, agent, timestamp):
-    print "Heartbeat"
-
 ##
 ## Main Program
 ##
 def main():
   _usage = "%prog [options] [broker-addr]..."
   _description = \
-"""Collect and print events from one of more Qpid message brokers.  If no broker-addr is
+"""Collect and print events from one or more Qpid message brokers.  If no broker-addr is
 supplied, %prog will connect to 'localhost:5672'.
 broker-addr is of the form:  [username/password@] hostname | ip-address [:<port>]
 ex: localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost

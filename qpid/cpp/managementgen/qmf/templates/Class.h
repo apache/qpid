@@ -72,7 +72,7 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void writeProperties    (::qpid::framing::Buffer& buf);
     void writeStatistics    (::qpid::framing::Buffer& buf,
                              bool skipHeaders = false);
-    void doMethod           (std::string            methodName,
+    void doMethod           (std::string& methodName,
                              ::qpid::framing::Buffer& inBuf,
                              ::qpid::framing::Buffer& outBuf);
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
@@ -88,17 +88,15 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
-    static void  registerClass  (::qpid::management::ManagementAgent* agent);
-    std::string& getPackageName (void) { return packageName; }
-    std::string& getClassName   (void) { return className; }
-    uint8_t*     getMd5Sum      (void) { return md5Sum; }
+    static void  registerSelf   (::qpid::management::ManagementAgent* agent);
+    std::string& getPackageName (void) const { return packageName; }
+    std::string& getClassName   (void) const { return className; }
+    uint8_t*     getMd5Sum      (void) const { return md5Sum; }
 
     // Method IDs
 /*MGEN:Class.MethodIdDeclarations*/
     // Accessor Methods
 /*MGEN:Class.AccessorMethods*/
-    // Event Methods
-/*MGEN:Class.EventMethodDecls*/
 };
 
 }/*MGEN:Class.CloseNamespaces*/

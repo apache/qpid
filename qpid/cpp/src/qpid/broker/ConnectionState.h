@@ -63,6 +63,9 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     virtual void setUserId(const string& uid) {  userId = uid; }
     const string& getUserId() const { return userId; }
 
+    void setUrl(const string& _url) { url = _url; }
+    const string& getUrl() const { return url; }
+
     void setFederationLink(bool b) {  federationLink = b; }
     bool isFederationLink() const { return federationLink; }
 
@@ -85,6 +88,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     uint16_t heartbeat;
     uint64_t stagingThreshold;
     string userId;
+    string url;
     bool federationLink;
 };
 

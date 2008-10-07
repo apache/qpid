@@ -26,6 +26,15 @@
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/agent/ManagementAgent.h"
+#include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
+#include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
+#include "qmf/org/apache/qpid/broker/EventBind.h"
+#include "qmf/org/apache/qpid/broker/EventUnbind.h"
+#include "qmf/org/apache/qpid/broker/EventSubscribe.h"
+#include "qmf/org/apache/qpid/broker/EventUnsubscribe.h"
 #include <boost/format.hpp>
 #include <boost/cast.hpp>
 #include <boost/bind.hpp>
@@ -36,6 +45,8 @@ namespace broker {
 using namespace qpid;
 using namespace qpid::framing;
 using namespace qpid::framing::dtx;
+using namespace qpid::management;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 typedef std::vector<Queue::shared_ptr> QueueVector;
 
@@ -54,18 +65,17 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                                                   const string& alternateExchange, 
                                                   bool passive, bool durable, bool /*autoDelete*/, const FieldTable& args){
 
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
         std::map<acl::Property, std::string> params;
-		params.insert(make_pair(acl::TYPE, type));
-		params.insert(make_pair(acl::ALTERNATE, alternateExchange));
-		params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
-		params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
-	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchange,&params) )
-	        throw NotAllowedException("ACL denied exhange declare request");
+        params.insert(make_pair(acl::TYPE, type));
+        params.insert(make_pair(acl::ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
+        params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
+        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchange,&params) )
+            throw NotAllowedException("ACL denied exhange declare request");
     }
-	
+    
     //TODO: implement autoDelete
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
@@ -90,6 +100,13 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                 checkType(response.first, type);
                 checkAlternate(response.first, alternate);
             }
+
+            ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+            if (agent)
+                agent->raiseEvent(_qmf::EventExchangeDeclare(getConnection().getUrl(), getConnection().getUserId(), exchange, type,
+                                                             alternateExchange, durable, false, args,
+                                                             response.second ? "created" : "existing"));
+
         }catch(UnknownExchangeTypeException& e){
             throw CommandInvalidException(QPID_MSG("Exchange type not implemented: " << type));
         }
@@ -106,21 +123,18 @@ void SessionAdapter::ExchangeHandlerImpl::checkType(Exchange::shared_ptr exchang
 void SessionAdapter::ExchangeHandlerImpl::checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate)
 {
     if (alternate && alternate != exchange->getAlternate()) 
-        throw NotAllowedException(
-            QPID_MSG("Exchange declared with alternate-exchange "
-                     << exchange->getAlternate()->getName() << ", requested " 
-                     << alternate->getName()));
+        throw NotAllowedException(QPID_MSG("Exchange declared with alternate-exchange "
+                                           << exchange->getAlternate()->getName() << ", requested " 
+                                           << alternate->getName()));
 }
                 
-void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifUnused*/){
-
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
-	    if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::EXCHANGE,name,NULL) )
-	        throw NotAllowedException("ACL denied exhange delete request");
+void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifUnused*/)
+{
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
+        if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::EXCHANGE,name,NULL) )
+            throw NotAllowedException("ACL denied exhange delete request");
     }
-
 
     //TODO: implement unused
     Exchange::shared_ptr exchange(getBroker().getExchanges().get(name));
@@ -128,16 +142,18 @@ void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifU
     if (exchange->isDurable()) getBroker().getStore().destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
     getBroker().getExchanges().destroy(name);
-} 
+
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    if (agent)
+        agent->raiseEvent(_qmf::EventExchangeDelete(getConnection().getUrl(), getConnection().getUserId(), name));
+}
 
 ExchangeQueryResult SessionAdapter::ExchangeHandlerImpl::query(const string& name)
 {
-
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
-	    if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::EXCHANGE,name,NULL) )
-	        throw NotAllowedException("ACL denied exhange query request");
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
+        if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::EXCHANGE,name,NULL) )
+            throw NotAllowedException("ACL denied exhange query request");
     }
 
     try {
@@ -147,15 +163,15 @@ ExchangeQueryResult SessionAdapter::ExchangeHandlerImpl::query(const string& nam
         return ExchangeQueryResult("", false, true, FieldTable());        
     }
 }
+
 void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName, 
                                            const string& exchangeName, const string& routingKey, 
-                                           const FieldTable& arguments){
-
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
-	    if (!acl->authorise(getConnection().getUserId(),acl::BIND,acl::EXCHANGE,exchangeName,routingKey) )
-	        throw NotAllowedException("ACL denied exhange bind request");
+                                           const FieldTable& arguments)
+{
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
+        if (!acl->authorise(getConnection().getUserId(),acl::BIND,acl::EXCHANGE,exchangeName,routingKey) )
+            throw NotAllowedException("ACL denied exhange bind request");
     }
 
     Queue::shared_ptr queue = getQueue(queueName);
@@ -167,29 +183,28 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
             if (exchange->isDurable() && queue->isDurable()) {
                 getBroker().getStore().bind(*exchange, *queue, routingKey, arguments);
             }
+
+            ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+            if (agent)
+                agent->raiseEvent(_qmf::EventBind(getConnection().getUrl(), getConnection().getUserId(), exchangeName, queueName, exchangeRoutingKey, arguments));
         }
     }else{
-        throw NotFoundException(
-            "Bind failed. No such exchange: " + exchangeName);
+        throw NotFoundException("Bind failed. No such exchange: " + exchangeName);
     }
 }
  
-void 
-SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
-                                        const string& exchangeName,
-                                        const string& routingKey)
+void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
+                                                 const string& exchangeName,
+                                                 const string& routingKey)
 {
-
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
         std::map<acl::Property, std::string> params;
-		params.insert(make_pair(acl::QUEUENAME, queueName));
-		params.insert(make_pair(acl::ROUTINGKEY, routingKey));
-	    if (!acl->authorise(getConnection().getUserId(),acl::UNBIND,acl::EXCHANGE,exchangeName,&params) )
-	        throw NotAllowedException("ACL denied exchange unbind request");
+        params.insert(make_pair(acl::QUEUENAME, queueName));
+        params.insert(make_pair(acl::ROUTINGKEY, routingKey));
+        if (!acl->authorise(getConnection().getUserId(),acl::UNBIND,acl::EXCHANGE,exchangeName,&params) )
+            throw NotAllowedException("ACL denied exchange unbind request");
     }
-
 
     Queue::shared_ptr queue = getQueue(queueName);
     if (!queue.get()) throw NotFoundException("Unbind failed. No such exchange: " + exchangeName);
@@ -198,10 +213,14 @@ SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
     if (!exchange.get()) throw NotFoundException("Unbind failed. No such exchange: " + exchangeName);
 
     //TODO: revise unbind to rely solely on binding key (not args)
-    if (exchange->unbind(queue, routingKey, 0) && exchange->isDurable() && queue->isDurable()) {
-        getBroker().getStore().unbind(*exchange, *queue, routingKey, FieldTable());
-    }
+    if (exchange->unbind(queue, routingKey, 0)) {
+        if (exchange->isDurable() && queue->isDurable())
+            getBroker().getStore().unbind(*exchange, *queue, routingKey, FieldTable());
 
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        if (agent)
+            agent->raiseEvent(_qmf::EventUnbind(getConnection().getUrl(), getConnection().getUserId(), exchangeName, queueName, routingKey));
+    }
 }
 
 ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string& exchangeName,
@@ -209,16 +228,15 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
                                                                   const std::string& key,
                                                                   const framing::FieldTable& args)
 {
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
         std::map<acl::Property, std::string> params;
-		params.insert(make_pair(acl::QUEUENAME, queueName));
-		params.insert(make_pair(acl::ROUTINGKEY, key));
-	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchangeName,&params) )
-	        throw NotAllowedException("ACL denied exhange bound request");
+        params.insert(make_pair(acl::QUEUENAME, queueName));
+        params.insert(make_pair(acl::ROUTINGKEY, key));
+        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchangeName,&params) )
+            throw NotAllowedException("ACL denied exhange bound request");
     }
-	
+    
     Exchange::shared_ptr exchange;
     try {
         exchange = getBroker().getExchanges().get(exchangeName);
@@ -279,13 +297,12 @@ bool SessionAdapter::QueueHandlerImpl::isLocal(const ConnectionToken* t) const
 
 QueueQueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 {
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
-	    if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::QUEUE,name,NULL) )
-	        throw NotAllowedException("ACL denied queue query request");
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
+        if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::QUEUE,name,NULL) )
+            throw NotAllowedException("ACL denied queue query request");
     }
-	
+    
     Queue::shared_ptr queue = session.getBroker().getQueues().find(name);
     if (queue) {
 
@@ -305,20 +322,19 @@ QueueQueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 }
 
 void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string& alternateExchange,
-                                              bool passive, bool durable, bool exclusive, 
-                                              bool autoDelete, const qpid::framing::FieldTable& arguments){
- 
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
+                                               bool passive, bool durable, bool exclusive, 
+                                               bool autoDelete, const qpid::framing::FieldTable& arguments)
+{ 
+    AclModule* acl = getBroker().getAcl();
+    if (acl) {
         std::map<acl::Property, std::string> params;
-		params.insert(make_pair(acl::ALTERNATE, alternateExchange));
-		params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
-		params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
-		params.insert(make_pair(acl::EXCLUSIVE, std::string(exclusive ? "true" : "false")));
-		params.insert(make_pair(acl::AUTODELETE, std::string(autoDelete ? "true" : "false")));
-	    if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::QUEUE,name,&params) )
-	        throw NotAllowedException("ACL denied queue create request");
+        params.insert(make_pair(acl::ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
+        params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
+        params.insert(make_pair(acl::EXCLUSIVE, std::string(exclusive ? "true" : "false")));
+        params.insert(make_pair(acl::AUTODELETE, std::string(autoDelete ? "true" : "false")));
+        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::QUEUE,name,&params) )
+            throw NotAllowedException("ACL denied queue create request");
     }
 
     Exchange::shared_ptr alternate;
@@ -327,17 +343,16 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
     }
     Queue::shared_ptr queue;
     if (passive && !name.empty()) {
-	queue = getQueue(name);
+    queue = getQueue(name);
         //TODO: check alternate-exchange is as expected
     } else {
-	std::pair<Queue::shared_ptr, bool> queue_created =  
-            getBroker().getQueues().declare(
-                name, durable,
-                autoDelete,
-                exclusive ? this : 0);
-	queue = queue_created.first;
-	assert(queue);
-	if (queue_created.second) { // This is a new queue
+        std::pair<Queue::shared_ptr, bool> queue_created =  
+            getBroker().getQueues().declare(name, durable,
+                                            autoDelete,
+                                            exclusive ? this : 0);
+        queue = queue_created.first;
+        assert(queue);
+        if (queue_created.second) { // This is a new queue
             if (alternate) {
                 queue->setAlternateExchange(alternate);
                 alternate->incAlternateUsers();
@@ -346,44 +361,50 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             //apply settings & create persistent record if required
             queue_created.first->create(arguments);
 
-	    //add default binding:
-	    getBroker().getExchanges().getDefault()->bind(queue, name, 0);
+            //add default binding:
+            getBroker().getExchanges().getDefault()->bind(queue, name, 0);
             queue->bound(getBroker().getExchanges().getDefault()->getName(), name, arguments);
 
             //handle automatic cleanup:
-	    if (exclusive) {
-		exclusiveQueues.push_back(queue);
-	    }
-	} else {
+            if (exclusive) {
+                exclusiveQueues.push_back(queue);
+            }
+        } else {
             if (exclusive && queue->setExclusiveOwner(this)) {
-		exclusiveQueues.push_back(queue);
+                exclusiveQueues.push_back(queue);
             }
         }
+
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        if (agent)
+            agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
+                                                      name, durable, exclusive, autoDelete, arguments,
+                                                      queue_created.second ? "created" : "existing"));
     }
+
     if (exclusive && !queue->isExclusiveOwner(this)) 
-	throw ResourceLockedException(
-            QPID_MSG("Cannot grant exclusive access to queue "
-                     << queue->getName()));
+        throw ResourceLockedException(QPID_MSG("Cannot grant exclusive access to queue "
+                                               << queue->getName()));
 } 
         
         
 void SessionAdapter::QueueHandlerImpl::purge(const string& queue){
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
- 	    if (!acl->authorise(getConnection().getUserId(),acl::PURGE,acl::QUEUE,queue,NULL) )
-	        throw NotAllowedException("ACL denied queue purge request");
+    AclModule* acl = getBroker().getAcl();
+    if (acl)
+    {
+         if (!acl->authorise(getConnection().getUserId(),acl::PURGE,acl::QUEUE,queue,NULL) )
+            throw NotAllowedException("ACL denied queue purge request");
     }
     getQueue(queue)->purge();
 } 
         
 void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnused, bool ifEmpty){
 
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
- 	    if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::QUEUE,queue,NULL) )
-	        throw NotAllowedException("ACL denied queue delete request");
+    AclModule* acl = getBroker().getAcl();
+    if (acl)
+    {
+         if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::QUEUE,queue,NULL) )
+            throw NotAllowedException("ACL denied queue delete request");
     }
 
     ChannelException error(0, "");
@@ -401,6 +422,10 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
         q->destroy();
         getBroker().getQueues().destroy(queue);
         q->unbind(getBroker().getExchanges(), q);
+
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        if (agent)
+            agent->raiseEvent(_qmf::EventQueueDelete(getConnection().getUrl(), getConnection().getUserId(), queue));
     }
 } 
 
@@ -441,12 +466,12 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
                               const FieldTable& arguments)
 {
 
-	AclModule* acl = getBroker().getAcl();
-	if (acl)
-	{
-	    // add flags as needed
- 	    if (!acl->authorise(getConnection().getUserId(),acl::CONSUME,acl::QUEUE,queueName,NULL) )
-	        throw NotAllowedException("ACL denied Queue subscribe request");
+    AclModule* acl = getBroker().getAcl();
+    if (acl)
+    {
+        // add flags as needed
+         if (!acl->authorise(getConnection().getUserId(),acl::CONSUME,acl::QUEUE,queueName,NULL) )
+            throw NotAllowedException("ACL denied Queue subscribe request");
     }
 
     Queue::shared_ptr queue = getQueue(queueName);
@@ -457,12 +482,21 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     state.consume(MessageDelivery::getMessageDeliveryToken(destination, acceptMode, acquireMode), 
                   tag, queue, false, //TODO get rid of no-local
                   acceptMode == 0, acquireMode == 0, exclusive, &arguments);
+
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    if (agent)
+        agent->raiseEvent(_qmf::EventSubscribe(getConnection().getUrl(), getConnection().getUserId(),
+                                               queueName, destination, exclusive, arguments));
 }
 
 void
 SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
 {
     state.cancel(destination);
+
+    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    if (agent)
+        agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getUrl(), getConnection().getUserId(), destination));
 }
 
 void

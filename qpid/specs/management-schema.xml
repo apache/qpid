@@ -86,17 +86,6 @@
       <arg name="password"      dir="I" type="sstr"/>
     </method>
 
-    <event name="agentConnect" desc="QMF Management Agent has connected to the broker">
-      <arg name="remoteAddress" type="sstr"/>
-      <arg name="label"         type="sstr"/>
-      <arg name="brokerBank"    type="uint32"/>
-      <arg name="agentBank"     type="uint32"/>
-    </event>
-
-    <event name="agentDisconnect" desc="QMF Management Agent has disconnected from the broker">
-      <arg name="remoteAddress" type="sstr"/>
-    </event>
-
     <method name="queueMoveMessages" desc="Move messages from one queue to another">
       <arg name="srcQueue"          dir="I" type="sstr" desc="Source queue"/>
       <arg name="destQueue"         dir="I" type="sstr" desc="Destination queue"/>
@@ -115,7 +104,8 @@
     <property name="label"         type="sstr"   access="RO"           desc="Label for agent"/>
     <property name="registeredTo"  type="objId"  references="Broker" access="RO" desc="Broker agent is registered to"/>
     <property name="systemId"      type="uuid"   access="RO"           desc="Identifier of system where agent resides"/>
-    <property name="objectIdBank"  type="uint32" access="RO"           desc="Assigned object-id bank"/>
+    <property name="brokerBank"    type="uint32" access="RO"           desc="Assigned object-id broker bank"/>
+    <property name="agentBank"     type="uint32" access="RO"           desc="Assigned object-id agent bank"/>
   </class>
 
   <!--
@@ -218,7 +208,7 @@
     <property name="vhostRef" type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
-    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation ,...)"/>
+    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
 
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="federationLink"   type="bool" desc="Is this a federation link"/>
@@ -305,5 +295,36 @@
     <method name="resetLifespan"/>
     <method name="close"/>
   </class>
+
+  <eventArguments>
+    <arg name="altEx"   type="sstr"   desc="Name of the alternate exchange"/>
+    <arg name="args"    type="map"    desc="Supplemental arguments or parameters supplied"/>
+    <arg name="autoDel" type="bool"   desc="Created object is automatically deleted when no longer in use"/>
+    <arg name="dest"    type="sstr"   desc="Destination tag for a subscription"/>
+    <arg name="disp"    type="sstr"   desc="Disposition of a declaration: 'created' if object was created, 'existing' if object already existed"/>
+    <arg name="durable" type="bool"   desc="Created object is durable"/>
+    <arg name="exName"  type="sstr"   desc="Name of an exchange"/>
+    <arg name="exType"  type="sstr"   desc="Type of an exchange"/>
+    <arg name="excl"    type="bool"   desc="Created object is exclusive for the use of the owner only"/>
+    <arg name="key"     type="sstr"   desc="Key text used for routing or binding"/>
+    <arg name="qName"   type="sstr"   desc="Name of a queue"/>
+    <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
+    <arg name="user"    type="sstr"   desc="Authentication identity"/>
+  </eventArguments>
+
+  <event name="clientConnect"     args="rhost, user"/>
+  <event name="clientDisconnect"  args="rhost, user"/>
+  <event name="agentConnect"      args="rhost, user"/>
+  <event name="agentDisconnect"   args="rhost, user"/>
+  <event name="brokerConnect"     args="rhost, user"/>
+  <event name="brokerDisconnect"  args="rhost, user"/>
+  <event name="queueDeclare"      args="rhost, user, qName, durable, excl, autoDel, args, disp"/>
+  <event name="queueDelete"       args="rhost, user, qName"/>
+  <event name="exchangeDeclare"   args="rhost, user, exName, exType, altEx, durable, autoDel, args, disp"/>
+  <event name="exchangeDelete"    args="rhost, user, exName"/>
+  <event name="bind"              args="rhost, user, exName, qName, key, args"/>
+  <event name="unbind"            args="rhost, user, exName, qName, key"/>
+  <event name="subscribe"         args="rhost, user, qName, dest, excl, args"/>
+  <event name="unsubscribe"       args="rhost, user, dest"/>
 </schema>
 
