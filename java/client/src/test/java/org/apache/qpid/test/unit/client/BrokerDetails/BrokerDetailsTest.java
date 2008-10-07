@@ -20,14 +20,19 @@
  */
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class BrokerDetailsTest extends TestCase
 {
-
     public void testMultiParameters() throws URLSyntaxException
     {
         String url = "tcp://localhost:5672?timeout='200',immediatedelivery='true'";
@@ -85,6 +90,17 @@ public class BrokerDetailsTest extends TestCase
             assertTrue(urise.getReason().equals("Illegal character in port number"));
         }
 
+    }
+    
+    public void testBrokerDefaultsToTopLevelOptions() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@clientid/test?ssl='false'&brokerlist='tcp://localhost:5672?ssl='true';tcp://myhost:5672'";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+        BrokerDetails bd1 = connectionurl.getBrokerDetails(0);
+        BrokerDetails bd2 = connectionurl.getBrokerDetails(1);
+        
+        assertTrue("Broker option should override the top level option",bd1.useSSL());
+        assertFalse("Broker options should default to the top level options",bd2.useSSL());
     }
 
     public static junit.framework.Test suite()
