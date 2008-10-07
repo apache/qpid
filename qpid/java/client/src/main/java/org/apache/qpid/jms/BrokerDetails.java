@@ -94,6 +94,8 @@ public interface BrokerDetails
     SSLConfiguration getSSLConfiguration();
 
     void setSSLConfiguration(SSLConfiguration sslConfiguration);
+    
+    boolean useSSL();
 
     String toString();
 

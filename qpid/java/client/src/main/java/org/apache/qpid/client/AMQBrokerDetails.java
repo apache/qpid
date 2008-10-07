@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -35,18 +36,28 @@ public class AMQBrokerDetails implements BrokerDetails
     private int _port;
     private String _transport;
 
-    private Map<String, String> _options;
+    private Map<String, String> _options = new HashMap<String, String>();
 
     private SSLConfiguration _sslConfiguration;
 
-    public AMQBrokerDetails()
-    {
-        _options = new HashMap<String, String>();
+    public AMQBrokerDetails(){}
+    
+    public AMQBrokerDetails(String url)throws URLSyntaxException
+    {   
+        this(url,null);
     }
 
-    public AMQBrokerDetails(String url) throws URLSyntaxException
-    {
-        this();
+    public AMQBrokerDetails(String url,Map<String, String> options) throws URLSyntaxException
+    {        
+        /* According to the wiki the AMQBroker options should default to connection level options.
+           unless overridden by broker specific options.
+           Currently there seems to be only one such option (SSL).            
+        */   
+        if (options != null)
+        {
+            _options.put(ConnectionURL.OPTIONS_SSL,options.get(ConnectionURL.OPTIONS_SSL));       
+        }
+        
         // URL should be of format tcp://host:port?option='value',option='value'
         try
         {
@@ -252,6 +263,23 @@ public class AMQBrokerDetails implements BrokerDetails
 
         return BrokerDetails.DEFAULT_CONNECT_TIMEOUT;
     }
+    
+    public boolean useSSL()
+    {
+        if (_options.containsKey(ConnectionURL.OPTIONS_SSL))
+        {
+            try
+            {
+                return Boolean.parseBoolean(_options.get(ConnectionURL.OPTIONS_SSL));
+            }
+            catch (NumberFormatException nfe)
+            {
+                //Do nothing as we will use the default below.
+            }
+        }
+
+        return false;
+    }    
 
     public void setTimeout(long timeout)
     {
