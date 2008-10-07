@@ -56,7 +56,7 @@ class SequenceNumber
 
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
-    uint32_t size() const;   
+    uint32_t encodedSize() const;   
 
     template <class S> void serialize(S& s) { s(value); }
 };    

@@ -64,12 +64,12 @@ void BodyHolder::decode(uint8_t type, Buffer& buffer, uint32_t size) {
     get()->decode(buffer, size);
 }
 
-uint32_t BodyHolder::size() const {
+uint32_t BodyHolder::encodedSize() const {
     const AMQMethodBody* method=getMethod();
     if (method) 
-        return sizeof(ClassId)+sizeof(MethodId)+method->size();
+        return sizeof(ClassId)+sizeof(MethodId)+method->encodedSize();
     else
-        return get()->size();
+        return get()->encodedSize();
 }
 
 }} // namespace qpid::framing

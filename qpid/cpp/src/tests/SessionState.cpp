@@ -85,7 +85,7 @@ AMQFrame contentFrameChar(char content, bool isLast=true) {
 }
 
 // Send frame & return size of frame.
-size_t send(qpid::SessionState& s, const AMQFrame& f) { s.senderRecord(f); return f.size(); }
+size_t send(qpid::SessionState& s, const AMQFrame& f) { s.senderRecord(f); return f.encodedSize(); }
 // Send transfer command with no content.
 size_t transfer0(qpid::SessionState& s) { return send(s, transferFrame(false)); }
 // Send transfer frame with single content frame.
@@ -116,8 +116,8 @@ size_t transfers(qpid::SessionState& s, string content) {
                            bind(transfer1Char, ref(s), _1));
 }
 
-size_t contentFrameSize(size_t n=1) { return AMQFrame(in_place<AMQContentBody>()).size() + n; }
-size_t transferFrameSize() { return AMQFrame(in_place<MessageTransferBody>()).size(); }
+size_t contentFrameSize(size_t n=1) { return AMQFrame(in_place<AMQContentBody>()).encodedSize() + n; }
+size_t transferFrameSize() { return AMQFrame(in_place<MessageTransferBody>()).encodedSize(); }
 
 // ==== qpid::SessionState test classes
 

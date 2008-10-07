@@ -349,7 +349,7 @@ void RdmaConnector::Writer::write(Rdma::AsynchIO&) {
     size_t bytesWritten = 0;
     while (aio->writable() && aio->bufferAvailable() && !frames.empty()) {
         const AMQFrame* frame = &frames.front();        
-        uint32_t size = frame->size();
+        uint32_t size = frame->encodedSize();
         while (size <= encode.available()) {
             frame->encode(encode);
             frames.pop_front();
@@ -358,7 +358,7 @@ void RdmaConnector::Writer::write(Rdma::AsynchIO&) {
             if (frames.empty())
                 break;
             frame = &frames.front();        
-            size = frame->size();
+            size = frame->encodedSize();
         }
         lastEof -= framesEncoded;
         writeOne();
@@ -392,7 +392,7 @@ void RdmaConnector::writeDataBlock(const AMQDataBlock& data) {
     Rdma::Buffer* buff = aio->getBuffer();
     framing::Buffer out(buff->bytes, buff->byteCount);
     data.encode(out);
-    buff->dataCount = data.size();
+    buff->dataCount = data.encodedSize();
     aio->queueWrite(buff);
 }
 

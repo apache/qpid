@@ -107,7 +107,7 @@ void Connection::recordFromServer(framing::AMQFrame& frame)
     if (mgmtObject != 0)
     {
         mgmtObject->inc_framesToClient();
-        mgmtObject->inc_bytesToClient(frame.size());
+        mgmtObject->inc_bytesToClient(frame.encodedSize());
     }
 }
 
@@ -116,7 +116,7 @@ void Connection::recordFromClient(framing::AMQFrame& frame)
     if (mgmtObject != 0)
     {
         mgmtObject->inc_framesFromClient();
-        mgmtObject->inc_bytesFromClient(frame.size());
+        mgmtObject->inc_bytesFromClient(frame.encodedSize());
     }
 }
 

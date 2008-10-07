@@ -61,7 +61,7 @@ void SessionPoint::advance(const AMQFrame& f) {
         if (f.isLastSegment() && f.isLastFrame()) 
             ++command;          // Single-frame command.
         else
-            offset += f.size();
+            offset += f.encodedSize();
     }
     else {                      // continuation frame for partial command
         if (offset == 0)
@@ -77,7 +77,7 @@ void SessionPoint::advance(const AMQFrame& f) {
             // that the relationship of fragment offsets to the replay
             // list can be computed more easily.
             // 
-            offset += f.size();
+            offset += f.encodedSize();
         }
     }
 }
@@ -116,9 +116,9 @@ void SessionState::senderRecord(const AMQFrame& f) {
     QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
     stateful = true;
     if (timeout) sender.replayList.push_back(f);
-    sender.unflushedSize += f.size();
-    sender.bytesSinceKnownCompleted += f.size();
-    sender.replaySize += f.size();
+    sender.unflushedSize += f.encodedSize();
+    sender.bytesSinceKnownCompleted += f.encodedSize();
+    sender.replaySize += f.encodedSize();
     sender.incomplete += sender.sendPoint.command;
     sender.sendPoint.advance(f);
     if (config.replayHardLimit && config.replayHardLimit < sender.replaySize) 
@@ -153,9 +153,9 @@ void SessionState::senderConfirmed(const SessionPoint& confirmed) {
     while (i != sender.replayList.end() && sender.replayPoint.command < confirmed.command) {
         sender.replayPoint.advance(*i);
         assert(sender.replayPoint <= sender.sendPoint);
-        sender.replaySize -= i->size();
+        sender.replaySize -= i->encodedSize();
         if (sender.replayPoint > sender.flushPoint) 
-            sender.unflushedSize -= i->size();
+            sender.unflushedSize -= i->encodedSize();
         ++i;
     }
     if (sender.replayPoint > sender.flushPoint)
@@ -186,7 +186,7 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
     if (isControl(f)) return true; // Ignore control frames.
     stateful = true;
     receiver.expected.advance(f);
-    receiver.bytesSinceKnownCompleted += f.size();
+    receiver.bytesSinceKnownCompleted += f.encodedSize();
     bool firstTime = receiver.expected > receiver.received;
     if (firstTime) {
         receiver.received = receiver.expected;

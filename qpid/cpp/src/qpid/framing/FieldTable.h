@@ -52,7 +52,7 @@ class FieldTable
     typedef ValueMap::iterator iterator;
 
     ~FieldTable();
-    uint32_t size() const;
+    uint32_t encodedSize() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
 

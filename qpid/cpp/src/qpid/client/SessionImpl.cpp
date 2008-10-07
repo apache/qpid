@@ -427,13 +427,13 @@ void SessionImpl::handleIn(AMQFrame& frame) // network thread
 
 void SessionImpl::handleOut(AMQFrame& frame) // user thread
 {
-    connection->expand(frame.size(), true);
+    connection->expand(frame.encodedSize(), true);
     channel.handle(frame);
 }
 
 void SessionImpl::proxyOut(AMQFrame& frame) // network thread
 {
-    connection->expand(frame.size(), false);
+    connection->expand(frame.encodedSize(), false);
     channel.handle(frame);
 }
 
@@ -523,7 +523,7 @@ void SessionImpl::commandPoint(const framing::SequenceNumber& id, uint64_t offse
 
 void SessionImpl::expected(const framing::SequenceSet& commands, const framing::Array& fragments)
 {
-    if (!commands.empty() || fragments.size()) {
+    if (!commands.empty() || fragments.encodedSize()) {
         throw NotImplementedException("Session resumption not yet supported");
     }
 }

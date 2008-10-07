@@ -37,8 +37,8 @@ void AMQFrame::setBody(const AMQBody& b) { body = new BodyHolder(b); }
 
 void AMQFrame::setMethod(ClassId c, MethodId m) { body = new BodyHolder(c,m); }
 
-uint32_t AMQFrame::size() const {
-    return frameOverhead() + body->size();
+uint32_t AMQFrame::encodedSize() const {
+    return frameOverhead() + body->encodedSize();
 }
 
 uint32_t AMQFrame::frameOverhead() {
@@ -60,7 +60,7 @@ void AMQFrame::encode(Buffer& buffer) const
     uint8_t flags = (bof ? 0x08 : 0) | (eof ? 0x04 : 0) | (bos ? 0x02 : 0) | (eos ? 0x01 : 0);
     buffer.putOctet(flags);
     buffer.putOctet(getBody()->type());
-    buffer.putShort(size());
+    buffer.putShort(encodedSize());
     buffer.putOctet(0);
     buffer.putOctet(0x0f & track);
     buffer.putShort(channel);    

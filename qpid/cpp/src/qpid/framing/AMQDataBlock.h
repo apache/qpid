@@ -32,7 +32,7 @@ public:
     virtual ~AMQDataBlock() {}
     virtual void encode(Buffer& buffer) const = 0; 
     virtual bool decode(Buffer& buffer) = 0; 
-    virtual uint32_t size() const = 0;
+    virtual uint32_t encodedSize() const = 0;
 };
 
 }

@@ -78,7 +78,7 @@ class AMQFrame : public AMQDataBlock
 
     void encode(Buffer& buffer) const; 
     bool decode(Buffer& buffer); 
-    uint32_t size() const;
+    uint32_t encodedSize() const;
 
     // 0-10 terminology: first/last frame (in segment) first/last segment (in assembly)
 
