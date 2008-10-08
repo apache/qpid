@@ -280,14 +280,14 @@
   ===============================================================
   -->
   <class name="Session">
-    <property name="vhostRef"         type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
-    <property name="name"             type="sstr"   access="RC" index="y"/>
-    <property name="channelId"        type="uint16" access="RO"/>
-    <property name="connectionRef"    type="objId"  references="Connection" access="RO"/>
-    <property name="detachedLifespan" type="uint32" access="RO" unit="second"/>
+    <property name="vhostRef"         type="objId"   references="Vhost" access="RC" index="y" parentRef="y"/>
+    <property name="name"             type="sstr"    access="RC" index="y"/>
+    <property name="channelId"        type="uint16"  access="RO"/>
+    <property name="connectionRef"    type="objId"   references="Connection" access="RO"/>
+    <property name="detachedLifespan" type="uint32"  access="RO" unit="second"/>
+    <property name="attached"         type="bool"    access="RO"/>
+    <property name="expireTime"       type="absTime" access="RO" optional="y"/>
 
-    <statistic name="attached"          type="bool"/>
-    <statistic name="expireTime"        type="absTime"/>
     <statistic name="framesOutstanding" type="count32"/>
 
     <method name="solicitAck"/>
