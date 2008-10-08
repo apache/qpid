@@ -27,6 +27,7 @@
 #include "Results.h"
 
 #include "qpid/SessionId.h"
+#include "qpid/SessionState.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ChannelHandler.h"
@@ -35,6 +36,7 @@
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/sys/Semaphore.h"
 #include "qpid/sys/StateMonitor.h"
+#include "qpid/sys/ExceptionHolder.h"
 
 #include <boost/optional.hpp>
 
@@ -52,6 +54,7 @@ namespace client {
 
 class Future;
 class ConnectionImpl;
+class SessionHandler;
 
 ///@internal
 class SessionImpl : public framing::FrameHandler::InOutHandler,
@@ -91,6 +94,8 @@ public:
     void sendCompletion();
     void sendFlush();
 
+    void setException(const sys::ExceptionHolder&);
+    
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
     void connectionBroke(uint16_t code, const std::string& text);
@@ -102,12 +107,6 @@ public:
     uint32_t getTimeout() const;
 
 private:
-    enum ErrorType {
-        OK,
-        CONNECTION_CLOSE,
-        SESSION_DETACH,
-        EXCEPTION
-    };
     enum State {
         INACTIVE,
         ATTACHING,
@@ -123,6 +122,7 @@ private:
     inline void setState(State s);
     inline void waitFor(State);
 
+    void setExceptionLH(const sys::ExceptionHolder&);      // LH = lock held when called.
     void detach();
     
     void check() const;
@@ -168,9 +168,7 @@ private:
                    const std::string& description,
                    const framing::FieldTable& errorInfo);
 
-    ErrorType error;
-    int code;                   // Error code
-    std::string text;           // Error text
+    sys::ExceptionHolder exceptionHolder;
     mutable StateMonitor state;
     mutable sys::Semaphore sendLock;
     uint32_t detachedLifetime;
@@ -193,6 +191,9 @@ private:
     framing::SequenceNumber nextIn;
     framing::SequenceNumber nextOut;
 
+    SessionState sessionState;
+
+  friend class client::SessionHandler;
 };
 
 }} // namespace qpid::client

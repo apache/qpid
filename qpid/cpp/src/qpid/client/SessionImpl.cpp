@@ -54,10 +54,7 @@ typedef sys::ScopedLock<sys::Semaphore>  Acquire;
 SessionImpl::SessionImpl(const std::string& name,
                          shared_ptr<ConnectionImpl> conn,
                          uint16_t ch, uint64_t _maxFrameSize)
-    : error(OK),
-      code(DETACH_CODE_NORMAL),
-      text(EMPTY),
-      state(INACTIVE),
+    : state(INACTIVE),
       detachedLifetime(0),
       maxFrameSize(_maxFrameSize),
       id(conn->getNegotiatedSettings().username, name.empty() ? Uuid(true).str() : name),
@@ -238,17 +235,23 @@ void SessionImpl::markCompleted(const SequenceNumber& id, bool cumulative, bool 
     }    
 }
 
+void SessionImpl::setException(const sys::ExceptionHolder& ex) {
+    Lock l(state);
+    setExceptionLH(ex);
+}
+
+void SessionImpl::setExceptionLH(const sys::ExceptionHolder& ex) { // Call with lock held.
+    exceptionHolder = ex;
+    setState(DETACHED);
+}
+
 /**
  * Called by ConnectionImpl to notify active sessions when connection
  * is explictly closed
  */
-void SessionImpl::connectionClosed(uint16_t _code, const std::string& _text) 
-{
-    Lock l(state);
-    error = CONNECTION_CLOSE;
-    code = _code;
-    text = _text;
-    setState(DETACHED);
+void SessionImpl::connectionClosed(uint16_t code, const std::string& text)  {
+    setException(createConnectionException(code, text));
+    // FIXME aconway 2008-10-07: Should closing a connection detach or close its sessions?
     handleClosed();
 }
 
@@ -258,6 +261,7 @@ void SessionImpl::connectionClosed(uint16_t _code, const std::string& _text)
  */
 void SessionImpl::connectionBroke(uint16_t _code, const std::string& _text) 
 {
+    // FIXME aconway 2008-10-07: distinguish disconnect from clean close.  
     connectionClosed(_code, _text);
 }
 
@@ -411,13 +415,12 @@ void SessionImpl::handleIn(AMQFrame& frame) // network thread
                 deliver(frame);
             }
         }
-    } catch (const SessionException& e) {
-        //TODO: proper 0-10 exception handling
-        QPID_LOG(error, "Session exception:" << e.what());
-        Lock l(state);
-        error = EXCEPTION;
-        code = e.code;
-        text = e.what();
+    }
+    catch (const SessionException& e) {
+        setException(createSessionException(e.code, e.getMessage()));
+    }
+    catch (const ChannelException& e) {
+        setException(createChannelException(e.code, e.getMessage()));
     }
 }
 
@@ -478,22 +481,19 @@ void SessionImpl::detach(const std::string& _name)
     QPID_LOG(info, "Session detached by peer: " << id);
 }
 
-void SessionImpl::detached(const std::string& _name, uint8_t _code)
-{
+void SessionImpl::detached(const std::string& _name, uint8_t _code) {
     Lock l(state);
     if (id.getName() != _name) throw InternalErrorException("Incorrect session name");
     setState(DETACHED);
     if (_code) {
         //TODO: make sure this works with execution.exception - don't
         //want to overwrite the code from that
-        QPID_LOG(error, "Session detached by peer: " << id << " " << code);
-        error = SESSION_DETACH;
-        code = _code;
-        text = "Session detached by peer";
+        setExceptionLH(createChannelException(_code, "Session detached by peer"));
+        QPID_LOG(error, exceptionHolder.what());
     }
     if (detachedLifetime == 0) {
         handleClosed();
-    }
+}
 }
 
 void SessionImpl::requestTimeout(uint32_t t)
@@ -606,9 +606,7 @@ void SessionImpl::exception(uint16_t errorCode,
              << " [caused by " << commandId << " " << classCode << ":" << commandCode << "]");
 
     Lock l(state);
-    error = EXCEPTION;
-    code = errorCode;
-    text = description;
+    setExceptionLH(createSessionException(errorCode, description));
     if (detachedLifetime) 
         setTimeout(0);
 }
@@ -631,12 +629,7 @@ inline void SessionImpl::waitFor(State s) //call with lock held
 
 void SessionImpl::check() const  //call with lock held.
 {
-    switch (error) {
-      case OK: break;
-      case CONNECTION_CLOSE: throw ConnectionException(code, text);
-      case SESSION_DETACH: throw ChannelException(code, text);
-      case EXCEPTION: createSessionException(code, text).raise();
-    }
+    exceptionHolder.raise();
 }
 
 void SessionImpl::checkOpen() const  //call with lock held.
@@ -657,7 +650,7 @@ void SessionImpl::handleClosed()
 {
     // FIXME aconway 2008-06-12: needs to be set to the correct exception type.
     // 
-    demux.close(sys::ExceptionHolder(text.empty() ? new ClosedException() : new Exception(text)));
+    demux.close(exceptionHolder.empty() ? new ClosedException() : exceptionHolder);
     results.close();
 }
 
@@ -668,4 +661,5 @@ uint32_t SessionImpl::setTimeout(uint32_t seconds) {
     detachedLifetime = seconds;
     return detachedLifetime;
 }
+
 }}
