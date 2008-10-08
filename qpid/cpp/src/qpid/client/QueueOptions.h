@@ -86,6 +86,11 @@ class QueueOptions: public framing::FieldTable
 	void clearPersistLastNode();
 	
 	/**
+	* get the key used match LVQ in args for message transfer 
+	*/
+	void getLVQKey(std::string& key);
+		
+	/**
 	* Use default odering policy
 	*/ 
 	void clearOrdering();
@@ -100,7 +105,7 @@ class QueueOptions: public framing::FieldTable
 	static const std::string strLastValueQueue;
 	static const std::string strOptimisticConsume;
 	static const std::string strPersistLastNode;
-	private:
+	static const std::string strLVQMatchProperty;
 	
 
 

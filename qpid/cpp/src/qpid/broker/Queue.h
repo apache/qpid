@@ -65,6 +65,7 @@ namespace qpid {
 
             typedef std::list<Consumer::shared_ptr> Listeners;
             typedef std::deque<QueuedMessage> Messages;
+			typedef std::map<string,QueuedMessage*> LVQ;
 
             const string name;
             const bool autodelete;
@@ -81,6 +82,7 @@ namespace qpid {
             std::vector<std::string> traceExclude;
             Listeners listeners;
             Messages messages;
+			LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
             mutable qpid::sys::Mutex ownershipLock;
@@ -253,6 +255,9 @@ namespace qpid {
             }
 
             bool releaseMessageContent(const QueuedMessage&);
+
+            void popMsg(QueuedMessage& qmsg);
+
         };
     }
 }
