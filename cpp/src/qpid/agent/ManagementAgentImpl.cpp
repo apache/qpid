@@ -172,7 +172,8 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event)
     event.encode(outBuffer);
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "mgmt.event");
+    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management",
+                              "console.event." + event.getPackageName() + "." + event.getEventName());
 }
 
 uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
@@ -510,7 +511,7 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
     encodePackageIndication(outBuffer, result.first);
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "mgmt.schema.package");
+    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "schema.package");
 
     return result.first;
 }
@@ -582,7 +583,7 @@ void ManagementAgentImpl::periodicProcessing()
 
         contentSize = BUFSIZE - msgBuffer.available();
         msgBuffer.reset();
-        routingKey = "mgmt." + systemId.str() + ".heartbeat";
+        routingKey = "console.heartbeat";
         connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
     }
 
@@ -617,7 +618,7 @@ void ManagementAgentImpl::periodicProcessing()
 
             contentSize = BUFSIZE - msgBuffer.available();
             msgBuffer.reset();
-            routingKey = "mgmt." + systemId.str() + ".prop." + object->getClassName();
+            routingKey = "console.prop." + object->getPackageName() + "." + object->getClassName();
             connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
         }
         
@@ -629,7 +630,7 @@ void ManagementAgentImpl::periodicProcessing()
 
             contentSize = BUFSIZE - msgBuffer.available();
             msgBuffer.reset();
-            routingKey = "mgmt." + systemId.str() + ".stat." + object->getClassName();
+            routingKey = "console.stat." + object->getPackageName() + "." + object->getClassName();
             connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
         }
 

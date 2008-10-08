@@ -706,6 +706,7 @@ class SchemaEvent:
     self.packageName = package
     self.name = None
     self.desc = None
+    self.sevText = "inform"
     self.args = []
     self.hash = Hash(node)
 
@@ -719,6 +720,9 @@ class SchemaEvent:
       elif key == 'desc':
         self.desc = val
 
+      elif key == 'sev':
+        self.sevText = val
+
       elif key == 'args':
         list = val.replace(" ", "").split(",")
         for item in list:
@@ -729,6 +733,17 @@ class SchemaEvent:
 
       else:
         raise ValueError ("Unknown attribute in event '%s'" % key)
+
+    if   self.sevText == "emerg"  : self.sev = 0
+    elif self.sevText == "alert"  : self.sev = 1
+    elif self.sevText == "crit"   : self.sev = 2
+    elif self.sevText == "error"  : self.sev = 3
+    elif self.sevText == "warn"   : self.sev = 4
+    elif self.sevText == "notice" : self.sev = 5
+    elif self.sevText == "inform" : self.sev = 6
+    elif self.sevText == "debug"  : self.sev = 7
+    else:
+      raise ValueError("Unknown severity '%s' in event '%s'" % (self.sevText, self.name))
 
   def getName (self):
     return self.name
@@ -796,6 +811,7 @@ class SchemaEvent:
       stream.write ("namespace %s {\n" % item)
 
   def genArgEncodes(self, stream, variables):
+    stream.write("    buf.putOctet(%d);\n" % self.sev)
     for arg in self.args:
       stream.write("    " + arg.type.type.encode.replace("@", "buf").replace("#", arg.name) + ";\n")
 
