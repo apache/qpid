@@ -105,7 +105,7 @@ void SessionImpl::open(uint32_t timeout) // user thread
         waitFor(ATTACHED);
         //TODO: timeout will not be set locally until get response to
         //confirm, should we wait for that?
-        proxy.requestTimeout(timeout);
+        setTimeout(timeout);
         proxy.commandPoint(nextOut, 0);
     } else {
         throw Exception("Open already called for this session");
@@ -115,11 +115,7 @@ void SessionImpl::open(uint32_t timeout) // user thread
 void SessionImpl::close() //user thread
 {
     Lock l(state);
-    if (detachedLifetime) {
-        proxy.requestTimeout(0);
-        //should we wait for the timeout response?
-        detachedLifetime = 0;
-    }
+    if (detachedLifetime) setTimeout(0);
     detach();
     waitFor(DETACHED);
 }
@@ -613,11 +609,8 @@ void SessionImpl::exception(uint16_t errorCode,
     error = EXCEPTION;
     code = errorCode;
     text = description;
-    if (detachedLifetime) {
-        proxy.requestTimeout(0);
-        //should we wait for the timeout response?
-        detachedLifetime = 0;
-    }
+    if (detachedLifetime) 
+        setTimeout(0);
 }
 
 
@@ -639,10 +632,10 @@ inline void SessionImpl::waitFor(State s) //call with lock held
 void SessionImpl::check() const  //call with lock held.
 {
     switch (error) {
-    case OK: break;
-    case CONNECTION_CLOSE: throw ConnectionException(code, text);
-    case SESSION_DETACH: throw ChannelException(code, text);
-    case EXCEPTION: throwExecutionException(code, text);
+      case OK: break;
+      case CONNECTION_CLOSE: throw ConnectionException(code, text);
+      case SESSION_DETACH: throw ChannelException(code, text);
+      case EXCEPTION: createSessionException(code, text).raise();
     }
 }
 
@@ -668,4 +661,11 @@ void SessionImpl::handleClosed()
     results.close();
 }
 
+uint32_t SessionImpl::setTimeout(uint32_t seconds) {
+    proxy.requestTimeout(seconds);
+    // FIXME aconway 2008-10-07: wait for timeout response from broker
+    // and use value retured by broker.
+    detachedLifetime = seconds;
+    return detachedLifetime;
+}
 }}

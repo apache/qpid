@@ -162,41 +162,39 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-// FIXME aconway 2008-05-26: Re-enable with final resume implementation.
-// 
-// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
-// {
-//     ClientSessionFixture fix;
-//     fix.session.suspend();  // session has 0 timeout.
-//     try {
-//         fix.connection.resume(fix.session);
-//         BOOST_FAIL("Expected InvalidArgumentException.");
-//     } catch(const InternalErrorException&) {}
-// }
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
+{
+    ClientSessionFixture fix;
+    fix.session.suspend();  // session has 0 timeout.
+    try {
+        fix.connection.resume(fix.session);
+        BOOST_FAIL("Expected InvalidArgumentException.");
+    } catch(const InternalErrorException&) {}
+}
 
-// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUseSuspendedError, 1)
-// {
-//     ClientSessionFixture fix;
-//     fix.session =fix.session.timeout(60);
-//     fix.session.suspend();
-//     try {
-//         fix.session.exchangeQuery(name="amq.fanout");
-//         BOOST_FAIL("Expected session suspended exception");
-//     } catch(const CommandInvalidException&) {}
-// }
+QPID_AUTO_TEST_CASE(testUseSuspendedError)
+{
+    ClientSessionFixture fix;
+    fix.session.timeout(60);
+    fix.session.suspend();
+    try {
+        fix.session.exchangeQuery(arg::exchange="amq.fanout");
+        BOOST_FAIL("Expected session suspended exception");
+    } catch(const NotAttachedException&) {}
+}
 
-// QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
-// {
-//     ClientSessionFixture fix;
-//     fix.session.timeout(60);
-//     fix.declareSubscribe();
-//     fix.session.suspend();
-//     // Make sure we are still subscribed after resume.
-//     fix.connection.resume(fix.session);
-//     fix.session.messageTransfer(content=TransferContent("my-message", "my-queue"));
-//     FrameSet::shared_ptr msg = fix.session.get();
-//     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
-// }
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
+{
+    ClientSessionFixture fix;
+    fix.session.timeout(60);
+    fix.declareSubscribe();
+    fix.session.suspend();
+    // Make sure we are still subscribed after resume.
+    fix.connection.resume(fix.session);
+    fix.session.messageTransfer(arg::content=TransferContent("my-message", "my-queue"));
+    FrameSet::shared_ptr msg = fix.session.get();
+    BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
+}
 
 
 QPID_AUTO_TEST_CASE(testSendToSelf) {
