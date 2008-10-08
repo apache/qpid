@@ -240,10 +240,8 @@ QPID_AUTO_TEST_CASE(testBound)
 
 QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 
-    FieldTable args;
-
-    // set queue mode
-	args.setInt("qpid.persist_last_node", 1);
+    client::QueueOptions args;
+	args.setPersistLastNode();
 	
 	Queue::shared_ptr queue(new Queue("my-queue", true));
     queue->configure(args);
@@ -292,8 +290,8 @@ class TestMessageStoreOC : public NullMessageStore
 
 QPID_AUTO_TEST_CASE(testOptimisticConsume){
 
-    FieldTable args;
-	args.setInt("qpid.persist_last_node", 1);
+    client::QueueOptions args;
+	args.setPersistLastNode();
 
     // set queue mode
 	
@@ -305,7 +303,7 @@ QPID_AUTO_TEST_CASE(testOptimisticConsume){
 	msg1->forcePersistent();
 
 	//change mode
-	args.setInt("qpid.optimistic_consume", 1);
+	args.setOptimisticConsume();
     queue->configure(args);
 	
 	//enqueue 1 message
@@ -322,6 +320,94 @@ QPID_AUTO_TEST_CASE(testOptimisticConsume){
 
 }
 
+QPID_AUTO_TEST_CASE(testLVQOrdering){
+
+    client::QueueOptions args;
+    // set queue mode
+	args.setOrdering(client::LVQ);
+
+	Queue::shared_ptr queue(new Queue("my-queue", true ));
+	queue->configure(args);
+	
+    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg2 = message("e", "B");
+    intrusive_ptr<Message> msg3 = message("e", "C");
+    intrusive_ptr<Message> msg4 = message("e", "D");
+    intrusive_ptr<Message> received;
+
+    //set deliever match for LVQ a,b,c,a
+
+    string key;
+	args.getLVQKey(key);
+    BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
+	
+
+	msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+	msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+	msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	
+	//enqueue 4 message
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+    queue->deliver(msg3);
+    queue->deliver(msg4);
+	
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+	
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg4.get(), received.get());
+
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg2.get(), received.get());
+	
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg3.get(), received.get());
+
+    intrusive_ptr<Message> msg5 = message("e", "A");
+    intrusive_ptr<Message> msg6 = message("e", "B");
+    intrusive_ptr<Message> msg7 = message("e", "C");
+	msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+	msg7->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+    queue->deliver(msg5);
+    queue->deliver(msg6);
+    queue->deliver(msg7);
+	
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+	
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg5.get(), received.get());
+
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg6.get(), received.get());
+	
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg7.get(), received.get());
+	
+}
+
+QPID_AUTO_TEST_CASE(testLVQSaftyCheck){
+
+// This test is to check std::deque memory copy does not change out under us
+// if this test fails, then lvq would no longer be safe.
+
+    std::deque<string> deq;
+	
+	string a;
+	string b;
+	
+	deq.push_back(a);
+	deq.push_back(b);
+	string* tmp = &deq.back();
+	for (int a =0; a<=100000; a++){
+	    string z;
+		deq.push_back(z);
+	}
+	deq.pop_front();
+    BOOST_CHECK_EQUAL(&deq.front(),tmp);
+
+}
 
 QPID_AUTO_TEST_SUITE_END()
 
