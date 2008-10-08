@@ -64,6 +64,7 @@ SessionState::SessionState(
                 (agent, this, parent, getId().getName());
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
+            mgmtObject->clr_expireTime();
             agent->addObject (mgmtObject);
         }
     }
