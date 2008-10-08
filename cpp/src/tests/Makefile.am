@@ -64,7 +64,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	TxPublishTest.cpp \
 	MessageBuilderTest.cpp \
 	ConnectionOptions.h \
-	ForkedBroker.h
+	ForkedBroker.h \
+	ManagementTest.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
