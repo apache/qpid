@@ -8,6 +8,8 @@ nobase_qmfpython_DATA = \
 	qmf/templates/Args.h \
 	qmf/templates/Class.cpp \
 	qmf/templates/Class.h \
+	qmf/templates/Event.cpp \
+	qmf/templates/Event.h \
 	qmf/templates/Makefile.mk \
 	qmf/templates/Package.cpp \
 	qmf/templates/Package.h \

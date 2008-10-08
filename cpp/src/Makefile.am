@@ -417,6 +417,7 @@ nobase_include_HEADERS = \
   qpid/InlineAllocator.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
+  qpid/Version.h \
   qpid/agent/ManagementAgent.h \
   qpid/agent/ManagementAgentImpl.h \
   qpid/broker/Broker.h \
