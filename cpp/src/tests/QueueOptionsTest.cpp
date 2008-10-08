@@ -63,15 +63,19 @@ QPID_AUTO_TEST_CASE(testFlags)
 	
 	ft.setOptimisticConsume();
 	ft.setPersistLastNode();
+    ft.setOrdering(LVQ);
 	
     BOOST_CHECK(1 == ft.getInt(QueueOptions::strOptimisticConsume));
     BOOST_CHECK(1 == ft.getInt(QueueOptions::strPersistLastNode));
+    BOOST_CHECK(1 == ft.getInt(QueueOptions::strLastValueQueue));
 	
 	ft.clearOptimisticConsume();
 	ft.clearPersistLastNode();
+    ft.setOrdering(FIFO);
 
 	BOOST_CHECK(!ft.isSet(QueueOptions::strOptimisticConsume));
 	BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
+	BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
 
 }
 

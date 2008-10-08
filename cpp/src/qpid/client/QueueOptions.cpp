@@ -38,6 +38,7 @@ const std::string QueueOptions::strRING_STRICT("ring_strict");
 const std::string QueueOptions::strLastValueQueue("qpid.last_value_queue");
 const std::string QueueOptions::strOptimisticConsume("qpid.optimistic_consume");
 const std::string QueueOptions::strPersistLastNode("qpid.persist_last_node");
+const std::string QueueOptions::strLVQMatchProperty("qpid.LVQ_key");
 
 
 QueueOptions::~QueueOptions()
@@ -83,13 +84,15 @@ void QueueOptions::setPersistLastNode()
 void QueueOptions::setOrdering(QueueOrderingPolicy op)
 {
 	if (op == LVQ){
-	     // TODO, add and test options with LVQ patch.
-		 // also set the key match for LVQ
-	     //setString(LastValueQueue, 1); 
-	
+	    setInt(strLastValueQueue, 1); 
 	}else{
 	    clearOrdering();
 	}
+}
+
+void QueueOptions::getLVQKey(std::string& key)
+{
+    key.assign(strLVQMatchProperty);
 }
 
 void QueueOptions::clearSizePolicy()
