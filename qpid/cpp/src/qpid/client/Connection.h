@@ -169,6 +169,7 @@ class Connection
 
     
   friend class ConnectionAccess; ///<@internal
+  friend class SessionBase_0_10; ///<@internal
 };
 
 }} // namespace qpid::client

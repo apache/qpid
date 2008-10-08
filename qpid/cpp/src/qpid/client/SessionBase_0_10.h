@@ -38,6 +38,8 @@
 namespace qpid {
 namespace client {
 
+class Connection;
+
 using std::string;
 using framing::Content;
 using framing::FieldTable;
@@ -90,6 +92,12 @@ class SessionBase_0_10 {
 
     /** Set the timeout for this session. */
     uint32_t timeout(uint32_t seconds);
+
+    /** Suspend the session - detach it from its connection */
+    void suspend();
+
+    /** Resume a suspended session with a new connection */
+    void resume(Connection);
 
     Execution& getExecution();  
     void flush();
