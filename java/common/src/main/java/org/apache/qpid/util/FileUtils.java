@@ -46,16 +46,30 @@ public class FileUtils
     {
         BufferedInputStream is = null;
 
-        try
-        {
-            is = new BufferedInputStream(new FileInputStream(filename));
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
+        try{
+            try
+            {
+                is = new BufferedInputStream(new FileInputStream(filename));
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
 
-        return readStreamAsString(is);
+            return readStreamAsString(is);
+        }finally {
+            if (is != null)
+            {
+                try
+                {
+                    is.close();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /**
@@ -230,14 +244,14 @@ public class FileUtils
       */
      public static boolean delete(File file, boolean recursive)
      {
-         boolean success=true;
+         boolean success = true;
 
          if (file.isDirectory())
          {
              if (recursive)
              {
                  for (File subFile : file.listFiles())
-                 {                                     
+                 {
                      success = delete(subFile, true) & success ;
                  }
 
