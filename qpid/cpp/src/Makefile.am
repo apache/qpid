@@ -577,6 +577,7 @@ nobase_include_HEADERS = \
   qpid/management/Args.h \
   qpid/management/Manageable.h \
   qpid/management/ManagementBroker.h \
+  qpid/management/ManagementEvent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
   qpid/sys/AggregateOutput.h \
