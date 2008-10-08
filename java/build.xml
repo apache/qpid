@@ -27,8 +27,10 @@
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
   <property name="modules.management" value="management/eclipse-plugin"/>
   <property name="modules.plugin"     value="broker-plugins"/>
-
-  <property name="modules"            value="${modules.core} ${modules.plugin} ${modules.examples} ${modules.tests} ${modules.management}"/>
+  <property name="modules.management.tools" value="management/tools/qpid-cli"/>
+  <property name="modules"            value="${modules.core}
+  ${modules.plugin} ${modules.examples} ${modules.tests}
+  ${modules.management} ${modules.management.tools}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
