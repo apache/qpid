@@ -36,9 +36,9 @@
     <arg name="userId"     type="sstr"/>
   </eventArguments>
 
-  <event name="allow"          args="userId, action, objectType, objectName, arguments"/>
-  <event name="deny"           args="userId, action, objectType, objectName, arguments"/>
-  <event name="fileLoaded"     args="userId"/>
-  <event name="fileLoadFailed" args="userId, reason"/>
+  <event name="allow"          sev="inform" args="userId, action, objectType, objectName, arguments"/>
+  <event name="deny"           sev="notice" args="userId, action, objectType, objectName, arguments"/>
+  <event name="fileLoaded"     sev="inform" args="userId"/>
+  <event name="fileLoadFailed" sev="error"  args="userId, reason"/>
 
 </schema>

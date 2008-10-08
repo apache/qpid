@@ -522,7 +522,9 @@ class managementClient:
       if self.ctrlCb != None:
         self.ctrlCb (ch.context, self.CTRL_SCHEMA_LOADED, None)
       ch.ssn.exchange_bind (exchange="qpid.management",
-                            queue=ch.topicName, binding_key="mgmt.#")
+                            queue=ch.topicName, binding_key="console.#")
+      ch.ssn.exchange_bind (exchange="qpid.management",
+                            queue=ch.topicName, binding_key="schema.#")
 
 
   def handleMethodReply (self, ch, codec, sequence):

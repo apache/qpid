@@ -235,7 +235,8 @@ void ManagementBroker::raiseEvent(const ManagementEvent& event)
     event.encode(outBuffer);
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
-    sendBuffer(outBuffer, outLen, mExchange, "mgmt.event");
+    sendBuffer(outBuffer, outLen, mExchange,
+               "console.event." + event.getPackageName() + "." + event.getEventName());
 }
 
 ManagementBroker::Periodic::Periodic (ManagementBroker& _broker, uint32_t _seconds)
@@ -347,7 +348,7 @@ void ManagementBroker::periodicProcessing (void)
 
         contentSize = BUFSIZE - msgBuffer.available ();
         msgBuffer.reset ();
-        routingKey = "mgmt." + uuid.str() + ".heartbeat";
+        routingKey = "console.heartbeat";
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
     }
 
@@ -382,7 +383,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt." + uuid.str() + ".prop." + object->getClassName ();
+            routingKey = "console.prop." + object->getPackageName() + "." + object->getClassName ();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
@@ -394,7 +395,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "mgmt." + uuid.str () + ".stat." + object->getClassName ();
+            routingKey = "console.stat." + object->getPackageName() + "." + object->getClassName ();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
@@ -440,6 +441,7 @@ bool ManagementBroker::dispatchCommand (Deliverable&      deliverable,
     //
     //    agent.1.0.#
     //    broker
+    //    schema.#
 
     if (routingKey == "broker") {
         dispatchAgentCommandLH(msg);
@@ -453,6 +455,11 @@ bool ManagementBroker::dispatchCommand (Deliverable&      deliverable,
 
     else if (routingKey.compare(0, 8, "agent.1.") == 0) {
         return authorizeAgentMessageLH(msg);
+    }
+
+    else if (routingKey.compare(0, 7, "schema.") == 0) {
+        dispatchAgentCommandLH(msg);
+        return true;
     }
 
     return true;
@@ -698,7 +705,7 @@ void ManagementBroker::handleSchemaResponseLH(Buffer& inBuffer, string /*replyTo
                 encodeClassIndication(outBuffer, pIter, cIter);
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
-                sendBuffer(outBuffer, outLen, mExchange, "mgmt." + uuid.str() + ".schema");
+                sendBuffer(outBuffer, outLen, mExchange, "schema.class");
             }
         }
     }
@@ -972,7 +979,7 @@ ManagementBroker::PackageMap::iterator ManagementBroker::findOrAddPackageLH(std:
     encodePackageIndication (outBuffer, result.first);
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
-    sendBuffer (outBuffer, outLen, mExchange, "mgmt." + uuid.str() + ".schema.package");
+    sendBuffer (outBuffer, outLen, mExchange, "schema.package");
 
     return result.first;
 }
