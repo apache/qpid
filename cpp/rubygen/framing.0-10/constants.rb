@@ -93,9 +93,9 @@ class ConstantsGen < CppGen
       scope("switch (code) {") {
         enum = @amqp.class_(class_name).domain(domain_name).enum
         enum.choices.each { |c|
-          genl "case #{c.value}: holder = new #{c.name.caps}Exception(text); break;" unless c.name == "normal"
+          assign = "holder = new #{c.name.caps}Exception(text); " unless c.name == "normal"
+          genl "case #{c.value}: #{assign}break;" 
         }
-        genl "default: assert(0);"
         genl "    holder = new #{invalid}(QPID_MSG(\"Bad exception code: \" << code << \": \" << text));"
       }
       genl "return holder;"

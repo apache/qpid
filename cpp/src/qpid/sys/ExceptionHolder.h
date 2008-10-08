@@ -52,7 +52,7 @@ class ExceptionHolder : public Raisable {
     template <class Ex> ExceptionHolder& operator=(boost::shared_ptr<Ex> ex) { wrap(ex.release()); return *this; }
         
     void raise() const { if (wrapper.get()) wrapper->raise() ; }
-    std::string what() const { return wrapper->what(); }
+    std::string what() const { return wrapper.get() ? wrapper->what() : std::string(); }
     bool empty() const { return !wrapper.get(); }
     operator bool() const { return !empty(); }
     void reset() { wrapper.reset(); }

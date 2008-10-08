@@ -83,7 +83,7 @@ QPID_AUTO_TEST_CASE(TestSessionBusy) {
         ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.connection.newSession(f.session.getId().getName());
         BOOST_FAIL("Expected SessionBusyException for " << f.session.getId().getName());
-    } catch (const Exception&) {} // FIXME aconway 2008-09-22: client is not throwing correct exception.
+    } catch (const SessionBusyException&) {} // FIXME aconway 2008-09-22: client is not throwing correct exception.
 }
 
 QPID_AUTO_TEST_CASE(DisconnectedPop) {
@@ -91,7 +91,7 @@ QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxyConnection c(fix.broker->getPort());
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
-    Catcher<Exception> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
+    Catcher<ConnectionException> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
     fix.connection.proxy.close();
     BOOST_CHECK(pop.join());
 }
