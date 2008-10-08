@@ -95,6 +95,12 @@ public:
     void connectionClosed(uint16_t code, const std::string& text);
     void connectionBroke(uint16_t code, const std::string& text);
 
+    /** Set timeout in seconds, returns actual timeout allowed by broker */ 
+    uint32_t setTimeout(uint32_t requestedSeconds);
+
+    /** Get timeout in seconds. */
+    uint32_t getTimeout() const;
+
 private:
     enum ErrorType {
         OK,
@@ -131,7 +137,6 @@ private:
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
     void sendContent(const framing::MethodContent&);
     void waitForCompletionImpl(const framing::SequenceNumber& id);
-    void requestTimeout(uint32_t timeout);    
     
     void sendCompletionImpl();
 
@@ -140,7 +145,8 @@ private:
     void attach(const std::string& name, bool force);    
     void attached(const std::string& name);    
     void detach(const std::string& name);    
-    void detached(const std::string& name, uint8_t detachCode);    
+    void detached(const std::string& name, uint8_t detachCode);
+    void requestTimeout(uint32_t timeout);    
     void timeout(uint32_t timeout);    
     void commandPoint(const framing::SequenceNumber& commandId, uint64_t commandOffset);    
     void expected(const framing::SequenceSet& commands, const framing::Array& fragments);    

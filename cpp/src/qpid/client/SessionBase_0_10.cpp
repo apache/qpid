@@ -19,10 +19,12 @@
  *
  */
 #include "SessionBase_0_10.h"
+#include "Connection.h"
 #include "qpid/framing/all_method_bodies.h"
 
 namespace qpid {
 namespace client {
+
 using namespace framing;
 
 SessionBase_0_10::SessionBase_0_10() {}
@@ -56,6 +58,10 @@ void SessionBase_0_10::sendCompletion()
 {
     impl->sendCompletion();
 }
+
+void SessionBase_0_10::suspend() { impl->suspend(); }
+void SessionBase_0_10::resume(Connection c) { impl->resume(c.impl); }
+uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(seconds); }
 
 SessionId SessionBase_0_10::getId() const { return impl->getId(); }
 framing::FrameSet::shared_ptr SessionBase_0_10::get() { return impl->get(); }

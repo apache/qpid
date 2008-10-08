@@ -50,18 +50,18 @@ class ConstantsGen < CppGen
     h_file("#{@dir}/enum") {
       # Constants for enum domains.
       namespace(@namespace) {
-        @amqp.domains.each { |d| define_enum(d.enum) if d.enum }
+        @amqp.domains.each { |d| declare_enum(d.enum) if d.enum }
         @amqp.classes.each { |c|
           enums=c.collect_all(AmqpEnum)
           if !enums.empty? then
-            namespace(c.nsname) { enums.each { |e| define_enum(e) } }
+            namespace(c.nsname) { enums.each { |e| declare_enum(e) } }
           end
         }
       }
     }
   end
 
-  def define_enum(enum)
+  def declare_enum(enum)
     # Generated like this: enum containing_class::Foo { FOO_X, FOO_Y; }
     name="#{enum.parent.name.caps}"
     prefix=enum.parent.name.shout+"_" 
@@ -70,7 +70,7 @@ class ConstantsGen < CppGen
     }
   end
 
-  def define_exception(c, base, package)
+  def declare_exception(c, base, package)
     name=c.name.caps+"Exception"
     genl
     doxygen_comment { genl c.doc }
@@ -80,9 +80,26 @@ class ConstantsGen < CppGen
     }
   end
 
-  def define_exceptions_for(class_name, domain_name, base)
+  def declare_exceptions(class_name, domain_name, base)
     enum = @amqp.class_(class_name).domain(domain_name).enum
-    enum.choices.each { |c| define_exception(c, base, class_name) unless c.name == "normal" }
+    enum.choices.each { |c| declare_exception(c, base, class_name) unless c.name == "normal" }
+    genl
+    genl "sys::ExceptionHolder create#{base}(int code, const std::string& text);"
+  end
+
+  def create_exception(class_name, domain_name, base, invalid)
+    scope("sys::ExceptionHolder create#{base}(int code, const std::string& text) {") {
+      genl "sys::ExceptionHolder holder;"
+      scope("switch (code) {") {
+        enum = @amqp.class_(class_name).domain(domain_name).enum
+        enum.choices.each { |c|
+          genl "case #{c.value}: holder = new #{c.name.caps}Exception(text); break;" unless c.name == "normal"
+        }
+        genl "default: assert(0);"
+        genl "    holder = new #{invalid}(QPID_MSG(\"Bad exception code: \" << code << \": \" << text));"
+      }
+      genl "return holder;"
+    }
   end
 
   def reply_exceptions_h()
@@ -90,12 +107,9 @@ class ConstantsGen < CppGen
       include "qpid/Exception"
       include "qpid/sys/ExceptionHolder"
       namespace(@namespace) {
-        define_exceptions_for("execution", "error-code", "SessionException")
-        define_exceptions_for("connection", "close-code", "ConnectionException")
-        define_exceptions_for("session", "detach-code", "ChannelException")
-        genl
-        genl "void throwExecutionException(int code, const std::string& text);"
-        genl "void setExecutionException(sys::ExceptionHolder& holder, int code, const std::string& text);"
+        declare_exceptions("execution", "error-code", "SessionException")
+        declare_exceptions("connection", "close-code", "ConnectionException")
+        declare_exceptions("session", "detach-code", "ChannelException")
       }
     }
   end
@@ -106,21 +120,11 @@ class ConstantsGen < CppGen
       include "<sstream>"
       include "<assert.h>"
       namespace("qpid::framing") {
-        scope("void throwExecutionException(int code, const std::string& text) {"){
-          genl "sys::ExceptionHolder h;"
-          genl "setExecutionException(h, code, text);"
-          genl "h.raise();"
-        }
-        scope("void setExecutionException(sys::ExceptionHolder& holder, int code, const std::string& text) {"){        
-          scope("switch (code) {") {
-            enum = @amqp.class_("execution").domain("error-code").enum
-            enum.choices.each { |c| 
-              genl "case #{c.value}: holder = new #{c.name.caps}Exception(text); break;"
-            }
-            genl 'default: assert(0);'
-            genl '    holder = new InvalidArgumentException(QPID_MSG("Bad exception code: " << code << ": " << text));'
-          }
-        }
+        create_exception("execution", "error-code", "SessionException", "InvalidArgumentException")
+        # FIXME aconway 2008-10-07: there are no good exception codes in 0-10 for an invalid code.
+        # The following choices are arbitrary.
+        create_exception("connection", "close-code", "ConnectionException", "FramingErrorException")
+        create_exception("session", "detach-code", "ChannelException", "NotAttachedException")
       }
     }
   end
