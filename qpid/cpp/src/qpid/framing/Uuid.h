@@ -19,12 +19,12 @@
  *
  */
 
+#include "qpid/sys/uuid.h"
+
 #include <boost/array.hpp>
 
 #include <ostream>
 #include <istream>
-
-#include <uuid/uuid.h>
 
 namespace qpid {
 namespace framing {

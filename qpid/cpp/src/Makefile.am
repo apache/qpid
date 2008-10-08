@@ -622,7 +622,8 @@ nobase_include_HEADERS = \
   qpid/sys/Waitable.h \
   qpid/sys/Thread.h \
   qpid/sys/Time.h \
-  qpid/sys/TimeoutHandler.h
+  qpid/sys/TimeoutHandler.h \
+  qpid/sys/uuid.h
 
 if HAVE_XML
 nobase_include_HEADERS += qpid/broker/XmlExchange.h
