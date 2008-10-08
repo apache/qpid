@@ -141,6 +141,10 @@ class Session:
     self.getResult         = []
     self.getSelect         = []
     self.error             = None
+    if self.console == None:
+      rcvObjects    = False
+      rcvEvents     = False
+      rcvHeartbeats = False
     self.bindingKeyList    = self._bindingKeys(rcvObjects, rcvEvents, rcvHeartbeats)
     self.manageConnections = manageConnections
 
@@ -316,16 +320,19 @@ class Session:
 
   def _bindingKeys(self, rcvObjects, rcvEvents, rcvHeartbeats):
     keyList = []
+    keyList.append("schema.#")
     if rcvObjects and rcvEvents and rcvHeartbeats:
-      keyList.append("mgmt.#")
+      keyList.append("console.#")
     else:
       if rcvObjects:
-        keyList.append("mgmt.*.prop.#")
-        keyList.append("mgmt.*.stat.#")
+        keyList.append("console.prop.#")
+        keyList.append("console.stat.#")
+      else:
+        keyList.append("console.prop.org.apache.qpid.broker.agent")
       if rcvEvents:
-        keyList.append("mgmt.event")
+        keyList.append("console.event.#")
       if rcvHeartbeats:
-        keyList.append("mgmt.*.heartbeat.#")
+        keyList.append("console.heartbeat")
     return keyList
 
   def _handleBrokerConnect(self, broker):
@@ -1013,14 +1020,13 @@ class Broker:
       self.amqpSession.message_flow(destination="rdest", unit=0, value=0xFFFFFFFF)
       self.amqpSession.message_flow(destination="rdest", unit=1, value=0xFFFFFFFF)
 
-      if self.session.console != None:
-        self.topicName = "topic-%s" % self.amqpSessionId
-        self.amqpSession.queue_declare(queue=self.topicName, exclusive=True, auto_delete=True)
-        self.amqpSession.message_subscribe(queue=self.topicName, destination="tdest")
-        self.amqpSession.incoming("tdest").listen(self._replyCb)
-        self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=1)
-        self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFF)
-        self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFF)
+      self.topicName = "topic-%s" % self.amqpSessionId
+      self.amqpSession.queue_declare(queue=self.topicName, exclusive=True, auto_delete=True)
+      self.amqpSession.message_subscribe(queue=self.topicName, destination="tdest")
+      self.amqpSession.incoming("tdest").listen(self._replyCb)
+      self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=1)
+      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFF)
+      self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFF)
 
       self.isConnected = True
       self.session._handleBrokerConnect(self)
@@ -1116,7 +1122,7 @@ class Broker:
   def _decOutstanding(self):
     self.cv.acquire()
     self.reqsOutstanding -= 1
-    if self.reqsOutstanding == 0 and not self.topicBound and self.session.console != None:
+    if self.reqsOutstanding == 0 and not self.topicBound:
       self.topicBound = True
       for key in self.session.bindingKeyList:
         self.amqpSession.exchange_bind(exchange="qpid.management",
@@ -1174,6 +1180,7 @@ class Event:
     hash  = codec.read_bin128()
     self.classKey = (pname, cname, hash)
     self.timestamp = codec.read_int64()
+    self.severity = codec.read_uint8()
     self.schema = None
     if pname in session.packages:
       if (cname, hash) in session.packages[pname]:
@@ -1184,6 +1191,16 @@ class Event:
 
   def __repr__(self):
     return self.getSyslogText()
+
+  def _sevName(self):
+    if self.severity == 0 : return "EMER "
+    if self.severity == 1 : return "ALERT"
+    if self.severity == 2 : return "CRIT "
+    if self.severity == 3 : return "ERROR"
+    if self.severity == 4 : return "WARN "
+    if self.severity == 5 : return "NOTIC"
+    if self.severity == 6 : return "INFO "
+    if self.severity == 7 : return "DEBUG"
 
   def getClassKey(self):
     return self.classKey
@@ -1204,7 +1221,7 @@ class Event:
     if self.schema == None:
       return "<uninterpretable>"
     out = strftime("%c", gmtime(self.timestamp / 1000000000))
-    out += " " + self.classKey[0] + ":" + self.classKey[1]
+    out += " " + self._sevName() + " " + self.classKey[0] + ":" + self.classKey[1]
     for arg in self.schema.arguments:
       out += " " + arg.name + "=" + self.session._displayValue(self.arguments[arg.name], arg.type)
     return out

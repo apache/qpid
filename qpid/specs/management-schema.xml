@@ -312,19 +312,19 @@
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
   </eventArguments>
 
-  <event name="clientConnect"     args="rhost, user"/>
-  <event name="clientDisconnect"  args="rhost, user"/>
-  <event name="agentConnect"      args="rhost, user"/>
-  <event name="agentDisconnect"   args="rhost, user"/>
-  <event name="brokerConnect"     args="rhost, user"/>
-  <event name="brokerDisconnect"  args="rhost, user"/>
-  <event name="queueDeclare"      args="rhost, user, qName, durable, excl, autoDel, args, disp"/>
-  <event name="queueDelete"       args="rhost, user, qName"/>
-  <event name="exchangeDeclare"   args="rhost, user, exName, exType, altEx, durable, autoDel, args, disp"/>
-  <event name="exchangeDelete"    args="rhost, user, exName"/>
-  <event name="bind"              args="rhost, user, exName, qName, key, args"/>
-  <event name="unbind"            args="rhost, user, exName, qName, key"/>
-  <event name="subscribe"         args="rhost, user, qName, dest, excl, args"/>
-  <event name="unsubscribe"       args="rhost, user, dest"/>
+  <event name="clientConnect"     sev="inform" args="rhost, user"/>
+  <event name="clientDisconnect"  sev="inform" args="rhost, user"/>
+  <event name="agentConnect"      sev="inform" args="rhost, user"/>
+  <event name="agentDisconnect"   sev="inform" args="rhost, user"/>
+  <event name="brokerConnect"     sev="inform" args="rhost, user"/>
+  <event name="brokerDisconnect"  sev="inform" args="rhost, user"/>
+  <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, args, disp"/>
+  <event name="queueDelete"       sev="inform" args="rhost, user, qName"/>
+  <event name="exchangeDeclare"   sev="inform" args="rhost, user, exName, exType, altEx, durable, autoDel, args, disp"/>
+  <event name="exchangeDelete"    sev="inform" args="rhost, user, exName"/>
+  <event name="bind"              sev="inform" args="rhost, user, exName, qName, key, args"/>
+  <event name="unbind"            sev="inform" args="rhost, user, exName, qName, key"/>
+  <event name="subscribe"         sev="inform" args="rhost, user, qName, dest, excl, args"/>
+  <event name="unsubscribe"       sev="inform" args="rhost, user, dest"/>
 </schema>
 
