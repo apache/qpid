@@ -42,6 +42,7 @@ private:
 public:
     AgentAttachment() : first(0) {}
     void setBanks(uint32_t broker, uint32_t bank);
+    uint64_t getFirst() const { return first; }
 };
 
 
@@ -55,6 +56,7 @@ public:
     ObjectId(framing::Buffer& buf) : agent(0) { decode(buf); }
     ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object);
     ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object);
+    ObjectId(std::istream&);
     bool operator==(const ObjectId &other) const;
     bool operator<(const ObjectId &other) const;
     void encode(framing::Buffer& buffer);
