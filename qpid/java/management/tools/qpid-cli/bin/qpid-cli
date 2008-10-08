@@ -4,8 +4,8 @@
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
+# tonn you under the Apache License, Version 2.0 (the
+# "Licnense"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
@@ -18,7 +18,7 @@
 # under the License.
 #
 # set classpath to using jar files
-for f in $QPID_CLI/lib/*.jar
+for f in $QPID_HOME/lib/*.jar
 do
   CLASSPATH=$CLASSPATH:$f
 done
@@ -26,9 +26,12 @@ export CLASSPATH
 
 
 
-export CLASSPATH=$CLASSPATH:$QPID_CLI/build/main/classes/
-echo $CLASSPATH
+export CLASSPATH=$CLASSPATH:$QPID_HOME/management/tools/qpid-cli/main/classes/
+
 
 
 
 java -classpath $CLASSPATH org.apache.qpid.CommandLineInterpreter $@
+
+
+
