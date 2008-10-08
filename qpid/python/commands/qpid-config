@@ -24,20 +24,26 @@ import getopt
 import sys
 from qpid import qmfconsole
 
-_recursive    = False
-_host         = "localhost"
-_durable      = False
-_fileCount    = 8
-_fileSize     = 24
-_maxQueueSize = None
-_maxQueueCount= None
-_policyType   = None
+_recursive         = False
+_host              = "localhost"
+_durable           = False
+_clusterDurable    = False
+_fileCount         = 8
+_fileSize          = 24
+_maxQueueSize      = None
+_maxQueueCount     = None
+_policyType        = None
+_lvq               = False
+_optimisticConsume = False
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
 MAX_QUEUE_SIZE  = "qpid.max_size"
 MAX_QUEUE_COUNT  = "qpid.max_count"
 POLICY_TYPE  = "qpid.policy_type"
+CLUSTER_DURABLE = "qpid.persist_last_node"
+LVQ = "qpid.last_value_queue"
+OPTIMISTIC_CONSUME = "qpid.optimistic_consume"
 
 def Usage ():
     print "Usage:  qpid-config [OPTIONS]"
@@ -57,12 +63,15 @@ def Usage ():
     print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
     print "Add Queue Options:"
-    print "    --durable           Queue is durable"
-    print "    --file-count N (8)  Number of files in queue's persistence journal"
-    print "    --file-size  N (24) File size in pages (64Kib/page)"
-    print "    --max-queue-size N  Maximum in-memory queue size as bytes"
-    print "    --max-queue-count N Maximum in-memory queue size as a number of messages"
-    print "    --policy-type TYPE  Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
+    print "    --durable            Queue is durable"
+    print "    --cluster-durable    Queue becomes durable if there is only one functioning cluster node"
+    print "    --file-count N (8)   Number of files in queue's persistence journal"
+    print "    --file-size  N (24)  File size in pages (64Kib/page)"
+    print "    --max-queue-size N   Maximum in-memory queue size as bytes"
+    print "    --max-queue-count N  Maximum in-memory queue size as a number of messages"
+    print "    --policy-type TYPE   Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
+    print "    --last-value-queue   Enable LVQ behavior on the queue"
+    print "    --optimistic-consume Enable optimistic consume on the queue"
     print
     print "Add Exchange Options:"
     print "    --durable           Exchange is durable"
@@ -130,25 +139,33 @@ class BrokerManager:
             
 
     def QueueList (self, filter):
-        queues   = self.qmf.getObjects(_class="queue")
-        journals = self.qmf.getObjects(_class="journal")
-        print "                                      Store Size"
-        print "Durable  AutoDel  Excl  Bindings  (files x file pages)  Queue Name"
-        print "==========================================================================================="
+        queues = self.qmf.getObjects(_class="queue")
+
+        caption = "Queue Name"
+        maxNameLen = len(caption)
         for q in queues:
-            if self.match (q.name, filter):
-                args = q.arguments
-                if q.durable and FILESIZE in args and FILECOUNT in args:
-                    fs = int (args[FILESIZE])
-                    fc = int (args[FILECOUNT])
-                    print "%4c%9c%7c%10d%11dx%-14d%s" % \
-                        (YN (q.durable), YN (q.autoDelete),
-                         YN (q.exclusive), q.bindingCount, fc, fs, q.name)
-                else:
-                    if not _durable:
-                        print "%4c%9c%7c%10d                          %s" % \
-                            (YN (q.durable), YN (q.autoDelete),
-                             YN (q.exclusive), q.bindingCount, q.name)
+            if len(q.name) > maxNameLen:  maxNameLen = len(q.name)
+        print "%-*s  Attributes" % (maxNameLen, caption)
+        line = ""
+        for i in range((maxNameLen / 5) + 5):
+            line += "====="
+        print line
+
+        for q in queues:
+            print "%-*s " % (maxNameLen, q.name),
+            args = q.arguments
+            if q.durable:    print "durable",
+            if CLUSTER_DURABLE in args and args[CLUSTER_DURABLE] == 1: print "clusterDurable",
+            if q.autoDelete: print "autoDel",
+            if q.exclusive:  print "excl",
+            if FILESIZE in args: print "fileSize=%d" % args[FILESIZE],
+            if FILECOUNT in args: print "fileCount=%d" % args[FILECOUNT],
+            if MAX_QUEUE_SIZE in args: print "maxQSize=%d" % args[MAX_QUEUE_SIZE],
+            if MAX_QUEUE_COUNT in args: print "maxQCount=%d" % args[MAX_QUEUE_COUNT],
+            if POLICY_TYPE in args: print "policy=%s" % args[POLICY_TYPE],
+            if LVQ in args and args[LVQ] == 1: print "lvq",
+            if OPTIMISTIC_CONSUME in args and args[OPTIMISTIC_CONSUME] == 1: print "optConsume",
+            print
 
     def QueueListRecurse (self, filter):
         exchanges = self.qmf.getObjects(_class="exchange")
@@ -195,6 +212,12 @@ class BrokerManager:
             declArgs[MAX_QUEUE_COUNT]  = _maxQueueCount
         if _policyType:
             declArgs[POLICY_TYPE]  = _policyType
+        if _clusterDurable:
+            declArgs[CLUSTER_DURABLE] = 1
+        if _lvq:
+            declArgs[LVQ] = 1
+        if _optimisticConsume:
+            declArgs[OPTIMISTIC_CONSUME] = 1
 
         self.broker.getAmqpSession().queue_declare (queue=qname, durable=_durable, arguments=declArgs)
 
@@ -247,7 +270,9 @@ def YN (bool):
 ##
 
 try:
-    longOpts = ("durable", "bindings", "broker-addr=", "file-count=", "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=")
+    longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
+                "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=",
+                "last-value-queue", "optimistic-consume")
     (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -259,6 +284,8 @@ for opt in optlist:
         _host = opt[1]
     if opt[0] == "--durable":
         _durable = True
+    if opt[0] == "--cluster-durable":
+        _clusterDurable = True
     if opt[0] == "--file-count":
         _fileCount = int (opt[1])
     if opt[0] == "--file-size":
@@ -269,6 +296,10 @@ for opt in optlist:
         _maxQueueCount = int (opt[1])
     if opt[0] == "--policy-type":
         _policyType = opt[1]
+    if opt[0] == "--last-value-queue":
+        _lvq = True
+    if opt[0] == "--optimistic-consume":
+        _optimisticConsume = True
 
 nargs = len (cargs)
 bm    = BrokerManager ()
