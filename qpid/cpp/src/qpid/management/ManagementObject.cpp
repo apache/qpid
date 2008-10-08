@@ -55,6 +55,41 @@ ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_
     second = object;
 }
 
+ObjectId::ObjectId(std::istream& in) : agent(0)
+{
+#define FIELDS 5
+    string text;
+    char* cText;
+    char* field[FIELDS];
+    bool  atFieldStart = true;
+    int   idx = 0;
+
+    in >> text;
+    cText = const_cast<char*>(text.c_str());
+    for (char* cursor = cText; *cursor; cursor++) {
+        if (atFieldStart) {
+            if (idx >= FIELDS)
+                throw Exception("Invalid ObjectId format");
+            field[idx++] = cursor;
+            atFieldStart = false;
+        } else {
+            if (*cursor == '-') {
+                *cursor = '\0';
+                atFieldStart = true;
+            }
+        }
+    }
+
+    if (idx != FIELDS)
+        throw Exception("Invalid ObjectId format");
+
+    first = (atoll(field[0]) << 60) +
+        (atoll(field[1]) << 48) +
+        (atoll(field[2]) << 28) +
+        atoll(field[3]);
+    second = atoll(field[4]);
+}
+
 bool ObjectId::operator==(const ObjectId &other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
@@ -89,11 +124,15 @@ namespace management {
 
 std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 {
-    out << "[" << ((i.first & 0xF000000000000000LL) >> 60) <<
-        "-" << ((i.first & 0x0FFF000000000000LL) >> 48) <<
-        "-" << ((i.first & 0x0000FFFFF0000000LL) >> 32) <<
-        "-" << (i.first & 0x000000000FFFFFFFLL) <<
-        "-" << i.second << "]";
+    uint64_t virtFirst = i.first;
+    if (i.agent)
+        virtFirst |= i.agent->getFirst();
+
+    out << ((virtFirst & 0xF000000000000000LL) >> 60) <<
+        "-" << ((virtFirst & 0x0FFF000000000000LL) >> 48) <<
+        "-" << ((virtFirst & 0x0000FFFFF0000000LL) >> 28) <<
+        "-" <<  (virtFirst & 0x000000000FFFFFFFLL) <<
+        "-" << i.second;
     return out;
 }
 
