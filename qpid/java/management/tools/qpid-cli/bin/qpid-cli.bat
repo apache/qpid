@@ -16,10 +16,10 @@
 @REM specific language governing permissions and limitations
 @REM under the License.
 @REM
-set CLASSPATH=%CLASSPATH%;%QPID_CLI%/lib/jline-0.9.94.jar
-set CLASSPATH=%CLASSPATH%;%QPID_CLI%/lib/junit-4.4.jar
-set CLASSPATH=%CLASSPATH%;%QPID_CLI%/lib/qpid-cli-1.0.jar
-set CLASSPATH=%CLASSPATH%;%QPID_CLI%/build/main/classes/
+set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/jline-0.9.94.jar
+set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/junit-4.4.jar
+set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/qpid-cli-1.0.jar
+set CLASSPATH=%CLASSPATH%;%QPID_HOME%/management/tools/qpid-cli/main/classes/
 java -classpath %CLASSPATH% org.apache.qpid.CommandLineInterpreter %1
 
 
