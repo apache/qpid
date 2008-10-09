@@ -76,6 +76,7 @@ posix_plat_src = \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
+  qpid/sys/posix/SystemInfo.cpp \
   qpid/sys/posix/Mutex.cpp \
   qpid/sys/posix/Fork.cpp \
   qpid/sys/posix/StrError.cpp \
@@ -273,7 +274,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/PollableCondition.h \
   qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
-  qpid/sys/SystemInfo.cpp \
   qpid/sys/Shlib.cpp \
   qpid/DataDir.cpp \
   qpid/Options.cpp \
@@ -398,6 +398,7 @@ nobase_include_HEADERS = \
   $(platform_hdr) \
   qpid/amqp_0_10/apply.h \
   qpid/assert.h \
+  qpid/Address.h \
   qpid/DataDir.h \
   qpid/Exception.h \
   qpid/sys/ExceptionHolder.h \
