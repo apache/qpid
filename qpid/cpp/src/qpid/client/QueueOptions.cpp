@@ -49,45 +49,45 @@ void QueueOptions::setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t 
     if (maxCount) setInt(strMaxCountKey, maxCount);
     if (maxSize) setInt(strMaxSizeKey, maxSize);
     if (maxSize || maxCount){
-	    switch (sp)
-		{
-	    case REJECT:
-		   setString(strTypeKey, strREJECT);
-		   break;
-	    case FLOW_TO_DISK:
-		   setString(strTypeKey, strFLOW_TO_DISK);
-		   break;
-	    case RING:
-		   setString(strTypeKey, strRING);
-		   break;
-	    case RING_STRICT:
-		   setString(strTypeKey, strRING_STRICT);
-		   break;
-	    case NONE:
-		   clearSizePolicy();
-		   break;
-		}
-	}
+        switch (sp)
+        {
+          case REJECT:
+            setString(strTypeKey, strREJECT);
+            break;
+          case FLOW_TO_DISK:
+            setString(strTypeKey, strFLOW_TO_DISK);
+            break;
+          case RING:
+            setString(strTypeKey, strRING);
+            break;
+          case RING_STRICT:
+            setString(strTypeKey, strRING_STRICT);
+            break;
+          case NONE:
+            clearSizePolicy();
+            break;
+        }
+    }
 }
 
 
 void QueueOptions::setOptimisticConsume()
 {
-	setInt(strOptimisticConsume, 1);
+    setInt(strOptimisticConsume, 1);
 }
 
 void QueueOptions::setPersistLastNode()
 {
-	setInt(strPersistLastNode, 1);
+    setInt(strPersistLastNode, 1);
 }
 
 void QueueOptions::setOrdering(QueueOrderingPolicy op)
 {
-	if (op == LVQ){
-	    setInt(strLastValueQueue, 1); 
-	}else{
-	    clearOrdering();
-	}
+    if (op == LVQ){
+        setInt(strLastValueQueue, 1); 
+    }else{
+        clearOrdering();
+    }
 }
 
 void QueueOptions::getLVQKey(std::string& key)
