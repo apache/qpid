@@ -64,8 +64,7 @@ public class ConnectorFactory {
             mbsc = jmxc.getMBeanServerConnection();
 
         } catch (IOException e) {
-            e.printStackTrace();
-            return null; //To change body of catch statement use File | Settings | File Templates.
+            throw new RuntimeException(e);
         }
         return new Connector(url, jmxc, mbsc);
     }

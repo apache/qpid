@@ -17,21 +17,19 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# set classpath to using jar files
-for f in $QPID_HOME/lib/*.jar
-do
-  CLASSPATH=$CLASSPATH:$f
-done
-export CLASSPATH
 
+if [ -z "$QPID_HOME" ]; then
+    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPID_HOME}/bin
+fi
 
+# Set classpath to include Qpid jar with all required jars in manifest
+QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar
 
-export CLASSPATH=$CLASSPATH:$QPID_HOME/management/tools/qpid-cli/main/classes/
+# Set other variables used by the qpid-run script before calling
+export JAVA=java \
+       JAVA_VM=-server \
+       JAVA_MEM=-Xmx1024m \
+       QPID_CLASSPATH=$QPID_LIBS
 
-
-
-
-java -classpath $CLASSPATH org.apache.qpid.CommandLineInterpreter $@
-
-
-
+. qpid-run org.apache.qpid.CommandLineInterpreter "$@"
