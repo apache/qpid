@@ -203,6 +203,11 @@ bool Queue::acquire(const QueuedMessage& msg) {
     QPID_LOG(debug, "attempting to acquire " << msg.position);
     for (Messages::iterator i = messages.begin(); i != messages.end(); i++) {
         if (i->position == msg.position) {
+            if (lastValueQueue){
+                const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
+                string key = ft->getString(qpidVQMatchProperty);
+                lvq.erase(key);
+            }
             messages.erase(i);
             QPID_LOG(debug, "Match found, acquire succeeded: " << i->position << " == " << msg.position);
             return true;
@@ -523,7 +528,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
         msg->addTraceId(traceId);
     }
 
-    if (msg->isPersistent() && store) {
+    if (msg->isPersistent() && store && !lastValueQueue) {
         msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg);
         store->enqueue(ctxt, pmsg, *this);
@@ -540,7 +545,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
         Mutex::ScopedLock locker(messageLock);
         dequeued(msg);
     }
-    if (msg.payload->isPersistent() && store) {
+    if (msg.payload->isPersistent() && store && !lastValueQueue) {
         msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
         store->dequeue(ctxt, pmsg, *this);
