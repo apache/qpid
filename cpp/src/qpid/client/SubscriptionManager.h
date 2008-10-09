@@ -198,10 +198,10 @@ class SubscriptionManager : public sys::Runnable
      * Default is to acknowledge every message automatically.
      */
     void setAckPolicy(const AckPolicy& autoAck);
-    /**
-     *
-     */
+
      AckPolicy& getAckPolicy();
+
+    Session getSession() const { return session; }
 };
 
 /** AutoCancel cancels a subscription in its destructor */

@@ -32,6 +32,7 @@ class Url;
 namespace client {
 
 class ConnectionSettings;
+class ConnectionImpl;
 
 /**
  * Represents a connection to an AMQP broker. All communication is
@@ -42,9 +43,7 @@ class ConnectionSettings;
  */
 class Connection
 {
-    framing::ChannelId channelIdCounter;
     framing::ProtocolVersion version;
-    uint16_t max_frame_size;
 
   protected:
     boost::shared_ptr<ConnectionImpl> impl;
@@ -55,6 +54,7 @@ class Connection
      * @see open()
      */
     Connection();
+
     ~Connection();
 
     /**
@@ -157,7 +157,7 @@ class Connection
      * If the name is empty (the default) then a unique name will be
      * chosen using a Universally-unique identifier (UUID) algorithm.
      */
-    Session newSession(const std::string& name=std::string());
+    Session newSession(const std::string& name=std::string(), uint32_t timeoutSeconds = 0);
 
     /**
      * Resume a suspended session. A session may be resumed
@@ -167,7 +167,8 @@ class Connection
 
     bool isOpen() const;
 
-    
+    std::vector<Url> getKnownBrokers();
+
   friend class ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal
 };

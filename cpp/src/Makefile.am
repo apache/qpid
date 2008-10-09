@@ -390,6 +390,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10.h		\
   qpid/client/SessionBase_0_10Access.h		\
+  qpid/client/ConnectionAccess.h		\
   qpid/client/SessionImpl.cpp			\
   qpid/client/StateManager.cpp			\
   qpid/client/SubscriptionManager.cpp

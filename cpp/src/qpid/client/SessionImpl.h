@@ -28,7 +28,8 @@
 
 #include "qpid/SessionId.h"
 #include "qpid/SessionState.h"
-#include "qpid/shared_ptr.h"
+#include "boost/shared_ptr.hpp"
+#include "boost/weak_ptr.hpp"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -63,7 +64,7 @@ class SessionImpl : public framing::FrameHandler::InOutHandler,
                     private framing::AMQP_ClientOperations::ExecutionHandler
 {
 public:
-    SessionImpl(const std::string& name, shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
+    SessionImpl(const std::string& name, shared_ptr<ConnectionImpl>);
     ~SessionImpl();
 
 
@@ -106,6 +107,11 @@ public:
     /** Get timeout in seconds. */
     uint32_t getTimeout() const;
 
+    /** Make this session use a weak_ptr to the ConnectionImpl.
+     * Used for sessions created by the ConnectionImpl itself.
+     */
+    void setWeakPtr(bool weak=true);
+
 private:
     enum State {
         INACTIVE,
@@ -131,7 +137,6 @@ private:
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
-    void proxyOut(framing::AMQFrame& frame);
     void deliver(framing::AMQFrame& frame);
 
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
@@ -175,8 +180,11 @@ private:
     const uint64_t maxFrameSize;
     const SessionId id;
 
-    shared_ptr<ConnectionImpl> connection;
-    framing::FrameHandler::MemFunRef<SessionImpl, &SessionImpl::proxyOut> ioHandler;
+    shared_ptr<ConnectionImpl> connection();
+    shared_ptr<ConnectionImpl> connectionShared;
+    boost::weak_ptr<ConnectionImpl> connectionWeak;
+    bool weakPtr;
+
     framing::ChannelHandler channel;
     framing::AMQP_ServerProxy::Session proxy;
 

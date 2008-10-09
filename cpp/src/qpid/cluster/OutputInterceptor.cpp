@@ -58,9 +58,7 @@ void OutputInterceptor::activateOutput() {
 // Called in write thread when the IO layer has no more data to write.
 // We do nothing in the write thread, we run doOutput only on delivery
 // of doOutput requests.
-bool  OutputInterceptor::doOutput() {
-    return false;
-}
+bool  OutputInterceptor::doOutput() { return false; }
 
 // Delivery of doOutput allows us to run the real connection doOutput()
 // which stocks up the write buffers with data.
