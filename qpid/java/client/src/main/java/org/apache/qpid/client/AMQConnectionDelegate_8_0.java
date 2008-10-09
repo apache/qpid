@@ -58,7 +58,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     private AMQConnection _conn;
 
 
-    public void closeConneciton(long timeout) throws JMSException, AMQException
+    public void closeConnection(long timeout) throws JMSException, AMQException
     {
         _conn.getProtocolHandler().closeConnection(timeout);
 

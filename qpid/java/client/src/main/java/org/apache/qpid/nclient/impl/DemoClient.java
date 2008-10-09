@@ -23,60 +23,55 @@ package org.apache.qpid.nclient.impl;
 
 import org.apache.qpid.ErrorCode;
 import org.apache.qpid.api.Message;
-import org.apache.qpid.nclient.Client;
-import org.apache.qpid.nclient.Connection;
-import org.apache.qpid.nclient.ClosedListener;
-import org.apache.qpid.nclient.Session;
-import org.apache.qpid.nclient.util.MessageListener;
-import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.SessionListener;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class DemoClient
 {
-    public static MessagePartListenerAdapter createAdapter()
+    public static class DemoListener implements SessionListener
     {
-        return new MessagePartListenerAdapter(new MessageListener()
-        {
-            public void onMessage(Message m)
-            {
-                System.out.println("\n================== Received Msg ==================");
-                System.out.println("Message Id : " + m.getMessageProperties().getMessageId());
-                System.out.println(m.toString());
-                System.out.println("================== End Msg ==================\n");
-            }
+        public void opened(Session ssn) {}
 
-        });
+        public void exception(Session ssn, SessionException exc)
+        {
+            System.out.println(exc);
+        }
+
+        public void message(Session ssn, MessageTransfer m)
+        {
+            System.out.println("\n================== Received Msg ==================");
+            System.out.println("Message Id : " + m.getHeader().get(MessageProperties.class).getMessageId());
+            System.out.println(m.toString());
+            System.out.println("================== End Msg ==================\n");
+        }
+
+        public void closed(Session ssn) {}
     }
 
     public static final void main(String[] args)
     {
-        Connection conn = Client.createConnection();
-        try{
-            conn.connect("0.0.0.0", 5672, "test", "guest", "guest");
-        }catch(Exception e){
-            e.printStackTrace();
-        }
+        Connection conn = new Connection();
+        conn.connect("0.0.0.0", 5672, "test", "guest", "guest");
 
         Session ssn = conn.createSession(50000);
-        ssn.setClosedListener(new ClosedListener()
-                {
-                     public void onClosed(ErrorCode errorCode, String reason, Throwable t)
-                     {
-                         System.out.println("ErrorCode : " + errorCode + " reason : " + reason);
-                     }
-                });
+        ssn.setSessionListener(new DemoListener());
         ssn.queueDeclare("queue1", null, null);
         ssn.exchangeBind("queue1", "amq.direct", "queue1",null);
         ssn.sync();
 
-        ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
+        ssn.messageSubscribe("queue1", "myDest", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                             null, 0, null);
 
         // queue
         ssn.messageTransfer("amq.direct", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
@@ -91,9 +86,12 @@ public class DemoClient
         ssn.sync();
 
         // topic subs
-        ssn.messageSubscribe("topic1", "myDest2", (short)0, (short)0,createAdapter(), null);
-        ssn.messageSubscribe("topic2", "myDest3", (short)0, (short)0,createAdapter(), null);
-        ssn.messageSubscribe("topic3", "myDest4", (short)0, (short)0,createAdapter(), null);
+        ssn.messageSubscribe("topic1", "myDest2", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                             null, 0, null);
+        ssn.messageSubscribe("topic2", "myDest3", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                             null, 0, null);
+        ssn.messageSubscribe("topic3", "myDest4", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
+                             null, 0, null);
         ssn.sync();
 
         ssn.queueDeclare("topic1", null, null);

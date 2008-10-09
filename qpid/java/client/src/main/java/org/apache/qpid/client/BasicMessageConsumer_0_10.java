@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This is a 0.10 message consumer.
  */
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedMessage_0_10>
-        implements org.apache.qpid.nclient.MessagePartListener
 {
 
     /**
@@ -114,9 +113,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return _consumerTagString;
     }
 
-
-    // ----- Interface org.apache.qpid.client.util.MessageListener
-
     /**
      *
      * This is invoked by the session thread when emptying the session message queue.
@@ -157,28 +153,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             _logger.debug("messageOk, trying to notify");
             super.notifyMessage(jmsMessage);
         }
-    }
-
-
-
-    /**
-     * This method is invoked by the transport layer when a message is delivered for this
-     * consumer. The message is transformed and pass to the session.
-     * @param xfr an 0.10 message transfer
-     */
-    public void messageTransfer(MessageTransfer xfr)
-
-    //public void onMessage(Message message)
-    {
-        int channelId = getSession().getChannelId();
-        int consumerTag = getConsumerTag();
-
-        UnprocessedMessage_0_10 newMessage =
-            new UnprocessedMessage_0_10(consumerTag, xfr);
-
-
-        getSession().messageReceived(newMessage);
-        // else ignore this message
     }
 
     //----- overwritten methods
@@ -304,8 +278,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         {
             RangeSet ranges = new RangeSet();
             ranges.add((int) message.getDeliveryTag());
-            _0_10session.getQpidSession().messageAcknowledge(ranges,
-                    _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE );
+            _0_10session.messageAcknowledge
+                (ranges,
+                 _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
             _0_10session.getCurrentException();
         }
     }
@@ -425,10 +400,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
         super.postDeliver(msg);
-        if(_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
+        if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
         {
-          _session.acknowledgeMessage(msg.getDeliveryTag(), false);                
-        }               
+          _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+        }
     }
 
 }

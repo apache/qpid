@@ -21,13 +21,12 @@ package org.apache.qpid.example.amqpexample.fanout;
  */
 
 
-import org.apache.qpid.nclient.Client;
-import org.apache.qpid.nclient.Connection;
-import org.apache.qpid.nclient.Session;
+import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
+import org.apache.qpid.transport.Session;
 
 public class FannoutProducer
 {
@@ -38,16 +37,8 @@ public class FannoutProducer
     public static void main(String[] args)
     {
         // Create connection
-        Connection con = Client.createConnection();
-        try
-        {
-            con.connect("localhost", 5672, "test", "guest", "guest");
-        }
-        catch(Exception e)
-        {
-            System.out.print("Error connecting to broker");
-            e.printStackTrace();
-        }
+        Connection con = new Connection();
+        con.connect("localhost", 5672, "test", "guest", "guest");
 
         // Create session
         Session session = con.createSession(0);
@@ -68,16 +59,8 @@ public class FannoutProducer
         session.sync();
 
         //cleanup
-        session.sessionDetach(session.getName());
-        try
-        {
-            con.close();
-        }
-        catch(Exception e)
-        {
-            System.out.print("Error closing broker connection");
-            e.printStackTrace();
-        }
+        session.close();
+        con.close();
     }
 
 }

@@ -262,13 +262,13 @@ public class MinaHandler<E> implements IoHandler
                                     ConnectionDelegate delegate)
         throws IOException
     {
-        accept(host, port, new ConnectionBinding(delegate));
+        accept(host, port, ConnectionBinding.get(delegate));
     }
 
     public static final Connection connect(String host, int port,
                                            ConnectionDelegate delegate)
     {
-        return connect(host, port, new ConnectionBinding(delegate));
+        return connect(host, port, ConnectionBinding.get(delegate));
     }
 
 }

@@ -196,14 +196,9 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
                         throw new TransportException("join timed out");
                     }
                 }
-                transport.getReceiver().close();
-                socket.close();
+                transport.getReceiver().close(false);
             }
             catch (InterruptedException e)
-            {
-                throw new TransportException(e);
-            }
-            catch (IOException e)
             {
                 throw new TransportException(e);
             }

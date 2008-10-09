@@ -42,5 +42,5 @@ public interface AMQConnectionDelegate
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException;
 
-    public void closeConneciton(long timeout) throws JMSException, AMQException;
+    public void closeConnection(long timeout) throws JMSException, AMQException;
 }

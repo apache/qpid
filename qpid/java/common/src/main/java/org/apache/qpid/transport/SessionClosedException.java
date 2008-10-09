@@ -33,7 +33,7 @@ public class SessionClosedException extends SessionException
 
     public SessionClosedException()
     {
-        super(Collections.EMPTY_LIST);
+        super(null);
     }
 
 }

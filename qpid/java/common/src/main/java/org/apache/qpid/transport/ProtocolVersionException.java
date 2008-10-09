@@ -26,7 +26,7 @@ package org.apache.qpid.transport;
  *
  */
 
-public final class ProtocolVersionException extends TransportException
+public final class ProtocolVersionException extends ConnectionException
 {
 
     private final byte major;

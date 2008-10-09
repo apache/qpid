@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,25 +16,23 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.nclient;
-
-import org.apache.qpid.ErrorCode;
+package org.apache.qpid.transport;
 
 
 /**
- * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
- * informs the connection's ExceptionListener
+ * ConnectionListener
+ *
  */
-public interface ClosedListener
+
+public interface ConnectionListener
 {
-    /**
-     * If the communication layer detects a serious problem with a connection, it
-     * informs the connection's ExceptionListener
-     * @param errorCode TODO
-     * @param reason TODO
-     * @param t TODO
-     * @see Connection
-     */
-    public void onClosed(ErrorCode errorCode, String reason, Throwable t);
+
+    void opened(Connection connection);
+
+    void exception(Connection connection, ConnectionException exception);
+
+    void closed(Connection connection);
+
 }

@@ -28,12 +28,6 @@ import java.util.Map;
 import org.apache.qpid.ErrorCode;
 import org.apache.qpid.QpidException;
 import org.apache.qpid.api.Message;
-import org.apache.qpid.nclient.Client;
-import org.apache.qpid.nclient.Connection;
-import org.apache.qpid.nclient.ClosedListener;
-import org.apache.qpid.nclient.Session;
-import org.apache.qpid.nclient.util.MessageListener;
-import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
@@ -41,9 +35,13 @@ import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageCreditUnit;
 import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.SessionListener;
 
-public class BasicInteropTest implements ClosedListener
+public class BasicInteropTest implements SessionListener
 {
 
     private Session session;
@@ -62,7 +60,7 @@ public class BasicInteropTest implements ClosedListener
 
     public void testCreateConnection(){
         System.out.println("------- Creating connection--------");
-        conn = Client.createConnection();
+        conn = new Connection();
         try{
             conn.connect(host, 5672, "test", "guest", "guest");
         }catch(Exception e){
@@ -116,23 +114,11 @@ public class BasicInteropTest implements ClosedListener
     public void testSubscribe()
     {
         System.out.println("------- Sending a subscribe --------");
+        session.setSessionListener(this);
         session.messageSubscribe("testQueue", "myDest",
-                                 Session.TRANSFER_CONFIRM_MODE_REQUIRED,
-                                 Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
-                                 new MessagePartListenerAdapter(new MessageListener(){
-
-                                    public void onMessage(Message message)
-                                    {
-                                        System.out.println("--------Message Received--------");
-                                        System.out.println(message.toString());
-                                        System.out.println("--------/Message Received--------");
-                                        RangeSet ack = new RangeSet();
-                                        ack.add(message.getMessageTransferId(),message.getMessageTransferId());
-                                        session.messageAcknowledge(ack, true);
-                                    }
-
-                                 }),
-                                 null);
+                                 MessageAcceptMode.EXPLICIT,
+                                 MessageAcquireMode.PRE_ACQUIRED,
+                                 null, 0, null);
 
         System.out.println("------- Setting Credit mode --------");
         session.messageSetFlowMode("myDest", MessageFlowMode.WINDOW);
@@ -141,19 +127,31 @@ public class BasicInteropTest implements ClosedListener
         session.messageFlow("myDest", MessageCreditUnit.BYTE, -1);
     }
 
+    public void opened(Session ssn) {}
+
+    public void message(Session ssn, MessageTransfer xfr)
+    {
+        System.out.println("--------Message Received--------");
+        System.out.println(xfr.toString());
+        System.out.println("--------/Message Received--------");
+        ssn.processed(xfr);
+        ssn.flushProcessed();
+    }
+
     public void testMessageFlush()
     {
         session.messageFlush("myDest");
         session.sync();
     }
 
-    public void onClosed(ErrorCode errorCode, String reason, Throwable t)
+    public void exception(Session ssn, SessionException exc)
     {
         System.out.println("------- Broker Notified an error --------");
-        System.out.println("------- " + errorCode + " --------");
-        System.out.println("------- " + reason + " --------");
+        System.out.println("------- " + exc + " --------");
         System.out.println("------- /Broker Notified an error --------");
     }
+
+    public void closed(Session ssn) {}
 
     public static void main(String[] args) throws QpidException
     {

@@ -36,7 +36,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.util.Strings;
-import org.apache.qpid.nclient.util.ByteBufferMessage;
 import org.apache.qpid.njms.ExceptionHelper;
 import org.apache.qpid.transport.*;
 import static org.apache.qpid.transport.Option.*;

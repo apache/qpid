@@ -112,7 +112,7 @@ public class Channel extends Invoker
 
     public void closed()
     {
-        log.debug("channel closed: ", this);
+        log.debug("channel closed: %s", this);
         if (session != null)
         {
             session.closed();
