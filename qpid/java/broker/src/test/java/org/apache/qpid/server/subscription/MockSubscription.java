@@ -29,8 +29,6 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
-import org.apache.qpid.server.subscription.Subscription.State;
-import org.apache.qpid.server.subscription.Subscription.StateListener;
 
 public class MockSubscription implements Subscription
 {
@@ -40,15 +38,15 @@ public class MockSubscription implements Subscription
     private AMQQueue queue = null;
     private StateListener listener = null;
     private QueueEntry lastSeen = null;
-    private State state = State.ACTIVE;
+    private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
 
     @Override
     public void close()
     {
         closed = true;
-        listener.stateChange(this, state , State.CLOSED);
-        state = State.CLOSED;
+        listener.stateChange(this, _state, State.CLOSED);
+        _state = State.CLOSED;
     }
 
     @Override
@@ -177,6 +175,11 @@ public class MockSubscription implements Subscription
     public void setStateListener(StateListener listener)
     {
         this.listener = listener;
+    }
+
+    public State getState()
+    {
+        return _state;
     }
 
     @Override

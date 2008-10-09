@@ -82,6 +82,8 @@ public interface Subscription
 
     void setStateListener(final StateListener listener);
 
+    public State getState();
+
     QueueEntry getLastSeenEntry();
 
     boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
