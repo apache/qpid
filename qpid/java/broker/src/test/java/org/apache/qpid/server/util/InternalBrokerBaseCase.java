@@ -36,15 +36,18 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.util.MockChannel;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 
 public class InternalBrokerBaseCase extends TestCase
 {
     protected IApplicationRegistry _registry;
     protected MessageStore _messageStore;
-    protected AMQChannel _channel;
+    protected MockChannel _channel;
     protected InternalTestProtocolSession _session;
     protected VirtualHost _virtualHost;
     protected StoreContext _storeContext = new StoreContext();
@@ -74,7 +77,7 @@ public class InternalBrokerBaseCase extends TestCase
 
         _session.setVirtualHost(_virtualHost);
 
-        _channel = new AMQChannel(_session, 1, _messageStore);
+        _channel = new MockChannel(_session, 1, _messageStore);
 
         _session.addChannel(_channel);
     }
@@ -98,6 +101,29 @@ public class InternalBrokerBaseCase extends TestCase
         try
         {
             return channel.subscribeToQueue(null, queue, true, null, false, true);
+        }
+        catch (AMQException e)
+        {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
+        catch (ConsumerTagNotUniqueException e)
+        {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
+        //Keep the compiler happy
+        return null;
+    }
+
+    protected AMQShortString browse(AMQChannel channel, AMQQueue queue)
+    {
+        try
+        {
+            FieldTable filters = new FieldTable();
+            filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
+
+            return channel.subscribeToQueue(null, queue, true, filters, false, true);
         }
         catch (AMQException e)
         {
