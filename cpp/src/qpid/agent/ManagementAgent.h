@@ -44,6 +44,18 @@ class ManagementAgent
         static ManagementAgent* agent;
     };
 
+    typedef enum {
+    SEV_EMERG = 0,
+    SEV_ALERT = 1,
+    SEV_CRIT  = 2,
+    SEV_ERROR = 3,
+    SEV_WARN  = 4,
+    SEV_NOTE  = 5,
+    SEV_INFO  = 6,
+    SEV_DEBUG = 7,
+    SEV_DEFAULT = 8
+    } severity_t;
+
     ManagementAgent() {}
     virtual ~ManagementAgent() {}
 
@@ -108,7 +120,8 @@ class ManagementAgent
 
     //
     //
-    virtual void raiseEvent(const ManagementEvent& event) = 0;
+    virtual void raiseEvent(const ManagementEvent& event,
+                            severity_t severity = SEV_DEFAULT) = 0;
 
     // If "useExternalThread" was set to true in init, this method must
     // be called to provide a thread for any pending method calls that have arrived.

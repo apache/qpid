@@ -158,17 +158,19 @@ ObjectId ManagementAgentImpl::addObject(ManagementObject* object,
     return objectId;
 }
 
-void ManagementAgentImpl::raiseEvent(const ManagementEvent& event)
+void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t severity)
 {
     Mutex::ScopedLock lock(agentLock);
     Buffer outBuffer(eventBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
+    uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
 
     encodeHeader(outBuffer, 'e');
     outBuffer.putShortString(event.getPackageName());
     outBuffer.putShortString(event.getEventName());
     outBuffer.putBin128(event.getMd5Sum());
     outBuffer.putLongLong(uint64_t(Duration(now())));
+    outBuffer.putOctet(sev);
     event.encode(outBuffer);
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();

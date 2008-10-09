@@ -1201,6 +1201,7 @@ class Event:
     if self.severity == 5 : return "NOTIC"
     if self.severity == 6 : return "INFO "
     if self.severity == 7 : return "DEBUG"
+    return "INV-%d" % self.severity
 
   def getClassKey(self):
     return self.classKey
