@@ -20,14 +20,22 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import java.nio.ByteBuffer;
+import java.util.UUID;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
+
+import static org.apache.qpid.transport.Connection.State.*;
 
 
 /**
@@ -44,21 +52,162 @@ public class Connection
     implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
+    enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
+
     private static final Logger log = Logger.get(Connection.class);
 
-    final private Sender<ProtocolEvent> sender;
-    final private ConnectionDelegate delegate;
-    private int channelMax = 1;
-    // want to make this final
-    private int _connectionId;
+    class DefaultConnectionListener implements ConnectionListener
+    {
+        public void opened(Connection conn) {}
+        public void exception(Connection conn, ConnectionException exception)
+        {
+            throw exception;
+        }
+        public void closed(Connection conn) {}
+    }
+
+    private ConnectionDelegate delegate;
+    private Sender<ProtocolEvent> sender;
 
     final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
 
-    public Connection(Sender<ProtocolEvent> sender,
-                      ConnectionDelegate delegate)
+    private State state = NEW;
+    private Object lock = new Object();
+    private long timeout = 60000;
+    private ConnectionListener listener = new DefaultConnectionListener();
+    private Throwable error = null;
+
+    private int channelMax = 1;
+    private String locale;
+    private SaslServer saslServer;
+    private SaslClient saslClient;
+
+    // want to make this final
+    private int _connectionId;
+
+    public Connection() {}
+
+    public void setConnectionDelegate(ConnectionDelegate delegate)
+    {
+        this.delegate = delegate;
+    }
+
+    public void setConnectionListener(ConnectionListener listener)
+    {
+        if (listener == null)
+        {
+            this.listener = new DefaultConnectionListener();
+        }
+        else
+        {
+            this.listener = listener;
+        }
+    }
+
+    public Sender<ProtocolEvent> getSender()
+    {
+        return sender;
+    }
+
+    public void setSender(Sender<ProtocolEvent> sender)
     {
         this.sender = sender;
-        this.delegate = delegate;
+    }
+
+    void setState(State state)
+    {
+        synchronized (lock)
+        {
+            this.state = state;
+            lock.notifyAll();
+        }
+    }
+
+    void setLocale(String locale)
+    {
+        this.locale = locale;
+    }
+
+    String getLocale()
+    {
+        return locale;
+    }
+
+    void setSaslServer(SaslServer saslServer)
+    {
+        this.saslServer = saslServer;
+    }
+
+    SaslServer getSaslServer()
+    {
+        return saslServer;
+    }
+
+    void setSaslClient(SaslClient saslClient)
+    {
+        this.saslClient = saslClient;
+    }
+
+    SaslClient getSaslClient()
+    {
+        return saslClient;
+    }
+
+    public void connect(String host, int port, String vhost, String username, String password)
+    {
+        synchronized (lock)
+        {
+            state = OPENING;
+
+            delegate = new ClientDelegate(vhost, username, password);
+
+            IoTransport.connect(host, port, ConnectionBinding.get(this));
+            send(new ProtocolHeader(1, 0, 10));
+
+            Waiter w = new Waiter(lock, timeout);
+            while (w.hasTime() && state == OPENING && error == null)
+            {
+                w.await();
+            }
+
+            if (error != null)
+            {
+                Throwable t = error;
+                error = null;
+                close();
+                throw new ConnectionException(t);
+            }
+
+            switch (state)
+            {
+            case OPENING:
+                close();
+                throw new ConnectionException("connect() timed out");
+            case OPEN:
+                break;
+            case CLOSED:
+                throw new ConnectionException("connect() aborted");
+            default:
+                throw new IllegalStateException(String.valueOf(state));
+            }
+        }
+
+        listener.opened(this);
+    }
+
+    public Session createSession()
+    {
+        return createSession(0);
+    }
+
+    public Session createSession(long expiryInSeconds)
+    {
+        Channel ch = getChannel();
+        Session ssn = new Session(UUID.randomUUID().toString().getBytes());
+        ssn.attach(ch);
+        ssn.sessionAttach(ssn.getName());
+        ssn.sessionRequestTimeout(expiryInSeconds);
+        return ssn;
     }
 
     public void setConnectionId(int id)
@@ -86,7 +235,12 @@ public class Connection
     public void send(ProtocolEvent event)
     {
         log.debug("SEND: [%s] %s", this, event);
-        sender.send(event);
+        Sender s = sender;
+        if (s == null)
+        {
+            throw new ConnectionException("connection closed");
+        }
+        s.send(event);
     }
 
     public void flush()
@@ -107,7 +261,7 @@ public class Connection
 
     public Channel getChannel()
     {
-        synchronized (channels)
+        synchronized (lock)
         {
             for (int i = 0; i < getChannelMax(); i++)
             {
@@ -123,7 +277,7 @@ public class Connection
 
     public Channel getChannel(int number)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
             Channel channel = channels.get(number);
             if (channel == null)
@@ -137,24 +291,60 @@ public class Connection
 
     void removeChannel(int number)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
             channels.remove(number);
         }
     }
 
+    public void exception(ConnectionException e)
+    {
+        synchronized (lock)
+        {
+            switch (state)
+            {
+            case OPENING:
+            case CLOSING:
+                error = e;
+                lock.notifyAll();
+                break;
+            default:
+                listener.exception(this, e);
+                break;
+            }
+        }
+    }
+
     public void exception(Throwable t)
     {
-        delegate.exception(t);
+        synchronized (lock)
+        {
+            switch (state)
+            {
+            case OPENING:
+            case CLOSING:
+                error = t;
+                lock.notifyAll();
+                break;
+            default:
+                listener.exception(this, new ConnectionException(t));
+                break;
+            }
+        }
     }
 
     void closeCode(ConnectionClose close)
     {
-        synchronized (channels)
+        synchronized (lock)
         {
             for (Channel ch : channels.values())
             {
                 ch.closeCode(close);
+            }
+            ConnectionCloseCode code = close.getReplyCode();
+            if (code != ConnectionCloseCode.NORMAL)
+            {
+                exception(new ConnectionException(close));
             }
         }
     }
@@ -162,20 +352,85 @@ public class Connection
     public void closed()
     {
         log.debug("connection closed: %s", this);
-        synchronized (channels)
+
+        if (state == OPEN)
+        {
+            exception(new ConnectionException("connection aborted"));
+        }
+
+        synchronized (lock)
         {
             List<Channel> values = new ArrayList<Channel>(channels.values());
             for (Channel ch : values)
             {
                 ch.closed();
             }
+
+            sender = null;
+            setState(CLOSED);
         }
-        delegate.closed();
+
+        listener.closed(this);
     }
 
     public void close()
     {
-        sender.close();
+        synchronized (lock)
+        {
+            switch (state)
+            {
+            case OPEN:
+                Channel ch = getChannel(0);
+                state = CLOSING;
+                ch.connectionClose(ConnectionCloseCode.NORMAL, null);
+                Waiter w = new Waiter(lock, timeout);
+                while (w.hasTime() && state == CLOSING && error == null)
+                {
+                    w.await();
+                }
+
+                if (error != null)
+                {
+                    close();
+                    throw new ConnectionException(error);
+                }
+
+                switch (state)
+                {
+                case CLOSING:
+                    close();
+                    throw new ConnectionException("close() timed out");
+                case CLOSED:
+                    break;
+                default:
+                    throw new IllegalStateException(String.valueOf(state));
+                }
+                break;
+            case CLOSED:
+                break;
+            default:
+                if (sender != null)
+                {
+                    sender.close();
+                    w = new Waiter(lock, timeout);
+                    while (w.hasTime() && sender != null && error == null)
+                    {
+                        w.await();
+                    }
+
+                    if (error != null)
+                    {
+                        throw new ConnectionException(error);
+                    }
+
+                    if (sender != null)
+                    {
+                        throw new ConnectionException("close() timed out");
+                    }
+                }
+                break;
+            }
+        }
     }
 
     public String toString()

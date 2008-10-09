@@ -108,7 +108,7 @@ public final class IoTransport<E>
     public static final Connection connect(String host, int port,
                                            ConnectionDelegate delegate)
     {
-        return connect(host, port, new ConnectionBinding(delegate));
+        return connect(host, port, ConnectionBinding.get(delegate));
     }
 
     public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port)

@@ -29,7 +29,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
-import org.apache.qpid.nclient.*;
 import org.apache.qpid.jms.Message;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
@@ -138,7 +137,7 @@ public class AMQMessageDelegate_0_10 implements AMQMessageDelegate
     }
 
 
-    public static void updateExchangeTypeMapping(Header header, org.apache.qpid.nclient.Session session)
+    public static void updateExchangeTypeMapping(Header header, org.apache.qpid.transport.Session session)
     {
         DeliveryProperties deliveryProps = header.get(DeliveryProperties.class);
         if(deliveryProps != null)

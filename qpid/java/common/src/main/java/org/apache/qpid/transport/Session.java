@@ -49,6 +49,26 @@ public class Session extends Invoker
 
     private static final Logger log = Logger.get(Session.class);
 
+    class DefaultSessionListener implements SessionListener
+    {
+
+        public void opened(Session ssn) {}
+
+        public void message(Session ssn, MessageTransfer xfr)
+        {
+            log.info("message: %s", xfr);
+        }
+
+        public void exception(Session ssn, SessionException exc)
+        {
+            throw exc;
+        }
+
+        public void closed(Session ssn) {}
+    }
+
+    public static final int UNLIMITED_CREDIT = 0xFFFFFFFF;
+
     private static boolean ENABLE_REPLAY = false;
 
     static
@@ -65,6 +85,7 @@ public class Session extends Invoker
     }
 
     private byte[] name;
+    private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
 
@@ -95,6 +116,23 @@ public class Session extends Invoker
     public byte[] getName()
     {
         return name;
+    }
+
+    public void setSessionListener(SessionListener listener)
+    {
+        if (listener == null)
+        {
+            this.listener = new DefaultSessionListener();
+        }
+        else
+        {
+            this.listener = listener;
+        }
+    }
+
+    public SessionListener getSessionListener()
+    {
+        return listener;
     }
 
     public void setAutoSync(boolean value)
@@ -270,8 +308,8 @@ public class Session extends Invoker
     {
         if (closed.get())
         {
-            List<ExecutionException> exc = getExceptions();
-            if (!exc.isEmpty())
+            ExecutionException exc = getException();
+            if (exc != null)
             {
                 throw new SessionException(exc);
             }
@@ -361,7 +399,7 @@ public class Session extends Invoker
             {
                 if (closed.get())
                 {
-                    throw new SessionException(getExceptions());
+                    throw new SessionException(getException());
                 }
                 else
                 {
@@ -375,8 +413,7 @@ public class Session extends Invoker
 
     private Map<Integer,ResultFuture<?>> results =
         new HashMap<Integer,ResultFuture<?>>();
-    private List<ExecutionException> exceptions =
-        new ArrayList<ExecutionException>();
+    private ExecutionException exception = null;
 
     void result(int command, Struct result)
     {
@@ -388,11 +425,17 @@ public class Session extends Invoker
         future.set(result);
     }
 
-    void addException(ExecutionException exc)
+    void setException(ExecutionException exc)
     {
-        synchronized (exceptions)
+        synchronized (results)
         {
-            exceptions.add(exc);
+            if (exception != null)
+            {
+                throw new IllegalStateException
+                    (String.format
+                     ("too many exceptions: %s, %s", exception, exc));
+            }
+            exception = exc;
         }
     }
 
@@ -403,11 +446,11 @@ public class Session extends Invoker
         this.close = close;
     }
 
-    List<ExecutionException> getExceptions()
+    ExecutionException getException()
     {
-        synchronized (exceptions)
+        synchronized (results)
         {
-            return new ArrayList<ExecutionException>(exceptions);
+            return exception;
         }
     }
 
@@ -473,7 +516,7 @@ public class Session extends Invoker
             }
             else if (closed.get())
             {
-                throw new SessionException(getExceptions());
+                throw new SessionException(getException());
             }
             else
             {

@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 
 import java.io.IOException;
 
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.XASession;
 
@@ -33,15 +34,18 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.nclient.Client;
-import org.apache.qpid.nclient.ClosedListener;
 import org.apache.qpid.ErrorCode;
-import org.apache.qpid.QpidException;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionClose;
+import org.apache.qpid.transport.ConnectionException;
+import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ProtocolVersionException;
+import org.apache.qpid.transport.TransportException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ClosedListener
+public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ConnectionListener
 {
     /**
      * This class logger.
@@ -56,7 +60,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
     /**
      * The QpidConeection instance that is mapped with thie JMS connection.
      */
-    org.apache.qpid.nclient.Connection _qpidConnection;
+    org.apache.qpid.transport.Connection _qpidConnection;
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
@@ -125,7 +129,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
      */
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
-        _qpidConnection = Client.createConnection();
+        _qpidConnection = new Connection();
         try
         {
             if (_logger.isDebugEnabled())
@@ -134,16 +138,16 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
                         .getHost() + " port: " + brokerDetail.getPort() + " virtualhost: " + _conn
                         .getVirtualHost() + "user name: " + _conn.getUsername() + "password: " + _conn.getPassword());
             }
+            _qpidConnection.setConnectionListener(this);
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword());
-            _qpidConnection.setClosedListener(this);
             _conn._connected = true;
         }
         catch(ProtocolVersionException pe)
         {
             return new ProtocolVersion(pe.getMajor(), pe.getMinor());
         }
-        catch (QpidException e)
+        catch (ConnectionException e)
         {
             throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot connect to broker", e);
         }
@@ -161,34 +165,42 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Closed
     }
 
 
-    public void closeConneciton(long timeout) throws JMSException, AMQException
+    public void closeConnection(long timeout) throws JMSException, AMQException
     {
         try
         {
             _qpidConnection.close();
         }
-        catch (QpidException e)
+        catch (TransportException e)
         {
-            throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot close connection", e);
+            throw new AMQException(e.getMessage(), e);
         }
-
     }
 
-    public void onClosed(ErrorCode errorCode, String reason, Throwable t)
+    public void opened(Connection conn) {}
+
+    public void exception(Connection conn, ConnectionException exc)
     {
-        if (_logger.isDebugEnabled())
+        ExceptionListener listener = _conn._exceptionListener;
+        if (listener == null)
         {
-            _logger.debug("Received a connection close from the broker: Error code : " + errorCode.getCode(), t);
+            _logger.error("connection exception: " + conn, exc);
         }
-        if (_conn._exceptionListener != null)
+        else
         {
-            JMSException ex = new JMSException(reason,String.valueOf(errorCode.getCode()));
-            if (t != null)
+            ConnectionClose close = exc.getClose();
+            String code = null;
+            if (close != null)
             {
-                ex.initCause(t);
+                code = close.getReplyCode().toString();
             }
+            JMSException ex = new JMSException(exc.getMessage(), code);
+            ex.initCause(exc);
 
             _conn._exceptionListener.onException(ex);
         }
     }
+
+    public void closed(Connection conn) {}
+
 }

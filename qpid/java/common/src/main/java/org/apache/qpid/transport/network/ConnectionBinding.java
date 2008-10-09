@@ -33,23 +33,46 @@ import org.apache.qpid.transport.Sender;
  *
  */
 
-public class ConnectionBinding implements Binding<Connection,ByteBuffer>
+public abstract class ConnectionBinding
+    implements Binding<Connection,ByteBuffer>
 {
 
-    private static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
-
-    private final ConnectionDelegate delegate;
-
-    public ConnectionBinding(ConnectionDelegate delegate)
+    public static Binding<Connection,ByteBuffer> get(final Connection connection)
     {
-        this.delegate = delegate;
+        return new ConnectionBinding()
+        {
+            public Connection connection()
+            {
+                return connection;
+            }
+        };
     }
+
+    public static Binding<Connection,ByteBuffer> get(final ConnectionDelegate delegate)
+    {
+        return new ConnectionBinding()
+        {
+            public Connection connection()
+            {
+                Connection conn = new Connection();
+                conn.setConnectionDelegate(delegate);
+                return conn;
+            }
+        };
+    }
+
+    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+
+    public abstract Connection connection();
 
     public Connection endpoint(Sender<ByteBuffer> sender)
     {
+        Connection conn = connection();
+
         // XXX: hardcoded max-frame
-        return new Connection
-            (new Disassembler(sender, MAX_FRAME_SIZE), delegate);
+        Disassembler dis = new Disassembler(sender, MAX_FRAME_SIZE);
+        conn.setSender(dis);
+        return conn;
     }
 
     public Receiver<ByteBuffer> receiver(Connection conn)

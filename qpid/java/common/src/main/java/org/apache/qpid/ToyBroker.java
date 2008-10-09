@@ -174,22 +174,13 @@ class ToyBroker extends SessionDelegate
     public static final void main(String[] args) throws IOException
     {
         final ToyExchange exchange = new ToyExchange();
-        ConnectionDelegate delegate = new ConnectionDelegate()
+        ConnectionDelegate delegate = new ServerDelegate()
         {
             public SessionDelegate getSessionDelegate()
             {
                 return new ToyBroker(exchange);
             }
-            public void exception(Throwable t)
-            {
-                t.printStackTrace();
-            }
-            public void closed() {}
         };
-
-        //hack
-        delegate.setUsername("guest");
-        delegate.setPassword("guest");
 
         MinaHandler.accept("0.0.0.0", 5672, delegate);
     }

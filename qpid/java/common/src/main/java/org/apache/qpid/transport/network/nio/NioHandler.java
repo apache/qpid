@@ -87,8 +87,9 @@ public class NioHandler implements Runnable
         }
 
         NioSender sender = new NioSender(_ch);
-        Connection con = new Connection
-            (new Disassembler(sender, 64*1024 - 1), delegate);
+        Connection con = new Connection();
+        con.setSender(new Disassembler(sender, 64*1024 - 1));
+        con.setConnectionDelegate(delegate);
 
         con.setConnectionId(_count.incrementAndGet());
         _handlers.put(con.getConnectionId(),sender);
