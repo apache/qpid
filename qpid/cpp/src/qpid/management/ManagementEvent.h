@@ -40,6 +40,7 @@ public:
     virtual std::string& getEventName() const = 0;
     virtual std::string& getPackageName() const = 0;
     virtual uint8_t* getMd5Sum() const = 0;
+    virtual uint8_t getSeverity() const = 0;
     virtual void encode(qpid::framing::Buffer&) const = 0;
 };
 
