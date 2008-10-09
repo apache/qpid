@@ -24,6 +24,7 @@
 
 #include "Bounds.h"
 #include "ConnectionHandler.h"
+
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
@@ -41,6 +42,7 @@ namespace client {
 class Connector;
 class ConnectionSettings;
 class SessionImpl;
+class FailoverListener;
 
 class ConnectionImpl : public Bounds,
                        public framing::FrameHandler,
@@ -54,7 +56,9 @@ class ConnectionImpl : public Bounds,
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::scoped_ptr<Connector> connector;
+    boost::scoped_ptr<FailoverListener> failover;
     framing::ProtocolVersion version;
+    uint16_t nextChannel;
     sys::Mutex lock;
 
     template <class F> void closeInternal(const F&);
@@ -72,13 +76,18 @@ class ConnectionImpl : public Bounds,
     void open();
     bool isOpen() const;
 
-    void addSession(const boost::shared_ptr<SessionImpl>&);
+    boost::shared_ptr<SessionImpl> newSession(const std::string& name, uint32_t timeout, uint16_t channel=0);
+    void addSession(const boost::shared_ptr<SessionImpl>&, uint16_t channel=0);
         
     void close();
     void handle(framing::AMQFrame& frame);
     void erase(uint16_t channel);
-
+    void stopFailoverListener();
+    
     const ConnectionSettings& getNegotiatedSettings();
+
+    std::vector<Url> getKnownBrokers();
+
 };
 
 }}

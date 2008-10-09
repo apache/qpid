@@ -147,7 +147,7 @@ void SessionState::senderRecordKnownCompleted() {
 
 void SessionState::senderConfirmed(const SessionPoint& confirmed) {
     if (confirmed > sender.sendPoint)
-        throw InvalidArgumentException(QPID_MSG(getId() << ": confirmed commands not yet sent."));
+        throw InvalidArgumentException(QPID_MSG(getId() << ": confirmed < " << confirmed << " but only sent < " << sender.sendPoint));
     QPID_LOG(debug, getId() << ": sender confirmed point moved to " << confirmed);
     ReplayList::iterator i = sender.replayList.begin();
     while (i != sender.replayList.end() && sender.replayPoint.command < confirmed.command) {
@@ -169,7 +169,7 @@ void SessionState::senderCompleted(const SequenceSet& commands) {
     QPID_LOG(debug, getId() << ": sender marked completed: " << commands);
     sender.incomplete -= commands;
     // Completion implies confirmation but we don't handle out-of-order
-    // confirmation, so confirm only the first contiguous range of commands.
+    // confirmation, so confirm up to the end of the first contiguous range of commands.
     senderConfirmed(SessionPoint(commands.rangesBegin()->end()));
 }
 
