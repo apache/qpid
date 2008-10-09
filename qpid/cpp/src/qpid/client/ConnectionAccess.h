@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_FAILOVERLISTENER_H
-#define QPID_CLIENT_FAILOVERLISTENER_H
+#ifndef QPID_CLIENT_CONNECTIONACCESS_H
+#define QPID_CLIENT_CONNECTIONACCESS_H
 
 /*
  *
@@ -22,36 +22,20 @@
  *
  */
 
-#include "qpid/client/MessageListener.h"
-#include "qpid/Url.h"
-#include "qpid/sys/Mutex.h"
-#include "qpid/sys/Thread.h"
-#include <vector>
+#include "qpid/client/Connection.h"
+
+/**@file @internal  Internal use only */
 
 namespace qpid {
 namespace client {
 
-class SubscriptionManager;
 
-/**
- * @internal Listen for failover updates from the amq.failover exchange.
- */
-class FailoverListener : public MessageListener {
-  public:
-    FailoverListener();
-    ~FailoverListener();
-    void start(const boost::shared_ptr<ConnectionImpl>&);
-    void stop();
-    
-    std::vector<Url> getKnownBrokers() const;
-    void received(Message& msg);
-    
-  private:
-    mutable sys::Mutex lock;
-    std::auto_ptr<SubscriptionManager> subscriptions;
-    sys::Thread thread;
-    std::vector<Url> knowBrokers;
+
+struct ConnectionAccess {
+    static void setVersion(Connection& c, const framing::ProtocolVersion& v) { c.version = v; }
+    static boost::shared_ptr<ConnectionImpl>  getImpl(Connection& c) { return c.impl; }
 };
+
 }} // namespace qpid::client
 
-#endif  /*!QPID_CLIENT_FAILOVERLISTENER_H*/
+#endif  /*!QPID_CLIENT_CONNECTIONACCESS_H*/

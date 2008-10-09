@@ -44,7 +44,7 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-Connection::Connection() : channelIdCounter(0), version(framing::highestProtocolVersion) {}
+Connection::Connection() : version(framing::highestProtocolVersion) {}
 
 Connection::~Connection(){ }
 
@@ -106,32 +106,29 @@ void Connection::open(const ConnectionSettings& settings)
 
     impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
     impl->open();
-    max_frame_size = impl->getNegotiatedSettings().maxFrameSize;
 }
 
-Session Connection::newSession(const std::string& name) {
+Session Connection::newSession(const std::string& name, uint32_t timeout) {
     if (!isOpen())
         throw Exception(QPID_MSG("Connection has not yet been opened"));
-    shared_ptr<SessionImpl> simpl(
-        new SessionImpl(name, impl, ++channelIdCounter, max_frame_size));
-    impl->addSession(simpl);
-    simpl->open(0);
     Session s;
-    SessionBase_0_10Access(s).set(simpl);
+    SessionBase_0_10Access(s).set(impl->newSession(name, timeout));
     return s;
 }
 
 void Connection::resume(Session& session) {
     if (!isOpen())
         throw Exception(QPID_MSG("Connection is not open."));
-
-    session.impl->setChannel(++channelIdCounter);
     impl->addSession(session.impl);
     session.impl->resume(impl);
 }
 
 void Connection::close() {
     impl->close();
+}
+
+std::vector<Url> Connection::getKnownBrokers() {
+    return isOpen() ? impl->getKnownBrokers() : std::vector<Url>();
 }
 
 }} // namespace qpid::client

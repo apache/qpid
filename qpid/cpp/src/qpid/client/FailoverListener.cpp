@@ -19,27 +19,50 @@
  *
  */
 #include "FailoverListener.h"
+#include "SessionBase_0_10Access.h"
+#include "qpid/client/SubscriptionManager.h"
 
 namespace qpid {
 namespace client {
 
 static const std::string AMQ_FAILOVER("amq.failover");
 
-FailoverListener::FailoverListener(Connection c)
-    : connection(c), session(c.newSession()), subscriptions(session)
-{
-    std::string qname=AMQ_FAILOVER + "." + session.getId().getName();
-    if (session.exchangeQuery(arg::exchange=AMQ_FAILOVER).getType().empty())
-        return;                 // Failover exchange not implemented.
-    session.queueDeclare(arg::queue=qname, arg::exclusive=true, arg::autoDelete=true);
-    session.exchangeBind(arg::queue=qname, arg::exchange=AMQ_FAILOVER);
-    subscriptions.subscribe(*this, qname, FlowControl::unlimited());
-    thread = sys::Thread(subscriptions);
+static Session makeSession(boost::shared_ptr<SessionImpl> si) {
+    // Hold only a weak pointer to the ConnectionImpl so a
+    // FailoverListener in a ConnectionImpl won't createa a shared_ptr
+    // cycle.
+    // 
+    si->setWeakPtr(true);
+    Session s;
+    SessionBase_0_10Access(s).set(si);
+    return s;
 }
 
-FailoverListener::~FailoverListener() {
-    subscriptions.stop();
+FailoverListener::FailoverListener() {}
+
+void FailoverListener::start(const boost::shared_ptr<ConnectionImpl>& c) {
+    Session session = makeSession(c->newSession(std::string(), 0));
+    if (session.exchangeQuery(arg::name=AMQ_FAILOVER).getNotFound()) {
+        session.close();
+        return;
+    }
+    subscriptions.reset(new SubscriptionManager(session));
+    std::string qname=AMQ_FAILOVER + "." + session.getId().getName();
+    session.queueDeclare(arg::queue=qname, arg::exclusive=true, arg::autoDelete=true);
+    session.exchangeBind(arg::queue=qname, arg::exchange=AMQ_FAILOVER);
+    subscriptions->subscribe(*this, qname, FlowControl::unlimited());
+    thread = sys::Thread(*subscriptions);
+}
+
+void FailoverListener::stop() {
+    if (subscriptions.get()) subscriptions->stop();
     if (thread.id()) thread.join();
+    if (subscriptions.get()) subscriptions->getSession().close();
+    thread=sys::Thread();
+    subscriptions.reset();
+}    
+FailoverListener::~FailoverListener() {
+    stop();
 }
 
 void FailoverListener::received(Message& msg) {
