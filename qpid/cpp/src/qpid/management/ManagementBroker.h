@@ -62,7 +62,7 @@ public:
                           ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject   (ManagementObject* object,
                           uint64_t          persistId = 0);
-    void raiseEvent(const ManagementEvent& event);
+    void raiseEvent(const ManagementEvent& event, severity_t severity = SEV_DEFAULT);
     void clientAdded     ();
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,

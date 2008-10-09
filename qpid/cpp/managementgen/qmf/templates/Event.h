@@ -44,12 +44,13 @@ class Event/*MGEN:Event.NameCap*/ : public ::qpid::management::ManagementEvent
     writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
 
     Event/*MGEN:Event.NameCap*/(/*MGEN:Event.ConstructorArgs*/);
-    ~Event/*MGEN:Class.NameCap*/() {};
+    ~Event/*MGEN:Event.NameCap*/() {};
 
     static void registerSelf(::qpid::management::ManagementAgent* agent);
     std::string& getPackageName() const { return packageName; }
     std::string& getEventName() const { return eventName; }
     uint8_t* getMd5Sum() const { return md5Sum; }
+    uint8_t getSeverity() const { return /*MGEN:Event.Severity*/; }
     void encode(::qpid::framing::Buffer& buffer) const;
 };
 

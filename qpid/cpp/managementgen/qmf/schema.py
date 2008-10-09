@@ -810,8 +810,10 @@ class SchemaEvent:
     for item in self.packageName.split("."):
       stream.write ("namespace %s {\n" % item)
 
+  def genSeverity(self, stream, variables):
+    stream.write("%d" % self.sev)
+
   def genArgEncodes(self, stream, variables):
-    stream.write("    buf.putOctet(%d);\n" % self.sev)
     for arg in self.args:
       stream.write("    " + arg.type.type.encode.replace("@", "buf").replace("#", arg.name) + ";\n")
 
