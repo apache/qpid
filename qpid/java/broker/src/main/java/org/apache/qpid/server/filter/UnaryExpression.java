@@ -35,24 +35,32 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * An expression which performs an operation on two expression values
  */
-public abstract class UnaryExpression<E extends Exception> implements Expression<E> {
+public abstract class UnaryExpression<E extends Exception> implements Expression<E>
+{
 
     private static final BigDecimal BD_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE);
     protected Expression<E> right;
 
-    public static <E extends Exception> Expression<E> createNegate(Expression<E> left) {
+    public static<E extends Exception> Expression<E> createNegate(Expression<E> left)
+    {
         return new NegativeExpression(left);
     }
 
-    public static <E extends Exception> BooleanExpression createInExpression(PropertyExpression<E> right, List elements, final boolean not) {
+    public static<E extends Exception> BooleanExpression createInExpression(PropertyExpression<E> right, List elements, final boolean not)
+    {
 
         // Use a HashSet if there are many elements.
         Collection t;
-        if (elements.size() == 0) {
+        if (elements.size() == 0)
+        {
             t = null;
-        } else if (elements.size() < 5) {
+        }
+        else if (elements.size() < 5)
+        {
             t = elements;
-        } else {
+        }
+        else
+        {
             t = new HashSet(elements);
         }
 
@@ -61,53 +69,63 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         return new InExpression(right, inList, not);
     }
 
-    abstract static class BooleanUnaryExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E> {
-        public BooleanUnaryExpression(Expression<E> left) {
+    abstract static class BooleanUnaryExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
+    {
+        public BooleanUnaryExpression(Expression<E> left)
+        {
             super(left);
         }
 
-        public boolean matches(Filterable<E> message) throws E {
-            Object object = null;
-            try{
-                object = evaluate(message);
-            }catch(Exception ex)
-            {
-                ex.printStackTrace();
-            }
+        public boolean matches(Filterable<E> message) throws E
+        {
+            Object object = evaluate(message);
 
             return (object != null) && (object == Boolean.TRUE);
         }
     }
-
     ;
 
-    public static <E extends Exception> BooleanExpression<E> createNOT(BooleanExpression<E> left) {
+    public static<E extends Exception> BooleanExpression<E> createNOT(BooleanExpression<E> left)
+    {
         return new NotExpression(left);
     }
 
-    public static BooleanExpression createXPath(final String xpath) {
+    public static BooleanExpression createXPath(final String xpath)
+    {
         return new XPathExpression(xpath);
     }
 
-    public static BooleanExpression createXQuery(final String xpath) {
+    public static BooleanExpression createXQuery(final String xpath)
+    {
         return new XQueryExpression(xpath);
     }
 
-    public static <E extends Exception> BooleanExpression createBooleanCast(Expression<E> left) {
+    public static<E extends Exception> BooleanExpression createBooleanCast(Expression<E> left)
+    {
         return new BooleanCastExpression(left);
     }
 
-    private static Number negate(Number left) {
+    private static Number negate(Number left)
+    {
         Class clazz = left.getClass();
-        if (clazz == Integer.class) {
+        if (clazz == Integer.class)
+        {
             return new Integer(-left.intValue());
-        } else if (clazz == Long.class) {
+        }
+        else if (clazz == Long.class)
+        {
             return new Long(-left.longValue());
-        } else if (clazz == Float.class) {
+        }
+        else if (clazz == Float.class)
+        {
             return new Float(-left.floatValue());
-        } else if (clazz == Double.class) {
+        }
+        else if (clazz == Double.class)
+        {
             return new Double(-left.doubleValue());
-        } else if (clazz == BigDecimal.class) {
+        }
+        else if (clazz == BigDecimal.class)
+        {
             // We ussually get a big deciamal when we have Long.MIN_VALUE constant in the
             // Selector.  Long.MIN_VALUE is too big to store in a Long as a positive so we store it
             // as a Big decimal.  But it gets Negated right away.. to here we try to covert it back
@@ -115,32 +133,39 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
             BigDecimal bd = (BigDecimal) left;
             bd = bd.negate();
 
-            if (BD_LONG_MIN_VALUE.compareTo(bd) == 0) {
+            if (BD_LONG_MIN_VALUE.compareTo(bd) == 0)
+            {
                 return new Long(Long.MIN_VALUE);
             }
 
             return bd;
-        } else {
+        }
+        else
+        {
             throw new RuntimeException("Don't know how to negate: " + left);
         }
     }
 
-    public UnaryExpression(Expression left) {
+    public UnaryExpression(Expression left)
+    {
         this.right = left;
     }
 
-    public Expression<E> getRight() {
+    public Expression<E> getRight()
+    {
         return right;
     }
 
-    public void setRight(Expression expression) {
+    public void setRight(Expression expression)
+    {
         right = expression;
     }
 
     /**
      * @see java.lang.Object#toString()
      */
-    public String toString() {
+    public String toString()
+    {
         return "(" + getExpressionSymbol() + " " + right.toString() + ")";
     }
 
@@ -149,7 +174,8 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
      *
      * @see java.lang.Object#hashCode()
      */
-    public int hashCode() {
+    public int hashCode()
+    {
         return toString().hashCode();
     }
 
@@ -158,9 +184,11 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
 
-        if ((o == null) || !this.getClass().equals(o.getClass())) {
+        if ((o == null) || !this.getClass().equals(o.getClass()))
+        {
             return false;
         }
 
@@ -176,73 +204,74 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
      */
     public abstract String getExpressionSymbol();
 
-    private static class NegativeExpression<E extends Exception> extends UnaryExpression<E> {
-        public NegativeExpression(final Expression<E> left) {
+    private static class NegativeExpression<E extends Exception> extends UnaryExpression<E>
+    {
+        public NegativeExpression(final Expression<E> left)
+        {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E {
-            Object rvalue = null;
-            try{
-                rvalue = right.evaluate(message);
-            }catch(Exception ex)
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
             {
-                ex.printStackTrace();
-            }
-
-            if (rvalue == null) {
                 return null;
             }
 
-            if (rvalue instanceof Number) {
+            if (rvalue instanceof Number)
+            {
                 return negate((Number) rvalue);
             }
 
             return null;
         }
 
-        public String getExpressionSymbol() {
+        public String getExpressionSymbol()
+        {
             return "-";
         }
     }
 
-    private static class InExpression<E extends Exception> extends BooleanUnaryExpression<E> {
+    private static class InExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
         private final Collection _inList;
         private final boolean _not;
 
-        public InExpression(final PropertyExpression<E> right, final Collection inList, final boolean not) {
+        public InExpression(final PropertyExpression<E> right, final Collection inList, final boolean not)
+        {
             super(right);
             _inList = inList;
             _not = not;
         }
 
-        public Object evaluate(Filterable<E> message) throws E {
+        public Object evaluate(Filterable<E> message) throws E
+        {
 
-            Object rvalue = null;
-            try{
-                rvalue = right.evaluate(message);
-            }
-            catch(Exception ex)
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
             {
-                ex.printStackTrace();
-            }
-            if (rvalue == null) {
                 return null;
             }
 
-            if (rvalue.getClass() != String.class) {
+            if (rvalue.getClass() != String.class)
+            {
                 return null;
             }
 
-            if (((_inList != null) && _inList.contains(rvalue)) ^ _not) {
+            if (((_inList != null) && _inList.contains(rvalue)) ^ _not)
+            {
                 return Boolean.TRUE;
-            } else {
+            }
+            else
+            {
                 return Boolean.FALSE;
             }
 
         }
 
-        public String toString() {
+        public String toString()
+        {
             StringBuffer answer = new StringBuffer();
             answer.append(right);
             answer.append(" ");
@@ -250,9 +279,11 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
             answer.append(" ( ");
 
             int count = 0;
-            for (Iterator i = _inList.iterator(); i.hasNext();) {
+            for (Iterator i = _inList.iterator(); i.hasNext();)
+            {
                 Object o = (Object) i.next();
-                if (count != 0) {
+                if (count != 0)
+                {
                     answer.append(", ");
                 }
 
@@ -265,71 +296,73 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
             return answer.toString();
         }
 
-        public String getExpressionSymbol() {
-            if (_not) {
+        public String getExpressionSymbol()
+        {
+            if (_not)
+            {
                 return "NOT IN";
-            } else {
+            }
+            else
+            {
                 return "IN";
             }
         }
     }
 
-    private static class NotExpression<E extends Exception> extends BooleanUnaryExpression<E> {
-        public NotExpression(final BooleanExpression<E> left) {
+    private static class NotExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
+        public NotExpression(final BooleanExpression<E> left)
+        {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E {
-            Boolean lvalue = null;
-            try {
-                lvalue = (Boolean) right.evaluate(message);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-
-            }
-
-            if (lvalue == null) {
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Boolean lvalue = (Boolean) right.evaluate(message);
+            if (lvalue == null)
+            {
                 return null;
             }
 
             return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
-
         }
 
-        public String getExpressionSymbol() {
+        public String getExpressionSymbol()
+        {
             return "NOT";
         }
     }
 
-    private static class BooleanCastExpression<E extends Exception> extends BooleanUnaryExpression<E> {
-        public BooleanCastExpression(final Expression<E> left) {
+    private static class BooleanCastExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    {
+        public BooleanCastExpression(final Expression<E> left)
+        {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E {
-            Object rvalue = null;
-            try {
-                rvalue = right.evaluate(message);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            if (rvalue == null) {
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            Object rvalue = right.evaluate(message);
+            if (rvalue == null)
+            {
                 return null;
             }
 
-            if (!rvalue.getClass().equals(Boolean.class)) {
+            if (!rvalue.getClass().equals(Boolean.class))
+            {
                 return Boolean.FALSE;
             }
 
             return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
-
         }
 
-        public String toString() {
+        public String toString()
+        {
             return right.toString();
         }
 
-        public String getExpressionSymbol() {
+        public String getExpressionSymbol()
+        {
             return "";
         }
     }
