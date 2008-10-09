@@ -39,76 +39,73 @@ class QueueOptions: public framing::FieldTable
     QueueOptions();
     virtual ~QueueOptions();
 	
-	/**
-	* Sets the queue sizing plocy
-	* 
-	* @param sp SizePolicy
-	* REJECT - reject if queue greater than size/count
-	* FLOW_TO_DISK - page messages to disk from this point is greater than size/count
-	* RING - limit the queue to size/count and over-write old messages round a ring
-	* RING_STRICT - limit the queue to size/count and reject is head == tail
-	* NONE - Use default broker sizing policy
-	* @param maxSize Set the max number of bytes for the sizing policies
-	* @param setMaxCount Set the max number of messages for the sizing policies
-	*/
-	void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
+    /**
+     * Sets the queue sizing plocy
+     * 
+     * @param sp SizePolicy
+     * REJECT - reject if queue greater than size/count
+     * FLOW_TO_DISK - page messages to disk from this point is greater than size/count
+     * RING - limit the queue to size/count and over-write old messages round a ring
+     * RING_STRICT - limit the queue to size/count and reject is head == tail
+     * NONE - Use default broker sizing policy
+     * @param maxSize Set the max number of bytes for the sizing policies
+     * @param setMaxCount Set the max number of messages for the sizing policies
+     */
+    void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
 
-	/**
-	* Enables optimistic consume allowing the consumer to dequeue the message before the
-	* broker has safe stored it.
-	*/
-	void setOptimisticConsume();
+    /**
+     * Enables optimistic consume allowing the consumer to dequeue the message before the
+     * broker has safe stored it.
+     */
+    void setOptimisticConsume();
 	
-	/**
-	* Enables the persisting of a queue to the store module when a cluster fails down to it's last
-	* node. Does so optimistically. Will start persisting when cluster count >1 again.
-	*/
-	void setPersistLastNode();
+    /**
+     * Enables the persisting of a queue to the store module when a cluster fails down to it's last
+     * node. Does so optimistically. Will start persisting when cluster count >1 again.
+     */
+    void setPersistLastNode();
 	
-	/**
-	* Sets the odering policy on the Queue, default ordering is FIFO.
-	*/
-	void setOrdering(QueueOrderingPolicy op);
+    /**
+     * Sets the odering policy on the Queue, default ordering is FIFO.
+     */
+    void setOrdering(QueueOrderingPolicy op);
     
-	/**
-	* Use broker defualt sizing ploicy
-	*/
-	void clearSizePolicy();
+    /**
+     * Use broker defualt sizing ploicy
+     */
+    void clearSizePolicy();
 	
-	/**
-	* Clear Optimistic Consume Policy
-	*/ 
-	void clearOptimisticConsume();
+    /**
+     * Clear Optimistic Consume Policy
+     */ 
+    void clearOptimisticConsume();
 	
-	/**
-	* Clear Persist Last Node Policy
-	*/ 
-	void clearPersistLastNode();
+    /**
+     * Clear Persist Last Node Policy
+     */ 
+    void clearPersistLastNode();
 	
-	/**
-	* get the key used match LVQ in args for message transfer 
-	*/
-	void getLVQKey(std::string& key);
+    /**
+     * get the key used match LVQ in args for message transfer 
+     */
+    void getLVQKey(std::string& key);
 		
-	/**
-	* Use default odering policy
-	*/ 
-	void clearOrdering();
+    /**
+     * Use default odering policy
+     */ 
+    void clearOrdering();
 	
-	static const std::string strMaxCountKey;
-	static const std::string strMaxSizeKey;
-	static const std::string strTypeKey;
-	static const std::string strREJECT;
-	static const std::string strFLOW_TO_DISK;
-	static const std::string strRING;
-	static const std::string strRING_STRICT;
-	static const std::string strLastValueQueue;
-	static const std::string strOptimisticConsume;
-	static const std::string strPersistLastNode;
-	static const std::string strLVQMatchProperty;
-	
-
-
+    static const std::string strMaxCountKey;
+    static const std::string strMaxSizeKey;
+    static const std::string strTypeKey;
+    static const std::string strREJECT;
+    static const std::string strFLOW_TO_DISK;
+    static const std::string strRING;
+    static const std::string strRING_STRICT;
+    static const std::string strLastValueQueue;
+    static const std::string strOptimisticConsume;
+    static const std::string strPersistLastNode;
+    static const std::string strLVQMatchProperty;
 };
 
 }
