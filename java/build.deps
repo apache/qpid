@@ -6,6 +6,7 @@ commons-collections=lib/commons-collections-3.2.jar
 commons-configuration=lib/commons-configuration-1.2.jar
 commons-lang=lib/commons-lang-2.2.jar
 commons-logging=lib/commons-logging-1.0.4.jar
+commons-pool=lib/commons-pool-1.4.jar
 
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
@@ -39,6 +40,7 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs} ${build.lib}/${project.name}-common-${project.version}.jar
 
 broker-plugins.libs=${common.libs} ${felix.libs}
+management-client.libs=${client.libs} ${commons-pool}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
@@ -83,6 +85,7 @@ client.test.libs=${broker.libs} ${test.libs}
 client-example.test.libs=${test.libs}
 tools.test.libs=${client.test.libs}
 testkit.test.libs=${test.libs}
+management-client.test.libs=${client.test.libs}
 management-eclipse-plugin.test.libs=${systests.libs}
 broker-plugins.test.libs=${test.libs}
 management-tools-qpid-cli.test.libs=${junit4} ${slf4j-log4j} ${log4j} ${client.libs}
