@@ -387,6 +387,54 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
 	
 }
 
+QPID_AUTO_TEST_CASE(testLVQAcquire){
+
+    client::QueueOptions args;
+    // set queue mode
+    args.setOrdering(client::LVQ);
+
+    Queue::shared_ptr queue(new Queue("my-queue", true ));
+    queue->configure(args);
+	
+    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg2 = message("e", "B");
+    intrusive_ptr<Message> msg3 = message("e", "C");
+    intrusive_ptr<Message> msg4 = message("e", "D");
+    intrusive_ptr<Message> msg5 = message("e", "F");
+
+    //set deliever match for LVQ a,b,c,a
+
+    string key;
+    args.getLVQKey(key);
+    BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
+	
+
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+    msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+    msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+	
+    //enqueue 4 message
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+    queue->deliver(msg3);
+    queue->deliver(msg4);
+    
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+
+    framing::SequenceNumber sequence;
+    QueuedMessage qmsg(queue.get(), msg2, ++sequence);
+    queue->acquire(qmsg);
+    
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
+    
+    queue->deliver(msg5);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+ 
+}
+
+
 QPID_AUTO_TEST_CASE(testLVQSaftyCheck){
 
 // This test is to check std::deque memory copy does not change out under us
