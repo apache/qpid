@@ -65,6 +65,8 @@ LS_BIN='/bin/ls'
 TAR_BIN='/bin/tar'
 BZIP2_BIN='/usr/bin/bzip2'
 UNZIP_BIN='/usr/bin/unzip'
+ECHO_BIN='/bin/echo'
+SVNVERSION_BIN='/usr/bin/svnversion'
 
 
 
@@ -114,7 +116,6 @@ PATH_SEP=os.sep
 
 _source=None
 _target=DEFAULT_BUILD
-_rootDir = DEFAULT_ROOTDIR
 _log = True
 _verbose = False
 _debug = False
@@ -274,7 +275,7 @@ def prepareEnvironment(env):
         _rootDir = getValue(rootdir[0])
     else:
         verbose ("Using default build dir: "+DEFAULT_ROOTDIR)
-        _rootDir = DEFAULT_ROOTDIR
+        _rootDir = os.getcwd() + PATH_SEP + DEFAULT_ROOTDIR
 
     if _rootDir == "":
         verbose (ROOTDIR+" value is empty. Please specify a value for "+ ROOTDIR)
@@ -488,7 +489,7 @@ def prepare():
 
 def postProcess(item, destination):
     name = getName(item)
-    type = getValue(item.getElementsByTagName(TYPE)[0])
+    type = getType(item)
 
     verbose("Post Processing:"+name)
 
@@ -585,7 +586,7 @@ def applyPatch(patch):
     global _rootDir
 
     name = getName(patch)
-    type = getValue(patch.getElementsByTagName(TYPE)[0])
+    type = getType(patch)
     source = getValue(patch.getElementsByTagName(SOURCE)[0])
     if (patch.getElementsByTagName(PREFIX).length > 0):
         prefix = getValue(patch.getElementsByTagName(PREFIX)[0])
@@ -612,10 +613,9 @@ def applyPatch(patch):
 
     patchSource= _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + name
 
-    log("Patching " + source + ": ")
     for root, dirs, files in os.walk(patchSource, topdown=False):
         for patchName in files:
-                log("Applying patch:"+name)
+                log("Applying patch '" + name + "' to " + source)
                 runCommandShowError(basecommand + patchSource + PATH_SEP + patchName)
 
 
@@ -798,6 +798,22 @@ def getName(item):
     name = item.getElementsByTagName(NAME)
     if name.length > 0:
         return getValue(name[0])
+	
+#
+# Returns the value of the TYPE element contained in the specified item
+#
+def getType(item):
+    type = item.getElementsByTagName(TYPE)	
+    if type.length > 0:
+        return getValue(type[0])
+	    
+#
+# Returns the value of the URL element contained in the specified item
+#
+def getURL(item):
+    url = item.getElementsByTagName(URL)	
+    if url.length > 0:
+        return getValue(url[0])
 
 #
 # Return the list of sources in this build configuration
@@ -950,14 +966,121 @@ def peformSubstitutionsInScript(build, script):
                 replace = item.childNodes[0].data
 
                 script = script.replace(search,replace)
+		
+    # Perform Macro replacements
+    # Currently only one macro so for simplisity fix it here    
+    writeVersionMacro = script.find("$writeVersions")
+    if writeVersionMacro != -1:
+    	
+	#Extract Filename
+        fileNameStart = script.find("(",writeVersionMacro)
+        fileNameEnd = script.find(")",fileNameStart)	
+	fileName= script[fileNameStart+1:fileNameEnd]
+	
+	macro = createVersionMacro(build, fileName)
+		
+	script = script.replace("$writeVersions(" + fileName + ")", macro)		
+	
 
-    # Validate we got them all
-    dollar =script.find("$")
-    if dollar != -1:
-        space = script.find(" ",dollar)
-        fatal("Unknown variable defined in script"+script[dollar:space])
+    return script     
+
+################################################################################
+#
+# Macros
+#
+################################################################################
+   
+#
+# Use the specified build as to lookup all associated source/patches and write out their details
+# to the specified file using shell redirects. redirects are to be used as the absolute filename 
+# location may not be known as the name comes in via the release script
+#
+def createVersionMacro(build, filename):
+    macro = ""
+    sources = getSourceList();
+
+    dependencies = build.getElementsByTagName(DEPENDENCY)
+	
+    if dependencies > 0:
+        macro += "\n echo 'Source Version Information:'>> " + filename	
+        for dependency in dependencies :
+            depSources = dependency.getElementsByTagName(SOURCE)
+            # Can assume we have dependencies as we would have failed before now
+            for source in depSources:
+                sourceDependency = getValue(source)	
+		# We can assume source is valid.		
+		for s in sources:
+		    if sourceDependency == getName(s):		    	
+			macro += "\n " + ECHO_BIN + " -n '" + sourceDependency + ":" \
+			         + getType(s) + ":' >> " + filename
+			macro += "\n" + getVersionCommand(s) + " >>" + filename
+			macro += addPatchVersions(s, filename)
+						   	    	     
+    return macro
     
-    return script
+#
+# Use the specified source as to lookup all associated patches and write their details out the 
+# the specified file using shell redirects. redirects are to be used as the absolute filename 
+# location may not be known as the name comes in via the release script
+#
+def addPatchVersions(source, filename):
+    macro = ""
+    
+    patches = getPatchList()
+    
+    sourceName = getName(source)
+	
+    for patch in patches:
+    	patchSourceName = getValue(patch.getElementsByTagName(SOURCE)[0])
+
+        if sourceName == patchSourceName:
+	    type = getType(patch)
+	    macro += "\n" + ECHO_BIN + " \"\t"+getName(patch)+":"+type + "\" >> "+filename
+	    url = getValue(patch.getElementsByTagName(URL)[0])
+	    macro += "\n" + ECHO_BIN + " \"\t\tURL:" + url + "\" >> "+filename
+	    if (type == SVN):
+		    if (source.getElementsByTagName(REVISION).length > 0):
+                        macro += "\n" + ECHO_BIN + " \"\t\tREVISION:"+ \
+			         getValue(patch.getElementsByTagName(REVISION)[0])  + "\" >> " + filename	    
+		    else:
+                        macro += "\n" + ECHO_BIN + " \"\t\tREVISION: HEAD\" >> "+ filename	    
+			
+	    if (patch.getElementsByTagName(PREFIX).length > 0):
+		macro += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
+		         getValue(patch.getElementsByTagName(PREFIX)[0]) + "\" >> " + filename
+			 
+	    if (patch.getElementsByTagName(PATH).length > 0):
+   		macro += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
+		         getValue(patch.getElementsByTagName(PATH)[0]) + "\" >> " + filename 
+    
+	   
+		
+    if (macro != ""):
+	return "\n" + ECHO_BIN + " \"\tPatches applied to " + sourceName + ":\" >> " + filename + macro 
+    else:
+    	return "\n" + ECHO_BIN + " \"\tNo Patches\" >> " + filename 
+
+      
+#
+# Given a source entry return the command that will provide the current version 
+# of that source.
+# i.e. svn source : svnversion <path to source>
+#     http source : echo <URL>
+#      
+def getVersionCommand(source):
+    global _rootDir
+    type = getType(source)	
+	
+    versionCommand=""
+    
+    if type == SVN:
+        versionCommand=SVNVERSION_BIN+" "+_rootDir + PATH_SEP + SOURCE_DIR + PATH_SEP + getName(source)
+    else:
+        if type == FILE or type == HTTP or type == FTP:
+	    versionCommand = ECHO_BIN +" " + getURL(source)
+	
+	
+    return versionCommand	
 
 ################################################################################
 #
@@ -970,7 +1093,7 @@ def peformSubstitutionsInScript(build, script):
 #
 def downloadSource(source, destination):
     name = getName(source)
-    type = getValue(source.getElementsByTagName(TYPE)[0])
+    type = getType(source)
     url =  getValue(source.getElementsByTagName(URL)[0])
     log ( "Retrieving "+ name + "("+ type +")")
 
