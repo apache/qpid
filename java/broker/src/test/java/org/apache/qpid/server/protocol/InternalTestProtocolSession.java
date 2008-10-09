@@ -72,7 +72,14 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     {
         synchronized (_channelDelivers)
         {
-            List<DeliveryPair> msgs = _channelDelivers.get(channelId).get(consumerTag).subList(0, count);
+            List<DeliveryPair> all =_channelDelivers.get(channelId).get(consumerTag);
+            
+            if (all == null)
+            {
+                return new ArrayList<DeliveryPair>(0);
+            }
+            
+            List<DeliveryPair> msgs = all.subList(0, count);
 
             List<DeliveryPair> response = new ArrayList<DeliveryPair>(msgs);
 

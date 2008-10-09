@@ -79,6 +79,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
 
 
+        @Override
         public boolean isBrowser()
         {
             return true;
@@ -91,6 +92,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * @param msg   The message to send
          * @throws AMQException
          */
+        @Override
         public void send(QueueEntry msg) throws AMQException
         {
             // We don't decrement the reference here as we don't want to consume the message
@@ -103,6 +105,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             }
 
         }
+
+        @Override
+        public boolean wouldSuspend(QueueEntry msg)
+        {
+            return false;
+        }
+
     }
 
     public static class NoAckSubscription extends SubscriptionImpl
@@ -118,6 +127,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
 
 
+        @Override
         public boolean isBrowser()
         {
             return false;
@@ -130,6 +140,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * @param entry   The message to send
          * @throws AMQException
          */
+        @Override
         public void send(QueueEntry entry) throws AMQException
         {
 
@@ -166,6 +177,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             }
         }
 
+        @Override
         public boolean wouldSuspend(QueueEntry msg)
         {
             return false;
@@ -185,6 +197,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
+        @Override
         public boolean isBrowser()
         {
             return false;
@@ -198,6 +211,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * @param entry   The message to send
          * @throws AMQException
          */
+        @Override
         public void send(QueueEntry entry) throws AMQException
         {
 
