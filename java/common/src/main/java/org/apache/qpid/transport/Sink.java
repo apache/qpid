@@ -103,28 +103,17 @@ public class Sink extends SessionDelegate
 
     public static final void main(String[] args) throws IOException
     {
-        ConnectionDelegate delegate = new ConnectionDelegate()
+        ConnectionDelegate delegate = new ServerDelegate()
         {
 
             public SessionDelegate getSessionDelegate()
             {
                 return new Sink();
             }
-
-            public void exception(Throwable t)
-            {
-                t.printStackTrace();
-            }
-
-            public void closed() {}
         };
 
-        //hack
-        delegate.setUsername("guest");
-        delegate.setPassword("guest");
-
         IoAcceptor ioa = new IoAcceptor
-            ("0.0.0.0", 5672, new ConnectionBinding(delegate));
+            ("0.0.0.0", 5672, ConnectionBinding.get(delegate));
         System.out.println
             (String.format
              (FORMAT_HDR, "Session", "Count/MBytes", "Cumulative Rate", "Interval Rate"));

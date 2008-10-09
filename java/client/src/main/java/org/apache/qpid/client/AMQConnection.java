@@ -917,7 +917,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
                         // adjust timeout
                         timeout = adjustTimeout(timeout, startCloseTime);
-                        _delegate.closeConneciton(timeout);
+                        _delegate.closeConnection(timeout);
 
                         //If the taskpool hasn't shutdown by now then give it shutdownNow.
                         // This will interupt any running tasks.

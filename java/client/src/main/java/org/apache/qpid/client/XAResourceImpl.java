@@ -88,8 +88,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr(e.getException().getErrorCode());
         }
         checkStatus(result.getStatus());
     }
@@ -142,8 +141,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr(e.getException().getErrorCode());
         }
         checkStatus(result.getStatus());
     }
@@ -171,8 +169,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr(e.getException().getErrorCode());
         }
     }
 
@@ -201,8 +198,7 @@ public class XAResourceImpl implements XAResource
             {
                 // we need to restore the qpid session that has been closed
                 _xaSession.createSession();
-                // we should get a single exception
-                convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+                convertExecutionErrorToXAErr(e.getException().getErrorCode());
             }
         }
         return result;
@@ -248,8 +244,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr(e.getException().getErrorCode());
         }
         DtxXaStatus status = result.getStatus();
         int outcome = XAResource.XA_OK;
@@ -291,8 +286,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr( e.getException().getErrorCode());
         }
         Xid[] result = new Xid[res.getInDoubt().size()];
         int i = 0;
@@ -329,8 +323,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr( e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr( e.getException().getErrorCode());
         }
         checkStatus(result.getStatus());
     }
@@ -413,8 +406,7 @@ public class XAResourceImpl implements XAResource
         {
             // we need to restore the qpid session that has been closed
             _xaSession.createSession();
-            // we should get a single exception
-            convertExecutionErrorToXAErr(e.getExceptions().get(0).getErrorCode());
+            convertExecutionErrorToXAErr(e.getException().getErrorCode());
             // TODO: The amqp spec does not allow to make the difference
             // between an already known XID and a wrong arguments (join and resume are set)
             // TODO: make sure amqp addresses that

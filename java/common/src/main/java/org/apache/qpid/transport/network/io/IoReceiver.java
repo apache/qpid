@@ -61,7 +61,7 @@ final class IoReceiver extends Thread
         start();
     }
 
-    void close()
+    void close(boolean block)
     {
         if (!closed.getAndSet(true))
         {
@@ -75,7 +75,7 @@ final class IoReceiver extends Thread
                 {
                     socket.shutdownInput();
                 }
-                if (Thread.currentThread() != this)
+                if (block && Thread.currentThread() != this)
                 {
                     join(timeout);
                     if (isAlive())
@@ -121,6 +121,7 @@ final class IoReceiver extends Thread
                     }
                 }
             }
+            socket.close();
         }
         catch (Throwable t)
         {
@@ -129,7 +130,6 @@ final class IoReceiver extends Thread
         finally
         {
             receiver.closed();
-            transport.getSender().close();
         }
     }
 

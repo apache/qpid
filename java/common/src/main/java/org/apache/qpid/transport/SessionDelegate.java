@@ -29,7 +29,7 @@ import org.apache.qpid.transport.network.Frame;
  * @author Rafael H. Schloming
  */
 
-public abstract class SessionDelegate
+public class SessionDelegate
     extends MethodDelegate<Session>
     implements ProtocolDelegate<Session>
 {
@@ -57,7 +57,7 @@ public abstract class SessionDelegate
 
     @Override public void executionException(Session ssn, ExecutionException exc)
     {
-        ssn.addException(exc);
+        ssn.setException(exc);
     }
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
@@ -120,6 +120,11 @@ public abstract class SessionDelegate
     @Override public void executionSync(Session ssn, ExecutionSync sync)
     {
         ssn.syncPoint();
+    }
+
+    @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
+    {
+        ssn.getSessionListener().message(ssn, xfr);
     }
 
 }

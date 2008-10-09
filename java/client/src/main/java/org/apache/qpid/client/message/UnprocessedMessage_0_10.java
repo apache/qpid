@@ -33,9 +33,9 @@ public class UnprocessedMessage_0_10 extends UnprocessedMessage
 {
     private MessageTransfer _transfer;
 
-    public UnprocessedMessage_0_10(int consumerTag, MessageTransfer xfr)
+    public UnprocessedMessage_0_10(MessageTransfer xfr)
     {
-        super(consumerTag);
+        super(Integer.parseInt(xfr.getDestination()));
         _transfer = xfr;
     }
 

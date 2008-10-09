@@ -50,38 +50,30 @@ public class ConnectionTest extends TestCase
 
         port = AvailablePortFinder.getNextAvailable(12000);
 
-        ConnectionDelegate server = new ConnectionDelegate() {
-            public void init(Channel ch, ProtocolHeader hdr) {
+        ConnectionDelegate server = new ServerDelegate() {
+            @Override public void connectionOpen(Channel ch, ConnectionOpen open)
+            {
+                super.connectionOpen(ch, open);
                 ch.getConnection().close();
             }
-
-            public SessionDelegate getSessionDelegate() {
-                return new SessionDelegate() {};
-            }
-            public void exception(Throwable t) {
-                log.error(t, "exception caught");
-            }
-            public void closed() {}
         };
 
         IoAcceptor ioa = new IoAcceptor
-            ("localhost", port, new ConnectionBinding(server));
+            ("localhost", port, ConnectionBinding.get(server));
         ioa.start();
     }
 
     private Connection connect(final Condition closed)
     {
-        Connection conn = IoTransport.connect("localhost", port, new ConnectionDelegate()
+        Connection conn = new Connection();
+        conn.setConnectionListener(new ConnectionListener()
         {
-            public SessionDelegate getSessionDelegate()
+            public void opened(Connection conn) {}
+            public void exception(Connection conn, ConnectionException exc)
             {
-                return new SessionDelegate() {};
+                exc.printStackTrace();
             }
-            public void exception(Throwable t)
-            {
-                t.printStackTrace();
-            }
-            public void closed()
+            public void closed(Connection conn)
             {
                 if (closed != null)
                 {
@@ -89,8 +81,7 @@ public class ConnectionTest extends TestCase
                 }
             }
         });
-
-        conn.send(new ProtocolHeader(1, 0, 10));
+        conn.connect("localhost", port, null, "guest", "guest");
         return conn;
     }
 

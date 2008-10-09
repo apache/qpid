@@ -56,7 +56,7 @@ class ToyClient extends SessionDelegate
     public static final void main(String[] args)
     {
         Connection conn = MinaHandler.connect("0.0.0.0", 5672,
-                                              new ClientDelegate()
+                                              new ClientDelegate(null, "guest", "guest")
                                               {
                                                   public SessionDelegate getSessionDelegate()
                                                   {

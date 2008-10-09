@@ -23,48 +23,35 @@ package org.apache.qpid.example.amqpexample.pubsub;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.api.Message;
-import org.apache.qpid.nclient.Client;
-import org.apache.qpid.nclient.Connection;
-import org.apache.qpid.nclient.Session;
-import org.apache.qpid.nclient.util.MessageListener;
-import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
 import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Option;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.SessionListener;
 
 
-public class TopicListener implements MessageListener
+public class TopicListener implements SessionListener
 {
-    boolean finish = false;
-    int count = 0;
 
-    public void onMessage(Message m)
+    public void opened(Session ssn) {}
+
+    public void message(Session ssn, MessageTransfer xfr)
     {
-        String data = null;
-
-        try
-        {
-            ByteBuffer buf = m.readData();
-            byte[] b = new byte[buf.remaining()];
-            buf.get(b);
-            data = new String(b);
-        }
-        catch(Exception e)
-        {
-            System.out.print("Error reading message");
-            e.printStackTrace();
-        }
-
-        System.out.println("Message: " + data + " with routing_key " + m.getDeliveryProperties().getRoutingKey());
-
-        if (data != null && data.equals("That's all, folks!"))
-        {
-            count++;
-            if (count == 4){
-                finish = true;
-            }
-        }
+        DeliveryProperties dp = xfr.getHeader().get(DeliveryProperties.class);
+        System.out.println("Message: " + xfr + " with routing_key " + dp.getRoutingKey());
     }
+
+    public void exception(Session ssn, SessionException exc)
+    {
+        exc.printStackTrace();
+    }
+
+    public void closed(Session ssn) {}
 
     public void prepareQueue(Session session,String queueName,String bindingKey)
     {
@@ -72,14 +59,13 @@ public class TopicListener implements MessageListener
         session.exchangeBind(queueName, "amq.topic", bindingKey, null);
         session.exchangeBind(queueName, "amq.topic", "control", null);
 
-        session.messageSubscribe(queueName,queueName,
-                                 Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                 Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
-                                 new MessagePartListenerAdapter(this),
-                                 null, Option.NONE);
+        session.messageSubscribe(queueName, queueName,
+                                 MessageAcceptMode.NONE,
+                                 MessageAcquireMode.PRE_ACQUIRED,
+                                 null, 0, null);
         // issue credits
         // XXX: need to be able to set to null
-        session.messageFlow(queueName, MessageCreditUnit.BYTE, Session.MESSAGE_FLOW_MAX_BYTES);
+        session.messageFlow(queueName, MessageCreditUnit.BYTE, Session.UNLIMITED_CREDIT);
         session.messageFlow(queueName, MessageCreditUnit.MESSAGE, 24);
     }
 
@@ -88,30 +74,18 @@ public class TopicListener implements MessageListener
         session.messageCancel(dest);
     }
 
-    public boolean isFinished()
-    {
-        return finish;
-    }
-
-    public static void main(String[] args)
+    public static void main(String[] args) throws InterruptedException
     {
         // Create connection
-        Connection con = Client.createConnection();
-        try
-        {
-            con.connect("localhost", 5672, "test", "guest", "guest");
-        }
-        catch(Exception e)
-        {
-            System.out.print("Error connecting to broker");
-            e.printStackTrace();
-        }
+        Connection con = new Connection();
+        con.connect("localhost", 5672, "test", "guest", "guest");
 
         // Create session
         Session session = con.createSession(0);
 
         // Create an instance of the listener
         TopicListener listener = new TopicListener();
+        session.setSessionListener(listener);
 
         listener.prepareQueue(session,"usa", "usa.#");
         listener.prepareQueue(session,"europe", "europe.#");
@@ -120,25 +94,19 @@ public class TopicListener implements MessageListener
 
         // confirm completion
         session.sync();
-        // check to see if we have received all the messages
-        while (!listener.isFinished()){}
-        System.out.println("Shutting down listener for listener_destination");
+
+        System.out.println("Waiting 100 seconds for messages");
+        Thread.sleep(100*1000);
+
+        System.out.println("Shutting down listeners");
         listener.cancelSubscription(session,"usa");
         listener.cancelSubscription(session,"europe");
         listener.cancelSubscription(session,"news");
         listener.cancelSubscription(session,"weather");
 
         //cleanup
-        session.sessionDetach(session.getName());
-        try
-        {
-            con.close();
-        }
-        catch(Exception e)
-        {
-            System.out.print("Error closing broker connection");
-            e.printStackTrace();
-        }
+        session.close();
+        con.close();
     }
 
 }
