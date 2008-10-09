@@ -321,7 +321,7 @@
 
   <target name="libs" description="copy dependencies into build tree">
     <copy todir="${build.lib}" failonerror="false" flatten="true">
-      <fileset dir="${basedir}${file.separator}.." includes="${module.libs}"/>
+      <fileset dir="${project.root}" includes="${module.libs}"/>
     </copy>
   </target>
 
