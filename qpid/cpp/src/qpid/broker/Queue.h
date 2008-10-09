@@ -77,12 +77,12 @@ namespace qpid {
             bool lastValueQueue;
             bool optimisticConsume;
             bool persistLastNode;
-			bool inLastNodeFailure;
+            bool inLastNodeFailure;
             std::string traceId;
             std::vector<std::string> traceExclude;
             Listeners listeners;
             Messages messages;
-			LVQ lvq;
+            LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
             mutable qpid::sys::Mutex ownershipLock;
@@ -109,26 +109,29 @@ namespace qpid {
 
             void dequeued(const QueuedMessage& msg);
             void popAndDequeue();
-			inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg){
+
+            inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
+            {
                 if (mgmtObject != 0) {
                     mgmtObject->inc_msgTotalEnqueues ();
                     mgmtObject->inc_byteTotalEnqueues (msg->contentSize ());
                     if (msg->isPersistent ()) {
-                	    mgmtObject->inc_msgPersistEnqueues ();
-                	    mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
-					}
+                        mgmtObject->inc_msgPersistEnqueues ();
+                        mgmtObject->inc_bytePersistEnqueues (msg->contentSize ());
+                    }
                 }
-			};
-			inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg){
-    			if (mgmtObject != 0){
-        			mgmtObject->inc_msgTotalDequeues  ();
-        			mgmtObject->inc_byteTotalDequeues (msg->contentSize());
-        			if (msg->isPersistent ()){
-            			mgmtObject->inc_msgPersistDequeues ();
-            			mgmtObject->inc_bytePersistDequeues (msg->contentSize());
-        			}
-    			}
-			};
+            }
+            inline void mgntDeqStats(const boost::intrusive_ptr<Message>& msg)
+            {
+                if (mgmtObject != 0){
+                    mgmtObject->inc_msgTotalDequeues  ();
+                    mgmtObject->inc_byteTotalDequeues (msg->contentSize());
+                    if (msg->isPersistent ()){
+                        mgmtObject->inc_msgPersistDequeues ();
+                        mgmtObject->inc_bytePersistDequeues (msg->contentSize());
+                    }
+                }
+            }
 
         public:
 
