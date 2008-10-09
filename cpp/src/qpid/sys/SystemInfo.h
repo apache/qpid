@@ -21,6 +21,9 @@
  *
  */
 
+#include "qpid/sys/IntegerTypes.h"
+#include "qpid/Address.h"
+
 namespace qpid {
 namespace sys {
 
@@ -28,17 +31,38 @@ namespace sys {
  * Retrieve information about the system we are running on.
  * Results may be dependent on OS/hardware. 
  */
-class SystemInfo
-{
-  public:
-    /** Estimate available concurrency, e.g. number of CPU cores.
+namespace SystemInfo {
+    /**
+     * Estimate available concurrency, e.g. number of CPU cores.
      * -1 means estimate not available on this platform.
      */
-    static long concurrency();
-};
+    long concurrency();
 
-}} // namespace qpid::sys
+    /**
+     * Get the local host name and set it in the specified TcpAddress.
+     * Returns false if it can't be obtained and sets errno to any error value.
+     */
+    bool getLocalHostname (TcpAddress &address);
 
+    void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
 
+    /**
+     * Retrieve system identifiers and versions. This is information that can
+     * generally be retrieved via POSIX uname().
+     *
+     * @param osName   Receives the OS name; e.g., GNU/Linux or Windows
+     * @param nodeName Receives the nodename. This may or may not match the
+     *                 set hostname from getLocalHostname().
+     * @param release  Receives the OS release identifier.
+     * @param version  Receives the OS release version (kernel, build, sp, etc.)
+     * @param machine  Receives the hardware type.
+     */
+    void getSystemId (std::string &osName,
+                      std::string &nodeName,
+                      std::string &release,
+                      std::string &version,
+                      std::string &machine);
+
+}}} // namespace qpid::sys::SystemInfo
 
 #endif  /*!QPID_SYS_SYSTEMINFO_H*/

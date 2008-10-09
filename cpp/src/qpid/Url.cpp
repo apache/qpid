@@ -19,6 +19,8 @@
 #include "qpid/Url.h"
 #include "qpid/Exception.h"
 #include "qpid/Msg.h"
+#include "qpid/sys/SystemInfo.h"
+#include "qpid/sys/StrError.h"
 
 #include <limits.h>             // NB: must be before boost/spirit headers.
 #include <boost/spirit.hpp>
@@ -26,10 +28,6 @@
 
 #include <sstream>
 
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -45,31 +43,15 @@ std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
 std::istream& operator>>(std::istream&, const TcpAddress&);
 
 Url Url::getHostNameUrl(uint16_t port) {
-    char name[HOST_NAME_MAX];
-    if (::gethostname(name, sizeof(name)) != 0)
+    TcpAddress address("", port);
+    if (!sys::SystemInfo::getLocalHostname(address))
         throw InvalidUrl(QPID_MSG("Cannot get host name: " << qpid::sys::strError(errno)));
-    return Url(TcpAddress(name, port));
+    return Url(address);
 }
-
-static const string LOCALHOST("127.0.0.1");
 
 Url Url::getIpAddressesUrl(uint16_t port) {
     Url url;
-    int s = socket (PF_INET, SOCK_STREAM, 0);
-    for (int i=1;;i++) {
-        struct ifreq ifr;
-        ifr.ifr_ifindex = i;
-        if (::ioctl (s, SIOCGIFNAME, &ifr) < 0)
-            break;
-        /* now ifr.ifr_name is set */
-        if (::ioctl (s, SIOCGIFADDR, &ifr) < 0)
-            continue;
-        struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
-        string addr(inet_ntoa(sin->sin_addr));
-        if (addr != LOCALHOST)
-            url.push_back(TcpAddress(addr, port));
-    }
-    close (s);
+    sys::SystemInfo::getLocalIpAddresses(port, url);
     return url;
 }
 

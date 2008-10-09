@@ -19,8 +19,8 @@
  *
  */
 
+#include "qpid/Address.h"
 #include "qpid/Exception.h"
-#include <boost/variant.hpp>
 #include <string>
 #include <vector>
 #include <new>
@@ -28,28 +28,7 @@
 
 namespace qpid {
 
-/** TCP address of a broker - host:port */
-struct TcpAddress {
-    static const uint16_t DEFAULT_PORT=5672;
-    explicit TcpAddress(const std::string& host_=std::string(),
-               uint16_t port_=DEFAULT_PORT)
-        : host(host_), port(port_) {}
-    std::string host;
-    uint16_t port;
-};
-
-inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
-    return y.host==x.host && y.port == x.port;
-}
-
 std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
-
-/** Address is a variant of all address types, more coming in future. */
-struct Address : public boost::variant<TcpAddress> {
-    template <class T> Address(const T& t) : boost::variant<TcpAddress>(t) {}
-    template <class T> T* get() { return boost::get<T>(this); }
-    template <class T> const T* get() const { return boost::get<T>(this); }
-};
 
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {

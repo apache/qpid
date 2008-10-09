@@ -20,7 +20,7 @@
 #include "System.h"
 #include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
-#include <sys/utsname.h>
+#include "qpid/sys/SystemInfo.h"
 #include <iostream>
 #include <fstream>
 
@@ -64,15 +64,17 @@ System::System (string _dataDir) : mgmtObject(0)
         }
 
         mgmtObject = new _qmf::System (agent, this, systemId);
-        struct utsname _uname;
-        if (uname (&_uname) == 0)
-        {
-            mgmtObject->set_osName   (std::string (_uname.sysname));
-            mgmtObject->set_nodeName (std::string (_uname.nodename));
-            mgmtObject->set_release  (std::string (_uname.release));
-            mgmtObject->set_version  (std::string (_uname.version));
-            mgmtObject->set_machine  (std::string (_uname.machine));
-        }
+        std::string sysname, nodename, release, version, machine;
+        qpid::sys::SystemInfo::getSystemId (sysname,
+                                            nodename,
+                                            release,
+                                            version,
+                                            machine);
+        mgmtObject->set_osName   (sysname);
+        mgmtObject->set_nodeName (nodename);
+        mgmtObject->set_release  (release);
+        mgmtObject->set_version  (version);
+        mgmtObject->set_machine  (machine);
 
         agent->addObject (mgmtObject, 0x1000000000000001LL);
     }
