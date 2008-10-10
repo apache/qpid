@@ -25,6 +25,7 @@
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
 #include "qmf/org/apache/qpid/broker/Bridge.h"
@@ -35,6 +36,7 @@
 namespace qpid {
 namespace broker {
 
+class Connection;
 class ConnectionState;
 class Link;
 class LinkRegistry;
@@ -68,6 +70,13 @@ public:
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
 private:
+    struct PushHandler : framing::FrameHandler {
+        PushHandler(Connection* c) { conn = c; }
+        void handle(framing::AMQFrame& frame);
+        Connection* conn;
+    };
+
+    std::auto_ptr<PushHandler>                        pushHandler;
     std::auto_ptr<framing::ChannelHandler>            channelHandler;
     std::auto_ptr<framing::AMQP_ServerProxy::Session> session;
     std::auto_ptr<framing::AMQP_ServerProxy>          peer;
