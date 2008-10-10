@@ -21,13 +21,16 @@ package org.apache.qpid.server.queue;
  */
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -39,6 +42,7 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionImpl;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class SimpleAMQQueueTest extends TestCase
@@ -46,7 +50,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     protected SimpleAMQQueue _queue;
     protected VirtualHost _virtualHost;
-    protected MessageStore _store = new TestableMemoryMessageStore();
+    protected TestableMemoryMessageStore _store = new TestableMemoryMessageStore();
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
@@ -327,6 +331,39 @@ public class SimpleAMQQueueTest extends TestCase
             Long messageId = new Long(i+5);
             assertEquals("Message ID was wrong", messageId, msgids.get(i));
         }
+    }
+  
+    public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
+    {
+        // Create IncomingMessage and nondurable queue
+        NonTransactionalContext txnContext = new NonTransactionalContext(_store, null, null, null);
+        IncomingMessage msg = new IncomingMessage(1L, info, txnContext, null);
+        ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
+        contentHeaderBody.properties = new BasicContentHeaderProperties();
+        ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
+        msg.setContentHeaderBody(contentHeaderBody);
+        ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+        
+        // Send persistent message
+        qs.add(_queue);
+        msg.enqueue(qs);
+        msg.routingComplete(_store, new MessageHandleFactory());
+        
+        // Check that it is enqueued
+        AMQQueue data = _store.getMessages().get(1L);
+        _store.storeMessageMetaData(null, new Long(1L), new MessageMetaData(info, contentHeaderBody, 1));
+        assertNotNull(data);
+        
+        // Dequeue message
+        MockQueueEntry entry = new MockQueueEntry();
+        AMQMessage amqmsg = new AMQMessage(1L, _store, new MessageHandleFactory(), txnContext);
+        
+        entry.setMessage(amqmsg);
+        _queue.dequeue(null, entry);
+        
+        // Check that it is dequeued
+        data = _store.getMessages().get(1L);
+        assertNull(data);
     }
 
 
