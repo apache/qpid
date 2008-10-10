@@ -33,7 +33,17 @@ public class SessionClosedException extends SessionException
 
     public SessionClosedException()
     {
-        super(null);
+        this(null);
+    }
+
+    public SessionClosedException(Throwable cause)
+    {
+        super(null, cause);
+    }
+
+    @Override public void rethrow()
+    {
+        throw new SessionClosedException(this);
     }
 
 }
