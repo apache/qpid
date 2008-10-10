@@ -181,13 +181,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
-
-    /** The default maximum number of prefetched message at which to suspend the channel. */
-    public static final int DEFAULT_PREFETCH_HIGH_MARK = 5000;
-
-    /** The default minimum number of prefetched messages at which to resume the channel. */
-    public static final int DEFAULT_PREFETCH_LOW_MARK = 2500;
-
     /**
      * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
      * not need to be attached to a queue.
@@ -233,10 +226,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private int _ticket;
 
     /** Holds the high mark for prefetched message, at which the session is suspended. */
-    private int _defaultPrefetchHighMark = DEFAULT_PREFETCH_HIGH_MARK;
+    private int _defaultPrefetchHighMark;
 
     /** Holds the low mark for prefetched messages, below which the session is resumed. */
-    private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
+    private int _defaultPrefetchLowMark;
 
     /** Holds the message listener, if any, which is attached to this session. */
     private MessageListener _messageListener = null;
