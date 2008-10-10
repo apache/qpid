@@ -64,7 +64,10 @@ void FailoverListener::stop() {
     subscriptions.reset();
 }    
 FailoverListener::~FailoverListener() {
-    stop();
+    try { stop(); }
+    catch (const std::exception& e) { 
+        QPID_LOG(warning, QPID_MSG("Ignoring exception in destructor" << e.what()));
+    }
 }
 
 void FailoverListener::received(Message& msg) {
