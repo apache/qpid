@@ -157,12 +157,16 @@ void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSize
     proxy.open(virtualhost, capabilities, insist);
 }
 
-void ConnectionHandler::openOk(const framing::Array& /*knownHosts*/)
+void ConnectionHandler::openOk ( const framing::Array& knownBrokers )
 {
     checkState(OPENING, INVALID_STATE_OPEN_OK);
-    //TODO: store knownHosts for reconnection etc
+    knownBrokersUrls.clear();
+    framing::Array::ValueVector::const_iterator i;
+    for ( i = knownBrokers.begin(); i != knownBrokers.end(); ++i )
+        knownBrokersUrls.push_back(Url((*i)->get<std::string>()));
     setState(OPEN);
 }
+
 
 void ConnectionHandler::redirect(const std::string& /*host*/, const Array& /*knownHosts*/)
 {

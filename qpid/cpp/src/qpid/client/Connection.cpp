@@ -99,6 +99,15 @@ bool Connection::isOpen() const {
     return impl && impl->isOpen();
 }
 
+void 
+Connection::registerFailureCallback ( boost::function<void ()> fn ) {
+    failureCallback = fn;
+    if ( impl )
+        impl->registerFailureCallback ( fn );
+}
+
+
+
 void Connection::open(const ConnectionSettings& settings)
 {
     if (isOpen())
@@ -106,6 +115,8 @@ void Connection::open(const ConnectionSettings& settings)
 
     impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
     impl->open();
+    if ( failureCallback )
+        impl->registerFailureCallback ( failureCallback );
 }
 
 Session Connection::newSession(const std::string& name, uint32_t timeout) {

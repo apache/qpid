@@ -28,6 +28,7 @@
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
+#include "qpid/Url.h"
 #include "AclModule.h"
 
 using namespace qpid;
@@ -127,8 +128,11 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
-    framing::Array knownhosts;
-    client.openOk(knownhosts);
+    std::vector<Url> urls = connection.broker.getKnownBrokers();
+    framing::Array array(0x95); // str16 array
+    for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i) 
+        array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
+    client.openOk(array);
 }
 
         

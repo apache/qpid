@@ -147,6 +147,12 @@ bool SubscriptionManager::get(Message& result, const std::string& queue, sys::Du
     return lq.get(result, 0);
 }
 
+Session SubscriptionManager::getSession() const { return session; }
+
+void SubscriptionManager::registerFailoverHandler (boost::function<void ()> fh) {
+    dispatcher.registerFailoverHandler(fh);
+}
+
 }} // namespace qpid::client
 
 #endif

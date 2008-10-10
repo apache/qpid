@@ -1,4 +1,4 @@
-SUBDIRS = direct fanout pub-sub request-response
+SUBDIRS = direct fanout pub-sub request-response failover
 if HAVE_XML
   SUBDIRS += xml-exchange
 endif

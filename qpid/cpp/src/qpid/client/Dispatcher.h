@@ -69,6 +69,8 @@ class Dispatcher : public sys::Runnable
     Subscriber::shared_ptr find(const std::string& name);
     bool isStopped();
 
+    boost::function<void ()> failoverHandler;
+
 public:
     Dispatcher(const Session& session, const std::string& queue = "");
 
@@ -76,6 +78,11 @@ public:
     void run();
     void stop();
     void setAutoStop(bool b);
+
+    void registerFailoverHandler ( boost::function<void ()> fh )
+    {
+      failoverHandler = fh;
+    }
 
     void listen(MessageListener* listener, AckPolicy autoAck=AckPolicy());
     void listen(const std::string& destination, MessageListener* listener, AckPolicy autoAck=AckPolicy());
