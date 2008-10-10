@@ -57,15 +57,26 @@ ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_
 
 ObjectId::ObjectId(std::istream& in) : agent(0)
 {
-#define FIELDS 5
     string text;
+    in >> text;
+    fromString(text);
+}
+
+ObjectId::ObjectId(const string& text) : agent(0)
+{
+    fromString(text);
+}
+
+void ObjectId::fromString(const string& text)
+{
+#define FIELDS 5
+    string copy(text.c_str());
     char* cText;
     char* field[FIELDS];
     bool  atFieldStart = true;
     int   idx = 0;
 
-    in >> text;
-    cText = const_cast<char*>(text.c_str());
+    cText = const_cast<char*>(copy.c_str());
     for (char* cursor = cText; *cursor; cursor++) {
         if (atFieldStart) {
             if (idx >= FIELDS)
@@ -89,6 +100,7 @@ ObjectId::ObjectId(std::istream& in) : agent(0)
         atoll(field[3]);
     second = atoll(field[4]);
 }
+
 
 bool ObjectId::operator==(const ObjectId &other) const
 {

@@ -51,12 +51,14 @@ protected:
     const AgentAttachment* agent;
     uint64_t first;
     uint64_t second;
+    void fromString(const std::string&);
 public:
     ObjectId() : agent(0), first(0), second(0) {}
     ObjectId(framing::Buffer& buf) : agent(0) { decode(buf); }
     ObjectId(uint8_t flags, uint16_t seq, uint32_t broker, uint32_t bank, uint64_t object);
     ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_t object);
     ObjectId(std::istream&);
+    ObjectId(const std::string&);
     bool operator==(const ObjectId &other) const;
     bool operator<(const ObjectId &other) const;
     void encode(framing::Buffer& buffer);
