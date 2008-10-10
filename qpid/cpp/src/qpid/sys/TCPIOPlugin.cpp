@@ -67,7 +67,7 @@ static class TCPIOPlugin : public Plugin {
             const broker::Broker::Options& opts = broker->getOptions();
             ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, opts.tcpNoDelay));
             QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
-            broker->registerProtocolFactory(protocol);
+            broker->registerProtocolFactory("tcp", protocol);
         }
     }
 } tcpPlugin;
