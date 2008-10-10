@@ -38,6 +38,11 @@
     <fileset id="tests.builds">
         <include name="test/default.build" />	
     </fileset>	
+    
+     <!-- Fileset with build files for 'performence' test assemblies. -->
+    <fileset id="perftest.builds">
+        <include name="perftest/default.build" />	
+    </fileset>	
 
     <!-- Prepare environment for a debug build. -->
     <target name="debug">
@@ -170,6 +175,11 @@
         <!-- Compile test assemblies. -->
         <nant target="build">
             <buildfiles refid="tests.builds" />
+        </nant>
+        
+        <!-- Compile test assemblies. -->
+        <nant target="build">
+            <buildfiles refid="perftest.builds" />
         </nant>
       
         <!-- copy config files over to the output dir -->

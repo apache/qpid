@@ -19,8 +19,6 @@
 *
 */
 
-using System;
-
 namespace org.apache.qpid.transport
 {
     /// <summary> 

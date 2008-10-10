@@ -105,10 +105,8 @@ namespace common.org.apache.qpid.transport.util
             buffer[i] = t;
             i += add;
             if (i < 0) i += len;
-            nwp = i; 
-            countValue = nwp - nrp;
-            if (countValue == 0)
-                countValue += len;
+            nwp = i;
+            updateCount();
         }
 
         private void updateCount()
@@ -125,7 +123,7 @@ namespace common.org.apache.qpid.transport.util
             i += add;
             if (i < 0) i += len;
             nrp = i;
-            countValue = nwp - nrp;          
+            countValue--;    
             return (temp);
         }
 
