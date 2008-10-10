@@ -50,7 +50,7 @@ class FailoverListener : public MessageListener {
     mutable sys::Mutex lock;
     std::auto_ptr<SubscriptionManager> subscriptions;
     sys::Thread thread;
-    std::vector<Url> knowBrokers;
+    std::vector<Url> knownBrokers;
 };
 }} // namespace qpid::client
 
