@@ -20,7 +20,6 @@
 */
 
 using System;
-using org.apache.qpid.transport;
 
 namespace org.apache.qpid.transport
 {		
