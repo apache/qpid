@@ -23,7 +23,8 @@
   <property name="module.depends" value="common" />
   <property name="module.test.depends" value="common client" />
   <property name="module.src" value="src" />
-  <property name="module.test.src" value="test" />
+  <!-- Disable tests as per QPID-1342 -->
+  <!--property name="module.test.src" value="test" /-->
 
   <import file="../../../module.xml"/>
 
