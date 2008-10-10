@@ -613,10 +613,12 @@ def applyPatch(patch):
 
     patchSource= _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + name
 
-    for root, dirs, files in os.walk(patchSource, topdown=False):
+    for root, dirs, files in os.walk(patchSource):
+    	if '.svn' in dirs:
+		dirs.remove('.svn')
         for patchName in files:
-                log("Applying patch '" + name + "' to " + source)
-                runCommandShowError(basecommand + patchSource + PATH_SEP + patchName)
+	                log("Applying patch '" + name + "'("+patchName+") to " + source)
+        	        runCommandShowError(basecommand + patchSource + PATH_SEP + patchName)
 
 
 ################################################################################
@@ -1042,8 +1044,10 @@ def addPatchVersions(source, filename):
 		    if (source.getElementsByTagName(REVISION).length > 0):
                         macro += "\n" + ECHO_BIN + " \"\t\tREVISION:"+ \
 			         getValue(patch.getElementsByTagName(REVISION)[0])  + "\" >> " + filename	    
-		    else:
-                        macro += "\n" + ECHO_BIN + " \"\t\tREVISION: HEAD\" >> "+ filename	    
+		    else:			
+                        macro += "\n" + ECHO_BIN + " -n \"\t\tREVISION: \"  >> " + filename
+			macro += "\n" + SVNVERSION_BIN + " " + _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + getName(patch) + " >> " + filename	    
+
 			
 	    if (patch.getElementsByTagName(PREFIX).length > 0):
 		macro += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
