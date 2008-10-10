@@ -32,6 +32,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/InputHandler.h"
+#include "qpid/Url.h"
 
 namespace qpid {
 namespace client {
@@ -103,6 +104,8 @@ public:
 
     CloseListener onClose;
     ErrorListener onError;
+
+    std::vector<Url> knownBrokersUrls;
 };
 
 }}

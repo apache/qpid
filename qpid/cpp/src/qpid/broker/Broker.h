@@ -113,6 +113,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 
+    std::vector<Url> knownBrokers;
+    std::vector<Url> getKnownBrokersImpl();
+
 
   public:
 
@@ -191,6 +194,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
+
+    boost::function<std::vector<Url> ()> getKnownBrokers;
+    
 };
 
 }}

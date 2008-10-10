@@ -49,7 +49,10 @@ void Subscriber::received(Message& msg)
 }
 
 Dispatcher::Dispatcher(const Session& s, const std::string& q)
-    : session(s), running(false), autoStop(true)
+    : session(s), 
+      running(false), 
+      autoStop(true),
+      failoverHandler(0)
 {
     queue = q.empty() ? 
         session.getExecution().getDemux().getDefault() : 
@@ -91,9 +94,20 @@ void Dispatcher::run()
         }
         session.sync(); // Make sure all our acks are received before returning.
     }
-    catch (const ClosedException&) {} //ignore it and return
+    catch (const ClosedException& e) 
+    { 
+      QPID_LOG(debug, "Ignored exception in client dispatch thread: " << e.what());
+    } //ignore it and return
     catch (const std::exception& e) {
         QPID_LOG(error, "Exception in client dispatch thread: " << e.what());
+      if ( failoverHandler )
+      {
+        failoverHandler();
+      }
+      else
+      {
+        QPID_LOG(info, "No dispatcher failover handler registered.");
+      }
     }
 }
 

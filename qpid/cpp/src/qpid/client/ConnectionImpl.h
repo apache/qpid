@@ -69,6 +69,8 @@ class ConnectionImpl : public Bounds,
     void idleIn();
     void shutdown();
 
+    boost::function<void ()> failureCallback;
+
   public:
     ConnectionImpl(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
@@ -82,12 +84,11 @@ class ConnectionImpl : public Bounds,
     void close();
     void handle(framing::AMQFrame& frame);
     void erase(uint16_t channel);
-    void stopFailoverListener();
-    
     const ConnectionSettings& getNegotiatedSettings();
 
     std::vector<Url> getKnownBrokers();
-
+    void registerFailureCallback ( boost::function<void ()> fn ) { failureCallback = fn; }
+    void stopFailoverListener();
 };
 
 }}

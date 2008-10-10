@@ -190,7 +190,7 @@ class SubscriptionManager : public sys::Runnable
     /** Set the acquire-mode for new subscriptions. Defaults to false.
      *@param acquire: if false messages pre-acquired, if true
      * messages are dequed on acknowledgement or on transfer 
-	 * depending on acceptMode.
+     * depending on acceptMode.
      */
     void setAcquireMode(bool acquire);
 
@@ -199,9 +199,11 @@ class SubscriptionManager : public sys::Runnable
      */
     void setAckPolicy(const AckPolicy& autoAck);
 
-     AckPolicy& getAckPolicy();
+    AckPolicy& getAckPolicy();
 
-    Session getSession() const { return session; }
+    void registerFailoverHandler ( boost::function<void ()> fh );
+
+    Session getSession() const;
 };
 
 /** AutoCancel cancels a subscription in its destructor */

@@ -371,11 +371,14 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Bounds.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
-  qpid/client/ConnectionImpl.cpp \
+  qpid/client/ConnectionImpl.cpp                \
   qpid/client/ConnectionSettings.cpp		\
-  qpid/client/Connector.cpp			\
+  qpid/client/Connector.cpp	                \
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
+  qpid/client/FailoverConnection.cpp            \
+  qpid/client/FailoverSession.cpp               \
+  qpid/client/FailoverSubscriptionManager.cpp   \
   qpid/client/FailoverListener.h		\
   qpid/client/FailoverListener.cpp		\
   qpid/client/Future.cpp			\
@@ -508,6 +511,9 @@ nobase_include_HEADERS = \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/Execution.h \
+  qpid/client/FailoverConnection.h \
+  qpid/client/FailoverSession.h \
+  qpid/client/FailoverSubscriptionManager.h \
   qpid/client/FlowControl.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \

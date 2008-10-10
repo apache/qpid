@@ -331,6 +331,7 @@ AC_CONFIG_FILES([
   examples/fanout/Makefile
   examples/pub-sub/Makefile
   examples/request-response/Makefile
+  examples/failover/Makefile
   examples/xml-exchange/Makefile
   managementgen/Makefile
   etc/Makefile

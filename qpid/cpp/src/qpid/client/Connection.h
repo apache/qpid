@@ -45,8 +45,12 @@ class Connection
 {
     framing::ProtocolVersion version;
 
+    boost::function<void ()> failureCallback;
+
+
   protected:
     boost::shared_ptr<ConnectionImpl> impl;
+
 
   public:
     /**
@@ -168,6 +172,7 @@ class Connection
     bool isOpen() const;
 
     std::vector<Url> getKnownBrokers();
+    void registerFailureCallback ( boost::function<void ()> fn );
 
   friend class ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal
