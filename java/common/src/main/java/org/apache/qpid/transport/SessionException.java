@@ -32,15 +32,25 @@ public class SessionException extends TransportException
 
     private ExecutionException exception;
 
+    public SessionException(ExecutionException exception, Throwable cause)
+    {
+        super(String.valueOf(exception), cause);
+        this.exception = exception;
+    }
+
     public SessionException(ExecutionException exception)
     {
-        super(String.valueOf(exception));
-        this.exception = exception;
+        this(exception, null);
     }
 
     public ExecutionException getException()
     {
         return exception;
+    }
+
+    @Override public void rethrow()
+    {
+        throw new SessionException(exception, this);
     }
 
 }

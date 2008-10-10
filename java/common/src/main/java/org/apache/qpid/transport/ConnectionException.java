@@ -62,4 +62,9 @@ public class ConnectionException extends TransportException
         return close;
     }
 
+    @Override public void rethrow()
+    {
+        throw new ConnectionException(getMessage(), close, this);
+    }
+
 }

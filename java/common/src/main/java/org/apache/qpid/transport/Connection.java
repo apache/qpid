@@ -75,7 +75,7 @@ public class Connection
     private Object lock = new Object();
     private long timeout = 60000;
     private ConnectionListener listener = new DefaultConnectionListener();
-    private Throwable error = null;
+    private ConnectionException error = null;
 
     private int channelMax = 1;
     private String locale;
@@ -172,18 +172,10 @@ public class Connection
 
             if (error != null)
             {
-                Throwable t = error;
+                ConnectionException t = error;
                 error = null;
                 close();
-                
-                if (t instanceof ProtocolVersionException)
-                {
-                    throw (ProtocolVersionException) t;
-                }
-                else
-                {
-                    throw new ConnectionException(t);
-                }
+                t.rethrow();
             }
 
             switch (state)
@@ -325,20 +317,7 @@ public class Connection
 
     public void exception(Throwable t)
     {
-        synchronized (lock)
-        {
-            switch (state)
-            {
-            case OPENING:
-            case CLOSING:
-                error = t;
-                lock.notifyAll();
-                break;
-            default:
-                listener.exception(this, new ConnectionException(t));
-                break;
-            }
-        }
+        exception(new ConnectionException(t));
     }
 
     void closeCode(ConnectionClose close)

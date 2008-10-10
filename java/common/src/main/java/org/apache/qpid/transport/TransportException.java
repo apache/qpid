@@ -43,4 +43,9 @@ public class TransportException extends RuntimeException
         super(cause);
     }
 
+    public void rethrow()
+    {
+        throw new TransportException(getMessage(), this);
+    }
+
 }
