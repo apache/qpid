@@ -35,6 +35,8 @@
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
+#include "qpid/sys/Mutex.h"
+
 #include <string>
 
 
@@ -295,11 +297,13 @@ class FailoverSession
 
     void failover ( );
 
-    FailoverSubscriptionManager * failoverSubscriptionManager;
-
+    void setFailoverSubscriptionManager(FailoverSubscriptionManager*);
 
   private:
+    typedef sys::Mutex::ScopedLock Lock;
+    sys::Mutex lock;
 
+    FailoverSubscriptionManager * failoverSubscriptionManager;
 
     Session session;
     Session newSession;

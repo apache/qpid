@@ -29,7 +29,7 @@
 #include "qpid/client/FailoverConnection.h"
 #include "qpid/client/FailoverSession.h"
 #include "qpid/client/FailoverSubscriptionManager.h"
-
+#include "qpid/sys/Mutex.h"
 
 
 namespace qpid {
@@ -82,11 +82,11 @@ class FailoverConnection
 
   private:
 
-    std::string host;
+    typedef sys::Mutex::ScopedLock Lock;
+
+    sys::Mutex lock;
 
     Connection connection;
-
-    int currentPortNumber;
 
     boost::function<void ()> clientFailoverCallback;
 
