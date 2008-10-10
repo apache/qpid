@@ -439,7 +439,7 @@ class Session:
 
   def _handleEventInd(self, broker, codec, seq):
     if self.console != None:
-      event = Event(self, codec)
+      event = Event(self, broker, codec)
       self.console.event(broker, event)
 
   def _handleSchemaResp(self, broker, codec, seq):
@@ -505,24 +505,24 @@ class Session:
   
   def _decodeValue(self, codec, typecode):
     """ Decode, from the codec, a value based on its typecode. """
-    if   typecode == 1:  data = codec.read_uint8()     # U8
-    elif typecode == 2:  data = codec.read_uint16()    # U16
-    elif typecode == 3:  data = codec.read_uint32()    # U32
-    elif typecode == 4:  data = codec.read_uint64()    # U64
-    elif typecode == 6:  data = str(codec.read_str8()) # SSTR
-    elif typecode == 7:  data = codec.read_str16()     # LSTR
-    elif typecode == 8:  data = codec.read_int64()     # ABSTIME
-    elif typecode == 9:  data = codec.read_uint64()    # DELTATIME
-    elif typecode == 10: data = ObjectId(codec)        # REF
-    elif typecode == 11: data = codec.read_uint8()     # BOOL
-    elif typecode == 12: data = codec.read_float()     # FLOAT
-    elif typecode == 13: data = codec.read_double()    # DOUBLE
-    elif typecode == 14: data = codec.read_uuid()      # UUID
-    elif typecode == 15: data = codec.read_map()       # FTABLE
-    elif typecode == 16: data = codec.read_int8()      # S8
-    elif typecode == 17: data = codec.read_int16()     # S16
-    elif typecode == 18: data = codec.read_int32()     # S32
-    elif typecode == 19: data = codec.read_int64()     # S63
+    if   typecode == 1:  data = codec.read_uint8()      # U8
+    elif typecode == 2:  data = codec.read_uint16()     # U16
+    elif typecode == 3:  data = codec.read_uint32()     # U32
+    elif typecode == 4:  data = codec.read_uint64()     # U64
+    elif typecode == 6:  data = str(codec.read_str8())  # SSTR
+    elif typecode == 7:  data = codec.read_str16()      # LSTR
+    elif typecode == 8:  data = codec.read_int64()      # ABSTIME
+    elif typecode == 9:  data = codec.read_uint64()     # DELTATIME
+    elif typecode == 10: data = ObjectId(codec)         # REF
+    elif typecode == 11: data = codec.read_uint8() != 0 # BOOL
+    elif typecode == 12: data = codec.read_float()      # FLOAT
+    elif typecode == 13: data = codec.read_double()     # DOUBLE
+    elif typecode == 14: data = codec.read_uuid()       # UUID
+    elif typecode == 15: data = codec.read_map()        # FTABLE
+    elif typecode == 16: data = codec.read_int8()       # S8
+    elif typecode == 17: data = codec.read_int16()      # S16
+    elif typecode == 18: data = codec.read_int32()      # S32
+    elif typecode == 19: data = codec.read_int64()      # S63
     else:
       raise ValueError("Invalid type code: %d" % typecode)
     return data
@@ -993,13 +993,13 @@ class Broker:
     """ Get the AMQP session object for this connected broker. """
     return self.amqpSession
 
+  def getUrl(self):
+    """ """
+    return "%s:%d" % (self.host, self.port)
+
   def __repr__(self):
     if self.isConnected:
-      if self.port == 5672:
-        port = ""
-      else:
-        port = ":%d" % self.port
-      return "Broker connected at: amqp://%s%s" % (self.host, port)
+      return "Broker connected at: %s" % self.getUrl()
     else:
       return "Disconnected Broker"
 
@@ -1171,10 +1171,14 @@ class Agent:
   def __repr__(self):
     return "Agent at bank %s (%s)" % (self.bank, self.label)
 
+  def getBroker(self):
+    return self.broker
+
 class Event:
   """ """
-  def __init__(self, session, codec):
+  def __init__(self, session, broker, codec):
     self.session = session
+    self.broker  = broker
     pname = codec.read_str8()
     cname = codec.read_str8()
     hash  = codec.read_bin128()
@@ -1190,7 +1194,14 @@ class Event:
           self.arguments[arg.name] = session._decodeValue(codec, arg.type)
 
   def __repr__(self):
-    return self.getSyslogText()
+    if self.schema == None:
+      return "<uninterpretable>"
+    out = strftime("%c", gmtime(self.timestamp / 1000000000))
+    out += " " + self._sevName() + " " + self.classKey[0] + ":" + self.classKey[1]
+    out += " broker=" + self.broker.getUrl()
+    for arg in self.schema.arguments:
+      out += " " + arg.name + "=" + self.session._displayValue(self.arguments[arg.name], arg.type)
+    return out
 
   def _sevName(self):
     if self.severity == 0 : return "EMER "
@@ -1217,15 +1228,6 @@ class Event:
 
   def getSchema(self):
     return self.schema
-
-  def getSyslogText(self):
-    if self.schema == None:
-      return "<uninterpretable>"
-    out = strftime("%c", gmtime(self.timestamp / 1000000000))
-    out += " " + self._sevName() + " " + self.classKey[0] + ":" + self.classKey[1]
-    for arg in self.schema.arguments:
-      out += " " + arg.name + "=" + self.session._displayValue(self.arguments[arg.name], arg.type)
-    return out
 
 class SequenceManager:
   """ Manage sequence numbers for asynchronous method calls """
