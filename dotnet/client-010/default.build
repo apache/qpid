@@ -161,6 +161,8 @@
         <!-- copy reference assemblies over to the output dir -->
         <copy todir="${build.dir}" file="lib/log4net/log4net.dll"/>
         <copy todir="${build.dir}" file="lib/nunit/nunit.framework.dll"/>
+        <copy todir="${build.dir}" file="lib/plossum/C5.dll"/>
+        <copy todir="${build.dir}" file="lib/plossum/Plossum CommandLine.dll"/>
 
         <!-- Compile assemblies. -->
         <nant target="build">
