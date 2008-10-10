@@ -47,14 +47,14 @@ class DtxManager{
     WorkMap work;
     TransactionalStore* store;
     qpid::sys::Mutex lock;
-    Timer timer;
+    Timer& timer;
 
     void remove(const std::string& xid);
     DtxWorkRecord* getWork(const std::string& xid);
     DtxWorkRecord* createWork(std::string xid);
 
 public:
-    DtxManager();
+    DtxManager(Timer&);
     ~DtxManager();
     void start(const std::string& xid, DtxBuffer::shared_ptr work);
     void join(const std::string& xid, DtxBuffer::shared_ptr work);

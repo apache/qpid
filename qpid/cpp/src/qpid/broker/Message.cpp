@@ -30,15 +30,22 @@
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/log/Statement.h"
 
+#include <time.h>
+
 using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
+using qpid::sys::AbsTime;
+using qpid::sys::Duration;
+using qpid::sys::TIME_MSEC;
+using qpid::sys::FAR_FUTURE;
 using std::string;
 
 TransferAdapter Message::TRANSFER;
 
 Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false),
-staged(false), forcePersistentPolicy(false), publisher(0), adapter(0) {}
+                                             staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
+                                             expiration(FAR_FUTURE) {}
 
 Message::~Message()
 {
@@ -296,4 +303,21 @@ void Message::addTraceId(const std::string& id)
             headers.setString(X_QPID_TRACE, trace);
         }        
     }
+}
+
+void Message::setTimestamp()
+{
+    time_t now = ::time(0);
+    DeliveryProperties* props = getProperties<DeliveryProperties>();    
+    props->setTimestamp(now);
+    if (props->getTtl()) {
+        //set expiration (nb: ttl is in millisecs, time_t is in secs)
+        props->setExpiration(now + (props->getTtl()/1000));
+        expiration = AbsTime(AbsTime::now(), Duration(props->getTtl() * TIME_MSEC));
+    }
+}
+
+bool Message::hasExpired() const
+{
+    return expiration < AbsTime::now();
 }
