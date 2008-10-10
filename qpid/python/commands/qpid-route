@@ -150,7 +150,7 @@ class RouteManager:
 
         if _verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, 0, 0)
+        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, False, False)
         if res.status == 4:
             raise Exception("Can't create a durable route on a non-durable link")
         if _verbose:

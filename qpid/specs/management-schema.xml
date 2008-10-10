@@ -245,11 +245,12 @@
       <arg name="durable"     dir="I" type="bool"/>
       <arg name="src"         dir="I" type="sstr"/>
       <arg name="dest"        dir="I" type="sstr"/>
-      <arg name="key"         dir="I" type="sstr" default=""/>
-      <arg name="tag"         dir="I" type="sstr" default=""/>
-      <arg name="excludes"    dir="I" type="sstr" default=""/>
-      <arg name="srcIsQueue"  dir="I" type="bool" default="0"/>
-      <arg name="srcIsLocal"  dir="I" type="bool" default="0"/>
+      <arg name="key"         dir="I" type="sstr"/>
+      <arg name="tag"         dir="I" type="sstr"/>
+      <arg name="excludes"    dir="I" type="sstr"/>
+      <arg name="srcIsQueue"  dir="I" type="bool"/>
+      <arg name="srcIsLocal"  dir="I" type="bool"/>
+      <arg name="dynamic"     dir="I" type="bool"/>
     </method>
   </class>
 
@@ -270,6 +271,7 @@
     <property name="srcIsLocal"  type="bool"   access="RC"/>
     <property name="tag"         type="sstr"   access="RC"/>
     <property name="excludes"    type="sstr"   access="RC"/>
+    <property name="dynamic"     type="bool"   access="RC"/>
     <method name="close"/> 
   </class>
 
