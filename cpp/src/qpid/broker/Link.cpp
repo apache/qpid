@@ -353,7 +353,8 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args
         std::pair<Bridge::shared_ptr, bool> result =
             links->declare (host, port, iargs.i_durable, iargs.i_src,
                             iargs.i_dest, iargs.i_key, iargs.i_srcIsQueue,
-                            iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes);
+                            iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes,
+                            iargs.i_dynamic);
 
         if (result.second && iargs.i_durable)
             store->create(*result.first);
