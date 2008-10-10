@@ -146,9 +146,9 @@ FailoverConnection::failover ( )
      * (and, through them, their SessionManagers and whatever else)
      * that we are about to failover to this new Connection.
      */
-    // FIXME mgoulish -- get rid of two-passes here.
-    std::vector<FailoverSession *>::iterator sessions_iterator;
 
+    // FIXME aconway 2008-10-10: thread unsafe, possible race with concurrent newSession 
+    std::vector<FailoverSession *>::iterator sessions_iterator;
     for ( sessions_iterator = sessions.begin();
           sessions_iterator < sessions.end();
           ++ sessions_iterator

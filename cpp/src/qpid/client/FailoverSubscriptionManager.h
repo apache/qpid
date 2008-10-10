@@ -33,6 +33,7 @@
 #include <qpid/client/LocalQueue.h>
 #include <qpid/client/FlowControl.h>
 #include <qpid/sys/Runnable.h>
+#include <qpid/sys/Mutex.h>
 
 
 
@@ -106,7 +107,6 @@ class FailoverSubscriptionManager
 
     AckPolicy & getAckPolicy();
 
-    void registerFailoverHandler ( boost::function<void ()> fh );
 
     // Get ready for a failover.
     void prepareForFailover ( Session newSession );
@@ -116,6 +116,8 @@ class FailoverSubscriptionManager
 
 
   private:
+    typedef sys::Mutex::ScopedLock Lock;
+    sys::Mutex lock;
     
     SubscriptionManager * subscriptionManager;
 
