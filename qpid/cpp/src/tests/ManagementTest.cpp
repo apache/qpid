@@ -28,11 +28,22 @@ QPID_AUTO_TEST_SUITE(ManagementTestSuite)
 using namespace qpid::framing;
 using namespace qpid::management;
 
-QPID_AUTO_TEST_CASE(testObjectIdSerialize) {
+QPID_AUTO_TEST_CASE(testObjectIdSerializeStream) {
     std::string text("0-10-4-2500-80000000000");
     std::stringstream input(text);
 
     ObjectId oid(input);
+
+    std::stringstream output;
+    output << oid;
+
+    BOOST_CHECK_EQUAL(text, output.str());
+}
+
+QPID_AUTO_TEST_CASE(testObjectIdSerializeString) {
+    std::string text("0-10-4-2500-80000000000");
+
+    ObjectId oid(text);
 
     std::stringstream output;
     output << oid;

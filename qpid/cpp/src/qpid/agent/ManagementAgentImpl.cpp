@@ -403,9 +403,26 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
 
     ft.decode(inBuffer);
     value = ft.get("_class");
-    if (value.get() == 0 || !value->convertsTo<string>())
-    {
-        // TODO: Send completion with an error code
+    if (value.get() == 0 || !value->convertsTo<string>()) {
+        value = ft.get("_objectid");
+        if (value.get() == 0 || !value->convertsTo<string>())
+            return;
+
+        ObjectId selector(value->get<string>());
+        ManagementObjectMap::iterator iter = managementObjects.find(selector);
+        if (iter != managementObjects.end()) {
+            ManagementObject* object = iter->second;
+            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+
+            encodeHeader(outBuffer, 'g', sequence);
+            object->writeProperties(outBuffer);
+            object->writeStatistics(outBuffer, true);
+            outLen = MA_BUFFER_SIZE - outBuffer.available ();
+            outBuffer.reset ();
+            connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+        }
+        sendCommandComplete(replyTo, sequence);
         return;
     }
 
@@ -413,11 +430,9 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
 
     for (ManagementObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
-         iter++)
-    {
+         iter++) {
         ManagementObject* object = iter->second;
-        if (object->getClassName() == className)
-        {
+        if (object->getClassName() == className) {
             Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
