@@ -38,10 +38,10 @@ namespace qpid {
 namespace client {
 
 FailoverSession::FailoverSession ( ) :
-  name("no_name")
+    name("no_name")
 {
-  // The session is created by FailoverConnection::newSession
-  failoverSubscriptionManager = 0;
+    // The session is created by FailoverConnection::newSession
+    failoverSubscriptionManager = 0;
 }
 
 
@@ -53,50 +53,54 @@ FailoverSession::~FailoverSession ( )
 framing::FrameSet::shared_ptr 
 FailoverSession::get()
 {
-  return session.get();
+    return session.get();
 }
 
 
 SessionId 
 FailoverSession::getId() const
 {
-  return session.getId();
+    return session.getId();
 }
 
 
 void 
 FailoverSession::close()
 {
-  session.close();
+    session.close();
 }
 
 
 void 
 FailoverSession::sync()
 {
-  session.sync();
+
+    session.sync();
 }
 
 
 uint32_t 
 FailoverSession::timeout(uint32_t /*seconds*/ )
 {
-  // MICK WTF?  return session.timeout ( seconds );
-  return 0;
+
+    // MICK WTF?  return session.timeout ( seconds );
+    return 0;
 }
 
 
 Execution& 
 FailoverSession::getExecution()
 {
-  return session.getExecution();
+
+    return session.getExecution();
 }
 
 
 void 
 FailoverSession::flush()
 {
-  session.flush();
+
+    session.flush();
 }
 
 
@@ -104,9 +108,10 @@ void
 FailoverSession::markCompleted(const framing::SequenceNumber& id, 
                                bool cumulative, 
                                bool notifyPeer
-                              )
+)
 {
-  session.markCompleted ( id, cumulative, notifyPeer );
+
+    session.markCompleted ( id, cumulative, notifyPeer );
 }
 
 
@@ -116,7 +121,8 @@ FailoverSession::markCompleted(const framing::SequenceNumber& id,
 void 
 FailoverSession::executionSync()
 {
-  session.executionSync();
+
+    session.executionSync();
 }
 
 
@@ -124,11 +130,12 @@ FailoverSession::executionSync()
 void 
 FailoverSession::executionResult ( const SequenceNumber& commandId, 
                                    const string& value
-                                 )
+)
 {
-  session.executionResult ( commandId, 
-                            value 
-                          );
+
+    session.executionResult ( commandId, 
+                              value 
+    );
 }
 
 
@@ -141,16 +148,17 @@ FailoverSession::executionException ( uint16_t errorCode,
                                       uint8_t fieldIndex, 
                                       const string& description, 
                                       const FieldTable& errorInfo
-                                    )
+)
 {
-  session.executionException ( errorCode,
-                               commandId,
-                               classCode,
-                               commandCode,
-                               fieldIndex,
-                               description,
-                               errorInfo
-                             );
+
+    session.executionException ( errorCode,
+                                 commandId,
+                                 classCode,
+                                 commandCode,
+                                 fieldIndex,
+                                 description,
+                                 errorInfo
+    );
 }
 
 
@@ -160,13 +168,14 @@ FailoverSession::messageTransfer ( const string& destination,
                                    uint8_t acceptMode, 
                                    uint8_t acquireMode, 
                                    const MethodContent& content
-                                 )
+)
 {
-  session.messageTransfer ( destination,
-                            acceptMode,
-                            acquireMode,
-                            content
-                          );
+
+    session.messageTransfer ( destination,
+                              acceptMode,
+                              acquireMode,
+                              content
+    );
 }
 
 
@@ -174,7 +183,8 @@ FailoverSession::messageTransfer ( const string& destination,
 void 
 FailoverSession::messageAccept ( const SequenceSet& transfers )
 {
-  session.messageAccept ( transfers );
+
+    session.messageAccept ( transfers );
 }
 
 
@@ -183,12 +193,13 @@ void
 FailoverSession::messageReject ( const SequenceSet& transfers, 
                                  uint16_t code, 
                                  const string& text
-                               )
+)
 {
-  session.messageReject ( transfers, 
-                          code, 
-                          text 
-                        );
+
+    session.messageReject ( transfers, 
+                            code, 
+                            text 
+    );
 }
 
 
@@ -196,11 +207,12 @@ FailoverSession::messageReject ( const SequenceSet& transfers,
 void 
 FailoverSession::messageRelease ( const SequenceSet& transfers, 
                                   bool setRedelivered
-                                )
+)
 {
-  session.messageRelease ( transfers,
-                           setRedelivered
-                         );
+
+    session.messageRelease ( transfers,
+                             setRedelivered
+    );
 }
 
 
@@ -208,7 +220,8 @@ FailoverSession::messageRelease ( const SequenceSet& transfers,
 qpid::framing::MessageAcquireResult 
 FailoverSession::messageAcquire ( const SequenceSet& transfers )
 {
-  return session.messageAcquire ( transfers );
+
+    return session.messageAcquire ( transfers );
 }
 
 
@@ -216,11 +229,12 @@ FailoverSession::messageAcquire ( const SequenceSet& transfers )
 qpid::framing::MessageResumeResult 
 FailoverSession::messageResume ( const string& destination, 
                                  const string& resumeId
-                               )
+)
 {
-  return session.messageResume ( destination,
-                                 resumeId
-                               );
+
+    return session.messageResume ( destination,
+                                   resumeId
+    );
 }
 
 
@@ -234,17 +248,18 @@ FailoverSession::messageSubscribe ( const string& queue,
                                     const string& resumeId, 
                                     uint64_t resumeTtl, 
                                     const FieldTable& arguments
-                                  )
+)
 {
-  session.messageSubscribe ( queue,
-                             destination,
-                             acceptMode,
-                             acquireMode,
-                             exclusive,
-                             resumeId,
-                             resumeTtl,
-                             arguments
-                           );
+
+    session.messageSubscribe ( queue,
+                               destination,
+                               acceptMode,
+                               acquireMode,
+                               exclusive,
+                               resumeId,
+                               resumeTtl,
+                               arguments
+    );
 }
 
 
@@ -252,7 +267,8 @@ FailoverSession::messageSubscribe ( const string& queue,
 void 
 FailoverSession::messageCancel ( const string& destinations )
 {
-  session.messageCancel ( destinations );
+
+    session.messageCancel ( destinations );
 }
 
 
@@ -260,11 +276,11 @@ FailoverSession::messageCancel ( const string& destinations )
 void 
 FailoverSession::messageSetFlowMode ( const string& destination, 
                                       uint8_t flowMode
-                                    )
+)
 {
-  session.messageSetFlowMode ( destination,
-                               flowMode
-                             );
+    session.messageSetFlowMode ( destination,
+                                 flowMode
+    );
 }
 
 
@@ -274,10 +290,10 @@ FailoverSession::messageFlow(const string& destination,
                              uint8_t unit, 
                              uint32_t value)
 {
-  session.messageFlow ( destination,
-                        unit,
-                        value
-                      );
+    session.messageFlow ( destination,
+                          unit,
+                          value
+    );
 }
 
 
@@ -285,7 +301,7 @@ FailoverSession::messageFlow(const string& destination,
 void 
 FailoverSession::messageFlush(const string& destination)
 {
-  session.messageFlush ( destination );
+    session.messageFlush ( destination );
 }
 
 
@@ -293,7 +309,7 @@ FailoverSession::messageFlush(const string& destination)
 void 
 FailoverSession::messageStop(const string& destination)
 {
-  session.messageStop ( destination );
+    session.messageStop ( destination );
 }
 
 
@@ -301,7 +317,7 @@ FailoverSession::messageStop(const string& destination)
 void 
 FailoverSession::txSelect()
 {
-  session.txSelect ( );
+    session.txSelect ( );
 }
 
 
@@ -309,7 +325,7 @@ FailoverSession::txSelect()
 void 
 FailoverSession::txCommit()
 {
-  session.txCommit ( );
+    session.txCommit ( );
 }
 
 
@@ -317,7 +333,7 @@ FailoverSession::txCommit()
 void 
 FailoverSession::txRollback()
 {
-  session.txRollback ( );
+    session.txRollback ( );
 }
 
 
@@ -325,7 +341,7 @@ FailoverSession::txRollback()
 void 
 FailoverSession::dtxSelect()
 {
-  session.dtxSelect ( );
+    session.dtxSelect ( );
 }
 
 
@@ -335,10 +351,10 @@ FailoverSession::dtxStart(const Xid& xid,
                           bool join, 
                           bool resume)
 {
-  return session.dtxStart ( xid,
-                            join,
-                            resume
-                          );
+    return session.dtxStart ( xid,
+                              join,
+                              resume
+    );
 }
 
 
@@ -348,10 +364,10 @@ FailoverSession::dtxEnd(const Xid& xid,
                         bool fail, 
                         bool suspend)
 {
-  return session.dtxEnd ( xid,
-                          fail,
-                          suspend
-                        );
+    return session.dtxEnd ( xid,
+                            fail,
+                            suspend
+    );
 }
 
 
@@ -360,9 +376,9 @@ qpid::framing::XaResult
 FailoverSession::dtxCommit(const Xid& xid, 
                            bool onePhase)
 {
-  return session.dtxCommit ( xid,
-                             onePhase
-                           );
+    return session.dtxCommit ( xid,
+                               onePhase
+    );
 }
 
 
@@ -370,7 +386,7 @@ FailoverSession::dtxCommit(const Xid& xid,
 void 
 FailoverSession::dtxForget(const Xid& xid)
 {
-  session.dtxForget ( xid );
+    session.dtxForget ( xid );
 }
 
 
@@ -378,7 +394,7 @@ FailoverSession::dtxForget(const Xid& xid)
 qpid::framing::DtxGetTimeoutResult 
 FailoverSession::dtxGetTimeout(const Xid& xid)
 {
-  return session.dtxGetTimeout ( xid );
+    return session.dtxGetTimeout ( xid );
 }
 
 
@@ -386,7 +402,7 @@ FailoverSession::dtxGetTimeout(const Xid& xid)
 qpid::framing::XaResult 
 FailoverSession::dtxPrepare(const Xid& xid)
 {
-  return session.dtxPrepare ( xid );
+    return session.dtxPrepare ( xid );
 }
 
 
@@ -394,7 +410,7 @@ FailoverSession::dtxPrepare(const Xid& xid)
 qpid::framing::DtxRecoverResult 
 FailoverSession::dtxRecover()
 {
-  return session.dtxRecover ( );
+    return session.dtxRecover ( );
 }
 
 
@@ -402,7 +418,7 @@ FailoverSession::dtxRecover()
 qpid::framing::XaResult 
 FailoverSession::dtxRollback(const Xid& xid)
 {
-  return session.dtxRollback ( xid );
+    return session.dtxRollback ( xid );
 }
 
 
@@ -411,9 +427,9 @@ void
 FailoverSession::dtxSetTimeout(const Xid& xid, 
                                uint32_t timeout)
 {
-  session.dtxSetTimeout ( xid,
-                          timeout
-                        );
+    session.dtxSetTimeout ( xid,
+                            timeout
+    );
 }
 
 
@@ -427,14 +443,14 @@ FailoverSession::exchangeDeclare(const string& exchange,
                                  bool autoDelete, 
                                  const FieldTable& arguments)
 {
-  session.exchangeDeclare ( exchange,
-                            type,
-                            alternateExchange,
-                            passive,
-                            durable,
-                            autoDelete,
-                            arguments
-                          );
+    session.exchangeDeclare ( exchange,
+                              type,
+                              alternateExchange,
+                              passive,
+                              durable,
+                              autoDelete,
+                              arguments
+    );
 }
 
 
@@ -443,9 +459,9 @@ void
 FailoverSession::exchangeDelete(const string& exchange, 
                                 bool ifUnused)
 {
-  session.exchangeDelete ( exchange,
-                           ifUnused
-                         );
+    session.exchangeDelete ( exchange,
+                             ifUnused
+    );
 }
 
 
@@ -453,7 +469,7 @@ FailoverSession::exchangeDelete(const string& exchange,
 qpid::framing::ExchangeQueryResult 
 FailoverSession::exchangeQuery(const string& name)
 {
-  return session.exchangeQuery ( name );
+    return session.exchangeQuery ( name );
 }
 
 
@@ -464,11 +480,11 @@ FailoverSession::exchangeBind(const string& queue,
                               const string& bindingKey, 
                               const FieldTable& arguments)
 {
-  session.exchangeBind ( queue,
-                         exchange,
-                         bindingKey,
-                         arguments
-                       );
+    session.exchangeBind ( queue,
+                           exchange,
+                           bindingKey,
+                           arguments
+    );
 }
 
 
@@ -478,10 +494,10 @@ FailoverSession::exchangeUnbind(const string& queue,
                                 const string& exchange, 
                                 const string& bindingKey)
 {
-  session.exchangeUnbind ( queue,
-                           exchange,
-                           bindingKey
-                         );
+    session.exchangeUnbind ( queue,
+                             exchange,
+                             bindingKey
+    );
 }
 
 
@@ -492,11 +508,11 @@ FailoverSession::exchangeBound(const string& exchange,
                                const string& bindingKey, 
                                const FieldTable& arguments)
 {
-  return session.exchangeBound ( exchange,
-                                 queue,
-                                 bindingKey,
-                                 arguments
-                               );
+    return session.exchangeBound ( exchange,
+                                   queue,
+                                   bindingKey,
+                                   arguments
+    );
 }
 
 
@@ -510,14 +526,14 @@ FailoverSession::queueDeclare(const string& queue,
                               bool autoDelete, 
                               const FieldTable& arguments)
 {
-  session.queueDeclare ( queue,
-                         alternateExchange,
-                         passive,
-                         durable,
-                         exclusive,
-                         autoDelete,
-                         arguments
-                       );
+    session.queueDeclare ( queue,
+                           alternateExchange,
+                           passive,
+                           durable,
+                           exclusive,
+                           autoDelete,
+                           arguments
+    );
 }
 
 
@@ -527,10 +543,10 @@ FailoverSession::queueDelete(const string& queue,
                              bool ifUnused, 
                              bool ifEmpty)
 {
-  session.queueDelete ( queue,
-                        ifUnused,
-                        ifEmpty
-                      );
+    session.queueDelete ( queue,
+                          ifUnused,
+                          ifEmpty
+    );
 }
 
 
@@ -538,7 +554,7 @@ FailoverSession::queueDelete(const string& queue,
 void 
 FailoverSession::queuePurge(const string& queue)
 {
-  session.queuePurge ( queue) ;
+    session.queuePurge ( queue) ;
 }
 
 
@@ -546,7 +562,7 @@ FailoverSession::queuePurge(const string& queue)
 qpid::framing::QueueQueryResult 
 FailoverSession::queueQuery(const string& queue)
 {
-  return session.queueQuery ( queue );
+    return session.queueQuery ( queue );
 }
 
 
@@ -557,20 +573,20 @@ FailoverSession::queueQuery(const string& queue)
 void
 FailoverSession::prepareForFailover ( Connection newConnection )
 {
-  try
-  {
-    newSession = newConnection.newSession();
-  }
-  catch ( const std::exception& error )
-  {
-    throw Exception(QPID_MSG("Can't create failover session."));
-  }
+    try
+    {
+        newSession = newConnection.newSession();
+    }
+    catch ( const std::exception& error )
+    {
+        throw Exception(QPID_MSG("Can't create failover session."));
+    }
 
-
-  if ( failoverSubscriptionManager )
-  {
-    failoverSubscriptionManager->prepareForFailover ( newSession );
-  }
+    if ( failoverSubscriptionManager )
+    {
+        // 
+        failoverSubscriptionManager->prepareForFailover ( newSession );
+    }
 }
 
 
@@ -578,15 +594,16 @@ FailoverSession::prepareForFailover ( Connection newConnection )
 void 
 FailoverSession::failover (  )
 {
-  if ( failoverSubscriptionManager )
-  {
-    failoverSubscriptionManager->failover ( );
-  }
-
-  session = newSession;
+    if ( failoverSubscriptionManager )
+    {
+        failoverSubscriptionManager->failover ( );
+    }
+    session = newSession;
 }
 
 
-
+void FailoverSession::setFailoverSubscriptionManager(FailoverSubscriptionManager* fsm) {
+    failoverSubscriptionManager = fsm;
+}
 
 }} // namespace qpid::client
