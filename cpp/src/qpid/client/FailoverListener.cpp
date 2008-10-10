@@ -21,6 +21,8 @@
 #include "FailoverListener.h"
 #include "SessionBase_0_10Access.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/log/Statement.h"
+#include "qpid/log/Helpers.h"
 
 namespace qpid {
 namespace client {
@@ -67,16 +69,17 @@ FailoverListener::~FailoverListener() {
 
 void FailoverListener::received(Message& msg) {
     sys::Mutex::ScopedLock l(lock);
-    knowBrokers.clear();
+    knownBrokers.clear();
     framing::Array urlArray;
     msg.getHeaders().getArray("amq.failover", urlArray);
     for (framing::Array::ValueVector::const_iterator i = urlArray.begin(); i < urlArray.end(); ++i ) 
-        knowBrokers.push_back(Url((*i)->get<std::string>()));
+        knownBrokers.push_back(Url((*i)->get<std::string>()));
+    QPID_LOG(info, "Known-brokers update: " << log::formatList(knownBrokers));
 }
 
 std::vector<Url> FailoverListener::getKnownBrokers() const {
     sys::Mutex::ScopedLock l(lock);
-    return knowBrokers;
+    return knownBrokers;
 }
 
 }} // namespace qpid::client
