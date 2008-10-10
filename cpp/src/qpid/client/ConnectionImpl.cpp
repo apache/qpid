@@ -151,13 +151,20 @@ static const std::string CONN_CLOSED("Connection closed by broker");
 
 void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
-    if (handler.isClosed()) return;
+    if (handler.isClosed()) 
+    {
+    std::cerr << "MDEBUG  ConnectionImpl::shutdown -- returning w/o failure callback!\n";
+    return;
+    }
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
     // an appropriate close-code. connection-forced is not right.
     if (!handler.isClosing()) 
         closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     handler.fail(CONN_CLOSED);
+
+    if ( failureCallback )
+      failureCallback();
 }
 
 void ConnectionImpl::erase(uint16_t ch) {
@@ -171,8 +178,8 @@ const ConnectionSettings& ConnectionImpl::getNegotiatedSettings()
 }
     
 std::vector<qpid::Url> ConnectionImpl::getKnownBrokers() {
-    // FIXME aconway 2008-10-08: initialize failover list from openOk or settings
-    return failover ? failover->getKnownBrokers() : std::vector<qpid::Url>();
+    // FIXME aconway 2008-10-08: ensure we never return empty list, always include self Url.
+    return failover ? failover->getKnownBrokers() : handler.knownBrokersUrls;
 }
 
 boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& name, uint32_t timeout, uint16_t channel) {

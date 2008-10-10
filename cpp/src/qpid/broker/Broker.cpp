@@ -140,7 +140,8 @@ Broker::Broker(const Broker::Options& conf) :
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
-        *this)
+        *this),
+   getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if(conf.enableMgmt){
         QPID_LOG(info, "Management enabled");
@@ -425,6 +426,16 @@ uint32_t Broker::queueMoveMessages(
 
 
 boost::shared_ptr<sys::Poller> Broker::getPoller() { return poller; }
+
+std::vector<Url> 
+Broker::getKnownBrokersImpl()
+{
+  knownBrokers.clear();
+  knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort() ) );
+  return knownBrokers;
+}
+
+
 
 }} // namespace qpid::broker
 
