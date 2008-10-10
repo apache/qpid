@@ -126,7 +126,7 @@ FailoverConnection::failover ( )
 {
     std::vector<Url> knownBrokers = connection.getKnownBrokers();
     if (knownBrokers.empty())
-         throw Exception(QPID_MSG("FailoverConnection::failover " << name << " no known brokers."));
+        throw Exception(QPID_MSG("FailoverConnection::failover " << name << " no known brokers."));
 
     Connection newConnection;
     for (std::vector<Url>::iterator i = knownBrokers.begin(); i != knownBrokers.end(); ++i) {
@@ -171,12 +171,8 @@ FailoverConnection::failover ( )
     }
 
     connection = newConnection;
-
-    // FIXME aconway 2008-10-09: use sys/Time.h functions.
-    if ( failoverCompleteTime )
-    {
-        gettimeofday ( failoverCompleteTime, 0 );
-    }
+    connection.registerFailureCallback
+        ( boost::bind(&FailoverConnection::failover, this));
 }
 
 

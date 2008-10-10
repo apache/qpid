@@ -39,6 +39,7 @@ main ( int argc, char ** argv)
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     int count  = argc>3 ? atoi(argv[3]) : 30;
+    int delayMs  = argc>4 ? atoi(argv[4]) : 1000;
 
     try {
         FailoverConnection connection;
@@ -70,7 +71,7 @@ main ( int argc, char ** argv)
                                        0,
                                        message
             );
-            sleep ( 1 );
+            usleep ( 1000*delayMs );
             ++ sent;
         }
         message.setData ( "That's all, folks!" );
