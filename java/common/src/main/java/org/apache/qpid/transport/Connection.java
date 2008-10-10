@@ -175,7 +175,15 @@ public class Connection
                 Throwable t = error;
                 error = null;
                 close();
-                throw new ConnectionException(t);
+                
+                if (t instanceof ProtocolVersionException)
+                {
+                    throw (ProtocolVersionException) t;
+                }
+                else
+                {
+                    throw new ConnectionException(t);
+                }
             }
 
             switch (state)

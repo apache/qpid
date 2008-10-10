@@ -64,11 +64,12 @@ public class ClientDelegate extends ConnectionDelegate
 
     public void init(Channel ch, ProtocolHeader hdr)
     {
-        if (hdr.getMajor() != 0 && hdr.getMinor() != 10)
+        if (!(hdr.getMajor() == 0 && hdr.getMinor() == 10))
         {
             Connection conn = ch.getConnection();
             conn.exception(new ProtocolVersionException(hdr.getMajor(), hdr.getMinor()));
         }
+
     }
 
     @Override public void connectionStart(Channel ch, ConnectionStart start)
