@@ -250,7 +250,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected AMQConnectionDelegate _delegate;
 
     // this connection maximum number of prefetched messages
-    private long _maxPrefetch;
+    protected int _maxPrefetch;
 
     //Indicates whether persistent messages are synchronized
     private boolean _syncPersistence;
@@ -337,13 +337,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // set this connection maxPrefetch
         if (connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH) != null)
         {
-            _maxPrefetch = Long.parseLong(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
+            _maxPrefetch = Integer.parseInt(connectionURL.getOption(ConnectionURL.AMQ_MAXPREFETCH));
         }
         else
         {
             // use the defaul value set for all connections
-            _maxPrefetch = Long.valueOf(System.getProperties().getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME,
-                                                                           ClientProperties.MAX_PREFETCH_DEFAULT));
+            _maxPrefetch = Integer.parseInt(System.getProperties().getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME,
+                                                                               ClientProperties.MAX_PREFETCH_DEFAULT));
         }
 
         if (connectionURL.getOption(ConnectionURL.AMQ_SYNC_PERSISTENCE) != null)
@@ -653,7 +653,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode) throws JMSException
     {
-        return createSession(transacted, acknowledgeMode, AMQSession.DEFAULT_PREFETCH_HIGH_MARK);
+        return createSession(transacted, acknowledgeMode, _maxPrefetch);
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode, final int prefetch)
