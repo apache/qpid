@@ -217,7 +217,7 @@ static class RdmaIOPlugin : public Plugin {
             const broker::Broker::Options& opts = broker->getOptions();
             ProtocolFactory::shared_ptr protocol(new RdmaIOProtocolFactory(opts.port, opts.connectionBacklog));
             QPID_LOG(info, "Listening on RDMA port " << protocol->getPort());
-            broker->registerProtocolFactory(protocol);
+            broker->registerProtocolFactory("rdma", protocol);
         }
     }
 } rdmaPlugin;
