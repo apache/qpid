@@ -587,7 +587,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         try
         {
             AMQMessage msg = entry.getMessage();
-            if (isDurable() && msg.isPersistent())
+            if (msg.isPersistent())
             {
                 _virtualHost.getMessageStore().dequeueMessage(storeContext, this, msg.getMessageId());
             }
