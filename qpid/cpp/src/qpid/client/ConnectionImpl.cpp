@@ -151,11 +151,8 @@ static const std::string CONN_CLOSED("Connection closed by broker");
 
 void ConnectionImpl::shutdown() {
     Mutex::ScopedLock l(lock);
-    if (handler.isClosed()) 
-    {
-    std::cerr << "MDEBUG  ConnectionImpl::shutdown -- returning w/o failure callback!\n";
-    return;
-    }
+    if (handler.isClosed()) return;
+
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
     // an appropriate close-code. connection-forced is not right.
     if (!handler.isClosing()) 

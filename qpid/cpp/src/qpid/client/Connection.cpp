@@ -139,7 +139,7 @@ void Connection::close() {
 }
 
 std::vector<Url> Connection::getKnownBrokers() {
-    return isOpen() ? impl->getKnownBrokers() : std::vector<Url>();
+    return impl ? impl->getKnownBrokers() : std::vector<Url>();
 }
 
 }} // namespace qpid::client
