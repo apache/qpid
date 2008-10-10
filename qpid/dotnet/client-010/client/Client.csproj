@@ -189,7 +189,6 @@
     <Compile Include="transport\RangeSet.cs" />
     <Compile Include="transport\ReceivedPayload.cs" />
     <Compile Include="transport\Receiver.cs" />
-    <Compile Include="transport\Result.cs" />
     <Compile Include="transport\Sender.cs" />
     <Compile Include="transport\Session.cs" />
     <Compile Include="transport\SessionDelegate.cs" />
