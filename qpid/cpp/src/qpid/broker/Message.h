@@ -30,6 +30,7 @@
 #include "MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Time.h"
 
 namespace qpid {
 	
@@ -70,6 +71,8 @@ public:
     const framing::FieldTable* getApplicationHeaders() const;
     bool isPersistent();
     bool requiresAccept();
+    void setTimestamp();
+    bool hasExpired() const;
 
     framing::FrameSet& getFrames() { return frames; } 
     const framing::FrameSet& getFrames() const { return frames; } 
@@ -147,6 +150,7 @@ public:
 	bool forcePersistentPolicy; // used to force message as durable, via a broker policy
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
+    qpid::sys::AbsTime expiration;
 
     static TransferAdapter TRANSFER;
 

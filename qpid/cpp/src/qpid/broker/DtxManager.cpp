@@ -33,7 +33,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager() : store(0) {}
+DtxManager::DtxManager(Timer& t) : store(0), timer(t) {}
 
 DtxManager::~DtxManager() {}
 

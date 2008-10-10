@@ -33,6 +33,7 @@
 #include "SessionManager.h"
 #include "Vhost.h"
 #include "System.h"
+#include "Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementBroker.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -97,13 +98,14 @@ class Broker : public sys::Runnable, public Plugin::Target,
     management::ManagementAgent::Singleton managementAgentSingleton;
     std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
     MessageStore* store;
-	AclModule* acl;
+    AclModule* acl;
     DataDir dataDir;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;
     boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
+    Timer timer;
     DtxManager dtxManager;
     SessionManager sessionManager;
     management::ManagementAgent* managementAgent;
@@ -194,6 +196,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
+
+    Timer& getTimer() { return timer; }
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
     

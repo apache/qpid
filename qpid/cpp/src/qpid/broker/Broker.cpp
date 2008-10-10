@@ -136,6 +136,7 @@ Broker::Broker(const Broker::Options& conf) :
     dataDir(conf.noDataDir ? std::string () : conf.dataDir),
     links(this),
     factory(new ConnectionFactory(*this)),
+    dtxManager(timer),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.

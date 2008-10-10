@@ -264,6 +264,12 @@ bool Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
             return false;
         } else {
             QueuedMessage msg = messages.front();
+            if (msg.payload->hasExpired()) {
+                QPID_LOG(debug, "Message expired from queue '" << name << "'");
+                popAndDequeue();
+                continue;
+            }
+
             if (!optimisticConsume && store && !msg.payload->isEnqueueComplete()) { 
                 QPID_LOG(debug, "Messages not ready to dispatch on queue '" << name << "'");
                 addListener(c);
@@ -294,7 +300,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
     QueuedMessage msg(this);
     while (seek(msg, c)) {
-        if (c->filter(msg.payload)) {
+        if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
             if (c->accept(msg.payload)) {
                 //consumer wants the message
                 c->position = msg.position;

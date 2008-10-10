@@ -341,6 +341,11 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
     }
 }
 
+namespace
+{
+const std::string nullstring;
+}
+
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     //TODO: the following should be hidden behind message (using MessageAdapter or similar)
@@ -352,6 +357,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
         if (!msg->hasProperties<DeliveryProperties>() ||
             msg->getProperties<DeliveryProperties>()->getExchange().empty())
             msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
+        msg->setTimestamp();
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
@@ -359,18 +365,19 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
 
     /* verify the userid if specified: */
     std::string id =
-    	msg->hasProperties<MessageProperties>()? msg->getProperties<MessageProperties>()->getUserId():"";
+    	msg->hasProperties<MessageProperties>() ? msg->getProperties<MessageProperties>()->getUserId() : nullstring;
 
     if (authMsg &&  !id.empty() && id != userID )
     {
-        QPID_LOG(debug, "user id : " << userID << " msgProps.getUserID() " << msg->getProperties<MessageProperties>()->getUserId());
-        throw UnauthorizedAccessException("user id in the message is not the same id used to authenticate the connection");
+        QPID_LOG(debug, "authorised user id : " << userID << " but user id in message declared as " << id);
+        throw UnauthorizedAccessException(QPID_MSG("authorised user id : " << userID << " but user id in message declared as " << id));
     }
 
     if (acl && acl->doTransferAcl())
     {
         if (!acl->authorise(getSession().getConnection().getUserId(),acl::PUBLISH,acl::EXCHANGE,exchangeName, msg->getRoutingKey() ))
-            throw NotAllowedException("ACL denied exhange publish request");
+            throw NotAllowedException(QPID_MSG(getSession().getConnection().getUserId() << " cannot publish to " <<
+                                               exchangeName << " with routing-key " << msg->getRoutingKey()));
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
