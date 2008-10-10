@@ -107,7 +107,7 @@ void Link::startConnectionLH ()
         // Set the state before calling connect.  It is possible that connect
         // will fail synchronously and call Link::closed before returning.
         setStateLH(STATE_CONNECTING);
-        broker->connect (host, port, useSsl,
+        broker->connect (host, port, useSsl ? "ssl" : Broker::TCP_TRANSPORT,
                          boost::bind (&Link::closed, this, _1, _2));
     } catch(std::exception& e) {
         setStateLH(STATE_WAITING);

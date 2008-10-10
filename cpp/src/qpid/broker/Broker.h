@@ -93,10 +93,12 @@ class Broker : public sys::Runnable, public Plugin::Target,
     };
  
   private:
+    typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
+
     boost::shared_ptr<sys::Poller> poller;
     Options config;
     management::ManagementAgent::Singleton managementAgentSingleton;
-    std::vector< boost::shared_ptr<sys::ProtocolFactory> > protocolFactories;
+    ProtocolFactoryMap protocolFactories;
     MessageStore* store;
     AclModule* acl;
     DataDir dataDir;
@@ -166,13 +168,14 @@ class Broker : public sys::Runnable, public Plugin::Target,
                                                         std::string& text);
     
     /** Add to the broker's protocolFactorys */
-    void registerProtocolFactory(boost::shared_ptr<sys::ProtocolFactory>);
+    void registerProtocolFactory(const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
 
     /** Accept connections */
     void accept();
 
     /** Create a connection to another broker. */
-    void connect(const std::string& host, uint16_t port, bool useSsl,
+    void connect(const std::string& host, uint16_t port, 
+                 const std::string& transport,
                  boost::function2<void, int, std::string> failed,
                  sys::ConnectionCodec::Factory* =0);
     /** Create a connection to another broker. */
@@ -189,7 +192,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
     // For the present just return the first ProtocolFactory registered.
-    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory() const;
+    boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
 
     /** Expose poller so plugins can register their descriptors. */
     boost::shared_ptr<sys::Poller> getPoller();
@@ -200,7 +203,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Timer& getTimer() { return timer; }
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
-    
+
+    static const std::string TCP_TRANSPORT;
 };
 
 }}

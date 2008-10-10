@@ -370,34 +370,35 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     return status;
 }
 
-boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory() const {
-    assert(protocolFactories.size() > 0);
-    return protocolFactories[0];
+boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
+    ProtocolFactoryMap::const_iterator i = protocolFactories.find(name);
+    if (i == protocolFactories.end()) return boost::shared_ptr<ProtocolFactory>();
+    else return i->second;
 }
 
-void Broker::registerProtocolFactory(ProtocolFactory::shared_ptr protocolFactory) {
-    protocolFactories.push_back(protocolFactory);
-}
-
-// TODO: This can only work if there is only one protocolFactory
+//TODO: should this allow choosing the port by transport name?
 uint16_t Broker::getPort() const  {
     return getProtocolFactory()->getPort();
 }
 
-// TODO: This should iterate over all protocolFactories
-void Broker::accept() {
-    for (unsigned int i = 0; i < protocolFactories.size(); ++i)
-        protocolFactories[i]->accept(poller, factory.get());
+void Broker::registerProtocolFactory(const std::string& name, ProtocolFactory::shared_ptr protocolFactory) {
+    protocolFactories[name] = protocolFactory;
 }
 
+void Broker::accept() {
+    for (ProtocolFactoryMap::const_iterator i = protocolFactories.begin(); i != protocolFactories.end(); i++) {
+        i->second->accept(poller, factory.get());
+    }
+}
 
-// TODO: How to chose the protocolFactory to use for the connection
 void Broker::connect(
-    const std::string& host, uint16_t port, bool /*useSsl*/,
+    const std::string& host, uint16_t port, const std::string& transport,
     boost::function2<void, int, std::string> failed,
     sys::ConnectionCodec::Factory* f)
 {
-    getProtocolFactory()->connect(poller, host, port, f ? f : factory.get(), failed);
+    boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
+    if (pf) pf->connect(poller, host, port, f ? f : factory.get(), failed);
+    else throw Exception(QPID_MSG("Unsupported transport type: " << transport));
 }
 
 void Broker::connect(
@@ -407,7 +408,7 @@ void Broker::connect(
 {
     url.throwIfEmpty();
     TcpAddress addr=boost::get<TcpAddress>(url[0]);
-    connect(addr.host, addr.port, false, failed, f);
+    connect(addr.host, addr.port, TCP_TRANSPORT, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages( 
@@ -436,7 +437,7 @@ Broker::getKnownBrokersImpl()
   return knownBrokers;
 }
 
-
+const std::string Broker::TCP_TRANSPORT("tcp");
 
 }} // namespace qpid::broker
 
