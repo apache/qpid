@@ -828,34 +828,49 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
 
     ft.decode(inBuffer);
     value = ft.get("_class");
-    if (value.get() == 0 || !value->convertsTo<string>())
-    {
-        // TODO: Send completion with an error code
+    if (value.get() == 0 || !value->convertsTo<string>()) {
+        value = ft.get("_objectid");
+        if (value.get() == 0 || !value->convertsTo<string>())
+            return;
+
+        ObjectId selector(value->get<string>());
+        ManagementObjectMap::iterator iter = managementObjects.find(selector);
+        if (iter != managementObjects.end()) {
+            ManagementObject* object = iter->second;
+            Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
+
+            encodeHeader(outBuffer, 'g', sequence);
+            object->writeProperties(outBuffer);
+            object->writeStatistics(outBuffer, true);
+            outLen = MA_BUFFER_SIZE - outBuffer.available ();
+            outBuffer.reset ();
+            sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+        }
+        sendCommandComplete(replyToKey, sequence);
         return;
     }
 
     string className (value->get<string>());
 
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++)
-    {
+    for (ManagementObjectMap::iterator iter = managementObjects.begin();
+         iter != managementObjects.end();
+         iter++) {
         ManagementObject* object = iter->second;
-        if (object->getClassName () == className)
-        {
+        if (object->getClassName () == className) {
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
-            encodeHeader (outBuffer, 'g', sequence);
+            encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);
             object->writeStatistics(outBuffer, true);
             outLen = MA_BUFFER_SIZE - outBuffer.available ();
             outBuffer.reset ();
-            sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+            sendBuffer(outBuffer, outLen, dExchange, replyToKey);
         }
     }
 
-    sendCommandComplete (replyToKey, sequence);
+    sendCommandComplete(replyToKey, sequence);
 }
 
 bool ManagementBroker::authorizeAgentMessageLH(Message& msg)

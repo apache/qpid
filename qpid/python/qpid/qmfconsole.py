@@ -227,6 +227,7 @@ class Session:
     _key = <key>       - supply a classKey from the list returned by getClasses.
     _class = <name>    - supply a class name as a string.  If the class name exists
                          in multiple packages, a _package argument may also be supplied.
+    _objectId = <id>   - get the object referenced by the object-id
 
     If objects should be obtained from only one agent, use the following argument.
     Otherwise, the query will go to all agents.
@@ -268,17 +269,20 @@ class Session:
       pname, cname, hash = None, kwargs["_class"], None
       if "_package" in kwargs:
         pname = kwargs["_package"]
-    if cname == None:
-      raise Exception("No class supplied, use '_schema', '_key', or '_class' argument")
-    map = {}
-    map["_class"] = cname
-    if pname != None: map["_package"] = pname
-    if hash  != None: map["_hash"]    = hash
+    if cname == None and "_objectId" not in kwargs:
+      raise Exception("No class supplied, use '_schema', '_key', '_class', or '_objectId' argument")
 
+    map = {}
     self.getSelect = []
-    for item in kwargs:
-      if item[0] != '_':
-        self.getSelect.append((item, kwargs[item]))
+    if "_objectId" in kwargs:
+      map["_objectid"] = kwargs["_objectId"].__repr__()
+    else:
+      map["_class"] = cname
+      if pname != None: map["_package"] = pname
+      if hash  != None: map["_hash"]    = hash
+      for item in kwargs:
+        if item[0] != '_':
+          self.getSelect.append((item, kwargs[item]))
 
     self.getResult = []
     for agent in agentList:
@@ -765,7 +769,7 @@ class ObjectId:
     return 0
 
   def __repr__(self):
-    return "%d-%d-%d-%d-%x" % (self.getFlags(), self.getSequence(),
+    return "%d-%d-%d-%d-%d" % (self.getFlags(), self.getSequence(),
                                self.getBroker(), self.getBank(), self.getObject())
 
   def index(self):
@@ -863,6 +867,12 @@ class Object(object):
         return lambda *args, **kwargs : self._invoke(name, args, kwargs)
     for property, value in self._properties:
       if name == property.name:
+        if property.type == 10:  # Dereference references
+          deref = self._session.getObjects(_objectId=value)
+          if len(deref) != 1:
+            return None
+          else:
+            return deref[0]
         return value
     for statistic, value in self._statistics:
       if name == statistic.name:
