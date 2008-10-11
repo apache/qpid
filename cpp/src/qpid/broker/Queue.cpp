@@ -202,7 +202,8 @@ bool Queue::acquire(const QueuedMessage& msg) {
     Mutex::ScopedLock locker(messageLock);
     QPID_LOG(debug, "attempting to acquire " << msg.position);
     for (Messages::iterator i = messages.begin(); i != messages.end(); i++) {
-        if (i->position == msg.position) {
+        if ((i->position == msg.position && !lastValueQueue) // note that in some cases payload not be set
+            || (lastValueQueue && i->position == msg.position && i->payload.get() == msg.payload.get())) {
             if (lastValueQueue){
                 const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
                 string key = ft->getString(qpidVQMatchProperty);
