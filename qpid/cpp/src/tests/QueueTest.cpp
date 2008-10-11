@@ -423,9 +423,12 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
 
-    framing::SequenceNumber sequence;
-    QueuedMessage qmsg(queue.get(), msg2, ++sequence);
-    queue->acquire(qmsg);
+    framing::SequenceNumber sequence(1);
+    QueuedMessage qmsg(queue.get(), msg1, sequence);
+    QueuedMessage qmsg2(queue.get(), msg2, ++sequence);
+
+    BOOST_CHECK(!queue->acquire(qmsg));
+    BOOST_CHECK(queue->acquire(qmsg2));
     
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     
