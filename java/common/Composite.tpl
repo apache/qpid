@@ -130,9 +130,13 @@ if options or base == "Method":
 }
     }
 
-    public <C> void dispatch(C context, MethodDelegate<C> delegate) {
+${
+
+if base == "Method":
+  out("""    public <C> void dispatch(C context, MethodDelegate<C> delegate) {
         delegate.$(dromedary(name))(context, this);
-    }
+    }""")
+}
 
 ${
 for f in fields:

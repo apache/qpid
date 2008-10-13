@@ -37,31 +37,64 @@ import static org.apache.qpid.transport.Connection.State.*;
  *
  * the connectionClose is kind of different for both sides
  */
-public abstract class ConnectionDelegate extends MethodDelegate<Channel>
+public abstract class ConnectionDelegate
+    extends MethodDelegate<Connection>
+    implements ProtocolDelegate<Connection>
 {
 
     private static final Logger log = Logger.get(ConnectionDelegate.class);
 
-    public SessionDelegate getSessionDelegate()
+    public void control(Connection conn, Method method)
     {
-        return new SessionDelegate();
+        method.dispatch(conn, this);
     }
 
-    public abstract void init(Channel ch, ProtocolHeader hdr);
-
-    @Override public void connectionClose(Channel ch, ConnectionClose close)
+    public void command(Connection conn, Method method)
     {
-        Connection conn = ch.getConnection();
-        ch.connectionCloseOk();
+        method.dispatch(conn, this);
+    }
+
+    public void error(Connection conn, ProtocolError error)
+    {
+        conn.exception(new ConnectionException(error.getMessage()));
+    }
+
+    public void handle(Connection conn, Method method)
+    {
+        conn.dispatch(method);
+    }
+
+    @Override public void connectionClose(Connection conn, ConnectionClose close)
+    {
+        conn.connectionCloseOk();
         conn.getSender().close();
         conn.closeCode(close);
         conn.setState(CLOSE_RCVD);
     }
 
-    @Override public void connectionCloseOk(Channel ch, ConnectionCloseOk ok)
+    @Override public void connectionCloseOk(Connection conn, ConnectionCloseOk ok)
     {
-        Connection conn = ch.getConnection();
         conn.getSender().close();
+    }
+
+    @Override public void sessionAttached(Connection conn, SessionAttached atc)
+    {
+        
+    }
+
+    @Override public void sessionDetach(Connection conn, SessionDetach dtc)
+    {
+        Session ssn = conn.getSession(dtc.getChannel());
+        conn.unmap(ssn);
+        ssn.sessionDetached(dtc.getName(), SessionDetachCode.NORMAL);
+        ssn.closed();
+    }
+
+    @Override public void sessionDetached(Connection conn, SessionDetached dtc)
+    {
+        Session ssn = conn.getSession(dtc.getChannel());
+        conn.unmap(ssn);
+        ssn.closed();
     }
 
 }

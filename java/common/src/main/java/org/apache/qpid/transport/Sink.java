@@ -31,7 +31,7 @@ import org.apache.qpid.transport.network.io.IoAcceptor;
  *
  */
 
-public class Sink extends SessionDelegate
+public class Sink implements SessionListener
 {
 
     private static final String FORMAT_HDR = "%-12s %-18s %-18s %-18s";
@@ -85,7 +85,9 @@ public class Sink extends SessionDelegate
         return String.format("%d/%.2f", count, ((double) bytes)/(1024*1024));
     }
 
-    public void messageTransfer(Session ssn, MessageTransfer xfr)
+    public void opened(Session ssn) {}
+
+    public void message(Session ssn, MessageTransfer xfr)
     {
         count++;
         bytes += xfr.getBody().remaining();
@@ -101,14 +103,22 @@ public class Sink extends SessionDelegate
         ssn.processed(xfr);
     }
 
+    public void exception(Session ssn, SessionException exc)
+    {
+        exc.printStackTrace();
+    }
+
+    public void closed(Session ssn) {}
+
     public static final void main(String[] args) throws IOException
     {
         ConnectionDelegate delegate = new ServerDelegate()
         {
-
-            public SessionDelegate getSessionDelegate()
+            @Override public Session getSession(Connection conn, SessionAttach atc)
             {
-                return new Sink();
+                Session ssn = super.getSession(conn, atc);
+                ssn.setSessionListener(new Sink());
+                return ssn;
             }
         };
 

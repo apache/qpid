@@ -181,6 +181,11 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
     {
         if (!closed.getAndSet(true))
         {
+            synchronized (notFull)
+            {
+                notFull.notify();
+            }
+
             synchronized (notEmpty)
             {
                 notEmpty.notify();
