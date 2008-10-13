@@ -932,6 +932,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     }
                     catch (AMQException e)
                     {
+                        _logger.error("error:", e);
                         JMSException jmse = new JMSException("Error closing connection: " + e);
                         jmse.setLinkedException(e);
                         throw jmse;
