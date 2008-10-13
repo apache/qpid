@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "qpid/Exception.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/ExchangeRegistry.h"
@@ -458,6 +459,44 @@ QPID_AUTO_TEST_CASE(testLVQSaftyCheck){
 	deq.pop_front();
     BOOST_CHECK_EQUAL(&deq.front(),tmp);
 
+}
+
+void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTtl = 0) 
+{
+    for (uint i = 0; i < count; i++) {
+        intrusive_ptr<Message> m = message("exchange", "key");
+        if (i % 2) {
+            if (oddTtl) m->getProperties<DeliveryProperties>()->setTtl(oddTtl);
+        } else {
+            if (evenTtl) m->getProperties<DeliveryProperties>()->setTtl(evenTtl);
+        }
+        m->setTimestamp();
+        queue.deliver(m);
+    }
+}
+
+QPID_AUTO_TEST_CASE(testPurgeExpired) {
+    Queue queue("my-queue");
+    addMessagesToQueue(10, queue);
+    BOOST_CHECK_EQUAL(queue.getMessageCount(), 10u);
+    ::usleep(300*1000);
+    queue.purgeExpired();
+    BOOST_CHECK_EQUAL(queue.getMessageCount(), 5u);
+}
+
+QPID_AUTO_TEST_CASE(testQueueCleaner) {
+    Timer timer;
+    QueueRegistry queues;
+    Queue::shared_ptr queue = queues.declare("my-queue").first;
+    addMessagesToQueue(10, *queue, 200, 400);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 10u);
+
+    QueueCleaner cleaner(queues, timer);
+    cleaner.start(100 * qpid::sys::TIME_MSEC);
+    ::usleep(300*1000);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 5u);
+    ::usleep(300*1000);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 0u);
 }
 
 QPID_AUTO_TEST_SUITE_END()

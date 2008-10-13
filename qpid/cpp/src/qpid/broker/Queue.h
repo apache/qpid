@@ -189,6 +189,7 @@ namespace qpid {
             void cancel(Consumer::shared_ptr c);
 
             uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
+            void purgeExpired();
 
 	    //move qty # of messages to destination Queue destq
 	    uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 

@@ -87,6 +87,7 @@ Broker::Options::Options(const std::string& name) :
     stagingThreshold(5000000),
     enableMgmt(1),
     mgmtPubInterval(10),
+    queueCleanInterval(60*10),//10 minutes
     auth(AUTH_DEFAULT),
     realm("QPID"),
     replayFlushLimit(0),
@@ -114,6 +115,8 @@ Broker::Options::Options(const std::string& name) :
         ("staging-threshold", optValue(stagingThreshold, "N"), "Stages messages over N bytes to disk")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
+        ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"), 
+         "Interval between attempts to purge any expired messages from queues")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
         ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)")
@@ -142,7 +145,8 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-   getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
+    queueCleaner(queues, timer),
+    getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if(conf.enableMgmt){
         QPID_LOG(info, "Management enabled");
@@ -244,6 +248,10 @@ Broker::Broker(const Broker::Options& conf) :
          i != plugins.end();
          i++)
         (*i)->initialize(*this);
+
+    if (conf.queueCleanInterval) {
+        queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
+    }
 }
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)

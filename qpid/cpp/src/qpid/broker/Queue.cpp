@@ -403,6 +403,19 @@ QueuedMessage Queue::get(){
     return msg;
 }
 
+void Queue::purgeExpired()
+{
+    Mutex::ScopedLock locker(messageLock);
+    for (Messages::iterator i = messages.begin(); i != messages.end(); ) {
+        if (i->payload->hasExpired()) {
+            dequeue(0, *i);
+            i = messages.erase(i);
+        } else {
+            ++i;
+        }
+    } 
+}
+
 /**
  * purge - for purging all or some messages on a queue
  *         depending on the purge_request
