@@ -90,7 +90,7 @@ for f in fields:
 
 if segments:
   out("    private Header _header;\n")
-  out("    private MemoryStream _body;\n")
+  out("    private MemoryStream _body = new MemoryStream();\n")
 }
 
 ${
