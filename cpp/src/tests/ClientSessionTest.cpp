@@ -42,6 +42,7 @@ using namespace qpid;
 using qpid::sys::Monitor;
 using qpid::sys::Thread;
 using qpid::sys::TIME_SEC;
+using qpid::broker::Broker;
 using std::string;
 using std::cout;
 using std::endl;
@@ -94,6 +95,8 @@ struct SimpleListener : public MessageListener
 
 struct ClientSessionFixture : public ProxySessionFixture
 {
+    ClientSessionFixture(Broker::Options opts = Broker::Options()) : ProxySessionFixture(opts) {}
+
     void declareSubscribe(const string& q="my-queue",
                           const string& dest="my-dest")
     {
@@ -280,6 +283,43 @@ QPID_AUTO_TEST_CASE(testOpenFailure) {
     BOOST_CHECK(c.isOpen());
     c.close();
     BOOST_CHECK(!c.isOpen());
+}
+
+QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
+    Broker::Options opts;
+    opts.queueCleanInterval = 1;
+    ClientSessionFixture fix(opts);
+    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
+
+    for (uint i = 0; i < 10; i++) {        
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+        if (i % 2) m.getDeliveryProperties().setTtl(500);
+        fix.session.messageTransfer(arg::content=m);
+    }
+
+    BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 10u);
+    sleep(2);
+    BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 5u);
+}
+
+QPID_AUTO_TEST_CASE(testExpirationOnPop) {
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
+
+    for (uint i = 0; i < 10; i++) {        
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+        if (i % 2) m.getDeliveryProperties().setTtl(200);
+        fix.session.messageTransfer(arg::content=m);
+    }
+
+    ::usleep(300* 1000);
+
+    for (uint i = 0; i < 10; i++) {        
+        if (i % 2) continue;
+        Message m;
+        BOOST_CHECK(fix.subs.get(m, "my-queue", TIME_SEC));
+        BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), m.getData());
+    }
 }
 
 QPID_AUTO_TEST_SUITE_END()
