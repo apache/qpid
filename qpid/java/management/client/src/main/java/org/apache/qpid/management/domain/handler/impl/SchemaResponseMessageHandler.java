@@ -49,10 +49,6 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
     {        
         try 
         {
-            int classKind = decoder.readUint8();
-            if (classKind != 1) {
-                return;
-            }
             String packageName = decoder.readStr8();
             String className = decoder.readStr8();
             
@@ -61,7 +57,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
             int howManyProperties = decoder.readUint16();
             int howManyStatistics = decoder.readUint16();
             int howManyMethods = decoder.readUint16();
-            int howManyEvents = 0;
+            int howManyEvents = decoder.readUint16();
                                     
             // FIXME : Divide between schema error and raw data conversion error!!!!
             _domainModel.addSchema(

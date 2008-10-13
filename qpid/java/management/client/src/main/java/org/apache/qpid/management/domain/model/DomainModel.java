@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
 
@@ -40,6 +41,8 @@ public class DomainModel
     
     /** Here the known packages of the remote broker are stored. */
     Map<String,QpidPackage> _packages = new HashMap<String, QpidPackage>();
+
+    private IMethodInvocationListener _methodInvocationListener;
     
     /**
      * Builds a new domain model with the given broker identifier.
@@ -170,5 +173,15 @@ public class DomainModel
         {
             qpidPackage.releaseResources();
         }
+    }
+
+    public void setMethodInvocationListener(IMethodInvocationListener listener)
+    {
+        this._methodInvocationListener = listener;
+    }
+    
+    IMethodInvocationListener getMethodInvocationListener ()
+    {
+        return _methodInvocationListener;
     }
 }

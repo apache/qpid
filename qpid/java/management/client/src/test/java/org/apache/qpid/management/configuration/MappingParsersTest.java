@@ -20,16 +20,11 @@
  */
 package org.apache.qpid.management.configuration;
 
-import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.TestCase;
 
 import org.apache.qpid.management.TestConstants;
-import org.apache.qpid.management.domain.handler.base.IMessageHandler;
-import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
-import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
-import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
 import org.apache.qpid.management.domain.model.AccessMode;
 import org.apache.qpid.management.domain.model.type.Type;
 import org.apache.qpid.management.domain.model.type.Uint8;
@@ -102,73 +97,6 @@ public class MappingParsersTest extends TestCase
         assertEquals(virtualHost,result.getVirtualHost());
         assertEquals(username,result.getUsername());
         assertEquals(password,result.getPassword());
-    }
-
-    /**
-     * Tests the execution of the management queue handler mapping parser.
-     * 
-     * <br>precondition: Two managenent queue handlers mapping are built by the parser;
-     * <br>postcondition: the corresponding management handlers are available on the configuration.
-     */
-    public void testManagementQueueMessageListenerParser() 
-    {
-        String instrOpcode = "i";
-        String configOpCode = "c";
-        
-        ManagementQueueMessageListenerParser parser = new ManagementQueueMessageListenerParser();
-        
-        parser.setCurrrentAttributeValue(instrOpcode);
-        parser.setCurrentAttributeName(Tag.OPCODE.toString());
-        parser.setCurrrentAttributeValue(InstrumentationMessageHandler.class.getName());
-        parser.setCurrentAttributeName(Tag.CLASS_NAME.toString());
-        parser.setCurrentAttributeName(Tag.HANDLER.toString());
-
-        parser.setCurrrentAttributeValue(configOpCode);
-        parser.setCurrentAttributeName(Tag.OPCODE.toString());
-        parser.setCurrrentAttributeValue(ConfigurationMessageHandler.class.getName());
-        parser.setCurrentAttributeName(Tag.CLASS_NAME.toString());
-        parser.setCurrentAttributeName(Tag.HANDLER.toString());
-
-        
-        Map<Character,IMessageHandler> result = Configuration.getInstance().getManagementQueueHandlers();
-        
-        assertEquals(2,result.size());
-        
-        assertEquals(InstrumentationMessageHandler.class,result.get(instrOpcode.charAt(0)).getClass());
-        assertEquals(ConfigurationMessageHandler.class,result.get(configOpCode.charAt(0)).getClass());  
-    }  
-    
-    /**
-     * Tests the execution of the method-reply queue handler mapping parser.
-     * 
-     * <br>precondition: two method-reply queue handler mappings are built by the parser;
-     * <br>postcondition: the corresponding method-reply handlers are available on the configuration.
-     */
-    public void testMethodReplyQueueMessageListenerParser() 
-    {
-        String schemaOpcode = "s";
-        String configOpCode = "c";
-        
-        MethodReplyQueueMessageListenerParser parser = new MethodReplyQueueMessageListenerParser();
-        
-        parser.setCurrrentAttributeValue(schemaOpcode);
-        parser.setCurrentAttributeName(Tag.OPCODE.toString());
-        parser.setCurrrentAttributeValue(SchemaResponseMessageHandler.class.getName());
-        parser.setCurrentAttributeName(Tag.CLASS_NAME.toString());
-        parser.setCurrentAttributeName(Tag.HANDLER.toString());
-
-        parser.setCurrrentAttributeValue(configOpCode);
-        parser.setCurrentAttributeName(Tag.OPCODE.toString());
-        parser.setCurrrentAttributeValue(ConfigurationMessageHandler.class.getName());
-        parser.setCurrentAttributeName(Tag.CLASS_NAME.toString());
-        parser.setCurrentAttributeName(Tag.HANDLER.toString());
-
-        Map<Character,IMessageHandler> result = Configuration.getInstance().getMethodReplyQueueHandlers();
-        
-        assertEquals(2,result.size());
-        
-        assertEquals(SchemaResponseMessageHandler.class,result.get(schemaOpcode.charAt(0)).getClass());
-        assertEquals(ConfigurationMessageHandler.class,result.get(configOpCode.charAt(0)).getClass());  
     }
     
     /**

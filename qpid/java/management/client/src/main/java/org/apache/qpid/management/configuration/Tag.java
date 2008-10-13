@@ -26,9 +26,7 @@ public enum Tag {
 	VIRTUAL_HOST { @Override public String toString() { return "virtual-host"; }},
 	USER { @Override public String toString() { return "user"; }},
 	PASSWORD { @Override public String toString() { return "password"; }},
-	BROKERS { @Override public String toString() { return "brokers"; }},
-	MANAGEMENT_QUEUE { @Override public String toString() { return "management-queue"; }},
-	METHOD_REPLY_QUEUE { @Override public String toString() { return "method-reply-queue"; }};
+	BROKERS { @Override public String toString() { return "brokers"; }};
 	
 	/**
 	 * Returns the enum entry associated to the given tag name.

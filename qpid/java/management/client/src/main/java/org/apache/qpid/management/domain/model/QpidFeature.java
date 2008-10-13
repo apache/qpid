@@ -60,7 +60,7 @@ abstract class QpidFeature
      * 
      * @return the name of the feature.
      */
-    String getName ()
+    public String getName ()
     {
         return _name;
     }

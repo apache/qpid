@@ -86,12 +86,6 @@ public class ConfiguratorTest extends TestCase
 
         configurator.startElement(null, null, Tag.BROKERS.toString(), null);
         assertSame(configurator._brokerConfigurationParser,configurator._currentParser);
-        
-        configurator.startElement(null, null, Tag.MANAGEMENT_QUEUE.toString(), null);
-        assertSame(configurator._managementQueueHandlerParser,configurator._currentParser);
-        
-        configurator.startElement(null, null, Tag.METHOD_REPLY_QUEUE.toString(), null);
-        assertSame(configurator._methodReplyQueueHandlerParser,configurator._currentParser);
     }    
     /**
      * Create a stub configurator which returns the given datafile path.

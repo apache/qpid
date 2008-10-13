@@ -36,7 +36,6 @@ public class DomainModelTest extends BaseDomainModelTestCase
     @Override
     protected void setUp () throws Exception
     {
-        super.setUp();
         _model = new DomainModel(UUID.randomUUID());
     }
     

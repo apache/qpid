@@ -34,7 +34,6 @@ public class QpidPackageTest extends BaseDomainModelTestCase
     @Override
     protected void setUp () throws Exception
     {
-        super.setUp();
         _qpidPackage = new QpidPackage(TestConstants.QPID_PACKAGE_NAME, TestConstants.DOMAIN_MODEL);
     }
     

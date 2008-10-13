@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 public class Map extends Type
 {
@@ -37,8 +37,9 @@ public class Map extends Type
     }
 
     @Override
-    public void encode (Object value, ManagementEncoder encoder)
+    public void encode (Object value, AmqpCoDec encoder)
     {
-        encoder.writeMap((java.util.Map<String, Object>)value);
+        throw new RuntimeException("encode not yet supported for AMQP Map type.");
+        //encoder.writeMap((java.util.Map<String, Object>)value);
     }
 }
