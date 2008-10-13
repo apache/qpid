@@ -341,15 +341,18 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
-        if (hp.i_useSsl)
-            return Manageable::STATUS_FEATURE_NOT_IMPLEMENTED;
+        string transport = hp.i_transport.empty() ? TCP_TRANSPORT : hp.i_transport;
+        if (!getProtocolFactory(transport)) {
+            QPID_LOG(error, "Transport '" << transport << "' not supported");
+            return  Manageable::STATUS_NOT_IMPLEMENTED;
+        }
+        QPID_LOG(info, "Connecting to " << hp.i_host << ":" << hp.i_port << " using '" << transport << "' as " << "'" << hp.i_username << "'");
 
         std::pair<Link::shared_ptr, bool> response =
-            links.declare (hp.i_host, hp.i_port, hp.i_useSsl, hp.i_durable,
+            links.declare (hp.i_host, hp.i_port, transport, hp.i_durable,
                            hp.i_authMechanism, hp.i_username, hp.i_password);
         if (hp.i_durable && response.second)
             store->create(*response.first);
-
         status = Manageable::STATUS_OK;
         break;
       }
@@ -398,7 +401,7 @@ void Broker::connect(
 {
     boost::shared_ptr<ProtocolFactory> pf = getProtocolFactory(transport);
     if (pf) pf->connect(poller, host, port, f ? f : factory.get(), failed);
-    else throw Exception(QPID_MSG("Unsupported transport type: " << transport));
+    else throw NoSuchTransportException(QPID_MSG("Unsupported transport type: " << transport));
 }
 
 void Broker::connect(

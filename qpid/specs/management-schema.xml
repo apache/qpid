@@ -79,11 +79,11 @@
     <method name="connect" desc="Establish a connection to another broker">
       <arg name="host"          dir="I" type="sstr"/>
       <arg name="port"          dir="I" type="uint32"/>
-      <arg name="useSsl"        dir="I" type="bool"/>
       <arg name="durable"       dir="I" type="bool"/>
       <arg name="authMechanism" dir="I" type="sstr"/>
       <arg name="username"      dir="I" type="sstr"/>
       <arg name="password"      dir="I" type="sstr"/>
+      <arg name="transport"     dir="I" type="sstr"/>
     </method>
 
     <method name="queueMoveMessages" desc="Move messages from one queue to another">
@@ -233,7 +233,7 @@
     <property name="vhostRef"  type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="host"      type="sstr"   access="RC" index="y"/>
     <property name="port"      type="uint16" access="RC" index="y"/>
-    <property name="useSsl"    type="bool"   access="RC"/>
+    <property name="transport" type="sstr"   access="RC"/>
     <property name="durable"   type="bool"   access="RC"/>
 
     <statistic name="state"       type="sstr" desc="Operational state of the link"/>

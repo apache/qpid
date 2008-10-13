@@ -56,7 +56,7 @@ void LinkRegistry::periodicMaintenance ()
 
 pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
                                                    uint16_t port,
-                                                   bool     useSsl,
+                                                   string&  transport,
                                                    bool     durable,
                                                    string&  authMechanism,
                                                    string&  username,
@@ -73,7 +73,7 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
     {
         Link::shared_ptr link;
 
-        link = Link::shared_ptr (new Link (this, store, host, port, useSsl, durable,
+        link = Link::shared_ptr (new Link (this, store, host, port, transport, durable,
                                            authMechanism, username, password,
                                            broker, parent));
         links[key] = link;

@@ -47,7 +47,7 @@ namespace qpid {
             MessageStore*       store;
             string        host;
             uint16_t      port;
-            bool          useSsl;
+            string        transport;
             bool          durable;
             string        authMechanism;
             string        username;
@@ -86,7 +86,7 @@ namespace qpid {
                  MessageStore* store,
                  string&       host,
                  uint16_t      port,
-                 bool          useSsl,
+                 string&       transport,
                  bool          durable,
                  string&       authMechanism,
                  string&       username,
