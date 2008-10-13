@@ -70,6 +70,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
 }
 
 void DirectExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
+    preRoute(msg);
     Queues::ConstPtr p;
     {
         Mutex::ScopedLock l(lock);

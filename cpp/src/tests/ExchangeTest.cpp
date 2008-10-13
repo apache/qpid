@@ -165,4 +165,62 @@ QPID_AUTO_TEST_CASE(testDeleteGetAndRedeclare)
     BOOST_CHECK_EQUAL(string("direct"), response.first->getType());  
 }
 
+intrusive_ptr<Message> cmessage(std::string exchange, std::string routingKey) {
+    intrusive_ptr<Message> msg(new Message());
+    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
+    AMQFrame header(in_place<AMQHeaderBody>());
+    msg->getFrames().append(method);
+    msg->getFrames().append(header);
+    msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
+    return msg;
+}
+
+QPID_AUTO_TEST_CASE(testSequenceOptions) 
+{
+    FieldTable args;
+    args.setInt("qpid.msg_sequence",1);
+    
+    DirectExchange direct("direct1", false, args);
+    
+    intrusive_ptr<Message> msg1 = cmessage("e", "A");
+    intrusive_ptr<Message> msg2 = cmessage("e", "B");
+    intrusive_ptr<Message> msg3 = cmessage("e", "C");
+
+    DeliverableMessage dmsg1(msg1);
+    DeliverableMessage dmsg2(msg2);
+    DeliverableMessage dmsg3(msg3);
+
+    direct.route(dmsg1, "abc", 0);
+    direct.route(dmsg2, "abc", 0);
+    direct.route(dmsg3, "abc", 0);
+
+    BOOST_CHECK_EQUAL(1, msg1->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+    BOOST_CHECK_EQUAL(2, msg2->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+    BOOST_CHECK_EQUAL(3, msg3->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+    
+    FanOutExchange fanout("fanout1", false, args);
+    HeadersExchange header("headers1", false, args);
+    TopicExchange topic ("topic1", false, args);
+    
+    // check other exchanges, that they preroute
+    intrusive_ptr<Message> msg4 = cmessage("e", "A");
+    intrusive_ptr<Message> msg5 = cmessage("e", "B");
+    intrusive_ptr<Message> msg6 = cmessage("e", "C");
+
+    DeliverableMessage dmsg4(msg4);
+    DeliverableMessage dmsg5(msg5);
+    DeliverableMessage dmsg6(msg6);
+    
+    fanout.route(dmsg4, "abc", 0);
+    BOOST_CHECK_EQUAL(1, msg4->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+    
+    FieldTable headers;
+    header.route(dmsg5, "abc", &headers);
+    BOOST_CHECK_EQUAL(1, msg5->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+
+    topic.route(dmsg6, "abc", 0);
+    BOOST_CHECK_EQUAL(1, msg6->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
+
+}
+
 QPID_AUTO_TEST_SUITE_END()

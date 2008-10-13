@@ -69,15 +69,18 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, cons
 }
 
 void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
+    preRoute(msg);
     uint32_t count(0);
 
     BindingsArray::ConstPtr p = bindings.snapshot();
-    for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++){
-        msg.deliverTo((*i)->queue);
-        if ((*i)->mgmtBinding != 0)
-            (*i)->mgmtBinding->inc_msgMatched ();
+    if (p.get()){
+        for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++){
+            msg.deliverTo((*i)->queue);
+            if ((*i)->mgmtBinding != 0)
+                (*i)->mgmtBinding->inc_msgMatched ();
+        }
     }
-
+    
     if (mgmtExchange != 0)
     {
         mgmtExchange->inc_msgReceives  ();

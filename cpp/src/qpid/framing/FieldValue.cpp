@@ -135,8 +135,7 @@ Struct32Value::Struct32Value(const std::string& v) :
 
 IntegerValue::IntegerValue(int v) :
     FieldValue(0x21, new FixedWidthValue<4>(v))
-{
-}
+{}
 
 FloatValue::FloatValue(float v) :
     FieldValue(0x23, new FixedWidthValue<4>(reinterpret_cast<uint8_t*>(&v)))
@@ -146,8 +145,17 @@ DoubleValue::DoubleValue(double v) :
     FieldValue(0x33, new FixedWidthValue<8>(reinterpret_cast<uint8_t*>(&v)))
 {}
 
-TimeValue::TimeValue(uint64_t v) :
+Integer64Value::Integer64Value(int64_t v) :
+    FieldValue(0x31, new FixedWidthValue<8>(v))
+{}
+
+Unsigned64Value::Unsigned64Value(uint64_t v) :
     FieldValue(0x32, new FixedWidthValue<8>(v))
+{}
+
+
+TimeValue::TimeValue(uint64_t v) :
+    FieldValue(0x38, new FixedWidthValue<8>(v))
 {
 }
 

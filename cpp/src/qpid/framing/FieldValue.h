@@ -106,10 +106,16 @@ template <>
 inline bool FieldValue::convertsTo<int>() const { return data->convertsToInt(); }
 
 template <>
+inline bool FieldValue::convertsTo<int64_t>() const { return data->convertsToInt(); }
+
+template <>
 inline bool FieldValue::convertsTo<std::string>() const { return data->convertsToString(); }
 
 template <>
 inline int FieldValue::get<int>() const { return data->getInt(); }
+
+template <>
+inline int64_t FieldValue::get<int64_t>() const { return data->getInt(); }
 
 template <>
 inline std::string FieldValue::get<std::string>() const { return data->getString(); }
@@ -276,6 +282,16 @@ class IntegerValue : public FieldValue {
 class TimeValue : public FieldValue {
   public:
     TimeValue(uint64_t v);
+};
+
+class Integer64Value : public FieldValue {
+  public:
+    Integer64Value(int64_t v);
+};
+
+class Unsigned64Value : public FieldValue {
+  public:
+    Unsigned64Value(uint64_t v);
 };
 
 class FieldTableValue : public FieldValue {
