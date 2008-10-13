@@ -36,20 +36,20 @@ QPID_AUTO_TEST_CASE(testSizePolicy)
 	
 	ft.setSizePolicy(REJECT,1,2);
 	
-    BOOST_CHECK(QueueOptions::strREJECT == ft.getString(QueueOptions::strTypeKey));
-    BOOST_CHECK(1 == ft.getInt(QueueOptions::strMaxSizeKey));
-    BOOST_CHECK(2 == ft.getInt(QueueOptions::strMaxCountKey));
+    BOOST_CHECK(QueueOptions::strREJECT == ft.getAsString(QueueOptions::strTypeKey));
+    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strMaxSizeKey));
+    BOOST_CHECK(2 == ft.getAsInt(QueueOptions::strMaxCountKey));
 
 	ft.setSizePolicy(FLOW_TO_DISK,0,2);
-    BOOST_CHECK(QueueOptions::strFLOW_TO_DISK == ft.getString(QueueOptions::strTypeKey));
-    BOOST_CHECK(1 == ft.getInt(QueueOptions::strMaxSizeKey));
-    BOOST_CHECK(2 == ft.getInt(QueueOptions::strMaxCountKey));
+    BOOST_CHECK(QueueOptions::strFLOW_TO_DISK == ft.getAsString(QueueOptions::strTypeKey));
+    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strMaxSizeKey));
+    BOOST_CHECK(2 == ft.getAsInt(QueueOptions::strMaxCountKey));
 
 	ft.setSizePolicy(RING,1,0);
-    BOOST_CHECK(QueueOptions::strRING == ft.getString(QueueOptions::strTypeKey));
+    BOOST_CHECK(QueueOptions::strRING == ft.getAsString(QueueOptions::strTypeKey));
 
 	ft.setSizePolicy(RING_STRICT,1,0);
-    BOOST_CHECK(QueueOptions::strRING_STRICT == ft.getString(QueueOptions::strTypeKey));
+    BOOST_CHECK(QueueOptions::strRING_STRICT == ft.getAsString(QueueOptions::strTypeKey));
 	
 	ft.clearSizePolicy();
 	BOOST_CHECK(!ft.isSet(QueueOptions::strTypeKey));
@@ -65,9 +65,9 @@ QPID_AUTO_TEST_CASE(testFlags)
 	ft.setPersistLastNode();
     ft.setOrdering(LVQ);
 	
-    BOOST_CHECK(1 == ft.getInt(QueueOptions::strOptimisticConsume));
-    BOOST_CHECK(1 == ft.getInt(QueueOptions::strPersistLastNode));
-    BOOST_CHECK(1 == ft.getInt(QueueOptions::strLastValueQueue));
+    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strOptimisticConsume));
+    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strPersistLastNode));
+    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strLastValueQueue));
 	
 	ft.clearOptimisticConsume();
 	ft.clearPersistLastNode();

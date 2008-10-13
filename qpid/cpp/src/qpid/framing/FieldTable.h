@@ -72,16 +72,17 @@ class FieldTable
     void setDouble(const std::string& name, double value);
     //void setDecimal(string& name, xxx& value);
 
-    std::string getString(const std::string& name) const;
-    int getInt(const std::string& name) const;
-//    uint64_t getTimestamp(const std::string& name) const;
+    int getAsInt(const std::string& name) const;
     uint64_t getAsUInt64(const std::string& name) const;
     int64_t getAsInt64(const std::string& name) const;
+    std::string getAsString(const std::string& name) const;
+
     bool getTable(const std::string& name, FieldTable& value) const;
     bool getArray(const std::string& name, Array& value) const;
     bool getFloat(const std::string& name, float& value) const;
     bool getDouble(const std::string& name, double& value) const;
-//    void getDecimal(string& name, xxx& value);
+    //bool getTimestamp(const std::string& name, uint64_t& value) const;
+    //bool getDecimal(string& name, xxx& value);
     void erase(const std::string& name);
     
 

@@ -78,7 +78,7 @@ XmlExchange::XmlExchange(const std::string& _name, bool _durable,
 
 bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* bindingArguments)
 {
-    string queryText = bindingArguments->getString("xquery");
+    string queryText = bindingArguments->getAsString("xquery");
 
     try {
         RWlock::ScopedWlock l(lock);

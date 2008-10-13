@@ -34,7 +34,7 @@ QPID_AUTO_TEST_CASE(testMe)
 {
     FieldTable ft;
     ft.setString("A", "BCDE");
-    BOOST_CHECK(string("BCDE") == ft.getString("A"));
+    BOOST_CHECK(string("BCDE") == ft.getAsString("A"));
 
     char buff[100];
     Buffer wbuffer(buff, 100);
@@ -43,7 +43,7 @@ QPID_AUTO_TEST_CASE(testMe)
     Buffer rbuffer(buff, 100);
     FieldTable ft2;
     rbuffer.get(ft2);
-    BOOST_CHECK(string("BCDE") == ft2.getString("A"));
+    BOOST_CHECK(string("BCDE") == ft2.getAsString("A"));
 
 }
 
@@ -57,10 +57,10 @@ QPID_AUTO_TEST_CASE(testAssignment)
     b = a;
     a.setString("A", "CCCC");
     
-    BOOST_CHECK(string("CCCC") == a.getString("A"));
-    BOOST_CHECK(string("BBBB") == b.getString("A"));
-    BOOST_CHECK_EQUAL(1234, a.getInt("B"));
-    BOOST_CHECK_EQUAL(1234, b.getInt("B"));
+    BOOST_CHECK(string("CCCC") == a.getAsString("A"));
+    BOOST_CHECK(string("BBBB") == b.getAsString("A"));
+    BOOST_CHECK_EQUAL(1234, a.getAsInt("B"));
+    BOOST_CHECK_EQUAL(1234, b.getAsInt("B"));
     BOOST_CHECK(IntegerValue(1234) == *a.get("B"));
     BOOST_CHECK(IntegerValue(1234) == *b.get("B"));
 
@@ -76,10 +76,10 @@ QPID_AUTO_TEST_CASE(testAssignment)
         Buffer rbuffer(buff, c.encodedSize());
         rbuffer.get(d);
         BOOST_CHECK_EQUAL(c, d);
-        BOOST_CHECK(string("CCCC") == c.getString("A"));
+        BOOST_CHECK(string("CCCC") == c.getAsString("A"));
         BOOST_CHECK(IntegerValue(1234) == *c.get("B"));
     }
-    BOOST_CHECK(string("CCCC") == d.getString("A"));
+    BOOST_CHECK(string("CCCC") == d.getAsString("A"));
     BOOST_CHECK(IntegerValue(1234) == *d.get("B"));
 }
 
@@ -110,9 +110,9 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         FieldTable b;
         Array c;
         rbuffer.get(a);
-        BOOST_CHECK(string("A") == a.getString("id"));
+        BOOST_CHECK(string("A") == a.getAsString("id"));
         a.getTable("B", b);
-        BOOST_CHECK(string("B") == b.getString("id"));
+        BOOST_CHECK(string("B") == b.getAsString("id"));
         a.getArray("C", c);
         std::vector<std::string> items;
         c.collect(items);
@@ -141,8 +141,8 @@ QPID_AUTO_TEST_CASE(testFloatAndDouble)
         Buffer rbuffer(buff, 100);
         FieldTable a;
         rbuffer.get(a);
-        BOOST_CHECK(string("abc") == a.getString("string"));
-        BOOST_CHECK(5672 == a.getInt("int"));
+        BOOST_CHECK(string("abc") == a.getAsString("string"));
+        BOOST_CHECK(5672 == a.getAsInt("int"));
         float f2;
         BOOST_CHECK(!a.getFloat("string", f2));
         BOOST_CHECK(!a.getFloat("int", f2));
