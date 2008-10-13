@@ -44,14 +44,16 @@ Link::Link(LinkRegistry*  _links,
            MessageStore*  _store,
            string&        _host,
            uint16_t       _port,
-           bool           _useSsl,
+           string&        _transport,
            bool           _durable,
            string&        _authMechanism,
            string&        _username,
            string&        _password,
            Broker*        _broker,
            management::Manageable* parent)
-    : links(_links), store(_store), host(_host), port(_port), useSsl(_useSsl), durable(_durable),
+    : links(_links), store(_store), host(_host), port(_port), 
+      transport(_transport), 
+      durable(_durable),
       authMechanism(_authMechanism), username(_username), password(_password),
       persistenceId(0), mgmtObject(0), broker(_broker), state(0),
       visitCount(0),
@@ -65,7 +67,7 @@ Link::Link(LinkRegistry*  _links,
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _useSsl, _durable);
+            mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _transport, _durable);
             if (!durable)
                 agent->addObject(mgmtObject);
         }
@@ -107,7 +109,7 @@ void Link::startConnectionLH ()
         // Set the state before calling connect.  It is possible that connect
         // will fail synchronously and call Link::closed before returning.
         setStateLH(STATE_CONNECTING);
-        broker->connect (host, port, useSsl ? "ssl" : Broker::TCP_TRANSPORT,
+        broker->connect (host, port, transport,
                          boost::bind (&Link::closed, this, _1, _2));
     } catch(std::exception& e) {
         setStateLH(STATE_WAITING);
@@ -289,19 +291,20 @@ Link::shared_ptr Link::decode(LinkRegistry& links, Buffer& buffer)
 {
     string   host;
     uint16_t port;
+    string   transport;
     string   authMechanism;
     string   username;
     string   password;
     
     buffer.getShortString(host);
     port = buffer.getShort();
-    bool useSsl(buffer.getOctet());
+    buffer.getShortString(transport);
     bool durable(buffer.getOctet());
     buffer.getShortString(authMechanism);
     buffer.getShortString(username);
     buffer.getShortString(password);
 
-    return links.declare(host, port, useSsl, durable, authMechanism, username, password).first;
+    return links.declare(host, port, transport, durable, authMechanism, username, password).first;
 }
 
 void Link::encode(Buffer& buffer) const 
@@ -309,7 +312,7 @@ void Link::encode(Buffer& buffer) const
     buffer.putShortString(string("link"));
     buffer.putShortString(host);
     buffer.putShort(port);
-    buffer.putOctet(useSsl  ? 1 : 0);
+    buffer.putShortString(transport);
     buffer.putOctet(durable ? 1 : 0);
     buffer.putShortString(authMechanism);
     buffer.putShortString(username);
@@ -321,7 +324,7 @@ uint32_t Link::encodedSize() const
     return host.size() + 1 // short-string (host)
         + 5                // short-string ("link")
         + 2                // port
-        + 1                // useSsl
+        + transport.size() + 1 // short-string(transport)
         + 1                // durable
         + authMechanism.size() + 1
         + username.size() + 1
