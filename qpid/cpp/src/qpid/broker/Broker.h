@@ -31,6 +31,7 @@
 #include "QueueRegistry.h"
 #include "LinkRegistry.h"
 #include "SessionManager.h"
+#include "QueueCleaner.h"
 #include "Vhost.h"
 #include "System.h"
 #include "Timer.h"
@@ -90,6 +91,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint64_t stagingThreshold;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
+        uint16_t queueCleanInterval;
         bool auth;
         std::string realm;
         size_t replayFlushLimit;
@@ -120,6 +122,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     qmf::org::apache::qpid::broker::Broker* mgmtObject;
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
+    QueueCleaner queueCleaner;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 
