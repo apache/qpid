@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 public class ObjectReference extends Type
 {
@@ -37,7 +37,7 @@ public class ObjectReference extends Type
     }
 
     @Override
-    public void encode (Object value, ManagementEncoder encoder)
+    public void encode (Object value, AmqpCoDec encoder)
     {
         ((Binary)value).encode(encoder);
     }

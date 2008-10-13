@@ -57,9 +57,15 @@ public class QMan
             public void run ()
             {
                 LOGGER.info("<QMAN-000006> : Shutting down Q-Man...");
-                for (ManagementClient client : managementClients)
-                {   
-                    client.shutdown();  
+                try 
+                {
+                    for (ManagementClient client : managementClients)
+                    {   
+                        client.shutdown();  
+                    }
+                } catch(Exception exception)
+                {
+                    
                 }
                 LOGGER.info("<QMAN-000007> : Q-Man shut down.");                
             }
@@ -85,7 +91,7 @@ public class QMan
                     
                     LOGGER.info("<QMAN-000004> : Management client for broker %s successfully connected.",brokerId);
                 } catch(StartupFailureException exception) {
-                    LOGGER.error(exception, "<QMAN-100001>: Cannot connect to broker %s on %s:%s",brokerId,data.getHost(),data.getPort());
+                    LOGGER.error(exception, "<QMAN-100001>: Cannot connect to broker %s on %s",brokerId,data);
                 }
             }
             LOGGER.info("<QMAN-000004> : Q-Man open for e-business.");
@@ -96,7 +102,9 @@ public class QMan
             while ( !"q".equals(reader.readLine()) ){
             }
        } catch(ConfigurationException exception) {
-            LOGGER.error(exception, "<QMAN-100002> : Q-Man was unable to startup correctly : a configuration error occurred.");
+            LOGGER.error(
+                    exception, 
+                    "<QMAN-100002> : Q-Man was unable to startup correctly : a configuration error occurred.");
             System.exit(1);
         } 
     }

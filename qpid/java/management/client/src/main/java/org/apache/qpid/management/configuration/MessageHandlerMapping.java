@@ -31,6 +31,24 @@ class MessageHandlerMapping
     private String _handlerClass;
     
     /**
+     * Builds an empty message handler mapping.
+     */
+    MessageHandlerMapping()
+    {
+    }
+    
+    /**
+     * Builds a new mapping with the given opcode and handler class.
+     * 
+     * @param opcode the opcode.
+     * @param handlerClass the handler class.
+     */
+    MessageHandlerMapping(Character opcode, String handlerClass) {
+        this._opcode = opcode;
+        this._handlerClass = handlerClass;
+    }
+    
+    /**
      * Returns the opcode of this mapping.
      * 
      * @return the code of this mapping.

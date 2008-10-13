@@ -27,6 +27,11 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.qpid.management.Names;
+import org.apache.qpid.management.Protocol;
+import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.MethodResponseMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -57,9 +62,6 @@ public class Configurator extends DefaultHandler
     IParser _typeMappingParser = new TypeMappingParser();
     IParser _accessModeMappingParser = new AccessModeMappingParser();
     IParser _brokerConfigurationParser = new BrokerConnectionDataParser();
-    IParser _managementQueueHandlerParser = new ManagementQueueMessageListenerParser();
-    IParser _methodReplyQueueHandlerParser = new MethodReplyQueueMessageListenerParser();
-
     IParser _currentParser = DEFAULT_PARSER;
     
     /**
@@ -95,16 +97,6 @@ public class Configurator extends DefaultHandler
                 _currentParser = _brokerConfigurationParser;
                 break;
             }
-            case MANAGEMENT_QUEUE: 
-            {
-                _currentParser = _managementQueueHandlerParser;
-                break;
-            }  
-            case METHOD_REPLY_QUEUE: 
-            {
-                _currentParser = _methodReplyQueueHandlerParser;
-                break;
-            } 
         }
     }
     
@@ -127,12 +119,49 @@ public class Configurator extends DefaultHandler
             BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(getConfigurationFileName()),"UTF8"));
             InputSource source = new InputSource(reader);
             parser.parse(source, this);
+            
+            // Hard-coded configuration for message handlers : we need that because those handler mustn't be configurable.
+            // QMan is not able to work without them!
+            addMandatoryManagementMessageHandlers();
+            addMandatoryMethodReplyMessageHandlers();                        
         } catch (Exception exception)
         {
             throw new ConfigurationException(exception);
         }
     }
     
+    /**
+     * Configures the mandatory management message handlers.
+     */
+    private void addMandatoryMethodReplyMessageHandlers ()
+    {
+        Configuration.getInstance().addMethodReplyMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.OPERATION_INVOCATION_RESPONSE_OPCODE,
+                        MethodResponseMessageHandler.class.getName()));
+        
+        Configuration.getInstance().addMethodReplyMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.SCHEMA_RESPONSE_OPCODE,
+                        SchemaResponseMessageHandler.class.getName()));        
+    }
+
+    /**
+     * Configures the mandatory management message handlers.
+     */
+    private void addMandatoryManagementMessageHandlers ()
+    {
+        Configuration.getInstance().addManagementMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.INSTRUMENTATION_CONTENT_RESPONSE_OPCODE,
+                        InstrumentationMessageHandler.class.getName()));
+      
+        Configuration.getInstance().addManagementMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.CONFIGURATION_CONTENT_RESPONSE_OPCDE,
+                        ConfigurationMessageHandler.class.getName()));        
+    }
+
     /**
      * Returns the name of the configuration file.
      * 

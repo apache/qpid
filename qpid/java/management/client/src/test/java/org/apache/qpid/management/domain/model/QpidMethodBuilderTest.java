@@ -25,7 +25,6 @@ import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribu
 import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute.type;
 import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute.unit;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,6 @@ import javax.management.MBeanOperationInfo;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 /**
  * Test case for Qpid Statistic builder.
@@ -145,22 +143,5 @@ public class QpidMethodBuilderTest extends BaseQpidFeatureBuilderTestCase
         
         assertEquals(method.getDescription(),info.getDescription());
         assertEquals(method.getName(),info.getName());
-    }
-    
-    public void testEncodeParameters() throws ValidationException, UnableToBuildFeatureException {
-        _builder.build();
-        
-        Object [] parameters = new Object[]{new Integer(1), new Integer(2),new Integer(3)};
-        
-        ManagementEncoder encoder = new ManagementEncoder(ByteBuffer.allocate(1)){
-            @Override
-            public void writeUint16 (int s)
-            {
-               assertTrue(s == 1 || s == 2);
-            }
-        };
-        
-        QpidMethod method = (QpidMethod) _builder.getQpidFeature();
-        method.encodeParameters(parameters, encoder);
     }
 }

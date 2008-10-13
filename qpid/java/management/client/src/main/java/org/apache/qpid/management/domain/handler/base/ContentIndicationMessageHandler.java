@@ -46,8 +46,6 @@ public abstract class ContentIndicationMessageHandler extends BaseMessageHandler
         long timeObjectWasCreated = decoder.readDatetime();
         long timeObjectWasDeleted = decoder.readDatetime();
         
-       
-        
         Binary objectId = new Binary(decoder.readBin128());
                 
         if (objectHasBeenRemoved(timeObjectWasDeleted, timeStampOfCurrentSample))

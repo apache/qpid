@@ -29,13 +29,16 @@ import org.apache.qpid.transport.util.Logger;
  * For each access-mode-mappings/mapping element found in the configuration file, a new access mode mapping 
  * is built and injected into the bridge configuration.
  * 
- * <broker>
-        <host>192.168.61.130</host>
-        <port>5673</port>
-        <virtual-host>test</virtual-host>
-        <user>andrea</user>
-        <password>andrea</password>
-    </broker>
+        <broker>
+            <host>192.168.148.131</host>
+            <port>5672</port>
+            <virtual-host>test</virtual-host>
+            <user>guest</user>
+            <password>guest</password>
+            <max-pool-capacity>4</max-pool-capacity>
+            <initial-pool-capacity>4</initial-pool-capacity>
+            <max-wait-timeout>-1</max-wait-timeout>
+        </broker>   
  * 
  * @author Andrea Gazzarini
  */

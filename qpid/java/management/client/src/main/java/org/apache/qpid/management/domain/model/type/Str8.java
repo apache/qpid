@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 public class Str8 extends Type
 {
@@ -37,8 +37,8 @@ public class Str8 extends Type
     }
     
     @Override
-    public void encode (Object value, ManagementEncoder encoder)
+    public void encode (Object value, AmqpCoDec encoder)
     {
-        encoder.writeStr8((String)value);
+        encoder.packStr8((String)value);
     }
 }

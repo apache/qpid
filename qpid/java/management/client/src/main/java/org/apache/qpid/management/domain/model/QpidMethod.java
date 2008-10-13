@@ -20,10 +20,15 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.qpid.transport.codec.ManagementEncoder;
+import org.apache.qpid.management.messages.AmqpCoDec;
+import org.apache.qpid.transport.codec.ManagementDecoder;
+
 
 /**
  * Qpid method definition.
@@ -31,7 +36,7 @@ import org.apache.qpid.transport.codec.ManagementEncoder;
  * 
  * @author Andrea Gazzarini
  */
-class QpidMethod extends QpidFeature
+public class QpidMethod extends QpidFeature
 {
     /** Argument list */
     List<QpidArgument> arguments = new LinkedList<QpidArgument>();
@@ -82,22 +87,61 @@ class QpidMethod extends QpidFeature
 
     /**
      * Encodes the given parameter values according to this method arguments definitions.
-     * Also provide a validation of the given values according to the invariants defined for each argument.
-     * Note that only Input/Output and Output parameters are encoded.
+     * Note that only Input/Output and Input parameters are encoded.
      * 
      * @param parameters the parameters values.
      * @param encoder the encoder used for encoding.
-     * @throws ValidationException when one of the given values is violating an argument invariant.
      */
-    void encodeParameters (Object[] parameters, ManagementEncoder encoder) throws ValidationException
+    public void encodeParameters (Object[] parameters, AmqpCoDec encoder) 
     {
         int index = 0;
         for (QpidArgument argument : arguments)
         {
             if (argument.getDirection() != Direction.O)
             {
-                argument.validateAndEncode(parameters[index++],encoder);
+                argument.encode(parameters[index++],encoder);
             }
         }
+    }
+
+    /**
+     * Decodes the given input raw according to this method arguments definitions.
+     * Note that only Input/Output and Output parameters are encoded.
+     * 
+     * @param parameters the parameters values.
+     * @param encoder the encoder used for encoding.
+     */
+    public Map<String, Object> decodeParameters (byte [] values) 
+    {
+        ManagementDecoder decoder = new ManagementDecoder();
+        decoder.init(ByteBuffer.wrap(values));
+        Map<String, Object> result = new HashMap<String, Object>();
+        
+        for (QpidArgument argument : arguments)
+        {
+            if (argument.getDirection() != Direction.I)
+            {
+                result.put(argument.getName(),argument.decode(decoder));
+            }
+        }
+        return result;
+    }    
+    
+    /**
+     * Validates the given array of parameters against the constraint defined on this method's arguments.
+     * 
+     * @param parameters the parameters (values) to be validated.
+     * @throws ValidationException when one of the supplied values is violating some constraint.
+     */
+    public void validate (Object[] parameters) throws ValidationException
+    {
+        int index = 0;
+        for (QpidArgument argument : arguments)
+        {
+            if (argument.getDirection() != Direction.O)
+            {
+                argument.validate(parameters[index++]);
+            }
+        }        
     }
 }

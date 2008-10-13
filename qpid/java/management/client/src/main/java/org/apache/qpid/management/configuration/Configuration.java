@@ -25,9 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.model.AccessMode;
 import org.apache.qpid.management.domain.model.type.Type;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -60,6 +63,9 @@ public final class Configuration
     private String _methodReplyQueueName;
     
     private Header _headerForCommandMessages;
+    private DeliveryProperties _deliveryProperties = new DeliveryProperties();
+    private MessageProperties _messageProperties = new MessageProperties();
+    public BlockingQueue<InvocationResult> _resultExchangeChannel = new SynchronousQueue<InvocationResult>();
     
     // Private constructor.
     private Configuration()
@@ -236,6 +242,26 @@ public final class Configuration
     }
 
     /**
+     * Returns the command message properties.
+     *  
+     * @return the command message properties.
+     */
+    public MessageProperties getCommandMessageProperties ()
+    {
+        return _messageProperties;
+    }
+
+    /**
+     * Returns the command message delivery properties.
+     *  
+     * @return the command message delivery properties.
+     */
+    public DeliveryProperties getCommandDeliveryProperties ()
+    {
+        return _deliveryProperties;
+    }        
+    
+    /**
      * Adds a new type mapping to this configuration.
      * 
      * @param mapping the type mapping that will be added.
@@ -314,16 +340,11 @@ public final class Configuration
      */
     private void createHeaderForCommandMessages ()
     {
-        MessageProperties messageProperties = new MessageProperties();
-        
         ReplyTo replyTo=new ReplyTo();
         replyTo.setRoutingKey(_methodReplyQueueName);
-        messageProperties.setReplyTo(replyTo);
-
-        DeliveryProperties deliveryProperties = new DeliveryProperties();
-        deliveryProperties.setRoutingKey(Names.AGENT_ROUTING_KEY);        
-
-        _headerForCommandMessages = new Header(deliveryProperties, messageProperties);
+        _messageProperties.setReplyTo(replyTo);
+        _deliveryProperties.setRoutingKey(Names.AGENT_ROUTING_KEY);        
+        _headerForCommandMessages = new Header(_deliveryProperties, _messageProperties);
     }
     
     /**
@@ -339,5 +360,5 @@ public final class Configuration
         
         LOGGER.debug("<QMAN-200021> : Management queue name : %s",_managementQueueName);
         LOGGER.debug("<QMAN-000022> : Method-reply queue name : %s",_methodReplyQueueName);        
-    }    
+    }
 }

@@ -20,22 +20,90 @@
  */
 package org.apache.qpid.management.domain.handler.impl;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
+import org.apache.qpid.management.domain.model.DomainModel;
+import org.apache.qpid.management.domain.model.InvocationEvent;
 import org.apache.qpid.transport.codec.ManagementDecoder;
 import org.apache.qpid.transport.util.Logger;
 
+/**
+ * Message handler for method response messages.
+ * This handler is installed on domain model as a method invocation result listener. 
+ * When a method is going to be invoked this listener is notified with the exchange channel that will be used between it and
+ * the event (method invocation) source object.
+ * 
+ * @author Andrea Gazzarini
+ *
+ */
 public class MethodResponseMessageHandler extends BaseMessageHandler
 {
     private final static Logger LOGGER = Logger.get(MethodResponseMessageHandler.class);
+        
+    private Map<Integer, BlockingQueue<InvocationResult>> _exchangeChannels = new HashMap<Integer, BlockingQueue<InvocationResult>>();
     
-    public void process (ManagementDecoder decoder, int sequenceNumber)
+    /**
+     * This is the listener installed on domain model for method invocations.
+     */
+    private final IMethodInvocationListener methodInvocationListener = new IMethodInvocationListener()
     {
-        LOGGER.debug("<QMAN-200009> : Incoming method response message.");
-        
-        long statusCode = decoder.readUint32();
-        String statusText = decoder.readStr8();
-        
-        LOGGER.debug("<QMAN-200010> : Status code : %s", statusCode);
-        LOGGER.debug("<QMAN-200011> : Status text : %s", statusText);
+        /**
+         * Event source callback. 
+         * A method is going to be invoked and this method lets this listener take the exchange channel that will be used
+         * with the event source for synchronous communication.
+         * 
+         * @param event the operation invocation event.
+         */
+        public void operationIsGoingToBeInvoked (InvocationEvent event)
+        {
+            _exchangeChannels.put(event.getSequenceNumber(), event.getExchangeChannel());
+        }        
+    };
+    
+    /**
+     * Processes the incoming message.
+     * 
+     * @param decoder the decoder used for parsing incoming data.
+     * @param sequenceNumber the sequence number of the incoming message.
+     */
+    public void process (ManagementDecoder decoder, int sequenceNumber)
+    {        
+        InvocationResult result = new InvocationResult(decoder.readUint32(), decoder.readStr8(),decoder.readReaminingBytes());
+        BlockingQueue<InvocationResult> exchangeChannel = _exchangeChannels.remove(sequenceNumber);
+        if (exchangeChannel != null)
+        {
+            try
+            {
+                exchangeChannel.put(result);
+            } catch (InterruptedException exception)
+            {
+                LOGGER.error(
+                        exception,
+                        "<QMAN-100044> : an exception occurred while storing the result of a method invocation. " +
+                        "Sequence number was %s", 
+                        sequenceNumber);
+            }
+        } else 
+        {
+            LOGGER.warn(
+                    "Unable to deal with incoming message because it contains a unknown sequence number (%s).", 
+                    sequenceNumber);
+        }
     }
+
+    /**
+     * Sets the domain model on this handler.
+     * In addiction, this handler registers a method invocation listener on the domain model.
+     * 
+     *  @param domainModel the managed broker domain model.
+     */
+    @Override
+    public void setDomainModel (DomainModel domainModel)
+    {
+        super.setDomainModel(domainModel);
+        domainModel.setMethodInvocationListener(methodInvocationListener);
+    }    
 }

@@ -129,7 +129,6 @@ final class ManagementClient
         BrokerMessageListener methodReplyChannelListener = new BrokerMessageListener(_domainModel);
         methodReplyChannelListener.setHandlers(Configuration.getInstance().getMethodReplyQueueHandlers());
         _service.createSubscription(_methodReplyQueueName, _methodReplyQueueName, methodReplyChannelListener);
-        
         LOGGER.info(
                 "<QMAN-000039> : Method-reply queue consumer has been successfully installed and bound on broker %s.", 
                 _domainModel.getBrokerId());             
