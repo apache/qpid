@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.transport;
 
+import java.nio.ByteBuffer;
+
+import static org.apache.qpid.transport.util.Functions.*;
+
 
 /**
  * Binary
@@ -49,6 +53,13 @@ public final class Binary
     public Binary(byte[] bytes)
     {
         this(bytes, 0, bytes.length);
+    }
+
+    public final byte[] getBytes()
+    {
+        byte[] result = new byte[size];
+        System.arraycopy(bytes, offset, result, 0, size);
+        return result;
     }
 
     public final byte[] array()
@@ -124,6 +135,11 @@ public final class Binary
         }
 
         return true;
+    }
+
+    public String toString()
+    {
+        return str(ByteBuffer.wrap(bytes, offset, size));
     }
 
 }

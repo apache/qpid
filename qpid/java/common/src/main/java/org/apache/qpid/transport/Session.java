@@ -44,7 +44,7 @@ import static org.apache.qpid.util.Strings.*;
  * @author Rafael H. Schloming
  */
 
-public class Session extends Invoker
+public class Session extends SessionInvoker
 {
 
     private static final Logger log = Logger.get(Session.class);
@@ -84,13 +84,13 @@ public class Session extends Invoker
         }
     }
 
-    private byte[] name;
+    private Connection connection;
+    private Binary name;
+    private int channel;
+    private SessionDelegate delegate = new SessionDelegate();
     private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
-
-    // channel may be null
-    Channel channel;
 
     // incoming command count
     int commandsIn = 0;
@@ -108,14 +108,25 @@ public class Session extends Invoker
 
     private AtomicBoolean closed = new AtomicBoolean(false);
 
-    public Session(byte[] name)
+    Session(Connection connection, Binary name)
     {
+        this.connection = connection;
         this.name = name;
     }
 
-    public byte[] getName()
+    public Binary getName()
     {
         return name;
+    }
+
+    int getChannel()
+    {
+        return channel;
+    }
+
+    void setChannel(int channel)
+    {
+        this.channel = channel;
     }
 
     public void setSessionListener(SessionListener listener)
@@ -212,8 +223,12 @@ public class Session extends Invoker
             {
                 maxProcessed = max(maxProcessed, upper);
             }
-            flush = lt(old, syncPoint) && ge(maxProcessed, syncPoint);
-            syncPoint = maxProcessed;
+            boolean synced = ge(maxProcessed, syncPoint);
+            flush = lt(old, syncPoint) && synced;
+            if (synced)
+            {
+                syncPoint = maxProcessed;
+            }
         }
         if (flush)
         {
@@ -266,12 +281,6 @@ public class Session extends Invoker
         }
     }
 
-    public void attach(Channel channel)
-    {
-        this.channel = channel;
-        channel.setSession(this);
-    }
-
     public Method getCommand(int id)
     {
         synchronized (commands)
@@ -301,6 +310,22 @@ public class Session extends Invoker
             log.debug("%s   commands remaining: %s", this, commands);
             commands.notifyAll();
             return gt(maxComplete, old);
+        }
+    }
+
+    void received(Method m)
+    {
+        m.delegate(this, delegate);
+    }
+
+    private void send(Method m)
+    {
+        m.setChannel(channel);
+        connection.send(m);
+
+        if (!m.isBatch())
+        {
+            connection.flush();
         }
     }
 
@@ -342,7 +367,7 @@ public class Session extends Invoker
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
-                channel.method(m);
+                send(m);
                 if (autoSync)
                 {
                     sync();
@@ -358,7 +383,7 @@ public class Session extends Invoker
         }
         else
         {
-            channel.method(m);
+            send(m);
         }
     }
 
@@ -564,7 +589,7 @@ public class Session extends Invoker
     public void close()
     {
         sessionRequestTimeout(0);
-        sessionDetach(name);
+        sessionDetach(name.getBytes());
         synchronized (commands)
         {
             long start = System.currentTimeMillis();
@@ -576,12 +601,19 @@ public class Session extends Invoker
                     commands.wait(timeout - elapsed);
                     elapsed = System.currentTimeMillis() - start;
                 }
+
+                if (!closed.get())
+                {
+                    throw new SessionException("close() timed out");
+                }
             }
             catch (InterruptedException e)
             {
                 throw new RuntimeException(e);
             }
         }
+
+        connection.removeSession(this);
     }
 
     public void exception(Throwable t)
@@ -606,13 +638,11 @@ public class Session extends Invoker
                 }
             }
         }
-        channel.setSession(null);
-        channel = null;
     }
 
     public String toString()
     {
-        return String.format("ssn:%s", str(name));
+        return String.format("ssn:%s", name);
     }
 
 }

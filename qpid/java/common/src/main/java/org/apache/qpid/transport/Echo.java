@@ -32,22 +32,33 @@ import org.apache.qpid.transport.network.io.IoAcceptor;
  *
  */
 
-public class Echo extends SessionDelegate
+public class Echo implements SessionListener
 {
 
-    public void messageTransfer(Session ssn, MessageTransfer xfr)
+    public void opened(Session ssn) {}
+
+    public void message(Session ssn, MessageTransfer xfr)
     {
         ssn.invoke(xfr);
         ssn.processed(xfr);
     }
 
+    public void exception(Session ssn, SessionException exc)
+    {
+        exc.printStackTrace();
+    }
+
+    public void closed(Session ssn) {}
+
     public static final void main(String[] args) throws IOException
     {
         ConnectionDelegate delegate = new ServerDelegate()
         {
-            public SessionDelegate getSessionDelegate()
+            @Override public Session getSession(Connection conn, SessionAttach atc)
             {
-                return new Echo();
+                Session ssn = super.getSession(conn, atc);
+                ssn.setSessionListener(new Echo());
+                return ssn;
             }
         };
 

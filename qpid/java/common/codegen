@@ -43,14 +43,20 @@ controls = spec.query["amqp/class/control", excludes]
 commands = spec.query["amqp/class/command", excludes]
 
 composites = structs + controls + commands
+actions = controls + commands
+connection = [c for c in actions if c.parent["@name"] == "connection"]
+session = [c for c in actions if c.parent["@name"] != "connection"]
 
 for c in composites:
   name = cname(c)
   execute("%s.java" % name, "Composite.tpl", type = c, name = name)
 
-execute("MethodDelegate.java", "MethodDelegate.tpl", composites = composites)
+execute("MethodDelegate.java", "MethodDelegate.tpl", composites = actions)
 execute("Option.java", "Option.tpl", composites = composites)
-execute("Invoker.java", "Invoker.tpl", composites = controls + commands)
+execute("ConnectionInvoker.java", "Invoker.tpl", invoker = "ConnectionInvoker",
+        composites = connection)
+execute("SessionInvoker.java", "Invoker.tpl", invoker = "SessionInvoker",
+        composites = session)
 execute("StructFactory.java", "StructFactory.tpl", composites = composites)
 
 def is_enum(nd):

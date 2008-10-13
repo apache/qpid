@@ -62,23 +62,20 @@ public class ClientDelegate extends ConnectionDelegate
         this.password = password;
     }
 
-    public void init(Channel ch, ProtocolHeader hdr)
+    public void init(Connection conn, ProtocolHeader hdr)
     {
         if (!(hdr.getMajor() == 0 && hdr.getMinor() == 10))
         {
-            Connection conn = ch.getConnection();
             conn.exception(new ProtocolVersionException(hdr.getMajor(), hdr.getMinor()));
         }
-
     }
 
-    @Override public void connectionStart(Channel ch, ConnectionStart start)
+    @Override public void connectionStart(Connection conn, ConnectionStart start)
     {
-        Connection conn = ch.getConnection();
         List<Object> mechanisms = start.getMechanisms();
         if (mechanisms == null || mechanisms.isEmpty())
         {
-            ch.connectionStartOk
+            conn.connectionStartOk
                 (Collections.EMPTY_MAP, null, null, conn.getLocale());
             return;
         }
@@ -97,7 +94,7 @@ public class ClientDelegate extends ConnectionDelegate
 
             byte[] response = sc.hasInitialResponse() ?
                 sc.evaluateChallenge(new byte[0]) : null;
-            ch.connectionStartOk
+            conn.connectionStartOk
                 (Collections.EMPTY_MAP, sc.getMechanismName(), response,
                  conn.getLocale());
         }
@@ -107,14 +104,13 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionSecure(Channel ch, ConnectionSecure secure)
+    @Override public void connectionSecure(Connection conn, ConnectionSecure secure)
     {
-        Connection conn = ch.getConnection();
         SaslClient sc = conn.getSaslClient();
         try
         {
             byte[] response = sc.evaluateChallenge(secure.getChallenge());
-            ch.connectionSecureOk(response);
+            conn.connectionSecureOk(response);
         }
         catch (SaslException e)
         {
@@ -122,20 +118,19 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionTune(Channel ch, ConnectionTune tune)
+    @Override public void connectionTune(Connection conn, ConnectionTune tune)
     {
-        Connection conn = ch.getConnection();
         conn.setChannelMax(tune.getChannelMax());
-        ch.connectionTuneOk(tune.getChannelMax(), tune.getMaxFrameSize(), tune.getHeartbeatMax());
-        ch.connectionOpen(vhost, null, Option.INSIST);
+        conn.connectionTuneOk(tune.getChannelMax(), tune.getMaxFrameSize(), tune.getHeartbeatMax());
+        conn.connectionOpen(vhost, null, Option.INSIST);
     }
 
-    @Override public void connectionOpenOk(Channel ch, ConnectionOpenOk ok)
+    @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
-        ch.getConnection().setState(OPEN);
+        conn.setState(OPEN);
     }
 
-    @Override public void connectionRedirect(Channel ch, ConnectionRedirect redir)
+    @Override public void connectionRedirect(Connection conn, ConnectionRedirect redir)
     {
         throw new UnsupportedOperationException();
     }

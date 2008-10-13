@@ -51,10 +51,10 @@ public class ConnectionTest extends TestCase
         port = AvailablePortFinder.getNextAvailable(12000);
 
         ConnectionDelegate server = new ServerDelegate() {
-            @Override public void connectionOpen(Channel ch, ConnectionOpen open)
+            @Override public void connectionOpen(Connection conn, ConnectionOpen open)
             {
-                super.connectionOpen(ch, open);
-                ch.getConnection().close();
+                super.connectionOpen(conn, open);
+                conn.close();
             }
         };
 
@@ -94,13 +94,9 @@ public class ConnectionTest extends TestCase
             fail("never got notified of connection close");
         }
 
-        Channel ch = conn.getChannel(0);
-        Session ssn = new Session("test".getBytes());
-        ssn.attach(ch);
-
         try
         {
-            ssn.sessionAttach(ssn.getName());
+            conn.connectionCloseOk();
             fail("writing to a closed socket succeeded");
         }
         catch (TransportException e)

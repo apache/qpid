@@ -5,13 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class Invoker {
-
-    protected abstract void invoke(Method method);
-    protected abstract <T> Future<T> invoke(Method method, Class<T> resultClass);
-
+public abstract class $(invoker) {
 ${
 from genutil import *
+
+results = False
 
 for c in composites:
   name = cname(c)
@@ -20,6 +18,7 @@ for c in composites:
   args = get_arguments(c, fields)
   result = c["result"]
   if result:
+    results = True
     if not result["@type"]:
       rname = cname(result["struct"])
     else:
@@ -32,11 +31,22 @@ for c in composites:
     jreturn = ""
     jclass = ""
 
+  if c.name == "command":
+    access = "public "
+  else:
+    access = ""
+
   out("""
-    public final $jresult $(dromedary(name))($(", ".join(params))) {
+    $(access)final $jresult $(dromedary(name))($(", ".join(params))) {
         $(jreturn)invoke(new $name($(", ".join(args)))$jclass);
     }
 """)
 }
-
+    protected abstract void invoke(Method method);
+${
+if results:
+  out("""
+    protected abstract <T> Future<T> invoke(Method method, Class<T> resultClass);
+""")
+}
 }
