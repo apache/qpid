@@ -307,11 +307,14 @@ void Message::addTraceId(const std::string& id)
 
 void Message::setTimestamp()
 {
-    time_t now = ::time(0);
     DeliveryProperties* props = getProperties<DeliveryProperties>();    
-    props->setTimestamp(now);
+    //Spec states that timestamp should be set, evaluate the
+    //performance impact before re-enabling this:
+    //time_t now = ::time(0);
+    //props->setTimestamp(now);
     if (props->getTtl()) {
         //set expiration (nb: ttl is in millisecs, time_t is in secs)
+        time_t now = ::time(0);
         props->setExpiration(now + (props->getTtl()/1000));
         expiration = AbsTime(AbsTime::now(), Duration(props->getTtl() * TIME_MSEC));
     }
@@ -319,5 +322,5 @@ void Message::setTimestamp()
 
 bool Message::hasExpired() const
 {
-    return expiration < AbsTime::now();
+    return expiration < FAR_FUTURE && expiration < AbsTime::now();
 }
