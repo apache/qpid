@@ -50,6 +50,7 @@ _verbose  = False
 _quiet    = False
 _durable  = False
 _dellink  = False
+_transport = "tcp"
 
 class RouteManager:
     def __init__ (self, destBroker):
@@ -84,8 +85,9 @@ class RouteManager:
             mech = "ANONYMOUS"
         else:
             mech = "PLAIN"
-        res = broker.connect(self.src.host, self.src.port, False, _durable,
-                             mech, self.src.authName, self.src.authPass)
+        res = broker.connect(self.src.host, self.src.port, _durable,
+                             mech, self.src.authName, self.src.authPass,
+                             _transport)
         if _verbose:
             print "Connect method returned:", res.status, res.text
         link = self.getLink()
@@ -131,8 +133,9 @@ class RouteManager:
                 mech = "ANONYMOUS"
             else:
                 mech = "PLAIN"
-            res = broker.connect(self.src.host, self.src.port, False, _durable,
-                                 mech, self.src.authName, self.src.authPass)
+            res = broker.connect(self.src.host, self.src.port, _durable,
+                                 mech, self.src.authName, self.src.authPass,
+                                 _transport)
             if _verbose:
                 print "Connect method returned:", res.status, res.text
             link = self.getLink()

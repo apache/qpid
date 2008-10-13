@@ -69,7 +69,7 @@ namespace broker {
         std::pair<Link::shared_ptr, bool>
             declare(std::string& host,
                     uint16_t     port,
-                    bool         useSsl,
+                    std::string& transport,
                     bool         durable,
                     std::string& authMechanism,
                     std::string& username,

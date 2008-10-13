@@ -64,6 +64,12 @@ namespace broker {
 
 static const  uint16_t DEFAULT_PORT=5672;
 
+struct NoSuchTransportException : qpid::Exception
+{
+    NoSuchTransportException(const std::string& s) : Exception(s) {}
+    virtual ~NoSuchTransportException() throw() {}
+};
+
 /**
  * A broker instance. 
  */
