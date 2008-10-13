@@ -38,7 +38,7 @@ public class SessionClosedException extends SessionException
 
     public SessionClosedException(Throwable cause)
     {
-        super(null, cause);
+        super("session closed", null, cause);
     }
 
     @Override public void rethrow()

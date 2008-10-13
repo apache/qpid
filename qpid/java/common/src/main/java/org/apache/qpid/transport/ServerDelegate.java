@@ -55,24 +55,22 @@ public class ServerDelegate extends ConnectionDelegate
 
     private SaslServer saslServer;
 
-    public void init(Channel ch, ProtocolHeader hdr)
+    public void init(Connection conn, ProtocolHeader hdr)
     {
-        Connection conn = ch.getConnection();
         conn.send(new ProtocolHeader(1, 0, 10));
         List<Object> utf8 = new ArrayList<Object>();
         utf8.add("utf8");
-        ch.connectionStart(null, Collections.EMPTY_LIST, utf8);
+        conn.connectionStart(null, Collections.EMPTY_LIST, utf8);
     }
 
-    @Override public void connectionStartOk(Channel ch, ConnectionStartOk ok)
+    @Override public void connectionStartOk(Connection conn, ConnectionStartOk ok)
     {
-        Connection conn = ch.getConnection();
         conn.setLocale(ok.getLocale());
         String mechanism = ok.getMechanism();
 
         if (mechanism == null || mechanism.length() == 0)
         {
-            ch.connectionTune
+            conn.connectionTune
                 (Integer.MAX_VALUE,
                  org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
                  0, Integer.MAX_VALUE);
@@ -85,13 +83,13 @@ public class ServerDelegate extends ConnectionDelegate
                 (mechanism, "AMQP", "localhost", null, null);
             if (ss == null)
             {
-                ch.connectionClose
+                conn.connectionClose
                     (ConnectionCloseCode.CONNECTION_FORCED,
                      "null SASL mechanism: " + mechanism);
                 return;
             }
             conn.setSaslServer(ss);
-            secure(ch, ok.getResponse());
+            secure(conn, ok.getResponse());
         }
         catch (SaslException e)
         {
@@ -99,9 +97,8 @@ public class ServerDelegate extends ConnectionDelegate
         }
     }
 
-    private void secure(Channel ch, byte[] response)
+    private void secure(Connection conn, byte[] response)
     {
-        Connection conn = ch.getConnection();
         SaslServer ss = conn.getSaslServer();
         try
         {
@@ -109,14 +106,14 @@ public class ServerDelegate extends ConnectionDelegate
             if (ss.isComplete())
             {
                 ss.dispose();
-                ch.connectionTune
+                conn.connectionTune
                     (Integer.MAX_VALUE,
                      org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
                      0, Integer.MAX_VALUE);
             }
             else
             {
-                ch.connectionSecure(challenge);
+                conn.connectionSecure(challenge);
             }
         }
         catch (SaslException e)
@@ -125,21 +122,32 @@ public class ServerDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionSecureOk(Channel ch, ConnectionSecureOk ok)
+    @Override public void connectionSecureOk(Connection conn, ConnectionSecureOk ok)
     {
-        secure(ch, ok.getResponse());
+        secure(conn, ok.getResponse());
     }
 
-    @Override public void connectionTuneOk(Channel ch, ConnectionTuneOk ok)
+    @Override public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
     {
         
     }
 
-    @Override public void connectionOpen(Channel ch, ConnectionOpen open)
+    @Override public void connectionOpen(Connection conn, ConnectionOpen open)
     {
-        Connection conn = ch.getConnection();
-        ch.connectionOpenOk(Collections.EMPTY_LIST);
+        conn.connectionOpenOk(Collections.EMPTY_LIST);
         conn.setState(OPEN);
+    }
+
+    public Session getSession(Connection conn, SessionAttach atc)
+    {
+        return new Session(conn, new Binary(atc.getName()));
+    }
+
+    @Override public void sessionAttach(Connection conn, SessionAttach atc)
+    {
+        Session ssn = getSession(conn, atc);
+        conn.map(ssn, atc.getChannel());
+        ssn.sessionAttached(atc.getName());
     }
 
 }

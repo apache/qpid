@@ -24,6 +24,7 @@ import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
+import org.apache.qpid.util.Strings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +49,7 @@ import static org.apache.qpid.transport.Connection.State.*;
  * short instead of Short
  */
 
-public class Connection
+public class Connection extends ConnectionInvoker
     implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
@@ -69,7 +70,8 @@ public class Connection
     private ConnectionDelegate delegate;
     private Sender<ProtocolEvent> sender;
 
-    final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
+    final private Map<Binary,Session> sessions = new HashMap<Binary,Session>();
+    final private Map<Integer,Session> channels = new HashMap<Integer,Session>();
 
     private State state = NEW;
     private Object lock = new Object();
@@ -200,14 +202,45 @@ public class Connection
         return createSession(0);
     }
 
-    public Session createSession(long expiryInSeconds)
+    public Session createSession(long timeout)
     {
-        Channel ch = getChannel();
-        Session ssn = new Session(UUID.randomUUID().toString().getBytes());
-        ssn.attach(ch);
-        ssn.sessionAttach(ssn.getName());
-        ssn.sessionRequestTimeout(expiryInSeconds);
-        return ssn;
+        return createSession(UUID.randomUUID().toString(), timeout);
+    }
+
+    public Session createSession(String name)
+    {
+        return createSession(name, 0);
+    }
+
+    public Session createSession(String name, long timeout)
+    {
+        return createSession(Strings.toUTF8(name), timeout);
+    }
+
+    public Session createSession(byte[] name, long timeout)
+    {
+        return createSession(new Binary(name), timeout);
+    }
+
+    public Session createSession(Binary name, long timeout)
+    {
+        synchronized (lock)
+        {
+            Session ssn = new Session(this, name);
+            sessions.put(name, ssn);
+            map(ssn);
+            ssn.sessionAttach(name.getBytes());
+            ssn.sessionRequestTimeout(timeout);
+            return ssn;
+        }
+    }
+
+    void removeSession(Session ssn)
+    {
+        synchronized (lock)
+        {
+            sessions.remove(ssn.getName());
+        }
     }
 
     public void setConnectionId(int id)
@@ -228,8 +261,7 @@ public class Connection
     public void received(ProtocolEvent event)
     {
         log.debug("RECV: [%s] %s", this, event);
-        Channel channel = getChannel(event.getChannel());
-        channel.received(event);
+        event.delegate(this, delegate);
     }
 
     public void send(ProtocolEvent event)
@@ -249,6 +281,22 @@ public class Connection
         sender.flush();
     }
 
+    protected void invoke(Method method)
+    {
+        method.setChannel(0);
+        send(method);
+        if (!method.isBatch())
+        {
+            flush();
+        }
+    }
+
+    public void dispatch(Method method)
+    {
+        Session ssn = getSession(method.getChannel());
+        ssn.received(method);
+    }
+
     public int getChannelMax()
     {
         return channelMax;
@@ -259,7 +307,7 @@ public class Connection
         channelMax = max;
     }
 
-    public Channel getChannel()
+    private int map(Session ssn)
     {
         synchronized (lock)
         {
@@ -267,7 +315,8 @@ public class Connection
             {
                 if (!channels.containsKey(i))
                 {
-                    return getChannel(i);
+                    map(ssn, i);
+                    return i;
                 }
             }
 
@@ -275,25 +324,28 @@ public class Connection
         }
     }
 
-    public Channel getChannel(int number)
+    void map(Session ssn, int channel)
     {
         synchronized (lock)
         {
-            Channel channel = channels.get(number);
-            if (channel == null)
-            {
-                channel = new Channel(this, number, delegate.getSessionDelegate());
-                channels.put(number, channel);
-            }
-            return channel;
+            channels.put(channel, ssn);
+            ssn.setChannel(channel);
         }
     }
 
-    void removeChannel(int number)
+    void unmap(Session ssn)
     {
         synchronized (lock)
         {
-            channels.remove(number);
+            channels.remove(ssn.getChannel());
+        }
+    }
+
+    Session getSession(int channel)
+    {
+        synchronized (lock)
+        {
+            return channels.get(channel);
         }
     }
 
@@ -324,9 +376,9 @@ public class Connection
     {
         synchronized (lock)
         {
-            for (Channel ch : channels.values())
+            for (Session ssn : channels.values())
             {
-                ch.closeCode(close);
+                ssn.closeCode(close);
             }
             ConnectionCloseCode code = close.getReplyCode();
             if (code != ConnectionCloseCode.NORMAL)
@@ -347,10 +399,10 @@ public class Connection
 
         synchronized (lock)
         {
-            List<Channel> values = new ArrayList<Channel>(channels.values());
-            for (Channel ch : values)
+            List<Session> values = new ArrayList<Session>(channels.values());
+            for (Session ssn : values)
             {
-                ch.closed();
+                ssn.closed();
             }
 
             sender = null;
@@ -367,9 +419,8 @@ public class Connection
             switch (state)
             {
             case OPEN:
-                Channel ch = getChannel(0);
                 state = CLOSING;
-                ch.connectionClose(ConnectionCloseCode.NORMAL, null);
+                connectionClose(ConnectionCloseCode.NORMAL, null);
                 Waiter w = new Waiter(lock, timeout);
                 while (w.hasTime() && state == CLOSING && error == null)
                 {

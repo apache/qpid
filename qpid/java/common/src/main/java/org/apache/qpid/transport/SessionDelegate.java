@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.qpid.transport.network.Frame;
+import org.apache.qpid.transport.util.Logger;
 
 
 /**
@@ -33,6 +33,8 @@ public class SessionDelegate
     extends MethodDelegate<Session>
     implements ProtocolDelegate<Session>
 {
+    private static final Logger log = Logger.get(SessionDelegate.class);
+
     public void init(Session ssn, ProtocolHeader hdr) { }
 
     public void control(Session ssn, Method method) {
@@ -50,15 +52,12 @@ public class SessionDelegate
 
     public void error(Session ssn, ProtocolError error) { }
 
-    @Override public void executionResult(Session ssn, ExecutionResult result)
+    public void handle(Session ssn, Method method)
     {
-        ssn.result(result.getCommandId(), result.getValue());
+        log.warn("UNHANDLED: [%s] %s", ssn, method);
     }
 
-    @Override public void executionException(Session ssn, ExecutionException exc)
-    {
-        ssn.setException(exc);
-    }
+    @Override public void sessionTimeout(Session ssn, SessionTimeout t) {}
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
     {
@@ -120,6 +119,16 @@ public class SessionDelegate
     @Override public void executionSync(Session ssn, ExecutionSync sync)
     {
         ssn.syncPoint();
+    }
+
+    @Override public void executionResult(Session ssn, ExecutionResult result)
+    {
+        ssn.result(result.getCommandId(), result.getValue());
+    }
+
+    @Override public void executionException(Session ssn, ExecutionException exc)
+    {
+        ssn.setException(exc);
     }
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
