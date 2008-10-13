@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 /**
  * Layer supertype for all management "types".
@@ -91,5 +91,5 @@ public abstract class Type
         return getClass().hashCode();
     }
 
-    public abstract void encode (Object value, ManagementEncoder encoder);
+    public abstract void encode (Object value, AmqpCoDec encoder);
 }

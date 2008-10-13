@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 public class DeltaTime extends Type
 {
@@ -37,8 +37,8 @@ public class DeltaTime extends Type
     }
 
     @Override
-    public void encode (Object value, ManagementEncoder encoder)
+    public void encode (Object value, AmqpCoDec encoder)
     {
-        encoder.writeUint64((Long)value);
+        encoder.pack64((Long)value);
     }
 }

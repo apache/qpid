@@ -27,6 +27,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -43,12 +46,13 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
-import org.apache.qpid.management.Protocol;
+import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
+import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.QpidService;
+import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -124,10 +128,20 @@ class QpidClass
          */
         public synchronized void addConfigurationData (Binary objectId, byte[] rawData)
         {
-            schemaRequest();
-            QpidManagedObject instance = getObjectInstance(objectId,false);
-            instance._rawConfigurationData.add(rawData);       
-            _state = _schemaRequestedButNotYetInjected;
+            try
+            {
+                requestSchema();  
+                _state = _schemaRequestedButNotYetInjected;
+            } catch (Exception e)
+            {
+                LOGGER.error(
+                        "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
+                        _parent.getName(),
+                        _name);
+            } finally {
+                QpidManagedObject instance = getObjectInstance(objectId,false);
+                instance._rawConfigurationData.add(rawData);       
+            }
         }
 
         /**
@@ -139,10 +153,21 @@ class QpidClass
          */
         public synchronized void addInstrumentationData (Binary objectId, byte[] rawData)
         {
-            schemaRequest();
-            QpidManagedObject instance = getObjectInstance(objectId,false);
-            instance._rawConfigurationData.add(rawData);
-            _state = _schemaRequestedButNotYetInjected;
+            try
+            {
+                requestSchema();  
+                _state = _schemaRequestedButNotYetInjected;
+            } catch (Exception e)
+            {
+                LOGGER.error(
+                        "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
+                        _parent.getName(),
+                        _name);
+            } finally {
+                QpidManagedObject instance = getObjectInstance(objectId,false);
+                instance._rawConfigurationData.add(rawData);
+                _state = _schemaRequestedButNotYetInjected;
+            }
         }
 
         /**
@@ -394,9 +419,9 @@ class QpidClass
             {
                 try
                 {
-                    methodRequest(_objectId, method, params);
-                    return null;
-                } catch (ValidationException exception)
+                    method.validate(params);
+                    return invokeMethod(_objectId, method, params);
+                } catch (Exception exception)
                 {
                     throw new MBeanException(exception);
                 }
@@ -495,9 +520,22 @@ class QpidClass
     private final QpidService _service;
     
     private int _howManyPresenceBitMasks;
+    private BlockingQueue<InvocationResult> _exchangeChannelForMethodInvocations;
+    private final IMethodInvocationListener _methodInvocationListener;
     
     Map<Binary, QpidManagedObject> _objectInstances = new HashMap<Binary, QpidManagedObject>();
     State _state = _schemaNotRequested;;
+    
+    private final static class Log 
+    {
+        final static void logMethodInvocationResult(InvocationResult result)
+        {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug(String.valueOf(result));
+            }
+        }
+    }
     
     /**
      * Builds a new class with the given name and package as parent.
@@ -512,6 +550,9 @@ class QpidClass
         this._parent = parentPackage;
         this._hash = hash;
         this._service = new QpidService(_parent.getOwnerId());
+        this._methodInvocationListener = _parent.getMethodInvocationListener();
+        this._exchangeChannelForMethodInvocations = new SynchronousQueue<InvocationResult>();
+        
         LOGGER.debug(
                 "<QMAN-200017> : Class definition has been built (without schema) for %s::%s.%s", 
                 _parent.getOwnerId(),
@@ -688,29 +729,18 @@ class QpidClass
         }
     }    
     
-    private void schemaRequest()
-    {
-        ByteBuffer buffer = ByteBuffer.allocate(100);
-        ManagementEncoder encoder = new ManagementEncoder(buffer);
-        buffer.put(Protocol.SCHEMA_REQUEST_FIRST_FOUR_BYTES);
-        
-        // TODO
-        encoder.writeSequenceNo(1000);
-        encoder.writeStr8(_parent.getName());
-        encoder.writeStr8(_name);
-        _hash.encode(encoder);
-        buffer.rewind();        
+    /**
+     * Internal method used to send a schema request for this class.
+     * 
+     * @throws Exception when the request cannot be sent.
+     */
+    private void requestSchema() throws Exception
+    {     
         try
         {
             _service.connect();
-            _service.sendCommandMessage(buffer);
+            _service.requestSchema(_parent.getName(), _name, _hash);
             _service.sync();
-        } catch (Exception exception)
-        {
-            exception.printStackTrace();
-            // TODO
-            // Log.logSchemaRequestNotSent(exception,
-            // _parent.getOwnerId(),_parent.getName(), _name);
         } finally
         {
             _service.close();
@@ -730,33 +760,30 @@ class QpidClass
      * @param objectId
      * @param method
      * @param parameters
-     * @throws ValidationException
+     * @throws Exception
      */
-    private void methodRequest(Binary objectId,QpidMethod method,Object [] parameters) throws ValidationException
+    private InvocationResult invokeMethod(Binary objectId,QpidMethod method,Object [] parameters) throws Exception
     {
-        ByteBuffer buffer = ByteBuffer.allocate(1000);
-        ManagementEncoder encoder = new ManagementEncoder(buffer);
-        buffer.put(Protocol.METHOD_REQUEST_FIRST_FOUR_BYTES);
-        encoder.writeSequenceNo(0);
-        objectId.encode(encoder);
-        encoder.writeStr8(_parent.getName());
-        encoder.writeStr8(_name);
-        _hash.encode(encoder);
-        encoder.writeStr8(method.getName());
-        method.encodeParameters(parameters,encoder);
-        
-        buffer.rewind();        
-          try
+        try
         {
             _service.connect();
-            _service.sendCommandMessage(buffer);
-            //_service.sync();
-        } catch (Exception exception)
-        {
-            exception.printStackTrace();
-            // TODO
-            // Log.logSchemaRequestNotSent(exception,
-            // _parent.getOwnerId(),_parent.getName(), _name);
+            
+            int sequenceNumber = SequenceNumberGenerator.getNextSequenceNumber();
+            _methodInvocationListener.operationIsGoingToBeInvoked(new InvocationEvent(this,sequenceNumber,_exchangeChannelForMethodInvocations));
+            _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber);
+            
+            // TODO : Shoudl be configurable?
+            InvocationResult result = _exchangeChannelForMethodInvocations.poll(5000,TimeUnit.MILLISECONDS);
+            Map<String, Object> output = method.decodeParameters(result.getOutputAndBidirectionalArgumentValues());
+            result.setOutputSection(output);
+            
+            Log.logMethodInvocationResult(result);
+            
+            if (result.isException()) 
+            {
+                result.createAndThrowException();
+            }
+            return result;
         } finally
         {
             _service.close();

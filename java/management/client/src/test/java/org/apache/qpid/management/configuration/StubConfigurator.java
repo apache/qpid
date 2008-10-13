@@ -46,6 +46,15 @@ public class StubConfigurator extends Configurator
         Configuration.getInstance().addTypeMapping(mapping);        
     }
     
+    public void addTypeMapping(String code,String clazzName,String validatorClassName)
+    {
+        TypeMapping mapping = new TypeMapping();
+        mapping.setCode(code);
+        mapping.setType(clazzName);
+        mapping.setValidatorClassName(validatorClassName);
+        Configuration.getInstance().addTypeMapping(mapping);        
+    }
+    
     public void addAccessModeMapping(String code, String value)
     {
         AccessModeMapping mapping = new AccessModeMapping();

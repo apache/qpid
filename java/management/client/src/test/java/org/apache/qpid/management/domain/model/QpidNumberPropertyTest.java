@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import junit.framework.TestCase;
+
+import org.apache.qpid.management.configuration.StubConfigurator;
 import org.apache.qpid.management.domain.model.type.Uint64;
 
-public class QpidNumberPropertyTest extends BaseDomainModelTestCase
+public class QpidNumberPropertyTest extends TestCase
 {
     private QpidProperty _property;
     private Long _value = 55432L;
@@ -30,7 +33,8 @@ public class QpidNumberPropertyTest extends BaseDomainModelTestCase
     @Override
     protected void setUp () throws Exception
     {
-        super.setUp();
+        StubConfigurator configurator = new StubConfigurator();
+        configurator.addTypeMapping("1", Uint64.class.getName(),QpidProperty.NumberValidator.class.getName());
         _property = new QpidProperty();
         _property.setName("average");
         _property.setAccessMode(AccessMode.RW);

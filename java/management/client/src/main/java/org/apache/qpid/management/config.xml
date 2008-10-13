@@ -1,26 +1,4 @@
 <configuration>
-	<message-handlers>
-		<management-queue>
-			<handler>
-				<opcode>i</opcode>
-				<class-name>org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler</class-name>
-			</handler>
-			<handler>
-				<opcode>c</opcode>
-				<class-name>org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler</class-name>
-			</handler>
-		</management-queue>
-		<method-reply-queue>
-			<handler>
-				<opcode>m</opcode>
-				<class-name>org.apache.qpid.management.domain.handler.impl.MethodResponseMessageHandler</class-name>
-			</handler>
-			<handler>
-				<opcode>s</opcode>
-				<class-name>org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler</class-name>
-			</handler>
-		</method-reply-queue>	
-	</message-handlers>
 	<type-mappings>
 		<mapping>
 			<code>1</code>
@@ -99,7 +77,7 @@
 			<user>guest</user>
 			<password>guest</password>
 			<max-pool-capacity>4</max-pool-capacity>
-			<initial-pool-capacity>4</initial-pool-capacity>
+			<initial-pool-capacity>0</initial-pool-capacity>
 			<max-wait-timeout>-1</max-wait-timeout>
 		</broker>		
 	</brokers>

@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
+import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
-import org.apache.qpid.transport.codec.ManagementEncoder;
 
 public class Boolean extends Type
 {
@@ -37,8 +37,8 @@ public class Boolean extends Type
     }
 
     @Override
-    public void encode (Object value, ManagementEncoder encoder)
+    public void encode (Object value, AmqpCoDec encoder)
     {
-        encoder.writeUint8( ((java.lang.Boolean)value) ? (short)1 : (short)0);
+        encoder.pack8( ((java.lang.Boolean)value) ? 1 : 0);
     }
 }

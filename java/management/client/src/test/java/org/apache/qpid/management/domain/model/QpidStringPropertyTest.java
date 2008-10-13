@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import junit.framework.TestCase;
+
+import org.apache.qpid.management.configuration.StubConfigurator;
 import org.apache.qpid.management.domain.model.type.Str16;
 
-public class QpidStringPropertyTest extends BaseDomainModelTestCase
+public class QpidStringPropertyTest extends TestCase
 {
     private QpidProperty _property;
     private final String _5LettersString = "12345";
@@ -30,7 +33,8 @@ public class QpidStringPropertyTest extends BaseDomainModelTestCase
     @Override
     protected void setUp () throws Exception
     {
-        super.setUp();
+        StubConfigurator configurator = new StubConfigurator();
+        configurator.addTypeMapping("1", Str16.class.getName(),QpidProperty.StringValidator.class.getName());
         _property = new QpidProperty();
         _property.setName("name");
         _property.setAccessMode(AccessMode.RW);

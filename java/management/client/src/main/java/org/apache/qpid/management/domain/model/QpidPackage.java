@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
 
@@ -223,5 +224,15 @@ final class QpidPackage
         {
             qpidClass.releaseResources();
         }
+    }
+
+    /**
+     * Returns the method invocation listener of the corresponing parent domain model.
+     * 
+     * @return the method invocation listener of the corresponing parent domain model.
+     */
+    IMethodInvocationListener getMethodInvocationListener ()
+    {
+        return _parent.getMethodInvocationListener();
     }
 }

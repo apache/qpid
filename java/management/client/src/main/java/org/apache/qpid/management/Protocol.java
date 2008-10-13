@@ -27,8 +27,15 @@ package org.apache.qpid.management;
  */
 public interface Protocol
 {
-    String MAGIC_NUMBER = "AM2";
+    String MAGIC_NUMBER = "AM1";
     
-    byte [] METHOD_REQUEST_FIRST_FOUR_BYTES = (MAGIC_NUMBER+"M").getBytes();
-    byte [] SCHEMA_REQUEST_FIRST_FOUR_BYTES = (MAGIC_NUMBER+"S").getBytes();  
+    char SCHEMA_REQUEST_OPCODE = 'S';
+    char SCHEMA_RESPONSE_OPCODE = Character.toLowerCase(SCHEMA_REQUEST_OPCODE);
+    
+    char OPERATION_INVOCATION_REQUEST_OPCODE = 'M';
+    char OPERATION_INVOCATION_RESPONSE_OPCODE = Character.toLowerCase(OPERATION_INVOCATION_REQUEST_OPCODE);
+    
+    char INSTRUMENTATION_CONTENT_RESPONSE_OPCODE = 'i';
+    char CONFIGURATION_CONTENT_RESPONSE_OPCDE = 'c';
+    char INSTR_AND_CONFIG_CONTENT_RESPONSE_OPCODE = 'g';
 }
