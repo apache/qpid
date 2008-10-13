@@ -50,7 +50,7 @@ Listener::Listener(SubscriptionManager& subs) : subscriptions(subs)
 
 void Listener::received(Message& message) {
   std::cout << "Message: " << message.getData() << std::endl;
-  if (message.getHeaders().getString("control") == "end") {
+  if (message.getHeaders().getAsString("control") == "end") {
       std::cout << "Shutting down listener for " << message.getDestination()
                 << std::endl;
       subscriptions.cancel(message.getDestination());

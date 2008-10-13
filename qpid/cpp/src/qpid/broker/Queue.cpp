@@ -206,7 +206,7 @@ bool Queue::acquire(const QueuedMessage& msg) {
             || (lastValueQueue && i->position == msg.position && i->payload.get() == msg.payload.get())) {
             if (lastValueQueue){
                 const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
-                string key = ft->getString(qpidVQMatchProperty);
+                string key = ft->getAsString(qpidVQMatchProperty);
                 lvq.erase(key);
             }
             messages.erase(i);
@@ -461,7 +461,7 @@ void Queue::popMsg(QueuedMessage& qmsg)
 {
     if (lastValueQueue){
     	const framing::FieldTable* ft = qmsg.payload->getApplicationHeaders();
-        string key = ft->getString(qpidVQMatchProperty);
+        string key = ft->getAsString(qpidVQMatchProperty);
         lvq.erase(key);
     }
     messages.pop_front();
@@ -478,7 +478,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
         LVQ::iterator i;
         if (lastValueQueue){
             const framing::FieldTable* ft = msg->getApplicationHeaders();
-            string key = ft->getString(qpidVQMatchProperty);
+            string key = ft->getAsString(qpidVQMatchProperty);
 
             i = lvq.find(key);
             if (i == lvq.end()){
@@ -625,8 +625,8 @@ void Queue::configure(const FieldTable& _settings)
     persistLastNode= _settings.get(qpidPersistLastNode);
     if (persistLastNode) QPID_LOG(debug, "Configured queue to Persist data if cluster fails to one node");
 
-    traceId = _settings.getString(qpidTraceIdentity);
-    std::string excludeList = _settings.getString(qpidTraceExclude);
+    traceId = _settings.getAsString(qpidTraceIdentity);
+    std::string excludeList = _settings.getAsString(qpidTraceExclude);
     if (excludeList.size()) {
         split(traceExclude, excludeList, ", ");
     }

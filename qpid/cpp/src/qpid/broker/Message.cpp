@@ -273,7 +273,7 @@ bool Message::isExcluded(const std::vector<std::string>& excludes) const
 {
     const FieldTable* headers = getApplicationHeaders();
     if (headers) {
-        std::string traceStr = headers->getString(X_QPID_TRACE);
+        std::string traceStr = headers->getAsString(X_QPID_TRACE);
         if (traceStr.size()) {
             std::vector<std::string> trace = split(traceStr, ", ");
 
@@ -294,7 +294,7 @@ void Message::addTraceId(const std::string& id)
     sys::Mutex::ScopedLock l(lock);
     if (isA<MessageTransferBody>()) {
         FieldTable& headers = getProperties<MessageProperties>()->getApplicationHeaders();
-        std::string trace = headers.getString(X_QPID_TRACE);
+        std::string trace = headers.getAsString(X_QPID_TRACE);
         if (trace.empty()) {
             headers.setString(X_QPID_TRACE, id);
         } else if (trace.find(id) == std::string::npos) {

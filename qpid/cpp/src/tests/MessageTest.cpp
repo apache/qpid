@@ -81,7 +81,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
     BOOST_CHECK_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
     BOOST_CHECK_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
-    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
+    BOOST_CHECK_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("abc"));
     BOOST_CHECK_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
     BOOST_CHECK(msg->isPersistent());
 }
