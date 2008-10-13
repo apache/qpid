@@ -739,7 +739,7 @@ class QpidClass
         try
         {
             _service.connect();
-            _service.requestSchema(_parent.getName(), _name, _hash);
+           // _service.requestSchema(_parent.getName(), _name, _hash);
             _service.sync();
         } finally
         {
@@ -770,7 +770,7 @@ class QpidClass
             
             int sequenceNumber = SequenceNumberGenerator.getNextSequenceNumber();
             _methodInvocationListener.operationIsGoingToBeInvoked(new InvocationEvent(this,sequenceNumber,_exchangeChannelForMethodInvocations));
-            _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber);
+           // _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber);
             
             // TODO : Shoudl be configurable?
             InvocationResult result = _exchangeChannelForMethodInvocations.poll(5000,TimeUnit.MILLISECONDS);
