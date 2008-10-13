@@ -157,4 +157,17 @@ QPID_AUTO_TEST_CASE(testFloatAndDouble)
     }
 }
 
+QPID_AUTO_TEST_CASE(test64GetAndSetConverts)
+{
+    FieldTable args;
+    args.setInt64("a",100);
+    
+    args.setUInt64("b",1u);
+    BOOST_CHECK_EQUAL(1u, args.getAsUInt64("b"));
+    BOOST_CHECK_EQUAL(100u, args.getAsUInt64("a"));
+    BOOST_CHECK_EQUAL(1, args.getAsInt64("b"));
+    BOOST_CHECK_EQUAL(100, args.getAsInt64("a"));
+
+}
+ 
 QPID_AUTO_TEST_SUITE_END()

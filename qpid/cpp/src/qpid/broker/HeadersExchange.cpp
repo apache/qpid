@@ -105,14 +105,17 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
     if (!args) return;//can't match if there were no headers passed in
+    preRoute(msg);
 
     uint32_t count(0);
 
     Bindings::ConstPtr p = bindings.snapshot();
-    for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++) {
-        if (match((*i)->args, *args)) msg.deliverTo((*i)->queue);
-        if ((*i)->mgmtBinding != 0)
-            (*i)->mgmtBinding->inc_msgMatched ();
+    if (p.get()){
+        for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++) {
+            if (match((*i)->args, *args)) msg.deliverTo((*i)->queue);
+            if ((*i)->mgmtBinding != 0)
+                (*i)->mgmtBinding->inc_msgMatched ();
+        }
     }
 
     if (mgmtExchange != 0)
@@ -136,9 +139,11 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
 bool HeadersExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const args)
 {
     Bindings::ConstPtr p = bindings.snapshot();
-    for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
-        if ( (!args || equal((*i)->args, *args)) && (!queue || (*i)->queue == queue)) {
-            return true;
+    if (p.get()){
+        for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
+            if ( (!args || equal((*i)->args, *args)) && (!queue || (*i)->queue == queue)) {
+                return true;
+            }
         }
     }
     return false;

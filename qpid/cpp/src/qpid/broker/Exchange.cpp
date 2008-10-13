@@ -22,8 +22,11 @@
 #include "Exchange.h"
 #include "ExchangeRegistry.h"
 #include "qpid/agent/ManagementAgent.h"
+#include "qpid/log/Statement.h"
+#include "qpid/framing/MessageProperties.h"
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
 using qpid::management::ManagementAgent;
@@ -32,8 +35,15 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
+namespace 
+{
+const std::string qpidMsgSequence("qpid.msg_sequence");
+}
+
+
 Exchange::Exchange (const string& _name, Manageable* parent) :
-    name(_name), durable(false), persistenceId(0), mgmtExchange(0)
+    name(_name), durable(false), persistenceId(0), sequence(false), 
+	sequenceNo(0), mgmtExchange(0)
 {
     if (parent != 0)
     {
@@ -48,7 +58,8 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
 
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent)
-    : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0), mgmtExchange(0)
+    : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0), 
+	sequence(false), sequenceNo(0), mgmtExchange(0)
 {
     if (parent != 0)
     {
@@ -66,12 +77,23 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             }
         }
     }
+	
+    sequence = _args.get(qpidMsgSequence);
+    if (sequence) QPID_LOG(debug, "Configured exchange "+ _name +" with Msg sequencing");
+
 }
 
 Exchange::~Exchange ()
 {
     if (mgmtExchange != 0)
         mgmtExchange->resourceDestroy ();
+}
+
+void Exchange::preRoute(Deliverable& msg){
+	if (sequence){
+        sys::Mutex::ScopedLock lock(sequenceLock);
+		msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,++sequenceNo); 
+	}
 }
 
 void Exchange::setPersistenceId(uint64_t id) const

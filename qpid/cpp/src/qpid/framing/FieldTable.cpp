@@ -74,8 +74,16 @@ void FieldTable::setInt(const std::string& name, int value){
     values[name] = ValuePtr(new IntegerValue(value));
 }
 
+void FieldTable::setInt64(const std::string& name, int64_t value){
+    values[name] = ValuePtr(new Integer64Value(value));
+}
+
 void FieldTable::setTimestamp(const std::string& name, uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
+}
+
+void FieldTable::setUInt64(const std::string& name, uint64_t value){
+    values[name] = ValuePtr(new Unsigned64Value(value));
 }
 
 void FieldTable::setTable(const std::string& name, const FieldTable& value)
@@ -130,6 +138,14 @@ int FieldTable::getInt(const std::string& name) const {
 //uint64_t FieldTable::getTimestamp(const std::string& name) const {
 //    return getValue<uint64_t>(name);
 //}
+
+uint64_t FieldTable::getAsUInt64(const std::string& name) const {
+    return static_cast<uint64_t>( getValue<int64_t>(get(name)));
+}
+
+int64_t FieldTable::getAsInt64(const std::string& name) const {
+    return getValue<int64_t>(get(name));
+}
 
 bool FieldTable::getTable(const std::string& name, FieldTable& value) const {
     return getEncodedValue<FieldTable>(get(name), value);
