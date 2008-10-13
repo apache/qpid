@@ -369,7 +369,7 @@ class MessageTests(TestBase010):
             session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "abcdefgh"))
 
         #each message is currently interpreted as requiring msg_size bytes of credit
-        msg_size = 27
+        msg_size = 19
 
         #set byte credit to finite amount (less than enough for all messages)
         session.message_flow(unit = session.credit_unit.byte, value = msg_size*5, destination = "c")
@@ -438,7 +438,7 @@ class MessageTests(TestBase010):
             session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "abcdefgh"))
 
         #each message is currently interpreted as requiring msg_size bytes of credit
-        msg_size = 27
+        msg_size = 19
 
         #set byte credit to finite amount (less than enough for all messages)
         session.message_flow(unit = session.credit_unit.byte, value = msg_size*5, destination = "c")
