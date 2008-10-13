@@ -59,7 +59,8 @@ SessionImpl::SessionImpl(const std::string& name, shared_ptr<ConnectionImpl> con
       connectionShared(conn),
       connectionWeak(conn),
       weakPtr(false),
-      proxy(out),
+      ioHandler(*this),
+      proxy(ioHandler),
       nextIn(0),
       nextOut(0)
 {
@@ -424,9 +425,22 @@ void SessionImpl::handleIn(AMQFrame& frame) // network thread
 
 void SessionImpl::handleOut(AMQFrame& frame) // user thread
 {
+    sendFrame(frame, true);
+}
+
+void SessionImpl::proxyOut(AMQFrame& frame) // network thread
+{
+    //Note: this case is treated slightly differently that command
+    //frames sent by application; session controls should not be
+    //blocked by bounds checking on the outgoing frame queue.
+    sendFrame(frame, false);
+}
+
+void SessionImpl::sendFrame(AMQFrame& frame, bool canBlock)
+{
     boost::shared_ptr<ConnectionImpl> c =  connectionWeak.lock();
     if (c) {
-        c->expand(frame.encodedSize(), true);
+        c->expand(frame.encodedSize(), canBlock);
         channel.handle(frame);
     }
 }
