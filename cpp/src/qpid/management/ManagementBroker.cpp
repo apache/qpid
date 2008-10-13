@@ -1083,7 +1083,7 @@ size_t ManagementBroker::validateTableSchema(Buffer& inBuffer)
             ft.decode(inBuffer);
             if (!ft.isSet("argCount"))
                 return 0;
-            int argCount = ft.getInt("argCount");
+            int argCount = ft.getAsInt("argCount");
             for (int mIdx = 0; mIdx < argCount; mIdx++) {
                 FieldTable aft;
                 aft.decode(inBuffer);

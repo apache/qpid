@@ -127,17 +127,13 @@ T getValue(const FieldTable::ValuePtr value)
     return value->get<T>();
 }
 
-std::string FieldTable::getString(const std::string& name) const {
+std::string FieldTable::getAsString(const std::string& name) const {
     return getValue<std::string>(get(name));
 }
 
-int FieldTable::getInt(const std::string& name) const {
+int FieldTable::getAsInt(const std::string& name) const {
     return getValue<int>(get(name));
 }
-
-//uint64_t FieldTable::getTimestamp(const std::string& name) const {
-//    return getValue<uint64_t>(name);
-//}
 
 uint64_t FieldTable::getAsUInt64(const std::string& name) const {
     return static_cast<uint64_t>( getValue<int64_t>(get(name)));
@@ -175,6 +171,10 @@ bool FieldTable::getFloat(const std::string& name, float& value) const {
 bool FieldTable::getDouble(const std::string& name, double& value) const {    
     return getRawFixedWidthValue<double, 8, 0x33>(get(name), value);
 }
+
+//uint64_t FieldTable::getTimestamp(const std::string& name) const {
+//    return getValue<uint64_t>(name);
+//}
 
 void FieldTable::encode(Buffer& buffer) const{    
     buffer.putLong(encodedSize() - 4);

@@ -165,7 +165,7 @@ void Listener::received(Message& message){
         init = true;
         cout << "Batch started." << endl;
     }
-    string type = message.getHeaders().getString("TYPE");
+    string type = message.getHeaders().getAsString("TYPE");
 
     if(string("TERMINATION_REQUEST") == type){
         shutdown();
