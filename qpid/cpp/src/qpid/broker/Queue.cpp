@@ -405,15 +405,19 @@ QueuedMessage Queue::get(){
 
 void Queue::purgeExpired()
 {
-    Mutex::ScopedLock locker(messageLock);
-    for (Messages::iterator i = messages.begin(); i != messages.end(); ) {
-        if (i->payload->hasExpired()) {
-            dequeue(0, *i);
-            i = messages.erase(i);
-        } else {
-            ++i;
+    Messages expired;
+    {
+        Mutex::ScopedLock locker(messageLock);
+        for (Messages::iterator i = messages.begin(); i != messages.end();) {
+            if (i->payload->hasExpired()) {
+                expired.push_back(*i);
+                i = messages.erase(i);
+            } else {
+                ++i;
+            }
         }
-    } 
+    }
+    for_each(expired.begin(), expired.end(), bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
 }
 
 /**
