@@ -28,6 +28,7 @@
 #include "MessageStore.h"
 #include "PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Exchange.h"
 #include "qmf/org/apache/qpid/broker/Binding.h"
@@ -45,8 +46,14 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternate;
             uint32_t alternateUsers;
             mutable uint64_t persistenceId;
+            bool sequence;
+            mutable qpid::sys::Mutex sequenceLock;
+            uint64_t sequenceNo;
 
         protected:
+		
+            void preRoute(Deliverable& msg);
+		
             struct Binding : public management::Manageable {
                 typedef boost::shared_ptr<Binding>       shared_ptr;
                 typedef std::vector<Binding::shared_ptr> vector;
