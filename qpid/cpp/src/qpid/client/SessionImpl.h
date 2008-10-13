@@ -137,6 +137,14 @@ private:
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
+    /**
+     * Sends session controls. This case is treated slightly
+     * differently than command frames sent by the application via
+     * handleOut(); session controlsare not subject to bounds checking
+     * on the outgoing frame queue.
+     */
+    void proxyOut(framing::AMQFrame& frame);
+    void sendFrame(framing::AMQFrame& frame, bool canBlock);
     void deliver(framing::AMQFrame& frame);
 
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
@@ -185,6 +193,7 @@ private:
     boost::weak_ptr<ConnectionImpl> connectionWeak;
     bool weakPtr;
 
+    framing::FrameHandler::MemFunRef<SessionImpl, &SessionImpl::proxyOut> ioHandler;
     framing::ChannelHandler channel;
     framing::AMQP_ServerProxy::Session proxy;
 
