@@ -40,13 +40,12 @@ main ( int argc, char ** argv)
     int port = argc>2 ? atoi(argv[2]) : 5672;
     int count  = argc>3 ? atoi(argv[3]) : 30;
     int delayMs  = argc>4 ? atoi(argv[4]) : 1000;
+    string program_name = "PRODUCER";
 
     try {
         FailoverConnection connection;
         FailoverSession    * session;
         Message message;
-
-        string program_name = "PRODUCER";
 
         connection.open ( host, port );
         session = connection.newSession();
@@ -89,9 +88,10 @@ main ( int argc, char ** argv)
 
         session->sync();
         connection.close();
+        std::cout << program_name << ": " << " completed without error." << std::endl;
         return 0;  
     } catch(const std::exception& error) {
-        std::cout << error.what() << std::endl;
+        std::cout << program_name << ": " << error.what() << std::endl;
     }
     return 1;
 }
