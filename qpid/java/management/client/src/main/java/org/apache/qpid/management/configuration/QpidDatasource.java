@@ -56,7 +56,6 @@ public final class QpidDatasource
          * Builds a new decorator with the given connection.
          *
          * @param brokerId the broker identifier.
-         * @param decoratee the underlying connection.
          */
         private PooledConnection(UUID brokerId)
         {
@@ -132,7 +131,7 @@ public final class QpidDatasource
         @Override
         public Connection makeObject () throws Exception
         {
-            PooledConnection connection = new PooledConnection(_brokerId);
+        	PooledConnection connection = new PooledConnection(_brokerId);
             connection.connect(
                     _connectionData.getHost(),
                     _connectionData.getPort(),
@@ -206,12 +205,13 @@ public final class QpidDatasource
 
     /**
      * Adds a connection pool to this datasource.
-     *
+     * 
      * @param brokerId the broker identifier that will be associated with the new connection pool.
      * @param connectionData the broker connection data.
      * @throws Exception when the pool cannot be created.
      */
-    void addConnectionPool(UUID brokerId,BrokerConnectionData connectionData) throws Exception {
+    void addConnectionPool(UUID brokerId,BrokerConnectionData connectionData) throws Exception 
+    {
         GenericObjectPoolFactory factory = new GenericObjectPoolFactory(
                 new QpidConnectionFactory(brokerId,connectionData),
                 connectionData.getMaxPoolCapacity(),
@@ -219,11 +219,23 @@ public final class QpidDatasource
                 connectionData.getMaxWaitTimeout(),-1,
                 true,
                 false);
+    
         ObjectPool pool = factory.createPool();
 
-        for (int i  = 0; i < connectionData.getInitialPoolCapacity(); i++)
+        // Open connections at startup according to initial capacity param value.
+        int howManyConnectionAtStartup = connectionData.getInitialPoolCapacity(); 
+        Object [] openStartupList = new Object[howManyConnectionAtStartup];
+        
+        // Open...
+        for (int index  = 0; index < howManyConnectionAtStartup; index++)
         {
-            pool.returnObject(pool.borrowObject());
+            openStartupList[index] = pool.borrowObject();
+        }
+        
+        // ...and immediately return them to pool. In this way the pooled connection has been opened.
+        for (int index = 0; index < howManyConnectionAtStartup; index++)
+        {
+            pool.returnObject(openStartupList[index]);
         }
 
         pools.put(brokerId,pool);
