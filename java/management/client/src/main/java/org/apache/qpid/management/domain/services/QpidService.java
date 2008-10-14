@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.domain.services;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
@@ -27,10 +28,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.QpidException;
-import org.apache.qpid.management.Constants;
+import org.apache.qpid.api.Message;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.QpidDatasource;
+import org.apache.qpid.management.domain.model.QpidMethod;
+import org.apache.qpid.management.domain.model.type.Binary;
+import org.apache.qpid.management.messages.MethodInvocationRequestMessage;
+import org.apache.qpid.management.messages.SchemaRequestMessage;
 import org.apache.qpid.nclient.util.MessageListener;
 import org.apache.qpid.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpid.transport.Connection;
@@ -110,7 +115,7 @@ public class QpidService implements SessionListener
     {
         _connection = QpidDatasource.getInstance().getConnection(_brokerId);
         _listeners = new ConcurrentHashMap<String,MessagePartListenerAdapter>();
-        _session = _connection.createSession(Constants.NO_EXPIRATION);
+        _session = _connection.createSession(0);
         _session.setSessionListener(this);
     }
 
@@ -299,4 +304,126 @@ public class QpidService implements SessionListener
 
         Log.logMessageContent (messageData);
     }
+    
+    /**
+     * Requests a schema for the given package.class.hash.
+     * 
+     * @param packageName the package name.
+     * @param className the class name.
+     * @param schemaHash the schema hash.
+     * @throws IOException when the schema request cannot be sent.
+     */
+    public void requestSchema(final String packageName, final String className, final Binary schemaHash) throws IOException
+    {
+        Message message = new SchemaRequestMessage()
+        {
+            @Override
+            protected String className ()
+            {
+                return className;
+            }
+
+            @Override
+            protected String packageName ()
+            {
+                return packageName;
+            }
+
+            @Override
+            protected Binary schemaHash ()
+            {
+                return schemaHash;
+            }
+        };
+        
+        sendMessage(message);
+    }
+    
+    /**
+     * Invokes an operation on a broker object instance.
+     * 
+     * @param packageName the package name.
+     * @param className the class name.
+     * @param schemaHash the schema hash of the corresponding class.
+     * @param objectId the object instance identifier.
+     * @param parameters the parameters for this invocation.
+     * @param method the method (definition) invoked.
+     * @return the sequence number used for this message.
+     * @throws MethodInvocationException when the invoked method returns an error code.
+     * @throws UnableToComplyException when it wasn't possibile to invoke the requested operation. 
+     */
+    public void invoke(
+            final String packageName, 
+            final String className, 
+            final Binary schemaHash, 
+            final Binary objectId, 
+            final Object[] parameters, 
+            final QpidMethod method,
+            final int sequenceNumber) throws MethodInvocationException, UnableToComplyException 
+    {
+        Message message = new MethodInvocationRequestMessage()
+        {
+            
+            @Override
+            protected int sequenceNumber ()
+            {
+                return sequenceNumber;
+            }
+            
+            protected Binary objectId() {
+                return objectId;
+            }
+            
+            protected String packageName()
+            {
+                return packageName;
+            }
+            
+            protected String className() 
+            {
+                return className;
+            }
+            
+            @Override
+            protected QpidMethod method ()
+            {
+                return method;
+            }
+
+            @Override
+            protected Object[] parameters ()
+            {
+                return parameters;
+            }
+
+            @Override
+            protected Binary schemaHash ()
+            {
+                return schemaHash;
+            }
+        };
+        
+        try {
+            sendMessage(message);
+            sync();
+        } catch(Exception exception) {
+            throw new UnableToComplyException(exception);
+        }
+    }     
+    
+    /**
+     * Sends a command message.
+     * 
+     * @param message the command message.
+     * @throws IOException when the message cannot be sent.
+     */
+    public void sendMessage(Message message) throws IOException
+    {
+        _session.messageTransfer(
+                Names.MANAGEMENT_EXCHANGE,
+                MessageAcceptMode.EXPLICIT,
+                MessageAcquireMode.PRE_ACQUIRED,
+                message.getHeader(),
+                message.readData());
+    }      
 }
