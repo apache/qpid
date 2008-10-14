@@ -38,7 +38,7 @@ namespace qpid {
 namespace client {
 
 Subscriber::Subscriber(const Session& s, MessageListener* l, AckPolicy a)
-  : session(s), listener(l), autoAck(a) {}
+    : session(s), listener(l), autoAck(a) {}
 
 void Subscriber::received(Message& msg)
 {
@@ -96,18 +96,12 @@ void Dispatcher::run()
     }
     catch (const ClosedException& e) 
     { 
-      QPID_LOG(debug, "Ignored exception in client dispatch thread: " << e.what());
+        QPID_LOG(debug, "Ignored exception in client dispatch thread: " << e.what());
     } //ignore it and return
     catch (const std::exception& e) {
         QPID_LOG(error, "Exception in client dispatch thread: " << e.what());
-      if ( failoverHandler )
-      {
-        failoverHandler();
-      }
-      else
-      {
-        QPID_LOG(info, "No dispatcher failover handler registered.");
-      }
+        if ( failoverHandler )
+            failoverHandler();
     }
 }
 
