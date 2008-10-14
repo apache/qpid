@@ -46,14 +46,20 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternate;
             uint32_t alternateUsers;
             mutable uint64_t persistenceId;
+
+        protected:
             bool sequence;
             mutable qpid::sys::Mutex sequenceLock;
             uint64_t sequenceNo;
-
-        protected:
 		
-            void preRoute(Deliverable& msg);
-		
+            class PreRoute{
+            public:
+                PreRoute(Deliverable& msg, Exchange* _p);
+                ~PreRoute();
+            private:
+                Exchange* parent;
+		    };
+           
             struct Binding : public management::Manageable {
                 typedef boost::shared_ptr<Binding>       shared_ptr;
                 typedef std::vector<Binding::shared_ptr> vector;

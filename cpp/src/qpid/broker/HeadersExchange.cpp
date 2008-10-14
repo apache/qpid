@@ -105,7 +105,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
     if (!args) return;//can't match if there were no headers passed in
-    preRoute(msg);
+    PreRoute pr(msg, this);
 
     uint32_t count(0);
 

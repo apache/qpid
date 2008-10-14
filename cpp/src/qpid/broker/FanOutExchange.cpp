@@ -69,7 +69,7 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, cons
 }
 
 void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
-    preRoute(msg);
+    PreRoute pr(msg, this);
     uint32_t count(0);
 
     BindingsArray::ConstPtr p = bindings.snapshot();
