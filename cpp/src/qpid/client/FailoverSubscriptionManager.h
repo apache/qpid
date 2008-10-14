@@ -33,7 +33,7 @@
 #include <qpid/client/LocalQueue.h>
 #include <qpid/client/FlowControl.h>
 #include <qpid/sys/Runnable.h>
-#include <qpid/sys/Mutex.h>
+#include <qpid/sys/Monitor.h>
 
 
 
@@ -48,25 +48,27 @@ class FailoverSubscriptionManager
 
     FailoverSubscriptionManager ( FailoverSession * fs );
 
-    void foo ( int& arg_1 );
-
     void subscribe ( MessageListener   & listener,
                      const std::string & queue,
                      const FlowControl & flow,
-                     const std::string & tag = std::string() );
+                     const std::string & tag = std::string(),
+                     bool  record_this = true );
 
     void subscribe ( LocalQueue        & localQueue,
                      const std::string & queue,
                      const FlowControl & flow,
-                     const std::string & tag=std::string());
+                     const std::string & tag=std::string(),
+                     bool  record_this = true );
 
     void subscribe ( MessageListener   & listener,
                      const std::string & queue,
-                     const std::string & tag = std::string());
+                     const std::string & tag = std::string(),
+                     bool  record_this = true );
 
     void subscribe ( LocalQueue        & localQueue,
                      const std::string & queue,
-                     const std::string & tag=std::string());
+                     const std::string & tag=std::string(),
+                     bool  record_this = true );
 
     bool get ( Message & result, 
                const std::string & queue, 
@@ -115,9 +117,9 @@ class FailoverSubscriptionManager
     std::string name;
 
 
+
   private:
-    typedef sys::Mutex::ScopedLock Lock;
-    sys::Mutex lock;
+    sys::Monitor lock;
     
     SubscriptionManager * subscriptionManager;
 
@@ -130,32 +132,11 @@ class FailoverSubscriptionManager
 
     Session newSession;
     bool    newSessionIsValid;
+    bool    no_failover;
 
-    /*
-     * */
+
     typedef boost::function<void ()> subscribeFn;
     std::vector < subscribeFn > subscribeFns;
-
-    struct subscribeArgs
-    {
-      int interface;
-      MessageListener   * listener;
-      LocalQueue        * localQueue;
-      const std::string * queue;
-      const FlowControl * flow;
-      const std::string * tag;
-
-      subscribeArgs ( int _interface,
-                      MessageListener   *,
-                      LocalQueue  *,
-                      const std::string *,
-                      const FlowControl *,
-                      const std::string *
-                    );
-    };
-
-    std::vector < subscribeArgs * > subscriptionReplayVector;
-
 };
 
 }} // namespace qpid::client

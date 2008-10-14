@@ -163,7 +163,10 @@ void Cluster::mcastBuffer(const char* data, size_t size, const ConnectionId& con
 void Cluster::mcast(const Event& e) { Lock l(lock); mcast(e, l); }
 
 void Cluster::mcast(const Event& e, Lock&) {
-    if (state == LEFT) return;
+    if (state == LEFT) {
+        lock.notifyAll();        // threads waiting in getUrls()
+        return;
+    }
     if (state < READY && e.isConnection()) {
         // Stall outgoing connection events.
         QPID_LOG(trace, *this << " MCAST deferred: " << e );
@@ -351,6 +354,7 @@ void Cluster::configChange (
             map = ClusterMap(memberId, myUrl, true);
             memberUpdate(l);
             unstall(l);
+            lock.notifyAll();   // threads waiting in getUrls()
         }
         else {                  // Joining established group.
             state = NEWBIE;
@@ -417,6 +421,8 @@ void Cluster::dumpRequest(const MemberId& id, const std::string& url, Lock& l) {
 
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     map.ready(id, Url(url));
+    if (id == memberId)
+        lock.notifyAll(); // threads waiting in getUrls()
     memberUpdate(l);
 }
 
