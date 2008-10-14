@@ -27,6 +27,7 @@
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
+#include "RateTracker.h"
 
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
@@ -94,6 +95,7 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
             qmf::org::apache::qpid::broker::Queue* mgmtObject;
+            RateTracker dequeueTracker;
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
