@@ -150,6 +150,7 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text) {
 static const std::string CONN_CLOSED("Connection closed by broker");
 
 void ConnectionImpl::shutdown() {
+
     Mutex::ScopedLock l(lock);
     if (handler.isClosed()) return;
 

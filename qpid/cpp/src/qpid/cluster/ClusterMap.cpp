@@ -146,7 +146,7 @@ boost::optional<Url> ClusterMap::dumpOffer(const MemberId& from, const MemberId&
         newbies.erase(i);       // No longer a potential dumpee.
         return url;
     }
-    return boost::none;
+    return boost::optional<Url>();
 }
 
 }} // namespace qpid::cluster

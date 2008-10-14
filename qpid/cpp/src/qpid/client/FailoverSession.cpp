@@ -82,8 +82,7 @@ FailoverSession::sync()
 uint32_t 
 FailoverSession::timeout(uint32_t /*seconds*/ )
 {
-
-    // MICK WTF?  return session.timeout ( seconds );
+    // FIXME mgoulish return session.timeout ( seconds );
     return 0;
 }
 
