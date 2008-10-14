@@ -229,9 +229,9 @@ main ( int argc, char ** argv )
 {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    string program_name = "LISTENER";
 
     try {
-        string program_name = "LISTENER";
 
         FailoverConnection connection;
         FailoverSession    * session;
@@ -250,10 +250,11 @@ main ( int argc, char ** argv )
         subscriptions.run ( );
 
         connection.close();
+        std::cout << program_name << ": " << " completed without error." << std::endl;
         return 0;
 
     } catch(const std::exception& error) {
-        std::cout << error.what() << std::endl;
+        std::cout << program_name  << ": " << error.what() << std::endl;
     }
     return 1;
 }

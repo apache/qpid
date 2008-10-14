@@ -36,6 +36,7 @@
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/log/Statement.h"
+#include "qpid/log/Helpers.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/memory.h"
 #include "qpid/shared_ptr.h"
@@ -163,10 +164,8 @@ void Cluster::mcastBuffer(const char* data, size_t size, const ConnectionId& con
 void Cluster::mcast(const Event& e) { Lock l(lock); mcast(e, l); }
 
 void Cluster::mcast(const Event& e, Lock&) {
-    if (state == LEFT) {
-        lock.notifyAll();        // threads waiting in getUrls()
+    if (state == LEFT) 
         return;
-    }
     if (state < READY && e.isConnection()) {
         // Stall outgoing connection events.
         QPID_LOG(trace, *this << " MCAST deferred: " << e );
@@ -354,7 +353,6 @@ void Cluster::configChange (
             map = ClusterMap(memberId, myUrl, true);
             memberUpdate(l);
             unstall(l);
-            lock.notifyAll();   // threads waiting in getUrls()
         }
         else {                  // Joining established group.
             state = NEWBIE;
@@ -383,7 +381,7 @@ void Cluster::tryMakeOffer(const MemberId& id, Lock& l) {
 void Cluster::unstall(Lock& l) {
     // Called with lock held
     switch (state) {
-      case INIT: case DUMPEE: case DUMPER:
+      case INIT: case DUMPEE: case DUMPER: case READY:
         QPID_LOG(debug, *this << " unstall: deliver=" << deliverQueue.size()
                  << " mcast=" << mcastQueue.size());
         deliverQueue.start();
@@ -393,7 +391,7 @@ void Cluster::unstall(Lock& l) {
         if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
         break;
       case LEFT: break;
-      case NEWBIE: case READY: case OFFER:
+      case NEWBIE: case OFFER:
         assert(0);
     }
 }
@@ -422,7 +420,7 @@ void Cluster::dumpRequest(const MemberId& id, const std::string& url, Lock& l) {
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     map.ready(id, Url(url));
     if (id == memberId)
-        lock.notifyAll(); // threads waiting in getUrls()
+        unstall(l);
     memberUpdate(l);
 }
 
@@ -474,7 +472,8 @@ void Cluster::checkDumpIn(Lock& l) {
         map = *dumpedMap;
         QPID_LOG(debug, *this << " incoming dump complete. Members: " << map);
         mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), 0, l);
-        unstall(l);
+        state = READY;
+        // unstall when ready control is self-delivered.
     }
 }
 

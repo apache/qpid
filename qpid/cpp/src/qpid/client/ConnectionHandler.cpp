@@ -166,7 +166,7 @@ void ConnectionHandler::openOk ( const framing::Array& knownBrokers )
     for ( i = knownBrokers.begin(); i != knownBrokers.end(); ++i )
         knownBrokersUrls.push_back(Url((*i)->get<std::string>()));
     setState(OPEN);
-    QPID_LOG(info, "Known-brokers for connection: " << log::formatList(knownBrokersUrls));
+    QPID_LOG(debug, "Known-brokers for connection: " << log::formatList(knownBrokersUrls));
 }
 
 
