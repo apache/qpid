@@ -158,6 +158,10 @@ FailoverConnection::failover ( )
         fs->prepareForFailover ( newConnection );
     }
 
+    connection = newConnection;
+    connection.registerFailureCallback
+        ( boost::bind(&FailoverConnection::failover, this));
+
     /*
      * Tell all sessions to actually failover to the new connection.
      */
@@ -169,10 +173,6 @@ FailoverConnection::failover ( )
         FailoverSession * fs = * sessions_iterator;
         fs->failover ( );
     }
-
-    connection = newConnection;
-    connection.registerFailureCallback
-        ( boost::bind(&FailoverConnection::failover, this));
 }
 
 
