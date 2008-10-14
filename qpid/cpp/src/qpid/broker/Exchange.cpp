@@ -41,6 +41,20 @@ const std::string qpidMsgSequence("qpid.msg_sequence");
 }
 
 
+Exchange::PreRoute::PreRoute(Deliverable& msg, Exchange* _p):parent(_p) {
+    if (parent && parent->sequence){
+        parent->sequenceLock.lock();
+        parent->sequenceNo++;
+        msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,parent->sequenceNo); 
+    }
+}
+
+Exchange::PreRoute::~PreRoute(){
+    if (parent && parent->sequence){
+        parent->sequenceLock.unlock();
+    }
+}
+
 Exchange::Exchange (const string& _name, Manageable* parent) :
     name(_name), durable(false), persistenceId(0), sequence(false), 
 	sequenceNo(0), mgmtExchange(0)
@@ -87,13 +101,6 @@ Exchange::~Exchange ()
 {
     if (mgmtExchange != 0)
         mgmtExchange->resourceDestroy ();
-}
-
-void Exchange::preRoute(Deliverable& msg){
-	if (sequence){
-        sys::Mutex::ScopedLock lock(sequenceLock);
-		msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,++sequenceNo); 
-	}
 }
 
 void Exchange::setPersistenceId(uint64_t id) const

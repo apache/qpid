@@ -180,7 +180,7 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, TopicPattern& pattern)
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
     RWlock::ScopedRlock l(lock);
-    preRoute(msg);
+    PreRoute pr(msg, this);
     uint32_t count(0);
     Tokens   tokens(routingKey);
 
