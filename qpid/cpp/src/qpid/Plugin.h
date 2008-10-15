@@ -28,7 +28,7 @@
 /**@file Generic plug-in framework. */
 
 namespace qpid {
-class Options;
+struct Options;
 
 /**
  * Plug-in base class.

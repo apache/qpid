@@ -28,8 +28,8 @@ Each line is a name=value pair. Blank lines and lines beginning with # are ignor
   # My qpidd configuration file.
   port=6000
   max-connections=10
-  log-output=stdout
-  log-output=/tmp/qpidd.log
+  log-to-stdout=yes
+  log-to-file=/tmp/qpidd.log
 
 [ENVIRONMENT]
 .I QPID_<option>
@@ -41,6 +41,6 @@ The environment variable is the option name in uppercase, prefixed with QPID_ an
 
   export QPID_PORT=6000
   export QPID_MAX_CONNECTIONS=10
-  export QPID_LOG_OUTPUT=/tmp/qpidd.log
+  export QPID_LOG_TO_FILE=/tmp/qpidd.log
 
 
