@@ -19,8 +19,13 @@
 #include "test_tools.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
+#include "qpid/log/OstreamOutput.h"
 #include "qpid/memory.h"
 #include "qpid/Options.h"
+#if defined (_WIN32)
+#else
+#  include "qpid/log/posix/SinkOptions.h"
+#endif
 
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
@@ -179,7 +184,7 @@ QPID_AUTO_TEST_CASE(testOstreamOutput) {
     ScopedSuppressLogging ls(l);
     l.select(Selector(error));
     ostringstream os;
-    l.output(os);
+    l.output(qpid::make_auto_ptr<Logger::Output>(new OstreamOutput(os)));
     QPID_LOG(error, "foo");
     QPID_LOG(error, "bar");
     QPID_LOG(error, "baz");
@@ -257,19 +262,22 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
         "--log-enable", "error+:foo",
         "--log-enable", "debug:bar",
         "--log-enable", "info",
-        "--log-output", "x",
-        "--log-output", "y",
+        "--log-to-stderr", "no",
+        "--log-to-file", "logout",
         "--log-level", "yes",
         "--log-source", "1",
         "--log-thread", "true",
         "--log-function", "YES"
     };
     qpid::log::Options opts("");
+    qpid::log::posix::SinkOptions sinks("test");
     opts.parse(ARGC(argv), const_cast<char**>(argv));
+    sinks = *opts.sinkOptions;
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
-    expect=list_of("x")("y");
-    BOOST_CHECK_EQUAL(expect, opts.outputs);
+    BOOST_CHECK(!sinks.logToStderr);
+    BOOST_CHECK(!sinks.logToStdout);
+    BOOST_CHECK(sinks.logFile == "logout");
     BOOST_CHECK(opts.level);
     BOOST_CHECK(opts.source);
     BOOST_CHECK(opts.function);
@@ -278,9 +286,12 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
 
 QPID_AUTO_TEST_CASE(testOptionsDefault) {
     Options opts("");
-    vector<string> expect=list_of("stderr");
-    BOOST_CHECK_EQUAL(expect, opts.outputs);
-    expect=list_of("error+");
+    qpid::log::posix::SinkOptions sinks("test");
+    sinks = *opts.sinkOptions;
+    BOOST_CHECK(sinks.logToStderr);
+    BOOST_CHECK(!sinks.logToStdout);
+    BOOST_CHECK(sinks.logFile.length() == 0);
+    vector<string> expect=list_of("error+");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     BOOST_CHECK(opts.time && opts.level);
     BOOST_CHECK(!(opts.source || opts.function || opts.thread));
@@ -313,7 +324,8 @@ QPID_AUTO_TEST_CASE(testLoggerStateure) {
         0,
         "--log-time", "no", 
         "--log-source", "yes",
-        "--log-output", "logging.tmp",
+        "--log-to-stderr", "no",
+        "--log-to-file", "logging.tmp",
         "--log-enable", "critical"
     };
     opts.parse(ARGC(argv), const_cast<char**>(argv));
@@ -332,10 +344,13 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
     ScopedSuppressLogging ls(l);
     Options opts("test");
-    opts.outputs.clear();
-    opts.outputs.push_back("logging.tmp");
     opts.time=false;
+    qpid::log::posix::SinkOptions *sinks =
+      dynamic_cast<qpid::log::posix::SinkOptions *>(opts.sinkOptions.get());
+    sinks->logToStderr = false;
+    sinks->logFile = "logging.tmp";
     l.configure(opts);
+
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
     QPID_LOG(critical, str); 

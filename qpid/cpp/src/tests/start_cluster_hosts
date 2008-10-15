@@ -37,7 +37,7 @@ CLUSTER=${*:-$CLUSTER}		# Use args or env
 test -z "$CLUSTER" && { echo Must specify at least one host; exit 1; }
 
 
-OPTS="-d $PORTOPT --load-module $LIBQPIDCLUSTER --cluster-name=$NAME --no-data-dir --auth=no --log-output=syslog --log-enable=info+"
+OPTS="-d $PORTOPT --load-module $LIBQPIDCLUSTER --cluster-name=$NAME --no-data-dir --auth=no --log-to-syslog --log-enable=info+"
 
 num=0
 for h in $CLUSTER; do

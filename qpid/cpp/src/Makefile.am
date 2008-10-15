@@ -68,6 +68,7 @@ sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
+  qpid/log/posix/SinkOptions.cpp \
   qpid/sys/posix/IOHandle.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
@@ -83,6 +84,7 @@ posix_plat_src = \
   qpid/sys/posix/PollableCondition.cpp
 
 posix_plat_hdr = \
+  qpid/log/posix/SinkOptions.h \
   qpid/sys/posix/check.h \
   qpid/sys/posix/Condition.h \
   qpid/sys/posix/PrivatePosix.h \
@@ -116,15 +118,6 @@ include cluster.mk
 include acl.mk
 include qmf.mk
 include xml.mk
-
-# The logger library uses boost::date_time to format time.
-# We have to disable the unused parameters warning to get around
-# unused parameters in boost::date_time headers. So we build it
-# in a convenience library to link into libqpid_common.
-# 
-noinst_LTLIBRARIES=libLogger.la # libqpidamqp_0_10.la
-libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
-libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 if RDMA
 
@@ -222,19 +215,28 @@ libqpidcommon_la_LIBADD = \
   -lboost_program_options \
   -lboost_filesystem \
   -luuid \
-  libLogger.la \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
 
 libqpidcommon_la_SOURCES = \
   $(rgen_framing_srcs) \
   $(platform_src) \
-  qpid/amqp_0_10/SessionHandler.h \
-  qpid/amqp_0_10/SessionHandler.cpp \
+  qpid/assert.cpp qpid/assert.h \
+  qpid/pointer_to_other.h \
+  qpid/DataDir.cpp \
+  qpid/Exception.cpp \
+  qpid/Options.cpp \
+  qpid/Plugin.cpp \
+  qpid/RefCountedBuffer.h \
+  qpid/RefCountedBuffer.cpp \
   qpid/Serializer.h \
   qpid/SessionState.h \
   qpid/SessionState.cpp \
   qpid/SessionId.cpp \
+  qpid/StringUtils.cpp \
+  qpid/Url.cpp \
+  qpid/amqp_0_10/SessionHandler.h \
+  qpid/amqp_0_10/SessionHandler.cpp \
   qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
@@ -262,11 +264,11 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Blob.cpp \
   qpid/framing/MaxMethodBodySize.h \
   qpid/framing/TransferContent.cpp \
-  qpid/assert.cpp qpid/assert.h \
-  qpid/Exception.cpp \
-  qpid/Plugin.cpp \
-  qpid/StringUtils.cpp \
-  qpid/Url.cpp \
+  qpid/log/Logger.cpp \
+  qpid/log/Options.cpp \
+  qpid/log/OstreamOutput.cpp \
+  qpid/log/Selector.cpp \
+  qpid/log/Statement.cpp \
   qpid/management/Manageable.cpp \
   qpid/management/ManagementObject.cpp \
   qpid/sys/AggregateOutput.cpp \
@@ -275,15 +277,7 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/PollableCondition.h \
   qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
-  qpid/sys/Shlib.cpp \
-  qpid/DataDir.cpp \
-  qpid/Options.cpp \
-  qpid/log/Options.cpp \
-  qpid/RefCountedBuffer.h \
-  qpid/RefCountedBuffer.cpp \
-  qpid/log/Selector.cpp \
-  qpid/log/Statement.cpp \
-  qpid/pointer_to_other.h
+  qpid/sys/Shlib.cpp
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 if HAVE_SASL
@@ -578,7 +572,9 @@ nobase_include_HEADERS = \
   qpid/log/Helpers.h \
   qpid/log/Options.h \
   qpid/log/Logger.h \
+  qpid/log/OstreamOutput.h \
   qpid/log/Selector.h \
+  qpid/log/SinkOptions.h \
   qpid/log/Statement.h \
   qpid/management/Args.h \
   qpid/management/Manageable.h \

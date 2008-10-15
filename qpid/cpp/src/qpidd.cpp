@@ -229,10 +229,8 @@ int main(int argc, char* argv[])
         // Starting the broker.
         if (options->daemon.daemon) {
             // For daemon mode replace default stderr with syslog.
-            if (options->log.outputs.size() == 1 && options->log.outputs[0] == "stderr") {
-                options->log.outputs[0] = "syslog";
-                qpid::log::Logger::instance().configure(options->log);
-            }
+            options->log.sinkOptions->detached();
+            qpid::log::Logger::instance().configure(options->log);
             // Fork the daemon
             QpiddDaemon d(options->daemon.piddir);
             d.fork();           // Broker is stared in QpiddDaemon::child()
