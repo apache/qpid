@@ -173,6 +173,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
             message.setExpiration(_expiration);
             message.setClientIdentifier(_publisher.getSessionIdentifier());
 
+            // we then allow the transactional context to do something with the message content
+            // now that it has all been received, before we attempt delivery
+            _txnContext.messageFullyReceived(isPersistent());
+            
             AMQShortString userID = getContentHeaderBody().properties instanceof BasicContentHeaderProperties ?
                      ((BasicContentHeaderProperties) getContentHeaderBody().properties).getUserId() : null; 
             
@@ -180,10 +184,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
             {
                 throw new UnauthorizedAccessException("Acccess Refused",message);
             }
-            
-            // we then allow the transactional context to do something with the message content
-            // now that it has all been received, before we attempt delivery
-            _txnContext.messageFullyReceived(isPersistent());
             
             if ((_destinationQueues == null) || _destinationQueues.size() == 0)
             {
