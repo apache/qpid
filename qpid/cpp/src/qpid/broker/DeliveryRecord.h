@@ -53,12 +53,11 @@ class DeliveryRecord{
 
     bool completed;
     bool ended;
+    const bool windowing;
 
   public:
     DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
-                   const DeliveryId id, bool acquired, bool confirmed = false);
-    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
-            
+                   const DeliveryId id, bool acquired, bool confirmed, bool windowing);
     bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
@@ -77,7 +76,7 @@ class DeliveryRecord{
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }
-    bool isRedundant() const { return ended && completed; }
+    bool isRedundant() const { return ended && (!windowing || completed); }
 
     uint32_t getCredit() const;
     const std::string& getTag() const { return tag; } 
