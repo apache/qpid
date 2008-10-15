@@ -181,6 +181,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
                 throw new UnauthorizedAccessException("Acccess Refused",message);
             }
             
+            // we then allow the transactional context to do something with the message content
+            // now that it has all been received, before we attempt delivery
+            _txnContext.messageFullyReceived(isPersistent());
+            
             if ((_destinationQueues == null) || _destinationQueues.size() == 0)
             {
 
@@ -223,9 +227,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
                 }
             }
 
-            // we then allow the transactional context to do something with the message content
-            // now that it has all been received, before we attempt delivery
-            _txnContext.messageFullyReceived(isPersistent());
             message.clearStoreContext();
             return message;
         }
