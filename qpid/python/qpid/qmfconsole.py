@@ -867,13 +867,13 @@ class Object(object):
         return lambda *args, **kwargs : self._invoke(name, args, kwargs)
     for property, value in self._properties:
       if name == property.name:
-        if property.type == 10:  # Dereference references
-          deref = self._session.getObjects(_objectId=value)
-          if len(deref) != 1:
-            return None
-          else:
-            return deref[0]
         return value
+      if name == "_" + property.name + "_" and property.type == 10:  # Dereference references
+        deref = self._session.getObjects(_objectId=value)
+        if len(deref) != 1:
+          return None
+        else:
+          return deref[0]
     for statistic, value in self._statistics:
       if name == statistic.name:
         return value
