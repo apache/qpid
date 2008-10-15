@@ -26,15 +26,25 @@ namespace log {
  * Central logging agent.
  *
  * Thread safe, singleton.
+ *
+ * The Logger provides all needed functionality for selecting and
+ * formatting logging output. The actual outputting of log records
+ * is handled by Logger::Output-derived classes instantiated by the
+ * platform's sink-related options.
  */
 class Logger : private boost::noncopyable {
   public:
     /** Flags indicating what to include in the log output */
     enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32};
 
-    /** Interface for log output destination.
-     * 
-     * Implementations must be thread safe.
+    /**
+     * Logging output sink.
+     *
+     * The Output sink provides an interface to direct logging output to.
+     * Logging sinks are primarily platform-specific as provided for on
+     * each platform.
+     *
+     * Implementations of Output must be thread safe.
      */
     class Output {
       public:
@@ -43,7 +53,7 @@ class Logger : private boost::noncopyable {
         /** Receives the statemnt of origin and formatted message to log. */
         virtual void log(const Statement&, const std::string&) =0;
     };
-    
+
     static Logger& instance();
 
     Logger();
@@ -69,25 +79,8 @@ class Logger : private boost::noncopyable {
     /** Log a message. */
     void log(const Statement&, const std::string&);
 
-    /** Add an ostream to outputs.
-     * 
-     * The ostream must not be destroyed while the Logger might
-     * still be using it. This is the case for std streams cout,
-     * cerr, clog. 
-     */
-    void output(std::ostream&);
-
-    /** Add syslog to outputs. */
-    void syslog(const Options&);
-
-    /** Add an output.
-     *@param name a file name or one of the special tokens:
-     *stdout, stderr, syslog.
-     */
-    void output(const std::string& name, const Options&);
-
     /** Add an output destination for messages */
-    void output(std::auto_ptr<Output> out); 
+    void output(std::auto_ptr<Output> out);
 
     /** Set a prefix for all messages */
     void setPrefix(const std::string& prefix);

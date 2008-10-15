@@ -1,5 +1,5 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef QPID_LOG_OPTIONS_H
+#define QPID_LOG_OPTIONS_H
 
 /*
  *
@@ -19,40 +19,31 @@
  *
  */
 #include "qpid/Options.h"
+#include "SinkOptions.h"
 #include <iosfwd>
+#include <memory>
 
 namespace qpid {
 namespace log {
 
-/** Provides << and >> operators to convert syslog facility values to/from strings. */
-struct SyslogFacility {
-    int value;
-    SyslogFacility(int i=0) : value(i) {}
-};
-
-std::ostream& operator<<(std::ostream&, const SyslogFacility&);
-std::istream& operator>>(std::istream&, SyslogFacility&);
-
 /** Logging options for config parser. */
 struct Options : public qpid::Options {
     /** Pass argv[0] for use in syslog output */
-    Options(const std::string& argv0=std::string(),
-            const std::string& name="Logging options");
+    Options(const std::string& argv0_=std::string(),
+            const std::string& name_="Logging options");
+    Options(const Options &);
 
     Options& operator=(const Options&);
 
+    std::string argv0;
+    std::string name;
     std::vector<std::string> selectors;
-    std::vector<std::string> outputs;
     bool time, level, thread, source, function;
     bool trace;
-    std::string syslogName;
-    SyslogFacility syslogFacility;
     std::string prefix;
+    std::auto_ptr<SinkOptions> sinkOptions;
 };
-
 
 }} // namespace qpid::log
 
-
-
-#endif  /*!OPTIONS_H*/
+#endif  /*!QPID_LOG_OPTIONS_H*/

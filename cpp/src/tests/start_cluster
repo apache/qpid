@@ -16,10 +16,10 @@ OPTS="-d --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-di
 
 if test "$SIZE" = "one"; then	# Special case of singleton cluster, use default port.
     ../qpidd -q
-    with_ais_group ../qpidd $OPTS --log-output=cluster.log || exit 1
+    with_ais_group ../qpidd $OPTS --log-to-file=cluster.log || exit 1
 else
     for (( i=0; i<SIZE; ++i )); do
-	PORT=`with_ais_group ../qpidd  -p0 --log-output=cluster$i.log $OPTS`  || exit 1
+	PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS`  || exit 1
 	echo $PORT >> cluster.ports
     done
 fi
