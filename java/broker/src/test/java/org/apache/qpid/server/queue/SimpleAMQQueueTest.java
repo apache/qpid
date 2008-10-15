@@ -348,10 +348,10 @@ public class SimpleAMQQueueTest extends TestCase
         qs.add(_queue);
         msg.enqueue(qs);
         msg.routingComplete(_store, new MessageHandleFactory());
+        _store.storeMessageMetaData(null, new Long(1L), new MessageMetaData(info, contentHeaderBody, 1));
         
         // Check that it is enqueued
         AMQQueue data = _store.getMessages().get(1L);
-        _store.storeMessageMetaData(null, new Long(1L), new MessageMetaData(info, contentHeaderBody, 1));
         assertNotNull(data);
         
         // Dequeue message
