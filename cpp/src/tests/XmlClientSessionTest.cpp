@@ -20,6 +20,7 @@
  */
 #include "unit_test.h"
 #include "BrokerFixture.h"
+#include "qpid/sys/Shlib.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
@@ -43,11 +44,13 @@ using namespace qpid::client;
 using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
+using qpid::sys::Shlib;
 using qpid::sys::Monitor;
 using std::string;
 using std::cout;
 using std::endl;
 
+Shlib shlib("../.libs/xml.so");
 
 struct DummyListener : public sys::Runnable, public MessageListener {
     std::vector<Message> messages;
@@ -118,6 +121,8 @@ struct ClientSessionFixture : public ProxySessionFixture
 
 // ########### START HERE ####################################
 
+
+
 QPID_AUTO_TEST_CASE(testXmlBinding) {
   ClientSessionFixture f;
 
@@ -149,8 +154,9 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
 /**
  * Ensure that multiple queues can be bound using the same routing key
  */
-QPID_AUTO_TEST_CASE(testBindMultipleQueues) {
+QPID_AUTO_TEST_CASE(testXMLBindMultipleQueues) {
     ClientSessionFixture f;
+
 
     f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
     f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true);
@@ -176,9 +182,59 @@ QPID_AUTO_TEST_CASE(testBindMultipleQueues) {
     BOOST_CHECK_EQUAL(sent2.getData(), received.getData());
 }
 
-//### Test: Bad XML does not kill the server
+//### Test: Bad XML does not kill the server - and does not even
+// raise an exception, the content is not required to be XML.
 
-//### Test: Bad XQuery does not kill the server
+QPID_AUTO_TEST_CASE(testXMLSendBadXML) {
+  ClientSessionFixture f;
+
+  f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
+  f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
+    ;
+  f.session.queueDeclare(arg::queue="red", arg::exclusive=true, arg::autoDelete=true);
+
+  FieldTable blue;
+  blue.setString("xquery", "./colour = 'blue'");
+  f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
+olour", arg::arguments=blue);
+  FieldTable red;
+  red.setString("xquery", "./colour = 'red'");
+  f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-co\
+lour", arg::arguments=red);
+
+  Message sent1("<>colour>blue</colour>", "by-colour");
+  f.session.messageTransfer(arg::content=sent1,  arg::destination="xml");
+
+  BOOST_CHECK_EQUAL(1, 1);
+}
+
+
+//### Test: Bad XQuery does not kill the server, but does raise an exception
+
+QPID_AUTO_TEST_CASE(testXMLBadXQuery) {
+  ClientSessionFixture f;
+
+  f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
+  f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
+    ;
+
+  try {
+    FieldTable blue;
+    blue.setString("xquery", "./colour $=! 'blue'");
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
+olour", arg::arguments=blue);
+  }
+  catch (const InternalErrorException& e) {
+    return;
+  }
+  BOOST_ERROR("A bad XQuery must raise an exception when used in an XML Binding.");
+
+}
+
+
+//### Test: Each session can provide its own definition for a query name
+
+
 
 //### Test: Bindings persist, surviving broker restart
 

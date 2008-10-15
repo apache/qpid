@@ -25,9 +25,6 @@
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "TopicExchange.h"
-#ifdef HAVE_XML
-#include "XmlExchange.h"
-#endif
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -61,11 +58,6 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
         }else if (type == ManagementExchange::typeName) {
             exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent));
         }
-#ifdef HAVE_XML
-	else if (type == XmlExchange::typeName) {
-            exchange = Exchange::shared_ptr(new XmlExchange(name, durable, args, parent));
-        }
-#endif
 	else{
             FunctionMap::iterator i =  factory.find(type);
             if (i == factory.end()) {

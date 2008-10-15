@@ -20,17 +20,19 @@
  */
 
 #include "config.h"
+
 #include "XmlExchange.h"
 
-#include "DeliverableMessage.h"
+#include "qpid/broker/DeliverableMessage.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
 
-#include <xercesc/framework/MemBufInputSource.hpp>
+#include "qpid/Plugin.h"
 
+#include <xercesc/framework/MemBufInputSource.hpp>
 #include <xqilla/context/ItemFactory.hpp>
 #include <xqilla/xqilla-simple.hpp>
 
@@ -44,6 +46,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {
+
 
 XmlExchange::XmlExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
 {
@@ -176,6 +179,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 
 void XmlExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* args)
 {
+    PreRoute pr(msg, this);
     try {
         XmlBinding::vector::ConstPtr p;
 	{
