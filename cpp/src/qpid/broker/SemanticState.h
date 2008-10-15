@@ -179,7 +179,6 @@ class SemanticState : public sys::OutputTask,
     void flush(const std::string& destination);
     void stop(const std::string& destination);
 
-    bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void startTx();
     void commit(MessageStore* const store);
     void rollback();
