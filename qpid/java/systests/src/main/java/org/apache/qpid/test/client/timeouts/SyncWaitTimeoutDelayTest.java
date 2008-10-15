@@ -43,6 +43,7 @@ public class SyncWaitTimeoutDelayTest extends SyncWaitDelayTest
         super.setUp();
     }
 
+    @Override
     public void test() throws JMSException
     {
         MessageProducer producer = _session.createProducer(_queue);
