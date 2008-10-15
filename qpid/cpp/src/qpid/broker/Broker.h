@@ -129,7 +129,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     std::vector<Url> knownBrokers;
     std::vector<Url> getKnownBrokersImpl();
 
-
   public:
 
   
