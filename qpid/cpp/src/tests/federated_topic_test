@@ -8,6 +8,7 @@ rm -f subscriber_*.log
 SUBSCRIBERS=2
 MESSAGES=1000
 BATCHES=1
+VERBOSE=1
 
 while getopts "s:m:b:" opt ; do
     case $opt in
@@ -26,19 +27,23 @@ PYTHON_DIR=${MY_DIR}/../../../python
 
 trap stop_brokers EXIT
 
+start_broker() {
+    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
+}
+
 start_brokers() {
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
+    start_broker
     PORT_A=`cat qpidd.port`
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
+    start_broker
     PORT_B=`cat qpidd.port`
-    ${MY_DIR}/../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no > qpidd.port
+    start_broker
     PORT_C=`cat qpidd.port`
 }
 
 stop_brokers() {
-    ${MY_DIR}/../qpidd -q --port $PORT_A
-    ${MY_DIR}/../qpidd -q --port $PORT_B
-    ${MY_DIR}/../qpidd -q --port $PORT_C
+    for p in $PORT_A $PORT_B $PORT_C; do
+        ${MY_DIR}/../qpidd -q --port $p
+    done
 }
 
 subscribe() {
@@ -62,33 +67,44 @@ setup_routes() {
     BROKER_A="localhost:$PORT_A"
     BROKER_B="localhost:$PORT_B"
     BROKER_C="localhost:$PORT_C"
-    export PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
-    echo "Establishing routes for topic..."
-    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_A amq.topic topic_control B B
-    $PYTHON_DIR/commands/qpid-route add $BROKER_C $BROKER_B amq.topic topic_control C C
-    echo "linked A->B->C"        
-    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_C amq.topic topic_control B B
-    $PYTHON_DIR/commands/qpid-route add $BROKER_A $BROKER_B amq.topic topic_control A A
-    echo "linked C->B->A"        
+    export PYTHONPATH=$PYTHON_DIR
+    if (($VERBOSE)); then
+        echo "Establishing routes for topic..."
+    fi
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_B $BROKER_A amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_C $BROKER_B amq.topic topic_control C C
+    if (($VERBOSE)); then
+        echo "linked A->B->C"        
+    fi
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_B $BROKER_C amq.topic topic_control B B
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_A $BROKER_B amq.topic topic_control A A
+    if (($VERBOSE)); then
+        echo "linked C->B->A"        
+        echo "Establishing routes for response queue..."
+    fi
 
-    echo "Establishing routes for response queue..."
-    $PYTHON_DIR/commands/qpid-route add $BROKER_B $BROKER_C amq.direct response B B 
-    $PYTHON_DIR/commands/qpid-route add $BROKER_A $BROKER_B amq.direct response A A
-    echo "linked C->B->A"        
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_B $BROKER_C amq.direct response B B 
+    $PYTHON_DIR/commands/qpid-route route add $BROKER_A $BROKER_B amq.direct response A A
+    if (($VERBOSE)); then
+        echo "linked C->B->A"        
+        for b in $BROKER_A $BROKER_B $BROKER_C; do 
+            echo "Routes for $b"
+            $PYTHON_DIR/commands/qpid-route route list $b
+        done
+    fi
 }
 
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
-    echo "Running federated topic test against brokers on ports $PORT_A $PORT_B $PORT_C"
-
-    setup_routes
+    if (($VERBOSE)); then
+        echo "Running federated topic test against brokers on ports $PORT_A $PORT_B $PORT_C"
+    fi
 
     for ((i=$SUBSCRIBERS ; i--; )); do
         subscribe $i &
     done
 
-    #sleep to give subscribers time to get initialised
-    sleep 1
+    setup_routes
 
-    publish 2>&1 || exit 1
+    publish  || exit 1
 fi
