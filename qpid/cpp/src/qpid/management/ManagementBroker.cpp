@@ -291,26 +291,26 @@ bool ManagementBroker::checkHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
     return h1 == 'A' && h2 == 'M' && h3 == '2';
 }
 
-void ManagementBroker::sendBuffer (Buffer&  buf,
-                                   uint32_t length,
-                                   qpid::broker::Exchange::shared_ptr exchange,
-                                   string   routingKey)
+void ManagementBroker::sendBuffer(Buffer&  buf,
+                                  uint32_t length,
+                                  qpid::broker::Exchange::shared_ptr exchange,
+                                  string   routingKey)
 {
     if (exchange.get() == 0)
         return;
 
-    intrusive_ptr<Message> msg (new Message ());
-    AMQFrame method (in_place<MessageTransferBody>(
+    intrusive_ptr<Message> msg(new Message());
+    AMQFrame method(in_place<MessageTransferBody>(
         ProtocolVersion(), exchange->getName (), 0, 0));
-    AMQFrame header (in_place<AMQHeaderBody>());
+    AMQFrame header(in_place<AMQHeaderBody>());
     AMQFrame content(in_place<AMQContentBody>());
 
     content.castBody<AMQContentBody>()->decode(buf, length);
 
-    method.setEof  (false);
-    header.setBof  (false);
-    header.setEof  (false);
-    content.setBof (false);
+    method.setEof(false);
+    header.setBof(false);
+    header.setEof(false);
+    content.setBof(false);
 
     msg->getFrames().append(method);
     msg->getFrames().append(header);
@@ -321,7 +321,9 @@ void ManagementBroker::sendBuffer (Buffer&  buf,
     msg->getFrames().append(content);
 
     DeliverableMessage deliverable (msg);
-    exchange->route (deliverable, routingKey, 0);
+    try {
+        exchange->route(deliverable, routingKey, 0);
+    } catch(std::exception&) {}
 }
 
 void ManagementBroker::moveNewObjectsLH()
@@ -385,7 +387,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.prop." + object->getPackageName() + "." + object->getClassName ();
+            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName ();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
@@ -397,7 +399,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.stat." + object->getPackageName() + "." + object->getClassName ();
+            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName ();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
@@ -1018,7 +1020,7 @@ void ManagementBroker::addClassLH(uint8_t               kind,
         return;
 
     // No such class found, create a new class with local information.
-    QPID_LOG (debug, "ManagementBroker added class " << pIter->first << "." <<
+    QPID_LOG (debug, "ManagementBroker added class " << pIter->first << ":" <<
               key.name);
 
     cMap.insert(pair<SchemaClassKey, SchemaClass>(key, SchemaClass(kind, schemaCall)));

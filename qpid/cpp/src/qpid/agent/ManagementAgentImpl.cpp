@@ -606,13 +606,11 @@ void ManagementAgentImpl::periodicProcessing()
 
     moveNewObjectsLH();
 
-    if (clientWasAdded)
-    {
+    if (clientWasAdded) {
         clientWasAdded = false;
         for (ManagementObjectMap::iterator iter = managementObjects.begin();
              iter != managementObjects.end();
-             iter++)
-        {
+             iter++) {
             ManagementObject* object = iter->second;
             object->setAllChanged();
         }
@@ -620,39 +618,64 @@ void ManagementAgentImpl::periodicProcessing()
 
     if (managementObjects.empty())
         return;
-        
+
+    //
+    //  Clear the been-here flag on all objects in the map.
+    //
     for (ManagementObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
          iter++)
-    {
-        ManagementObject* object = iter->second;
+        iter->second->setFlags(0);
 
-        if (object->getConfigChanged() || object->isDeleted())
-        {
-            Buffer msgBuffer(msgChars, BUFSIZE);
-            encodeHeader(msgBuffer, 'c');
-            object->writeProperties(msgBuffer);
+    //
+    //  Process the entire object map.
+    //
+    for (ManagementObjectMap::iterator baseIter = managementObjects.begin();
+         baseIter != managementObjects.end();
+         baseIter++) {
+        ManagementObject* baseObject = baseIter->second;
 
-            contentSize = BUFSIZE - msgBuffer.available();
-            msgBuffer.reset();
-            routingKey = "console.prop." + object->getPackageName() + "." + object->getClassName();
-            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
-        }
+        //
+        //  Skip until we find a base object requiring a sent message.
+        //
+        if (baseObject->getFlags() == 1 ||
+            (!baseObject->getConfigChanged() &&
+             !baseObject->getInstChanged() &&
+             !baseObject->isDeleted()))
+            continue;
+
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        for (ManagementObjectMap::iterator iter = baseIter;
+             iter != managementObjects.end();
+             iter++) {
+            ManagementObject* object = iter->second;
+            if (baseObject->isSameClass(*object) && object->getFlags() == 0) {
+                object->setFlags(1);
+
+                if (object->getConfigChanged() || object->isDeleted()) {
+                    encodeHeader(msgBuffer, 'c');
+                    object->writeProperties(msgBuffer);
+                }
         
-        if (object->getInstChanged())
-        {
-            Buffer msgBuffer(msgChars, BUFSIZE);
-            encodeHeader(msgBuffer, 'i');
-            object->writeStatistics(msgBuffer);
+                if (object->getInstChanged()) {
+                    encodeHeader(msgBuffer, 'i');
+                    object->writeStatistics(msgBuffer);
+                }
 
-            contentSize = BUFSIZE - msgBuffer.available();
-            msgBuffer.reset();
-            routingKey = "console.stat." + object->getPackageName() + "." + object->getClassName();
-            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
+                if (object->isDeleted())
+                    deleteList.push_back(iter->first);
+
+                if (msgBuffer.available() < (BUFSIZE / 2))
+                    break;
+            }
         }
 
-        if (object->isDeleted())
-            deleteList.push_back(iter->first);
+        contentSize = BUFSIZE - msgBuffer.available();
+        if (contentSize > 0) {
+            msgBuffer.reset();
+            routingKey = "console.obj." + baseObject->getPackageName() + "." + baseObject->getClassName();
+            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
+        }
     }
 
     // Delete flagged objects
@@ -737,7 +760,9 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
     msg.getDeliveryProperties().setRoutingKey(routingKey);
     msg.getMessageProperties().setReplyTo(ReplyTo("amq.direct", queueName.str()));
     msg.setData(data);
-    session.messageTransfer(arg::content=msg, arg::destination=exchange);
+    try {
+        session.messageTransfer(arg::content=msg, arg::destination=exchange);
+    } catch(std::exception&) {}
 }
 
 void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint32_t agentBank)
