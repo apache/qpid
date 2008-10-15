@@ -32,35 +32,23 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                const std::string _tag,
                                DeliveryToken::shared_ptr _token, 
                                const DeliveryId _id,
-                               bool _acquired, bool accepted) : msg(_msg), 
-                                                                queue(_queue), 
-                                                                tag(_tag),
-                                                                token(_token),
-                                                                id(_id),
-                                                                acquired(_acquired),
-                                                                pull(false), 
-                                                                cancelled(false),
-                                                                credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
-                                                                size(msg.payload ? msg.payload->contentSize() : 0),
-                                                                completed(false),
-                                                                ended(accepted)
+                               bool _acquired, bool accepted, 
+                               bool _windowing) : msg(_msg), 
+                                                  queue(_queue), 
+                                                  tag(_tag),
+                                                  token(_token),
+                                                  id(_id),
+                                                  acquired(_acquired),
+                                                  pull(false), 
+                                                  cancelled(false),
+                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
+                                                  size(msg.payload ? msg.payload->contentSize() : 0),
+                                                  completed(false),
+                                                  ended(accepted),
+                                                  windowing(_windowing)
 {
     if (accepted) setEnded();
 }
-
-DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
-                               Queue::shared_ptr _queue, 
-                               const DeliveryId _id) : msg(_msg), 
-                                                       queue(_queue), 
-                                                       id(_id),
-                                                       acquired(true),
-                                                       pull(true),
-                                                       cancelled(false),
-                                                       credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
-                                                       size(msg.payload ? msg.payload->contentSize() : 0),
-                                                       completed(false),
-                                                       ended(false)
-{}
 
 void DeliveryRecord::setEnded()
 {

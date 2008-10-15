@@ -45,7 +45,7 @@ QPID_AUTO_TEST_CASE(testSort)
 
     list<DeliveryRecord> records;
     for (list<SequenceNumber>::iterator i = ids.begin(); i != ids.end(); i++) {
-        records.push_back(DeliveryRecord(QueuedMessage(0), Queue::shared_ptr(), "tag", DeliveryToken::shared_ptr(), *i, false, false));
+        records.push_back(DeliveryRecord(QueuedMessage(0), Queue::shared_ptr(), "tag", DeliveryToken::shared_ptr(), *i, false, false, false));
     }
     records.sort();
 

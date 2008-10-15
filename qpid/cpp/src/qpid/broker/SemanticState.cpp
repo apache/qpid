@@ -265,7 +265,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
     DeliveryId deliveryTag =
         parent->deliveryAdapter.deliver(msg, token);
     if (windowing || ackExpected || !acquire) {
-        parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
+        parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected, windowing));
     } 
     if (acquire && !ackExpected) {
         queue->dequeue(0, msg);
@@ -441,20 +441,6 @@ void SemanticState::recover(bool requeue)
         //id adjusted, confirmed messages are not and so the ordering
         //w.r.t id is lost
         unacked.sort();
-    }
-}
-
-bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected)
-{
-    QueuedMessage msg = queue->get();
-    if(msg.payload){
-        DeliveryId myDeliveryTag = deliveryAdapter.deliver(msg, token);
-        if(ackExpected){
-            unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
-        }
-        return true;
-    }else{
-        return false;
     }
 }
 
