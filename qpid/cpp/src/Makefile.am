@@ -115,6 +115,7 @@ cmodule_LTLIBRARIES =
 include cluster.mk
 include acl.mk
 include qmf.mk
+include xml.mk
 
 # The logger library uses boost::date_time to format time.
 # We have to disable the unused parameters warning to get around
@@ -285,9 +286,6 @@ libqpidcommon_la_SOURCES = \
   qpid/pointer_to_other.h
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
-if HAVE_XML
-libqpidbroker_la_LIBADD += -lxerces-c -lxqilla
-endif
 if HAVE_SASL
 libqpidbroker_la_LIBADD += -lsasl2
 endif
@@ -359,11 +357,6 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementBroker.cpp \
   qpid/management/ManagementExchange.cpp \
   qpid/sys/TCPIOPlugin.cpp
-
-if HAVE_XML
-libqpidbroker_la_SOURCES +=  qpid/broker/XmlExchange.cpp
-endif
-
 
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
@@ -636,10 +629,6 @@ nobase_include_HEADERS = \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h \
   qpid/sys/uuid.h
-
-if HAVE_XML
-nobase_include_HEADERS += qpid/broker/XmlExchange.h
-endif
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

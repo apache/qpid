@@ -21,11 +21,11 @@
 #ifndef _XmlExchange_
 #define _XmlExchange_
 
-#include "Exchange.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/CopyOnWriteArray.h"
 #include "qpid/sys/Monitor.h"
-#include "Queue.h"
+#include "qpid/broker/Queue.h"
 
 #include <xqilla/xqilla-simple.hpp>
 
