@@ -122,6 +122,7 @@ class ManagementObject : public ManagementItem
     sys::Mutex       accessLock;
     ManagementAgent* agent;
     int              maxThreads;
+    uint32_t         flags;
 
     static int nextThreadIndex;
         
@@ -164,6 +165,15 @@ class ManagementObject : public ManagementItem
         deleted     = true;
     }
     inline bool isDeleted (void) { return deleted; }
+    inline void setFlags(uint32_t f) { flags = f; }
+    inline uint32_t getFlags() { return flags; }
+    bool isSameClass(ManagementObject& other) {
+        for (int idx = 0; idx < 16; idx++)
+            if (other.getMd5Sum()[idx] != getMd5Sum()[idx])
+                return false;
+        return other.getClassName() == getClassName() &&
+            other.getPackageName() == getPackageName();
+    }
 };
 
 typedef std::map<ObjectId, ManagementObject*> ManagementObjectMap;

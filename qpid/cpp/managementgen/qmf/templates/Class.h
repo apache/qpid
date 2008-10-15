@@ -55,11 +55,11 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     struct PerThreadStats** perThreadStatsArray;
 
     inline struct PerThreadStats* getThreadStats() {
-        int index = getThreadIndex();
-        struct PerThreadStats* threadStats = perThreadStatsArray[index];
+        int idx = getThreadIndex();
+        struct PerThreadStats* threadStats = perThreadStatsArray[idx];
         if (threadStats == 0) {
             threadStats = new(PerThreadStats);
-            perThreadStatsArray[index] = threadStats;
+            perThreadStatsArray[idx] = threadStats;
 /*MGEN:Class.InitializePerThreadElements*/
         }
         return threadStats;
