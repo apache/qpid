@@ -105,8 +105,9 @@ void OutputInterceptor::sendDoOutput() {
     // Note we may send 0 size request if there's more than 2*estimate in the buffer.
     // Send it anyway to keep the doOutput chain going until we are sure there's no more output
     // (in deliverDoOutput)
-    // 
-    parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), &parent);
+    //
+    // FIXME aconway 2008-10-16: use ++parent.mcastSeq as sequence no,not 0
+    parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), parent.getId(), 0);
     QPID_LOG(trace, &parent << "Send doOutput request for " << request);
 }
 

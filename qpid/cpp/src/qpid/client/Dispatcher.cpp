@@ -72,7 +72,7 @@ void Dispatcher::run()
     boost::state_saver<bool>  reset(running); // Reset to false on exit.
     running = true;
     try {
-        while (!queue->isClosed()) {
+        while (true) {
             Mutex::ScopedUnlock u(lock);
             FrameSet::shared_ptr content = queue->pop();
             if (content->isA<MessageTransferBody>()) {
@@ -92,12 +92,14 @@ void Dispatcher::run()
                 }
             }
         }
-        session.sync(); // Make sure all our acks are received before returning.
     }
-    catch (const ClosedException& e) 
-    { 
-        QPID_LOG(debug, "Ignored exception in client dispatch thread: " << e.what());
-    } //ignore it and return
+    catch (const ClosedException& e)  { 
+        QPID_LOG(debug, "Dispatch thread exiting, session closed: " << session.getId());
+        try {
+            session.sync(); // Make sure all our acks are received before returning.
+        }
+        catch(...) {}
+    }
     catch (const std::exception& e) {
         QPID_LOG(error, "Exception in client dispatch thread: " << e.what());
         if ( failoverHandler )

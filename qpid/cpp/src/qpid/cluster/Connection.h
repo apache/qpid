@@ -64,12 +64,13 @@ class Connection :
     bool isLocal() const;
 
     /** True for connections that are shadowing remote broker connections */
-    bool isShadow() const { return !isLocal(); }
+    bool isShadow() const;
 
     /** True if the connection is in "catch-up" mode: building initial broker state. */
     bool isCatchUp() const { return catchUp; }
 
-    bool isDump() const { return self.getPointer() == 0; }
+    /** True if the connection is a completed shared dump connection */
+    bool isDumped() const;
 
     Cluster& getCluster() { return cluster; }
 
@@ -103,6 +104,7 @@ class Connection :
     void membership(const framing::FieldTable&, const framing::FieldTable&);
 
   private:
+    bool catcUp;
 
     void deliverClose();
     void deliverDoOutput(uint32_t requested);

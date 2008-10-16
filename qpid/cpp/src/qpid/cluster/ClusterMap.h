@@ -58,6 +58,8 @@ class ClusterMap {
         cpg_address *left, int nLeft,
         cpg_address *joined, int nJoined);
 
+    bool configChange(const std::string& addresses);
+
     bool isNewbie(const MemberId& id) const { return newbies.find(id) != newbies.end(); }
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
     bool isAlive(const MemberId& id) const { return alive.find(id) != alive.end(); }

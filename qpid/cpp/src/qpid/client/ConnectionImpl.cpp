@@ -32,17 +32,18 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
-using namespace qpid::client;
+
+namespace qpid {
+namespace client {
+
 using namespace qpid::framing;
 using namespace qpid::framing::connection;
 using namespace qpid::sys;
-
 using namespace qpid::framing::connection;//for connection error codes
 
 ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSettings& settings)
     : Bounds(settings.maxFrameSize * settings.bounds),
       handler(settings, v),
-      failover(new FailoverListener()),
       version(v),
       nextChannel(1)
 {
@@ -51,7 +52,6 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
                                   CLOSE_CODE_NORMAL, std::string());
-
     //only set error handler once  open
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
 }
@@ -69,7 +69,8 @@ void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, u
     Mutex::ScopedLock l(lock);
     session->setChannel(channel ? channel : nextChannel++);
     boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
-    if (s.lock()) throw SessionBusyException();
+    boost::shared_ptr<SessionImpl> ss = s.lock();
+    if (ss) throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attachd to " << ss->getId()));
     s = session;
 }
 
@@ -110,7 +111,7 @@ void ConnectionImpl::open()
     connector->init();
     handler.waitForOpen();
 
-    if (failover.get()) failover->start(shared_from_this());
+    failover.reset(new FailoverListener(shared_from_this(), handler.knownBrokersUrls));
 }
 
 void ConnectionImpl::idleIn()
@@ -176,7 +177,6 @@ const ConnectionSettings& ConnectionImpl::getNegotiatedSettings()
 }
     
 std::vector<qpid::Url> ConnectionImpl::getKnownBrokers() {
-    // FIXME aconway 2008-10-08: ensure we never return empty list, always include self Url.
     return failover ? failover->getKnownBrokers() : handler.knownBrokersUrls;
 }
 
@@ -187,4 +187,6 @@ boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& na
     return simpl;
 }
 
-void ConnectionImpl::stopFailoverListener() { failover.reset(); }
+void ConnectionImpl::stopFailoverListener() { failover->stop(); }
+
+}} // namespace qpid::client
