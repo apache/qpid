@@ -42,7 +42,7 @@
 namespace qpid {
 namespace client {
 
-class ConnectionSettings;
+struct ConnectionSettings;
 class ConnectionImpl;
 
 ///@internal
