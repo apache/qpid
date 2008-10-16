@@ -177,46 +177,52 @@ template <class C> set<uint16_t> makeSet(const C& c) {
     return s;
 }
 
-template <class T>  std::set<uint16_t> knownBrokerPorts(T& source, size_t n) {
+template <class T>  std::set<uint16_t> knownBrokerPorts(T& source, int n=-1) {
     vector<Url> urls = source.getKnownBrokers();
-    for (size_t retry=1000; urls.size() != n && retry != 0; --retry) {
-        ::usleep(1000);
-        urls = source.getKnownBrokers();
+    BOOST_MESSAGE("knownBrokerPorts " << n << ": " << urls);
+    if (n >= 0) {
+        for (size_t retry=10; urls.size() != unsigned(n) && retry != 0; --retry) {
+            ::usleep(100000);
+            urls = source.getKnownBrokers();
+            BOOST_MESSAGE("knownBrokerPorts retry: " << urls);
+        }
     }
     set<uint16_t> s;
-    for (vector<Url>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
-        BOOST_MESSAGE("Failover URL: " << *i);      
-        BOOST_CHECK(i->size() >= 1);
-        BOOST_CHECK((*i)[0].get<TcpAddress>());
+    for (vector<Url>::const_iterator i = urls.begin(); i != urls.end(); ++i) 
         s.insert((*i)[0].get<TcpAddress>()->port);
-    }
     return s;
 }
 
-QPID_AUTO_TEST_CASE(testFailoverListener) {
-    ClusterFixture cluster(2);
-    Client c0(cluster[0], "c0");
-    FailoverListener fl;
-    fl.start(ConnectionAccess::getImpl(c0.connection));
-    set<uint16_t> set0=makeSet(cluster);
-
-    BOOST_CHECK_EQUAL(set0, knownBrokerPorts(fl, 2));
-    cluster.add();
-    BOOST_CHECK_EQUAL(makeSet(cluster), knownBrokerPorts(fl, 3));
-    cluster.kill(2);
-    BOOST_CHECK_EQUAL(set0, knownBrokerPorts(fl, 2));
-}
-
 QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
-    ClusterFixture cluster(2);
+    ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
-    set<uint16_t> set0=makeSet(cluster);
+    set<uint16_t> kb0 = knownBrokerPorts(c0.connection);
+    BOOST_CHECK_EQUAL(kb0.size(), 1);
+    BOOST_CHECK_EQUAL(kb0, makeSet(cluster));
 
-    BOOST_CHECK_EQUAL(set0, knownBrokerPorts(c0.connection, 2));
     cluster.add();
-    BOOST_CHECK_EQUAL(makeSet(cluster), knownBrokerPorts(c0.connection, 3));
-    cluster.kill(2);
-    BOOST_CHECK_EQUAL(set0, knownBrokerPorts(c0.connection, 2));
+    Client c1(cluster[1], "c1");
+    set<uint16_t> kb1 = knownBrokerPorts(c1.connection);
+    kb0 = knownBrokerPorts(c0.connection, 2);
+    BOOST_CHECK_EQUAL(kb1.size(), 2);
+    BOOST_CHECK_EQUAL(kb1, makeSet(cluster));
+    BOOST_CHECK_EQUAL(kb1,kb0);
+
+    cluster.add();
+    Client c2(cluster[2], "c2");
+    set<uint16_t> kb2 = knownBrokerPorts(c2.connection);
+    kb1 = knownBrokerPorts(c1.connection, 3);
+    kb0 = knownBrokerPorts(c0.connection, 3);
+    BOOST_CHECK_EQUAL(kb2.size(), 3);
+    BOOST_CHECK_EQUAL(kb2, makeSet(cluster));
+    BOOST_CHECK_EQUAL(kb2,kb0);
+    BOOST_CHECK_EQUAL(kb2,kb1);
+
+    cluster.kill(1);
+    kb0 = knownBrokerPorts(c0.connection, 2);
+    kb2 = knownBrokerPorts(c2.connection, 2);
+    BOOST_CHECK_EQUAL(kb0.size(), 2);
+    BOOST_CHECK_EQUAL(kb0, kb2);
 }
 
 QPID_AUTO_TEST_CASE(DumpConsumers) {
@@ -237,6 +243,7 @@ QPID_AUTO_TEST_CASE(DumpConsumers) {
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 1u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 1u);
     BOOST_CHECK_EQUAL(c2.session.queueQuery("q").getMessageCount(), 1u);
+
 
     // Activate the subscription, ensure message removed on all queues. 
     c0.subs.setFlowControl("q", FlowControl::messageCredit(1));

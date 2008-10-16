@@ -38,11 +38,10 @@ class SubscriptionManager;
  */
 class FailoverListener : public MessageListener {
   public:
-    FailoverListener();
+    FailoverListener(const boost::shared_ptr<ConnectionImpl>&, const std::vector<Url>& initUrls);
     ~FailoverListener();
-    void start(const boost::shared_ptr<ConnectionImpl>&);
     void stop();
-    
+
     std::vector<Url> getKnownBrokers() const;
     void received(Message& msg);
     
