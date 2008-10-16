@@ -168,9 +168,6 @@ void DumpClient::dumpConnection(const boost::intrusive_ptr<Connection>& dumpConn
     // authentication etc. See ConnectionSettings.
     shadowConnection.open(dumpeeUrl, bc.getUserId());
 
-    // Stop the failover listener as its session will conflict with re-creating-sessions
-    client::ConnectionAccess::getImpl(shadowConnection)->stopFailoverListener();
-    
     dumpConnection->getBrokerConnection().eachSessionHandler(boost::bind(&DumpClient::dumpSession, this, _1));
     ClusterConnectionProxy(shadowConnection).shadowReady(
         dumpConnection->getId().getMember(),

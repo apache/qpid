@@ -89,6 +89,8 @@ class ConnectionImpl : public Bounds,
     std::vector<Url> getKnownBrokers();
     void registerFailureCallback ( boost::function<void ()> fn ) { failureCallback = fn; }
     void stopFailoverListener();
+
+    framing::ProtocolVersion getVersion() { return version; }
 };
 
 }}

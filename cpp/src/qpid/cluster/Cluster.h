@@ -65,11 +65,11 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     virtual ~Cluster();
 
     // Connection map
-    void insert(const ConnectionPtr&); 
+    bool insert(const ConnectionPtr&); 
     void erase(ConnectionId);       
     
     // Send to the cluster 
-    void mcastControl(const framing::AMQBody& controlBody, Connection* cptr=0);
+    void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&, uint32_t id);
     void mcastBuffer(const char*, size_t, const ConnectionId&, uint32_t id);
     void mcast(const Event& e);
 
@@ -101,7 +101,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // a Lock to call the unlocked functions.
 
     // Unlocked versions of public functions
-    void mcastControl(const framing::AMQBody& controlBody, Connection* cptr, Lock&);
+    void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&, uint32_t, Lock&);
+    void mcastControl(const framing::AMQBody& controlBody, Lock&);
     void mcastBuffer(const char*, size_t, const ConnectionId&, uint32_t id, Lock&);
     void mcast(const Event& e, Lock&);
     void leave(Lock&);
@@ -109,9 +110,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Called via CPG, deliverQueue or DumpClient threads. 
     void tryMakeOffer(const MemberId&, Lock&);
-
-    // Called in CPG, connection IO and DumpClient threads.
-    void unstall(Lock&);
 
     // Called in main thread in ~Broker.
     void brokerShutdown();
@@ -123,9 +121,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void dumpOffer(const MemberId& dumper, uint64_t dumpee, Lock&);
     void dumpStart(const MemberId& dumper, uint64_t dumpeeInt, const std::string& urlStr, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
+    void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    void process(const Event&); // deliverQueue callback
-    void process(const Event&, Lock&); // unlocked version
+    void delivered(const Event&); // deliverQueue callback
+    void delivered(const Event&, Lock&); // unlocked version
 
     // CPG callbacks, called in CPG IO thread.
     void dispatch(sys::DispatchHandle&); // Dispatch CPG events.
@@ -139,6 +138,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         void* /*msg*/,
         int /*msg_len*/);
 
+    void deliver(const Event& e, Lock&); 
+    
     void configChange( // CPG config change callback.
         cpg_handle_t /*handle*/,
         struct cpg_name */*group*/,
@@ -172,7 +173,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Cpg cpg;
     const Cpg::Name name;
     const Url myUrl;
-    const MemberId memberId;
+    const MemberId myId;
 
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
@@ -183,7 +184,17 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
 
-    enum { INIT, NEWBIE, DUMPEE, READY, OFFER, DUMPER, LEFT } state;
+    enum {
+        INIT,                   ///< Initial state, no CPG messages received.
+        NEWBIE,                 ///< Sent dump request, waiting for dump offer.
+        DUMPEE,                 ///< Stalled receive queue at dump offer, waiting for dump to complete.
+        CATCHUP,                ///< Dump complete, unstalled but has not yet seen own "ready" event.
+        READY,                  ///< Fully operational 
+        OFFER,                  ///< Sent an offer, waiting for accept/reject.
+        DUMPER,                 ///< Offer accepted, sending a state dump.
+        LEFT                    ///< Final state, left the cluster.
+    } state;
+    
     ClusterMap map;
     sys::Thread dumpThread;
     boost::optional<ClusterMap> dumpedMap;
