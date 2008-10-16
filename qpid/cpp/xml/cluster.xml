@@ -33,6 +33,7 @@
 
     <control name = "dump-offer" code="0x2" label="Member offering to be dumper for dumpee.">
       <field name="dumpee" type="uint64"/>
+      <field name="cluster-id" type="uuid"/>
     </control>
 
     <control name = "dump-start" code="0x3" label="Used internally by dumper to mark stall point.">
