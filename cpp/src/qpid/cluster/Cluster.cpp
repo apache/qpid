@@ -78,7 +78,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     void dumpRequest(const std::string& url) { cluster.dumpRequest(member, url, l); }
     void ready(const std::string& url) { cluster.ready(member, url, l); }
     void configChange(const std::string& addresses) { cluster.configChange(member, addresses, l); }
-    void dumpOffer(uint64_t dumpee) { cluster.dumpOffer(member, dumpee, l); }
+    void dumpOffer(uint64_t dumpee, const Uuid& id) { cluster.dumpOffer(member, dumpee, id, l); }
     void dumpStart(uint64_t dumpee, const std::string& url) { cluster.dumpStart(member, dumpee, url, l); }
     void shutdown() { cluster.shutdown(member, l); }
 
@@ -110,8 +110,6 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
         mgmtObject = new qmf::Cluster (agent, this, &broker,name.str(),myUrl.str());
         agent->addObject (mgmtObject);
         mgmtObject->set_status("JOINING");
-        // FIXME aconway 2008-09-24: 
-        // if first cluster up set new UUID to set_clusterID() else set UUID of cluster being joined.
     }
     broker.getKnownBrokers = boost::bind(&Cluster::getUrls, this);
     failoverExchange.reset(new FailoverExchange(this));
@@ -372,6 +370,7 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
 
     if (state == INIT) {        // First configChange
         if (map.aliveCount() == 1) {
+            setClusterId(true);
             QPID_LOG(info, *this << " first in cluster at " << myUrl);
             state = READY;
             if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
@@ -395,7 +394,7 @@ void Cluster::tryMakeOffer(const MemberId& id, Lock& l) {
     if (state == READY && map.isNewbie(id)) {
         state = OFFER;
         QPID_LOG(debug, *this << " send dump-offer to " << id);
-        mcastControl(ClusterDumpOfferBody(ProtocolVersion(), id), l);
+        mcastControl(ClusterDumpOfferBody(ProtocolVersion(), id, clusterId), l);
     }
 }
 
@@ -432,7 +431,7 @@ void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     }
 }
 
-void Cluster::dumpOffer(const MemberId& dumper, uint64_t dumpeeInt, Lock& l) {
+void Cluster::dumpOffer(const MemberId& dumper, uint64_t dumpeeInt, const Uuid& uuid, Lock& l) {
     if (state == LEFT) return;
     MemberId dumpee(dumpeeInt);
     boost::optional<Url> url = map.dumpOffer(dumper, dumpee);
@@ -450,6 +449,7 @@ void Cluster::dumpOffer(const MemberId& dumper, uint64_t dumpeeInt, Lock& l) {
     else if (dumpee == myId && url) {
         assert(state == NEWBIE);
         QPID_LOG(debug, *this << " accepted dump-offer from " << dumper);
+        setClusterId(uuid);
         state = DUMPEE;
         deliverQueue.stop();
         checkDumpIn(l);
@@ -578,6 +578,13 @@ MemberId Cluster::getId() const {
 
 broker::Broker& Cluster::getBroker() const {
     return broker; // Immutable,  no need to lock.
+}
+
+void Cluster::setClusterId(const Uuid& uuid) {
+    clusterId = uuid;
+    if (mgmtObject)
+        mgmtObject->set_clusterID(clusterId.str());
+    QPID_LOG(debug, *this << " cluster-id = " << clusterId);
 }
 
 }} // namespace qpid::cluster
