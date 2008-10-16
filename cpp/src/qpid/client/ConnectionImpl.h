@@ -40,7 +40,7 @@ namespace qpid {
 namespace client {
 
 class Connector;
-class ConnectionSettings;
+struct ConnectionSettings;
 class SessionImpl;
 class FailoverListener;
 
