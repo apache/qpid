@@ -1,9 +1,11 @@
 SUBDIRS = direct fanout pub-sub request-response failover
 if HAVE_XML
   SUBDIRS += xml-exchange
+  broker_args = "--no-module-dir --data-dir \"\" --auth no --load-module $(top_builddir)/src/.libs/xml.so"	
 endif
 if !HAVE_XML
   exclude_examples_regexp="xml"	# Exclude XML examples.
+  broker_args = "--no-module-dir --data-dir \"\" --auth no"	
 endif
 
 MAKEDIST=.libs/Makefile
@@ -25,5 +27,5 @@ abs_top_srcdir = @abs_top_srcdir@
 
 # Verify the examples in the buid tree.
 check-local: 
-	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(top_builddir)/src/qpidd $(exclude_examples_regexp)
+	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(top_builddir)/src/qpidd $(broker_args) $(exclude_examples_regexp)
 
