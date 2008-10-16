@@ -5,11 +5,12 @@
 verify=`dirname $0`/verify
 topsrcdir=$1
 qpidd=$2
-exclude_regexp=$3
+broker_args=$3
+exclude_regexp=$4
 python=${QPID_PYTHON_DIR:-$topsrcdir/python}
 
 trap "$qpidd -q" exit
-QPID_PORT=`$qpidd -dp0 --no-module-dir --data-dir "" --auth no --load-module $topsrcdir/cpp/src/.libs/xml.so` || { echo "Can't run qpidd" ; exit 1; }
+QPID_PORT=`$qpidd -dp0 $broker_args` || { echo "Can't run qpidd" ; exit 1; }
 PYTHON_EXAMPLES=$python/examples
 PYTHONPATH=$python:$PYTHONPATH
 export QPID_PORT PYTHON_EXAMPLES PYTHONPATH
