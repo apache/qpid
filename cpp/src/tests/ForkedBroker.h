@@ -58,10 +58,10 @@ class ForkedBroker {
         }
     }
 
-    void kill() {
+    void kill(int sig=SIGINT) {
         using qpid::ErrnoException;
         if (pid == 0) return;
-        if (::kill(pid, SIGINT) < 0) throw ErrnoException("kill failed");
+        if (::kill(pid, sig) < 0) throw ErrnoException("kill failed");
         int status;
         if (::waitpid(pid, &status, 0) < 0) throw ErrnoException("wait for forked process failed");
         if (WEXITSTATUS(status) != 0)
