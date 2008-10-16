@@ -197,14 +197,14 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
     set<uint16_t> kb0 = knownBrokerPorts(c0.connection);
-    BOOST_CHECK_EQUAL(kb0.size(), 1);
+    BOOST_CHECK_EQUAL(kb0.size(), 1u);
     BOOST_CHECK_EQUAL(kb0, makeSet(cluster));
 
     cluster.add();
     Client c1(cluster[1], "c1");
     set<uint16_t> kb1 = knownBrokerPorts(c1.connection);
     kb0 = knownBrokerPorts(c0.connection, 2);
-    BOOST_CHECK_EQUAL(kb1.size(), 2);
+    BOOST_CHECK_EQUAL(kb1.size(), 2u);
     BOOST_CHECK_EQUAL(kb1, makeSet(cluster));
     BOOST_CHECK_EQUAL(kb1,kb0);
 
@@ -213,7 +213,7 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     set<uint16_t> kb2 = knownBrokerPorts(c2.connection);
     kb1 = knownBrokerPorts(c1.connection, 3);
     kb0 = knownBrokerPorts(c0.connection, 3);
-    BOOST_CHECK_EQUAL(kb2.size(), 3);
+    BOOST_CHECK_EQUAL(kb2.size(), 3u);
     BOOST_CHECK_EQUAL(kb2, makeSet(cluster));
     BOOST_CHECK_EQUAL(kb2,kb0);
     BOOST_CHECK_EQUAL(kb2,kb1);
@@ -221,7 +221,7 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     cluster.kill(1,9);
     kb0 = knownBrokerPorts(c0.connection, 2);
     kb2 = knownBrokerPorts(c2.connection, 2);
-    BOOST_CHECK_EQUAL(kb0.size(), 2);
+    BOOST_CHECK_EQUAL(kb0.size(), 2u);
     BOOST_CHECK_EQUAL(kb0, kb2);
 }
 
