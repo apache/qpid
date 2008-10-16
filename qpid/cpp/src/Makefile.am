@@ -216,7 +216,6 @@ EXTRA_DIST +=\
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \
   -lboost_filesystem \
-  -lboost_thread-mt \
   -luuid \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
