@@ -23,6 +23,8 @@
 #include "qpid/sys/StrError.h"
 
 #include <limits.h>             // NB: must be before boost/spirit headers.
+#define BOOST_SPIRIT_THREADSAFE
+
 #include <boost/spirit.hpp>
 #include <boost/spirit/actor.hpp>
 
@@ -43,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
 std::istream& operator>>(std::istream&, const TcpAddress&);
 
 Url Url::getHostNameUrl(uint16_t port) {
-    TcpAddress address("", port);
+    TcpAddress address(std::string(), port);
     if (!sys::SystemInfo::getLocalHostname(address))
         throw InvalidUrl(QPID_MSG("Cannot get host name: " << qpid::sys::strError(errno)));
     return Url(address);
