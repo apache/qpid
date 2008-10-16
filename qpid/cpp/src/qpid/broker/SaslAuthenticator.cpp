@@ -19,7 +19,9 @@
  *
  */
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
 #include "Connection.h"
 #include "qpid/log/Statement.h"
@@ -66,9 +68,45 @@ public:
     void step(const std::string& response);
 };
 
+bool SaslAuthenticator::available(void)
+{
+    return true;
+}
+
+// Initialize the SASL mechanism; throw if it fails.
+void SaslAuthenticator::init(const std::string& saslName)
+{
+    int code = sasl_server_init(NULL, saslName.c_str());
+    if (code != SASL_OK) {
+        // TODO: Figure out who owns the char* returned by
+        // sasl_errstring, though it probably does not matter much
+        throw Exception(sasl_errstring(code, NULL, NULL));
+    }
+}
+
+void SaslAuthenticator::fini(void)
+{
+    sasl_done();
+}
+
 #else
 
 typedef NullAuthenticator CyrusAuthenticator;
+
+bool SaslAuthenticator::available(void)
+{
+    return false;
+}
+
+void SaslAuthenticator::init(const std::string& /*saslName*/)
+{
+    throw Exception("Requested authentication but SASL unavailable");
+}
+
+void SaslAuthenticator::fini(void)
+{
+    return;
+}
 
 #endif
 

@@ -18,36 +18,13 @@
  * under the License.
  *
  */
-#ifndef _SaslAuthenticator_
-#define _SaslAuthenticator_
 
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/Exception.h"
-#include <memory>
+#include "qpid/broker/Broker.h"
 
 namespace qpid {
 namespace broker {
 
-class Connection;
-
-class SaslAuthenticator
-{
-public:
-    virtual ~SaslAuthenticator() {}
-    virtual void getMechanisms(framing::Array& mechanisms) = 0;
-    virtual void start(const std::string& mechanism, const std::string& response) = 0;
-    virtual void step(const std::string& response) = 0;
-
-    static bool available(void);
-
-    // Initialize the SASL mechanism; throw if it fails.
-    static void init(const std::string& saslName);
-    static void fini(void);
-
-    static std::auto_ptr<SaslAuthenticator> createAuthenticator(Connection& connection);
-};
+const std::string Broker::Options::DEFAULT_DATA_DIR_LOCATION("\\TEMP");
+const std::string Broker::Options::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
 
 }}
-
-#endif
