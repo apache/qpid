@@ -53,9 +53,6 @@ struct LevelTraits {
 
     /** String name of level */
     static const char* name(Level); 
-
-    /** Syslog priority of level */
-    static int priority(Level);
 };
     
 /** POD struct representing a logging statement in source code. */
