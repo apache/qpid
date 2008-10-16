@@ -91,11 +91,21 @@ void Bridge::create(ConnectionState& c)
         string queue = "bridge_queue_";
         queue += Uuid(true).str();
         FieldTable queueSettings;
+
         if (args.i_tag.size()) {
             queueSettings.setString("qpid.trace.id", args.i_tag);
+        } else {
+            const string& localTag = link->getBroker()->getFederationTag();
+            if (localTag.size())
+                queueSettings.setString("qpid.trace.id", localTag);
         }
+
         if (args.i_excludes.size()) {
             queueSettings.setString("qpid.trace.exclude", args.i_excludes);
+        } else {
+            const string& peerTag = c.getFederationPeerTag();
+            if (peerTag.size())
+                queueSettings.setString("qpid.trace.exclude", peerTag);
         }
 
         bool durable = false;//should this be an arg, or would be use srcIsQueue for durable queues?

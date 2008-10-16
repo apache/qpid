@@ -38,3 +38,7 @@ Vhost::Vhost (management::Manageable* parentBroker) : mgmtObject(0)
     }
 }
 
+void Vhost::setFederationTag(const std::string& tag)
+{
+    mgmtObject->set_federationTag(tag);
+}
