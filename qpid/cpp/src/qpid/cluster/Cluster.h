@@ -42,6 +42,12 @@
 #include <map>
 
 namespace qpid {
+
+namespace framing {
+class AMQBody;
+class Uuid;
+}
+
 namespace cluster {
 
 class Connection;
@@ -118,7 +124,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // May be called in CPG thread via deliver() OR in deliverQueue thread.
     // 
     void dumpRequest(const MemberId&, const std::string&, Lock&);
-    void dumpOffer(const MemberId& dumper, uint64_t dumpee, Lock&);
+    void dumpOffer(const MemberId& dumper, uint64_t dumpee, const framing::Uuid&, Lock&);
     void dumpStart(const MemberId& dumper, uint64_t dumpeeInt, const std::string& urlStr, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
@@ -166,6 +172,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void dumpOutError(const std::exception&);
     void dumpOutDone(Lock&);
 
+    void setClusterId(const framing::Uuid&);
+    
     mutable sys::Monitor lock;
 
     broker::Broker& broker;
@@ -181,6 +189,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableEventQueue deliverQueue;
     PlainEventQueue mcastQueue;
     uint32_t mcastId;
+    framing::Uuid clusterId;
 
     qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
 
