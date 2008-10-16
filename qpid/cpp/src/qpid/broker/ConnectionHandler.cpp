@@ -42,6 +42,7 @@ const std::string ANONYMOUS = "ANONYMOUS";
 const std::string PLAIN     = "PLAIN";
 const std::string en_US     = "en_US";
 const std::string QPID_FED_LINK = "qpid.fed_link";
+const std::string QPID_FED_TAG  = "qpid.federation_tag";
 }
 
 void ConnectionHandler::close(ReplyCode code, const string& text, ClassId, MethodId)
@@ -83,6 +84,8 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
         FieldTable properties;
         Array mechanisms(0x95);
 
+        properties.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
+
         authenticator = SaslAuthenticator::createAuthenticator(c);
         authenticator->getMechanisms(mechanisms);
 
@@ -104,12 +107,13 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
 {
     authenticator->start(mechanism, response);
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
-    if (connection.isFederationLink()){
+    connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
+    if (connection.isFederationLink()) {
     	if (acl && !acl->authorise(connection.getUserId(),acl::CREATE,acl::LINK,"")){
-             client.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
-    	      return;
-	}
-	QPID_LOG(info, "Connection is a federation link");
+            client.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
+            return;
+        }
+        QPID_LOG(info, "Connection is a federation link");
     }
 }
 
@@ -154,15 +158,18 @@ void ConnectionHandler::Handler::closeOk(){
 } 
 
 
-void ConnectionHandler::Handler::start(const FieldTable& /*serverProperties*/,
+void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
                                        const framing::Array& /*mechanisms*/,
                                        const framing::Array& /*locales*/)
 {
     string mechanism = connection.getAuthMechanism();
     string response  = connection.getAuthCredentials();
 
+    connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
+
     FieldTable ft;
     ft.setInt(QPID_FED_LINK,1);
+    ft.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
     server.startOk(ft, mechanism, response, en_US);
 }
 

@@ -245,6 +245,65 @@ class FederationTests(TestBase010):
 
         mgmt.shutdown ()
 
+    def test_tracing_automatic(self):
+        remoteUrl = "%s:%d" % (remote_host(), remote_port())
+        self.startQmf()
+        l_broker = self.qmf_broker
+        r_broker = self.qmf.addBroker(remoteUrl)
+
+        l_brokerObj = self.qmf.getObjects(_class="broker", _broker=l_broker)[0]
+        r_brokerObj = self.qmf.getObjects(_class="broker", _broker=r_broker)[0]
+
+        l_res = l_brokerObj.connect(remote_host(), remote_port(),     False, "PLAIN", "guest", "guest", "tcp")
+        r_res = r_brokerObj.connect(testrunner.host, testrunner.port, False, "PLAIN", "guest", "guest", "tcp")
+
+        self.assertEqual(l_res.status, 0)
+        self.assertEqual(r_res.status, 0)
+
+        l_link = self.qmf.getObjects(_class="link", _broker=l_broker)[0]
+        r_link = self.qmf.getObjects(_class="link", _broker=r_broker)[0]
+
+        l_res = l_link.bridge(False, "amq.direct", "amq.direct", "key", "", "", False, False, False)
+        r_res = r_link.bridge(False, "amq.direct", "amq.direct", "key", "", "", False, False, False)
+
+        self.assertEqual(l_res.status, 0)
+        self.assertEqual(r_res.status, 0)
+
+        count = 0
+        while l_link.state != "Operational" or r_link.state != "Operational":
+            count += 1
+            if count > 10:
+                self.fail("Fed links didn't become operational after 10 seconds")
+            sleep(1)
+            l_link = self.qmf.getObjects(_class="link", _broker=l_broker)[0]
+            r_link = self.qmf.getObjects(_class="link", _broker=r_broker)[0]
+        sleep(3)
+
+        #setup queue to receive messages from local broker
+        session = self.session
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="amq.direct", binding_key="key")
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        #setup queue on remote broker and add some messages
+        r_conn = self.connect(host=remote_host(), port=remote_port())
+        r_session = r_conn.session("test_trace")
+        for i in range(1, 11):
+            dp = r_session.delivery_properties(routing_key="key")
+            r_session.message_transfer(destination="amq.direct", message=Message(dp, "Message %d" % i))
+
+        for i in range(1, 11):
+            try:
+                msg = queue.get(timeout=5)
+                self.assertEqual("Message %d" % i, msg.body)
+            except Empty:
+                self.fail("Failed to find expected message containing 'Message %d'" % i)
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
     def test_tracing(self):
         session = self.session
         

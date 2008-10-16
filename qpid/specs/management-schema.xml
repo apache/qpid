@@ -114,8 +114,9 @@
   ===============================================================
   -->
   <class name="Vhost">
-    <property name="brokerRef" type="objId" references="Broker" access="RC" index="y" parentRef="y"/>
-    <property name="name"      type="sstr"  access="RC" index="y"/>
+    <property name="brokerRef"     type="objId" references="Broker" access="RC" index="y" parentRef="y"/>
+    <property name="name"          type="sstr"  access="RC" index="y"/>
+    <property name="federationTag" type="sstr"  access="RO"/>
   </class>
 
   <!--

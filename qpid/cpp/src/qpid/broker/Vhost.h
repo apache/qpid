@@ -41,6 +41,7 @@ class Vhost : public management::Manageable
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }
+    void setFederationTag(const std::string& tag);
 };
 
 }}
