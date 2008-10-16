@@ -219,13 +219,10 @@ void DumpClient::dumpConsumer(broker::SemanticState::ConsumerImpl* ci) {
         arg::destination = ci->getName(),
         arg::acceptMode  = ci->isAckExpected() ? ACCEPT_MODE_EXPLICIT : ACCEPT_MODE_NONE,
         arg::acquireMode = ci->isAcquire() ? ACQUIRE_MODE_PRE_ACQUIRED : ACQUIRE_MODE_NOT_ACQUIRED,
-        arg::exclusive   = false ,  // FIXME aconway 2008-09-23: duplicate from consumer
-
-        // TODO aconway 2008-09-23: remaining args not used by current broker.
-        // Update this code when they are.
-        arg::resumeId=std::string(), 
-        arg::resumeTtl=0,
-        arg::arguments=FieldTable()
+        arg::exclusive   = ci->isExclusive(),
+        arg::resumeId    = ci->getResumeId(),
+        arg::resumeTtl   = ci->getResumeTtl(),
+        arg::arguments   = ci->getArguments()
     );
     shadowSession.messageSetFlowMode(ci->getName(), ci->isWindowing() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
     shadowSession.messageFlow(ci->getName(), CREDIT_UNIT_MESSAGE, ci->getMsgCredit());
