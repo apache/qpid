@@ -67,6 +67,7 @@ public:
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
+    const framing::Uuid& getUuid() const { return uuid; }
 
     // Stubs for remote management agent calls
     void init (std::string, uint16_t, uint16_t, bool, std::string) { assert(0); }

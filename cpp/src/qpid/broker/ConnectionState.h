@@ -68,6 +68,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
 
     void setFederationLink(bool b) {  federationLink = b; }
     bool isFederationLink() const { return federationLink; }
+    void setFederationPeerTag(const string& tag) { federationPeerTag = string(tag); }
+    const string& getFederationPeerTag() const { return federationPeerTag; }
 
     Broker& getBroker() { return broker; }
 
@@ -90,6 +92,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     string userId;
     string url;
     bool federationLink;
+    string federationPeerTag;
 };
 
 }}

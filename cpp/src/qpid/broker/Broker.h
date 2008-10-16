@@ -128,6 +128,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
 
     std::vector<Url> knownBrokers;
     std::vector<Url> getKnownBrokersImpl();
+    std::string federationTag;
 
   public:
 
@@ -168,6 +169,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options& getOptions() { return config; }
 
     SessionManager& getSessionManager() { return sessionManager; }
+    const std::string& getFederationTag() const { return federationTag; }
 
     management::ManagementObject*     GetManagementObject (void) const;
     management::Manageable*           GetVhostObject      (void) const;

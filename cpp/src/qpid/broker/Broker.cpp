@@ -37,6 +37,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/sys/ProtocolFactory.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Dispatcher.h"
@@ -136,7 +137,7 @@ Broker::Broker(const Broker::Options& conf) :
     managementAgentSingleton(!config.enableMgmt),
     store(0),
     acl(0),
-    dataDir(conf.noDataDir ? std::string () : conf.dataDir),
+    dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     links(this),
     factory(new ConnectionFactory(*this)),
     dtxManager(timer),
@@ -148,40 +149,43 @@ Broker::Broker(const Broker::Options& conf) :
     queueCleaner(queues, timer),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
-    if(conf.enableMgmt){
+    if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
         managementAgent = managementAgentSingleton.getInstance();
         ((ManagementBroker*) managementAgent)->configure
-            (dataDir.isEnabled () ? dataDir.getPath () : string (),
+            (dataDir.isEnabled() ? dataDir.getPath() : string(),
              conf.mgmtPubInterval, this, conf.workerThreads + 3);
-        _qmf::Package packageInitializer (managementAgent);
+        _qmf::Package packageInitializer(managementAgent);
 
-        System* system = new System (dataDir.isEnabled () ? dataDir.getPath () : string ());
-        systemObject = System::shared_ptr (system);
+        System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string());
+        systemObject = System::shared_ptr(system);
 
-        mgmtObject = new _qmf::Broker (managementAgent, this, system, conf.port);
-        mgmtObject->set_workerThreads    (conf.workerThreads);
-        mgmtObject->set_maxConns         (conf.maxConnections);
-        mgmtObject->set_connBacklog      (conf.connectionBacklog);
-        mgmtObject->set_stagingThreshold (conf.stagingThreshold);
-        mgmtObject->set_mgmtPubInterval  (conf.mgmtPubInterval);
-        mgmtObject->set_version          (qpid::version);
+        mgmtObject = new _qmf::Broker(managementAgent, this, system, conf.port);
+        mgmtObject->set_workerThreads(conf.workerThreads);
+        mgmtObject->set_maxConns(conf.maxConnections);
+        mgmtObject->set_connBacklog(conf.connectionBacklog);
+        mgmtObject->set_stagingThreshold(conf.stagingThreshold);
+        mgmtObject->set_mgmtPubInterval(conf.mgmtPubInterval);
+        mgmtObject->set_version(qpid::version);
         if (dataDir.isEnabled())
             mgmtObject->set_dataDir(dataDir.getPath());
         else
             mgmtObject->clr_dataDir();
         
-        managementAgent->addObject (mgmtObject, 0x1000000000000002LL);
+        managementAgent->addObject(mgmtObject, 0x1000000000000002LL);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the
         // management schema correct.
-        Vhost* vhost = new Vhost (this);
-        vhostObject = Vhost::shared_ptr (vhost);
+        Vhost* vhost = new Vhost(this);
+        vhostObject = Vhost::shared_ptr(vhost);
+        framing::Uuid uuid(((ManagementBroker*) managementAgent)->getUuid());
+        federationTag = uuid.str();
+        vhostObject->setFederationTag(federationTag);
 
-        queues.setParent    (vhost);
-        exchanges.setParent (vhost);
-        links.setParent     (vhost);
+        queues.setParent(vhost);
+        exchanges.setParent(vhost);
+        links.setParent(vhost);
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
