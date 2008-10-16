@@ -457,13 +457,13 @@ void SessionAdapter::MessageHandlerImpl::release(const SequenceSet& transfers, b
 
 void
 SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
-                              const string& destination,
-                              uint8_t acceptMode,
-                              uint8_t acquireMode,
-                              bool exclusive,
-                              const string& /*resumeId*/,//TODO implement resume behaviour. Need to update cluster.
-                              uint64_t /*resumeTtl*/,
-                              const FieldTable& arguments)
+                                              const string& destination,
+                                              uint8_t acceptMode,
+                                              uint8_t acquireMode,
+                                              bool exclusive,
+                                              const string& resumeId,
+                                              uint64_t resumeTtl,
+                                              const FieldTable& arguments)
 {
 
     AclModule* acl = getBroker().getAcl();
@@ -481,7 +481,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     string tag = destination;
     state.consume(MessageDelivery::getMessageDeliveryToken(destination, acceptMode, acquireMode), 
                   tag, queue, false, //TODO get rid of no-local
-                  acceptMode == 0, acquireMode == 0, exclusive, &arguments);
+                  acceptMode == 0, acquireMode == 0, exclusive, resumeId, resumeTtl, arguments);
 
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent)

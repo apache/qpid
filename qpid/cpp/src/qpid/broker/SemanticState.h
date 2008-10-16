@@ -73,6 +73,10 @@ class SemanticState : public sys::OutputTask,
         const bool acquire;
         bool blocked;
         bool windowing;
+        bool exclusive;
+        string resumeId;
+        uint64_t resumeTtl;
+        framing::FieldTable arguments;
         uint32_t msgCredit;
         uint32_t byteCredit;
         bool notifyEnabled;
@@ -85,7 +89,8 @@ class SemanticState : public sys::OutputTask,
 
         ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
-                     bool ack, bool nolocal, bool acquire);
+                     bool ack, bool nolocal, bool acquire, bool exclusive,
+                     const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
         bool deliver(QueuedMessage& msg);            
@@ -114,8 +119,12 @@ class SemanticState : public sys::OutputTask,
         bool isAckExpected() const { return ackExpected; }
         bool isAcquire() const { return acquire; }
         bool isWindowing() const { return windowing; }
+        bool isExclusive() const { return exclusive; }
         uint32_t getMsgCredit() const { return msgCredit; }
         uint32_t getByteCredit() const { return byteCredit; }
+        std::string getResumeId() const { return resumeId; };
+        uint64_t getResumeTtl() const { return resumeTtl; }
+        const framing::FieldTable& getArguments() const { return arguments; }
     };
 
   private:
@@ -168,7 +177,9 @@ class SemanticState : public sys::OutputTask,
      *@param tagInOut - if empty it is updated with the generated token.
      */
     void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
-                 bool nolocal, bool ackRequired, bool acquire, bool exclusive, const framing::FieldTable* = 0);
+                 bool nolocal, bool ackRequired, bool acquire, bool exclusive,
+                 const string& resumeId=string(), uint64_t resumeTtl=0,
+                 const framing::FieldTable& = framing::FieldTable());
 
     void cancel(const string& tag);
 

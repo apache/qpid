@@ -86,11 +86,11 @@ bool SemanticState::exists(const string& consumerTag){
 
 void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut, 
                             Queue::shared_ptr queue, bool nolocal, bool ackRequired, bool acquire,
-                            bool exclusive, const FieldTable*)
+                            bool exclusive, const string& resumeId, uint64_t resumeTtl, const FieldTable& arguments)
 {
     if(tagInOut.empty())
         tagInOut = tagGenerator.generate();
-    ConsumerImpl::shared_ptr c(new ConsumerImpl(this, token, tagInOut, queue, ackRequired, nolocal, acquire));
+    ConsumerImpl::shared_ptr c(new ConsumerImpl(this, token, tagInOut, queue, ackRequired, nolocal, acquire, exclusive, resumeId, resumeTtl, arguments));
     queue->consume(c, exclusive);//may throw exception
     outputTasks.addOutputTask(c.get());
     consumers[tagInOut] = c;
@@ -233,13 +233,19 @@ void SemanticState::record(const DeliveryRecord& delivery)
 }
 
 SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent, 
-                                    DeliveryToken::shared_ptr _token,
-                                    const string& _name, 
-                                    Queue::shared_ptr _queue, 
-                                    bool ack,
-                                    bool _nolocal,
-                                    bool _acquire
-                                    ) : 
+                                          DeliveryToken::shared_ptr _token,
+                                          const string& _name, 
+                                          Queue::shared_ptr _queue, 
+                                          bool ack,
+                                          bool _nolocal,
+                                          bool _acquire,
+                                          bool _exclusive,
+                                          const string& _resumeId,
+                                          uint64_t _resumeTtl,
+                                          const framing::FieldTable& _arguments
+
+
+) : 
     Consumer(_acquire),
     parent(_parent), 
     token(_token), 
@@ -249,7 +255,11 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     nolocal(_nolocal),
     acquire(_acquire),
     blocked(true), 
-    windowing(true), 
+    windowing(true),
+    exclusive(_exclusive),
+    resumeId(_resumeId),
+    resumeTtl(_resumeTtl),
+    arguments(_arguments),
     msgCredit(0), 
     byteCredit(0),
     notifyEnabled(true) {}
