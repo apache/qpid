@@ -104,6 +104,9 @@ endif
 platform_src = $(posix_plat_src) $(poller)
 platform_hdr = $(posix_plat_hdr)
 
+posix_broker_src = \
+  qpid/broker/posix/BrokerDefaults.cpp
+
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
 # Definitions for client and daemon plugins
@@ -288,6 +291,7 @@ endif
 
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
+  $(posix_broker_src) \
   qpid/amqp_0_10/Connection.h \
   qpid/amqp_0_10/Connection.cpp \
   qpid/broker/Broker.cpp \

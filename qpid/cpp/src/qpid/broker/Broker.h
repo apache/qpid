@@ -50,6 +50,7 @@
 #include "AclModule.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <string>
 #include <vector>
 
 namespace qpid { 
@@ -80,6 +81,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
   public:
 
     struct Options : public qpid::Options {
+        static const std::string DEFAULT_DATA_DIR_LOCATION;
+        static const std::string DEFAULT_DATA_DIR_NAME;
+
         Options(const std::string& name="Broker Options");
 
         bool noDataDir;
