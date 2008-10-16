@@ -200,3 +200,12 @@
    obj:*/libcpg.so.2.0.0
 }
 
+{
+ Known leak in boost.thread versions < 1.34
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:/usr/lib/libboost_thread.so.1.33.1
+   fun:_ZN5boost6detail3tss3setEPv
+   fun:_ZN5boost6spirit4impl14get_definitionIN4qpid10UrlGrammarENS0_14parser_contextINS0_5nil_tEEENS0_7scannerIPKcNS0_16scanner_policiesINS0_16iteration_policyENS0_12match_policyENS0_13action_policyEEEEEEERNT_10definitionEPKNS0_7grammarISH_T0_EE
+   fun:_ZN4qpid3Url5parseEPKc
+}
