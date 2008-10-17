@@ -20,15 +20,41 @@ Download CruiseControl from: http://cruisecontrol.sourceforge.net/
 Set system variables
 ******************
 
-Prior to use CruiseControl you'll need to set two system variables:
+Prior to use CruiseControl you'll need to set three system variables:
 Variable 	    Value
 CC_HOME         	path to your qpid project, for example /home/foo/projects/qpid
 CPPSTORE_HOME 	path to your C++ store, for example /home/foo/projects/bdbstore-cpp
+NANT_HOME       path to the nant directory -- only required for .net client --
+                (nant can be downloaded from http://nant.sourceforge.net/)
 
 Edit the file CC_HOME/config.properties and set the properties so to match your system requirements. 
 Notes
-    *  the cpp store can be checked out from: https://svn.jboss.org/repos/rhmessaging/store/trunk/cpp
+    * the cpp store can be checked out from: https://svn.jboss.org/repos/rhmessaging/store/trunk/cpp
     * Only unix scrips are currently provided
+    * 
+
+
+******************
+Installing Mono
+******************
+For building the .net client on a Linux platform you need to install Mono.
+Mono website is: http://www.mono-project.com/Main_Page
+Here are the instruction for a RHEL5 platform:
+
+Create the file "/etc/yum.repos.d/mono.repo" and add the following lines:
+
+[Mono]
+name=Mono Stack (RHEL_5)
+type=rpm-md
+baseurl=http://download.opensuse.org/repositories/Mono/RHEL_5/
+gpgcheck=1
+gpgkey=http://download.opensuse.org/repositories/Mono/RHEL_5/repodata/repomd.xml.key
+enabled=1
+
+Enter the following command to install Mono:
+
+# yum install mono-complete 
+
 
 ******************
 Running CruiseControl
