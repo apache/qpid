@@ -31,6 +31,7 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AcknowledgeTest extends QpidTestCase
@@ -139,6 +140,21 @@ public class AcknowledgeTest extends QpidTestCase
     public void test2ConsumersTx() throws Exception
     {
     	testMessageAck(true, Session.AUTO_ACKNOWLEDGE);
+    }
+    
+    public void testIndividualAck() throws Exception
+    {
+        init(false, Session.CLIENT_ACKNOWLEDGE);
+        sendMessages(3);
+        Message msg = null;
+        for (int i = 0; i < 2; i++)
+        {
+            msg = _consumerA.receive(RECEIVE_TIMEOUT);
+            ((AbstractJMSMessage)msg).acknowledgeThis();
+        }
+        msg = _consumerA.receive(RECEIVE_TIMEOUT);
+        msg.acknowledge();
+        _con.close();
     }
     
 }
