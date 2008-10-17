@@ -85,6 +85,9 @@ libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
 libshlibtest_la_SOURCES = shlibtest.cpp
 
 include cluster.mk
+if SSL
+include ssl.mk
+endif
 
 #
 # Other test programs

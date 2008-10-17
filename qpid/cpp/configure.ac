@@ -295,6 +295,34 @@ AC_ARG_WITH([rdma],
 LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
 
+# Setup --with-ssl/--without-ssl as arguments to configure
+tmp_LIBS=$LIBS
+AC_ARG_WITH([ssl],
+  [AS_HELP_STRING([--with-ssl], [Build with support for SSL])],
+  [case ${withval} in
+   yes)
+     with_SSL=yes
+     PKG_CHECK_MODULES([SSL], [nspr],,[AC_MSG_ERROR([nspr not found])])
+     PKG_CHECK_MODULES([SSL], [nss],,[AC_MSG_ERROR([nss not found])])
+     ;;
+   no)
+     with_SSL=no
+     ;;
+   *)
+     AC_MSG_ERROR([Bad value for --with-ssl: ${withval}])
+     ;;
+   esac],
+  [
+    with_SSL=yes
+    PKG_CHECK_MODULES([SSL], [nspr],,[with_SSL=no])
+    PKG_CHECK_MODULES([SSL], [nss],,[with_SSL=no])
+  ]
+)
+# Remove from LIBS, we will link it explicitly in make files.
+LIBS=$tmp_LIBS
+AM_CONDITIONAL([SSL], [test x$with_SSL = xyes])
+
+
 poller=no
 AC_ARG_WITH([poller],
  [AS_HELP_STRING([--with-poller], [The low level poller implementation: poll/solaris-ecf/epoll])],
