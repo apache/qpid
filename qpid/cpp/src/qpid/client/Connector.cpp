@@ -394,7 +394,7 @@ void TCPConnector::run(){
         aio->queueForDeletion();
         socket.close();
     } catch (const std::exception& e) {
-        QPID_LOG(error, e.what());
+        QPID_LOG(error, QPID_MSG("FAIL " << identifier << ": " << e.what()));
         handleClosed();
     }
 }

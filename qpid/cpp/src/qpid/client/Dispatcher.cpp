@@ -72,7 +72,7 @@ void Dispatcher::run()
     boost::state_saver<bool>  reset(running); // Reset to false on exit.
     running = true;
     try {
-        while (true) {
+        while (!queue->isClosed()) {
             Mutex::ScopedUnlock u(lock);
             FrameSet::shared_ptr content = queue->pop();
             if (content->isA<MessageTransferBody>()) {
@@ -92,18 +92,19 @@ void Dispatcher::run()
                 }
             }
         }
+        session.sync(); // Make sure all our acks are received before returning.
     }
-    catch (const ClosedException& e)  { 
-        QPID_LOG(debug, "Dispatch thread exiting, session closed: " << session.getId());
-        try {
-            session.sync(); // Make sure all our acks are received before returning.
-        }
-        catch(...) {}
+    catch (const ClosedException&) {
+        QPID_LOG(debug, QPID_MSG(session.getId() << ": closed by peer"));
     }
     catch (const std::exception& e) {
-        QPID_LOG(error, "Exception in client dispatch thread: " << e.what());
-        if ( failoverHandler )
+        if ( failoverHandler ) {
+            QPID_LOG(debug, QPID_MSG(session.getId() << " failover: " << e.what()));
             failoverHandler();
+        }
+        else {
+            QPID_LOG(error, session.getId() << " error: " << e.what());
+        }
     }
 }
 

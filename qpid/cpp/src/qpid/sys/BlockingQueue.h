@@ -73,7 +73,9 @@ public:
         return result;
     }
         
-    /** Push a value onto the queue */
+    /** Push a value onto the queue.
+     * Note it is not an error to push onto a closed queue.
+     */
     void push(const T& t) {
         Mutex::ScopedLock l(waitable);
         queue.push(t);
