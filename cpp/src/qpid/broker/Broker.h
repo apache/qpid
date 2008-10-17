@@ -149,7 +149,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual uint16_t getPort() const;
+    virtual uint16_t getPort(const std::string& name = TCP_TRANSPORT) const;
 
     /**
      * Run the broker. Implements Runnable::run() so the broker

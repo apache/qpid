@@ -46,6 +46,7 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
         const std::string& host, int16_t port,
         ConnectionCodec::Factory* codec,
         ConnectFailedCallback failed) = 0;
+    virtual bool supports(const std::string& /*capability*/) { return false; }
 };
 
 inline ProtocolFactory::~ProtocolFactory() {}

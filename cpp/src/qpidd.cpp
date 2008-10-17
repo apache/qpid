@@ -63,6 +63,7 @@ struct DaemonOptions : public qpid::Options {
     bool check;
     int wait;
     std::string piddir;
+    std::string transport;
 
     DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
     {
@@ -76,6 +77,7 @@ struct DaemonOptions : public qpid::Options {
 
         addOptions()
             ("daemon,d", optValue(daemon), "Run as a daemon. --log-output defaults to syslog in this mode.")
+            ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
             ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
             ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
             ("check,c", optValue(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
@@ -130,7 +132,7 @@ struct QpiddDaemon : public Daemon {
     /** Code for parent process */
     void parent() {
         uint16_t port = wait(options->daemon.wait);
-        if (options->broker.port == 0)
+        if (options->broker.port == 0 || !options->daemon.transport.empty())
             cout << port << endl; 
     }
 
@@ -138,7 +140,7 @@ struct QpiddDaemon : public Daemon {
     void child() {
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         broker::SignalHandler::setBroker(brokerPtr);
-        uint16_t port=brokerPtr->getPort();
+        uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
         brokerPtr->run();
     }
@@ -238,8 +240,8 @@ int main(int argc, char* argv[])
         else {                  // Non-daemon broker.
             boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
             broker::SignalHandler::setBroker(brokerPtr);
-            if (options->broker.port == 0)
-                cout << uint16_t(brokerPtr->getPort()) << endl; 
+            if (options->broker.port == 0 || !options->daemon.transport.empty())
+                cout << uint16_t(brokerPtr->getPort(options->daemon.transport)) << endl; 
             brokerPtr->run();
         }
         return 0;

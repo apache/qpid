@@ -181,6 +181,10 @@ RdmaClient_LDADD = \
 
 endif
 
+if SSL
+include ssl.mk
+endif
+
 # New 0-10 codec, to be integrated in future.
 # libqpidamqp_0_10_la_SOURCES= 
 EXTRA_DIST +=\
