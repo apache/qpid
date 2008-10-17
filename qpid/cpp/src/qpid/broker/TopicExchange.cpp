@@ -131,19 +131,22 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable,
 }
 
 bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
-    RWlock::ScopedWlock l(lock);
-    TopicPattern routingPattern(routingKey);
-    if (isBound(queue, routingPattern)) {
-        return false;
-    } else {
-        Binding::shared_ptr binding (new Binding (routingKey, queue, this));
-        bindings[routingPattern].push_back(binding);
-        if (mgmtExchange != 0) {
-            mgmtExchange->inc_bindingCount();
-            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+    {
+        RWlock::ScopedWlock l(lock);
+        TopicPattern routingPattern(routingKey);
+        if (isBound(queue, routingPattern)) {
+            return false;
+        } else {
+            Binding::shared_ptr binding (new Binding (routingKey, queue, this));
+            bindings[routingPattern].push_back(binding);
+            if (mgmtExchange != 0) {
+                mgmtExchange->inc_bindingCount();
+                ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            }
         }
-        return true;
     }
+    routeIVE();
+    return true;
 }
 
 bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){

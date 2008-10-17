@@ -86,22 +86,21 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
     try {
         RWlock::ScopedWlock l(lock);
 
-	XmlBinding::vector& bindings(bindingsMap[routingKey]);
-	XmlBinding::vector::ConstPtr p = bindings.snapshot();
-	if (!p || std::find_if(p->begin(), p->end(), MatchQueue(queue)) == p->end()) {
-	    Query query(xqilla.parse(X(queryText.c_str())));
-	    XmlBinding::shared_ptr binding(new XmlBinding (routingKey, queue, this, query));
-	    bindings.add(binding);
-	    QPID_LOG(trace, "Bound successfully with query: " << queryText );
-	    
-	    if (mgmtExchange != 0) {
-	        mgmtExchange->inc_bindingCount();
-            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+	    XmlBinding::vector& bindings(bindingsMap[routingKey]);
+	    XmlBinding::vector::ConstPtr p = bindings.snapshot();
+	    if (!p || std::find_if(p->begin(), p->end(), MatchQueue(queue)) == p->end()) {
+	        Query query(xqilla.parse(X(queryText.c_str())));
+	        XmlBinding::shared_ptr binding(new XmlBinding (routingKey, queue, this, query));
+	        bindings.add(binding);
+	        QPID_LOG(trace, "Bound successfully with query: " << queryText );
+
+	        if (mgmtExchange != 0) {
+	            mgmtExchange->inc_bindingCount();
+                ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+	        }
+	    } else {
+	        return false;
 	    }
-	    return true;
-	} else {
-	    return false;
-	}
     }
     catch (XQException& e) {
         throw InternalErrorException(QPID_MSG("Could not parse xquery:"+ queryText));
@@ -109,6 +108,8 @@ bool XmlExchange::bind(Queue::shared_ptr queue, const string& routingKey, const 
     catch (...) {
         throw InternalErrorException(QPID_MSG("Unexpected error - Could not parse xquery:"+ queryText));
     }
+    routeIVE();
+	return true;
 }
 
 bool XmlExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/)
