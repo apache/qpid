@@ -51,6 +51,8 @@ namespace qpid {
             bool sequence;
             mutable qpid::sys::Mutex sequenceLock;
             uint64_t sequenceNo;
+            bool ive;
+            boost::intrusive_ptr<Message> lastMsg;
 		
             class PreRoute{
             public:
@@ -59,6 +61,8 @@ namespace qpid {
             private:
                 Exchange* parent;
 		    };
+           
+            void routeIVE();
            
             struct Binding : public management::Manageable {
                 typedef boost::shared_ptr<Binding>       shared_ptr;

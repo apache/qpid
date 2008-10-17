@@ -84,6 +84,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             mgmtExchange->inc_bindingCount();
             ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
+        routeIVE();
         return true;
     } else {
         return false;

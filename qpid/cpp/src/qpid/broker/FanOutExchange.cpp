@@ -49,6 +49,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
             mgmtExchange->inc_bindingCount();
             ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
+        routeIVE();
         return true;
     } else {
         return false;

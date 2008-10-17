@@ -43,17 +43,20 @@ DirectExchange::DirectExchange(const std::string& _name, bool _durable,
 }
 
 bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable*){
-    Mutex::ScopedLock l(lock);
-    Binding::shared_ptr b(new Binding (routingKey, queue, this));
-    if (bindings[routingKey].add_unless(b, MatchQueue(queue))) {
-        if (mgmtExchange != 0) {
-            mgmtExchange->inc_bindingCount();
-            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+    {
+        Mutex::ScopedLock l(lock);
+        Binding::shared_ptr b(new Binding (routingKey, queue, this));
+        if (bindings[routingKey].add_unless(b, MatchQueue(queue))) {
+            if (mgmtExchange != 0) {
+                mgmtExchange->inc_bindingCount();
+                ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
+            }
+        } else {
+            return false;
         }
-        return true;
-    } else {
-        return false;
     }
+    routeIVE();
+    return true;
 }
 
 bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
