@@ -42,6 +42,7 @@ Subscriber::Subscriber(const Session& s, MessageListener* l, AckPolicy a)
 
 void Subscriber::received(Message& msg)
 {
+
     if (listener) {
         listener->received(msg);
         autoAck.ack(msg, session);

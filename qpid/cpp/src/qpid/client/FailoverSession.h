@@ -59,8 +59,6 @@ class FailoverSession
     FailoverSession ( );
     ~FailoverSession ( );
 
-    std::string name;
-
     framing::FrameSet::shared_ptr get();
 
     SessionId getId() const;
@@ -81,6 +79,8 @@ class FailoverSession
                       );
     
     void sendCompletion ( );
+
+    bool failover_in_progress; 
 
 
 

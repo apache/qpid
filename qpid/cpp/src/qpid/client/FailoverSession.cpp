@@ -38,7 +38,7 @@ namespace qpid {
 namespace client {
 
 FailoverSession::FailoverSession ( ) :
-    name("no_name")
+    failover_in_progress(false)
 {
     // The session is created by FailoverConnection::newSession
     failoverSubscriptionManager = 0;
@@ -170,11 +170,26 @@ FailoverSession::messageTransfer ( const string& destination,
 )
 {
 
-    session.messageTransfer ( destination,
-                              acceptMode,
-                              acquireMode,
-                              content
-    );
+    while ( 1 )
+    {
+      try
+      {
+        session.messageTransfer ( destination,
+                                  acceptMode,
+                                  acquireMode,
+                                  content
+        );
+        break;
+      }
+      catch ( ... )
+      {
+        // Take special action only if there is a failover in progress.
+        if ( ! failover_in_progress )
+          break;
+
+        usleep ( 1000 );
+      }
+    }
 }
 
 
@@ -583,7 +598,6 @@ FailoverSession::prepareForFailover ( Connection newConnection )
 
     if ( failoverSubscriptionManager )
     {
-        // 
         failoverSubscriptionManager->prepareForFailover ( newSession );
     }
 }

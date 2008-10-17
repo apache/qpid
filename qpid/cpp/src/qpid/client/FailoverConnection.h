@@ -71,10 +71,6 @@ class FailoverConnection
 
     void registerFailureCallback ( boost::function<void ()> fn );
 
-    // If you have more than 1 connection and you want to give them 
-    // separate names for debugging...
-    std::string name; 
-
     void failover ( );
 
     struct timeval * failoverCompleteTime;
