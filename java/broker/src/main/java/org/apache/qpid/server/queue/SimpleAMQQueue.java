@@ -1174,7 +1174,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             boolean complete = false;
             try
             {
-                complete = flushSubscription(_sub, MAX_ASYNC_DELIVERIES);
+                complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
 
             }
             catch (AMQException e)
@@ -1204,79 +1204,28 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         flushSubscription(sub, Long.MAX_VALUE);
     }
 
-    public boolean flushSubscription(Subscription sub, long deliveries) throws AMQException
+    public boolean flushSubscription(Subscription sub, Long deliveries) throws AMQException
     {
         boolean atTail = false;
-        boolean advanced;
 
         while (!sub.isSuspended() && !atTail && deliveries != 0)
         {
-
-            advanced = false;
-            sub.getSendLock();
-            try
+            try 
             {
-                if (sub.isActive())
+                sub.getSendLock();
+                atTail =  attemptDelivery(sub, deliveries);
+                if (atTail && sub.isAutoClose())
                 {
-                    QueueEntry node = moveSubscriptionToNextNode(sub);
-                    if (!(node.isAcquired() || node.isDeleted()))
-                    {
-                        if (!sub.isSuspended())
-                        {
-                            if (sub.hasInterest(node))
-                            {
-                                if (!sub.wouldSuspend(node))
-                                {
-                                    if (!sub.isBrowser() && !node.acquire(sub))
-                                    {
-                                        sub.restoreCredit(node);
+                    unregisterSubscription(sub);
 
-                                    }
-                                    else
-                                    {
-                                        deliveries--;
-                                        deliverMessage(sub, node);
-
-                                        if (sub.isBrowser())
-                                        {
-                                            QueueEntry newNode = _entries.next(node);
-
-                                            if (newNode != null)
-                                            {
-                                                advanced = true;
-                                                sub.setLastSeenEntry(node, newNode);
-                                                node = sub.getLastSeenEntry();
-                                            }
-                                        }
-                                    }
-
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                // this subscription is not interested in this node so we can skip over it
-                                QueueEntry newNode = _entries.next(node);
-                                if (newNode != null)
-                                {
-                                    sub.setLastSeenEntry(node, newNode);
-                                }
-                            }
-                        }
-
-                    }
-                    atTail = (_entries.next(node) == null) && !advanced;
-
+                    ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
+                    converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
                 }
             }
             finally
             {
                 sub.releaseSendLock();
             }
-
         }
 
         // if there's (potentially) more than one subscription the others will potentially not have been advanced to the
@@ -1287,16 +1236,72 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             advanceAllSubscriptions();
         }
-
-        if (atTail && sub.isAutoClose())
-        {
-            unregisterSubscription(sub);
-
-            ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
-            converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
-        }
-
         return atTail;
+    }
+
+    private boolean attemptDelivery(Subscription sub, Long deliveries) throws AMQException
+    {
+        boolean atTail = false;
+        boolean advanced = false;
+        boolean subActive = sub.isActive();
+        if (subActive)
+        {
+            QueueEntry node = moveSubscriptionToNextNode(sub);
+            if (!(node.isAcquired() || node.isDeleted()))
+            {
+                if (!sub.isSuspended())
+                {
+                    if (sub.hasInterest(node))
+                    {
+                        if (!sub.wouldSuspend(node))
+                        {
+                            if (!sub.isBrowser() && !node.acquire(sub))
+                            {
+                                sub.restoreCredit(node);
+
+                            }
+                            else
+                            {
+                                deliveries--;
+                                deliverMessage(sub, node);
+
+                                if (sub.isBrowser())
+                                {
+                                    QueueEntry newNode = _entries.next(node);
+
+                                    if (newNode != null)
+                                    {
+                                        advanced = true;
+                                        sub.setLastSeenEntry(node, newNode);
+                                        node = sub.getLastSeenEntry();
+                                    }
+                                }
+                            }
+
+                        }
+                        else // Not enough Credit for message and wouldSuspend
+                        {
+                            //QPID-1187 - Treat the subscription as suspended for this message
+                            // and wait for the message to be removed to continue delivery.
+                            subActive = false;
+                            node.addStateChangeListener(new QueueEntryListener(sub, node));
+                        }
+                    }
+                    else
+                    {
+                        // this subscription is not interested in this node so we can skip over it
+                        QueueEntry newNode = _entries.next(node);
+                        if (newNode != null)
+                        {
+                            sub.setLastSeenEntry(node, newNode);
+                        }
+                    }
+                }
+
+            }
+            atTail = (_entries.next(node) == null) && !advanced;
+        }
+        return atTail || !subActive;
     }
 
     protected void advanceAllSubscriptions() throws AMQException
@@ -1347,7 +1352,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         boolean deliveryIncomplete = true;
 
         int extraLoops = 1;
-        int deliveries = MAX_ASYNC_DELIVERIES;
+        Long deliveries = new Long(MAX_ASYNC_DELIVERIES);
 
         _asynchronousRunner.compareAndSet(runner, null);
 
@@ -1372,110 +1377,46 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 boolean closeConsumer = false;
                 Subscription sub = subscriptionIter.getNode().getSubscription();
-                if (sub != null)
+                sub.getSendLock();
+                try
                 {
-                    sub.getSendLock();
-                    try
+                    if (sub != null)
                     {
+
                         QueueEntry node = moveSubscriptionToNextNode(sub);
-
-                        if (node != null && sub.isActive())
+                        if (node != null)
                         {
-                            boolean advanced = false;
-                            boolean subActive = false;
-
-                            if (!(node.isAcquired() || node.isDeleted()))
-                            {
-                                if (!sub.isSuspended())
-                                {
-                                    subActive = true;
-                                    if (sub.hasInterest(node))
-                                    {
-                                        if (!sub.wouldSuspend(node))
-                                        {
-                                            if (!sub.isBrowser() && !node.acquire(sub))
-                                            {
-                                                sub.restoreCredit(node);
-
-                                            }
-                                            else
-                                            {
-                                                deliverMessage(sub, node);
-                                                deliveries--;
-
-                                                if (sub.isBrowser())
-                                                {
-                                                    QueueEntry newNode = _entries.next(node);
-
-                                                    if (newNode != null)
-                                                    {
-                                                        sub.setLastSeenEntry(node, newNode);
-                                                        node = sub.getLastSeenEntry();
-                                                        advanced = true;
-                                                    }
-
-                                                }
-                                            }
-                                            done = false;
-                                        }
-                                        else // Not enough Credit for message and wouldSuspend
-                                        {
-                                            //QPID-1187 - Treat the subscription as suspended for this message
-                                            // and wait for the message to be removed to continue delivery.
-                                            subActive = false;
-
-                                            node.addStateChangeListener(new QueueEntryListener(sub, node));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // this subscription is not interested in this node so we can skip over it
-                                        QueueEntry newNode = _entries.next(node);
-                                        if (newNode != null)
-                                        {
-                                            sub.setLastSeenEntry(node, newNode);
-                                        }
-                                    }
-                                }
-                            }
-                            final boolean atTail = (_entries.next(node) == null);
-
-                            done = done && (!subActive || atTail);
-
-                            closeConsumer = (atTail && !advanced && sub.isAutoClose());
+                            done = attemptDelivery(sub, deliveries);
                         }
                     }
-                    finally
+                    if (done)
                     {
-                        sub.releaseSendLock();
-                    }
+                        if (extraLoops == 0)
+                        {
+                            deliveryIncomplete = false;
+                            if (sub.isAutoClose())
+                            {
+                                unregisterSubscription(sub);
 
-                    if (closeConsumer)
-                    {
-                        unregisterSubscription(sub);
-
-                        ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
-                        converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
-                    }
-
-                }
-                if (done)
-                {
-                    if (extraLoops == 0)
-                    {
-                        deliveryIncomplete = false;
+                                ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
+                                converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
+                            }
+                        }
+                        else
+                        {
+                            extraLoops--;
+                        }
                     }
                     else
                     {
-                        extraLoops--;
+                        extraLoops = 1;
                     }
                 }
-                else
+                finally
                 {
-                    extraLoops = 1;
+                    sub.releaseSendLock();
                 }
             }
-
             _asynchronousRunner.set(null);
         }
 

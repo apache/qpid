@@ -336,7 +336,14 @@ public class AMQChannel
         Subscription sub = _tag2SubscriptionMap.remove(consumerTag);
         if (sub != null)
         {
-            sub.getQueue().unregisterSubscription(sub);
+            try {
+                sub.getSendLock();
+                sub.getQueue().unregisterSubscription(sub);
+            }
+            finally 
+            {
+                sub.releaseSendLock();
+            }
             return true;
         }
         else
@@ -395,7 +402,16 @@ public class AMQChannel
 
             Subscription sub = me.getValue();
 
-            sub.getQueue().unregisterSubscription(sub);
+            try
+            {
+                sub.getSendLock();
+                sub.getQueue().unregisterSubscription(sub);
+            }
+            finally
+            {
+                sub.releaseSendLock();
+            }
+            
         }
 
         _tag2SubscriptionMap.clear();
