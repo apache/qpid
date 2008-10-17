@@ -43,7 +43,7 @@ namespace test.interop
         [TestFixtureSetUp] 
         public void Init()
         {
-            XmlConfigurator.Configure(new FileInfo(".\\log.xml"));
+            XmlConfigurator.Configure(new FileInfo("/log.xml"));
             // populate default properties
             _properties.Add("UserName", "guest");
             _properties.Add("Password", "guest");
@@ -51,7 +51,7 @@ namespace test.interop
             _properties.Add("Port", "5672");
             _properties.Add("VirtualHost", "test");
              //Read the test config file  
-            XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + ".\\test.config");
+            XmlTextReader reader = new XmlTextReader(Environment.CurrentDirectory + "/test.config");
             while (reader.Read())
             {                
                 // if node type is an element

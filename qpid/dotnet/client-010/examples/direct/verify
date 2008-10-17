@@ -1,0 +1,15 @@
+# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify
+cpp=$CPP/direct
+
+direct_listener_dotnet()
+{
+mono $DOTNET_EXAMPLES/example-direct-Listener.exe localhost 5672
+}
+
+direct_producer_dotnet()
+{
+mono $DOTNET_EXAMPLES/example-direct-Producer.exe localhost 5672
+}
+
+clients $cpp/declare_queues  direct_producer_dotnet direct_listener_dotnet
+outputs  $cpp/declare_queues.out ./direct_producer_dotnet.out ./direct_listener_dotnet.out 

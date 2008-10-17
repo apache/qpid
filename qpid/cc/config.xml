@@ -22,13 +22,16 @@ under the License.
     <property environment="env" toupper="true"/>
 
     <!-- Set a collection of global properties from the properties file "config.properties" -->
-    <property file="config.properties"/>
+    <property file="${env.CC_HOME}/cc/config.properties"/>
 
     <include.projects file="./config/cpp-trunk.xml"/>
     <include.projects file="./config/java-trunk.xml"/>
+    <include.projects file="./config/dotnet-trunk.xml"/>
     <include.projects file="./config/bdbstore-cpp-trunk.xml"/>
     <include.projects file="./config/cpp-perftests.xml"/>
     <include.projects file="./config/example-automation.xml"/>
     <include.projects file="./config/java-perftests.xml"/>
     <include.projects file="./config/java-jmstck.xml"/>    
 </cruisecontrol>
+
+
