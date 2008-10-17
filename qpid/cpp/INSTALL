@@ -59,6 +59,10 @@ Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)                                  
  * xerces-c <http://xerces.apache.org/xerces-c/>        (2.7.0)  
 
+Optional SSL support requires:
+* nss <http://www.mozilla.org/projects/security/pki/nss/>
+* nspr <http://www.mozilla.org/projects/nspr/>
+
 Qpid has been built using the GNU C++ compiler:
  * gcc     <http://gcc.gnu.org/>            		(3.2.3)
 

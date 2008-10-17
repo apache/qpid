@@ -23,6 +23,7 @@ http://cwiki.apache.org/qpid/
 2. Available Documentation
 ==========================
   - INSTALL 		- How to install Qpid/C++.
+  - SSL                 - How to setup SSL
   - RELEASE_NOTES 	- Release notes.
   - DESIGN 		- Qpid/C++ implementation.
   - LICENSE		- Apache license.

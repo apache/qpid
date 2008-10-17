@@ -113,7 +113,7 @@ Broker::Options::Options(const std::string& name) :
          "Interval between attempts to purge any expired messages from queues")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
-        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)")
+        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)") 
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections");
 }
 
@@ -339,8 +339,6 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
             QPID_LOG(error, "Transport '" << transport << "' not supported");
             return  Manageable::STATUS_NOT_IMPLEMENTED;
         }
-        QPID_LOG(info, "Connecting to " << hp.i_host << ":" << hp.i_port << " using '" << transport << "' as " << "'" << hp.i_username << "'");
-
         std::pair<Link::shared_ptr, bool> response =
             links.declare (hp.i_host, hp.i_port, transport, hp.i_durable,
                            hp.i_authMechanism, hp.i_username, hp.i_password);
@@ -372,9 +370,14 @@ boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string&
     else return i->second;
 }
 
-//TODO: should this allow choosing the port by transport name?
-uint16_t Broker::getPort() const  {
-    return getProtocolFactory()->getPort();
+uint16_t Broker::getPort(const std::string& name) const  {
+    boost::shared_ptr<ProtocolFactory> factory 
+        = getProtocolFactory(name.empty() ? TCP_TRANSPORT : name);
+    if (factory) { 
+        return factory->getPort();
+    } else {
+        throw Exception(QPID_MSG("No such transport: " << name));
+    }
 }
 
 void Broker::registerProtocolFactory(const std::string& name, ProtocolFactory::shared_ptr protocolFactory) {
