@@ -486,7 +486,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
 
 
-    public void setPrefecthLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    public void setPrefetchLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
     {
         new FailoverRetrySupport<Object, AMQException>(
                 new FailoverProtectedOperation<Object, AMQException>()
