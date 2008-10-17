@@ -211,8 +211,7 @@ namespace org.apache.qpid.transport.network
                 case SegmentType.HEADER:
                     command = incomplete[channel];
                     List<Struct> structs = new List<Struct>();
-                    //while (decoder.hasRemaining())
-                    for (int i = 0; i < 2; i++ )
+                    while (decoder.hasRemaining())                    
                     {
                         structs.Add(decoder.readStruct32());
                     }
