@@ -42,7 +42,7 @@ struct SslServerOptions : ssl::SslOptions
     uint16_t port;
     bool clientAuth;
 
-    SslServerOptions() : port(5673),
+    SslServerOptions() : port(5671),
                          clientAuth(false)
     {
         addOptions()
