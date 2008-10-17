@@ -79,7 +79,7 @@ public class FlowControlTest extends QpidTestCase
 
         Connection consumerConnection = getConnection();
         Session consumerSession = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8) consumerSession).setPrefecthLimits(0, 256);
+        ((AMQSession_0_8) consumerSession).setPrefetchLimits(0, 256);
         MessageConsumer recv = consumerSession.createConsumer(_queue);
         consumerConnection.start();
 
@@ -152,7 +152,7 @@ public class FlowControlTest extends QpidTestCase
 
         Connection consumerConnection = getConnection();
         Session consumerSession1 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8) consumerSession1).setPrefecthLimits(0, 256);
+        ((AMQSession_0_8) consumerSession1).setPrefetchLimits(0, 256);
         MessageConsumer recv1 = consumerSession1.createConsumer(_queue);
 
         consumerConnection.start();
@@ -165,7 +165,7 @@ public class FlowControlTest extends QpidTestCase
         assertNull("Second message incorrectly delivered", r2);
 
         Session consumerSession2 = consumerConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        ((AMQSession_0_8) consumerSession2).setPrefecthLimits(0, 256);
+        ((AMQSession_0_8) consumerSession2).setPrefetchLimits(0, 256);
         MessageConsumer recv2 = consumerSession2.createConsumer(_queue);
 
         r2 = recv2.receive(100000L);//RECEIVE_TIMEOUT);
