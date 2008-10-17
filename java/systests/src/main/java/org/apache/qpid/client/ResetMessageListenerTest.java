@@ -55,26 +55,20 @@ public class ResetMessageListenerTest extends QpidTestCase
     Context _context;
 
     private static final int MSG_COUNT = 6;
-    private int receivedCount = 0;
     private Connection _clientConnection, _producerConnection;
     private MessageConsumer _consumer1;
     MessageProducer _producer;
     Session _clientSession, _producerSession;
 
-    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); // all messages Sent Lock
-    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); // all messages Sent Lock
-    
-    private String oldImmediatePrefetch;
+    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
+    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        oldImmediatePrefetch = System.getProperty(AMQSession.IMMEDIATE_PREFETCH);
-        System.setProperty(AMQSession.IMMEDIATE_PREFETCH, "true");
-
         _clientConnection = getConnection("guest", "guest");
-
+        _clientConnection.start();        
         // Create Client 1
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -106,26 +100,19 @@ public class ResetMessageListenerTest extends QpidTestCase
         _clientConnection.close();
 
         super.tearDown();
-        if (oldImmediatePrefetch == null)
-        {
-            oldImmediatePrefetch = AMQSession.IMMEDIATE_PREFETCH_DEFAULT;
-        }
-        System.setProperty(AMQSession.IMMEDIATE_PREFETCH, oldImmediatePrefetch);
     }
 
     public void testAsynchronousRecieve()
     {
 
         _logger.info("Test Start");
-
+        
         try
         {
             _consumer1.setMessageListener(new MessageListener()
             {
                 public void onMessage(Message message)
                 {
-                    _logger.info("Received Message(" + receivedCount + "):" + message);
-
                     try
                     {
                         if (message.getStringProperty("rank").equals("first"))
@@ -147,7 +134,8 @@ public class ResetMessageListenerTest extends QpidTestCase
         }
         try
         {
-            _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            assertTrue("Did not receive all first batch of messages", 
+                    _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS));
             _logger.info("Received first batch of messages");
         }
         catch (InterruptedException e)
@@ -171,13 +159,12 @@ public class ResetMessageListenerTest extends QpidTestCase
             {
                 public void onMessage(Message message)
                 {
-                    _logger.info("Received Message(" + receivedCount + "):" + message);
-
                     try
                     {
                         if (message.getStringProperty("rank").equals("first"))
                         {
-                            _allFirstMessagesSent.countDown();
+                            // Something ugly will happen, it'll probably kill the dispatcher
+                            fail("All first set of messages should have been received");
                         }
                         else
                         {
@@ -187,6 +174,7 @@ public class ResetMessageListenerTest extends QpidTestCase
                     catch (JMSException e)
                     {
                         e.printStackTrace();
+                        // Something ugly will happen, it'll probably kill the dispatcher
                         fail("error receiving message");
                     }
                 }
@@ -220,11 +208,11 @@ public class ResetMessageListenerTest extends QpidTestCase
             _logger.error("Unable to send additional messages", e);
         }
 
-        _logger.info("Waiting upto 2 seconds for messages");
+        _logger.info("Waiting for messages");
 
         try
         {
-            _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            assertTrue(_allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS));
         }
         catch (InterruptedException e)
         {
