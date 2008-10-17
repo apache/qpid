@@ -44,7 +44,7 @@ namespace org.apache.qpid.client
         {
             get
             {
-                if (_message.Header != null)
+                if (_message.Header != null && Header.Structs.Length > 1)
                     return (MessageProperties) Header.Structs[0];
                 return null;
             }
@@ -62,7 +62,12 @@ namespace org.apache.qpid.client
             get
             {
                 if (Header != null)
-                    return (DeliveryProperties) Header.Structs[1];
+                {
+                    if( Header.Structs.Length > 1 )
+                        return (DeliveryProperties)Header.Structs[1];
+                    return (DeliveryProperties)Header.Structs[0];
+                }
+                    
                 return null;
             }
             set
