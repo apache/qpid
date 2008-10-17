@@ -18,7 +18,9 @@
  * under the License.
  *
  */
+
 #include "unit_test.h"
+#include "test_tools.h"
 #include "BrokerFixture.h"
 #include "qpid/sys/Shlib.h"
 #include "qpid/sys/Monitor.h"
@@ -124,31 +126,31 @@ struct ClientSessionFixture : public ProxySessionFixture
 
 
 QPID_AUTO_TEST_CASE(testXmlBinding) {
-  ClientSessionFixture f;
+    ClientSessionFixture f;
 
-  SubscriptionManager subscriptions(f.session);
-  SubscribedLocalQueue localQueue(subscriptions);
+    SubscriptionManager subscriptions(f.session);
+    SubscribedLocalQueue localQueue(subscriptions);
 
-  f.session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
-  f.session.queueDeclare(qpid::client::arg::queue="odd_blue");
-  subscriptions.subscribe(localQueue, "odd_blue");
+    f.session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
+    f.session.queueDeclare(qpid::client::arg::queue="odd_blue");
+    subscriptions.subscribe(localQueue, "odd_blue");
 
-  FieldTable binding;
-  binding.setString("xquery", "declare variable $color external;"
-                               "(./message/id mod 2 = 1) and ($color = 'blue')");
-  f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding); 
+    FieldTable binding;
+    binding.setString("xquery", "declare variable $color external;"
+                      "(./message/id mod 2 = 1) and ($color = 'blue')");
+    f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding); 
 
-  Message message;
-  message.getDeliveryProperties().setRoutingKey("query_name"); 
+    Message message;
+    message.getDeliveryProperties().setRoutingKey("query_name"); 
 
-  message.getHeaders().setString("color", "blue");
-  string m = "<message><id>1</id></message>";
-  message.setData(m);
+    message.getHeaders().setString("color", "blue");
+    string m = "<message><id>1</id></message>";
+    message.setData(m);
 
-  f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
+    f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
 
-  Message m2 = localQueue.get();
-  BOOST_CHECK_EQUAL(m, m2.getData());  
+    Message m2 = localQueue.get();
+    BOOST_CHECK_EQUAL(m, m2.getData());  
 }
 
 /**
@@ -186,48 +188,49 @@ QPID_AUTO_TEST_CASE(testXMLBindMultipleQueues) {
 // raise an exception, the content is not required to be XML.
 
 QPID_AUTO_TEST_CASE(testXMLSendBadXML) {
-  ClientSessionFixture f;
+    ClientSessionFixture f;
 
-  f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
-  f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
-    ;
-  f.session.queueDeclare(arg::queue="red", arg::exclusive=true, arg::autoDelete=true);
+    f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
+    f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
+        ;
+    f.session.queueDeclare(arg::queue="red", arg::exclusive=true, arg::autoDelete=true);
 
-  FieldTable blue;
-  blue.setString("xquery", "./colour = 'blue'");
-  f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
+    FieldTable blue;
+    blue.setString("xquery", "./colour = 'blue'");
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
 olour", arg::arguments=blue);
-  FieldTable red;
-  red.setString("xquery", "./colour = 'red'");
-  f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-co\
+    FieldTable red;
+    red.setString("xquery", "./colour = 'red'");
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-co\
 lour", arg::arguments=red);
 
-  Message sent1("<>colour>blue</colour>", "by-colour");
-  f.session.messageTransfer(arg::content=sent1,  arg::destination="xml");
+    Message sent1("<>colour>blue</colour>", "by-colour");
+    f.session.messageTransfer(arg::content=sent1,  arg::destination="xml");
 
-  BOOST_CHECK_EQUAL(1, 1);
+    BOOST_CHECK_EQUAL(1, 1);
 }
 
 
 //### Test: Bad XQuery does not kill the server, but does raise an exception
 
 QPID_AUTO_TEST_CASE(testXMLBadXQuery) {
-  ClientSessionFixture f;
+    ClientSessionFixture f;
 
-  f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
-  f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
-    ;
+    f.session.exchangeDeclare(arg::exchange="xml", arg::type="xml");
+    f.session.queueDeclare(arg::queue="blue", arg::exclusive=true, arg::autoDelete=true)\
+        ;
 
-  try {
-    FieldTable blue;
-    blue.setString("xquery", "./colour $=! 'blue'");
-    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
+    try {
+        ScopedSuppressLogging sl; // Supress logging of error messages for expected error.
+        FieldTable blue;
+        blue.setString("xquery", "./colour $=! 'blue'");
+        f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-c\
 olour", arg::arguments=blue);
-  }
-  catch (const InternalErrorException& e) {
-    return;
-  }
-  BOOST_ERROR("A bad XQuery must raise an exception when used in an XML Binding.");
+    }
+    catch (const InternalErrorException& e) {
+        return;
+    }
+    BOOST_ERROR("A bad XQuery must raise an exception when used in an XML Binding.");
 
 }
 
