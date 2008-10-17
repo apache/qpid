@@ -37,7 +37,7 @@
 
     <target name="copy-etc-release" if="module.etc.exists" description="copy etc directory if it exists to build tree">
       <copy todir="${module.release}/etc" failonerror="false" flatten="true">
-          <fileset dir="${module.etc}" excludes="mstool-log4j.xml,*.conf,*.jpp"/>
+          <fileset dir="${module.etc}" excludes="*.conf,*.jpp"/>
       </copy>
     </target>
 
