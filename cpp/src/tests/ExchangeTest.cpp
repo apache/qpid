@@ -223,4 +223,45 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
 
 }
 
+QPID_AUTO_TEST_CASE(testIVEOption) 
+{
+    FieldTable args;
+    args.setInt("qpid.ive",1);
+    DirectExchange direct("direct1", false, args);
+    FanOutExchange fanout("fanout1", false, args);
+    HeadersExchange header("headers1", false, args);
+    TopicExchange topic ("topic1", false, args);
+    
+    intrusive_ptr<Message> msg1 = cmessage("direct1", "abc");
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString("a", "abc");
+    DeliverableMessage dmsg1(msg1);
+
+    FieldTable args2;
+    args2.setString("x-match", "any");
+    args2.setString("a", "abc");
+    
+    direct.route(dmsg1, "abc", 0);
+    fanout.route(dmsg1, "abc", 0);
+    header.route(dmsg1, "abc", &args2);
+    topic.route(dmsg1, "abc", 0);
+    Queue::shared_ptr queue(new Queue("queue", true));
+    Queue::shared_ptr queue1(new Queue("queue1", true));
+    Queue::shared_ptr queue2(new Queue("queue2", true));
+    Queue::shared_ptr queue3(new Queue("queue3", true));
+    
+    BOOST_CHECK(HeadersExchange::match(args2, msg1->getProperties<MessageProperties>()->getApplicationHeaders()));
+    
+    BOOST_CHECK(direct.bind(queue, "abc", 0));
+    BOOST_CHECK(fanout.bind(queue1, "abc", 0));
+    BOOST_CHECK(header.bind(queue2, "", &args2));
+    BOOST_CHECK(topic.bind(queue3, "abc", 0));
+    
+    BOOST_CHECK_EQUAL(1u,queue->getMessageCount());
+    BOOST_CHECK_EQUAL(1u,queue1->getMessageCount());
+    BOOST_CHECK_EQUAL(1u,queue2->getMessageCount());
+    BOOST_CHECK_EQUAL(1u,queue3->getMessageCount());
+    
+}
+
+
 QPID_AUTO_TEST_SUITE_END()
