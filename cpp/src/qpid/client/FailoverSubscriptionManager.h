@@ -114,9 +114,6 @@ class FailoverSubscriptionManager
     void prepareForFailover ( Session newSession );
     void failover ( );
 
-    std::string name;
-
-
 
   private:
     sys::Monitor lock;

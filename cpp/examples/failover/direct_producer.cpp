@@ -36,11 +36,12 @@ using namespace std;
 int 
 main ( int argc, char ** argv) 
 {
+
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     int count  = argc>3 ? atoi(argv[3]) : 30;
-    int delayMs  = argc>4 ? atoi(argv[4]) : 1000;
     string program_name = "PRODUCER";
+
 
     try {
         FailoverConnection connection;
@@ -49,14 +50,23 @@ main ( int argc, char ** argv)
 
         connection.open ( host, port );
         session = connection.newSession();
+        bool report = true;
         int sent  = 0;
         while ( sent < count ) {
+
             message.getDeliveryProperties().setRoutingKey("routing_key"); 
-            std::cout << "sending message " 
-                      << sent
-                      << " of " 
-                      << count 
-                      << ".\n";
+
+
+            if ( count > 1000 )
+              report = !(sent % 1000);
+
+            if ( report )
+            {
+              std::cout << "sending message " 
+                        << sent
+                        << ".\n";
+            }
+
             stringstream message_data;
             message_data << sent;
             message.setData(message_data.str());
@@ -70,12 +80,12 @@ main ( int argc, char ** argv)
                                        0,
                                        message
             );
-            usleep ( 1000*delayMs );
+
             ++ sent;
         }
         message.setData ( "That's all, folks!" );
 
-        /* MICK FIXME
+        /* FIXME mgoulish 16 Oct 08
            session.messageTransfer ( arg::content=message,  
            arg::destination="amq.direct"
            ); 
@@ -88,10 +98,17 @@ main ( int argc, char ** argv)
 
         session->sync();
         connection.close();
+        std::cout << program_name 
+                  << " sent " 
+                  << sent
+                  << " messages.\n";
+
         std::cout << program_name << ": " << " completed without error." << std::endl;
         return 0;  
     } catch(const std::exception& error) {
         std::cout << program_name << ": " << error.what() << std::endl;
+        std::cout << program_name << "Exiting.\n";
+        return 1;
     }
     return 1;
 }

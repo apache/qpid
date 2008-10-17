@@ -33,7 +33,6 @@ namespace client {
 
 
 FailoverSubscriptionManager::FailoverSubscriptionManager ( FailoverSession * fs) :
-    name("no_name"),
     newSessionIsValid(false),
     no_failover(false)
 {
