@@ -92,9 +92,17 @@ struct ClusterFixture : public vector<uint16_t>  {
     void add0(bool force);
     void setup();
 
+    /** Kill a forked broker with sig, or shutdown broker0 if n==0. */
     void kill(size_t n, int sig=SIGINT) {
         if (n) forkedBrokers[n-1].kill(sig);
         else broker0->broker->shutdown();
+    }
+
+    /** Kill a broker and suppress errors from connection. */
+    void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT) {
+        ScopedSuppressLogging sl;
+        kill(n,sig);
+        try { c.close(); } catch(...) {}
     }
 
     void waitFor(size_t n) {
@@ -218,7 +226,8 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     BOOST_CHECK_EQUAL(kb2,kb0);
     BOOST_CHECK_EQUAL(kb2,kb1);
 
-    cluster.kill(1,9);
+    cluster.killWithSilencer(1,c1.connection,9);
+    cluster.waitFor(2);
     kb0 = knownBrokerPorts(c0.connection, 2);
     kb2 = knownBrokerPorts(c2.connection, 2);
     BOOST_CHECK_EQUAL(kb0.size(), 2u);
@@ -257,13 +266,8 @@ QPID_AUTO_TEST_CASE(DumpConsumers) {
     BOOST_CHECK_EQUAL(c2.session.queueQuery("q").getMessageCount(), 0u);
 
     // Kill the subscribing member, ensure further messages are not removed.
-    {
-        ScopedSuppressLogging sl;
-        cluster.kill(1,9);
-        cluster.waitFor(2);
-        try { c1.connection.close(); }
-        catch (...) {}
-    }
+    cluster.killWithSilencer(1,c1.connection,9);
+    cluster.waitFor(2);
     for (int i = 0; i < 10; ++i) {
         c0.session.messageTransfer(arg::content=Message("bbb", "q"));
         BOOST_REQUIRE(c0.subs.get(m, "q", TIME_SEC));
