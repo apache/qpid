@@ -102,6 +102,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         }
 
         getProtocolHandler().writeFrame(ackFrame);
+        _unacknowledgedMessageTags.remove(deliveryTag);
     }
 
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
