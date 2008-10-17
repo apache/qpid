@@ -36,7 +36,6 @@ namespace client {
 
 
 FailoverConnection::FailoverConnection ( ) :
-    name(),
     failoverCompleteTime(0)
 {
     connection.registerFailureCallback
@@ -58,7 +57,6 @@ FailoverConnection::open ( const std::string& host,
 
     settings.host         = host;
     settings.port         = port;
-    settings.username     = uid;
     settings.username     = uid;
     settings.password     = pwd;
     settings.virtualhost  = virtualhost;
@@ -124,9 +122,19 @@ FailoverConnection::registerFailureCallback ( boost::function<void ()> /*fn*/ )
 void 
 FailoverConnection::failover ( )
 {
+  std::vector<FailoverSession *>::iterator sessions_iterator;
+
+  for ( sessions_iterator = sessions.begin(); 
+        sessions_iterator != sessions.end(); 
+        ++ sessions_iterator )
+  {
+    FailoverSession * fs = * sessions_iterator;
+    fs->failover_in_progress = true;
+  }
+
     std::vector<Url> knownBrokers = connection.getKnownBrokers();
     if (knownBrokers.empty())
-        throw Exception(QPID_MSG("FailoverConnection::failover " << name << " no known brokers."));
+        throw Exception(QPID_MSG("FailoverConnection::failover no known brokers."));
 
     Connection newConnection;
     for (std::vector<Url>::iterator i = knownBrokers.begin(); i != knownBrokers.end(); ++i) {
@@ -148,7 +156,6 @@ FailoverConnection::failover ( )
      */
 
     // FIXME aconway 2008-10-10: thread unsafe, possible race with concurrent newSession 
-    std::vector<FailoverSession *>::iterator sessions_iterator;
     for ( sessions_iterator = sessions.begin();
           sessions_iterator < sessions.end();
           ++ sessions_iterator
@@ -172,6 +179,15 @@ FailoverConnection::failover ( )
     {
         FailoverSession * fs = * sessions_iterator;
         fs->failover ( );
+    }
+
+    for ( sessions_iterator = sessions.begin();
+          sessions_iterator < sessions.end();
+          ++ sessions_iterator
+    )
+    {
+        FailoverSession * fs = * sessions_iterator;
+        fs->failover_in_progress = false;
     }
 }
 

@@ -151,8 +151,11 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text) {
 static const std::string CONN_CLOSED("Connection closed by broker");
 
 void ConnectionImpl::shutdown() {
-
     Mutex::ScopedLock l(lock);
+
+    if ( failureCallback )
+      failureCallback();
+
     if (handler.isClosed()) return;
 
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
@@ -161,9 +164,6 @@ void ConnectionImpl::shutdown() {
         closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
     handler.fail(CONN_CLOSED);
-
-    if ( failureCallback )
-      failureCallback();
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

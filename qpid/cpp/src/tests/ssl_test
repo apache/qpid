@@ -1,8 +1,8 @@
 #!/bin/sh
 # Run a simple test over SSL
-MY_DIR=$(dirname $(which $0))
-CERT_DIR=${MY_DIR}/test_cert_db
-CERT_PW_FILE=${MY_DIR}/cert.password
+
+CERT_DIR=`pwd`/test_cert_db
+CERT_PW_FILE=`pwd`/cert.password
 HOSTNAME=`hostname`
 COUNT=10000
 
@@ -18,13 +18,13 @@ create_certs() {
 }
 
 start_broker() {
-    ${MY_DIR}/../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no\
-        --load-module ${MY_DIR}/../.libs/ssl.so --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE > qpidd.port
+    ../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no\
+        --load-module ../.libs/ssl.so --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE > qpidd.port
     PORT=`cat qpidd.port`
 }
 
 stop_broker() {
-    ${MY_DIR}/../qpidd -q --port $PORT
+    ../qpidd -q --port $PORT
 }
 
 if [[ !(-e ${CERT_PW_FILE}) ]] ;  then
@@ -36,8 +36,8 @@ fi
 
 start_broker || error "Could not start broker"
 echo "Running SSL test on port $PORT"
-export QPID_LOAD_MODULE=${MY_DIR}/../.libs/sslconnector.so
+export QPID_LOAD_MODULE=../.libs/sslconnector.so
 export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
-${MY_DIR}/perftest --count ${COUNT} --port ${PORT} -P ssl -b $HOSTNAME --summary
+./perftest --count ${COUNT} --port ${PORT} -P ssl -b $HOSTNAME --summary
 
