@@ -102,6 +102,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         size_t replayHardLimit;
         uint queueLimit;
         bool tcpNoDelay;
+        bool requireEncrypted;
     };
  
   private:
@@ -149,7 +150,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual uint16_t getPort(const std::string& name = TCP_TRANSPORT) const;
+    virtual uint16_t getPort(const std::string& name) const;
 
     /**
      * Run the broker. Implements Runnable::run() so the broker

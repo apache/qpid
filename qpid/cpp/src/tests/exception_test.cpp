@@ -39,6 +39,7 @@ using namespace sys;
 using namespace client;
 using namespace framing;
 
+using qpid::broker::Broker;
 using boost::bind;
 using boost::function;
 
@@ -88,7 +89,7 @@ QPID_AUTO_TEST_CASE(TestSessionBusy) {
 
 QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxySessionFixture fix;
-    ProxyConnection c(fix.broker->getPort());
+    ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
     Catcher<ConnectionException> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
@@ -101,7 +102,7 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
     struct NullListener : public MessageListener {
         void received(Message&) { BOOST_FAIL("Unexpected message"); }
     } l;
-    ProxyConnection c(fix.broker->getPort());
+    ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(l, "q");
 
