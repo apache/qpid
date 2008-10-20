@@ -239,8 +239,11 @@ QPID_AUTO_TEST_CASE(DumpConsumers) {
 
     cluster.add();
     Client c1(cluster[1], "c1"); 
+    c1.session.queueDeclare("p");
     c1.session.queueDeclare("q");
     c1.subs.subscribe(c1.lq, "q", FlowControl::zero());
+    LocalQueue lp;
+    c1.subs.subscribe(lp, "p", FlowControl::messageCredit(1));
     c1.session.sync();
 
     // Start new members
@@ -249,22 +252,34 @@ QPID_AUTO_TEST_CASE(DumpConsumers) {
     cluster.add();
     Client c2(cluster[2], "c2"); 
 
-    // Transfer a message, verify all members see it.
+    // Transfer messages
     c1.session.messageTransfer(arg::content=Message("aaa", "q"));
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 1u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 1u);
     BOOST_CHECK_EQUAL(c2.session.queueQuery("q").getMessageCount(), 1u);
 
+    c1.session.messageTransfer(arg::content=Message("bbb", "p"));
+    c1.session.messageTransfer(arg::content=Message("ccc", "p"));
+    
     // Activate the subscription, ensure message removed on all queues. 
     c1.subs.setFlowControl("q", FlowControl::unlimited());
     Message m;
     BOOST_CHECK(c1.lq.get(m, TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "aaa");
-
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
     BOOST_CHECK_EQUAL(c2.session.queueQuery("q").getMessageCount(), 0u);
 
+    // Check second subscription's flow control: getsnn first message, not second.
+    BOOST_CHECK(lp.get(m, TIME_SEC));
+    BOOST_CHECK_EQUAL(m.getData(), "bbb");
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("p").getMessageCount(), 1u);
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("p").getMessageCount(), 1u);
+    BOOST_CHECK_EQUAL(c2.session.queueQuery("p").getMessageCount(), 1u);
+
+    BOOST_CHECK(c1.subs.get(m, "p", TIME_SEC));
+    BOOST_CHECK_EQUAL(m.getData(), "ccc");
+    
     // Kill the subscribing member, ensure further messages are not removed.
     cluster.killWithSilencer(1,c1.connection,9);
     cluster.waitFor(2);

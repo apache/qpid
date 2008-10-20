@@ -89,6 +89,8 @@ class Connection :
     void deliverBuffer(framing::Buffer&);
     void delivered(framing::AMQFrame&);
 
+    void consumerState(const std::string& name, bool blocked, bool notifyEnabled);
+    
     // ==== Used in catch-up mode to build initial state.
     // 
     // State dump methods.
