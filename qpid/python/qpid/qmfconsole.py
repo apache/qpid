@@ -91,7 +91,8 @@ class BrokerURL:
     if not match: raise ValueError("'%s' is not a valid broker url" % (text))
     user, password, host, port = match.groups()
 
-    self.host = socket.gethostbyname(host)
+    socket.gethostbyname(host)
+    self.host = host
     if port: self.port = int(port)
     else: self.port = 5672
     self.authName = user or "guest"
@@ -100,6 +101,9 @@ class BrokerURL:
 
   def name(self):
     return self.host + ":" + str(self.port)
+
+  def match(self, host, port):
+    return socket.gethostbyname(self.host) == socket.gethostbyname(host) and self.port == port
 
 class Session:
   """
@@ -784,8 +788,8 @@ class ObjectId:
       self.first = first
       self.second = second
 
-  def __cmp__(self, other):
-    if other == None:
+  def __cmp__(self, other):    
+    if other == None or not isinstance(other, ObjectId) :
       return 1
     if self.first < other.first:
       return -1
