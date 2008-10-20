@@ -44,7 +44,7 @@ class AckPolicy
     /**
      * Sends accepts and marks completion of received transfers.
      * 
-     *@param n: acknowledge every n messages.
+     *@param n: send an accept for every n messages received.
      *n==0 means no automatic acknowledgement.
      */
     AckPolicy(size_t n=1);
