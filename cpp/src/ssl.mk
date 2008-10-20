@@ -13,7 +13,7 @@ libsslcommon_la_SOURCES = \
 
 libsslcommon_la_LIBADD= -lnss3 -lssl3 -lnspr4 libqpidcommon.la
 
-libsslcommon_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS) -DCERT_DB=\"$(sysconfdir)/qpid_cert_db\"
+libsslcommon_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 
 lib_LTLIBRARIES +=  libsslcommon.la
 

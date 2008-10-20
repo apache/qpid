@@ -89,13 +89,21 @@ static struct SslPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
-            ssl::initNSS(options, true);
-
-            const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
-                                                                        opts.connectionBacklog, opts.tcpNoDelay));
-            QPID_LOG(info, "Listening for SSL connections on TCP port " << protocol->getPort());
-            broker->registerProtocolFactory("ssl", protocol);
+            if (options.certDbPath.empty()) {
+                QPID_LOG(warning, "SSL plugin not enabled, you must set --qpid-ssl-cert-db to enable it.");                    
+            } else {
+                try {
+                    ssl::initNSS(options, true);
+                    
+                    const broker::Broker::Options& opts = broker->getOptions();
+                    ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
+                                                                                opts.connectionBacklog, opts.tcpNoDelay));
+                    QPID_LOG(info, "Listening for SSL connections on TCP port " << protocol->getPort());
+                    broker->registerProtocolFactory("ssl", protocol);
+                } catch (const std::exception& e) {
+                    QPID_LOG(error, "Failed to initialise SSL plugin: " << e.what());
+                }
+            }
         }
     }
 } sslPlugin;
