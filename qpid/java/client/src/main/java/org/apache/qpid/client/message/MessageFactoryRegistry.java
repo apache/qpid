@@ -125,11 +125,15 @@ public class MessageFactoryRegistry
     {
 
         MessageProperties mprop = transfer.getHeader().get(MessageProperties.class);
-        String messageType = mprop.getContentType();
-        if (messageType == null)
+        String messageType = "";
+        if ( mprop == null || mprop.getContentType() == null)
         {
             _logger.debug("no message type specified, building a byte message");
             messageType = JMSBytesMessage.MIME_TYPE;
+        }
+        else
+        {
+           messageType = mprop.getContentType();
         }
         MessageFactory mf = _mimeStringToFactoryMap.get(messageType);
         if (mf == null)
