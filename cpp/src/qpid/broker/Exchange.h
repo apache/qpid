@@ -34,96 +34,95 @@
 #include "qmf/org/apache/qpid/broker/Binding.h"
 
 namespace qpid {
-    namespace broker {
-        using std::string;
-        class ExchangeRegistry;
+namespace broker {
 
-        class Exchange : public PersistableExchange, public management::Manageable {
-        private:
-            const string name;
-            const bool durable;
-            qpid::framing::FieldTable args;
-            boost::shared_ptr<Exchange> alternate;
-            uint32_t alternateUsers;
-            mutable uint64_t persistenceId;
+class ExchangeRegistry;
 
-        protected:
-            bool sequence;
-            mutable qpid::sys::Mutex sequenceLock;
-            uint64_t sequenceNo;
-            bool ive;
-            boost::intrusive_ptr<Message> lastMsg;
-		
-            class PreRoute{
-            public:
-                PreRoute(Deliverable& msg, Exchange* _p);
-                ~PreRoute();
-            private:
-                Exchange* parent;
-		    };
+class Exchange : public PersistableExchange, public management::Manageable {
+private:
+    const std::string name;
+    const bool durable;
+    qpid::framing::FieldTable args;
+    boost::shared_ptr<Exchange> alternate;
+    uint32_t alternateUsers;
+    mutable uint64_t persistenceId;
+
+protected:
+    bool sequence;
+    mutable qpid::sys::Mutex sequenceLock;
+    uint64_t sequenceNo;
+    bool ive;
+    boost::intrusive_ptr<Message> lastMsg;
+
+    class PreRoute{
+    public:
+        PreRoute(Deliverable& msg, Exchange* _p);
+        ~PreRoute();
+    private:
+        Exchange* parent;
+    };
            
-            void routeIVE();
+    void routeIVE();
            
-            struct Binding : public management::Manageable {
-                typedef boost::shared_ptr<Binding>       shared_ptr;
-                typedef std::vector<Binding::shared_ptr> vector;
+    struct Binding : public management::Manageable {
+        typedef boost::shared_ptr<Binding>       shared_ptr;
+        typedef std::vector<Binding::shared_ptr> vector;
 
-                Queue::shared_ptr         queue;
-                const std::string         key;
-                const framing::FieldTable args;
-                qmf::org::apache::qpid::broker::Binding* mgmtBinding;
+        Queue::shared_ptr         queue;
+        const std::string         key;
+        const framing::FieldTable args;
+        qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
-                Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
-                        framing::FieldTable args = framing::FieldTable ());
-                ~Binding ();
-                management::ManagementObject* GetManagementObject () const;
-            };
-            struct MatchQueue
-            {
-                const Queue::shared_ptr queue;        
-                MatchQueue(Queue::shared_ptr q);
-                bool operator()(Exchange::Binding::shared_ptr b);
-            };
+        Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
+                framing::FieldTable args = framing::FieldTable());
+        ~Binding();
+        management::ManagementObject* GetManagementObject() const;
+    };
 
-            qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
+    struct MatchQueue {
+        const Queue::shared_ptr queue;        
+        MatchQueue(Queue::shared_ptr q);
+        bool operator()(Exchange::Binding::shared_ptr b);
+    };
 
-        public:
-            typedef boost::shared_ptr<Exchange> shared_ptr;
+    qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
 
-            explicit Exchange(const string& name, management::Manageable* parent = 0);
-            Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
-                     management::Manageable* parent = 0);
-            virtual ~Exchange();
+public:
+    typedef boost::shared_ptr<Exchange> shared_ptr;
 
-            const string& getName() const { return name; }
-            bool isDurable() { return durable; }
-            qpid::framing::FieldTable& getArgs() { return args; }
+    explicit Exchange(const std::string& name, management::Manageable* parent = 0);
+    Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
+             management::Manageable* parent = 0);
+    virtual ~Exchange();
 
-            Exchange::shared_ptr getAlternate() { return alternate; }
-            void setAlternate(Exchange::shared_ptr _alternate) { alternate = _alternate; }
-            void incAlternateUsers() { alternateUsers++; }
-            void decAlternateUsers() { alternateUsers--; }
-            bool inUseAsAlternate() { return alternateUsers > 0; }
+    const std::string& getName() const { return name; }
+    bool isDurable() { return durable; }
+    qpid::framing::FieldTable& getArgs() { return args; }
 
-            virtual string getType() const = 0;
-            virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
-            virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
-            virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
-            virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    Exchange::shared_ptr getAlternate() { return alternate; }
+    void setAlternate(Exchange::shared_ptr _alternate) { alternate = _alternate; }
+    void incAlternateUsers() { alternateUsers++; }
+    void decAlternateUsers() { alternateUsers--; }
+    bool inUseAsAlternate() { return alternateUsers > 0; }
 
-            //PersistableExchange:
-            void setPersistenceId(uint64_t id) const;
-            uint64_t getPersistenceId() const { return persistenceId; }
-            uint32_t encodedSize() const;
-            void encode(framing::Buffer& buffer) const; 
+    virtual std::string getType() const = 0;
+    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
+    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
 
-            static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
+    //PersistableExchange:
+    void setPersistenceId(uint64_t id) const;
+    uint64_t getPersistenceId() const { return persistenceId; }
+    uint32_t encodedSize() const;
+    void encode(framing::Buffer& buffer) const; 
 
-            // Manageable entry points
-            management::ManagementObject* GetManagementObject(void) const;
-        };
-    }
-}
+    static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
+    // Manageable entry points
+    management::ManagementObject* GetManagementObject(void) const;
+};
+
+}}
 
 #endif  /*!_broker_Exchange.cpp_h*/
