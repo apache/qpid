@@ -30,7 +30,7 @@ void IncompleteMessageList::add(boost::intrusive_ptr<Message> msg)
     incomplete.push_back(msg);
 }
 
-void IncompleteMessageList::process(CompletionListener l, bool sync)
+void IncompleteMessageList::process(const CompletionListener& l, bool sync)
 {
     while (!incomplete.empty()) {
         boost::intrusive_ptr<Message>& msg = incomplete.front();
@@ -46,6 +46,10 @@ void IncompleteMessageList::process(CompletionListener l, bool sync)
         l(msg);
         incomplete.pop_front();
     }
+}
+
+void IncompleteMessageList::each(const CompletionListener& l) {
+    std::for_each(incomplete.begin(), incomplete.end(), l);
 }
 
 }}
