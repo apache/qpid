@@ -616,6 +616,11 @@ void SemanticState::ConsumerImpl::disableNotify()
     notifyEnabled = false;
 }
 
+bool SemanticState::ConsumerImpl::isNotifyEnabld() {
+    Mutex::ScopedLock l(lock);
+    return notifyEnabled;
+}
+
 void SemanticState::ConsumerImpl::notify()
 {
     //TODO: alter this, don't want to hold locks across external

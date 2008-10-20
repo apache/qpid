@@ -101,6 +101,7 @@ class SessionState : public qpid::SessionState,
     void readyToSend();
 
     template <class F> void eachConsumer(F f) { semanticState.eachConsumer(f); }
+    SemanticState::ConsumerImpl& getConsumer(const string& dest) { return semanticState.find(dest); } 
     
   private:
 
