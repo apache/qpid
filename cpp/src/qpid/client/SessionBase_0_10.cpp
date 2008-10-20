@@ -59,6 +59,8 @@ void SessionBase_0_10::sendCompletion()
     impl->sendCompletion();
 }
 
+uint16_t SessionBase_0_10::getChannel() const { return impl->getChannel(); }
+
 void SessionBase_0_10::suspend() { impl->suspend(); }
 void SessionBase_0_10::resume(Connection c) { impl->resume(c.impl); }
 uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(seconds); }

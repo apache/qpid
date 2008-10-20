@@ -166,11 +166,9 @@ void DumpClient::dumpConnection(const boost::intrusive_ptr<Connection>& dumpConn
     shadowConnection = catchUpConnection();
 
     broker::Connection& bc = dumpConnection->getBrokerConnection();
-    // FIXME aconway 2008-09-19: Open with identical settings to dumpConnection: password, vhost, frame size,
-    // authentication etc. See ConnectionSettings.
-    shadowConnection.open(dumpeeUrl, bc.getUserId());
-
-    dumpConnection->getBrokerConnection().eachSessionHandler(boost::bind(&DumpClient::dumpSession, this, _1));
+    // FIXME aconway 2008-10-20: What authentication info to reconnect?
+    shadowConnection.open(dumpeeUrl, bc.getUserId(), ""/*password*/, "/"/*vhost*/, bc.getFrameMax());
+    bc.eachSessionHandler(boost::bind(&DumpClient::dumpSession, this, _1));
     ClusterConnectionProxy(shadowConnection).shadowReady(
         dumpConnection->getId().getMember(),
         reinterpret_cast<uint64_t>(dumpConnection->getId().getPointer()));
@@ -194,19 +192,29 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
 
     // For reasons unknown, boost::bind does not work here with boost 1.33.
     ss->eachConsumer(std::bind1st(std::mem_fun(&DumpClient::dumpConsumer),this));
-    
-    // FIXME aconway 2008-09-19: update remaining session state.
+
+    boost::intrusive_ptr<Message> inProgress = ss->getMessageInProgress();
+
+    //  Adjust for message in progress, will be sent after state update.
+    SequenceNumber received = ss->receiverGetReceived().command;
+    if (inProgress)  
+        --received;
 
     // Reset command-sequence state.
     proxy.sessionState(
         ss->senderGetReplayPoint().command,
         ss->senderGetCommandPoint().command,
         ss->senderGetIncomplete(),
-        ss->receiverGetExpected().command,
-        ss->receiverGetReceived().command,
+        std::max(received, ss->receiverGetExpected().command),
+        received,
         ss->receiverGetUnknownComplete(),
         ss->receiverGetIncomplete()
     );
+
+    // Send frames for partial message in progress.
+    if (inProgress) {
+        inProgress->getFrames().map(simpl->out);
+    }
 
     // FIXME aconway 2008-09-23: update session replay list.
 

@@ -102,7 +102,9 @@ class SessionState : public qpid::SessionState,
 
     template <class F> void eachConsumer(F f) { semanticState.eachConsumer(f); }
     SemanticState::ConsumerImpl& getConsumer(const string& dest) { return semanticState.find(dest); } 
-    
+
+    boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
+
   private:
 
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
