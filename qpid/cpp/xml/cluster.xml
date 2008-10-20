@@ -75,9 +75,17 @@
 	 - send shadow-ready to mark end of shadow dump.
 	 - send dump-complete when entire dump is complete.
     -->
-    <control name="session-state" code="0x4" label="Set session state during a brain dump.">
-      <!-- Target session deduced from channel number.  -->
+    
+    <!-- Consumer state that cannot be set by standard AMQP controls. -->
+    <control name="consumer-state" code="0x10">
+      <field name="name" type="str8"/>
+      <field name="blocked" type="bit"/>
+      <field name="notifyEnabled" type="bit"/>
+    </control>
 
+    <!-- Complete a session state dump. -->
+    <control name="session-state" code="0x11" label="Set session state during a brain dump.">
+      <!-- Target session deduced from channel number.  -->
       <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
       <field name="command-point" type="sequence-no"/>	       <!-- Id of next command sent -->
       <field name="sent-incomplete" type="sequence-set"/>      <!-- Commands sent and incomplete. -->
@@ -88,12 +96,14 @@
       <field name="received-incomplete" type="sequence-set"/>  <!-- Received and incomplete -->
     </control>
 
-    <control name="shadow-ready" code="0x5" label="End of shadow connection dump.">
+    <!-- Complete a shadow connection dump. -->
+    <control name="shadow-ready" code="0x12" label="End of shadow connection dump.">
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
     </control>
 
-    <control name="membership" code="0x6" label="Cluster membership details.">
+    <!-- Complete a cluster state dump. -->
+    <control name="membership" code="0x13" label="Cluster membership details.">
       <field name="newbies" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
     </control>

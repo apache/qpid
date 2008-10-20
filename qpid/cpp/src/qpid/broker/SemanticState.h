@@ -100,6 +100,7 @@ class SemanticState : public sys::OutputTask,
         void disableNotify();
         void enableNotify();
         void notify();
+        bool isNotifyEnabld();
 
         void setWindowMode();
         void setCreditMode();
@@ -109,7 +110,8 @@ class SemanticState : public sys::OutputTask,
         void stop();
         void complete(DeliveryRecord&);    
         Queue::shared_ptr getQueue() { return queue; }
-        bool isBlocked() const { return blocked; }        
+        bool isBlocked() const { return blocked; }
+        bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
         bool hasOutput();
         bool doOutput();
@@ -150,7 +152,7 @@ class SemanticState : public sys::OutputTask,
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
     void checkDtxTimeout();
-    ConsumerImpl& find(const std::string& destination);
+
     void complete(DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
@@ -162,6 +164,8 @@ class SemanticState : public sys::OutputTask,
     ~SemanticState();
 
     SessionContext& getSession() { return session; }
+
+    ConsumerImpl& find(const std::string& destination);
     
     /**
      * Get named queue, never returns 0.

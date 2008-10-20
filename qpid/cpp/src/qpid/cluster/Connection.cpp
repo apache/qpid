@@ -22,6 +22,7 @@
 #include "Cluster.h"
 
 #include "qpid/broker/SessionState.h"
+#include "qpid/broker/SemanticState.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
@@ -159,6 +160,13 @@ void Connection::deliverBuffer(Buffer& buf) {
         delivered(mcastDecoder.frame);
 }
 
+void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled) {
+    broker::SessionHandler& h = connection.getChannel(currentChannel);
+    broker::SessionState* s = h.getSession();
+    broker::SemanticState::ConsumerImpl& c = s->getConsumer(name);
+    c.setBlocked(blocked);
+    if (notifyEnabled) c.enableNotify(); else c.disableNotify();
+}
 
 void Connection::sessionState(
     const SequenceNumber& replayStart,

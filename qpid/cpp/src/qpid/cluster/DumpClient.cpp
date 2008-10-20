@@ -35,6 +35,8 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/ClusterConnectionMembershipBody.h"
 #include "qpid/framing/ClusterConnectionShadowReadyBody.h"
+#include "qpid/framing/ClusterConnectionSessionStateBody.h"
+#include "qpid/framing/ClusterConnectionConsumerStateBody.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
@@ -227,7 +229,13 @@ void DumpClient::dumpConsumer(broker::SemanticState::ConsumerImpl* ci) {
     shadowSession.messageSetFlowMode(ci->getName(), ci->isWindowing() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
     shadowSession.messageFlow(ci->getName(), CREDIT_UNIT_MESSAGE, ci->getMsgCredit());
     shadowSession.messageFlow(ci->getName(), CREDIT_UNIT_BYTE, ci->getByteCredit());
-    // FIXME aconway 2008-09-23: need to replicate ConsumerImpl::blocked and notifyEnabled?
+    ClusterConnectionConsumerStateBody state(
+        ProtocolVersion(),
+        ci->getName(),
+        ci->isBlocked(),
+        ci->isNotifyEnabld()
+    );
+    client::SessionBase_0_10Access(shadowSession).get()->send(state);
     QPID_LOG(debug, dumperId << " dumped consumer " << ci->getName() << " on " << shadowSession.getId());
 }
 
