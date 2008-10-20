@@ -52,7 +52,7 @@ struct  BrokerFixture : private boost::noncopyable {
         // TODO aconway 2007-12-05: At one point BrokerFixture
         // tests could hang in Connection ctor if the following
         // line is removed. This may not be an issue anymore.
-        broker->getPort();
+        broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
         brokerThread = qpid::sys::Thread(*broker);
     };
 
@@ -63,10 +63,10 @@ struct  BrokerFixture : private boost::noncopyable {
 
     /** Open a connection to the broker. */
     void open(qpid::client::Connection& c) {
-        c.open("localhost", broker->getPort());
+        c.open("localhost", broker->getPort(qpid::broker::Broker::TCP_TRANSPORT));
     }
 
-    uint16_t getPort() { return broker->getPort(); }
+    uint16_t getPort() { return broker->getPort(qpid::broker::Broker::TCP_TRANSPORT); }
 };
 
 /** Connection that opens in its constructor */
@@ -108,7 +108,7 @@ struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 
     SessionFixtureT(Broker::Options opts=Broker::Options()) :
         BrokerFixture(opts),
-        ClientT<ConnectionType,SessionType>(broker->getPort())
+        ClientT<ConnectionType,SessionType>(broker->getPort(qpid::broker::Broker::TCP_TRANSPORT))
     {}
 
 };

@@ -87,7 +87,8 @@ Broker::Options::Options(const std::string& name) :
     replayFlushLimit(0),
     replayHardLimit(0),
     queueLimit(100*1048576/*100M default limit*/),
-    tcpNoDelay(false)
+    tcpNoDelay(false),
+    requireEncrypted(false)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -114,7 +115,8 @@ Broker::Options::Options(const std::string& name) :
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
         ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)") 
-        ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections");
+        ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
+        ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted");
 }
 
 const std::string empty;
@@ -365,18 +367,18 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 }
 
 boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
-    ProtocolFactoryMap::const_iterator i = protocolFactories.find(name);
+    ProtocolFactoryMap::const_iterator i 
+        = name.empty() ? protocolFactories.begin() : protocolFactories.find(name);
     if (i == protocolFactories.end()) return boost::shared_ptr<ProtocolFactory>();
     else return i->second;
 }
 
 uint16_t Broker::getPort(const std::string& name) const  {
-    boost::shared_ptr<ProtocolFactory> factory 
-        = getProtocolFactory(name.empty() ? TCP_TRANSPORT : name);
+    boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(name);
     if (factory) { 
         return factory->getPort();
     } else {
-        throw Exception(QPID_MSG("No such transport: " << name));
+        throw NoSuchTransportException(QPID_MSG("No such transport: '" << name << "'"));
     }
 }
 
@@ -432,7 +434,11 @@ std::vector<Url>
 Broker::getKnownBrokersImpl()
 {
   knownBrokers.clear();
-  knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort() ) );
+  try {
+      knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort(TCP_TRANSPORT) ) );
+  } catch (const NoSuchTransportException& e) {
+      QPID_LOG(error, "Could not send client known broker urls for cluster: " << e.what());
+  }
   return knownBrokers;
 }
 
