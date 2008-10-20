@@ -39,7 +39,8 @@ public:
     typedef boost::function<void(boost::intrusive_ptr<Message>)> CompletionListener;    
 
     void add(boost::intrusive_ptr<Message> msg);
-    void process(CompletionListener l, bool sync);
+    void process(const CompletionListener& l, bool sync);
+    void each(const CompletionListener& l);
 };
 
 

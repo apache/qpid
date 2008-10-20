@@ -99,6 +99,9 @@ class SessionBase_0_10 {
     /** Resume a suspended session with a new connection */
     void resume(Connection);
 
+    /** Get the channel associated with this session */
+    uint16_t getChannel() const;
+
     Execution& getExecution();  
     void flush();
     void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
