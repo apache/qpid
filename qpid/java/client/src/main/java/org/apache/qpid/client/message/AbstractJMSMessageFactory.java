@@ -131,8 +131,18 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                     .remaining());
         }
         // set the properties of this message
-        MessageProperties mprop = (MessageProperties) contentHeader[0];
-        DeliveryProperties devprop = (DeliveryProperties) contentHeader[1];
+        MessageProperties mprop;
+        DeliveryProperties devprop;
+        if( contentHeader.length >1 )
+        {
+          mprop = (MessageProperties) contentHeader[0];
+          devprop = (DeliveryProperties) contentHeader[1];
+        }
+        else
+        {
+          mprop = new MessageProperties();
+          devprop = (DeliveryProperties) contentHeader[0];
+        }
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_10(mprop, devprop, messageNbr);
 
