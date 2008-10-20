@@ -40,6 +40,8 @@ def Usage ():
     print "    -q [ --quiet ]           Quiet output, don't print duplicate warnings"
     print "    -d [ --durable ]         Added configuration shall be durable"
     print "    -e [ --del-empty-link ]  Delete link after deleting last route on the link"
+    print "    -t <transport> [ --transport <transport>]"
+    print "                             Specify transport to use for links, defaults to tcp"
     print
     print "  dest-broker and src-broker are in the form:  [username/password@] hostname | ip-address [:<port>]"
     print "  ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
@@ -65,13 +67,13 @@ class RouteManager:
     def getLink (self):
         links = self.qmf.getObjects(_class="link")
         for link in links:
-            if "%s:%d" % (link.host, link.port) == self.src.name ():
+            if self.src.match(link.host, link.port):
                 return link
         return None
 
     def AddLink (self, srcBroker):
         self.src = qmfconsole.BrokerURL(srcBroker)
-        if self.dest.name() == self.src.name():
+        if self.dest.match(self.src.host, self.src.port):
             print "Linking broker to itself is not permitted"
             sys.exit(1)
 
@@ -118,7 +120,7 @@ class RouteManager:
 
     def AddRoute (self, srcBroker, exchange, routingKey, tag, excludes):
         self.src = qmfconsole.BrokerURL(srcBroker)
-        if self.dest.name() == self.src.name():
+        if self.dest.match(self.src.host, self.src.port):
             raise Exception("Linking broker to itself is not permitted")
 
         brokers = self.qmf.getObjects(_class="broker")
@@ -241,8 +243,8 @@ def YN(val):
 ##
 
 try:
-    longOpts = ("verbose", "quiet", "durable", "del-empty-link")
-    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "vqde", longOpts)
+    longOpts = ("verbose", "quiet", "durable", "del-empty-link", "transport=")
+    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "vqdet:", longOpts)
 except:
     Usage ()
 
@@ -255,6 +257,8 @@ for opt in optlist:
         _durable = True
     if opt[0] == "-e" or opt[0] == "--del-empty-link":
         _dellink = True
+    if opt[0] == "-t" or opt[0] == "--transport":
+        _transport = opt[1]
 
 nargs = len (cargs)
 if nargs < 2:
@@ -304,7 +308,7 @@ try:
             else:
                 Usage ()
 except Exception,e:
-    print "Failed:", e.message
+    print "Failed:", e.args[0]
     sys.exit(1)
 
 rm.Disconnect ()
