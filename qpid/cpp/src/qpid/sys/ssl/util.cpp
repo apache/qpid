@@ -49,7 +49,6 @@ std::string defaultCertName()
 }
 
 SslOptions::SslOptions() : qpid::Options("SSL Settings"), 
-                           certDbPath(CERT_DB),
                            certName(defaultCertName()),
                            exportPolicy(false)
 {

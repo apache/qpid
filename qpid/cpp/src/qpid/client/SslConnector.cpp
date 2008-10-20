@@ -146,8 +146,12 @@ namespace {
             try {
                 SslOptions options;
                 options.parse (0, 0, CONF_FILE, true);
-                initNSS(options);                
-                Connector::registerFactory("ssl", &create);
+                if (options.certDbPath.empty()) {
+                    QPID_LOG(warning, "SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it.");                    
+                } else {
+                    initNSS(options);                
+                    Connector::registerFactory("ssl", &create);
+                }
             } catch (const std::exception& e) {
                 QPID_LOG(error, "Failed to initialise SSL connector: " << e.what());
             }
