@@ -183,7 +183,7 @@ class SubscriptionManager : public sys::Runnable
 
     /** Set the accept-mode for new subscriptions. Defaults to true.
      *@param required: if true messages must be confirmed by calling
-     *Message::acknowledge() or automatically, see setAckPolicy()
+     *Message::acknowledge() or automatically via an AckPolicy, see setAckPolicy()
      */
     void setAcceptMode(bool required);
 

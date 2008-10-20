@@ -220,6 +220,33 @@ class Sender {
     uint16_t channel;
 };
 
+// FIXME aconway 2008-10-20: dump Tx state.
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testDumpTxState, 1) {
+    // Verify that we dump transaction state correctly to new members.
+    ClusterFixture cluster(1);
+    Client c0(cluster[0], "c0");
+    c0.session.txSelect();
+    c0.session.queueDeclare("q");
+    c0.session.messageTransfer(arg::content=Message("1","q"));
+    c0.session.txCommit();
+    
+    c0.subs.subscribe(c0.lq, "q", FlowControl::messageCredit(1));
+    Message m;
+    BOOST_CHECK(c0.lq.get(m, TIME_SEC));
+    BOOST_CHECK_EQUAL(m.getData(), "1");
+    c0.session.messageTransfer(arg::content=Message("2","q"));
+
+    cluster.add();
+    Client c1(cluster[1], "c1");
+    // Not yet comitted, c1 should see nothing.
+    BOOST_CHECK_EQUAL(c1.session.queueQuery(arg::queue="q").getMessageCount(), 0u);
+    c0.session.txCommit();
+    // c1 shoudl see results of tx.
+    BOOST_CHECK_EQUAL(c1.session.queueQuery(arg::queue="q").getMessageCount(), 1u);
+    BOOST_CHECK(c1.subs.get(m, "q", TIME_SEC));
+    BOOST_CHECK_EQUAL(m.getData(), "2");
+}
+
 QPID_AUTO_TEST_CASE(testDumpMessageBuilder) {
     // Verify that we dump a partially recieved message to a new member.
     ClusterFixture cluster(1);    
