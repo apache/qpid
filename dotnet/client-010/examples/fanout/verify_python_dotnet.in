@@ -1,6 +1,6 @@
-==== declare_queues.py.out
-==== direct_producer.py.out
-==== direct_listener_dotnet.out
+==== fanout_producer.py.out
+==== fanout_listener_dotnet.out | remove_uuid
+Listening
 Message: message 0
 Message: message 1
 Message: message 2
