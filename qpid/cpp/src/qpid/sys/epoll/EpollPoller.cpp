@@ -162,9 +162,9 @@ class PollerPrivate {
 
     static ::__uint32_t directionToEpollEvent(Poller::Direction dir) {
         switch (dir) {
-            case Poller::IN: return ::EPOLLIN;
-            case Poller::OUT: return ::EPOLLOUT;
-            case Poller::INOUT: return ::EPOLLIN | ::EPOLLOUT;
+            case Poller::INPUT:  return ::EPOLLIN;
+            case Poller::OUTPUT: return ::EPOLLOUT;
+            case Poller::INOUT:  return ::EPOLLIN | ::EPOLLOUT;
             default: return 0;
         }
     }

@@ -92,13 +92,14 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
 
     if (isClient)
         async->setClient();
-    AsynchIO* aio = new AsynchIO(s,
-                                 boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::eof, async, _1),
-                                 boost::bind(&AsynchIOHandler::disconnect, async, _1),
-                                 boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
-                                 boost::bind(&AsynchIOHandler::nobuffs, async, _1),
-                                 boost::bind(&AsynchIOHandler::idle, async, _1));
+    AsynchIO* aio = AsynchIO::create
+      (s,
+       boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
+       boost::bind(&AsynchIOHandler::eof, async, _1),
+       boost::bind(&AsynchIOHandler::disconnect, async, _1),
+       boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+       boost::bind(&AsynchIOHandler::nobuffs, async, _1),
+       boost::bind(&AsynchIOHandler::idle, async, _1));
 
     async->init(aio, 4);
     aio->start(poller);
@@ -133,9 +134,13 @@ void AsynchIOProtocolFactory::connect(
     // is no longer needed.
 
     Socket* socket = new Socket();
-    new AsynchConnector (*socket, poller, host, port,
-                         boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, fact, true),
-                         failed);
+    AsynchConnector::create (*socket,
+                             poller,
+                             host,
+                             port,
+                             boost::bind(&AsynchIOProtocolFactory::established,
+                                         this, poller, _1, fact, true),
+                             failed);
 }
 
 }} // namespace qpid::sys
