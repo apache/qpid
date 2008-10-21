@@ -27,9 +27,8 @@
 #include <ostream>
 #include "qpid/framing/SequenceSet.h"
 #include "Queue.h"
-#include "Consumer.h"
+#include "QueuedMessage.h"
 #include "DeliveryId.h"
-#include "DeliveryToken.h"
 #include "Message.h"
 
 namespace qpid {
@@ -43,10 +42,9 @@ class DeliveryRecord{
     QueuedMessage msg;
     mutable Queue::shared_ptr queue;
     const std::string tag;
-    DeliveryToken::shared_ptr token;
     DeliveryId id;
     bool acquired;
-    const bool pull;
+    bool acceptExpected;
     bool cancelled;
     const uint32_t credit;
     const uint64_t size;
@@ -56,13 +54,14 @@ class DeliveryRecord{
     const bool windowing;
 
   public:
-    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
-                   const DeliveryId id, bool acquired, bool confirmed, bool windowing);
+    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, 
+                   const std::string tag,
+                   bool acquired, bool confirmed, bool windowing);
     bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
     bool coveredBy(const framing::SequenceSet* const range) const;
-
+    
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
     void release(bool setRedelivered);
@@ -80,7 +79,10 @@ class DeliveryRecord{
 
     uint32_t getCredit() const;
     const std::string& getTag() const { return tag; } 
-    bool isPull() const { return pull; }
+
+    void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
+    void setId(DeliveryId _id) { id = _id; }
+
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };

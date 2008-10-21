@@ -328,7 +328,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Message.cpp \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
-  qpid/broker/MessageDelivery.cpp \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
@@ -446,7 +445,6 @@ nobase_include_HEADERS = \
   qpid/broker/DeliveryAdapter.h \
   qpid/broker/DeliveryId.h \
   qpid/broker/DeliveryRecord.h \
-  qpid/broker/DeliveryToken.h \
   qpid/broker/DirectExchange.h \
   qpid/broker/DtxAck.h \
   qpid/broker/DtxBuffer.h \
@@ -464,7 +462,6 @@ nobase_include_HEADERS = \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
-  qpid/broker/MessageDelivery.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/NameGenerator.h \
