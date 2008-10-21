@@ -22,7 +22,6 @@
 
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Socket.h"
-#include <sys/socket.h>
 
 namespace qpid {
 namespace client {

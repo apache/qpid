@@ -33,7 +33,7 @@ namespace framing {
 namespace sys {
 
 class AsynchIO;
-class AsynchIOBufferBase;
+struct AsynchIOBufferBase;
 class Socket;
 
 class AsynchIOHandler : public OutputControl {

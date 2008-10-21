@@ -24,7 +24,7 @@
 
 namespace qpid {
 namespace log {
-class Options;
+struct Options;
 
 /**
  * A selector identifies the set of log messages to enable.

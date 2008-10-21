@@ -45,8 +45,8 @@ public:
 
     enum Direction {
         NONE = 0,
-        IN,
-        OUT,
+        INPUT,
+        OUTPUT,
         INOUT
     };
 

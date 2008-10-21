@@ -129,9 +129,9 @@ class PollerPrivate {
 
     static uint32_t directionToPollEvent(Poller::Direction dir) {
         switch (dir) {
-            case Poller::IN: return POLLIN;
-            case Poller::OUT: return POLLOUT;
-            case Poller::INOUT: return POLLIN | POLLOUT;
+            case Poller::INPUT:  return POLLIN;
+            case Poller::OUTPUT: return POLLOUT;
+            case Poller::INOUT:  return POLLIN | POLLOUT;
             default: return 0;
         }
     }

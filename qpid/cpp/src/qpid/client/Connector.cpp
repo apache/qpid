@@ -200,7 +200,7 @@ void TCPConnector::connect(const std::string& host, int port){
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
     closed = false;
     poller = Poller::shared_ptr(new Poller);
-    aio = new AsynchIO(socket,
+    aio = AsynchIO::create(socket,
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
                        boost::bind(&TCPConnector::eof, this, _1),
                        boost::bind(&TCPConnector::eof, this, _1),

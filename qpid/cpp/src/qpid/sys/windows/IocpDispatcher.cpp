@@ -19,7 +19,7 @@
  *
  */
 
-#include "Dispatcher.h"
+#include "qpid/sys/Dispatcher.h"
 
 #include <assert.h>
 
@@ -37,23 +37,18 @@ void Dispatcher::run() {
     do {
         Poller::Event event = poller->wait();
 
-        // If can read/write then dispatch appropriate callbacks        
-        if (event.handle) {
-            event.process();
-        } else {
-            // Handle shutdown
-            switch (event.type) {
-            case Poller::SHUTDOWN:
-                goto dispatcher_shutdown;
-            default:
-                // This should be impossible
-                assert(false);
-            }
+        // Handle shutdown
+        switch (event.type) {
+        case Poller::SHUTDOWN:
+            return;
+            break;
+        case Poller::INVALID:  // On any type of success or fail completion
+            break;
+        default:
+          // This should be impossible
+          assert(false);
         }
     } while (true);
-    
-dispatcher_shutdown:
-    ;
 }
 
 }}
