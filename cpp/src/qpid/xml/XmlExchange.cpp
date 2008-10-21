@@ -144,7 +144,8 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
         throw InternalErrorException(QPID_MSG("Query context looks munged ..."));
     }
 
-    XERCES_CPP_NAMESPACE::MemBufInputSource xml((XMLByte*) msgContent.c_str(), msgContent.length(), "input" );
+    XERCES_CPP_NAMESPACE::MemBufInputSource xml((const XMLByte*) msgContent.c_str(), 
+						msgContent.length(), "input" );
     Sequence seq(context->parseDocument(xml));
 
     if (args) {
