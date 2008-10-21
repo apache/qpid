@@ -17,8 +17,6 @@
  */
 #include "SessionAdapter.h"
 #include "Connection.h"
-#include "DeliveryToken.h"
-#include "MessageDelivery.h"
 #include "Queue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -478,10 +476,9 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     if(!destination.empty() && state.exists(destination))
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
 
-    string tag = destination;
-    state.consume(MessageDelivery::getMessageDeliveryToken(destination, acceptMode, acquireMode), 
-                  tag, queue, false, //TODO get rid of no-local
-                  acceptMode == 0, acquireMode == 0, exclusive, resumeId, resumeTtl, arguments);
+    state.consume(destination, queue, 
+                  acceptMode == 0, acquireMode == 0, exclusive, 
+                  resumeId, resumeTtl, arguments);
 
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent)

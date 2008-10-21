@@ -21,7 +21,7 @@
 #include "SessionState.h"
 #include "Broker.h"
 #include "ConnectionState.h"
-#include "MessageDelivery.h"
+#include "DeliveryRecord.h"
 #include "SessionManager.h"
 #include "SessionHandler.h"
 #include "qpid/framing/AMQContentBody.h"
@@ -230,14 +230,13 @@ void SessionState::handleOut(AMQFrame& frame) {
     handler->out(frame);
 }
 
-DeliveryId SessionState::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
+void SessionState::deliver(DeliveryRecord& msg)
 {
     uint32_t maxFrameSize = getConnection().getFrameMax();
     assert(senderGetCommandPoint().offset == 0);
     SequenceNumber commandId = senderGetCommandPoint().command;
-    MessageDelivery::deliver(msg, getProxy().getHandler(), commandId, token, maxFrameSize);
+    msg.deliver(getProxy().getHandler(), commandId, maxFrameSize);
     assert(senderGetCommandPoint() == SessionPoint(commandId+1, 0)); // Delivery has moved sendPoint.
-    return commandId;
 }
 
 void SessionState::sendCompletion() { handler->sendCompletion(); }
