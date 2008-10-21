@@ -26,7 +26,6 @@
 #include "Deliverable.h"
 #include "DeliveryAdapter.h"
 #include "DeliveryRecord.h"
-#include "DeliveryToken.h"
 #include "DtxBuffer.h"
 #include "DtxManager.h"
 #include "NameGenerator.h"
@@ -65,11 +64,9 @@ class SemanticState : public sys::OutputTask,
     {
         qpid::sys::Mutex lock;
         SemanticState* const parent;
-        const DeliveryToken::shared_ptr token;
         const string name;
         const Queue::shared_ptr queue;
         const bool ackExpected;
-        const bool nolocal;
         const bool acquire;
         bool blocked;
         bool windowing;
@@ -87,9 +84,9 @@ class SemanticState : public sys::OutputTask,
       public:
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
 
-        ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
+        ConsumerImpl(SemanticState* parent, 
                      const string& name, Queue::shared_ptr queue,
-                     bool ack, bool nolocal, bool acquire, bool exclusive,
+                     bool ack, bool acquire, bool exclusive,
                      const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
@@ -177,11 +174,9 @@ class SemanticState : public sys::OutputTask,
     
     bool exists(const string& consumerTag);
 
-    /**
-     *@param tagInOut - if empty it is updated with the generated token.
-     */
-    void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
-                 bool nolocal, bool ackRequired, bool acquire, bool exclusive,
+    void consume(const string& destination, 
+                 Queue::shared_ptr queue, 
+                 bool ackRequired, bool acquire, bool exclusive,
                  const string& resumeId=string(), uint64_t resumeTtl=0,
                  const framing::FieldTable& = framing::FieldTable());
 
@@ -203,7 +198,7 @@ class SemanticState : public sys::OutputTask,
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void recover(bool requeue);
-    DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
+    void deliver(DeliveryRecord& message);            
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);

@@ -23,7 +23,6 @@
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
-#include <qpid/broker/MessageDelivery.h>
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/Time.h"
 #include "qpid/broker/ConnectionState.h"

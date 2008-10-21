@@ -23,32 +23,29 @@
 #include "SemanticState.h"
 #include "Exchange.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/MessageTransferBody.h"
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 using std::string;
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const std::string _tag,
-                               DeliveryToken::shared_ptr _token, 
-                               const DeliveryId _id,
                                bool _acquired, bool accepted, 
                                bool _windowing) : msg(_msg), 
                                                   queue(_queue), 
                                                   tag(_tag),
-                                                  token(_token),
-                                                  id(_id),
                                                   acquired(_acquired),
-                                                  pull(false), 
+                                                  acceptExpected(!accepted),
                                                   cancelled(false),
                                                   credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
                                                   size(msg.payload ? msg.payload->contentSize() : 0),
                                                   completed(false),
                                                   ended(accepted),
                                                   windowing(_windowing)
-{
-    if (accepted) setEnded();
-}
+{}
 
 void DeliveryRecord::setEnded()
 {
@@ -77,18 +74,29 @@ bool DeliveryRecord::coveredBy(const framing::SequenceSet* const range) const{
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
     if (!ended) {
-        if(pull || cancelled){
-            //if message was originally sent as response to get, we must requeue it
-
-            //or if subscription was cancelled, requeue it (waiting for
+        if(cancelled){
+            //if subscription was cancelled, requeue it (waiting for
             //final confirmation for AMQP WG on this case)
-
             requeue();
         }else{
             msg.payload->redeliver();//mark as redelivered
-            id = session->redeliver(msg, token);
+            session->deliver(*this);
         }
     }
+}
+
+void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize)
+{
+    id = deliveryId;
+    if (msg.payload->getRedelivered()){
+        msg.payload->getProperties<DeliveryProperties>()->setRedelivered(true);
+    }
+
+    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1));
+    method.setEof(false);
+    h.handle(method);
+    msg.payload->sendHeader(h, framesize);
+    msg.payload->sendContent(*queue, h, framesize);
 }
 
 void DeliveryRecord::requeue() const

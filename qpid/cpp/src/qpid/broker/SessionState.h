@@ -91,7 +91,7 @@ class SessionState : public qpid::SessionState,
     void sendCompletion();
 
     //delivery adapter methods:
-    DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);
+    void deliver(DeliveryRecord&);
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject (void) const;

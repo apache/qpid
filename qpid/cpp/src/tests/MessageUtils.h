@@ -20,7 +20,6 @@
  */
 
 #include "qpid/broker/Message.h"
-#include "qpid/broker/MessageDelivery.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/Uuid.h"
