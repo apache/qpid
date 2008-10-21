@@ -26,12 +26,15 @@
 #include "Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
+#include <boost/format.hpp>
 
 #if HAVE_SASL
 #include <sasl/sasl.h>
 #endif
 
 using namespace qpid::framing;
+using boost::format;
+using boost::str;
 
 namespace qpid {
 namespace broker {
@@ -41,6 +44,7 @@ class NullAuthenticator : public SaslAuthenticator
 {
     Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
+    std::string realm;
 public:
     NullAuthenticator(Connection& connection);
     ~NullAuthenticator();
@@ -119,7 +123,8 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
     }
 }
 
-NullAuthenticator::NullAuthenticator(Connection& c) : connection(c), client(c.getOutput()) {}
+NullAuthenticator::NullAuthenticator(Connection& c) : connection(c), client(c.getOutput()), 
+                                                      realm(c.getBroker().getOptions().realm) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
@@ -136,7 +141,7 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
             string::size_type i = temp.find((char)0);
             string uid = temp.substr(0, i);
             string pwd = temp.substr(i + 1);
-            connection.setUserId(uid);
+            connection.setUserId(str(format("%1%@%2%") % uid % realm));
         }
     } else {
         connection.setUserId("anonymous");
