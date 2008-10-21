@@ -25,6 +25,7 @@
 
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Dispatcher.h"
+#include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Mutex.h"
 
 #include <netinet/in.h>
