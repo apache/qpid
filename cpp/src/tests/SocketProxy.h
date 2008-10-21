@@ -88,7 +88,7 @@ class SocketProxy : private qpid::sys::Runnable
         std::auto_ptr<qpid::sys::Socket> server;
         try {
             qpid::sys::PollerHandle listenerHandle(listener);
-            poller.addFd(listenerHandle, qpid::sys::Poller::IN);
+            poller.addFd(listenerHandle, qpid::sys::Poller::INPUT);
             qpid::sys::Poller::Event event = poller.wait();
             throwIf(event.type == qpid::sys::Poller::SHUTDOWN, "SocketProxy: Closed by close()");
             throwIf(!(event.type == qpid::sys::Poller::READABLE && event.handle == &listenerHandle), "SocketProxy: Accept failed");
@@ -99,8 +99,8 @@ class SocketProxy : private qpid::sys::Runnable
             // Pump data between client & server sockets
             qpid::sys::PollerHandle clientHandle(client);
             qpid::sys::PollerHandle serverHandle(*server);
-            poller.addFd(clientHandle, qpid::sys::Poller::IN);
-            poller.addFd(serverHandle, qpid::sys::Poller::IN);
+            poller.addFd(clientHandle, qpid::sys::Poller::INPUT);
+            poller.addFd(serverHandle, qpid::sys::Poller::INPUT);
             char buffer[1024];
             for (;;) {
                 qpid::sys::Poller::Event event = poller.wait();
