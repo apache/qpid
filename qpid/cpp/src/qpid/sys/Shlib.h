@@ -24,7 +24,6 @@
  
 #include <boost/noncopyable.hpp>
 #include <iostream>
-#include <dlfcn.h>
 
 namespace qpid {
 namespace sys {
