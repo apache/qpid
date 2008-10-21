@@ -21,7 +21,7 @@
  *
  */
 
-#include "qpid/sys/Dispatcher.h"
+#include "qpid/sys/DispatchHandle.h"
 
 #include <boost/function.hpp>
 #include <deque>
