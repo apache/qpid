@@ -82,8 +82,8 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
-        _queueName = binding.getQueueName() == null ? null : new AMQShortString(binding.getQueueName());
-        _routingKey = binding.getRoutingKey() == null ? null : new AMQShortString(binding.getRoutingKey());
+        _queueName = binding.getQueueName() == null ? null : binding.getQueueName();
+        _routingKey = binding.getRoutingKey() == null ? null : binding.getRoutingKey();
         _bindingKeys = binding.getBindingKeys() == null || binding.getBindingKeys().length == 0 ? new AMQShortString[0] : binding.getBindingKeys();
     }
 

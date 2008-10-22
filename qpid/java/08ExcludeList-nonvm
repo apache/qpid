@@ -30,3 +30,6 @@ org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 
 // QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
+
+// Those tests are written against the 0.10 path
+org.apache.qpid.test.unit.message.UTF8Test#*
