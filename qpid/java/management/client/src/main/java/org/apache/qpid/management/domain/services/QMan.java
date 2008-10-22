@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.Map.Entry;
 
+import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.ConfigurationException;
@@ -42,38 +43,19 @@ import org.apache.qpid.transport.util.Logger;
 public class QMan
 {
     private final static Logger LOGGER = Logger.get(QMan.class);
-    private final static List<ManagementClient> managementClients = new ArrayList<ManagementClient>();
-    
+    private final List<ManagementClient> managementClients = new ArrayList<ManagementClient>();
+
     /**
-     * Main method used for starting Q-Man.
-     * 
-     * @param args the command line arguments.
+     * Starts QMan.
+     * @throws StartupFailureException when it's not possible to proceed with startup.
      */
-    public static void main (String[] args) throws IOException
-    {  
-        // SHUTDOWN HOOK
-        Runtime.getRuntime().addShutdownHook(new Thread(){
-            @Override
-            public void run ()
-            {
-                LOGGER.info("<QMAN-000006> : Shutting down Q-Man...");
-                try 
-                {
-                    for (ManagementClient client : managementClients)
-                    {   
-                        client.shutdown();  
-                    }
-                } catch(Exception exception)
-                {
-                    
-                }
-                LOGGER.info("<QMAN-000007> : Q-Man shut down.");                
-            }
-        });
-        
+    void start() throws StartupFailureException
+    {
         LOGGER.info("<QMAN-000001> : Starting Q-Man...");
         LOGGER.info("<QMAN-000002> : Reading Q-Man configuration...");
-        
+
+    	addShutDownHook();
+
         Configurator configurator = new Configurator();
         try
         {
@@ -107,5 +89,63 @@ public class QMan
                     "<QMAN-100002> : Q-Man was unable to startup correctly : a configuration error occurred.");
             System.exit(1);
         } 
+       catch(IOException exception) 
+        {
+        	throw new StartupFailureException(exception);
+        }
+    }
+
+    /**
+     * Compose method used for adding a "graceful" shutdown hook.
+     */
+    private void addShutDownHook()
+    {
+        // SHUTDOWN HOOK
+        Runtime.getRuntime().addShutdownHook(new Thread(){
+            @Override
+            public void run ()
+            {
+                LOGGER.info("<QMAN-000006> : Shutting down Q-Man...");
+                try 
+                {
+                    for (ManagementClient client : managementClients)
+                    {   
+                        client.shutdown();  
+                    }
+                } catch(Exception exception)
+                {
+                    
+                }
+                LOGGER.info("<QMAN-000007> : Q-Man shut down.");                
+            }
+        });    	
+    }
+    
+    /**
+     * Main method used for starting Q-Man.
+     * 
+     * @param args the command line arguments.
+     */
+    public static void main (String[] args)
+    {  
+    	if (args.length == 1) 
+    	{
+    		String logFileName = args[0];
+    		DOMConfigurator.configureAndWatch(logFileName,5000);
+    	}
+    	
+    	new Thread()
+    	{
+    		public void run()
+    		{
+        		QMan qman = new QMan();
+    			try 
+    			{
+					qman.start();
+				} catch (StartupFailureException exception) {
+					exception.printStackTrace();
+				}    			
+    		}
+    	}.start();
     }
 }

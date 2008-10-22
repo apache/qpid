@@ -127,7 +127,7 @@ public class BrokerMessageListenerTest extends TestCase
                 _listener._handlers.isEmpty());
         
         _handlers.put(opcodeForWrongHandler,wrongMessageHandler);
-        
+
         _listener.setHandlers(_handlers);
         
         assertEquals("Now we should have two handlers configured.",2,_listener._handlers.size());

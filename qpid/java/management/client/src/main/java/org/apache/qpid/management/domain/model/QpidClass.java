@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
-import javax.management.DynamicMBean;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
@@ -50,7 +49,6 @@ import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
 import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
-import org.apache.qpid.management.domain.services.QpidService;
 import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
 import org.apache.qpid.transport.codec.ManagementDecoder;
 import org.apache.qpid.transport.util.Logger;
@@ -68,11 +66,11 @@ import org.apache.qpid.transport.util.Logger;
  * 
  * @author Andrea Gazzarini
  */
-class QpidClass
+class QpidClass extends QpidEntity
 {        
     /**
      * State interface for this class definition.
-     * Each state is responsible to handle the injection of the object data. 
+     * Each state is responsible to handle the injection of the data and / or schema. 
      * 
      * @author Andrea Gazzarini
      */
@@ -100,14 +98,12 @@ class QpidClass
          * @param propertyDefinitions
          * @param statisticDefinitions
          * @param methodDefinitions
-         * @param eventDefinitions
          * @throws UnableToBuildFeatureException when it's not possibile to parse schema and build the class definition.
          */
         public  void  setSchema (
                 List<Map<String, Object>> propertyDefinitions, 
                 List<Map<String, Object>> statisticDefinitions,
-                List<MethodOrEventDataTransferObject> methodDefinitions, 
-                List<MethodOrEventDataTransferObject> eventDefinitions) throws UnableToBuildFeatureException;
+                List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException;
     };
     
     /**
@@ -134,7 +130,7 @@ class QpidClass
                 _state = _schemaRequestedButNotYetInjected;
             } catch (Exception e)
             {
-                LOGGER.error(
+                _logger.error(
                         "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
                         _parent.getName(),
                         _name);
@@ -159,14 +155,13 @@ class QpidClass
                 _state = _schemaRequestedButNotYetInjected;
             } catch (Exception e)
             {
-                LOGGER.error(
+                _logger.error(
                         "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
                         _parent.getName(),
                         _name);
             } finally {
                 QpidManagedObject instance = getObjectInstance(objectId,false);
                 instance._rawConfigurationData.add(rawData);
-                _state = _schemaRequestedButNotYetInjected;
             }
         }
 
@@ -177,8 +172,7 @@ class QpidClass
         public void setSchema (
                 List<Map<String, Object>> propertyDefinitions,
                 List<Map<String, Object>> statisticDefinitions, 
-                List<MethodOrEventDataTransferObject> methodDefinitions,
-                List<MethodOrEventDataTransferObject> eventDefinitions) throws UnableToBuildFeatureException
+                List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException
         {
             throw new IllegalStateException("When a schema arrives it's not possible for this class to be in this state.");
         }
@@ -225,8 +219,7 @@ class QpidClass
         public synchronized void setSchema (
                 List<Map<String, Object>> propertyDefinitions,
                 List<Map<String, Object>> statisticDefinitions, 
-                List<MethodOrEventDataTransferObject> methodDefinitions,
-                List<MethodOrEventDataTransferObject> eventDefinitions) throws UnableToBuildFeatureException
+                List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException
         {
                 
                 MBeanAttributeInfo [] attributesMetadata = new MBeanAttributeInfo[propertyDefinitions.size()+statisticDefinitions.size()];
@@ -234,7 +227,6 @@ class QpidClass
                 
                 buildAttributes(propertyDefinitions,statisticDefinitions,attributesMetadata);
                 buildMethods(methodDefinitions,operationsMetadata);
-                buildEvents(eventDefinitions);
                 
                 _metadata = new MBeanInfo(_name,_name,attributesMetadata,null,operationsMetadata,null);
             
@@ -248,7 +240,7 @@ class QpidClass
                     {
                         updateInstanceWithInstrumentationData(instance,iterator.next());
                         iterator.remove();
-                    }
+                    } 
 
                     for (Iterator<byte[]> iterator = instance._rawConfigurationData.iterator(); iterator.hasNext();)
                     {
@@ -297,8 +289,7 @@ class QpidClass
         public void setSchema (
                 List<Map<String, Object>> propertyDefinitions,
                 List<Map<String, Object>> statisticDefinitions, 
-                List<MethodOrEventDataTransferObject> methodDefinitions,
-                List<MethodOrEventDataTransferObject> eventDefinitions) throws UnableToBuildFeatureException
+                List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException
         {
             throw new IllegalStateException("When a schema arrives it's not possible for this class to be in this state.");
         }
@@ -310,10 +301,8 @@ class QpidClass
      * 
      * @author Andrea Gazzarini
      */
-    class QpidManagedObject implements DynamicMBean,MBeanRegistration
+    class QpidManagedObject extends QpidManagedEntity implements MBeanRegistration
     {
-        // After this mbean is registered with the MBean server this collection holds the mbean attributes
-        private Map<String,Object> _attributes = new HashMap<String, Object>();
         private Binary _objectId;
         
         // Arrays used for storing raw data before this mbean is registered to mbean server.
@@ -328,20 +317,6 @@ class QpidClass
         QpidManagedObject(Binary objectId)
         {
             this._objectId = objectId;
-        }
-
-        /**
-         * Creates or replace the given attribute.
-         * Note that this is not part of the management interface of this object instance and therefore will be accessible only
-         * from within this class.
-         * It is used to update directly the object attributes.
-         * 
-         * @param attributeName the name of the attribute.
-         * @param property newValue the new value of the attribute.
-         */
-        void createOrReplaceAttributeValue(String attributeName, Object newValue) 
-        {
-            _attributes.put(attributeName, newValue);
         }
         
         /**
@@ -363,45 +338,6 @@ class QpidClass
             {
                 throw new AttributeNotFoundException(attributeName);
             }        
-        }
-
-       /**
-        * Get the values of several attributes of the Dynamic MBean.
-        *
-        * @param attributes A list of the attributes to be retrieved.
-        *
-        * @return  The list of attributes retrieved.
-        */
-        public AttributeList getAttributes (String[] attributes)
-        {
-            if (attributes == null) 
-            {
-                throw new RuntimeOperationsException(new IllegalArgumentException("attributes array must not be null"));
-            }
-            
-            AttributeList result = new AttributeList(attributes.length);
-            for (int i = 0; i < attributes.length; i++)
-            {
-                String attributeName = attributes[i];
-                try 
-                {
-                    result.add(new Attribute(attributeName,getAttribute(attributeName)));
-                } catch(Exception exception) 
-                {
-                    // Already logged.
-                }
-            } 
-            return result;
-        }
-
-        /**
-         * Returns metadata for this object instance.
-         */
-        // Developer Note : note that this metadata is a member of the outer class definition : in that way we create 
-        // that metadata only once and then it will be shared between all object instances (it's a readonly object)
-        public MBeanInfo getMBeanInfo ()
-        {
-            return _metadata;
         }
 
         /**
@@ -500,14 +436,6 @@ class QpidClass
             return name;
         }
     }
-
-    private final static Logger LOGGER = Logger.get(QpidClass.class);
-    private final static JmxService JMX_SERVICE = new JmxService();
-        
-    private final String _name;
-    private final Binary _hash;
-    
-    private final QpidPackage _parent;
     
     Map<String, QpidProperty> _properties = new HashMap<String, QpidProperty>(); 
     Map<String, QpidStatistic> _statistics = new HashMap<String, QpidStatistic>();
@@ -515,9 +443,6 @@ class QpidClass
     
     private List<QpidProperty> _schemaOrderedProperties = new ArrayList<QpidProperty>();
     private List<QpidStatistic> _schemaOrderedStatistics= new ArrayList<QpidStatistic>();
-    private MBeanInfo _metadata;
-
-    private final QpidService _service;
     
     private int _howManyPresenceBitMasks;
     private BlockingQueue<InvocationResult> _exchangeChannelForMethodInvocations;
@@ -528,6 +453,7 @@ class QpidClass
     
     private final static class Log 
     {
+    	private final static Logger LOGGER = Logger.get(QpidClass.class);
         final static void logMethodInvocationResult(InvocationResult result)
         {
             if (LOGGER.isDebugEnabled())
@@ -546,18 +472,9 @@ class QpidClass
      */
     QpidClass(String className, Binary hash, QpidPackage parentPackage)
     {
-        this._name = className;
-        this._parent = parentPackage;
-        this._hash = hash;
-        this._service = new QpidService(_parent.getOwnerId());
+    	super(className,hash, parentPackage);
         this._methodInvocationListener = _parent.getMethodInvocationListener();
         this._exchangeChannelForMethodInvocations = new SynchronousQueue<InvocationResult>();
-        
-        LOGGER.debug(
-                "<QMAN-200017> : Class definition has been built (without schema) for %s::%s.%s", 
-                _parent.getOwnerId(),
-                _parent.getName(),
-                _name);        
     }
     
     /**
@@ -568,7 +485,7 @@ class QpidClass
      */
     void addInstrumentationData (Binary objectId, byte[] rawData)
     {
-        LOGGER.debug("<QMAN-200015> : Incoming instrumentation data for %s::%s.%s.%s",
+        _logger.debug("<QMAN-200015> : Incoming instrumentation data for %s::%s.%s.%s",
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name,
@@ -584,7 +501,7 @@ class QpidClass
      */
     void addConfigurationData (Binary objectId, byte[] rawData)
     {
-        LOGGER.debug("<QMAN-200016> : Incoming configuration data for %s::%s.%s.%s",
+        _logger.debug("<QMAN-200016> : Incoming configuration data for %s::%s.%s.%s",
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name,
@@ -599,17 +516,15 @@ class QpidClass
      * @param propertyDefinitions properties metadata.
      * @param statisticDefinitions statistics metadata.
      * @param methodDefinitions methods metadata.
-     * @param eventDefinitions events metadata.
      * @throws UnableToBuildFeatureException when some error occurs while parsing the incoming schema.
      */
      void setSchema (
             List<Map<String, Object>> propertyDefinitions, 
             List<Map<String, Object>> statisticDefinitions,
-            List<MethodOrEventDataTransferObject> methodDefinitions, 
-            List<MethodOrEventDataTransferObject> eventDefinitions) throws UnableToBuildFeatureException
+            List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException
     {
-         LOGGER.info("<QMAN-000012> : Incoming schema for %s::%s.%s",_parent.getOwnerId(),_parent.getName(),_name);
-        _state.setSchema(propertyDefinitions, statisticDefinitions, methodDefinitions, eventDefinitions);
+         _logger.info("<QMAN-000012> : Incoming schema for %s::%s.%s",_parent.getOwnerId(),_parent.getName(),_name);
+        _state.setSchema(propertyDefinitions, statisticDefinitions, methodDefinitions);
     }    
 
     /**
@@ -641,7 +556,7 @@ class QpidClass
             _schemaOrderedProperties.add(property);
             attributes[index++]=(MBeanAttributeInfo) builder.getManagementFeature();
             
-            LOGGER.debug(
+            _logger.debug(
                     "<QMAN-200017> : Property definition for %s::%s.%s has been built.",
                     _parent.getName(),
                     _name,
@@ -650,7 +565,7 @@ class QpidClass
                 
         _howManyPresenceBitMasks =  (int)Math.ceil((double)howManyOptionalProperties / 8);
         
-        LOGGER.debug(
+        _logger.debug(
                 "<QMAN-200018> : Class %s::%s.%s has %s optional properties.",
                 _parent.getOwnerId(),
                 _parent.getName(),
@@ -667,7 +582,7 @@ class QpidClass
             _schemaOrderedStatistics.add(statistic);
             attributes[index++]=(MBeanAttributeInfo) builder.getManagementFeature();
             
-            LOGGER.debug(
+            _logger.debug(
                     "<QMAN-200019> : Statistic definition for %s::%s.%s has been built.",
                     _parent.getName(),
                     _name,
@@ -699,17 +614,6 @@ class QpidClass
     }
     
     /**
-     * Internal method used for building event statistics defintions.
-     * 
-     * @param definitions the properties map contained in the incoming schema.
-     * @throws UnableToBuildFeatureException  when it's not possibile to build one or more definitions.
-     */
-    void buildEvents (List<MethodOrEventDataTransferObject> eventDefinitions)
-    {
-        // TODO
-    }    
-    
-    /**
      * Internal method used for building method defintiions.
      * 
      * @param definitions the properties map contained in the incoming schema.
@@ -729,24 +633,6 @@ class QpidClass
         }
     }    
     
-    /**
-     * Internal method used to send a schema request for this class.
-     * 
-     * @throws Exception when the request cannot be sent.
-     */
-    private void requestSchema() throws Exception
-    {     
-        try
-        {
-            _service.connect();
-           _service.requestSchema(_parent.getName(), _name, _hash);
-            _service.sync();
-        } finally
-        {
-            _service.close();
-        }                
-    }
-
     /**
      * Header (opcode='M') 
      * ObjectId of target object (128 bits) 
@@ -796,7 +682,7 @@ class QpidClass
      * @param instance the managed object instance.
      * @param rawData the incoming configuration data which contains new values for instance properties.
      */
-    private void updateInstanceWithConfigurationData(QpidManagedObject instance,byte [] rawData)
+    void updateInstanceWithConfigurationData(QpidManagedObject instance,byte [] rawData)
     {
         ManagementDecoder decoder = new ManagementDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
@@ -808,7 +694,7 @@ class QpidClass
                 Object value = property.decodeValue(decoder,presenceBitMasks);
                 instance.createOrReplaceAttributeValue(property.getName(),value);             
             } catch(Exception ignore) {
-                LOGGER.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,property.getName());
+                _logger.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,property.getName());
             }
         }
     }
@@ -819,7 +705,7 @@ class QpidClass
      * @param instance the managed object instance.
      * @param rawData the incoming instrumentation data which contains new values for instance properties.
      */
-    private void updateInstanceWithInstrumentationData(QpidManagedObject instance,byte [] rawData)
+    void updateInstanceWithInstrumentationData(QpidManagedObject instance,byte [] rawData)
     {
         ManagementDecoder decoder = new ManagementDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
@@ -830,7 +716,7 @@ class QpidClass
                 Object value = statistic.decodeValue(decoder);
                 instance.createOrReplaceAttributeValue(statistic.getName(),value);             
             } catch(Exception ignore) {
-                LOGGER.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,statistic.getName());
+                _logger.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,statistic.getName());
             }
         }
     }    
@@ -842,7 +728,7 @@ class QpidClass
             .append(_parent.getOwnerId())
             .append("::")
             .append(_parent.getName())
-            .append("::")
+            .append('.')
             .append(_name)
             .toString();
     }
@@ -866,17 +752,9 @@ class QpidClass
      */
     void releaseResources ()
     {
-        for (Iterator<Binary> iterator = _objectInstances.keySet().iterator(); iterator.hasNext();)
-        {
-            Binary objectId = iterator.next();
-            JMX_SERVICE.unregisterObjectInstance(_parent.getOwnerId(),_parent.getName(),_name,objectId);
-            iterator.remove();
-            LOGGER.debug(
-                    "%s.%s.%s object instance has been removed from broker %s",
-                    _parent.getName(),
-                    _name,objectId,
-                    _parent.getOwnerId());
-        }
+    	// Chiamlo entityInstances<QpidManagedEntity> e mettilo nella superclasse?
+    	_objectInstances.clear();
+    	JMX_SERVICE.unregisterObjectInstances();
         _service.close();
     }
 }

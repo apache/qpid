@@ -29,6 +29,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.EventContentMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.MethodResponseMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
@@ -160,6 +161,11 @@ public class Configurator extends DefaultHandler
                 new MessageHandlerMapping(
                         Protocol.CONFIGURATION_CONTENT_RESPONSE_OPCDE,
                         ConfigurationMessageHandler.class.getName()));        
+        
+        Configuration.getInstance().addManagementMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.EVENT_CONTENT_RESPONSE_OPCDE,
+                        EventContentMessageHandler.class.getName()));        
     }
 
     /**

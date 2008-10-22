@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management;
 
+import com.sun.org.apache.xerces.internal.jaxp.validation.ErrorHandlerAdaptor;
+
 /**
  * Protocol defined constants.
  * 
@@ -27,7 +29,7 @@ package org.apache.qpid.management;
  */
 public interface Protocol
 {
-    String MAGIC_NUMBER = "AM1";
+    String MAGIC_NUMBER = "AM2";
     
     char SCHEMA_REQUEST_OPCODE = 'S';
     char SCHEMA_RESPONSE_OPCODE = Character.toLowerCase(SCHEMA_REQUEST_OPCODE);
@@ -37,5 +39,9 @@ public interface Protocol
     
     char INSTRUMENTATION_CONTENT_RESPONSE_OPCODE = 'i';
     char CONFIGURATION_CONTENT_RESPONSE_OPCDE = 'c';
+    char EVENT_CONTENT_RESPONSE_OPCDE = 'e';
     char INSTR_AND_CONFIG_CONTENT_RESPONSE_OPCODE = 'g';
+    
+    int CLASS = 1;
+    int EVENT = 2;
 }

@@ -36,7 +36,7 @@ public class UnableToBuildFeatureException extends Exception
      */
     UnableToBuildFeatureException(Exception exception, String featureName)
     {
-        super( (featureName != null) ? featureName : "Not available" ,exception);
+        super( (featureName != null) ? featureName : "Feature name is not available for debugging purposes." ,exception);
     }
     
     /**
