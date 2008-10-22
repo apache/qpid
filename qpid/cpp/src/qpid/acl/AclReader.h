@@ -25,7 +25,7 @@
 #include <set>
 #include <string>
 #include <vector>
-
+#include <sstream>
 #include "qpid/acl/AclData.h"
 #include "qpid/broker/AclModule.h"
 
@@ -86,11 +86,13 @@ class AclReader {
     groupMap groups;
     ruleList rules;
     AclHelper::objectMapPtr validationMap;
+    std::ostringstream errorStream;
 
   public:
     AclReader();
     virtual ~AclReader();
     int read(const std::string& fn, boost::shared_ptr<AclData> d);
+    std::string getError();
 
   private:
     bool processLine(char* line);

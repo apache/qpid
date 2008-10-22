@@ -212,13 +212,17 @@ AclReader::AclReader() : lineNumber(0), contFlag(false), validationMap(new AclHe
 
 AclReader::~AclReader() {}
 
+std::string AclReader::getError() {
+	return errorStream.str();
+}
+
 int AclReader::read(const std::string& fn, boost::shared_ptr<AclData> d) {
     fileName = fn;
     lineNumber = 0;
     char buff[1024];
     std::ifstream ifs(fn.c_str(), std::ios_base::in);
     if (!ifs.good()) {
-        QPID_LOG(error, "Unable to open ACL file \"" << fn << "\": eof=" << (ifs.eof()?"T":"F") << "; fail=" << (ifs.fail()?"T":"F") << "; bad=" << (ifs.bad()?"T":"F"));
+        errorStream << "Unable to open ACL file \"" << fn << "\": eof=" << (ifs.eof()?"T":"F") << "; fail=" << (ifs.fail()?"T":"F") << "; bad=" << (ifs.bad()?"T":"F");
         return -1;
     }
     try {
@@ -231,7 +235,7 @@ int AclReader::read(const std::string& fn, boost::shared_ptr<AclData> d) {
         }
         if (!ifs.eof())
         {
-            QPID_LOG(error, "Unable to read ACL file \"" << fn << "\": eof=" << (ifs.eof()?"T":"F") << "; fail=" << (ifs.fail()?"T":"F") << "; bad=" << (ifs.bad()?"T":"F"));
+            errorStream << "Unable to read ACL file \"" << fn << "\": eof=" << (ifs.eof()?"T":"F") << "; fail=" << (ifs.fail()?"T":"F") << "; bad=" << (ifs.bad()?"T":"F");
             ifs.close();
             return -2;
         }
@@ -239,18 +243,18 @@ int AclReader::read(const std::string& fn, boost::shared_ptr<AclData> d) {
         if (err) return -3;
         QPID_LOG(notice, "Read ACL file \"" <<  fn << "\"");
     } catch (const std::exception& e) {
-        QPID_LOG(error, "Unable to read ACL file \"" << fn << "\": " << e.what());
+        errorStream << "Unable to read ACL file \"" << fn << "\": " << e.what();
         ifs.close();
         return -4;
     } catch (...) {
-        QPID_LOG(error, "Unable to read ACL file \"" << fn << "\": Unknown exception");
+        errorStream << "Unable to read ACL file \"" << fn << "\": Unknown exception";
         ifs.close();
         return -5;
     }
     printNames();
     printRules();
 	loadDecisionData(d);
-	
+
     return 0;
 }
 
@@ -277,7 +281,7 @@ bool AclReader::processLine(char* line) {
         if (ws) {
             ret = true;
         } else {
-            QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Non-continuation line must start with \"group\" or \"acl\".");
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Non-continuation line must start with \"group\" or \"acl\".";
             ret = false;
         }
     }
@@ -305,25 +309,25 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
         gmCitr citr = groups.find(groupName);
         for (unsigned i = 0; i < toksSize; i++) {
             if (!checkName(toks[i])) {
-                QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.");
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
                 return false;
             }
             addName(toks[i], citr->second);
         }
     } else {
         if (toksSize < (cont ? 2 : 3)) {
-            QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for group definition.");
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for group definition.";
             return false;
         }
         if (!checkName(toks[1])) {
-            QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Group name \"" << toks[1] << "\" contains illegal characters.");
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Group name \"" << toks[1] << "\" contains illegal characters.";
             return false;
         }
         gmCitr citr = addGroup(toks[1]);
         if (citr == groups.end()) return false;
         for (unsigned i = 2; i < toksSize; i++) {
             if (!checkName(toks[i])) {
-                QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.");
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
                 return false;
             }
             addName(toks[i], citr->second);
@@ -336,7 +340,7 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
 AclReader::gmCitr AclReader::addGroup(const std::string& newGroupName) {
     gmCitr citr = groups.find(newGroupName);
     if (citr != groups.end()) {
-        QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Duplicate group name \"" << newGroupName << "\".");
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Duplicate group name \"" << newGroupName << "\".";
         return groups.end();
     }
     groupPair p(newGroupName, nameSetPtr(new nameSet));
@@ -389,7 +393,7 @@ void AclReader::printNames() const {
 bool AclReader::processAclLine(tokList& toks) {
     const unsigned toksSize = toks.size();
     if (toksSize < 4) {
-        QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for acl definition.");
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Insufficient tokens for acl definition.";
         return false;
     }
 
@@ -397,7 +401,7 @@ bool AclReader::processAclLine(tokList& toks) {
     try {
         res = AclHelper::getAclResult(toks[1]);
     } catch (...) {
-        QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Unknown ACL permission \"" << toks[1] << "\".");
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown ACL permission \"" << toks[1] << "\".";
         return false;
     }
 
@@ -407,7 +411,7 @@ bool AclReader::processAclLine(tokList& toks) {
     if (actionAllFlag) {
 
         if (userAllFlag && toksSize > 4) {
-            QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Tokens found after action \"all\".");
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Tokens found after action \"all\".";
             return false;
         }
         action = CONSUME; // dummy; compiler must initialize action for this code path
@@ -415,7 +419,7 @@ bool AclReader::processAclLine(tokList& toks) {
         try {
             action = AclHelper::getAction(toks[3]);
         } catch (...) {
-            QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Unknown action \"" << toks[3] << "\".");
+            errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown action \"" << toks[3] << "\".";
             return false;
         }
     }
@@ -435,7 +439,7 @@ bool AclReader::processAclLine(tokList& toks) {
             try {
                 rule->setObjectType(AclHelper::getObjectType(toks[4]));
             } catch (...) {
-                QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Unknown object \"" << toks[4] << "\".");
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown object \"" << toks[4] << "\".";
                 return false;
             }
         }
@@ -445,14 +449,14 @@ bool AclReader::processAclLine(tokList& toks) {
         for (unsigned i=5; i<toksSize; i++) {
             nvPair propNvp = splitNameValuePair(toks[i]);
             if (propNvp.second.size() == 0) {
-                QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Badly formed property name-value pair \"" << propNvp.first << "\". (Must be name=value)");
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Badly formed property name-value pair \"" << propNvp.first << "\". (Must be name=value)";
                 return false;
             }
             Property prop;
             try {
                 prop = AclHelper::getProperty(propNvp.first);
             } catch (...) {
-                QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Unknown property \"" << propNvp.first << "\".");
+                errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Unknown property \"" << propNvp.first << "\".";
                 return false;
             }
             rule->addProperty(prop, propNvp.second);
@@ -467,11 +471,11 @@ bool AclReader::processAclLine(tokList& toks) {
 
     // If rule validates, add to rule list
     if (!rule->validate(validationMap)) {
-        QPID_LOG(error, ACL_FORMAT_ERR_LOG_PREFIX << "Invalid object/action/property combination.");
+        errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Invalid object/action/property combination.";
         return false;
     }
     rules.push_back(rule);
-    
+
     return true;
 }
 
