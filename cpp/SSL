@@ -63,7 +63,7 @@ QPID_SSL_CERT_DB=./test_cert_db
 
 and run e.g.
 
-./src/tests/perftest --count 10000 -P ssl --port 5673 \
+./src/tests/perftest --count 10000 -P ssl --port 5671 \
                      --broker myhost.mydomain
 
 
