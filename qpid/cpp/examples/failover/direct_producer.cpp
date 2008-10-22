@@ -60,6 +60,8 @@ main ( int argc, char ** argv)
             if ( count > 1000 )
               report = !(sent % 1000);
 
+            report = false;
+
             if ( report )
             {
               std::cout << "sending message " 
@@ -71,7 +73,7 @@ main ( int argc, char ** argv)
             message_data << sent;
             message.setData(message_data.str());
 
-            /* MICK FIXME
+            /* FIXME mgoulish 21 oct 08
                session.messageTransfer ( arg::content=message,  
                arg::destination="amq.direct"
                ); */
@@ -85,7 +87,7 @@ main ( int argc, char ** argv)
         }
         message.setData ( "That's all, folks!" );
 
-        /* FIXME mgoulish 16 Oct 08
+        /* FIXME mgoulish 21 oct 08
            session.messageTransfer ( arg::content=message,  
            arg::destination="amq.direct"
            ); 

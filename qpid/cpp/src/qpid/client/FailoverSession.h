@@ -35,7 +35,7 @@
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Monitor.h"
 
 #include <string>
 
@@ -61,7 +61,7 @@ class FailoverSession
 
     framing::FrameSet::shared_ptr get();
 
-    SessionId getId() const;
+    SessionId getId();
 
     void close();
 
@@ -79,8 +79,6 @@ class FailoverSession
                       );
     
     void sendCompletion ( );
-
-    bool failover_in_progress; 
 
 
 
@@ -293,15 +291,18 @@ class FailoverSession
     // end Wrapped functions from Session  ---------------------------
 
     // Tells the FailoverSession to get ready for a failover.
+    void failoverStarting();
     void prepareForFailover ( Connection newConnection );
-
     void failover ( );
+    void failoverComplete();
 
     void setFailoverSubscriptionManager(FailoverSubscriptionManager*);
 
   private:
-    typedef sys::Mutex::ScopedLock Lock;
-    sys::Mutex lock;
+    sys::Monitor lock;
+    bool failover_in_progress; 
+    int  failover_count;
+
 
     FailoverSubscriptionManager * failoverSubscriptionManager;
 
