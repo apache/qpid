@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.management.Names;
+import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.transport.codec.ManagementDecoder;
@@ -38,6 +39,66 @@ import org.apache.qpid.transport.codec.ManagementDecoder;
  */
 public class SchemaResponseMessageHandler extends BaseMessageHandler
 {  
+	interface IProcessor 
+	{
+		void process(ManagementDecoder decoder);
+	}
+	
+	final IProcessor classDefinitionProcessor = new IProcessor()
+	{
+		@Override
+		public void process(ManagementDecoder decoder) 
+		{
+	        try 
+	        {	        	
+	            String packageName = decoder.readStr8();
+	            String className = decoder.readStr8();
+	            
+	            Binary schemaHash = new Binary(decoder.readBin128());
+	            
+	            int howManyProperties = decoder.readUint16();
+	            int howManyStatistics = decoder.readUint16();
+	            int howManyMethods = decoder.readUint16();
+
+	            _domainModel.addSchema(
+	                    packageName, 
+	                    className, 
+	                    schemaHash,
+	                    getAttributes(decoder, howManyProperties), 
+	                    getAttributes(decoder, howManyStatistics), 
+	                    getMethods(decoder, howManyMethods));
+	        } catch(Exception exception) 
+	        {
+	            _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
+	        }
+
+		}
+	};
+	
+	final IProcessor eventDefinitionProcessor = new IProcessor()
+	{
+		@Override
+		public void process(ManagementDecoder decoder) 
+		{
+	        try 
+	        {	        
+	            String packageName = decoder.readStr8();
+	            String className = decoder.readStr8();
+	            Binary hash = new Binary(decoder.readBin128());
+	            int howManyArguments = decoder.readUint16();
+	            
+	            _domainModel.addEventSchema(
+	            		packageName, 
+	            		className, 
+	            		hash, 
+	            		getAttributes(decoder, howManyArguments));
+	        } catch(Exception exception) 
+	        {
+	            _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
+	        }
+		}
+	};	
+	
     /**
      * Processes an incoming  schema response.
      * This will be used for building the corresponding class definition.
@@ -49,29 +110,28 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
     {        
         try 
         {
-            String packageName = decoder.readStr8();
-            String className = decoder.readStr8();
-            
-            Binary schemaHash = new Binary(decoder.readBin128());
-            
-            int howManyProperties = decoder.readUint16();
-            int howManyStatistics = decoder.readUint16();
-            int howManyMethods = decoder.readUint16();
-            int howManyEvents = decoder.readUint16();
-                                    
-            // FIXME : Divide between schema error and raw data conversion error!!!!
-            _domainModel.addSchema(
-                    packageName, 
-                    className, 
-                    schemaHash,
-                    getProperties(decoder, howManyProperties), 
-                    getStatistics(decoder, howManyStatistics), 
-                    getMethods(decoder, howManyMethods), 
-                    getEvents(decoder, howManyEvents));
+        	int classKind = decoder.readUint8();
+        	switch(classKind)
+        	{
+        		case Protocol.CLASS :
+        		{
+        			classDefinitionProcessor.process(decoder);
+        			break;
+        		}
+        		case Protocol.EVENT : 
+        		{
+        			eventDefinitionProcessor.process(decoder);   
+        			break;
+        		}
+        		default : 
+        		{
+        			_logger.error("<QMAN-100035> : Q-Man was unable to process the schema response message (reason : unknown class kind %s).",classKind);
+        		}
+        	}
         } catch(Exception exception) 
         {
             _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
-        }
+        }        	
     }
     
     /**
@@ -81,33 +141,16 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
      * @param howManyProperties the number of properties to read. 
      * @return a list of maps. Each map contains a property definition.
      */
-    List<Map<String, Object>> getProperties(ManagementDecoder decoder,int howManyProperties) 
+    List<Map<String, Object>> getAttributes(ManagementDecoder decoder,int howMany) 
     {
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(howManyProperties);        
-        for (int i = 0; i < howManyProperties; i++ )
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(howMany);        
+        for (int i = 0; i < howMany; i++ )
         {
             result.add(decoder.readMap());
         }
         return result;
     }
     
-    /**
-     * Reads the statistics definitions from the incoming message stream.
-     * 
-     * @param decoder the decoder used for decode incoming data.
-     * @param howManyProperties the number of statistics to read. 
-     * @return a list of maps. Each map contains a statistic definition.
-     */
-    List<Map<String, Object>> getStatistics(ManagementDecoder decoder,int howManyStatistics) 
-    {
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(howManyStatistics);        
-        for (int i = 0; i < howManyStatistics; i++ )
-        {
-            result.add(decoder.readMap());
-        }
-        return result;
-    }
-
     /**
      * Reads the methods definitions from the incoming message stream.
      * 

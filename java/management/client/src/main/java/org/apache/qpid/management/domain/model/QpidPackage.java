@@ -79,6 +79,7 @@ final class QpidPackage
     private String _name;
     private DomainModel _parent;
     private Map<QpidClassIdentity, QpidClass> _classes = new HashMap<QpidClassIdentity, QpidClass>();
+    private Map<QpidClassIdentity, QpidEvent> _events = new HashMap<QpidClassIdentity, QpidEvent>();
     
     /**
      * Builds a new package with the supplied name.
@@ -128,12 +129,19 @@ final class QpidPackage
             Binary classHash,
             List<Map<String, Object>> properties,
             List<Map<String, Object>> statistics,
-            List<MethodOrEventDataTransferObject> methods, 
-            List<MethodOrEventDataTransferObject> events) throws UnableToBuildFeatureException
+            List<MethodOrEventDataTransferObject> methods) throws UnableToBuildFeatureException
     {
-        getQpidClass(className,classHash,true).setSchema(properties,statistics,methods, events);
+        getQpidClass(className,classHash,true).setSchema(properties,statistics,methods);
     }
 
+    void addEventDefinition (
+            String eventClassName, 
+            Binary classHash,
+            List<Map<String, Object>> arguments) throws UnableToBuildFeatureException
+    {
+        getQpidEvent(eventClassName,classHash,true).setSchema(arguments);
+    }
+    
     /**
      * Returns true if this package contains the given class definition.
      * 
@@ -168,6 +176,11 @@ final class QpidPackage
     {
         getQpidClass(className,classHash,true).addConfigurationData(objectId,rawData);
     }
+
+    void setEventInstanceRawData (String eventName,Binary eventHash, byte[] rawData,long currentTimestamp,int severity)
+    {
+        getQpidEvent(eventName,eventHash,true).addEventData(rawData, currentTimestamp, severity);
+    }    
     
     /**
      * Returns the definition of the class with given name.
@@ -191,6 +204,29 @@ final class QpidPackage
          }
         return classDefinition;
     }
+    
+    /**
+     * Returns the definition of the class with given name.
+     * 
+     * @param className the name of the class.
+     * @param hash the class hash.
+     * @param store a flag indicating if a just created class must be stored or not.
+     * @return the definition of the class with given name.
+     */
+    QpidEvent getQpidEvent(String className, Binary hash, boolean store) 
+    {
+        QpidClassIdentity identity = new QpidClassIdentity(className,hash);
+        QpidEvent eventDefinition = _events.get(identity);
+        if (eventDefinition == null) 
+        {
+            eventDefinition = new QpidEvent(className, hash,this);
+            if (store) 
+            {
+            _events.put(identity,eventDefinition);
+            }
+         }
+        return eventDefinition;
+    }    
     
     /**
      * Returns a string representation of this class.
@@ -224,6 +260,11 @@ final class QpidPackage
         {
             qpidClass.releaseResources();
         }
+        
+        for (QpidEvent qpidEvent: _events.values())
+        {
+            qpidEvent.releaseResources();
+        }        
     }
 
     /**

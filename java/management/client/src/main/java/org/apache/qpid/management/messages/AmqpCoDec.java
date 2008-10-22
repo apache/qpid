@@ -13,7 +13,7 @@ public class AmqpCoDec
         _buffer = new byte [1000];
         _buffer[0] = 'A';
         _buffer[1] = 'M';
-        _buffer[2] = '1';
+        _buffer[2] = '2';
         _position = 3;
     }
     
