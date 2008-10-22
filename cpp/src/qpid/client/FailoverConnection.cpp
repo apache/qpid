@@ -129,7 +129,7 @@ FailoverConnection::failover ( )
         ++ sessions_iterator )
   {
     FailoverSession * fs = * sessions_iterator;
-    fs->failover_in_progress = true;
+    fs->failoverStarting();
   }
 
     std::vector<Url> knownBrokers = connection.getKnownBrokers();
@@ -187,7 +187,7 @@ FailoverConnection::failover ( )
     )
     {
         FailoverSession * fs = * sessions_iterator;
-        fs->failover_in_progress = false;
+        fs->failoverComplete();
     }
 }
 

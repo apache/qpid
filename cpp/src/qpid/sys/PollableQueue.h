@@ -24,6 +24,7 @@
 
 #include "qpid/sys/PollableCondition.h"
 #include "qpid/sys/Dispatcher.h"
+#include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Monitor.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>

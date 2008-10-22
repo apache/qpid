@@ -64,8 +64,10 @@ Listener::Listener ( FailoverSubscriptionManager & s ) :
 void 
 Listener::received ( Message & message ) 
 {
+    /*
     if(! (count%1000))
       std::cerr << "\t\tListener received: " << message.getData() << std::endl;
+     * */
 
     ++ count;
 
