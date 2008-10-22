@@ -129,7 +129,7 @@ public class QpidTestCase extends TestCase
 
     // values
     protected static final String VM = "vm";
-    private static final String EXTERNAL = "external";
+    protected static final String EXTERNAL = "external";
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
