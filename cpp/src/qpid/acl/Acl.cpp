@@ -53,8 +53,9 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
         agent->addObject (mgmtObject);
     }
 
-    if (!readAclFile()){
-        throw Exception("Could not read ACL file");
+    std::string errorString;
+    if (!readAclFile(errorString)){
+        throw Exception("Could not read ACL file " + errorString);
         if (mgmtObject!=0) mgmtObject->set_enforcingAcl(0);
     }
     QPID_LOG(info, "ACL Plugin loaded");
@@ -109,23 +110,25 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
                                             name, framing::FieldTable()));
           return false;
 	  }
-      return false;  
-   }
-      
-   bool Acl::readAclFile()
-   {
-      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
-      return readAclFile(aclValues.aclFile);
+      return false;
    }
 
-   bool Acl::readAclFile(std::string& aclFile) {
+   bool Acl::readAclFile(std::string& errorText)
+   {
+      // only set transferAcl = true if a rule implies the use of ACL on transfer, else keep false for permormance reasons.
+      return readAclFile(aclValues.aclFile, errorText);
+   }
+
+   bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
       boost::shared_ptr<AclData> d(new AclData);
       AclReader ar;
       if (ar.read(aclFile, d)){
-          agent->raiseEvent(_qmf::EventFileLoadFailed("", "See log for file load reason failure"));
+          agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
+          errorText = ar.getError();
+          QPID_LOG(error,ar.getError());
           return false;
       }
-	  
+
       data = d;
 	  transferAcl = data->transferAcl; // any transfer ACL
 	  if (mgmtObject!=0){
@@ -145,8 +148,8 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
    {
        return (ManagementObject*) mgmtObject;
    }
-   
-   Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string&)
+
+   Manageable::status_t Acl::ManagementMethod (uint32_t methodId, Args& /*args*/, string& text)
    {
       Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
       QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
@@ -154,10 +157,10 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
       switch (methodId)
       {
       case _qmf::Acl::METHOD_RELOADACLFILE :
-          readAclFile();
-          status = Manageable::STATUS_OK;
+          readAclFile(text);
+          status = Manageable::STATUS_USER;
           break;
       }
 
     return status;
-}    
+}
