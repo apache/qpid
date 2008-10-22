@@ -31,9 +31,9 @@ public class StubConfigurator extends Configurator
      */
     public void configure() throws ConfigurationException 
     {
-        addAccessModeMapping("1", "RW");
-        addAccessModeMapping("2", "RO");
-        addAccessModeMapping("3", "RC");
+        addAccessModeMapping("1", "RC");
+        addAccessModeMapping("2", "RW");
+        addAccessModeMapping("3", "RO");
         
         addTypeMapping("1", Str8.class.getName());
     }

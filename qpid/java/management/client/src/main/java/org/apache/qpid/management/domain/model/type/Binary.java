@@ -26,7 +26,6 @@ import java.util.UUID;
 
 import org.apache.qpid.management.messages.AmqpCoDec;
 
-
 /**
  * It is a simple wrapper for a byte array (for example a 128bin).
  * It is used to let QMan deal with an object instead of an array.
@@ -121,7 +120,6 @@ public final class Binary implements Serializable
       encoder.pack(bytes);  
     }
     
-    // TODO
     @Override
     public String toString ()
     {

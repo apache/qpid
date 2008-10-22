@@ -73,7 +73,6 @@ public class DomainModel
      * @param properties the class properties.
      * @param statistics the class statistics.
      * @param methods the class methods.
-     * @param events the class events.
      * @throws UnableToBuildFeatureException 
      */
     public void addSchema(
@@ -82,11 +81,31 @@ public class DomainModel
             Binary classHash,
             List<Map<String, Object>> properties,
             List<Map<String, Object>> statistics,
-            List<MethodOrEventDataTransferObject> methods, 
-            List<MethodOrEventDataTransferObject> events) throws UnableToBuildFeatureException
+            List<MethodOrEventDataTransferObject> methods) throws UnableToBuildFeatureException
     {
         QpidPackage qpidPackage = getPackageByName(packageName);
-        qpidPackage.addClassDefinition(className,classHash,properties,statistics,methods, events);
+        qpidPackage.addClassDefinition(className,classHash,properties,statistics,methods);
+    }
+    
+    /**
+     * Adds the specified schema to this domain model.
+     * 
+     * @param packageName the package name.
+     * @param className the class name.
+     * @param classHash the class schema hash.
+     * @param properties the class properties.
+     * @param statistics the class statistics.
+     * @param methods the class methods.
+     * @throws UnableToBuildFeatureException 
+     */
+    public void addEventSchema(
+            String packageName, 
+            String className, 
+            Binary classHash,
+            List<Map<String, Object>> arguments) throws UnableToBuildFeatureException
+    {
+        QpidPackage qpidPackage = getPackageByName(packageName);
+        qpidPackage.addEventDefinition(className,classHash,arguments);
     }
 
     /**
@@ -132,6 +151,18 @@ public class DomainModel
     {
         QpidPackage qpidPackage = getPackageByName(packageName);
         qpidPackage.setObjectInstanceInstrumentationRawData(className,classHash,objectId,rawData);
+    }
+    
+    public void addEventRawData (
+    		String packageName, 
+    		String eventName, 
+    		Binary eventHash, 
+    		byte[] rawData,
+    		long currentTimestamp, 
+    		int severity)
+    {
+        QpidPackage qpidPackage = getPackageByName(packageName);
+        qpidPackage.setEventInstanceRawData(eventName,eventHash,rawData,currentTimestamp,severity);
     }
     
     /**

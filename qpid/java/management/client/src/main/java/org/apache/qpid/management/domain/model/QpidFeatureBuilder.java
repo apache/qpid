@@ -439,6 +439,15 @@ class QpidFeatureBuilder
     
     void build() throws UnableToBuildFeatureException
     {
-        _state.build();
+    	try 
+    	{
+    		_state.build();
+    	} catch(UnableToBuildFeatureException exception)
+    	{
+    		throw exception;
+    	} catch(Exception exception)
+    	{
+    		throw new UnableToBuildFeatureException(exception,"Feature name is not available for debugging.");
+    	}
     }
 }

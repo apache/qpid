@@ -29,13 +29,13 @@ public interface Names
 {
     /** Name of the qpid management exchange. */
     String MANAGEMENT_EXCHANGE = "qpid.management";    
-    String MANAGEMENT_ROUTING_KEY = "mgmt.#";
+    String MANAGEMENT_ROUTING_KEY = "console.#";
    
     String MANAGEMENT_QUEUE_PREFIX = "management.";
     String METHOD_REPLY_QUEUE_PREFIX = "reply.";
    
     String AMQ_DIRECT_QUEUE = "amq.direct";
-    String AGENT_ROUTING_KEY = "agent.0";
+    String AGENT_ROUTING_KEY = "agent.1.0";
    
     String BROKER_ROUTING_KEY = "broker";
     
