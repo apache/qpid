@@ -48,7 +48,6 @@ FailoverSubscriptionManager::prepareForFailover ( Session _newSession )
     sys::Monitor::ScopedLock l(lock);
     newSession = _newSession;
     newSessionIsValid = true;
-    // lock.notifyAll();
 }
 
 
