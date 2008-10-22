@@ -131,7 +131,7 @@ consume_LDADD=$(lib_client)
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -140,6 +140,7 @@ EXTRA_DIST +=								\
   quick_perftest							\
   topictest								\
   run_federation_tests							\
+  run_acl_tests								\
   .valgrind.supp							\
   MessageUtils.h							\
   TestMessageStore.h							\
