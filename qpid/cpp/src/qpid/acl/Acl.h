@@ -74,15 +74,15 @@ public:
    virtual ~Acl();
 private:
    bool result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name);
-   bool readAclFile();
-   bool readAclFile(std::string& aclFile); 
+   bool readAclFile(std::string& errorText);
+   bool readAclFile(std::string& aclFile, std::string& errorText);
    virtual qpid::management::ManagementObject* GetManagementObject(void) const;
    virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
-  
+
 };
 
 
-    
+
 }} // namespace qpid::acl
 
 #endif // QPID_ACL_ACL_H
