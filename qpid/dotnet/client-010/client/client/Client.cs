@@ -52,7 +52,16 @@ namespace org.apache.qpid.client
         }
 
         #region Interface ClientInterface
-
+        
+        /// <summary>
+        /// Establishes a connection with a broker using the provided user auths 
+        /// 
+        /// </summary>
+        /// <param name="host">Host name on which a broker is deployed</param>
+        /// <param name="port">Broker port </param>
+        /// <param name="virtualHost">virtual host name</param>
+        /// <param name="username">User Name</param>
+        /// <param name="password">Password</param>
         public void connect(String host, int port, String virtualHost, String username, String password)
         {
             _log.debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
@@ -67,6 +76,32 @@ namespace org.apache.qpid.client
             negotiationComplete.WaitOne();
         }
 
+        /// <summary>
+        /// Establishes a connection with a broker using SSL
+        /// 
+        /// </summary>
+        /// <param name="host">Host name on which a broker is deployed</param>
+        /// <param name="port">Broker port </param>
+        /// <param name="virtualHost">virtual host name</param>
+        /// <param name="username">User Name</param>
+        /// <param name="password">Password</param>
+        /// <param name="serverName">Name of the SSL server</param>
+        /// <param name="certPath">Path to the X509 certificate to be used for client authentication</param>
+        /// <param name="rejectUntrusted">If true connection will not be established if the broker is not trusted</param>
+        public void connectSSL(String host, int port, String virtualHost, String username, String password, string serverName, string certPath, bool rejectUntrusted)
+        {
+            _log.debug(String.Format("Client Connecting to host {0}; port {1}; virtualHost {2}; username {3}", host,
+                                     port, virtualHost, username));
+            _log.debug(String.Format("SSL paramters: serverName: {0}; certPath: {1}; rejectUntrusted: {2}", serverName, certPath, rejectUntrusted));          
+            ConnectionDelegate connectionDelegate = new ClientConnectionDelegate(this, username, password);
+            ManualResetEvent negotiationComplete = new ManualResetEvent(false);
+            connectionDelegate.setCondition(negotiationComplete);
+            connectionDelegate.VirtualHost = virtualHost;
+            _conn = IoSSLTransport.connect(host, port, serverName, certPath, rejectUntrusted, connectionDelegate);
+
+            _conn.send(new ProtocolHeader(1, 0, 10));
+            negotiationComplete.WaitOne();
+        }
 
         public void close()
         {
