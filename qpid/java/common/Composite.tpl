@@ -13,6 +13,9 @@ import org.apache.qpid.transport.codec.Encoder;
 
 import org.apache.qpid.transport.network.Frame;
 
+import org.apache.qpid.util.Strings;
+
+
 ${
 from genutil import *
 
@@ -226,6 +229,26 @@ if segments:
     {
         setBody(body);
         return this;
+    }
+
+    public final byte[] getBodyBytes() {
+        ByteBuffer buf = getBody();
+        byte[] bytes = new byte[buf.remaining()];
+        buf.get(bytes);
+        return bytes;
+    }
+
+    public final void setBody(byte[] body)
+    {
+        setBody(ByteBuffer.wrap(body));
+    }
+
+    public final String getBodyString() {
+        return Strings.fromUTF8(getBodyBytes());
+    }
+
+    public final void setBody(String body) {
+        setBody(Strings.toUTF8(body));
     }
 """)
 }

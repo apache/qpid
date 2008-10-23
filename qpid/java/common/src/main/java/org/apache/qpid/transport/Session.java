@@ -24,6 +24,7 @@ package org.apache.qpid.transport;
 import org.apache.qpid.transport.network.Frame;
 
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.qpid.transport.Option.*;
+import static org.apache.qpid.transport.Session.State.*;
 import static org.apache.qpid.transport.util.Functions.*;
 import static org.apache.qpid.util.Serial.*;
 import static org.apache.qpid.util.Strings.*;
@@ -48,6 +50,8 @@ public class Session extends SessionInvoker
 {
 
     private static final Logger log = Logger.get(Session.class);
+
+    enum State { NEW, DETACHED, OPEN, CLOSING, CLOSED }
 
     class DefaultSessionListener implements SessionListener
     {
@@ -69,54 +73,53 @@ public class Session extends SessionInvoker
 
     public static final int UNLIMITED_CREDIT = 0xFFFFFFFF;
 
-    private static boolean ENABLE_REPLAY = false;
-
-    static
-    {
-        String enableReplay = "enable_command_replay";
-        try
-        {
-            ENABLE_REPLAY  = new Boolean(System.getProperties().getProperty(enableReplay, "false"));
-        }
-        catch (Exception e)
-        {
-            ENABLE_REPLAY = false;
-        }
-    }
-
     private Connection connection;
     private Binary name;
+    private long expiry;
     private int channel;
     private SessionDelegate delegate = new SessionDelegate();
     private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
 
+    private boolean incomingInit;
     // incoming command count
-    int commandsIn = 0;
+    private int commandsIn;
     // completed incoming commands
     private final Object processedLock = new Object();
-    private RangeSet processed = new RangeSet();
-    private int maxProcessed = commandsIn - 1;
-    private int syncPoint = maxProcessed;
+    private RangeSet processed;
+    private int maxProcessed;
+    private int syncPoint;
 
     // outgoing command count
     private int commandsOut = 0;
-    private Map<Integer,Method> commands = new HashMap<Integer,Method>();
+    private Method[] commands = new Method[64*1024];
     private int maxComplete = commandsOut - 1;
     private boolean needSync = false;
 
-    private AtomicBoolean closed = new AtomicBoolean(false);
+    private State state = NEW;
 
-    Session(Connection connection, Binary name)
+    Session(Connection connection, Binary name, long expiry)
     {
         this.connection = connection;
         this.name = name;
+        this.expiry = expiry;
+        initReceiver();
+    }
+
+    public Connection getConnection()
+    {
+        return connection;
     }
 
     public Binary getName()
     {
         return name;
+    }
+
+    void setExpiry(long expiry)
+    {
+        this.expiry = expiry;
     }
 
     int getChannel()
@@ -154,9 +157,63 @@ public class Session extends SessionInvoker
         }
     }
 
-    public Map<Integer,Method> getOutstandingCommands()
+    private void initReceiver()
     {
-        return commands;
+        synchronized (processedLock)
+        {
+            incomingInit = false;
+            processed = new RangeSet();
+        }
+    }
+
+    void attach()
+    {
+        initReceiver();
+        sessionAttach(name.getBytes());
+        sessionRequestTimeout(expiry);
+    }
+
+    void resume()
+    {
+        synchronized (commands)
+        {
+            for (int i = maxComplete + 1; lt(i, commandsOut); i++)
+            {
+                Method m = commands[mod(i, commands.length)];
+                if (m != null)
+                {
+                    sessionCommandPoint(m.getId(), 0);
+                    send(m);
+                }
+            }
+        }
+    }
+
+    void dump()
+    {
+        synchronized (commands)
+        {
+            for (Method m : commands)
+            {
+                if (m != null)
+                {
+                    System.out.println(m);
+                }
+            }
+        }
+    }
+
+    final void commandPoint(int id)
+    {
+        synchronized (processedLock)
+        {
+            this.commandsIn = id;
+            if (!incomingInit)
+            {
+                maxProcessed = commandsIn - 1;
+                syncPoint = maxProcessed;
+            }
+        }
     }
 
     public int getCommandsOut()
@@ -209,11 +266,12 @@ public class Session extends SessionInvoker
 
     public void processed(Range range)
     {
-        log.debug("%s processed(%s)", this, range);
+        log.debug("%s processed(%s) %s %s", this, range, syncPoint, maxProcessed);
 
         boolean flush;
         synchronized (processedLock)
         {
+            log.debug("%s", processed);
             processed.add(range);
             Range first = processed.getFirst();
             int lower = first.getLower();
@@ -281,14 +339,6 @@ public class Session extends SessionInvoker
         }
     }
 
-    public Method getCommand(int id)
-    {
-        synchronized (commands)
-        {
-            return commands.get(id);
-        }
-    }
-
     boolean complete(int lower, int upper)
     {
         //avoid autoboxing
@@ -301,13 +351,13 @@ public class Session extends SessionInvoker
             int old = maxComplete;
             for (int id = max(maxComplete, lower); le(id, upper); id++)
             {
-                commands.remove(id);
+                commands[mod(id, commands.length)] = null;
             }
             if (le(lower, maxComplete + 1))
             {
                 maxComplete = max(maxComplete, upper);
             }
-            log.debug("%s   commands remaining: %s", this, commands);
+            log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
             commands.notifyAll();
             return gt(maxComplete, old);
         }
@@ -329,38 +379,47 @@ public class Session extends SessionInvoker
         }
     }
 
+    final private boolean isFull(int id)
+    {
+        return id - maxComplete >= commands.length;
+    }
+
     public void invoke(Method m)
     {
-        if (closed.get())
-        {
-            ExecutionException exc = getException();
-            if (exc != null)
-            {
-                throw new SessionException(exc);
-            }
-            else if (close != null)
-            {
-                throw new ConnectionException(close);
-            }
-            else
-            {
-                throw new SessionClosedException();
-            }
-        }
-
         if (m.getEncodedTrack() == Frame.L4)
         {
             synchronized (commands)
             {
+                if (state == CLOSED)
+                {
+                    throw new SessionClosedException();
+                }
+
                 int next = commandsOut++;
                 m.setId(next);
+
+                if (isFull(next))
+                {
+                    Waiter w = new Waiter(commands, timeout);
+                    while (w.hasTime() && isFull(next))
+                    {
+                        sessionFlush(COMPLETED);
+                        w.await();
+                    }
+                }
+
+                if (isFull(next))
+                {
+                    throw new SessionException("timed out waiting for completion");
+                }
+
                 if (next == 0)
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if (ENABLE_REPLAY)
+                if (expiry > 0)
                 {
-                    commands.put(next, m);
+                    commands[mod(next, commands.length)] = m;
                 }
                 if (autoSync)
                 {
@@ -404,31 +463,23 @@ public class Session extends SessionInvoker
                 executionSync(SYNC);
             }
 
-            long start = System.currentTimeMillis();
-            long elapsed = 0;
-            while (!closed.get() && elapsed < timeout && lt(maxComplete, point))
+            Waiter w = new Waiter(commands, timeout);
+            while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                try {
-                    log.debug("%s   waiting for[%d]: %d, %s", this, point,
-                              maxComplete, commands);
-                    commands.wait(timeout - elapsed);
-                    elapsed = System.currentTimeMillis() - start;
-                }
-                catch (InterruptedException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                log.debug("%s   waiting for[%d]: %d, %s", this, point,
+                          maxComplete, commands);
+                w.await();
             }
 
             if (lt(maxComplete, point))
             {
-                if (closed.get())
+                if (state == CLOSED)
                 {
                     throw new SessionException(getException());
                 }
                 else
                 {
-                    throw new RuntimeException
+                    throw new SessionException
                         (String.format
                          ("timed out waiting for sync: complete = %s, point = %s", maxComplete, point));
                 }
@@ -518,20 +569,11 @@ public class Session extends SessionInvoker
         {
             synchronized (this)
             {
-                long start = System.currentTimeMillis();
-                long elapsed = 0;
-                while (!closed.get() && timeout - elapsed > 0 && !isDone())
+                Waiter w = new Waiter(this, timeout);
+                while (w.hasTime() && state != CLOSED && !isDone())
                 {
-                    try
-                    {
-                        log.debug("%s waiting for result: %s", Session.this, this);
-                        wait(timeout - elapsed);
-                        elapsed = System.currentTimeMillis() - start;
-                    }
-                    catch (InterruptedException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    log.debug("%s waiting for result: %s", Session.this, this);
+                    w.await();
                 }
             }
 
@@ -539,13 +581,15 @@ public class Session extends SessionInvoker
             {
                 return result;
             }
-            else if (closed.get())
+            else if (state == CLOSED)
             {
                 throw new SessionException(getException());
             }
             else
             {
-                return null;
+                throw new SessionException
+                    (String.format("%s timed out waiting for result: %s",
+                                   Session.this, this));
             }
         }
 
@@ -588,32 +632,24 @@ public class Session extends SessionInvoker
 
     public void close()
     {
-        sessionRequestTimeout(0);
-        sessionDetach(name.getBytes());
         synchronized (commands)
         {
-            long start = System.currentTimeMillis();
-            long elapsed = 0;
-            try
+            state = CLOSING;
+            sessionRequestTimeout(0);
+            sessionDetach(name.getBytes());
+            Waiter w = new Waiter(commands, timeout);
+            while (w.hasTime() && state != CLOSED)
             {
-                while (!closed.get() && elapsed < timeout)
-                {
-                    commands.wait(timeout - elapsed);
-                    elapsed = System.currentTimeMillis() - start;
-                }
+                w.await();
+            }
 
-                if (!closed.get())
-                {
-                    throw new SessionException("close() timed out");
-                }
-            }
-            catch (InterruptedException e)
+            if (state != CLOSED)
             {
-                throw new RuntimeException(e);
+                throw new SessionException("close() timed out");
             }
+
+            connection.removeSession(this);
         }
-
-        connection.removeSession(this);
     }
 
     public void exception(Throwable t)
@@ -623,18 +659,27 @@ public class Session extends SessionInvoker
 
     public void closed()
     {
-        closed.set(true);
         synchronized (commands)
         {
-            commands.notifyAll();
-        }
-        synchronized (results)
-        {
-            for (ResultFuture<?> result : results.values())
+            if (expiry == 0)
             {
-                synchronized(result)
+                state = CLOSED;
+            }
+            else
+            {
+                state = DETACHED;
+            }
+
+            commands.notifyAll();
+
+            synchronized (results)
+            {
+                for (ResultFuture<?> result : results.values())
                 {
-                    result.notifyAll();
+                    synchronized(result)
+                    {
+                        result.notifyAll();
+                    }
                 }
             }
         }

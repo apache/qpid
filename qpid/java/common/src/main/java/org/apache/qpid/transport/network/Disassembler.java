@@ -208,11 +208,14 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         if (payload)
         {
             final Header hdr = method.getHeader();
-            final Struct[] structs = hdr.getStructs();
-
-            for (Struct st : structs)
+            if (hdr != null)
             {
-                enc.writeStruct32(st);
+                final Struct[] structs = hdr.getStructs();
+
+                for (Struct st : structs)
+                {
+                    enc.writeStruct32(st);
+                }
             }
             headerSeg = enc.segment();
         }

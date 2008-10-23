@@ -140,7 +140,7 @@ public class ServerDelegate extends ConnectionDelegate
 
     public Session getSession(Connection conn, SessionAttach atc)
     {
-        return new Session(conn, new Binary(atc.getName()));
+        return new Session(conn, new Binary(atc.getName()), 0);
     }
 
     @Override public void sessionAttach(Connection conn, SessionAttach atc)
