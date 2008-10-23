@@ -72,39 +72,25 @@ class ManagementTest (TestBase010):
             self.assertEqual (res.body,     body)
 
     def test_system_object (self):
-        session = self.session
- 
-        mc  = managementClient (session.spec)
-        mch = mc.addChannel (session)
-
-        mc.syncWaitForStable (mch)
-        systems = mc.syncGetObjects (mch, "system")
+        self.startQmf()
+        systems = self.qmf.getObjects(_class="system")
         self.assertEqual (len (systems), 1)
-        mc.removeChannel (mch)
 
     def test_self_session_id (self):
-        session = self.session
- 
-        mc  = managementClient (session.spec)
-        mch = mc.addChannel (session)
+        self.startQmf()
+        sessionId = self.qmf_broker.getSessionId()
+        brokerSessions = self.qmf.getObjects(_class="session")
 
-        info = mc.syncWaitForStable (mch)
-        brokerSessions = mc.syncGetObjects (mch, "session")
         found = False
         for bs in brokerSessions:
-            if bs.name == info.sessionId:
+            if bs.name == sessionId:
                 found = True
         self.assertEqual (found, True)
-        mc.removeChannel (mch)
 
     def test_standard_exchanges (self):
-        session = self.session
- 
-        mc  = managementClient (session.spec)
-        mch = mc.addChannel (session)
+        self.startQmf()
 
-        mc.syncWaitForStable (mch)
-        exchanges = mc.syncGetObjects (mch, "exchange")
+        exchanges = self.qmf.getObjects(_class="exchange")
         exchange = self.findExchange (exchanges, "")
         self.assertEqual (exchange.type, "direct")
         exchange = self.findExchange (exchanges, "amq.direct")
@@ -117,7 +103,6 @@ class ManagementTest (TestBase010):
         self.assertEqual (exchange.type, "headers")
         exchange = self.findExchange (exchanges, "qpid.management")
         self.assertEqual (exchange.type, "topic")
-        mc.removeChannel (mch)
 
     def findExchange (self, exchanges, name):
         for exchange in exchanges:
