@@ -438,27 +438,38 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
  
 }
 
+QPID_AUTO_TEST_CASE(testLVQMultiQueue){
 
-QPID_AUTO_TEST_CASE(testLVQSaftyCheck){
+    client::QueueOptions args;
+    // set queue mode
+    args.setOrdering(client::LVQ);
 
-// This test is to check std::deque memory copy does not change out under us
-// if this test fails, then lvq would no longer be safe.
-
-    std::deque<string> deq;
+    Queue::shared_ptr queue1(new Queue("my-queue", true ));
+    Queue::shared_ptr queue2(new Queue("my-queue", true ));
+    intrusive_ptr<Message> received;
+    queue1->configure(args);
+    queue2->configure(args);
 	
-	string a;
-	string b;
-	
-	deq.push_back(a);
-	deq.push_back(b);
-	string* tmp = &deq.back();
-	for (int a =0; a<=100000; a++){
-	    string z;
-		deq.push_back(z);
-	}
-	deq.pop_front();
-    BOOST_CHECK_EQUAL(&deq.front(),tmp);
+    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg2 = message("e", "A");
 
+    string key;
+    args.getLVQKey(key);
+    BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
+
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	
+    queue1->deliver(msg1);
+    queue2->deliver(msg1);
+    queue1->deliver(msg2);
+    
+    received = queue1->get().payload;
+    BOOST_CHECK_EQUAL(msg2.get(), received.get());
+
+    received = queue2->get().payload;
+    BOOST_CHECK_EQUAL(msg1.get(), received.get());
+    
 }
 
 void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTtl = 0) 
