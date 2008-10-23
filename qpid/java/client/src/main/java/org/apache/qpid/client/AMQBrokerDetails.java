@@ -49,15 +49,7 @@ public class AMQBrokerDetails implements BrokerDetails
 
     public AMQBrokerDetails(String url,Map<String, String> options) throws URLSyntaxException
     {        
-        /* According to the wiki the AMQBroker options should default to connection level options.
-           unless overridden by broker specific options.
-           Currently there seems to be only one such option (SSL).            
-        */   
-        if (options != null)
-        {
-            _options.put(ConnectionURL.OPTIONS_SSL,options.get(ConnectionURL.OPTIONS_SSL));       
-        }
-        
+      
         // URL should be of format tcp://host:port?option='value',option='value'
         try
         {
@@ -268,14 +260,7 @@ public class AMQBrokerDetails implements BrokerDetails
     {
         if (_options.containsKey(ConnectionURL.OPTIONS_SSL))
         {
-            try
-            {
-                return Boolean.parseBoolean(_options.get(ConnectionURL.OPTIONS_SSL));
-            }
-            catch (NumberFormatException nfe)
-            {
-                //Do nothing as we will use the default below.
-            }
+            return Boolean.parseBoolean(_options.get(ConnectionURL.OPTIONS_SSL));
         }
 
         return false;
