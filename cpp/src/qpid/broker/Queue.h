@@ -66,7 +66,7 @@ namespace qpid {
 
             typedef std::list<Consumer::shared_ptr> Listeners;
             typedef std::deque<QueuedMessage> Messages;
-			typedef std::map<string,QueuedMessage*> LVQ;
+            typedef std::map<string,QueuedMessage*> LVQ;
 
             const string name;
             const bool autodelete;
@@ -95,7 +95,7 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
             qmf::org::apache::qpid::broker::Queue* mgmtObject;
-            RateTracker dequeueTracker;
+RateTracker dequeueTracker;
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -227,6 +227,13 @@ namespace qpid {
              */
             QueuedMessage get();
 
+            /** Get the message at position pos
+             *@param msg out parameter, assigned to the message found.
+             *@param pos position to search for.
+             *@return True if there is a message at pos, false otherwise.
+             */
+            bool find(QueuedMessage& msg, framing::SequenceNumber pos) const;
+
             const QueuePolicy* getPolicy();
 
             void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
@@ -264,6 +271,11 @@ namespace qpid {
 
             void popMsg(QueuedMessage& qmsg);
 
+            /** Set the position sequence number  for the next message on the queue.
+             * Must be >= the current sequence number.
+             * Used by cluster to replicate queues.
+             */
+            void setPosition(framing::SequenceNumber pos);
         };
     }
 }

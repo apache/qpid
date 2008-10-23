@@ -31,17 +31,16 @@ using namespace qpid::framing;
 using std::string;
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
-                               Queue::shared_ptr _queue, 
-                               const std::string _tag,
-                               bool _acquired, bool accepted, 
+                               const Queue::shared_ptr& _queue, 
+                               const std::string& _tag,
+                               bool _acquired,
+                               bool accepted, 
                                bool _windowing) : msg(_msg), 
                                                   queue(_queue), 
                                                   tag(_tag),
                                                   acquired(_acquired),
                                                   acceptExpected(!accepted),
                                                   cancelled(false),
-                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : 0),
-                                                  size(msg.payload ? msg.payload->contentSize() : 0),
                                                   completed(false),
                                                   ended(accepted),
                                                   windowing(_windowing)
@@ -154,7 +153,7 @@ void DeliveryRecord::reject()
 
 uint32_t DeliveryRecord::getCredit() const
 {
-    return credit;
+    return msg.payload ? msg.payload->getRequiredCredit() : 0;
 }
 
 void DeliveryRecord::acquire(DeliveryIds& results) {

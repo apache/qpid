@@ -241,7 +241,7 @@ void DumpClient::dumpConsumer(broker::SemanticState::ConsumerImpl* ci) {
         ProtocolVersion(),
         ci->getName(),
         ci->isBlocked(),
-        ci->isNotifyEnabld()
+        ci->isNotifyEnabled()
     );
     client::SessionBase_0_10Access(shadowSession).get()->send(state);
     QPID_LOG(debug, dumperId << " dumped consumer " << ci->getName() << " on " << shadowSession.getId());

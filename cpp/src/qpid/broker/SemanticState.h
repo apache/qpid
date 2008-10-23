@@ -62,7 +62,7 @@ class SemanticState : public sys::OutputTask,
     class ConsumerImpl : public Consumer, public sys::OutputTask,
                          public boost::enable_shared_from_this<ConsumerImpl>
     {
-        qpid::sys::Mutex lock;
+        mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
         const string name;
         const Queue::shared_ptr queue;
@@ -97,7 +97,7 @@ class SemanticState : public sys::OutputTask,
         void disableNotify();
         void enableNotify();
         void notify();
-        bool isNotifyEnabld();
+        bool isNotifyEnabled() const;
 
         void setWindowMode();
         void setCreditMode();
@@ -106,7 +106,7 @@ class SemanticState : public sys::OutputTask,
         void flush();
         void stop();
         void complete(DeliveryRecord&);    
-        Queue::shared_ptr getQueue() { return queue; }
+        Queue::shared_ptr getQueue() const { return queue; }
         bool isBlocked() const { return blocked; }
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
@@ -147,7 +147,6 @@ class SemanticState : public sys::OutputTask,
     const string userID;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
-    void record(const DeliveryRecord& delivery);
     void checkDtxTimeout();
 
     void complete(DeliveryRecord&);
@@ -213,8 +212,13 @@ class SemanticState : public sys::OutputTask,
     void attached();
     void detached();
 
+    // Used by cluster to re-create replica sessions
     static ConsumerImpl* castToConsumerImpl(OutputTask* p) { return boost::polymorphic_downcast<ConsumerImpl*>(p); }
+
     template <class F> void eachConsumer(F f) { outputTasks.eachOutput(boost::bind(f, boost::bind(castToConsumerImpl, _1))); }
+    template <class F> void eachUnacked(F f) { std::for_each(unacked.begin(), unacked.end(), f); }
+
+    void record(const DeliveryRecord& delivery);
 };
 
 }} // namespace qpid::broker
