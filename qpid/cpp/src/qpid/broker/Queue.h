@@ -66,7 +66,7 @@ namespace qpid {
 
             typedef std::list<Consumer::shared_ptr> Listeners;
             typedef std::deque<QueuedMessage> Messages;
-            typedef std::map<string,QueuedMessage*> LVQ;
+            typedef std::map<string,boost::intrusive_ptr<Message> > LVQ;
 
             const string name;
             const bool autodelete;
@@ -111,7 +111,10 @@ RateTracker dequeueTracker;
 
             void dequeued(const QueuedMessage& msg);
             void popAndDequeue();
-
+            QueuedMessage getFront();
+            QueuedMessage& checkLvqReplace(QueuedMessage& msg) const;
+            void clearLVQIndex(const QueuedMessage& msg);
+            
             inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
             {
                 if (mgmtObject != 0) {
@@ -193,8 +196,8 @@ RateTracker dequeueTracker;
             uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
             void purgeExpired();
 
-	    //move qty # of messages to destination Queue destq
-	    uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
+            //move qty # of messages to destination Queue destq
+            uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
 
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
@@ -211,10 +214,10 @@ RateTracker dequeueTracker;
             const QueueBindings& getBindings() const { return bindings; }
 
             /**
-			* used to take messages from in memory and flush down to disk.
-			*/
-			void setLastNodeFailure();
-			void clearLastNodeFailure();
+             * used to take messages from in memory and flush down to disk.
+             */
+            void setLastNodeFailure();
+            void clearLastNodeFailure();
 
             bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**
