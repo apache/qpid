@@ -42,12 +42,7 @@ public class AMQBrokerDetails implements BrokerDetails
 
     public AMQBrokerDetails(){}
     
-    public AMQBrokerDetails(String url)throws URLSyntaxException
-    {   
-        this(url,null);
-    }
-
-    public AMQBrokerDetails(String url,Map<String, String> options) throws URLSyntaxException
+    public AMQBrokerDetails(String url) throws URLSyntaxException
     {        
       
         // URL should be of format tcp://host:port?option='value',option='value'
