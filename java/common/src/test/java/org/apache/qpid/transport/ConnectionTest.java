@@ -139,7 +139,7 @@ public class ConnectionTest extends TestCase implements SessionListener
                 }
             }
         });
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest",false);
         return conn;
     }
 
@@ -170,7 +170,7 @@ public class ConnectionTest extends TestCase implements SessionListener
     public void testResume() throws Exception
     {
         Connection conn = new Connection();
-        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connect("localhost", port, null, "guest", "guest",false);
 
         conn.setConnectionListener(new ConnectionListener()
         {
@@ -182,7 +182,7 @@ public class ConnectionTest extends TestCase implements SessionListener
             public void closed(Connection conn)
             {
                 queue = true;
-                conn.connect("localhost", port, null, "guest", "guest");
+                conn.connect("localhost", port, null, "guest", "guest",false);
                 conn.resume();
             }
         });

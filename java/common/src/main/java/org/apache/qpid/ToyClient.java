@@ -52,7 +52,7 @@ class ToyClient implements SessionListener
     public static final void main(String[] args)
     {
         Connection conn = new Connection();
-        conn.connect("0.0.0.0", 5672, null, "guest", "guest");
+        conn.connect("0.0.0.0", 5672, null, "guest", "guest", false);
         Session ssn = conn.createSession();
         ssn.setSessionListener(new ToyClient());
 

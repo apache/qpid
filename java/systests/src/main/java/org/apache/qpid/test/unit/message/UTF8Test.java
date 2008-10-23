@@ -82,7 +82,7 @@ public class UTF8Test extends QpidTestCase
             Connection conn = new Connection();
             if (!_broker.equals(QpidTestCase.EXTERNAL) && !isBroker08())
             {
-                conn.connect("localhost", 5672, "test", "guest", "guest");
+                conn.connect("localhost", 5672, "test", "guest", "guest",false);
             }
             else
             {

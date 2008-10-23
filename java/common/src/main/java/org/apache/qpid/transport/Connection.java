@@ -155,7 +155,7 @@ public class Connection extends ConnectionInvoker
         return saslClient;
     }
 
-    public void connect(String host, int port, String vhost, String username, String password)
+    public void connect(String host, int port, String vhost, String username, String password,boolean ssl)
     {
         synchronized (lock)
         {
@@ -163,7 +163,7 @@ public class Connection extends ConnectionInvoker
 
             delegate = new ClientDelegate(vhost, username, password);
 
-            IoTransport.connect(host, port, ConnectionBinding.get(this));
+            IoTransport.connect(host, port, ConnectionBinding.get(this),ssl);
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);

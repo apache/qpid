@@ -64,7 +64,7 @@ public class Listener implements SessionListener
     {
         // Create connection
         Connection con = new Connection();
-        con.connect("localhost", 5672, "test", "guest", "guest");
+        con.connect("localhost", 5672, "test", "guest", "guest",false);
 
         // Create session
         Session session = con.createSession(0);
