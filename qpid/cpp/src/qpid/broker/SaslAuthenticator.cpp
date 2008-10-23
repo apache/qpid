@@ -141,7 +141,11 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
             string::size_type i = temp.find((char)0);
             string uid = temp.substr(0, i);
             string pwd = temp.substr(i + 1);
-            connection.setUserId(str(format("%1%@%2%") % uid % realm));
+            i = uid.find_last_of(realm);
+            if (i == string::npos || i != (uid.size() - 1)) {
+                uid = str(format("%1%@%2%") % uid % realm);
+            }
+            connection.setUserId(uid);
         }
     } else {
         connection.setUserId("anonymous");
