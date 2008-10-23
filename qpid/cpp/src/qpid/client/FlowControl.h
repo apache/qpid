@@ -27,7 +27,7 @@ namespace client {
 
 /**
  * Flow control works by associating a finite amount of "credit"
- * associated with a subscription.
+ * with a subscription.
  *
  * Credit includes a message count and a byte count. Each message
  * received decreases the message count by one, and the byte count by
