@@ -77,11 +77,6 @@ public abstract class ConnectionDelegate
         conn.getSender().close();
     }
 
-    @Override public void sessionAttached(Connection conn, SessionAttached atc)
-    {
-        
-    }
-
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
     {
         Session ssn = conn.getSession(dtc.getChannel());

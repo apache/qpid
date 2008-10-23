@@ -57,6 +57,11 @@ public class SessionDelegate
         log.warn("UNHANDLED: [%s] %s", ssn, method);
     }
 
+    @Override public void sessionAttached(Session ssn, SessionAttached atc)
+    {
+        ssn.setState(Session.State.OPEN);
+    }
+
     @Override public void sessionTimeout(Session ssn, SessionTimeout t)
     {
         ssn.setExpiry(t.getTimeout());

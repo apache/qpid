@@ -157,6 +157,15 @@ public class Session extends SessionInvoker
         }
     }
 
+    void setState(State state)
+    {
+        synchronized (commands)
+        {
+            this.state = state;
+            commands.notifyAll();
+        }
+    }
+
     private void initReceiver()
     {
         synchronized (processedLock)
@@ -390,9 +399,26 @@ public class Session extends SessionInvoker
         {
             synchronized (commands)
             {
-                if (state == CLOSED)
+                if (state != OPEN && state != CLOSED)
                 {
+                    Waiter w = new Waiter(commands, timeout);
+                    while (w.hasTime() && (state != OPEN && state != CLOSED))
+                    {
+                        w.await();
+                    }
+                }
+
+                switch (state)
+                {
+                case OPEN:
+                    break;
+                case CLOSED:
                     throw new SessionClosedException();
+                default:
+                    throw new SessionException
+                        (String.format
+                         ("timed out waiting for session to become open %s",
+                          state));
                 }
 
                 int next = commandsOut++;
