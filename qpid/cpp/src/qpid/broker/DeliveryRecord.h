@@ -46,17 +46,21 @@ class DeliveryRecord{
     bool acquired;
     bool acceptExpected;
     bool cancelled;
-    const uint32_t credit;
-    const uint64_t size;
 
     bool completed;
     bool ended;
     const bool windowing;
 
   public:
-    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, 
-                   const std::string tag,
-                   bool acquired, bool confirmed, bool windowing);
+    DeliveryRecord(
+        const QueuedMessage& msg,
+        const Queue::shared_ptr& queue, 
+        const std::string& tag,
+        bool acquired,
+        bool accepted,
+        bool windowing
+    );
+    
     bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
@@ -76,12 +80,20 @@ class DeliveryRecord{
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }
     bool isRedundant() const { return ended && (!windowing || completed); }
-
+    bool isCancelled() const { return cancelled; }
+    bool isAccepted() const { return !acceptExpected; }
+    bool isEnded() const { return ended; }
+    bool isWindowing() const { return windowing; }
+    
     uint32_t getCredit() const;
-    const std::string& getTag() const { return tag; } 
+    const std::string& getTag() const { return tag; }
 
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
+
+    const QueuedMessage& getMessage() const { return msg; }
+    framing::SequenceNumber getId() const { return id; }
+    Queue::shared_ptr getQueue() const { return queue; }
 
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);

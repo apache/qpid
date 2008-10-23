@@ -56,7 +56,7 @@ class Selector {
     /** Enable based on a 'level[+]:file' string */
     void enable(const std::string& enableStr);
 
-    /** True if level is enabld for file. */
+    /** True if level is enabled for file. */
     bool isEnabled(Level level, const std::string& function);
 
   private:
