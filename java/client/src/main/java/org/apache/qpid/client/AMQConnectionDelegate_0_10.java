@@ -140,7 +140,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             }
             _qpidConnection.setConnectionListener(this);
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
-                                    _conn.getUsername(), _conn.getPassword());
+                                    _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL());
             _conn._connected = true;
         }
         catch(ProtocolVersionException pe)
