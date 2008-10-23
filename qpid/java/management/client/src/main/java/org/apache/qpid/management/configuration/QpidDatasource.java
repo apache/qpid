@@ -137,7 +137,8 @@ public final class QpidDatasource
                     _connectionData.getPort(),
                     _connectionData.getVirtualHost(),
                     _connectionData.getUsername(),
-                    _connectionData.getPassword());
+                    _connectionData.getPassword(),
+		    false);
             return connection;
         }
 
