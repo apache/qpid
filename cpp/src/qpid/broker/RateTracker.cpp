@@ -43,7 +43,7 @@ double RateTracker::sampleRatePerSecond()
     lastCount = currentCount;
     lastTime = now;
     //if sampling at higher frequency than supported, will just return the number of increments
-    if (interval == 0) return increment;
+    if (interval < TIME_SEC) return increment;
     else if (increment == 0) return 0;
     else return increment / (interval / TIME_SEC);
 }
