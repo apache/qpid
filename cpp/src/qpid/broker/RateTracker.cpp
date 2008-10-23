@@ -42,7 +42,10 @@ double RateTracker::sampleRatePerSecond()
     Duration interval(lastTime, now);
     lastCount = currentCount;
     lastTime = now;
-    return increment ? increment / (interval / TIME_SEC) : 0;
+    //if sampling at higher frequency than supported, will just return the number of increments
+    if (interval == 0) return increment;
+    else if (increment == 0) return 0;
+    else return increment / (interval / TIME_SEC);
 }
 
 }} // namespace qpid::broker
