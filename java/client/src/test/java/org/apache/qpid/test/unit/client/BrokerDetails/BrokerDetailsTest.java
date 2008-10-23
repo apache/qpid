@@ -91,17 +91,6 @@ public class BrokerDetailsTest extends TestCase
         }
 
     }
-    
-    public void testBrokerDefaultsToTopLevelOptions() throws URLSyntaxException
-    {
-        String url = "amqp://guest:guest@clientid/test?ssl='false'&brokerlist='tcp://localhost:5672?ssl='true';tcp://myhost:5672'";
-        ConnectionURL connectionurl = new AMQConnectionURL(url);
-        BrokerDetails bd1 = connectionurl.getBrokerDetails(0);
-        BrokerDetails bd2 = connectionurl.getBrokerDetails(1);
-        
-        assertTrue("Broker option should override the top level option",bd1.useSSL());
-        assertFalse("Broker options should default to the top level options",bd2.useSSL());
-    }
 
     public static junit.framework.Test suite()
     {
