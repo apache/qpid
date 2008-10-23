@@ -263,7 +263,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager.setProtocolSession(_protocolSession);
         IoTransport.connect_0_9(getProtocolSession(),
-                brokerDetail.getHost(), brokerDetail.getPort());
+                                brokerDetail.getHost(),
+                                brokerDetail.getPort(),
+                                brokerDetail.useSSL());
         _protocolSession.init();
     }
     

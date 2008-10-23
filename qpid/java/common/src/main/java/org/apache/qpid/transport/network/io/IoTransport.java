@@ -26,6 +26,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Connection;
@@ -98,22 +100,24 @@ public final class IoTransport<E>
     }
 
     public static final <E> E connect(String host, int port,
-                                      Binding<E,ByteBuffer> binding)
+                                      Binding<E,ByteBuffer> binding,
+                                      boolean ssl)
     {
-        Socket socket = createSocket(host, port);
+        Socket socket = createSocket(host, port,ssl);
         IoTransport<E> transport = new IoTransport<E>(socket, binding);
         return transport.endpoint;
     }
 
     public static final Connection connect(String host, int port,
-                                           ConnectionDelegate delegate)
+                                           ConnectionDelegate delegate,
+                                           boolean ssl)
     {
-        return connect(host, port, ConnectionBinding.get(delegate));
+        return connect(host, port, ConnectionBinding.get(delegate),ssl);
     }
 
-    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port)
+    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port, boolean ssl)
     {
-        connect(host, port, new Binding_0_9(session));
+        connect(host, port, new Binding_0_9(session),ssl);
     }
 
     private static class Binding_0_9
@@ -140,12 +144,21 @@ public final class IoTransport<E>
 
     }
 
-    private static Socket createSocket(String host, int port)
+    private static Socket createSocket(String host, int port, boolean ssl)
     {
         try
         {
             InetAddress address = InetAddress.getByName(host);
-            Socket socket = new Socket();
+            Socket socket;
+            if (ssl)
+            {
+                SSLSocketFactory sslSocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                socket = sslSocketfactory.createSocket();
+            }
+            else
+            {
+                socket = new Socket();
+            }
             socket.setReuseAddress(true);
             socket.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
 
