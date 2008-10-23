@@ -39,8 +39,9 @@ public class Echo implements SessionListener
 
     public void message(Session ssn, MessageTransfer xfr)
     {
+        int id = xfr.getId();
         ssn.invoke(xfr);
-        ssn.processed(xfr);
+        ssn.processed(id);
     }
 
     public void exception(Session ssn, SessionException exc)

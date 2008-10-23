@@ -88,12 +88,6 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
         return result;
     }
 
-    private static final int mod(int n, int m)
-    {
-        int r = n % m;
-        return r < 0 ? m + r : r;
-    }
-
     public void send(ByteBuffer buf)
     {
         if (closed.get())

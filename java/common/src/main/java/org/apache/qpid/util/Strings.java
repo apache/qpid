@@ -79,4 +79,16 @@ public final class Strings
         }
     }
 
+    public static final String fromUTF8(byte[] bytes)
+    {
+        try
+        {
+            return new String(bytes, "UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

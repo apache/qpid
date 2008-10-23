@@ -53,9 +53,9 @@ public class Connection extends ConnectionInvoker
     implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
 {
 
-    enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
-
     private static final Logger log = Logger.get(Connection.class);
+
+    enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
     class DefaultConnectionListener implements ConnectionListener
     {
@@ -202,9 +202,9 @@ public class Connection extends ConnectionInvoker
         return createSession(0);
     }
 
-    public Session createSession(long timeout)
+    public Session createSession(long expiry)
     {
-        return createSession(UUID.randomUUID().toString(), timeout);
+        return createSession(UUID.randomUUID().toString(), expiry);
     }
 
     public Session createSession(String name)
@@ -212,25 +212,24 @@ public class Connection extends ConnectionInvoker
         return createSession(name, 0);
     }
 
-    public Session createSession(String name, long timeout)
+    public Session createSession(String name, long expiry)
     {
-        return createSession(Strings.toUTF8(name), timeout);
+        return createSession(Strings.toUTF8(name), expiry);
     }
 
-    public Session createSession(byte[] name, long timeout)
+    public Session createSession(byte[] name, long expiry)
     {
-        return createSession(new Binary(name), timeout);
+        return createSession(new Binary(name), expiry);
     }
 
-    public Session createSession(Binary name, long timeout)
+    public Session createSession(Binary name, long expiry)
     {
         synchronized (lock)
         {
-            Session ssn = new Session(this, name);
+            Session ssn = new Session(this, name, expiry);
             sessions.put(name, ssn);
             map(ssn);
-            ssn.sessionAttach(name.getBytes());
-            ssn.sessionRequestTimeout(timeout);
+            ssn.attach();
             return ssn;
         }
     }
@@ -346,6 +345,19 @@ public class Connection extends ConnectionInvoker
         synchronized (lock)
         {
             return channels.get(channel);
+        }
+    }
+
+    public void resume()
+    {
+        synchronized (lock)
+        {
+            for (Session ssn : sessions.values())
+            {
+                map(ssn);
+                ssn.attach();
+                ssn.resume();
+            }
         }
     }
 

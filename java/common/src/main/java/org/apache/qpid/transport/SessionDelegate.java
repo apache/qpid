@@ -57,7 +57,10 @@ public class SessionDelegate
         log.warn("UNHANDLED: [%s] %s", ssn, method);
     }
 
-    @Override public void sessionTimeout(Session ssn, SessionTimeout t) {}
+    @Override public void sessionTimeout(Session ssn, SessionTimeout t)
+    {
+        ssn.setExpiry(t.getTimeout());
+    }
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
     {
@@ -113,7 +116,7 @@ public class SessionDelegate
 
     @Override public void sessionCommandPoint(Session ssn, SessionCommandPoint scp)
     {
-        ssn.commandsIn = scp.getCommandId();
+        ssn.commandPoint(scp.getCommandId());
     }
 
     @Override public void executionSync(Session ssn, ExecutionSync sync)
