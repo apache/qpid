@@ -33,10 +33,10 @@ import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 public class MockSubscription implements Subscription
 {
 
-    private boolean closed = false;
+    private boolean _closed = false;
     private AMQShortString tag = new AMQShortString("mocktag");
     private AMQQueue queue = null;
-    private StateListener listener = null;
+    private StateListener _listener = null;
     private QueueEntry lastSeen = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
@@ -44,8 +44,11 @@ public class MockSubscription implements Subscription
     @Override
     public void close()
     {
-        closed = true;
-        listener.stateChange(this, _state, State.CLOSED);
+        _closed = true;
+        if (_listener != null)
+        {
+            _listener.stateChange(this, _state, State.CLOSED);
+        }
         _state = State.CLOSED;
     }
 
@@ -117,7 +120,7 @@ public class MockSubscription implements Subscription
     @Override
     public boolean isClosed()
     {
-        return closed;
+        return _closed;
     }
 
     @Override
@@ -174,7 +177,7 @@ public class MockSubscription implements Subscription
     @Override
     public void setStateListener(StateListener listener)
     {
-        this.listener = listener;
+        this._listener = listener;
     }
 
     public State getState()

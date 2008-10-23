@@ -22,9 +22,7 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
@@ -60,7 +58,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQChannel
 {
@@ -594,60 +591,9 @@ public class AMQChannel
         // Process the Unacked-Map.
         // Marking messages who still have a consumer for to be resent
         // and those that don't to be requeued.
+        _unacknowledgedMessageMap.visit(new ExtractResendAndRequeue(_unacknowledgedMessageMap, msgToRequeue,
+                                                                    msgToResend, requeue, _storeContext));
 
-        _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
-        {
-            public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
-            {
-
-                AMQMessage msg = message.getMessage();
-                msg.setRedelivered(true);
-                final Subscription subscription = message.getDeliveredSubscription();
-                if (subscription != null)
-                {
-                    // Consumer exists
-                    if (!subscription.isClosed())
-                    {
-                        msgToResend.put(deliveryTag, message);
-                    }
-                    else // consumer has gone
-                    {
-                        msgToRequeue.put(deliveryTag, message);
-                    }
-                }
-                else
-                {
-                    // Message has no consumer tag, so was "delivered" to a GET
-                    // or consumer no longer registered
-                    // cannot resend, so re-queue.
-                    if (!message.isQueueDeleted())
-                    {
-                        if (requeue)
-                        {
-                            msgToRequeue.put(deliveryTag, message);
-                        }
-                        else
-                        {
-                            _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
-                        }
-                    }
-                    else
-                    {
-                        message.discard(_storeContext);
-                        _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
-                    }
-                }
-
-                // false means continue processing
-                return false;
-            }
-
-            public void visitComplete()
-            {
-            }
-        });
-
-        _unacknowledgedMessageMap.clear();
 
         // Process Messages to Resend
         if (_log.isDebugEnabled())
