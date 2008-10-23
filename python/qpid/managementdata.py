@@ -19,6 +19,11 @@
 # under the License.
 #
 
+
+###############################################################################
+## This file is being obsoleted by qpid/qmfconsole.py
+###############################################################################
+
 import qpid
 import re
 import socket
