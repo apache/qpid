@@ -18,7 +18,6 @@
 */
 using System;
 using System.IO;
-using System.Net.Sockets;
 using System.Threading;
 using common.org.apache.qpid.transport.util;
 using org.apache.qpid.transport.util;
@@ -28,14 +27,14 @@ namespace org.apache.qpid.transport.network.io
     public sealed class IoSender : IIOSender<MemoryStream>
     {
         private static readonly Logger log = Logger.get(typeof (IoReceiver));
-        private readonly NetworkStream bufStream;
+        private readonly Stream bufStream;
         private bool closed;
         private readonly Mutex mutClosed = new Mutex();
         private readonly CircularBuffer<byte[]> queue;
         private readonly Thread thread;
         private readonly int timeout;
         private readonly MemoryStream _tobeSent = new MemoryStream();
-        public IoSender(IoTransport transport, int queueSize, int timeout)
+        public IoSender(IIoTransport transport, int queueSize, int timeout)
         {
             this.timeout = timeout;
             bufStream = transport.Stream;

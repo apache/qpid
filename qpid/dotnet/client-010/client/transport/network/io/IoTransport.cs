@@ -31,7 +31,7 @@ namespace org.apache.qpid.transport.network.io
     /// SO_RCVBUF    - qpid.readBufferSize
     /// SO_SNDBUF    - qpid.writeBufferSize
     /// </summary>
-    public sealed class IoTransport
+    public sealed class IoTransport : IIoTransport
     {
         // constants 
         private const int DEFAULT_READ_WRITE_BUFFER_SIZE = 64*1024;
@@ -39,7 +39,7 @@ namespace org.apache.qpid.transport.network.io
         private const int QUEUE_SIZE = 1000;
         // props
         private static readonly Logger log = Logger.get(typeof (IoTransport));
-        private NetworkStream  m_stream;
+        private Stream  m_stream;
         private IoSender m_sender;
         private Receiver<ReceivedPayload<MemoryStream>> m_receiver;
         private TcpClient m_socket;
@@ -92,7 +92,7 @@ namespace org.apache.qpid.transport.network.io
         }
 
 
-        public NetworkStream Stream
+        public Stream Stream
         {
             get { return m_stream; }
             set { m_stream = value; }
