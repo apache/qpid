@@ -138,6 +138,9 @@ public:
     void addTraceId(const std::string& id);
 	
 	void forcePersistent();
+    
+    boost::intrusive_ptr<Message>& getReplacementMessage(const Queue* qfor) const;
+    void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
 
   private:
     mutable sys::Mutex lock;
@@ -155,6 +158,10 @@ public:
     static TransferAdapter TRANSFER;
 
     MessageAdapter& getAdapter() const;
+	typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
+
+    mutable Replacement replacement;
+    mutable boost::intrusive_ptr<Message> empty;
 };
 
 }}

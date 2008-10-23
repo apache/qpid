@@ -324,3 +324,17 @@ bool Message::hasExpired() const
 {
     return expiration < FAR_FUTURE && expiration < AbsTime::now();
 }
+
+boost::intrusive_ptr<Message>& Message::getReplacementMessage(const Queue* qfor) const
+{
+    Replacement::iterator i = replacement.find(qfor);
+    if (i != replacement.end()){
+        return i->second;
+    }		 
+    return empty;
+}
+
+void Message::setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor)
+{
+    replacement[qfor] = msg;
+}

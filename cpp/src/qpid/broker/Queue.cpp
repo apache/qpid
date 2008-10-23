@@ -198,17 +198,23 @@ void Queue::requeue(const QueuedMessage& msg){
     for_each(copy.begin(), copy.end(), boost::mem_fn(&Consumer::notify));
 }
 
+void Queue::clearLVQIndex(const QueuedMessage& msg){
+    if (lastValueQueue){
+        const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
+        string key = ft->getAsString(qpidVQMatchProperty);
+        lvq.erase(key);
+    }
+}
+
 bool Queue::acquire(const QueuedMessage& msg) {
     Mutex::ScopedLock locker(messageLock);
     QPID_LOG(debug, "attempting to acquire " << msg.position);
     for (Messages::iterator i = messages.begin(); i != messages.end(); i++) {
         if ((i->position == msg.position && !lastValueQueue) // note that in some cases payload not be set
-            || (lastValueQueue && i->position == msg.position && i->payload.get() == msg.payload.get())) {
-            if (lastValueQueue){
-                const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
-                string key = ft->getAsString(qpidVQMatchProperty);
-                lvq.erase(key);
-            }
+            || (lastValueQueue && (i->position == msg.position) && 
+                msg.payload.get() == checkLvqReplace(*i).payload.get()) )  {
+
+            clearLVQIndex(msg);
             messages.erase(i);
             QPID_LOG(debug, "Match found, acquire succeeded: " << i->position << " == " << msg.position);
             return true;
@@ -238,7 +244,7 @@ bool Queue::checkForMessages(Consumer::shared_ptr c)
         addListener(c);
         return false;
     } else {
-        QueuedMessage msg = messages.front();
+        QueuedMessage msg = getFront();
         if (store && !msg.payload->isEnqueueComplete()) {
             //though a message is on the queue, it has not yet been
             //enqueued and so is not available for consumption yet,
@@ -264,7 +270,7 @@ bool Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
             addListener(c);
             return false;
         } else {
-            QueuedMessage msg = messages.front();
+            QueuedMessage msg = getFront();
             if (msg.payload->hasExpired()) {
                 QPID_LOG(debug, "Message expired from queue '" << name << "'");
                 popAndDequeue();
@@ -306,6 +312,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 //consumer wants the message
                 c->position = msg.position;
                 m = msg;
+                clearLVQIndex(msg);
                 return true;
             } else {
                 //browser hasn't got enough credit for the message
@@ -348,8 +355,8 @@ bool Queue::dispatch(Consumer::shared_ptr c)
 bool Queue::seek(QueuedMessage& msg, Consumer::shared_ptr c) {
     Mutex::ScopedLock locker(messageLock);
     if (!messages.empty() && messages.back().position > c->position) {
-        if (c->position < messages.front().position) {
-            msg = messages.front();
+        if (c->position < getFront().position) {
+            msg = getFront();
             return true;
         } else {        
             //TODO: can improve performance of this search, for now just searching linearly from end
@@ -416,7 +423,7 @@ QueuedMessage Queue::get(){
     QueuedMessage msg(this);
 
     if(!messages.empty()){
-        msg = messages.front();
+        msg = getFront();
         popMsg(msg);
     }
     return msg;
@@ -432,6 +439,7 @@ void Queue::purgeExpired()
         {
             Mutex::ScopedLock locker(messageLock);
             for (Messages::iterator i = messages.begin(); i != messages.end();) {
+                if (lastValueQueue) checkLvqReplace(*i);
                 if (i->payload->hasExpired()) {
                     expired.push_back(*i);
                     i = messages.erase(i);
@@ -471,7 +479,7 @@ uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty) {
     uint32_t count = 0; // count how many were moved for returning
 
     while((!qty || move_count--) && !messages.empty()) {
-        QueuedMessage qmsg = messages.front();
+        QueuedMessage qmsg = getFront();
         boost::intrusive_ptr<Message> msg = qmsg.payload;
         destq->deliver(msg); // deliver message to the destination queue
         popMsg(qmsg);
@@ -509,12 +517,11 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
             if (i == lvq.end()){
                 messages.push_back(qm);
                 listeners.swap(copy);
-                lvq[key] = &messages.back();
+                lvq[key] = msg;
             }else {
-                i->second->payload = msg;
+                i->second->setReplacementMessage(msg,this);
             }		 
         }else {
-		
             messages.push_back(qm);
             listeners.swap(copy);
         }
@@ -522,13 +529,33 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
     for_each(copy.begin(), copy.end(), boost::mem_fn(&Consumer::notify));
 }
 
+QueuedMessage Queue::getFront()
+{
+    QueuedMessage msg = messages.front();
+    if (lastValueQueue) {
+        boost::intrusive_ptr<Message> replacement = msg.payload->getReplacementMessage(this);
+        if (replacement.get()) msg.payload = replacement;
+    }
+    return msg;
+}
+
+QueuedMessage& Queue::checkLvqReplace(QueuedMessage& msg) const
+{
+    boost::intrusive_ptr<Message> replacement = msg.payload->getReplacementMessage(this);
+    if (replacement.get()) msg.payload = replacement;
+    return msg;
+}
+
 /** function only provided for unit tests, or code not in critical message path */
 uint32_t Queue::getMessageCount() const
 {
     Mutex::ScopedLock locker(messageLock);
   
-    uint32_t count =0;
+    uint32_t count = 0;
     for ( Messages::const_iterator i = messages.begin(); i != messages.end(); ++i ) {
+        //NOTE: don't need to use checkLvqReplace() here as it
+        //is only relevant for LVQ which does not support persistence
+        //so the enqueueComplete check has no effect
         if ( i->payload->isEnqueueComplete() ) count ++;
     }
     
@@ -556,7 +583,8 @@ void Queue::setLastNodeFailure()
 {
     if (persistLastNode){
         Mutex::ScopedLock locker(messageLock);
-    	for ( Messages::const_iterator i = messages.begin(); i != messages.end(); ++i ) {
+    	for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
+            if (lastValueQueue) checkLvqReplace(*i);
             i->payload->forcePersistent();
             if (i->payload->getPersistenceId() == 0){
             	enqueue(0, i->payload);
@@ -609,7 +637,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
  */
 void Queue::popAndDequeue()
 {
-    QueuedMessage msg = messages.front();
+    QueuedMessage msg = getFront();
     popMsg(msg);
     dequeue(0, msg);
 }
@@ -667,7 +695,7 @@ void Queue::destroy()
     if (alternateExchange.get()) {
         Mutex::ScopedLock locker(messageLock);
         while(!messages.empty()){
-            DeliverableMessage msg(messages.front().payload);
+            DeliverableMessage msg(getFront().payload);
             alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
                                      msg.getMessage().getApplicationHeaders());
             popAndDequeue();
