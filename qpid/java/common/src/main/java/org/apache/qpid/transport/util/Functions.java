@@ -34,6 +34,12 @@ import static java.lang.Math.*;
 public class Functions
 {
 
+    public static final int mod(int n, int m)
+    {
+        int r = n % m;
+        return r < 0 ? m + r : r;
+    }
+
     public static final byte lsb(int i)
     {
         return (byte) (0xFF & i);

@@ -19,9 +19,6 @@
  -
  -->
 <project name="AMQ Common" default="build">
- 
-  <!-- Disabled ConnectionTest due to QPID-1359 -->
-  <property name="module.test.excludes" value="**/ConnectionTest.java"/>
 
   <import file="../module.xml"/>
 
