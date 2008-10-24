@@ -38,12 +38,6 @@ using namespace std;
 
 namespace qpid {
 
-std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
-    return os << "tcp:" << a.host << ":" << a.port;
-}
-
-std::istream& operator>>(std::istream&, const TcpAddress&);
-
 Url Url::getHostNameUrl(uint16_t port) {
     TcpAddress address(std::string(), port);
     if (!sys::SystemInfo::getLocalHostname(address))
