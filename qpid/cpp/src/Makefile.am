@@ -232,6 +232,7 @@ libqpidcommon_la_SOURCES = \
   $(platform_src) \
   qpid/assert.cpp qpid/assert.h \
   qpid/pointer_to_other.h \
+  qpid/Address.cpp \
   qpid/DataDir.cpp \
   qpid/Exception.cpp \
   qpid/Options.cpp \
@@ -543,6 +544,7 @@ nobase_include_HEADERS = \
   qpid/framing/Array.h \
   qpid/framing/Blob.h \
   qpid/framing/BodyHandler.h \
+  qpid/framing/BodyHolder.h \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelHandler.h \
   qpid/framing/Endian.h \
@@ -558,7 +560,6 @@ nobase_include_HEADERS = \
   qpid/framing/InputHandler.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/MethodContent.h \
-  qpid/framing/BodyHolder.h \
   qpid/framing/MaxMethodBodySize.h \
   qpid/framing/ModelMethod.h \
   qpid/framing/OutputHandler.h \
@@ -613,6 +614,7 @@ nobase_include_HEADERS = \
   qpid/sys/FileSysDir.h \
   qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
+  qpid/sys/LockFile.h \
   qpid/sys/LockPtr.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
@@ -622,7 +624,6 @@ nobase_include_HEADERS = \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
   qpid/sys/Fork.h \
-  qpid/sys/LockFile.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
   qpid/sys/SystemInfo.h \
