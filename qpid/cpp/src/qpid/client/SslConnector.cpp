@@ -174,7 +174,7 @@ SslConnector::SslConnector(ProtocolVersion ver,
       aio(0),
       impl(cimpl)
 {
-    QPID_LOG(debug, "SslConnector created for " << version);
+    QPID_LOG(debug, "SslConnector created for " << version.toString());
     //TODO: how do we want to handle socket configuration with ssl?
     //settings.configureSocket(socket);
 }

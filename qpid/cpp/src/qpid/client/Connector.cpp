@@ -185,7 +185,7 @@ TCPConnector::TCPConnector(ProtocolVersion ver,
       aio(0),
       impl(cimpl)
 {
-    QPID_LOG(debug, "TCPConnector created for " << version);
+    QPID_LOG(debug, "TCPConnector created for " << version.toString());
     settings.configureSocket(socket);
 }
 
