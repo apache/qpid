@@ -333,7 +333,8 @@ public class AMQChannel
         Subscription sub = _tag2SubscriptionMap.remove(consumerTag);
         if (sub != null)
         {
-            try {
+            try 
+            {
                 sub.getSendLock();
                 sub.getQueue().unregisterSubscription(sub);
             }
