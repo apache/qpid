@@ -233,4 +233,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
             return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
         }
     }
+
+    public void close()
+    {
+        Security.removeProvider(PROVIDER_NAME);
+    }
 }
