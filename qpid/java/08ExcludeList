@@ -7,7 +7,5 @@ org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.testcases.FailoverTest#*
 // This is a long running test so should exclude from normal runs
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
-// QPID-1225 : Temporary remove this test until the problem has been addressed
-org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*

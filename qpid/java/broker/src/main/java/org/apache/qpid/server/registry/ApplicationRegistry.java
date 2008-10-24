@@ -27,8 +27,11 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.mina.common.IoAcceptor;
 
@@ -207,11 +210,24 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             virtualHost.close();
         }
 
+        // Replace above with this
+//        _virtualHostRegistry.close();
+
+//        _accessManager.close();
+
+//        _databaseManager.close();
+
+        _authenticationManager.close();
+
+//        _databaseManager.close();
+
         // close the rmi registry(if any) started for management
-        if (getManagedObjectRegistry() != null)
+        if (_managedObjectRegistry != null)
         {
-            getManagedObjectRegistry().close();
+            _managedObjectRegistry.close();
         }
+
+//        _pluginManager.close();
     }
 
     private void unbind()
