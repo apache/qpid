@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.Map.Entry;
 
 import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.ConfigurationException;
@@ -51,8 +52,8 @@ public class QMan
      */
     void start() throws StartupFailureException
     {
-        LOGGER.info("<QMAN-000001> : Starting Q-Man...");
-        LOGGER.info("<QMAN-000002> : Reading Q-Man configuration...");
+        LOGGER.info(Messages.QMAN_000001_STARTING_QMAN);
+        LOGGER.info(Messages.QMAN_000002_READING_CONFIGURATION);
 
     	addShutDownHook();
 
@@ -60,7 +61,7 @@ public class QMan
         try
         {
             configurator.configure();            
-            LOGGER.info("<QMAN-000003> : Creating management client(s)...");
+            LOGGER.info(Messages.QMAN_000003_CREATING_MANAGEMENT_CLIENTS);
             for (Entry<UUID, BrokerConnectionData> entry : Configuration.getInstance().getConnectionInfos())
             {
                 UUID brokerId = entry.getKey();
@@ -71,28 +72,16 @@ public class QMan
                     managementClients.add(client);
                     client.estabilishFirstConnectionWithBroker();
                     
-                    LOGGER.info("<QMAN-000004> : Management client for broker %s successfully connected.",brokerId);
+                    LOGGER.info(Messages.QMAN_000004_MANAGEMENT_CLIENT_CONNECTED,brokerId);
                 } catch(StartupFailureException exception) {
-                    LOGGER.error(exception, "<QMAN-100001>: Cannot connect to broker %s on %s",brokerId,data);
+                    LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
                 }
             }
-            LOGGER.info("<QMAN-000004> : Q-Man open for e-business.");
-
-            // TODO : console enhancement (i.e. : connect another broker)
-            System.out.println("Type \"q\" to quit.");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            while ( !"q".equals(reader.readLine()) ){
-            }
+            LOGGER.info(Messages.QMAN_000019_QMAN_STARTED);
        } catch(ConfigurationException exception) {
-            LOGGER.error(
-                    exception, 
-                    "<QMAN-100002> : Q-Man was unable to startup correctly : a configuration error occurred.");
-            System.exit(1);
+            LOGGER.error(exception,Messages.UNABLE_TO_STARTUP_CORRECTLY);
+            throw new StartupFailureException(exception);
         } 
-       catch(IOException exception) 
-        {
-        	throw new StartupFailureException(exception);
-        }
     }
 
     /**
@@ -101,11 +90,12 @@ public class QMan
     private void addShutDownHook()
     {
         // SHUTDOWN HOOK
-        Runtime.getRuntime().addShutdownHook(new Thread(){
+        Runtime.getRuntime().addShutdownHook(new Thread()
+        {
             @Override
             public void run ()
             {
-                LOGGER.info("<QMAN-000006> : Shutting down Q-Man...");
+                LOGGER.info(Messages.QMAN_000020_SHUTTING_DOWN_QMAN);
                 try 
                 {
                     for (ManagementClient client : managementClients)
@@ -114,9 +104,8 @@ public class QMan
                     }
                 } catch(Exception exception)
                 {
-                    
                 }
-                LOGGER.info("<QMAN-000007> : Q-Man shut down.");                
+                LOGGER.info(Messages.QMAN_000021_SHUT_DOWN);                
             }
         });    	
     }
@@ -134,18 +123,26 @@ public class QMan
     		DOMConfigurator.configureAndWatch(logFileName,5000);
     	}
     	
-    	new Thread()
-    	{
-    		public void run()
-    		{
-        		QMan qman = new QMan();
-    			try 
-    			{
-					qman.start();
-				} catch (StartupFailureException exception) {
-					exception.printStackTrace();
-				}    			
-    		}
-    	}.start();
+		QMan qman = new QMan();
+		try 
+		{
+			qman.start();
+		    
+			// TODO : console enhancement (i.e. : connect another broker)
+            System.out.println("Type \"q\" to quit.");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            while ( !"q".equals(reader.readLine()) )
+            {
+            	
+            }
+			System.exit(-1);
+		} catch (StartupFailureException exception) 
+		{
+			exception.printStackTrace();
+			System.exit(-1);
+		} catch (IOException exception)
+		{
+			System.exit(-1);					
+		}
     }
 }

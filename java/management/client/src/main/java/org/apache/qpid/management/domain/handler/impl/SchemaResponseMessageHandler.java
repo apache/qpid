@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
@@ -39,12 +40,25 @@ import org.apache.qpid.transport.codec.ManagementDecoder;
  */
 public class SchemaResponseMessageHandler extends BaseMessageHandler
 {  
+	/**
+	 * Behavioural interface for classes that are responsible to deal with schema messages.
+	 * 
+	 * @author Andrea Gazzarini
+	 */
 	interface IProcessor 
 	{
+		/**
+		 * Processes the incoming message using the given decoder.
+		 * 
+		 * @param decoder the decoder used for dealing with incoming message.
+		 */
 		void process(ManagementDecoder decoder);
 	}
 	
-	final IProcessor classDefinitionProcessor = new IProcessor()
+	/**
+	 * Processor responsible to deal with class schema related messages.
+	 */
+	final IProcessor _classSchemaProcessor = new IProcessor()
 	{
 		@Override
 		public void process(ManagementDecoder decoder) 
@@ -69,13 +83,15 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	                    getMethods(decoder, howManyMethods));
 	        } catch(Exception exception) 
 	        {
-	            _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
+	            _logger.error(exception,Messages.QMAN_100005_CLASS_SCHEMA_PROCESSING_FAILURE);
 	        }
-
 		}
 	};
 	
-	final IProcessor eventDefinitionProcessor = new IProcessor()
+	/**
+	 * Processor responsible to deal with class event related messages.
+	 */
+	final IProcessor _eventSchemaProcessor = new IProcessor()
 	{
 		@Override
 		public void process(ManagementDecoder decoder) 
@@ -94,7 +110,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	            		getAttributes(decoder, howManyArguments));
 	        } catch(Exception exception) 
 	        {
-	            _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
+	            _logger.error(exception,Messages.QMAN_100006_EVENT_SCHEMA_PROCESSING_FAILURE);
 	        }
 		}
 	};	
@@ -115,22 +131,22 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
         	{
         		case Protocol.CLASS :
         		{
-        			classDefinitionProcessor.process(decoder);
+        			_classSchemaProcessor.process(decoder);
         			break;
         		}
         		case Protocol.EVENT : 
         		{
-        			eventDefinitionProcessor.process(decoder);   
+        			_eventSchemaProcessor.process(decoder);   
         			break;
         		}
         		default : 
         		{
-        			_logger.error("<QMAN-100035> : Q-Man was unable to process the schema response message (reason : unknown class kind %s).",classKind);
+        			_logger.error(Messages.QMAN_100011_UNKNOWN_CLASS_KIND,classKind);
         		}
         	}
         } catch(Exception exception) 
         {
-            _logger.error(exception,"<QMAN-100007> : Q-Man was unable to process the schema response message.");
+            _logger.error(exception,Messages.QMAN_100012_SCHEMA_MESSAGE_PROCESSING_FAILURE);
         }        	
     }
     
@@ -167,7 +183,8 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
             int howManyArguments = (Integer) method.get(Names.ARG_COUNT_PARAM_NAME);
 
             List<Map<String,Object>> arguments = new ArrayList<Map<String,Object>>(howManyArguments);
-            for (int argIndex = 0; argIndex < howManyArguments; argIndex++){
+            for (int argIndex = 0; argIndex < howManyArguments; argIndex++)
+            {
                 arguments.add(decoder.readMap());
             }
             result.add(new MethodOrEventDataTransferObject(method,arguments));
@@ -191,7 +208,8 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
             int howManyArguments = (Integer) method.get(Names.ARG_COUNT_PARAM_NAME);
 
             List<Map<String,Object>> arguments = new ArrayList<Map<String,Object>>(howManyArguments);
-            for (int argIndex = 0; argIndex < howManyArguments; argIndex++){
+            for (int argIndex = 0; argIndex < howManyArguments; argIndex++)
+            {
                 arguments.add(decoder.readMap());
             }
             result.add(new MethodOrEventDataTransferObject(method,arguments));

@@ -23,6 +23,7 @@ package org.apache.qpid.management.domain.services;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import junit.framework.TestCase;
 
@@ -167,4 +168,74 @@ public class BrokerMessageListenerTest extends TestCase
         
         _listener.onMessage(message);
     }
+    
+    /**
+     * Tests the execution of the onMessage() method when the incoming message is a compound message.
+     * 
+     * <br>precondition : the incoming message is a compound message.
+     * <br>postcondition : each tokenized message is forwarded to the appropriate handler.
+     */
+    public void testOnMessageOK_WithCompoundMessage() throws Exception 
+    {
+    	final Map<Character,IMessageHandler> handlersMap = new HashMap<Character,IMessageHandler>();
+    	char [] opcodes = {'a','b','c','d','e'};
+    	
+    	class MockMessageHandler implements IMessageHandler
+        {
+    		private final char _opcode;
+    		
+    		public MockMessageHandler(char opcode) 
+    		{
+    			this._opcode = opcode;
+			}
+    		
+            public void process (ManagementDecoder decoder, int sequenceNumber)
+            {
+            	handlersMap.remove(_opcode);
+            }
+
+            public void setDomainModel (DomainModel domainModel)
+            {
+            	// Do nothing here. It's just a mock handler.
+            }      	
+        };
+    	
+    	for (char opcode : opcodes) 
+    	{
+        	handlersMap.put(opcode, new MockMessageHandler(opcode));			
+		}
+    	        
+    	// Removes previously injected handlers (i.e. x & y)
+    	_listener._handlers.clear();
+        _listener.setHandlers(handlersMap);
+        
+        Message compoundMessage = createCompoundMessage(opcodes);
+        _listener.onMessage(compoundMessage);
+        
+        assertTrue(handlersMap.isEmpty());
+    }
+
+    // Creates a (non valid) compound message.
+	private Message createCompoundMessage(char[] opcodes) throws IOException {
+		byte [] compoundMessageData = new byte [12 * opcodes.length];
+		Random randomizer = new Random();
+		int position = 0;
+		
+		for (char opcode : opcodes) {
+			System.arraycopy(MessageTokenizer.MAGIC_NUMBER_BYTES, 0, compoundMessageData, position, MessageTokenizer.MAGIC_NUMBER_BYTES.length);
+			position+=MessageTokenizer.MAGIC_NUMBER_BYTES.length;
+			
+			compoundMessageData[position++] = (byte)opcode;
+			
+			for (int c = 4; c < 12; c++) 
+			{
+				byte aByte = (byte)randomizer.nextInt(127);
+				compoundMessageData[position++] = aByte;
+			}
+		}
+						
+		Message compoundMessage = new ByteBufferMessage();
+		compoundMessage.appendData(compoundMessageData);
+		return compoundMessage;
+	}
 }

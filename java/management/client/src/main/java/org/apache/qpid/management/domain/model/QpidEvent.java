@@ -38,6 +38,7 @@ import javax.management.MBeanInfo;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.transport.codec.ManagementDecoder;
 
@@ -101,7 +102,7 @@ class QpidEvent extends QpidEntity
             } catch (Exception e)
             {
                 _logger.error(
-                        "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
+                        Messages.QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST, 
                         _parent.getName(),
                         _name);
             } finally {
@@ -306,7 +307,8 @@ class QpidEvent extends QpidEntity
      */
     void addEventData (byte[] rawData, long currentTimestamp, int severity)
     {
-        _logger.debug("<QMAN-200015> : Incoming data for event %s::%s.%s",
+        _logger.debug(
+        		Messages.QMAN_200021_INCOMING_EVENT_DATA,
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name);        
@@ -324,7 +326,7 @@ class QpidEvent extends QpidEntity
      */
      void setSchema (List<Map<String, Object>> argumentDefinitions) throws UnableToBuildFeatureException
     {
-         _logger.info("<QMAN-000012> : Incoming schema for %s::%s.%s",_parent.getOwnerId(),_parent.getName(),_name);
+         _logger.info(Messages.QMAN_000010_INCOMING_SCHEMA,_parent.getOwnerId(),_parent.getName(),_name);
         _state.setSchema(argumentDefinitions);
     }    
 
@@ -360,7 +362,7 @@ class QpidEvent extends QpidEntity
             attributes[index++]=(MBeanAttributeInfo) builder.getManagementFeature();
                        
             _logger.debug(
-                    "<QMAN-200017> : Event argument definition for %s::%s.%s has been built.",
+                    Messages.QMAN_200019_EVENT_ARGUMENT_DEFINITION_HAS_BEEN_BUILT,
                     _parent.getName(),
                     _name,
                     argument);
@@ -369,7 +371,7 @@ class QpidEvent extends QpidEntity
         attributes[index++] = new MBeanAttributeInfo(
         		SEVERITY_ATTR_NAME,
 			      	Integer.class.getName(),
-			      	"Severity level for this event.",
+			      	Messages.EVENT_SEVERITY_ATTRIBUTE_DESCRIPTION,
 			      	true,
 			      	false,
 		      	false);
@@ -377,11 +379,10 @@ class QpidEvent extends QpidEntity
         attributes[index++] = new MBeanAttributeInfo(
         		TIMESTAMP_ATTR_NAME,
 			      	Date.class.getName(),
-			      	"Current timestamp of this event.",
+			      	Messages.EVENT_TIMESTAMP_ATTRIBUTE_DESCRIPTION,
 			      	true,
 			      	false,
 		      	false);
-        
     }    
     
     /**
@@ -416,7 +417,7 @@ class QpidEvent extends QpidEntity
                 Object value = property.decodeValue(decoder);
                 instance.createOrReplaceAttributeValue(property.getName(),value);             
             } catch(Exception ignore) {
-                _logger.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,property.getName());
+                _logger.error(Messages.QMAN_100016_UNABLE_TO_DECODE_FEATURE_VALUE, _parent.getName(),_name,property.getName());
             }
         }
     }
@@ -448,7 +449,8 @@ class QpidEvent extends QpidEntity
      * 
      * @return true if there is one or more managed instances.
      */
-	boolean hasNoInstances() {
+	boolean hasNoInstances() 
+	{
 		return _eventInstances.isEmpty();
 	}
 }

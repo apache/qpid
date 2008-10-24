@@ -3,11 +3,19 @@ package org.apache.qpid.management.messages;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+/**
+ * AMQP Management messages codec.
+ * 
+ * @author Andrea Gazzarini
+ */
 public class AmqpCoDec
 {
     private byte [] _buffer;
     private int _position;
         
+    /**
+     * Builds a new codec.
+     */
     AmqpCoDec()
     {
         _buffer = new byte [1000];
@@ -118,6 +126,19 @@ public class AmqpCoDec
         }
     }
 
+	public static final long unpack64(byte data[]) {
+		return (
+				((long) (data[0] & 0xff) << 56) | 
+				((long)(data[1] & 0xff) << 48) | 
+				((long)(data[2] & 0xff) << 40) | 
+				((long)(data[3] & 0xff) << 32) | 
+				((long)(data[4] & 0xff) << 24) | 
+				((long)(data[5] & 0xff) << 16) | 
+				((long)(data[6] & 0xff) << 8) | 
+				(long) data[7] & 0xff);		
+	}
+
+    
     public void pack (byte[] bytes)
     {
         System.arraycopy(bytes, 0, _buffer, _position, bytes.length);

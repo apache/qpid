@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.management;
 
-import com.sun.org.apache.xerces.internal.jaxp.validation.ErrorHandlerAdaptor;
-
 /**
  * Protocol defined constants.
  * 

@@ -9,6 +9,7 @@ import javax.management.DynamicMBean;
 import javax.management.MBeanInfo;
 import javax.management.RuntimeOperationsException;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.QpidService;
 import org.apache.qpid.transport.util.Logger;
@@ -110,7 +111,7 @@ public abstract class QpidEntity
         this._service = new QpidService(_parent.getOwnerId());
         
         _logger.debug(
-                "<QMAN-200017> : Entity definition has been built (without schema) for %s::%s.%s", 
+                Messages.QMAN_200020_ENTITY_DEFINITION_HAS_BEEN_BUILT, 
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name);        

@@ -22,6 +22,7 @@ package org.apache.qpid.management.domain.model;
 
 import java.lang.reflect.Constructor;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.domain.model.type.Type;
 import org.apache.qpid.transport.codec.ManagementDecoder;
@@ -172,10 +173,10 @@ class QpidProperty extends QpidAttribute
             Class<?> validatorClass = Class.forName(Configuration.getInstance().getValidatorClassName(type));
             Constructor<?> validatorConstructor = validatorClass.getDeclaredConstructor(QpidProperty.class);
             _validator = (IValidator) validatorConstructor.newInstance(this);
-            LOGGER.debug("Validator %s for type %s successfully installed." ,validatorClass.getName(), type);
+            LOGGER.debug(Messages.QMAN_200022_VALIDATOR_INSTALLED ,validatorClass.getName(), type);
         } catch(Exception exception) {
             _validator = EMPTY_VALIDATOR;
-            LOGGER.debug("No validator was found for type %s. The default (empty) validator will be used." , type);
+            LOGGER.debug(Messages.QMAN_200023_VALIDATOR_NOT_FOUND , type);
         }
     }
 

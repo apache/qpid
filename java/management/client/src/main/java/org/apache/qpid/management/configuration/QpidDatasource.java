@@ -28,6 +28,7 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPoolFactory;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.util.Logger;
@@ -87,7 +88,8 @@ public final class QpidDatasource
             try
             {
                 pools.get(_brokerId).returnObject(this);
-                LOGGER.debug("<QMAN-200012> : Connection %s returned to the pool.", this);
+                
+                LOGGER.debug(Messages.QMAN_200006_QPID_CONNECTION_RELEASED, this);
             }
             catch (Exception e)
             {
@@ -150,7 +152,9 @@ public final class QpidDatasource
         {
             PooledConnection connection = (PooledConnection) obj;
             boolean isValid = connection.isValid();
-            LOGGER.debug("<QMAN-200013> : Test connection on reserve. Is valid? %s",isValid);
+
+            LOGGER.debug(Messages.QMAN_200007_TEST_CONNECTION_ON_RESERVE,isValid);
+            
             return isValid;
         }
 
@@ -164,10 +168,11 @@ public final class QpidDatasource
             {
                 PooledConnection connection = (PooledConnection) obj;
                 connection.reallyClose();
-                LOGGER.debug("<QMAN-200014> : Connection has been destroyed.");
-            } catch (Exception e)
+                
+                LOGGER.debug(Messages.QMAN_200008_CONNECTION_DESTROYED);
+            } catch (Exception exception)
             {
-                LOGGER.debug(e, "<QMAN-200015> : Unable to destroy a connection object");
+                LOGGER.debug(exception, Messages.QMAN_200009_CONNECTION_DESTROY_FAILURE);
             }
         }
     }
