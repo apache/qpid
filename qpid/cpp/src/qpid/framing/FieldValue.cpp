@@ -21,6 +21,7 @@
 #include "FieldValue.h"
 #include "Array.h"
 #include "Buffer.h"
+#include "Endian.h"
 #include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
@@ -138,11 +139,11 @@ IntegerValue::IntegerValue(int v) :
 {}
 
 FloatValue::FloatValue(float v) :
-    FieldValue(0x23, new FixedWidthValue<4>(reinterpret_cast<uint8_t*>(&v)))
+    FieldValue(0x23, new FixedWidthValue<4>(Endian::convertIfRequired(reinterpret_cast<uint8_t*>(&v), 4)))
 {}
 
 DoubleValue::DoubleValue(double v) :
-    FieldValue(0x33, new FixedWidthValue<8>(reinterpret_cast<uint8_t*>(&v)))
+    FieldValue(0x33, new FixedWidthValue<8>(Endian::convertIfRequired(reinterpret_cast<uint8_t*>(&v), 8)))
 {}
 
 Integer64Value::Integer64Value(int64_t v) :
