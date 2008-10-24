@@ -143,9 +143,9 @@ EXTRA_DIST +=								\
   quick_topictest							\
   quick_perftest							\
   topictest								\
-  run_header_tests							\
+  run_header_test							\
   header_test.py							\
-  run_ssl_tests								\
+  ssl_test								\
   run_federation_tests							\
   run_acl_tests								\
   .valgrind.supp							\
