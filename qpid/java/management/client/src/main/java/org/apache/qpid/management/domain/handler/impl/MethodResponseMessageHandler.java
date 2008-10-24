@@ -72,7 +72,7 @@ public class MethodResponseMessageHandler extends BaseMessageHandler
      */
     public void process (ManagementDecoder decoder, int sequenceNumber)
     {        
-        InvocationResult result = new InvocationResult(decoder.readUint32(), decoder.readStr8(),decoder.readReaminingBytes());
+        InvocationResult result = new InvocationResult(decoder.readUint32(), decoder.readStr16(),decoder.readReaminingBytes());
         BlockingQueue<InvocationResult> exchangeChannel = _exchangeChannels.remove(sequenceNumber);
         if (exchangeChannel != null)
         {
