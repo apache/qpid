@@ -128,9 +128,13 @@ check_PROGRAMS+=consume
 consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 consume_LDADD=$(lib_client) 
 
+check_PROGRAMS+=header_test
+header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
+header_test_LDADD=$(lib_client) 
+
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= $(srcdir)/run_test 
 
-system_tests = client_test quick_perftest quick_topictest
+system_tests = client_test quick_perftest quick_topictest run_header_test
 TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests
 
 EXTRA_DIST +=								\
@@ -139,6 +143,9 @@ EXTRA_DIST +=								\
   quick_topictest							\
   quick_perftest							\
   topictest								\
+  run_header_tests							\
+  header_test.py							\
+  run_ssl_tests								\
   run_federation_tests							\
   run_acl_tests								\
   .valgrind.supp							\
