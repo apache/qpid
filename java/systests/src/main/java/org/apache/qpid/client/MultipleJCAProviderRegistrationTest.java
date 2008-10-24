@@ -35,7 +35,7 @@ import java.util.LinkedList;
  * QPID-1394 : Test to ensure that the client can register their custom JCAProviders after the broker to ensure that
  * the Qpid custom authentication SASL plugins are used.
  */
-public class MultipleJCAProviderRegistration extends QpidTestCase
+public class MultipleJCAProviderRegistrationTest extends QpidTestCase
 {
     public void setUp() throws Exception
     {
