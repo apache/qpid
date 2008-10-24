@@ -85,8 +85,19 @@ public class DynamicSaslRegistrar
 
             if (factories.size() > 0)
             {
-                Security.insertProviderAt(new JCAProvider(factories), 0);
-                _logger.debug("Dynamic SASL provider added as a security provider");
+                // Ensure we are used before the defaults
+                if (Security.insertProviderAt(new JCAProvider(factories), 1) == -1)
+                {
+                    _logger.error("Unable to load custom SASL providers.");
+                }
+                else
+                {
+                    _logger.info("Additional SASL providers successfully registered.");
+                }
+            }
+            else
+            {
+                _logger.warn("No additional SASL providers registered.");
             }
         }
         catch (IOException e)
@@ -185,6 +196,7 @@ public class DynamicSaslRegistrar
                     continue;
                 }
 
+                _logger.debug("Registering class "+ clazz.getName() +" for mechanism "+mechanism);
                 factoriesToRegister.put(mechanism, (Class<? extends SaslClientFactory>) clazz);
             }
             catch (Exception ex)
