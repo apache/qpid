@@ -39,8 +39,14 @@ public class DynamicSaslRegistrar
         Map<String, Class> factories = registerSaslClientFactories();
         if (factories.size() > 0)
         {
-            Security.addProvider(new JCAProvider(factories));
-            _logger.debug("Dynamic SASL provider added as a security provider");
+            if (Security.addProvider(new JCAProvider(factories)) == -1)
+            {
+                _logger.error("Unable to load custom SASL providers. Qpid custom SASL authenticators unavailable.");                
+            }
+            else
+            {
+                _logger.debug("Dynamic SASL provider added as a security provider");
+            }
         }
     }
 
