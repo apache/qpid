@@ -22,14 +22,11 @@ org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowse
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
 org.apache.qpid.test.testcases.FailoverTest#*
 org.apache.qpid.test.client.failover.FailoverTest#*
-// QPID-1225 : Temporary remove this test until the problem has been addressed
-org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 
-// InVM Broker tests
+// InVM Broker tests awaiting resolution of QPID-1103
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
-
-// QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
+org.apache.qpid.server.security.acl.SimpleACLTest#
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
