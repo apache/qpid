@@ -415,6 +415,18 @@
     </zip>
   </target>
 
+  <target name="bundle" depends="jar">
+   <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.249.jar"/>
+   <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module}.bnd"/>
+   <bnd 
+      classpath="${build}/lib/${module.namever}.jar"
+      eclipse="false" 
+      failok="false" 
+      exceptions="true"
+      output="${build}/lib/${module.namever}-osgi.jar"
+      files="${module.src}/${module}.bnd"/>
+  </target>    
+
     <target name="tar-release" depends="zip-release" description="build release archive">
       <tar destfile="${module.release.tar}" longfile="gnu" >
         <zipfileset src="${module.release.zip}"/>

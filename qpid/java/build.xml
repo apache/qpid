@@ -98,6 +98,10 @@
     <iterate target="doc"/>
   </target>
 
+  <target name="bundle" description="create OSGi bundles">
+    <iterate target="bundle"/>
+  </target>
+  
   <target name="release-bin" description="build a binary release artifact" depends="build">
       <iterate  target="release-bin"/>
   </target>
