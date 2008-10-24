@@ -34,6 +34,7 @@ namespace broker {
 class FanOutExchange : public virtual Exchange {
     typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> BindingsArray;
     BindingsArray bindings;
+    FedBinding fedBinding;
   public:
     static const std::string typeName;
         
@@ -53,6 +54,7 @@ class FanOutExchange : public virtual Exchange {
     virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
 
     virtual ~FanOutExchange();
+    virtual bool supportsDynamicBinding() { return true; }
 };
 
 }

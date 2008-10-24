@@ -27,6 +27,7 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/management/Manageable.h"
+#include "Exchange.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
 #include "qmf/org/apache/qpid/broker/Bridge.h"
 
@@ -41,7 +42,7 @@ class ConnectionState;
 class Link;
 class LinkRegistry;
 
-class Bridge : public PersistableConfig, public management::Manageable
+class Bridge : public PersistableConfig, public management::Manageable, public Exchange::DynamicBridge
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
@@ -69,6 +70,12 @@ public:
     const std::string& getName() const;
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
+    // Exchange::DynamicBridge methods
+    void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin);
+    void sendReorigin();
+    bool containsLocalTag(const std::string& tagList) const;
+    const std::string& getLocalTag() const;
+
 private:
     struct PushHandler : framing::FrameHandler {
         PushHandler(Connection* c) { conn = c; }
@@ -87,7 +94,9 @@ private:
     qmf::org::apache::qpid::broker::Bridge*        mgmtObject;
     CancellationListener        listener;
     std::string name;
+    std::string queueName;
     mutable uint64_t  persistenceId;
+    ConnectionState* connState;
 };
 
 

@@ -60,7 +60,7 @@ using namespace qpid::framing;
 using std::stringstream;
 using std::string;
 
-void publish_messages(Session& session, string routing_key)
+void publish_messages(Session& session, string exchange, string routing_key)
 {
   Message message;
 
@@ -75,7 +75,7 @@ void publish_messages(Session& session, string routing_key)
     message.setData(message_data.str());
     // Asynchronous transfer sends messages as quickly as
     // possible without waiting for confirmation.
-    async(session).messageTransfer(arg::content=message, arg::destination="amq.topic");
+    async(session).messageTransfer(arg::content=message, arg::destination=exchange);
   }
 
 }
@@ -88,18 +88,19 @@ void publish_messages(Session& session, string routing_key)
  *
  */
 
-void no_more_messages(Session& session)
+void no_more_messages(Session& session, string exchange)
 {
   Message message;
 
   message.getDeliveryProperties().setRoutingKey("control"); 
   message.setData("That's all, folks!");
-  session.messageTransfer(arg::content=message, arg::destination="amq.topic"); 
+  session.messageTransfer(arg::content=message, arg::destination=exchange); 
 }
 
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    std::string exchange = argc>3 ? argv[3] : "amq.topic";
     Connection connection;
     Message message;
     try {
@@ -108,12 +109,12 @@ int main(int argc, char** argv) {
 
   //--------- Main body of program --------------------------------------------
 
-	publish_messages(session, "usa.news");
-	publish_messages(session, "usa.weather");
-	publish_messages(session, "europe.news");
-	publish_messages(session, "europe.weather");
+        publish_messages(session, exchange, "usa.news");
+        publish_messages(session, exchange, "usa.weather");
+        publish_messages(session, exchange, "europe.news");
+        publish_messages(session, exchange, "europe.weather");
 
-	no_more_messages(session);
+        no_more_messages(session, exchange);
 
   //-----------------------------------------------------------------------------
 

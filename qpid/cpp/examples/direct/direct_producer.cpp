@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     int count = argc>3 ? atoi(argv[3]) : 10;
+    string exchange(argc>4 ? argv[4] : "amq.direct");
     Connection connection;
     Message message;
     try {
@@ -89,14 +90,14 @@ int main(int argc, char** argv) {
 	  message.setData(message_data.str());
           // Asynchronous transfer sends messages as quickly as
           // possible without waiting for confirmation.
-          // async(session).messageTransfer(arg::content=message,  arg::destination="amq.direct");
-          session.messageTransfer(arg::content=message,  arg::destination="amq.direct");
+          // async(session).messageTransfer(arg::content=message,  arg::destination=exchange);
+          session.messageTransfer(arg::content=message,  arg::destination=exchange);
 	}
 	
 	// And send a final message to indicate termination.
 
 	message.setData("That's all, folks!");
-        session.messageTransfer(arg::content=message,  arg::destination="amq.direct"); 
+        session.messageTransfer(arg::content=message,  arg::destination=exchange); 
 
   //-----------------------------------------------------------------------------
 

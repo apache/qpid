@@ -31,33 +31,35 @@
 
 namespace qpid {
 namespace broker {
-    class DirectExchange : public virtual Exchange{
-        typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Queues;
-        typedef std::map<string, Queues> Bindings;
-        Bindings bindings;
-        qpid::sys::Mutex lock;
-
-    public:
-        static const std::string typeName;
-        
-        DirectExchange(const std::string& name, management::Manageable* parent = 0);
-        DirectExchange(const string& _name, bool _durable, 
-                       const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
-
-        virtual std::string getType() const { return typeName; }            
-        
-        virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-
-        virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-
-        virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
-
-        virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
-
-        virtual ~DirectExchange();
+class DirectExchange : public virtual Exchange {
+    typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> Queues;
+    struct BoundKey {
+        Queues     queues;
+        FedBinding fedBinding;
     };
-}
-}
+    typedef std::map<string, BoundKey> Bindings;
+    Bindings bindings;
+    qpid::sys::Mutex lock;
 
+public:
+    static const std::string typeName;
+        
+    DirectExchange(const std::string& name, management::Manageable* parent = 0);
+    DirectExchange(const string& _name, bool _durable, 
+                   const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
+
+    virtual std::string getType() const { return typeName; }            
+        
+    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+
+    virtual ~DirectExchange();
+
+    virtual bool supportsDynamicBinding() { return true; }
+};
+
+}}
 
 #endif

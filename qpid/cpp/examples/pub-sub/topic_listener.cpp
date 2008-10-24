@@ -61,7 +61,7 @@ class Listener : public MessageListener {
     SubscriptionManager subscriptions;
   public:
     Listener(Session& session);
-    virtual void prepareQueue(std::string queue, std::string routing_key);
+    virtual void prepareQueue(std::string queue, std::string exchange, std::string routing_key);
     virtual void received(Message& message);
     virtual void listen();
     ~Listener() { };
@@ -84,7 +84,7 @@ Listener::Listener(Session& session) :
 }
 
 
-void Listener::prepareQueue(std::string queue, std::string routing_key) {
+void Listener::prepareQueue(std::string queue, std::string exchange, std::string routing_key) {
 
     /* Create a unique queue name for this consumer by concatenating
      * the queue name parameter with the Session ID.
@@ -106,8 +106,8 @@ void Listener::prepareQueue(std::string queue, std::string routing_key) {
      * "control" routing key, when it is finished.
      */
 
-    session.exchangeBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey=routing_key);
-    session.exchangeBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey="control");
+    session.exchangeBind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey=routing_key);
+    session.exchangeBind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey="control");
 
     /*
      * subscribe to the queue using the subscription manager.
@@ -134,6 +134,7 @@ void Listener::listen() {
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    std::string exchange = argc>3 ? argv[3] : "amq.topic";
     Connection connection;
     try {
         connection.open(host, port);
@@ -147,12 +148,12 @@ int main(int argc, char** argv) {
 
         // Subscribe to messages on the queues we are interested in
 
-	listener.prepareQueue("usa", "usa.#");
-	listener.prepareQueue("europe", "europe.#");
-	listener.prepareQueue("news", "#.news");
-	listener.prepareQueue("weather", "#.weather");
+        listener.prepareQueue("usa", exchange, "usa.#");
+        listener.prepareQueue("europe", exchange, "europe.#");
+        listener.prepareQueue("news", exchange, "#.news");
+        listener.prepareQueue("weather", exchange, "#.weather");
 
-	std::cout << "Listening for messages ..." << std::endl;
+        std::cout << "Listening for messages ..." << std::endl;
 
         // Give up control and receive messages
         listener.listen();

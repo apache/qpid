@@ -41,6 +41,7 @@ class Tokens : public std::vector<std::string> {
     Tokens(const std::string& s) { operator=(s); }
     /** Tokenizing assignment operator s */
     Tokens & operator=(const std::string& s);
+    void key(std::string& key) const;
     
   private:
     size_t hash;
@@ -70,8 +71,12 @@ class TopicPattern : public Tokens
     void normalize();
 };
 
-class TopicExchange : public virtual Exchange{
-    typedef std::map<TopicPattern, Binding::vector> BindingMap;
+class TopicExchange : public virtual Exchange {
+    struct BoundKey {
+        Binding::vector bindingVector;
+        FedBinding fedBinding;
+    };
+    typedef std::map<TopicPattern, BoundKey> BindingMap;
     BindingMap bindings;
     qpid::sys::RWlock lock;
 
@@ -94,6 +99,7 @@ class TopicExchange : public virtual Exchange{
     virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
 
     virtual ~TopicExchange();
+    virtual bool supportsDynamicBinding() { return true; }
 };
 
 
