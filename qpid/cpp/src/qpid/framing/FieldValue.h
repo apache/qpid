@@ -166,6 +166,7 @@ class FixedWidthValue : public FieldValue::Data {
     {
         for (uint i = 0; i < width; ++i) data[i] = octets[i];
     }
+    uint8_t* const rawOctets() { return octets; }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
 };
@@ -303,7 +304,6 @@ class ArrayValue : public FieldValue {
   public:
     ArrayValue(const Array&);
 };
-
 
 template <class T>
 bool getEncodedValue(FieldTable::ValuePtr vptr, T& value) 

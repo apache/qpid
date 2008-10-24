@@ -21,6 +21,7 @@
 #include "FieldTable.h"
 #include "Array.h"
 #include "Buffer.h"
+#include "Endian.h"
 #include "FieldValue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -157,7 +158,9 @@ bool getRawFixedWidthValue(FieldTable::ValuePtr vptr, T& value)
     if (vptr && vptr->getType() == typecode) {
         FixedWidthValue<width>* fwv = dynamic_cast< FixedWidthValue<width>* >(&vptr->getData());
         if (fwv) {
-            fwv->copyInto(reinterpret_cast<uint8_t*>(&value));
+            uint8_t* const octets = Endian::convertIfRequired(fwv->rawOctets(), width);
+            uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
+            for (uint i = 0; i < width; ++i) target[i] = octets[i];
             return true;
         }
     }
