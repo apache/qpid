@@ -494,7 +494,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
 
         if (!acl->authorise(userId, acl::ACCESS, acl::METHOD, methodName, &params)) {
             outBuffer.putLong(Manageable::STATUS_FORBIDDEN);
-            outBuffer.putShortString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
+            outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);
@@ -505,12 +505,12 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
     ManagementObjectMap::iterator iter = managementObjects.find(objId);
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
         outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
-        outBuffer.putShortString (Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));
+        outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));
     } else {
         if ((iter->second->getPackageName() != packageName) ||
             (iter->second->getClassName()   != className)) {
             outBuffer.putLong        (Manageable::STATUS_INVALID_PARAMETER);
-            outBuffer.putShortString (Manageable::StatusText (Manageable::STATUS_INVALID_PARAMETER));
+            outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_INVALID_PARAMETER));
         }
         else
             try {
@@ -519,7 +519,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
             } catch(std::exception& e) {
                 outBuffer.restore();
                 outBuffer.putLong(Manageable::STATUS_EXCEPTION);
-                outBuffer.putShortString(e.what());
+                outBuffer.putMediumString(e.what());
             }
     }
 
@@ -926,7 +926,7 @@ bool ManagementBroker::authorizeAgentMessageLH(Message& msg)
 
             encodeHeader(outBuffer, 'm', sequence);
             outBuffer.putLong(Manageable::STATUS_FORBIDDEN);
-            outBuffer.putShortString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
+            outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);

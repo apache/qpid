@@ -460,7 +460,7 @@ class Session:
 
   def _handleMethodResp(self, broker, codec, seq):
     code = codec.read_uint32()
-    text = str(codec.read_str8())
+    text = str(codec.read_str16())
     outArgs = {}
     method, synchronous = self.seqMgr._release(seq)
     if code == 0:

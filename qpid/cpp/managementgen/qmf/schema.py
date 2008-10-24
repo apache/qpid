@@ -1076,7 +1076,7 @@ class SchemaClass:
       stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
       stream.write ("        outBuf.putLong        (status);\n")
-      stream.write ("        outBuf.putShortString (::qpid::management::Manageable::StatusText (status, text));\n")
+      stream.write ("        outBuf.putMediumString(::qpid::management::Manageable::StatusText (status, text));\n")
       for arg in method.args:
         if arg.getDir () == "O" or arg.getDir () == "IO":
           stream.write ("        " +\
