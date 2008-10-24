@@ -336,7 +336,7 @@ ManagementObject* Link::GetManagementObject (void) const
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args, string&)
+Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args, string& text)
 {
     switch (op)
     {
@@ -350,8 +350,22 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args
         _qmf::ArgsLinkBridge& iargs = (_qmf::ArgsLinkBridge&) args;
 
         // Durable bridges are only valid on durable links
-        if (iargs.i_durable && !durable)
-            return Manageable::STATUS_INVALID_PARAMETER;
+        if (iargs.i_durable && !durable) {
+            text = "Can't create a durable route on a non-durable link";
+            return Manageable::STATUS_USER;
+        }
+
+        if (iargs.i_dynamic) {
+            Exchange::shared_ptr exchange = getBroker()->getExchanges().get(iargs.i_src);
+            if (exchange.get() == 0) {
+                text = "Exchange not found";
+                return Manageable::STATUS_USER;
+            }
+            if (!exchange->supportsDynamicBinding()) {
+                text = "Exchange type does not support dynamic routing";
+                return Manageable::STATUS_USER;
+            }
+        }
 
         std::pair<Bridge::shared_ptr, bool> result =
             links->declare (host, port, iargs.i_durable, iargs.i_src,

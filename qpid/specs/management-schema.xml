@@ -196,6 +196,7 @@
     <property name="queueRef"    type="objId" references="Queue"    access="RC" index="y"/>
     <property name="bindingKey"  type="sstr"  access="RC" index="y"/>
     <property name="arguments"   type="map"   access="RC"/>
+    <property name="origin"      type="sstr"  access="RO" optional="y"/>
 
     <statistic name="msgMatched" type="count64"/>
   </class>

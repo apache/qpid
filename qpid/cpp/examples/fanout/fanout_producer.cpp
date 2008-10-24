@@ -64,6 +64,7 @@ using std::string;
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    string exchange = argc>3 ? argv[3] : "amq.fanout";
     Connection connection;
     Message message;
     try {
@@ -86,13 +87,13 @@ int main(int argc, char** argv) {
 	  message.setData(message_data.str());
           // Asynchronous transfer sends messages as quickly as
           // possible without waiting for confirmation.
-          async(session).messageTransfer(arg::content=message, arg::destination="amq.fanout");
+          async(session).messageTransfer(arg::content=message, arg::destination=exchange);
 	}
 	
 	// And send a final message to indicate termination.
 
 	message.setData("That's all, folks!");
-        session.messageTransfer(arg::content=message, arg::destination="amq.fanout"); 
+        session.messageTransfer(arg::content=message, arg::destination=exchange);
 
   //-----------------------------------------------------------------------------
 
