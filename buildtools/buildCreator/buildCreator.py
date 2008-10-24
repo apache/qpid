@@ -969,26 +969,26 @@ def peformSubstitutionsInScript(build, script):
 
                 script = script.replace(search,replace)
 		
-    # Perform Macro replacements
-    # Currently only one macro so for simplisity fix it here    
-    writeVersionMacro = script.find("$writeVersions")
-    if writeVersionMacro != -1:
+    # Perform keyword substitution replacements
+    # Currently only one substitution exists so for simplisity fix it here    
+    writeVersionSubstitution = script.find("$writeVersions")
+    if writeVersionSubstitution != -1:
     	
 	#Extract Filename
-        fileNameStart = script.find("(",writeVersionMacro)
+        fileNameStart = script.find("(",writeVersionSubstitution)
         fileNameEnd = script.find(")",fileNameStart)	
 	fileName= script[fileNameStart+1:fileNameEnd]
 	
-	macro = createVersionMacro(build, fileName)
+	substitution = createVersionSubstitution(build, fileName)
 		
-	script = script.replace("$writeVersions(" + fileName + ")", macro)		
+	script = script.replace("$writeVersions(" + fileName + ")", substitution)		
 	
 
     return script     
 
 ################################################################################
 #
-# Macros
+# Keyword Substitutions
 #
 ################################################################################
    
@@ -997,14 +997,14 @@ def peformSubstitutionsInScript(build, script):
 # to the specified file using shell redirects. redirects are to be used as the absolute filename 
 # location may not be known as the name comes in via the release script
 #
-def createVersionMacro(build, filename):
-    macro = ""
+def createVersionSubstitution(build, filename):
+    substitution = ""
     sources = getSourceList();
 
     dependencies = build.getElementsByTagName(DEPENDENCY)
 	
     if dependencies > 0:
-        macro += "\n echo 'Source Version Information:'>> " + filename	
+        substitution += "\n echo 'Source Version Information:'>> " + filename	
         for dependency in dependencies :
             depSources = dependency.getElementsByTagName(SOURCE)
             # Can assume we have dependencies as we would have failed before now
@@ -1013,12 +1013,12 @@ def createVersionMacro(build, filename):
 		# We can assume source is valid.		
 		for s in sources:
 		    if sourceDependency == getName(s):		    	
-			macro += "\n " + ECHO_BIN + " -n '" + sourceDependency + ":" \
+			substitution += "\n " + ECHO_BIN + " -n '" + sourceDependency + ":" \
 			         + getType(s) + ":' >> " + filename
-			macro += "\n" + getVersionCommand(s) + " >>" + filename
-			macro += addPatchVersions(s, filename)
+			substitution += "\n" + getVersionCommand(s) + " >>" + filename
+			substitution += addPatchVersions(s, filename)
 						   	    	     
-    return macro
+    return substitution
     
 #
 # Use the specified source as to lookup all associated patches and write their details out the 
@@ -1026,7 +1026,7 @@ def createVersionMacro(build, filename):
 # location may not be known as the name comes in via the release script
 #
 def addPatchVersions(source, filename):
-    macro = ""
+    substitution = ""
     
     patches = getPatchList()
     
@@ -1037,30 +1037,30 @@ def addPatchVersions(source, filename):
 
         if sourceName == patchSourceName:
 	    type = getType(patch)
-	    macro += "\n" + ECHO_BIN + " \"\t"+getName(patch)+":"+type + "\" >> "+filename
+	    substitution += "\n" + ECHO_BIN + " \"\t"+getName(patch)+":"+type + "\" >> "+filename
 	    url = getValue(patch.getElementsByTagName(URL)[0])
-	    macro += "\n" + ECHO_BIN + " \"\t\tURL:" + url + "\" >> "+filename
+	    substitution += "\n" + ECHO_BIN + " \"\t\tURL:" + url + "\" >> "+filename
 	    if (type == SVN):
 		    if (source.getElementsByTagName(REVISION).length > 0):
-                        macro += "\n" + ECHO_BIN + " \"\t\tREVISION:"+ \
+                        substitution += "\n" + ECHO_BIN + " \"\t\tREVISION:"+ \
 			         getValue(patch.getElementsByTagName(REVISION)[0])  + "\" >> " + filename	    
 		    else:			
-                        macro += "\n" + ECHO_BIN + " -n \"\t\tREVISION: \"  >> " + filename
-			macro += "\n" + SVNVERSION_BIN + " " + _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + getName(patch) + " >> " + filename	    
+                        substitution += "\n" + ECHO_BIN + " -n \"\t\tREVISION: \"  >> " + filename
+			substitution += "\n" + SVNVERSION_BIN + " " + _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + getName(patch) + " >> " + filename	    
 
 			
 	    if (patch.getElementsByTagName(PREFIX).length > 0):
-		macro += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
+		substitution += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
 		         getValue(patch.getElementsByTagName(PREFIX)[0]) + "\" >> " + filename
 			 
 	    if (patch.getElementsByTagName(PATH).length > 0):
-   		macro += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
+   		substitution += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
 		         getValue(patch.getElementsByTagName(PATH)[0]) + "\" >> " + filename 
     
 	   
 		
-    if (macro != ""):
-	return "\n" + ECHO_BIN + " \"\tPatches applied to " + sourceName + ":\" >> " + filename + macro 
+    if (substitution != ""):
+	return "\n" + ECHO_BIN + " \"\tPatches applied to " + sourceName + ":\" >> " + filename + substitution 
     else:
     	return "\n" + ECHO_BIN + " \"\tNo Patches\" >> " + filename 
 
