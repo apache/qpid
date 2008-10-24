@@ -24,8 +24,15 @@ start_broker() {
 }
 
 stop_broker() {
-    ../qpidd -q --port $PORT
+    if [[ -x $PORT ]] ; then
+        ../qpidd -q --port $PORT
+    fi
 }
+CERTUTIL=$(type -p certutil)
+if [[ !(-x $CERTUTIL) ]] ; then
+    echo "No certutil, skipping ssl test";
+    exit 0;
+fi
 
 if [[ !(-e ${CERT_PW_FILE}) ]] ;  then
     echo password > ${CERT_PW_FILE}
