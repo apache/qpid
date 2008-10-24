@@ -162,11 +162,7 @@ class FixedWidthValue : public FieldValue::Data {
         v |= octets[width-1];
         return v;
     }
-    void copyInto(uint8_t* const data) const
-    {
-        for (uint i = 0; i < width; ++i) data[i] = octets[i];
-    }
-    uint8_t* const rawOctets() { return octets; }
+    uint8_t* rawOctets() { return octets; }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
 };
