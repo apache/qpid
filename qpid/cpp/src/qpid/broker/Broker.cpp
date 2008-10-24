@@ -47,6 +47,7 @@
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
+#include "qpid/Address.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
 
@@ -408,8 +409,8 @@ void Broker::connect(
     sys::ConnectionCodec::Factory* f)
 {
     url.throwIfEmpty();
-    TcpAddress addr=boost::get<TcpAddress>(url[0]);
-    connect(addr.host, addr.port, TCP_TRANSPORT, failed, f);
+    const TcpAddress* addr=url[0].get<TcpAddress>();
+    connect(addr->host, addr->port, TCP_TRANSPORT, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages( 
