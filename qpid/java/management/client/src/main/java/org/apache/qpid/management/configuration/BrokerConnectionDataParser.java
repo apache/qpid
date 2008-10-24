@@ -22,6 +22,7 @@ package org.apache.qpid.management.configuration;
 
 import java.util.UUID;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -118,7 +119,7 @@ class BrokerConnectionDataParser implements IParser
                     Configuration.getInstance().addBrokerConnectionData(getUUId(),_connectionData);
                 } catch(Exception exception) 
                 {
-                    LOGGER.error(exception, "Unable to connect with broker located on %s and. Hence this broker will be ignored.", _connectionData);
+                    LOGGER.error(exception, Messages.QMAN_100007_UNABLE_TO_CONNECT_WITH_BROKER, _connectionData);
                 }
                 _connectionData = new BrokerConnectionData();
                 break;

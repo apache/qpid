@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.management.domain.model.InvocationEvent;
@@ -80,11 +81,7 @@ public class MethodResponseMessageHandler extends BaseMessageHandler
                 exchangeChannel.put(result);
             } catch (InterruptedException exception)
             {
-                LOGGER.error(
-                        exception,
-                        "<QMAN-100044> : an exception occurred while storing the result of a method invocation. " +
-                        "Sequence number was %s", 
-                        sequenceNumber);
+                LOGGER.error(exception,Messages.QMAN_100010_METHOD_INVOCATION_RESULT_FAILURE,sequenceNumber);
             }
         } else 
         {

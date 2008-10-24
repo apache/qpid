@@ -28,6 +28,7 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
 import org.apache.qpid.management.domain.model.QpidEvent.QpidManagedEvent;
@@ -58,7 +59,7 @@ class JmxService
                 _mxServer.registerMBean(eventInstance, name);
 
                 LOGGER.debug(
-                        "<QMAN-200026> : Event instance %s::%s::%s successfully registered with MBean Server with name %s", 
+                		Messages.QMAN_200010_EVENT_MBEAN_REGISTERED,
                         brokerId,
                         packageName,
                         eventClassName,
@@ -95,7 +96,7 @@ class JmxService
                     _mxServer.registerMBean(instance, name);
 
                     LOGGER.debug(
-                            "<QMAN-200026> : Object instance %s::%s::%s:%s successfully registered with MBean Server with name %s", 
+                            Messages.QMAN_200011_OBJECT_MBEAN_REGISTERED, 
                             brokerId,
                             packageName,
                             className,
@@ -130,8 +131,7 @@ class JmxService
                     _mxServer.unregisterMBean(name);
 
                     LOGGER.debug(
-                            "<QMAN-200012> : Object instance %s::%s::%s:%s successfully unregistered from MBean Server. " +
-                            "Name was %s", 
+                            Messages.QMAN_200012_OBJECT_MBEAN_UNREGISTERED, 
                             brokerId,
                             packageName,
                             className,
@@ -139,7 +139,7 @@ class JmxService
                             name);
                 }  catch (Exception exception)
                 {
-                    LOGGER.error(exception,"<QMAN-100010> : Unable to unregister object instance %s.",name);
+                    LOGGER.error(exception,Messages.QMAN_100013_MBEAN_REGISTRATION_FAILURE,name);
                 } 
             }
     }    

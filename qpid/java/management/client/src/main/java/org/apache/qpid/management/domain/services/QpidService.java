@@ -21,16 +21,14 @@
 package org.apache.qpid.management.domain.services;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.QpidException;
 import org.apache.qpid.api.Message;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
-import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.QpidDatasource;
 import org.apache.qpid.management.domain.model.QpidMethod;
 import org.apache.qpid.management.domain.model.type.Binary;
@@ -57,39 +55,6 @@ import org.apache.qpid.transport.util.Logger;
 public class QpidService implements SessionListener
 {
     private final static Logger LOGGER = Logger.get(QpidService.class);
-
-    // Inner static class used for logging and avoid conditional logic (isDebugEnabled()) duplication.
-    private static class Log
-    {
-        /**
-         * Logs the content f the message.
-         * This will be written on log only if DEBUG level is enabled.
-         *
-         * @param messageContent the raw content of the message.
-         */
-        static void logMessageContent(byte [] messageContent)
-        {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "<QMAN-200001> : Message has been sent to management exchange. Message content : %s",
-                        Arrays.toString(messageContent));
-            }
-        }
-
-        /**
-         * Logs the content f the message.
-         * This will be written on log only if DEBUG level is enabled.
-         *
-         * @param messageContent the raw content of the message.
-         */
-        static void logMessageContent(ByteBuffer messageContent)
-        {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "<QMAN-200002> : Message has been sent to management exchange.");
-            }
-        }
-    }
 
     private UUID _brokerId;
     private Connection _connection;
@@ -134,9 +99,10 @@ public class QpidService implements SessionListener
         }
     }
 
+    
     public void exception(Session ssn, SessionException exc)
     {
-        LOGGER.error(exc, "session %s exception", ssn);
+        
     }
 
     public void closed(Session ssn) {}
@@ -194,10 +160,7 @@ public class QpidService implements SessionListener
         _session.messageFlow(destinationName, MessageCreditUnit.BYTE, Session.UNLIMITED_CREDIT);
         _session.messageFlow(destinationName, MessageCreditUnit.MESSAGE, Session.UNLIMITED_CREDIT);
 
-        LOGGER.debug(
-                "<QMAN-200003> : New subscription between queue %s and destination %s has been declared.",
-                queueName,
-                destinationName);
+        LOGGER.debug(Messages.QMAN_200025_SUBSCRIPTION_DECLARED,queueName,destinationName);
     }
 
     /**
@@ -209,9 +172,7 @@ public class QpidService implements SessionListener
     public void removeSubscription(String destinationName)
     {
         _session.messageCancel(destinationName);
-        LOGGER.debug(
-                "<QMAN-200026> : Subscription named %s has been removed from remote broker.",
-                destinationName);
+        LOGGER.debug(Messages.QMAN_200026_SUBSCRIPTION_REMOVED,destinationName);
     }
 
     /**
@@ -223,7 +184,7 @@ public class QpidService implements SessionListener
     public void declareQueue(String queueName)
     {
         _session.queueDeclare(queueName, null, null);
-        LOGGER.debug("<QMAN-200004> : New queue with name %s has been declared.",queueName);
+        LOGGER.debug(Messages.QMAN_200027_QUEUE_DECLARED,queueName);
     }
 
     /**
@@ -235,7 +196,7 @@ public class QpidService implements SessionListener
     public void deleteQueue(String queueName)
     {
         _session.queueDelete(queueName);
-        LOGGER.debug("<QMAN-2000025> : Queue with name %s has been removed.",queueName);
+        LOGGER.debug(Messages.QMAN_200028_QUEUE_REMOVED,queueName);
     }
 
     /**
@@ -249,10 +210,7 @@ public class QpidService implements SessionListener
     public void declareBinding(String queueName, String exchangeName, String routingKey)
     {
         _session.exchangeBind(queueName, exchangeName, routingKey, null);
-        LOGGER.debug(
-                "<QMAN-200005> : New binding with %s as routing key has been declared between queue %s and exchange %s.",
-                routingKey,queueName,
-                exchangeName);
+        LOGGER.debug(Messages.QMAN_200029_BINDING_DECLARED,routingKey,queueName,exchangeName);
     }
 
     /**
@@ -265,10 +223,7 @@ public class QpidService implements SessionListener
     public void declareUnbinding(String queueName, String exchangeName, String routingKey)
     {
         _session.exchangeUnbind(queueName, exchangeName, routingKey);
-        LOGGER.debug(
-                "<QMAN-200005> : Binding with %s as routing key has been removed between queue %s and exchange %s.",
-                routingKey,queueName,
-                exchangeName);
+        LOGGER.debug(Messages.QMAN_200030_BINDING_REMOVED,routingKey,queueName,exchangeName);
     }
 
     /**
@@ -276,34 +231,6 @@ public class QpidService implements SessionListener
      *
      * @param messageData the command message content.
      */
-    public void sendCommandMessage(byte [] messageData)
-    {
-        _session.messageTransfer(
-                Names.MANAGEMENT_EXCHANGE,
-                MessageAcceptMode.EXPLICIT,
-                MessageAcquireMode.PRE_ACQUIRED,
-                Configuration.getInstance().getCommandMessageHeader(),
-                messageData);
-
-        Log.logMessageContent (messageData);
-    }
-
-    /**
-     * Sends a command message with the given data on the management queue.
-     *
-     * @param messageData the command message content.
-     */
-    public void sendCommandMessage(ByteBuffer messageData)
-    {
-        _session.messageTransfer(
-                Names.MANAGEMENT_EXCHANGE,
-                MessageAcceptMode.EXPLICIT,
-                MessageAcquireMode.PRE_ACQUIRED,
-                Configuration.getInstance().getCommandMessageHeader(),
-                messageData);
-
-        Log.logMessageContent (messageData);
-    }
     
     /**
      * Requests a schema for the given package.class.hash.
@@ -348,6 +275,8 @@ public class QpidService implements SessionListener
      * @param objectId the object instance identifier.
      * @param parameters the parameters for this invocation.
      * @param method the method (definition) invoked.
+     * @param bankId the object bank identifier.
+     * @param brokerId the broker identifier.
      * @return the sequence number used for this message.
      * @throws MethodInvocationException when the invoked method returns an error code.
      * @throws UnableToComplyException when it wasn't possibile to invoke the requested operation. 
@@ -359,9 +288,11 @@ public class QpidService implements SessionListener
             final Binary objectId, 
             final Object[] parameters, 
             final QpidMethod method,
-            final int sequenceNumber) throws MethodInvocationException, UnableToComplyException 
+            final int sequenceNumber,
+            final long bankId,
+            final long brokerId) throws MethodInvocationException, UnableToComplyException 
     {
-        Message message = new MethodInvocationRequestMessage()
+        Message message = new MethodInvocationRequestMessage(bankId, brokerId)
         {
             
             @Override

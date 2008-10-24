@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.qpid.api.Message;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
@@ -56,10 +57,8 @@ class BrokerMessageListener implements MessageListener
         static void debugIncomingMessage(ByteBuffer message)
         {
             if (LOGGER.isDebugEnabled()) 
-            {
-                LOGGER.debug(
-                        "<QMAN-200006> : New incoming message has been received. Message content : %s", 
-                        Arrays.toString(message.array()));
+            { 
+                LOGGER.debug(Messages.QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED, Arrays.toString(message.array()));
             }
         }
 
@@ -70,7 +69,7 @@ class BrokerMessageListener implements MessageListener
             {
                 for (Entry<Character, IMessageHandler> entry : _handlers.entrySet())
                 {
-                  LOGGER.debug("<QMAN-200007> : \"%s\" opcode is associated to handler %s",entry.getKey(),entry.getValue());  
+                  LOGGER.debug(Messages.QMAN_200002_OPCODE_HANDLER_ASSOCIATION,entry.getKey(),entry.getValue());  
                 }
             }
         }
@@ -98,57 +97,22 @@ class BrokerMessageListener implements MessageListener
      * 
      * @param message the incoming message.
      */
-    public void onMessage (Message message)
+    public void onMessage (Message compoundMessage)
     {
-        try 
-        { 
-            ByteBuffer buffer = message.readData();
-
-            // TODO : Should be better...!
-            String magicNumber = new String(new byte[] {buffer.get(),buffer.get(),buffer.get()});
-            if (!Protocol.MAGIC_NUMBER.equals(magicNumber))
-            {
-                LOGGER.error(
-                        "<QMAN-100003> : Message processing failure : incoming message contains a bad magic number (%s) " +
-                        "and therefore will be discaded.", 
-                        magicNumber);
-                return;
-            }
-            
-            char opcode = (char)buffer.get();
-            
-            IMessageHandler handler = _handlers.get(opcode); 
-            if (handler != null) 
-            {
-                ManagementDecoder decoder = new ManagementDecoder();
-                decoder.init(buffer);
-                
-                LOGGER.debug(
-                        "<QMAN-200008> : Incoming message with \"%s\" as opcode will be forwarded to %s for processing.", 
-                        opcode, 
-                        handler);
-                
-                handler.process(decoder,decoder.readSequenceNo());
-            } else 
-            {
-                LOGGER.warn(
-                        "<QMAN-300001> : No handler has been configured for processing messages with \"%s\" as opcode. " +
-                            "This message will be discarded.",
-                         opcode);                                      
-                
-                Log.debugConfiguredHandlers(_handlers);
-            }
-        } catch(IOException exception) 
+		try 
+		{
+			MessageTokenizer tokenizer = new MessageTokenizer(compoundMessage);
+			while (tokenizer.hasMoreElements())
+			{
+    			dispatch(tokenizer.nextElement());
+			}
+		} catch(IOException exception) 
         {
-           LOGGER.error(
-                   exception,
-                   "<QMAN-100004> : Message I/O failure : unable to read byte message content and therefore it will be discarded.");                        
+			LOGGER.error(exception,Messages.QMAN_100002_MESSAGE_READ_FAILURE);                        
         } catch(Exception exception) 
-        {
-            LOGGER.error(
-                    exception,
-                    "<QMAN-100005> : Message processing failure : unknown exception; see logs for more details.");            
-        }    
+	    {
+        	LOGGER.error(exception,Messages.QMAN_100003_MESSAGE_PROCESS_FAILURE);            
+	    }
     }
     
     /**
@@ -171,11 +135,44 @@ class BrokerMessageListener implements MessageListener
                 handler.setDomainModel(_domainModel);
                 _handlers.put(opcode, handler);
             } catch(Exception exception) {
-                LOGGER.error(
-                        exception, 
-                        "<QMAN-100006> : Message handler configured for opcode %s thrown an exception in initialization and therefore will be discarded.", 
-                        opcode);
+                LOGGER.error(exception,Messages.QMAN_100004_HANDLER_INITIALIZATION_FAILURE, opcode);
             }
         }        
+    }
+    
+    /**
+     * Dispatches the given message to the appropriate handler.
+     * 
+     * @param message the incoming message.
+     * @throws IOException when the message content cannot be read.
+     */
+    private void dispatch(Message message) throws IOException
+    {
+    	 ByteBuffer buffer = message.readData();
+
+         // TODO : Should be better...!
+         String magicNumber = new String(new byte[] {buffer.get(),buffer.get(),buffer.get()});
+         if (!Protocol.MAGIC_NUMBER.equals(magicNumber))
+         {
+             LOGGER.error(Messages.QMAN_100001_BAD_MAGIC_NUMBER_FAILURE,magicNumber);
+             return;
+         }
+         
+         char opcode = (char)buffer.get();
+         
+         IMessageHandler handler = _handlers.get(opcode); 
+         if (handler != null) 
+         {
+             ManagementDecoder decoder = new ManagementDecoder();
+             decoder.init(buffer);
+             
+             LOGGER.debug(Messages.QMAN_200003_MESSAGE_FORWARDING,opcode,handler);
+             
+             handler.process(decoder,decoder.readSequenceNo());
+         } else 
+         {
+             LOGGER.warn(Messages.QMAN_300001_MESSAGE_DISCARDED,opcode);
+             Log.debugConfiguredHandlers(_handlers);
+         }
     }
 }

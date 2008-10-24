@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.model.type.Type;
 import org.apache.qpid.transport.codec.ManagementDecoder;
 import org.apache.qpid.transport.util.Logger;
@@ -57,7 +58,6 @@ class QpidAttribute extends QpidFeature
     void setUnit (String unit)
     {
         this._unit = unit;
-        LOGGER.debug("Unit : %s", unit);
     }
     
     /**
@@ -90,8 +90,9 @@ class QpidAttribute extends QpidFeature
     {
         try {
             return _type.decode(decoder);
-        } catch(RuntimeException exception) {
-            LOGGER.error(exception,"Unable to decode value for attribute %s",this);
+        } catch(RuntimeException exception) 
+        {
+            LOGGER.error(exception,Messages.QMAN_100014_ATTRIBUTE_DECODING_FAILURE,this);
             throw exception;
         }
     }

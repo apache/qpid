@@ -35,9 +35,6 @@ import org.apache.qpid.management.messages.AmqpCoDec;
 public final class Binary implements Serializable
 {
     private static final long serialVersionUID = -6865585077320637567L;
-
-    // instance identifider.
-    private final UUID uuid;
     
     // Marker internal (empty) interface 
     private interface State extends Serializable{}
@@ -53,7 +50,7 @@ public final class Binary implements Serializable
     @Override
        public int hashCode ()
        {
-           hashCode = Arrays.hashCode(bytes);
+           hashCode = Arrays.hashCode(_bytes);
            state = hashCodeAlreadyComputed;
            return hashCode;
        } 
@@ -73,8 +70,10 @@ public final class Binary implements Serializable
             return hashCode;
         }
     };
-
-    private final byte [] bytes;
+    
+    private final UUID uuid;
+    private final byte [] _bytes;
+    private long _first;    
     private int hashCode;
     
     /** Current state (hashcode computation). */
@@ -87,7 +86,10 @@ public final class Binary implements Serializable
      */
     public Binary(byte [] bytes)
     {
-        this.bytes = bytes;
+        this._bytes = bytes;
+        byte [] array = new byte [8];
+    	System.arraycopy(_bytes, 0, array, 0, 8);
+    	_first =  AmqpCoDec.unpack64(array);
         uuid = UUID.randomUUID();
     }
     
@@ -103,7 +105,7 @@ public final class Binary implements Serializable
         try
         {
             Binary binary = (Binary)obj;
-            return Arrays.equals(bytes, binary.bytes);
+            return Arrays.equals(_bytes, binary._bytes);
         } catch (Exception exception)
         {
             return false;
@@ -117,12 +119,32 @@ public final class Binary implements Serializable
      */
     public void encode(AmqpCoDec encoder)
     {
-      encoder.pack(bytes);  
+      encoder.pack(_bytes);  
     }
     
     @Override
     public String toString ()
     {
         return uuid.toString();
+    }
+    
+    /**
+     * Returns the bank identifier derived from this object identifier.
+     * 
+     * @return the bank identifier derived from this object identifier.
+     */
+    public long getBankId()
+    {
+    	return _first & 0x000000000FFFFFFF;
+    }
+
+    /**
+     * Returns the broker identifier derived from this object identifier.
+     * 
+     * @return the broker identifier derived from this object identifier.
+     */
+    public long getBrokerId()
+    {
+    	return (_first & 281474708275200L) >> 28;
     }
 }
