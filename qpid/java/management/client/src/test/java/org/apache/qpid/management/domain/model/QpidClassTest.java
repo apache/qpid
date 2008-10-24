@@ -1,6 +1,5 @@
 package org.apache.qpid.management.domain.model;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,6 +18,11 @@ import org.apache.qpid.management.configuration.StubConfigurator;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
 
+/**
+ * Test case for Qpid Class.
+ * 
+ * @author Andrea Gazzarini
+ */
 public class QpidClassTest extends TestCase
 {
     private QpidClass _class;
@@ -197,8 +201,6 @@ public class QpidClassTest extends TestCase
 	        		TestConstants._1,
 	        		true, 
 	        		TestConstants._1));
-
-        List<Map<String,Object>> statisticDefinitions = new ArrayList<Map<String,Object>>(2);        
         
         _class.setSchema(propertyDefinitions, TestConstants.EMPTY_STATISTICS_SCHEMA, TestConstants.EMPTY_METHODS_SCHEMA);
         

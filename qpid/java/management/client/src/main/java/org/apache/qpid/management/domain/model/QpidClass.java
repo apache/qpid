@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -45,6 +46,7 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
 import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
@@ -131,7 +133,7 @@ class QpidClass extends QpidEntity
             } catch (Exception e)
             {
                 _logger.error(
-                        "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
+                        Messages.QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST, 
                         _parent.getName(),
                         _name);
             } finally {
@@ -156,7 +158,7 @@ class QpidClass extends QpidEntity
             } catch (Exception e)
             {
                 _logger.error(
-                        "<QMAN-100012> : Unable to send a schema request schema for %s.%s", 
+                        Messages.QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST, 
                         _parent.getName(),
                         _name);
             } finally {
@@ -485,7 +487,8 @@ class QpidClass extends QpidEntity
      */
     void addInstrumentationData (Binary objectId, byte[] rawData)
     {
-        _logger.debug("<QMAN-200015> : Incoming instrumentation data for %s::%s.%s.%s",
+        _logger.debug(
+        		Messages.QMAN_200014_INCOMING_INSTRUMENTATION_DATA,
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name,
@@ -501,7 +504,8 @@ class QpidClass extends QpidEntity
      */
     void addConfigurationData (Binary objectId, byte[] rawData)
     {
-        _logger.debug("<QMAN-200016> : Incoming configuration data for %s::%s.%s.%s",
+        _logger.debug(
+        		Messages.QMAN_200015_INCOMING_CONFIGURATION_DATA,
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name,
@@ -523,7 +527,7 @@ class QpidClass extends QpidEntity
             List<Map<String, Object>> statisticDefinitions,
             List<MethodOrEventDataTransferObject> methodDefinitions) throws UnableToBuildFeatureException
     {
-         _logger.info("<QMAN-000012> : Incoming schema for %s::%s.%s",_parent.getOwnerId(),_parent.getName(),_name);
+         _logger.info(Messages.QMAN_000010_INCOMING_SCHEMA,_parent.getOwnerId(),_parent.getName(),_name);
         _state.setSchema(propertyDefinitions, statisticDefinitions, methodDefinitions);
     }    
 
@@ -557,7 +561,7 @@ class QpidClass extends QpidEntity
             attributes[index++]=(MBeanAttributeInfo) builder.getManagementFeature();
             
             _logger.debug(
-                    "<QMAN-200017> : Property definition for %s::%s.%s has been built.",
+                    Messages.QMAN_200016_PROPERTY_DEFINITION_HAS_BEEN_BUILT,
                     _parent.getName(),
                     _name,
                     property);
@@ -566,7 +570,7 @@ class QpidClass extends QpidEntity
         _howManyPresenceBitMasks =  (int)Math.ceil((double)howManyOptionalProperties / 8);
         
         _logger.debug(
-                "<QMAN-200018> : Class %s::%s.%s has %s optional properties.",
+                Messages.QMAN_200018_OPTIONAL_PROPERTIES_INFO,
                 _parent.getOwnerId(),
                 _parent.getName(),
                 _name,
@@ -583,7 +587,7 @@ class QpidClass extends QpidEntity
             attributes[index++]=(MBeanAttributeInfo) builder.getManagementFeature();
             
             _logger.debug(
-                    "<QMAN-200019> : Statistic definition for %s::%s.%s has been built.",
+                    Messages.QMAN_200017_STATISTIC_DEFINITION_HAS_BEEN_BUILT,
                     _parent.getName(),
                     _name,
                     statistic);            
@@ -656,10 +660,16 @@ class QpidClass extends QpidEntity
             
             int sequenceNumber = SequenceNumberGenerator.getNextSequenceNumber();
             _methodInvocationListener.operationIsGoingToBeInvoked(new InvocationEvent(this,sequenceNumber,_exchangeChannelForMethodInvocations));
-           _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber);
-            
+           _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber,objectId.getBankId(),objectId.getBrokerId());
+             
             // TODO : Shoudl be configurable?
             InvocationResult result = _exchangeChannelForMethodInvocations.poll(5000,TimeUnit.MILLISECONDS);
+            
+            if (result == null) 
+            {
+            	throw new TimeoutException();
+            }
+            
             Map<String, Object> output = method.decodeParameters(result.getOutputAndBidirectionalArgumentValues());
             result.setOutputSection(output);
             
@@ -694,7 +704,7 @@ class QpidClass extends QpidEntity
                 Object value = property.decodeValue(decoder,presenceBitMasks);
                 instance.createOrReplaceAttributeValue(property.getName(),value);             
             } catch(Exception ignore) {
-                _logger.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,property.getName());
+                _logger.error(Messages.QMAN_100016_UNABLE_TO_DECODE_FEATURE_VALUE, _parent.getName(),_name,property.getName());
             }
         }
     }
@@ -716,7 +726,7 @@ class QpidClass extends QpidEntity
                 Object value = statistic.decodeValue(decoder);
                 instance.createOrReplaceAttributeValue(statistic.getName(),value);             
             } catch(Exception ignore) {
-                _logger.error("Unable to decode value for %s::%s::%s", _parent.getName(),_name,statistic.getName());
+                _logger.error(Messages.QMAN_100016_UNABLE_TO_DECODE_FEATURE_VALUE, _parent.getName(),_name,statistic.getName());
             }
         }
     }    
@@ -752,7 +762,6 @@ class QpidClass extends QpidEntity
      */
     void releaseResources ()
     {
-    	// Chiamlo entityInstances<QpidManagedEntity> e mettilo nella superclasse?
     	_objectInstances.clear();
     	JMX_SERVICE.unregisterObjectInstances();
         _service.close();

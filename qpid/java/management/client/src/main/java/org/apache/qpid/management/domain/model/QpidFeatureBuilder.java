@@ -34,6 +34,7 @@ import javax.management.MBeanParameterInfo;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.UnknownTypeCodeException;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
+import org.apache.qpid.management.Names;
 
 /**
  * A builder used to parse incoming schema message and therefore to build a feature (property, statistic, method, event)
@@ -240,7 +241,7 @@ class QpidFeatureBuilder
             for (Entry<String, Object> argumentAttribute : _featureDefinition.entrySet())
             {
                 String key = argumentAttribute.getKey();
-                if ("default".equals(key))
+                if (Names.DEFAULT_PARAM_NAME.equals(key))
                 {
                     argument.setDefaultValue(argumentAttribute.getValue());
                 } else {
@@ -307,7 +308,7 @@ class QpidFeatureBuilder
                 throw new MissingFeatureAttributesException(_mandatoryAttributes);
             }
             
-            QpidMethod method = new QpidMethod((String)definition.get("name"),(String) definition.get("desc"));
+            QpidMethod method = new QpidMethod((String)definition.get(Attribute.name.name()),(String) definition.get(Attribute.desc.name()));
 
             List<Map<String,Object>> args = _methodOrEventDefinition.getArgumentsDefinitions();            
             

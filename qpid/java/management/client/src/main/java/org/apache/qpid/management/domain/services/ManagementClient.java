@@ -23,6 +23,7 @@ package org.apache.qpid.management.domain.services;
 import java.util.UUID;
 
 import org.apache.qpid.QpidException;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
 import org.apache.qpid.management.configuration.Configuration;
@@ -102,9 +103,7 @@ final class ManagementClient
      */
     void shutdown ()
     {        
-        LOGGER.info(
-                "<QMAN-000033> : The shutdown sequence has been initiated for management client connected with broker %s",
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000011_SHUTDOWN_INITIATED,_domainModel.getBrokerId());
         
         removeMethodReplyConsumer();
         destroyAndUnbingMethodReplyQueue();
@@ -116,9 +115,7 @@ final class ManagementClient
         
         _service.close();
 
-        LOGGER.info(
-                "<QMAN-000034> : Management client connected with broker %s shut down successfully.",
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000012_MANAGEMENT_CLIENT_SHUT_DOWN,_domainModel.getBrokerId());
     }
 
     /**
@@ -129,9 +126,8 @@ final class ManagementClient
         BrokerMessageListener methodReplyChannelListener = new BrokerMessageListener(_domainModel);
         methodReplyChannelListener.setHandlers(Configuration.getInstance().getMethodReplyQueueHandlers());
         _service.createSubscription(_methodReplyQueueName, _methodReplyQueueName, methodReplyChannelListener);
-        LOGGER.info(
-                "<QMAN-000039> : Method-reply queue consumer has been successfully installed and bound on broker %s.", 
-                _domainModel.getBrokerId());             
+        
+        LOGGER.info(Messages.QMAN_000013_METHOD_REPLY_CONSUMER_INSTALLED, _domainModel.getBrokerId());             
     }
 
     /**
@@ -143,9 +139,7 @@ final class ManagementClient
         managementChannelListener.setHandlers(Configuration.getInstance().getManagementQueueHandlers());        
         _service.createSubscription(_managementQueueName, _managementQueueName, managementChannelListener);
         
-        LOGGER.info(
-                "<QMAN-000038> : Management queue consumer has been successfully installed and bound on broker %s.", 
-                _domainModel.getBrokerId());               
+        LOGGER.info(Messages.QMAN_000014_MANAGEMENT_CONSUMER_INSTALLED, _domainModel.getBrokerId());               
     }
 
     /**
@@ -159,10 +153,7 @@ final class ManagementClient
                 Names.MANAGEMENT_EXCHANGE, 
                 Names.MANAGEMENT_ROUTING_KEY);
 
-        LOGGER.info(
-                "<QMAN-000037> : Management queue with name %s has been successfully declared and bound on broker %s.", 
-                _managementQueueName,
-                _domainModel.getBrokerId());       
+        LOGGER.info(Messages.QMAN_000015_MANAGEMENT_QUEUE_DECLARED,_managementQueueName,_domainModel.getBrokerId());       
     }
     
     /**
@@ -174,10 +165,7 @@ final class ManagementClient
         _service.declareQueue(_methodReplyQueueName);
         _service.declareBinding(_methodReplyQueueName, Names.AMQ_DIRECT_QUEUE, _methodReplyQueueName);
         
-        LOGGER.info(
-                "<QMAN-000037> : Method-reply queue with name %s has been successfully declared and bound on broker %s.", 
-                _methodReplyQueueName,
-                _domainModel.getBrokerId());       
+        LOGGER.info(Messages.QMAN_000016_METHOD_REPLY_QUEUE_DECLARED,_methodReplyQueueName, _domainModel.getBrokerId());       
     }    
     
     /**
@@ -187,10 +175,7 @@ final class ManagementClient
     {
         _service.removeSubscription(_methodReplyQueueName); 
         
-        LOGGER.info(
-                "<QMAN-000034> : Consumer %s has been removed from broker %s.", 
-                _methodReplyQueueName,
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000017_CONSUMER_HAS_BEEN_REMOVED,_methodReplyQueueName,_domainModel.getBrokerId());
     }
     
     /**
@@ -201,10 +186,7 @@ final class ManagementClient
         _service.declareUnbinding(_methodReplyQueueName, Names.AMQ_DIRECT_QUEUE, _methodReplyQueueName);
         _service.deleteQueue(_methodReplyQueueName);        
         
-        LOGGER.info(
-                "<QMAN-000035> : Queue %s has been removed from broker %s.", 
-                _methodReplyQueueName,
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000018_QUEUE_UNDECLARED,_methodReplyQueueName,_domainModel.getBrokerId());
     }
     
     /**
@@ -214,10 +196,7 @@ final class ManagementClient
     {
         _service.removeSubscription(_managementQueueName);  
 
-        LOGGER.info(
-                "<QMAN-000036> : Consumer %s has been removed from broker %s.", 
-                _managementQueueName,
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000017_CONSUMER_HAS_BEEN_REMOVED,_managementQueueName,_domainModel.getBrokerId());
     }
     
     /**
@@ -228,10 +207,7 @@ final class ManagementClient
         _service.declareUnbinding(_managementQueueName, Names.MANAGEMENT_EXCHANGE, Names.MANAGEMENT_ROUTING_KEY);
         _service.deleteQueue(_managementQueueName);        
 
-        LOGGER.info(
-                "<QMAN-000037> : Queue %s has been removed from broker %s.", 
-                _managementQueueName,
-                _domainModel.getBrokerId());
+        LOGGER.info(Messages.QMAN_000018_QUEUE_UNDECLARED, _managementQueueName,_domainModel.getBrokerId());
     }    
     
     /**

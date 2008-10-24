@@ -23,6 +23,12 @@ package org.apache.qpid.management.messages;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.model.type.Binary;
 
+/**
+ * Abstract representation of a schema request message.
+ * Concrete subclasses must supply the values needed to build & encode the message.
+ * 
+ * @author Andrea Gazzarini
+ */
 public abstract class SchemaRequestMessage extends ManagementMessage
 {
     @Override
@@ -31,10 +37,25 @@ public abstract class SchemaRequestMessage extends ManagementMessage
         return Protocol.SCHEMA_REQUEST_OPCODE;
     }
     
+    /**
+     * Returns the package name.
+     * 
+     * @return the package name.
+     */
     protected abstract String packageName();
     
+    /**
+     * Returns the class name.
+     * 
+     * @return the class name.
+     */
     protected abstract String className();
     
+    /**
+     * Returns the schema hash.
+     * 
+     * @return the schema hash.
+     */
     protected abstract Binary schemaHash();
 
     @Override

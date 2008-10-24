@@ -29,6 +29,11 @@ public class SequenceNumberGenerator
 {
     private static int sequenceNumber;
     
+    /**
+     * Returns a valid sequence number.
+     * 
+     * @return a sequence number.
+     */
     public static synchronized int getNextSequenceNumber()
     {
         return sequenceNumber++;

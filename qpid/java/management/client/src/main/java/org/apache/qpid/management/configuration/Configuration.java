@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.InvocationResult;
@@ -193,10 +194,7 @@ public final class Configuration
                 result.put(opcode, (IMessageHandler)Class.forName(className).newInstance());
             } catch(Exception exception) 
             {
-                LOGGER.error(
-                        exception, 
-                        "<QMAN-100020> : Management Message Handler configured for opcode %s is not available and therefore will be discarded.",
-                        opcode);
+                LOGGER.error(exception,Messages.QMAN_100008_MANAGEMENT_MESSAGE_HANDLER_NOT_AVAILABLE,opcode);
             }
         }
         return result;
@@ -222,10 +220,7 @@ public final class Configuration
                 result.put(opcode, (IMessageHandler)Class.forName(className).newInstance());
             } catch(Exception exception) 
             {
-                LOGGER.error(
-                        exception, 
-                        "<QMAN-100021> :Method-Reply Message Handler configured for opcode %s is not available and therefore will be discarded.",
-                        opcode);
+                LOGGER.error(exception,Messages.QMAN_100009_METHOD_REPLY_MESSAGE_HANDLER_NOT_AVAILABLE,opcode);
             }
         }
         return result;
@@ -273,7 +268,7 @@ public final class Configuration
         _typeMappings.put(code, type);
         _validators.put(type, validatorClassName);
         
-        LOGGER.info("<QMAN-000020> : Type mapping : code = %s associated to %s (validator class is %s)", code,type,validatorClassName);
+        LOGGER.info(Messages.QMAN_000005_TYPE_MAPPING_CONFIGURED, code,type,validatorClassName);
     }
     
     /**
@@ -286,7 +281,7 @@ public final class Configuration
         AccessMode accessMode = mapping.getAccessMode();
         _accessModes.put(code, accessMode);
         
-        LOGGER.info("<QMAN-000021> : Access Mode mapping : code = %s associated to %s", code,accessMode);        
+        LOGGER.info(Messages.QMAN_000006_ACCESS_MODE_MAPPING_CONFIGURED, code,accessMode);        
     }    
     
     /**
@@ -302,7 +297,7 @@ public final class Configuration
         String handlerClass = mapping.getMessageHandlerClass();
         _managementQueueHandlers.put(opcode, handlerClass);
         
-        LOGGER.info("<QMAN-000022> : Management Queue Message Handler Mapping : opcode = %s associated with %s", opcode,handlerClass); 
+        LOGGER.info(Messages.QMAN_000007_MANAGEMENT_HANDLER_MAPPING_CONFIGURED, opcode,handlerClass); 
     }
 
     /**
@@ -318,7 +313,7 @@ public final class Configuration
         String handlerClass = mapping.getMessageHandlerClass();
         _methodReplyQueueHandlers.put(opcode, handlerClass);
         
-        LOGGER.info("<QMAN-000023> : Method-Reply Queue Message Handler Mapping : opcode = %s associated with %s", opcode,handlerClass);     
+        LOGGER.info(Messages.QMAN_000008_METHOD_REPLY_HANDLER_MAPPING_CONFIGURED, opcode,handlerClass);     
     }
     
     /**
@@ -332,7 +327,8 @@ public final class Configuration
     {
         QpidDatasource.getInstance().addConnectionPool(brokerId, connectionData);
       _brokerConnectionInfos.put(brokerId,connectionData);
-      LOGGER.info("<QMAN-000024> : Broker Configuration %s: %s",brokerId,connectionData);        
+      
+      LOGGER.info(Messages.QMAN_000009_BROKER_DATA_CONFIGURED,brokerId,connectionData);        
     }
     
     /**
@@ -358,7 +354,7 @@ public final class Configuration
         _managementQueueName = Names.MANAGEMENT_QUEUE_PREFIX+uuid;
         _methodReplyQueueName = Names.METHOD_REPLY_QUEUE_PREFIX+uuid;
         
-        LOGGER.debug("<QMAN-200021> : Management queue name : %s",_managementQueueName);
-        LOGGER.debug("<QMAN-000022> : Method-reply queue name : %s",_methodReplyQueueName);        
+        LOGGER.debug(Messages.QMAN_200004_MANAGEMENT_QUEUE_NAME,_managementQueueName);
+        LOGGER.debug(Messages.QMAN_200005_METHOD_REPLY_QUEUE_NAME,_methodReplyQueueName);        
     }
 }

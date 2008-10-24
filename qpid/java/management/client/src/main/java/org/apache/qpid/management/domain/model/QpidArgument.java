@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.ManagementDecoder;
 import org.apache.qpid.transport.util.Logger;
@@ -72,7 +73,7 @@ class QpidArgument extends QpidProperty
     public void encode(Object value,AmqpCoDec encoder) 
     {
         _type.encode(value, encoder);
-        LOGGER.debug("<QMAN-200012> : Encoded value %S for argument %s. Type is %s",value,_name,_type);
+        LOGGER.debug(Messages.QMAN_200013_ARGUMENT_VALUE_ENCODED,value,_name,_type);
     }
     
     public Object decode(ManagementDecoder decoder) 

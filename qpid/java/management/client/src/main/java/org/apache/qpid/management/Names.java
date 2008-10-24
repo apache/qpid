@@ -49,4 +49,5 @@ public interface Names
     String CONFIGURATION_FILE_NAME = "/org/apache/qpid/management/config.xml";
     
     String ARG_COUNT_PARAM_NAME = "argCount";
+    String DEFAULT_PARAM_NAME ="default";
 }
