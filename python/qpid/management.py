@@ -534,7 +534,7 @@ class managementClient:
 
   def handleMethodReply (self, ch, codec, sequence):
     status = codec.read_uint32 ()
-    sText  = str (codec.read_str8 ())
+    sText  = str (codec.read_str16 ())
 
     data = self.seqMgr.release (sequence)
     if data == None:

@@ -370,13 +370,13 @@ void ManagementAgentImpl::invokeMethodRequest(Buffer& inBuffer, uint32_t sequenc
 
     ManagementObjectMap::iterator iter = managementObjects.find(objId);
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
-        outBuffer.putLong       (Manageable::STATUS_UNKNOWN_OBJECT);
-        outBuffer.putShortString(Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT));
+        outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
+        outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT));
     } else {
         if ((iter->second->getPackageName() != packageName) ||
             (iter->second->getClassName()   != className)) {
             outBuffer.putLong        (Manageable::STATUS_INVALID_PARAMETER);
-            outBuffer.putShortString (Manageable::StatusText (Manageable::STATUS_INVALID_PARAMETER));
+            outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_INVALID_PARAMETER));
         }
         else
             try {
@@ -385,7 +385,7 @@ void ManagementAgentImpl::invokeMethodRequest(Buffer& inBuffer, uint32_t sequenc
             } catch(std::exception& e) {
                 outBuffer.restore();
                 outBuffer.putLong(Manageable::STATUS_EXCEPTION);
-                outBuffer.putShortString(e.what());
+                outBuffer.putMediumString(e.what());
             }
     }
 
