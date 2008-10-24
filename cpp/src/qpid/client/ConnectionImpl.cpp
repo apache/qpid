@@ -47,7 +47,7 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
       version(v),
       nextChannel(1)
 {
-    QPID_LOG(debug, "ConnectionImpl created for " << version);
+    QPID_LOG(debug, "ConnectionImpl created for " << version.toString());
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, boost::ref(connector), _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this,
