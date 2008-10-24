@@ -249,7 +249,7 @@ if test $use_xml != no; then
   AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
   AC_CHECK_HEADER([xercesc/framework/MemBufInputSource.hpp], , [use_xml=no])
   AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
-  AC_CHECK_LIB([xqilla], [canonicalCombiningClassTable], , [use_xml=no])
+  AC_CHECK_LIB([xqilla], [_init], , [use_xml=no])
   # Remove from LIBS, we will link it explicitly in make files.
   LIBS=$tmp_LIBS
 
