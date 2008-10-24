@@ -105,6 +105,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         if (agent != 0)
         {
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
+            mgmtExchange->set_arguments(args);
             if (!durable) {
                 if (name == "")
                     agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
