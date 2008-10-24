@@ -74,7 +74,7 @@ protected:
         qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
         Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
-                framing::FieldTable args = framing::FieldTable());
+                framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
         ~Binding();
         management::ManagementObject* GetManagementObject() const;
     };
@@ -83,6 +83,34 @@ protected:
         const Queue::shared_ptr queue;        
         MatchQueue(Queue::shared_ptr q);
         bool operator()(Exchange::Binding::shared_ptr b);
+    };
+
+    class FedBinding {
+        uint32_t localBindings;
+        std::set<std::string> originSet;
+    public:
+        FedBinding() : localBindings(0) {}
+        bool hasLocal() const { return localBindings != 0; }
+        bool addOrigin(const std::string& origin) {
+            if (origin.empty()) {
+                localBindings++;
+                return localBindings == 1;
+            }
+            originSet.insert(origin);
+            return true;
+        }
+        bool delOrigin(const std::string& origin) {
+            originSet.erase(origin);
+            return true;
+        }
+        bool delOrigin() {
+            if (localBindings > 0)
+                localBindings--;
+            return localBindings == 0;
+        }
+        uint32_t count() {
+            return localBindings + originSet.size();
+        }
     };
 
     qmf::org::apache::qpid::broker::Exchange* mgmtExchange;
@@ -121,6 +149,27 @@ public:
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject(void) const;
+
+    // Federation hooks
+    class DynamicBridge {
+    public:
+        virtual ~DynamicBridge() {}
+        virtual void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin) = 0;
+        virtual void sendReorigin() = 0;
+        virtual bool containsLocalTag(const std::string& tagList) const = 0;
+        virtual const std::string& getLocalTag() const = 0;
+    };
+
+    void registerDynamicBridge(DynamicBridge* db);
+    void removeDynamicBridge(DynamicBridge* db);
+    virtual bool supportsDynamicBinding() { return false; }
+
+protected:
+    std::vector<DynamicBridge*> bridgeVector;
+
+    virtual void handleHelloRequest();
+    void propagateFedOp(const std::string& routingKey, const std::string& tags,
+                        const std::string& op,         const std::string& origin);
 };
 
 }}

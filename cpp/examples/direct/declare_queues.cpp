@@ -56,6 +56,7 @@ using std::string;
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    string exchange(argc>3 ? argv[3] : "amq.direct");
     Connection connection;
 
     try {
@@ -69,7 +70,7 @@ int main(int argc, char** argv) {
       // routing key is "routing_key" to this newly created queue.
 
       session.queueDeclare(arg::queue="message_queue");
-      session.exchangeBind(arg::exchange="amq.direct", arg::queue="message_queue", arg::bindingKey="routing_key");
+      session.exchangeBind(arg::exchange=exchange, arg::queue="message_queue", arg::bindingKey="routing_key");
 
   //-----------------------------------------------------------------------------
 

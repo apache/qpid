@@ -34,6 +34,8 @@ def Usage ():
     print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
     print "        qpid-route [OPTIONS] route list  [<dest-broker>]"
     print "        qpid-route [OPTIONS] route flush [<dest-broker>]"
+    print "        qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]"
+    print "        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>"
     print
     print "Options:"
     print "    -v [ --verbose ]         Verbose output"
@@ -118,7 +120,7 @@ class RouteManager:
                 print "%-16s%-8d   %c     %-18s%s" % \
                 (link.host, link.port, YN(link.durable), link.state, link.lastError)
 
-    def AddRoute (self, srcBroker, exchange, routingKey, tag, excludes):
+    def AddRoute (self, srcBroker, exchange, routingKey, tag, excludes, dynamic=False):
         self.src = qmfconsole.BrokerURL(srcBroker)
         if self.dest.match(self.src.host, self.src.port):
             raise Exception("Linking broker to itself is not permitted")
@@ -155,13 +157,13 @@ class RouteManager:
 
         if _verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, False, False)
-        if res.status == 4:
-            raise Exception("Can't create a durable route on a non-durable link")
+        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, False, dynamic)
+        if res.status != 0:
+            raise Exception(res.text)
         if _verbose:
             print "Bridge method returned:", res.status, res.text
 
-    def DelRoute (self, srcBroker, exchange, routingKey):
+    def DelRoute (self, srcBroker, exchange, routingKey, dynamic=False):
         self.src = qmfconsole.BrokerURL(srcBroker)
         link = self.getLink()
         if link == None:
@@ -171,7 +173,8 @@ class RouteManager:
 
         bridges = self.qmf.getObjects(_class="bridge")
         for bridge in bridges:
-            if bridge.linkRef == link.getObjectId() and bridge.dest == exchange and bridge.key == routingKey:
+            if bridge.linkRef == link.getObjectId() and bridge.dest == exchange and bridge.key == routingKey \
+                    and bridge.dynamic == dynamic:
                 if _verbose:
                     print "Closing bridge..."
                 res = bridge.close()
@@ -201,7 +204,11 @@ class RouteManager:
                     myLink = link
                     break
             if myLink != None:
-                print "%s %s:%d %s %s" % (self.dest.name(), myLink.host, myLink.port, bridge.dest, bridge.key)
+                if bridge.dynamic:
+                    keyText = "<dynamic>"
+                else:
+                    keyText = bridge.key
+                print "%s %s:%d %s %s" % (self.dest.name(), myLink.host, myLink.port, bridge.dest, keyText)
 
     def ClearAllRoutes (self):
         links   = self.qmf.getObjects(_class="link")
@@ -285,6 +292,22 @@ try:
         elif cmd == "list":
             rm.ListLinks ()
 
+    elif group == "dynamic":
+        if cmd == "add":
+            if nargs < 5 or nargs > 7:
+                Usage ()
+
+            tag = ""
+            excludes = ""
+            if nargs > 5: tag = cargs[5]     
+            if nargs > 6: excludes = cargs[6]     
+            rm.AddRoute (cargs[3], cargs[4], "", tag, excludes, dynamic=True)
+        elif cmd == "del":
+            if nargs != 5:
+                Usage ()
+            else:
+                rm.DelRoute (cargs[3], cargs[4], "", dynamic=True)
+
     elif group == "route":
         if cmd == "add":
             if nargs < 6 or nargs > 8:
@@ -294,12 +317,12 @@ try:
             excludes = ""
             if nargs > 6: tag = cargs[6]     
             if nargs > 7: excludes = cargs[7]     
-            rm.AddRoute (cargs[3], cargs[4], cargs[5], tag, excludes)
+            rm.AddRoute (cargs[3], cargs[4], cargs[5], tag, excludes, dynamic=False)
         elif cmd == "del":
             if nargs != 6:
                 Usage ()
             else:
-                rm.DelRoute (cargs[3], cargs[4], cargs[5])
+                rm.DelRoute (cargs[3], cargs[4], cargs[5], dynamic=False)
         else:
             if   cmd == "list":
                 rm.ListRoutes ()
