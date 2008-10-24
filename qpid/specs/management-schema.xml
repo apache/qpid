@@ -175,6 +175,7 @@
     <property name="name"       type="sstr"  access="RC" index="y"/>
     <property name="type"       type="sstr"  access="RO"/>
     <property name="durable"    type="bool"  access="RC"/>
+    <property name="arguments"  type="map"   access="RO" desc="Arguments supplied in exchange.declare"/>
 
     <statistic name="producerCount" type="hilo32"  desc="Current producers on exchange"/>
     <statistic name="bindingCount"  type="hilo32"  desc="Current bindings"/>
