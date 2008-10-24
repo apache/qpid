@@ -22,6 +22,7 @@
 #include "qpid/sys/IntegerTypes.h"
 
 #include <boost/variant.hpp>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -41,12 +42,28 @@ inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
     return y.host==x.host && y.port == x.port;
 }
 
-/** Address is a variant of all address types, more coming in future. */
-struct Address : public boost::variant<TcpAddress> {
-    template <class T> Address(const T& t) : boost::variant<TcpAddress>(t) {}
-    template <class T> T* get() { return boost::get<T>(this); }
-    template <class T> const T* get() const { return boost::get<T>(this); }
+std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
+
+/**
+ * Address is a variant of all address types, more coming in future.
+ *
+ * Address wraps a boost::variant rather than be defined in terms of
+ * boost::variant to prevent users from having to deal directly with
+ * boost.
+ */
+struct Address  {
+public:
+    Address(const Address& a) : value(a.value) {}
+    template <class T> Address(const T& t) : value(t) {}
+    template <class T> Address& operator=(const T& t) { value=t; return *this; }
+    template <class T> T* get() { return boost::get<T>(&value); }
+    template <class T> const T* get() const { return boost::get<T>(&value); }
+
+private:
+    boost::variant<TcpAddress> value;
 };
+
+std::ostream& operator<<(std::ostream& os, const Address& addr);
 
 } // namespace qpid
 
