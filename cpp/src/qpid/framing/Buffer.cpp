@@ -220,14 +220,16 @@ void Buffer::putUInt<8>(uint64_t i) {
 }
 
 void Buffer::putShortString(const string& s){
-    uint8_t len = s.length();
+    size_t slen = s.length();
+    uint8_t len = slen < 0x100 ? (uint8_t) slen : 0xFF;
     putOctet(len);
     s.copy(data + position, len);
     position += len;    
 }
 
 void Buffer::putMediumString(const string& s){
-    uint16_t len = s.length();
+    size_t slen = s.length();
+    uint16_t len = slen < 0x10000 ? (uint16_t) slen : 0xFFFF;
     putShort(len);
     s.copy(data + position, len);
     position += len;    
