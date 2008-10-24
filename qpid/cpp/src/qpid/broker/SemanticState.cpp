@@ -549,20 +549,8 @@ Queue::shared_ptr SemanticState::getQueue(const string& name) const {
 }
 
 AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
-{    
-    ack_iterator start = find_if(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
-    ack_iterator end = start;
-     
-    if (start != unacked.end()) {
-        if (first == last) {
-            //just acked single element (move end past it)
-            ++end;
-        } else {
-            //need to find end (position it just after the last record in range)
-            end = find_if(start, unacked.end(), boost::bind(&DeliveryRecord::after, _1, last));
-        }
-    }
-    return AckRange(start, end);
+{   
+    return DeliveryRecord::findRange(unacked, first, last);
 }
 
 void SemanticState::acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired)

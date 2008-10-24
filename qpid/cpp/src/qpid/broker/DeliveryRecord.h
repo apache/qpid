@@ -34,11 +34,24 @@
 namespace qpid {
 namespace broker {
 class SemanticState;
+class DeliveryRecord;
+
+typedef std::list<DeliveryRecord> DeliveryRecords; 
+typedef std::list<DeliveryRecord>::iterator ack_iterator; 
+
+struct AckRange
+{
+    ack_iterator start;
+    ack_iterator end;    
+    AckRange(ack_iterator _start, ack_iterator _end) : start(_start), end(_end) {}
+};
+
 
 /**
  * Record of a delivery for which an ack is outstanding.
  */
-class DeliveryRecord{
+class DeliveryRecord
+{
     QueuedMessage msg;
     mutable Queue::shared_ptr queue;
     const std::string tag;
@@ -91,22 +104,12 @@ class DeliveryRecord{
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
+    static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
     Queue::shared_ptr getQueue() const { return queue; }
-
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
-};
-
-typedef std::list<DeliveryRecord> DeliveryRecords; 
-typedef std::list<DeliveryRecord>::iterator ack_iterator; 
-
-struct AckRange
-{
-    ack_iterator start;
-    ack_iterator end;    
-    AckRange(ack_iterator _start, ack_iterator _end) : start(_start), end(_end) {}
 };
 
 struct AcquireFunctor
@@ -120,7 +123,6 @@ struct AcquireFunctor
         record.acquire(results);
     }
 };
-
 }
 }
 

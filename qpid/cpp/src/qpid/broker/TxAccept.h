@@ -34,9 +34,31 @@ namespace qpid {
          * Defines the transactional behaviour for accepts received by
          * a transactional channel.
          */
-        class TxAccept : public TxOp{
+        class TxAccept : public TxOp {
+            struct RangeOp
+            {
+                AckRange range;
+    
+                RangeOp(const AckRange& r);
+                void prepare(TransactionContext* ctxt);
+                void commit();
+            };
+
+            struct RangeOps
+            {
+                std::vector<RangeOp> ranges;
+                DeliveryRecords& unacked;
+    
+                RangeOps(DeliveryRecords& u);
+
+                void operator()(framing::SequenceNumber start, framing::SequenceNumber end);
+                void prepare(TransactionContext* ctxt);
+                void commit();    
+            };
+
             framing::SequenceSet& acked;
             std::list<DeliveryRecord>& unacked;
+            RangeOps ops;
 
         public:
             /**

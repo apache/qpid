@@ -171,6 +171,24 @@ void DeliveryRecord::cancel(const std::string& cancelledTag)
         cancelled = true;
 }
 
+AckRange DeliveryRecord::findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last)
+{
+    ack_iterator start = find_if(records.begin(), records.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
+    ack_iterator end = start;
+     
+    if (start != records.end()) {
+        if (first == last) {
+            //just acked single element (move end past it)
+            ++end;
+        } else {
+            //need to find end (position it just after the last record in range)
+            end = find_if(start, records.end(), boost::bind(&DeliveryRecord::after, _1, last));
+        }
+    }
+    return AckRange(start, end);
+}
+
+
 namespace qpid {
 namespace broker {
 
