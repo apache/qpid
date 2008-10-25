@@ -32,7 +32,7 @@ namespace qpid {
 struct TcpAddress {
     static const uint16_t DEFAULT_PORT=5672;
     explicit TcpAddress(const std::string& host_=std::string(),
-               uint16_t port_=DEFAULT_PORT)
+                        uint16_t port_=DEFAULT_PORT)
         : host(host_), port(port_) {}
     std::string host;
     uint16_t port;
@@ -54,7 +54,7 @@ std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
 struct Address  {
 public:
     Address(const Address& a) : value(a.value) {}
-    template <class T> Address(const T& t) : value(t) {}
+    Address(const TcpAddress& tcp) : value(tcp) {}
     template <class T> Address& operator=(const T& t) { value=t; return *this; }
     template <class T> T* get() { return boost::get<T>(&value); }
     template <class T> const T* get() const { return boost::get<T>(&value); }
