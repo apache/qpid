@@ -92,9 +92,7 @@ void Listener::start(uint size)
 {
     session.queueDeclare(arg::queue=queue, arg::exclusive=true, arg::autoDelete=true);
     request.getDeliveryProperties().setRoutingKey(queue);
-    subscriptions.setAcceptMode(1/*not-required*/);
-    subscriptions.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
-    subscriptions.subscribe(*this, queue);    
+    subscriptions.subscribe(*this, queue, SubscriptionSettings(FlowControl::unlimited(), ACCEPT_MODE_NONE));    
 
     request.getDeliveryProperties().setTimestamp(current_time());
     if (size) request.setData(std::string(size, 'X'));

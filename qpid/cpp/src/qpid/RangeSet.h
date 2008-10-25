@@ -27,6 +27,7 @@
 #include <boost/operators.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
+#include <numeric>
 
 namespace qpid {
 
@@ -53,7 +54,7 @@ class Range {
 
     void begin(const T& t) { begin_ = t; }
     void end(const T& t) { end_ = t; }
-
+    size_t size() const { return end_ - begin_; }
     bool empty() const { return begin_ == end_; }
 
     bool contains(const T& x) const { return begin_ <= x && x < end_; }
@@ -172,6 +173,7 @@ class RangeSet
     // The difference between the start and end of this range set
     uint32_t span() const;
 
+    size_t size() const;
     bool empty() const { return ranges.empty(); }
     void clear() { ranges.clear(); }
     
@@ -185,6 +187,7 @@ class RangeSet
     template <class S> void decode(S& s) { uint16_t sz; s(sz); ranges.resize(sz/sizeof(Range<T>)); }
     
  private:
+    static size_t accumulateSize(size_t s, const Range<T>& r) { return s+r.size(); }
     Ranges ranges;
 
   template <class U> friend std::ostream& operator<<(std::ostream& o, const RangeSet<U>& r);
@@ -317,6 +320,9 @@ template <class T> uint32_t RangeSet<T>::span() const {
     return ranges.back().last() - ranges.front().first();
 }
 
+template <class T> size_t RangeSet<T>::size() const {
+    return std::accumulate(rangesBegin(), rangesEnd(), 0, &RangeSet<T>::accumulateSize);
+}
 
 } // namespace qpid
 

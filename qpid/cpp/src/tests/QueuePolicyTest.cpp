@@ -168,8 +168,10 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
     ProxySessionFixture f;
     std::string q("my-ring-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
-    LocalQueue incoming(AckPolicy(0));//no automatic acknowledgements
-    f.subs.subscribe(incoming, q);
+    LocalQueue incoming;
+    SubscriptionSettings settings(FlowControl::unlimited());
+    settings.autoAck = 0; // no auto ack.
+    Subscription sub = f.subs.subscribe(incoming, q, settings); 
     for (int i = 0; i < 5; i++) {
         f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
     }

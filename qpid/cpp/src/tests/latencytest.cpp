@@ -204,14 +204,15 @@ Receiver::Receiver(const string& q, Stats& s) : Client(q), mgr(session), count(0
         std::cout << "Warning: found " << msgCount << " msgs on " << queue << ". Purging..." << std::endl;
         session.queuePurge(arg::queue=queue);
     }
+    SubscriptionSettings settings;
     if (opts.prefetch) {
-        mgr.setAckPolicy(AckPolicy(opts.ack ? opts.ack : (opts.prefetch / 2)));
-        mgr.setFlowControl(opts.prefetch, SubscriptionManager::UNLIMITED, true);
+        settings.autoAck = (opts.ack ? opts.ack : (opts.prefetch / 2));
+        settings.flowControl = FlowControl::messageWindow(opts.prefetch);
     } else {
-        mgr.setAcceptMode(1/*not-required*/);
-        mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
+        settings.acceptMode = ACCEPT_MODE_NONE;
+        settings.flowControl = FlowControl::unlimited();
     }
-    mgr.subscribe(*this, queue);    
+    mgr.subscribe(*this, queue, settings);    
 }
 
 void Receiver::test()

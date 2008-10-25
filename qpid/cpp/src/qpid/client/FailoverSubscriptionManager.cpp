@@ -68,7 +68,7 @@ FailoverSubscriptionManager::failover ( )
 void 
 FailoverSubscriptionManager::subscribe ( MessageListener   & listener,
                                          const std::string & queue,
-                                         const FlowControl & flow,
+                                         const SubscriptionSettings & settings,
                                          const std::string & tag,
                                          bool                record_this
 )
@@ -77,11 +77,11 @@ FailoverSubscriptionManager::subscribe ( MessageListener   & listener,
 
     subscriptionManager->subscribe ( listener,
                                      queue,
-                                     flow,
+                                     settings,
                                      tag
     );
     if ( record_this )
-      subscribeFns.push_back ( boost::bind ( (void (FailoverSubscriptionManager::*)(MessageListener&, const std::string&, const FlowControl&, const std::string&, bool) )  &FailoverSubscriptionManager::subscribe, this, boost::ref(listener), queue, flow, tag, false ) );
+      subscribeFns.push_back ( boost::bind ( (void (FailoverSubscriptionManager::*)(MessageListener&, const std::string&, const SubscriptionSettings&, const std::string&, bool) )  &FailoverSubscriptionManager::subscribe, this, boost::ref(listener), queue, settings, tag, false ) );
 }
 
 
@@ -89,7 +89,7 @@ FailoverSubscriptionManager::subscribe ( MessageListener   & listener,
 void 
 FailoverSubscriptionManager::subscribe ( LocalQueue        & localQueue,
                                          const std::string & queue,
-                                         const FlowControl & flow,
+                                         const SubscriptionSettings & settings,
                                          const std::string & tag,
                                          bool                record_this
 )
@@ -98,12 +98,12 @@ FailoverSubscriptionManager::subscribe ( LocalQueue        & localQueue,
 
     subscriptionManager->subscribe ( localQueue,
                                      queue,
-                                     flow,
+                                     settings,
                                      tag
     );
 
     if ( record_this )
-      subscribeFns.push_back ( boost::bind ( (void (FailoverSubscriptionManager::*)(LocalQueue&, const std::string&, const FlowControl&, const std::string&, bool) )  &FailoverSubscriptionManager::subscribe, this, localQueue, queue, flow, tag, false ) );
+      subscribeFns.push_back ( boost::bind ( (void (FailoverSubscriptionManager::*)(LocalQueue&, const std::string&, const SubscriptionSettings&, const std::string&, bool) )  &FailoverSubscriptionManager::subscribe, this, localQueue, queue, settings, tag, false ) );
 }
 
 
@@ -244,110 +244,5 @@ FailoverSubscriptionManager::stop ( )
     subscriptionManager->stop ( );
     lock.notifyAll();
 }
-
-
-
-void 
-FailoverSubscriptionManager::setFlowControl ( const std::string & destination,
-                                              const FlowControl & flow 
-)
-{
-
-    subscriptionManager->setFlowControl ( destination, flow );
-}
-
-
-
-void 
-FailoverSubscriptionManager::setFlowControl ( const FlowControl & flow )
-{
-
-    subscriptionManager->setFlowControl ( flow );
-}
-
-
-
-const FlowControl & 
-FailoverSubscriptionManager::getFlowControl ( ) const
-{
-
-    return subscriptionManager->getFlowControl ( );
-}
-
-
-
-
-void 
-FailoverSubscriptionManager::setFlowControl ( const std::string & tag,
-                                              uint32_t messages,
-                                              uint32_t bytes,
-                                              bool window 
-)
-{
-
-    subscriptionManager->setFlowControl ( tag,
-                                          messages,
-                                          bytes,
-                                          window
-    );
-}
-
-
-
-void 
-FailoverSubscriptionManager::setFlowControl ( uint32_t messages,
-                                              uint32_t bytes,
-                                              bool window
-)
-{
-
-    subscriptionManager->setFlowControl ( messages,
-                                          bytes,
-                                          window
-    );
-}
-
-
-
-void 
-FailoverSubscriptionManager::setAcceptMode ( bool required )
-{
-
-    subscriptionManager->setAcceptMode ( required );
-}
-
-
-
-void 
-FailoverSubscriptionManager::setAcquireMode ( bool acquire )
-{
-
-    subscriptionManager->setAcquireMode ( acquire );
-}
-
-
-
-void 
-FailoverSubscriptionManager::setAckPolicy ( const AckPolicy & autoAck )
-{
-
-    subscriptionManager->setAckPolicy ( autoAck );
-}
-
-
-
-AckPolicy & 
-FailoverSubscriptionManager::getAckPolicy()
-{
-
-    return subscriptionManager->getAckPolicy ( );
-}
-
-
-
-
-
-
-
 
 }} // namespace qpid::client

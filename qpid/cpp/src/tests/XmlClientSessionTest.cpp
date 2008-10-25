@@ -29,7 +29,7 @@
 #include "qpid/framing/TransferContent.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/Dispatcher.h"
+#include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/LocalQueue.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
@@ -53,30 +53,6 @@ using std::cout;
 using std::endl;
 
 Shlib shlib("../.libs/xml.so");
-
-struct DummyListener : public sys::Runnable, public MessageListener {
-    std::vector<Message> messages;
-    string name;
-    uint expected;
-    Dispatcher dispatcher;
-
-    DummyListener(Session& session, const string& n, uint ex) :
-        name(n), expected(ex), dispatcher(session) {}
-
-    void run()
-    {
-        dispatcher.listen(name, this);
-        dispatcher.run();
-    }
-
-    void received(Message& msg)
-    {
-        messages.push_back(msg);
-        if (--expected == 0)
-            dispatcher.stop();
-    }
-};
-
 
 class SubscribedLocalQueue : public LocalQueue {
   private:

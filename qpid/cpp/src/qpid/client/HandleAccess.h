@@ -1,3 +1,6 @@
+#ifndef QPID_CLIENT_HANDLEACCESS_H
+#define QPID_CLIENT_HANDLEACCESS_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,33 +21,21 @@
  * under the License.
  *
  */
-#include "AckPolicy.h"
+
+#include <Handle.h>
 
 namespace qpid {
 namespace client {
 
-AckPolicy::AckPolicy(size_t n) : interval(n), count(n) {}
-
-void AckPolicy::ack(const Message& msg, AsyncSession session) 
+/**
+ * Provide access to the private impl member of a Handle.
+ */
+template <class T>
+class HandleAccess
 {
-    accepted.add(msg.getId());
-    if (interval && --count==0) {
-        session.markCompleted(msg.getId(), false, true);        
-        session.messageAccept(accepted);
-        accepted.clear();
-        count = interval;
-    } else {
-        session.markCompleted(msg.getId(), false, false);        
-    }
-}
-
-void AckPolicy::ackOutstanding(AsyncSession session) 
-{
-    if (!accepted.empty()) {
-        session.messageAccept(accepted);
-        accepted.clear();
-        session.sendCompletion();
-    }
-}
-
+  public:
+    static boost::shared_ptr<T> getImpl(Handle<T>& h) { return h.impl; }
+};
 }} // namespace qpid::client
+
+#endif  /*!QPID_CLIENT_HANDLEACCESS_H*/
