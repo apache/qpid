@@ -560,11 +560,12 @@ struct SubscribeThread : public Client {
         try {            
             if (opts.txSub) sync(session).txSelect();
             SubscriptionManager subs(session);
-            LocalQueue lq(AckPolicy(opts.txSub ? opts.txSub : opts.ack));
-            subs.setAcceptMode(opts.txSub || opts.ack ? 0 : 1);
-            subs.setFlowControl(opts.subQuota, SubscriptionManager::UNLIMITED,
-                                false);
-            subs.subscribe(lq, queue);
+            SubscriptionSettings settings;
+            settings.autoAck = opts.txSub ? opts.txSub : opts.ack;
+            settings.acceptMode = (opts.txSub || opts.ack ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT);
+            settings.flowControl = FlowControl::messageCredit(opts.subQuota);
+            LocalQueue lq;
+            Subscription subscription = subs.subscribe(lq, queue, settings);
             // Notify controller we are ready.
             session.messageTransfer(arg::content=Message("ready", "sub_ready"), arg::acceptMode=1);
             if (opts.txSub) {
@@ -603,7 +604,7 @@ struct SubscribeThread : public Client {
                     }
                 }
                 if (opts.txSub || opts.ack)
-                    lq.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
+                    subscription.accept(subscription.getUnaccepted());
                 if (opts.txSub) {
                     if (opts.commitAsync) session.txCommit();
                     else sync(session).txCommit();

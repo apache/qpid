@@ -139,9 +139,10 @@ struct Transfer : public Client, public Runnable
             else session.txSelect();
             SubscriptionManager subs(session);
             
-            LocalQueue lq(AckPolicy(0));//manual acking
-            subs.setFlowControl(opts.msgsPerTx, SubscriptionManager::UNLIMITED, true);
-            subs.subscribe(lq, src);
+            LocalQueue lq;
+            SubscriptionSettings settings(FlowControl::messageWindow(opts.msgsPerTx));
+            settings.autoAck = 0; // Disabled
+            Subscription sub = subs.subscribe(lq, src, settings);
             
             for (uint t = 0; t < opts.txCount; t++) {
                 Message in;
@@ -157,7 +158,7 @@ struct Transfer : public Client, public Runnable
                     out.getDeliveryProperties().setDeliveryMode(in.getDeliveryProperties().getDeliveryMode());
                     session.messageTransfer(arg::content=out, arg::acceptMode=1);
                 }
-                lq.getAckPolicy().ackOutstanding(session);
+                sub.accept(sub.getUnaccepted());
                 if (opts.dtx) {
                     session.dtxEnd(arg::xid=xid);
                     session.dtxPrepare(arg::xid=xid);
@@ -230,8 +231,6 @@ struct Controller : public Client
     int check() 
     {
         SubscriptionManager subs(session);
-        subs.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
-        subs.setAcceptMode(1/*not-required*/);
 
         // Recover DTX transactions (if any)
         if (opts.dtx) {
@@ -262,9 +261,10 @@ struct Controller : public Client
         StringSet drained;
         //drain each queue and verify the correct set of messages are available
         for (StringSet::iterator i = queues.begin(); i != queues.end(); i++) {
-            //subscribe, allocate credit and flush
-            LocalQueue lq(AckPolicy(0));//manual acking
-            subs.subscribe(lq, *i, *i);
+            //subscribe, allocate credit and flushn
+            LocalQueue lq;
+            SubscriptionSettings settings(FlowControl::unlimited(), ACCEPT_MODE_NONE);
+            subs.subscribe(lq, *i, settings);
             session.messageFlush(arg::destination=*i);
             session.sync();
 

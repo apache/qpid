@@ -22,6 +22,8 @@
  *
  */
 
+#include <qpid/sys/IntegerTypes.h>
+
 namespace qpid {
 namespace client {
 
@@ -40,9 +42,8 @@ namespace client {
  * is renewed.
  *
  * In "window mode" credit is automatically renewed when a message is
- * acknowledged (@see AckPolicy) In non-window mode credit is not
- * automatically renewed, it must be explicitly re-set (@see
- * SubscriptionManager)
+ * accepted. In non-window mode credit is not automatically renewed,
+ * it must be explicitly re-set (@see Subscription)
  */
 struct FlowControl {
     static const uint32_t UNLIMITED=0xFFFFFFFF;

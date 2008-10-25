@@ -22,13 +22,15 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "HandlePrivate.h"
+#include "SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {
 
 using namespace framing;
 
-LocalQueue::LocalQueue(AckPolicy a) : autoAck(a) {}
+LocalQueue::LocalQueue() {}
 LocalQueue::~LocalQueue() {}
 
 Message LocalQueue::pop() { return get(); }
@@ -48,16 +50,15 @@ bool LocalQueue::get(Message& result, sys::Duration timeout) {
     if (!ok) return false;
     if (content->isA<MessageTransferBody>()) {
         result = Message(*content);
-        autoAck.ack(result, session);
+        boost::intrusive_ptr<SubscriptionImpl> si = HandlePrivate<SubscriptionImpl>::get(subscription);
+        assert(si);
+        if (si) si->received(result);
         return true;
     }
     else
         throw CommandInvalidException(
             QPID_MSG("Unexpected method: " << content->getMethod()));
 }
-
-void LocalQueue::setAckPolicy(AckPolicy a) { autoAck=a; }
-AckPolicy& LocalQueue::getAckPolicy() { return autoAck; }
 
 bool LocalQueue::empty() const
 { 

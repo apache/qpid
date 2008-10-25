@@ -31,7 +31,7 @@
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/LocalQueue.h>
-#include <qpid/client/FlowControl.h>
+#include <qpid/client/SubscriptionSettings.h>
 #include <qpid/sys/Runnable.h>
 #include <qpid/sys/Monitor.h>
 
@@ -50,13 +50,13 @@ class FailoverSubscriptionManager
 
     void subscribe ( MessageListener   & listener,
                      const std::string & queue,
-                     const FlowControl & flow,
+                     const SubscriptionSettings & ,
                      const std::string & tag = std::string(),
                      bool  record_this = true );
 
     void subscribe ( LocalQueue        & localQueue,
                      const std::string & queue,
-                     const FlowControl & flow,
+                     const SubscriptionSettings & ,
                      const std::string & tag=std::string(),
                      bool  record_this = true );
 
@@ -83,32 +83,6 @@ class FailoverSubscriptionManager
     void setAutoStop ( bool set = true );
 
     void stop ( );
-
-    void setFlowControl ( const std::string & destintion, 
-                          const FlowControl & flow );
-
-    void setFlowControl ( const FlowControl & flow );
-
-    const FlowControl & getFlowControl ( ) const;
-
-    void setFlowControl ( const std::string & tag, 
-                          uint32_t messages,  
-                          uint32_t bytes, 
-                          bool window=true );
-
-    void setFlowControl ( uint32_t messages,  
-                          uint32_t bytes, 
-                          bool window = true
-                        );
-
-    void setAcceptMode ( bool required );
-
-    void setAcquireMode ( bool acquire );
-
-    void setAckPolicy ( const AckPolicy & autoAck );
-
-    AckPolicy & getAckPolicy();
-
 
     // Get ready for a failover.
     void prepareForFailover ( Session newSession );

@@ -19,6 +19,7 @@
  *
  */
 #include "Dispatcher.h"
+#include "SubscriptionImpl.h"
 
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -36,18 +37,6 @@ using qpid::sys::Thread;
 
 namespace qpid {
 namespace client {
-
-Subscriber::Subscriber(const Session& s, MessageListener* l, AckPolicy a)
-    : session(s), listener(l), autoAck(a) {}
-
-void Subscriber::received(Message& msg)
-{
-
-    if (listener) {
-        listener->received(msg);
-        autoAck.ack(msg, session);
-    }
-}
 
 Dispatcher::Dispatcher(const Session& s, const std::string& q)
     : session(s), 
@@ -78,7 +67,7 @@ void Dispatcher::run()
             FrameSet::shared_ptr content = queue->pop();
             if (content->isA<MessageTransferBody>()) {
                 Message msg(*content);
-                Subscriber::shared_ptr listener = find(msg.getDestination());
+                boost::intrusive_ptr<SubscriptionImpl> listener = find(msg.getDestination());
                 if (!listener) {
                     QPID_LOG(error, "No listener found for destination " << msg.getDestination());
                 } else {
@@ -121,7 +110,7 @@ void Dispatcher::setAutoStop(bool b)
     autoStop = b;
 }
 
-Subscriber::shared_ptr Dispatcher::find(const std::string& name)
+boost::intrusive_ptr<SubscriptionImpl> Dispatcher::find(const std::string& name)
 {
     ScopedLock<Mutex> l(lock);
     Listeners::iterator i = listeners.find(name);
@@ -131,24 +120,12 @@ Subscriber::shared_ptr Dispatcher::find(const std::string& name)
     return i->second;
 }
 
-void Dispatcher::listen(
-    MessageListener* listener, AckPolicy autoAck
-)
-{
+void Dispatcher::listen(const boost::intrusive_ptr<SubscriptionImpl>& subscription) {
     ScopedLock<Mutex> l(lock);
-    defaultListener = Subscriber::shared_ptr(
-        new Subscriber(session, listener, autoAck));
+    listeners[subscription->getName()] = subscription;
 }
 
-void Dispatcher::listen(const std::string& destination, MessageListener* listener, AckPolicy autoAck)
-{
-    ScopedLock<Mutex> l(lock);
-    listeners[destination] = Subscriber::shared_ptr(
-        new Subscriber(session, listener, autoAck));
-}
-
-void Dispatcher::cancel(const std::string& destination)
-{
+void Dispatcher::cancel(const std::string& destination) {
     ScopedLock<Mutex> l(lock);
     listeners.erase(destination);
     if (autoStop && listeners.empty())

@@ -75,11 +75,11 @@ struct Client
         if (opts.declare)
             session.queueDeclare(opts.queue);
         SubscriptionManager subs(session);
-        LocalQueue lq(AckPolicy(opts.ack));
-        subs.setAcceptMode(opts.ack > 0 ? 0 : 1);
-        subs.setFlowControl(opts.count, SubscriptionManager::UNLIMITED,
-                            false);
-        subs.subscribe(lq, opts.queue);
+        LocalQueue lq;
+        SubscriptionSettings settings;
+        settings.acceptMode = opts.ack > 0 ? ACCEPT_MODE_EXPLICIT : ACCEPT_MODE_NONE;
+        settings.flowControl = FlowControl(opts.count, SubscriptionManager::UNLIMITED,false);
+        Subscription sub = subs.subscribe(lq, opts.queue, settings);
         Message msg;
         AbsTime begin=now();        
         for (size_t i = 0; i < opts.count; ++i) {
@@ -87,7 +87,7 @@ struct Client
             QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
         }
         if (opts.ack != 0)
-            subs.getAckPolicy().ackOutstanding(session); // Cumulative ack for final batch.
+            sub.accept(sub.getUnaccepted()); // Cumulative ack for final batch.
         AbsTime end=now();
         double secs(double(Duration(begin,end))/TIME_SEC);
         if (opts.summary) cout << opts.count/secs << endl;
