@@ -41,7 +41,7 @@ QPID_AUTO_TEST_CASE(testUrl_parse) {
     Url url;
     url.parse("amqp:foo.com,tcp:bar.com:1234");
     BOOST_CHECK_EQUAL(2u, url.size());
-    BOOST_CHECK_EQUAL("foo.com", boost::get<TcpAddress>(url[0]).host);
+    BOOST_CHECK_EQUAL("foo.com", url[0].get<TcpAddress>()->host);
     BOOST_CHECK_EQUAL("amqp:tcp:foo.com:5672,tcp:bar.com:1234", url.str());
 
     url.parse("amqp:foo/ignorethis");
