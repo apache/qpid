@@ -16,7 +16,8 @@ stop_brokers() {
 }
 
 if test -d ${PYTHON_DIR} ;  then
-    mkdir $DATA_DIR
+    rm -rf $DATA_DIR
+    mkdir -p $DATA_DIR
     cp $srcdir/policy.acl $DATA_DIR
     start_brokers
     echo "Running acl tests using brokers on ports $LOCAL_PORT"
@@ -25,9 +26,9 @@ if test -d ${PYTHON_DIR} ;  then
     $srcdir/acl.py -v -s $srcdir/../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --port $LOCAL_PORT
     RETCODE=$?
     stop_brokers
+    rm -rf $DATA_DIR
     if test x$RETCODE != x0; then 
         echo "FAIL acl tests"; exit 1;
     fi
-    rm -rf $DATA_DIR
 fi
 
