@@ -30,24 +30,12 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "MessageListener.h"
-#include "AckPolicy.h"
+#include "SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {
 
-///@internal
-class Subscriber : public MessageListener
-{
-    AsyncSession session;
-    MessageListener* const listener;
-    AckPolicy autoAck;
-
-public:
-    typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(const Session& session, MessageListener* listener, AckPolicy);
-    void received(Message& msg);
-    
-};
+class SubscriptionImpl;
 
 ///@internal
 typedef framing::Handler<framing::FrameSet> FrameSetHandler;
@@ -55,7 +43,7 @@ typedef framing::Handler<framing::FrameSet> FrameSetHandler;
 ///@internal
 class Dispatcher : public sys::Runnable
 {
-    typedef std::map<std::string, Subscriber::shared_ptr> Listeners;
+    typedef std::map<std::string, boost::intrusive_ptr<SubscriptionImpl>  >Listeners;
     sys::Mutex lock;
     sys::Thread worker;
     Session session;
@@ -63,10 +51,10 @@ class Dispatcher : public sys::Runnable
     bool running;
     bool autoStop;
     Listeners listeners;
-    Subscriber::shared_ptr defaultListener;
+    boost::intrusive_ptr<SubscriptionImpl> defaultListener;
     std::auto_ptr<FrameSetHandler> handler;
 
-    Subscriber::shared_ptr find(const std::string& name);
+    boost::intrusive_ptr<SubscriptionImpl> find(const std::string& name);
     bool isStopped();
 
     boost::function<void ()> failoverHandler;
@@ -84,8 +72,7 @@ public:
       failoverHandler = fh;
     }
 
-    void listen(MessageListener* listener, AckPolicy autoAck=AckPolicy());
-    void listen(const std::string& destination, MessageListener* listener, AckPolicy autoAck=AckPolicy());
+    void listen(const boost::intrusive_ptr<SubscriptionImpl>& subscription);
     void cancel(const std::string& destination);
 };
 

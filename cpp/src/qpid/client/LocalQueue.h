@@ -23,8 +23,8 @@
  */
 
 #include "qpid/client/Message.h"
+#include "qpid/client/Subscription.h"
 #include "qpid/client/Demux.h"
-#include "qpid/client/AckPolicy.h"
 #include "qpid/sys/Time.h"
 
 namespace qpid {
@@ -38,17 +38,14 @@ namespace client {
  *
  * \ingroup clientapi
  */
-class LocalQueue
-{
+class LocalQueue {
   public:
     /** Create a local queue. Subscribe the local queue to a remote broker
      * queue with a SubscriptionManager.
      *
      * LocalQueue is an alternative to implementing a MessageListener.
-     * 
-     *@param ackPolicy Policy for acknowledging messages. @see AckPolicy.
      */
-    LocalQueue(AckPolicy ackPolicy=AckPolicy());
+    LocalQueue();
 
     ~LocalQueue();
 
@@ -74,16 +71,9 @@ class LocalQueue
     /** Number of messages on the local queue */
     size_t size() const;
 
-    /** Set the message acknowledgement policy. @see AckPolicy. */
-    void setAckPolicy(AckPolicy);
-
-    /** Get the message acknowledgement policy. @see AckPolicy. */
-    AckPolicy& getAckPolicy();
-
   private:
-    Session session;
     Demux::QueuePtr queue;
-    AckPolicy autoAck;
+    Subscription subscription;
 
   friend class SubscriptionManager;
 };

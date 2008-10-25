@@ -66,6 +66,7 @@ class Listener : public MessageListener{
 public:
     Listener(const Session& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
     virtual void received(Message& msg);
+    Subscription subscription;
 };
 
 /**
@@ -118,14 +119,15 @@ int main(int argc, char** argv){
             //set up listener
             SubscriptionManager mgr(session);
             Listener listener(session, mgr, "response", args.transactional);
+            SubscriptionSettings settings;
             if (args.prefetch) {
-                mgr.setAckPolicy(AckPolicy(args.ack ? args.ack : (args.prefetch / 2)));
-                mgr.setFlowControl(args.prefetch, SubscriptionManager::UNLIMITED, true);
+                settings.autoAck = (args.ack ? args.ack : (args.prefetch / 2));
+                settings.flowControl = FlowControl::messageCredit(args.prefetch);
             } else {
-                mgr.setAcceptMode(1/*-not-required*/);
-                mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
+                settings.acceptMode = ACCEPT_MODE_NONE;
+                settings.flowControl = FlowControl::unlimited();
             }
-            mgr.subscribe(listener, control);
+            listener.subscription =  mgr.subscribe(listener, control, settings);
             session.sync();
 
             if( args.statusqueue.length() > 0 ) {
@@ -170,7 +172,7 @@ void Listener::received(Message& message){
     if(string("TERMINATION_REQUEST") == type){
         shutdown();
     }else if(string("REPORT_REQUEST") == type){
-        mgr.getAckPolicy().ackOutstanding(session);//acknowledge everything upto this point
+        subscription.accept(subscription.getUnaccepted()); // Accept everything upto this point
         cout <<"Batch ended, sending report." << endl;
         //send a report:
         report();

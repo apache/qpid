@@ -60,7 +60,7 @@ FailoverListener::FailoverListener(const boost::shared_ptr<ConnectionImpl>& c, c
     std::string qname=session.getId().getName();
     session.queueDeclare(arg::queue=qname, arg::exclusive=true, arg::autoDelete=true);
     session.exchangeBind(arg::queue=qname, arg::exchange=AMQ_FAILOVER);
-    subscriptions->subscribe(*this, qname, FlowControl::unlimited());
+    subscriptions->subscribe(*this, qname, SubscriptionSettings(FlowControl::unlimited(), ACCEPT_MODE_NONE));
     thread = sys::Thread(*subscriptions);
 }
 

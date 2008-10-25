@@ -368,14 +368,15 @@ libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
-  qpid/client/AckPolicy.cpp			\
   qpid/client/Bounds.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
+  qpid/client/ConnectionImpl.h 			\
   qpid/client/ConnectionImpl.cpp                \
   qpid/client/ConnectionSettings.cpp		\
   qpid/client/Connector.cpp	                \
   qpid/client/Demux.cpp				\
+  qpid/client/Dispatcher.h			\
   qpid/client/Dispatcher.cpp			\
   qpid/client/FailoverConnection.cpp            \
   qpid/client/FailoverSession.cpp               \
@@ -385,6 +386,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
+  qpid/client/HandlePrivate.h			\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
@@ -395,8 +397,12 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SessionBase_0_10.h		\
   qpid/client/SessionBase_0_10Access.h		\
   qpid/client/ConnectionAccess.h		\
+  qpid/client/SessionImpl.h \
   qpid/client/SessionImpl.cpp			\
   qpid/client/StateManager.cpp			\
+  qpid/client/Subscription.cpp			\
+  qpid/client/SubscriptionImpl.h		\
+  qpid/client/SubscriptionImpl.cpp		\
   qpid/client/SubscriptionManager.cpp
 
 nobase_include_HEADERS = \
@@ -500,25 +506,25 @@ nobase_include_HEADERS = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.h \
   qpid/client/AckMode.h \
-  qpid/client/AckPolicy.h			\
   qpid/client/Bounds.h \
   qpid/client/ChainableFrameHandler.h		\
   qpid/client/Completion.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
-  qpid/client/ConnectionImpl.h \
   qpid/client/ConnectionSettings.h \
   qpid/client/Connector.h \
   qpid/client/Demux.h \
-  qpid/client/Dispatcher.h \
   qpid/client/Execution.h \
   qpid/client/FailoverConnection.h \
   qpid/client/FailoverSession.h \
+  qpid/client/Subscription.h \
+  qpid/client/SubscriptionSettings.h \
   qpid/client/FailoverSubscriptionManager.h \
   qpid/client/FlowControl.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
+  qpid/client/Handle.h \
   qpid/client/LocalQueue.h \
   qpid/client/QueueOptions.h \
   qpid/client/Message.h \
@@ -527,7 +533,6 @@ nobase_include_HEADERS = \
   qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \
   qpid/client/AsyncSession.h \
-  qpid/client/SessionImpl.h \
   qpid/client/StateManager.h \
   qpid/client/SubscriptionManager.h \
   qpid/client/TypedResult.h \
