@@ -1,3 +1,6 @@
+#ifndef QPID_MODULES_H
+#define QPID_MODULES_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,31 +22,22 @@
  *
  */
 
-#include "qpid/Modules.h"
-#include "qpid/sys/Shlib.h"
+#include "Options.h"
 #include <string>
 #include <vector>
-using std::vector;
-using std::string;
 
-namespace {
+namespace qpid {
 
-struct LoadtimeInitialise {
-    LoadtimeInitialise() {
-        qpid::ModuleOptions moduleOptions(MODULE_DIR);
-        string              defaultPath (moduleOptions.loadDir);
-        moduleOptions.parse (0, 0, CONF_FILE, true);
-    
-        for (vector<string>::iterator iter = moduleOptions.load.begin();
-             iter != moduleOptions.load.end();
-             iter++)
-            qpid::tryShlib (iter->data(), false);
-    
-        if (!moduleOptions.noLoad) {
-            bool isDefault = defaultPath == moduleOptions.loadDir;
-            qpid::loadModuleDir (moduleOptions.loadDir, isDefault);
-        }
-    }
-} init;
+struct ModuleOptions : public qpid::Options {
+    std::string              loadDir;
+    std::vector<std::string> load;
+    bool                     noLoad;
+    ModuleOptions(const std::string& defaultModuleDir);
+};
 
-} // namespace
+void tryShlib(const char* libname, bool noThrow);
+void loadModuleDir (std::string dirname, bool isDefault);
+
+} // namespace qpid
+
+#endif  /*!QPID_MODULES_H*/
