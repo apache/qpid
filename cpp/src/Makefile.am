@@ -235,6 +235,7 @@ libqpidcommon_la_SOURCES = \
   qpid/Address.cpp \
   qpid/DataDir.cpp \
   qpid/Exception.cpp \
+  qpid/Modules.cpp \
   qpid/Options.cpp \
   qpid/Plugin.cpp \
   qpid/RefCountedBuffer.h \
@@ -414,6 +415,7 @@ nobase_include_HEADERS = \
   qpid/Exception.h \
   qpid/sys/ExceptionHolder.h \
   qpid/amqp_0_10/Exception.h \
+  qpid/Modules.h \
   qpid/Msg.h \
   qpid/Options.h \
   qpid/Plugin.h \
