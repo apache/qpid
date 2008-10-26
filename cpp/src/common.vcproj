@@ -60,7 +60,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -132,7 +132,7 @@
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -207,7 +207,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -279,7 +279,7 @@
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -772,6 +772,9 @@
 			</File>
 			<File
 				RelativePath="qpid\management\ManagementObject.cpp">
+			</File>
+			<File
+				RelativePath="qpid\Modules.cpp">
 			</File>
 			<File
 				RelativePath="qpid\Options.cpp">
@@ -1490,6 +1493,9 @@
 			</File>
 			<File
 				RelativePath="qpid\memory.h">
+			</File>
+			<File
+				RelativePath="qpid\Modules.h">
 			</File>
 			<File
 				RelativePath="qpid\Msg.h">
