@@ -33,7 +33,7 @@ std::string Subscription::getName() const { return impl->getName(); }
 std::string Subscription::getQueue() const { return impl->getQueue(); }
 const SubscriptionSettings& Subscription::getSettings() const { return impl->getSettings(); }
 void Subscription::setFlowControl(const FlowControl& f) { impl->setFlowControl(f); }
-void Subscription::setAutoAck(size_t n) { impl->setAutoAck(n); }
+void Subscription::setAutoAck(unsigned int n) { impl->setAutoAck(n); }
 SequenceSet Subscription::getUnacquired() const { return impl->getUnacquired(); }
 SequenceSet Subscription::getUnaccepted() const { return impl->getUnaccepted(); }
 void Subscription::acquire(const SequenceSet& messageIds) { impl->acquire(messageIds); }
