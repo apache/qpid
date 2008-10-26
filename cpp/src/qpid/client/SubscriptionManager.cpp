@@ -110,7 +110,8 @@ bool SubscriptionManager::get(Message& result, const std::string& queue, sys::Du
 Session SubscriptionManager::getSession() const { return session; }
 
 Subscription SubscriptionManager::getSubscription(const std::string& name) const {
-    return subscriptions.at(name);
+    
+    return (*subscriptions.find(name)).second;
 }
 
 void SubscriptionManager::registerFailoverHandler (boost::function<void ()> fh) {
