@@ -327,9 +327,6 @@
 				RelativePath="gen\qpid\client\no_keyword\Session_0_10.cpp">
 			</File>
 			<File
-				RelativePath="qpid\client\AckPolicy.cpp">
-			</File>
-			<File
 				RelativePath="qpid\client\Bounds.cpp">
 			</File>
 			<File
