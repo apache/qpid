@@ -52,7 +52,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -67,7 +67,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="_DEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -127,7 +127,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -139,7 +139,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="NDEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -199,7 +199,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -214,7 +214,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
+				PreprocessorDefinitions="_DEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -274,7 +274,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -286,7 +286,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
+				PreprocessorDefinitions="NDEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
