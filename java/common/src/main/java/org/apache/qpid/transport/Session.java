@@ -65,7 +65,7 @@ public class Session extends SessionInvoker
 
         public void exception(Session ssn, SessionException exc)
         {
-            throw exc;
+            log.error(exc, "session exception");
         }
 
         public void closed(Session ssn) {}
@@ -195,6 +195,9 @@ public class Session extends SessionInvoker
                     send(m);
                 }
             }
+
+            sessionCommandPoint(commandsOut, 0);
+            sessionFlush(COMPLETED);
         }
     }
 
@@ -219,6 +222,7 @@ public class Session extends SessionInvoker
             this.commandsIn = id;
             if (!incomingInit)
             {
+                incomingInit = true;
                 maxProcessed = commandsIn - 1;
                 syncPoint = maxProcessed;
             }
@@ -242,6 +246,11 @@ public class Session extends SessionInvoker
 
     final void identify(Method cmd)
     {
+        if (!incomingInit)
+        {
+            throw new IllegalStateException();
+        }
+
         int id = nextCommandId();
         cmd.setId(id);
 
@@ -417,8 +426,8 @@ public class Session extends SessionInvoker
                 default:
                     throw new SessionException
                         (String.format
-                         ("timed out waiting for session to become open %s",
-                          state));
+                         ("timed out waiting for session to become open " +
+                          "(state=%s)", state));
                 }
 
                 int next = commandsOut++;
@@ -429,7 +438,26 @@ public class Session extends SessionInvoker
                     Waiter w = new Waiter(commands, timeout);
                     while (w.hasTime() && isFull(next))
                     {
-                        sessionFlush(COMPLETED);
+                        if (state == OPEN)
+                        {
+                            try
+                            {
+                                sessionFlush(COMPLETED);
+                            }
+                            catch (SenderException e)
+                            {
+                                if (expiry > 0)
+                                {
+                                    // if expiry is > 0 then this will
+                                    // happen again on resume
+                                    log.error(e, "error sending flush (full replay buffer)");
+                                }
+                                else
+                                {
+                                    e.rethrow();
+                                }
+                            }
+                        }
                         w.await();
                     }
                 }
@@ -452,7 +480,23 @@ public class Session extends SessionInvoker
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
-                send(m);
+                try
+                {
+                    send(m);
+                }
+                catch (SenderException e)
+                {
+                    if (expiry > 0)
+                    {
+                        // if expiry is > 0 then this will happen
+                        // again on resume
+                        log.error(e, "error sending command");
+                    }
+                    else
+                    {
+                        e.rethrow();
+                    }
+                }
                 if (autoSync)
                 {
                     sync();
@@ -462,7 +506,23 @@ public class Session extends SessionInvoker
                 // wraparound
                 if ((next % 65536) == 0)
                 {
-                    sessionFlush(COMPLETED);
+                    try
+                    {
+                        sessionFlush(COMPLETED);
+                    }
+                    catch (SenderException e)
+                    {
+                        if (expiry > 0)
+                        {
+                            // if expiry is > 0 then this will happen
+                            // again on resume
+                            log.error(e, "error sending flush (periodic)");
+                        }
+                        else
+                        {
+                            e.rethrow();
+                        }
+                    }
                 }
             }
         }

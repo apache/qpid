@@ -27,41 +27,40 @@ import javax.jms.Connection;
 
 public class FailoverBaseCase extends QpidTestCase
 {
-    private boolean failedOver = true;
-    
+
+    protected int FAILING_VM_PORT = 2;
+    protected int FAILING_PORT = 5673;
+
+    private boolean failedOver = false;
+
+    private int getFailingPort()
+    {
+        if (_broker.equals(VM))
+        {
+            return FAILING_VM_PORT;
+        }
+        else
+        {
+            return FAILING_PORT;
+        }
+    }
 
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
-
-        try
-        {
-            TransportConnection.createVMBroker(2);
-        }
-        catch (Exception e)
-        {
-            fail("Unable to create broker: " + e);
-        }
-
+        startBroker(getFailingPort());
     }
 
     /**
-     * We are using failover factories, Note that 0.10 code path does not yet support failover.
+     * We are using failover factories
      *
      * @return a connection 
      * @throws Exception
      */
     public Connection getConnection() throws Exception
     {
-        Connection conn;
-        if( _broker.equals(VM) )
-        {
-            conn = getConnectionFactory("vmfailover").createConnection("guest", "guest");
-        }
-        else
-        {
-            conn = getConnectionFactory("failover").createConnection("guest", "guest");
-        }
+        Connection conn =
+            getConnectionFactory("failover").createConnection("guest", "guest");
         _connections.add(conn);
         return conn;
     }
@@ -70,8 +69,7 @@ public class FailoverBaseCase extends QpidTestCase
     {
         if (!failedOver)
         {
-            TransportConnection.killVMBroker(2);
-            ApplicationRegistry.remove(2);
+            stopBroker(getFailingPort());
         }
         super.tearDown();
     }
@@ -83,7 +81,13 @@ public class FailoverBaseCase extends QpidTestCase
     public void failBroker()
     {
         failedOver = true;
-        TransportConnection.killVMBroker(2);
-        ApplicationRegistry.remove(2);
+        try
+        {
+            stopBroker(getFailingPort());
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

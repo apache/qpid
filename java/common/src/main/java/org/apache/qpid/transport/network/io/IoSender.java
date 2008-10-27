@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
 
@@ -92,7 +93,7 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
     {
         if (closed.get())
         {
-            throw new TransportException("sender is closed", exception);
+            throw new SenderException("sender is closed", exception);
         }
 
         final int size = buffer.length;
@@ -125,12 +126,12 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
 
                     if (closed.get())
                     {
-                        throw new TransportException("sender is closed", exception);
+                        throw new SenderException("sender is closed", exception);
                     }
 
                     if (head - tail >= size)
                     {
-                        throw new TransportException(String.format("write timed out: %s, %s", head, tail));
+                        throw new SenderException(String.format("write timed out: %s, %s", head, tail));
                     }
                 }
                 continue;
@@ -192,19 +193,19 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
                     join(timeout);
                     if (isAlive())
                     {
-                        throw new TransportException("join timed out");
+                        throw new SenderException("join timed out");
                     }
                 }
                 transport.getReceiver().close(false);
             }
             catch (InterruptedException e)
             {
-                throw new TransportException(e);
+                throw new SenderException(e);
             }
 
             if (reportException && exception != null)
             {
-                throw new TransportException(exception);
+                throw new SenderException(exception);
             }
         }
     }

@@ -70,43 +70,43 @@ public class QpidTestCase extends TestCase
         if (Boolean.getBoolean("test.excludes"))
         {
             _logger.info("Some tests should be excluded, building the exclude list");
-            String exclusionListURI = System.getProperties().getProperty("test.excludesfile", "");
+            String exclusionListURIs = System.getProperties().getProperty("test.excludesfile", "");
             String exclusionListString = System.getProperties().getProperty("test.excludeslist", "");
-            File file = new File(exclusionListURI);
             List<String> exclusionList = new ArrayList<String>();
-            if (file.exists())
+
+            for (String uri : exclusionListURIs.split("\\s+"))
             {
-                _logger.info("Using exclude file: " + exclusionListURI);
-                try
+                File file = new File(uri);
+                if (file.exists())
                 {
-                    BufferedReader in = new BufferedReader(new FileReader(file));
-                    String excludedTest = in.readLine();
-                    do
+                    _logger.info("Using exclude file: " + uri);
+                    try
                     {
-                        exclusionList.add(excludedTest);
-                        excludedTest = in.readLine();
+                        BufferedReader in = new BufferedReader(new FileReader(file));
+                        String excludedTest = in.readLine();
+                        do
+                        {
+                            exclusionList.add(excludedTest);
+                            excludedTest = in.readLine();
+                        }
+                        while (excludedTest != null);
                     }
-                    while (excludedTest != null);
-                }
-                catch (IOException e)
-                {
-                    _logger.warn("Exception when reading exclusion list", e);
+                    catch (IOException e)
+                    {
+                        _logger.warn("Exception when reading exclusion list", e);
+                    }
                 }
             }
-            else if (!exclusionListString.equals(""))
+
+            if (!exclusionListString.equals(""))
             {
                 _logger.info("Using excludeslist: " + exclusionListString);
-                // the exclusion list may be specified as a string
-                StringTokenizer t = new StringTokenizer(exclusionListString, " ");
-                while (t.hasMoreTokens())
+                for (String test : exclusionListString.split("\\s+"))
                 {
-                    exclusionList.add(t.nextToken());
+                    exclusionList.add(test);
                 }
             }
-            else
-            {
-                throw new RuntimeException("Aborting test: Cannot find excludes file nor excludes list");
-            }
+
             _exclusionList = exclusionList;
         }
 
@@ -136,17 +136,17 @@ public class QpidTestCase extends TestCase
     private static final String QPID_HOME = "QPID_HOME";
 
     protected int DEFAULT_VM_PORT = 1;
+    protected int DEFAULT_PORT = 5672;
 
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
 
-    private Process _brokerProcess;
+    private Map<Integer,Process> _brokers = new HashMap<Integer,Process>();
 
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
-    private boolean _brokerStarted;
 
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
@@ -299,20 +299,44 @@ public class QpidTestCase extends TestCase
         startBroker(0);
     }
 
-    public void startBroker(int port) throws Exception
+    private int getPort(int port)
     {
         if (_broker.equals(VM))
         {
-            //If we are starting on port 0 use the default VM_PORT
-            port = port == 0 ? DEFAULT_VM_PORT : port;
+            return port == 0 ? DEFAULT_VM_PORT : port;
+        }
+        else if (!_broker.equals(EXTERNAL))
+        {
+            return port == 0 ? DEFAULT_PORT : port;
+        }
+        else
+        {
+            return port;
+        }
+    }
 
+    private String getBrokerCommand(int port)
+    {
+        return _broker
+            .replace("@PORT", "" + port)
+            .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
+    }
+
+    public void startBroker(int port) throws Exception
+    {
+        port = getPort(port);
+
+        Process process = null;
+        if (_broker.equals(VM))
+        {
             // create an in_VM broker
             TransportConnection.createVMBroker(port);
         }
         else if (!_broker.equals(EXTERNAL))
         {
-            _logger.info("starting broker: " + _broker);
-            ProcessBuilder pb = new ProcessBuilder(_broker.split("\\s+"));
+            String cmd = getBrokerCommand(port);
+            _logger.info("starting broker: " + cmd);
+            ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
             pb.redirectErrorStream(true);
 
             Map<String, String> env = pb.environment();
@@ -323,9 +347,9 @@ public class QpidTestCase extends TestCase
             //Augment Path with bin directory in QPID_HOME.
             env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
 
-            _brokerProcess = pb.start();
+            process = pb.start();
 
-            Piper p = new Piper(_brokerProcess.getInputStream(),
+            Piper p = new Piper(process.getInputStream(),
                                 System.getProperty(BROKER_READY));
 
             p.start();
@@ -339,7 +363,7 @@ public class QpidTestCase extends TestCase
 
             try
             {
-                int exit = _brokerProcess.exitValue();
+                int exit = process.exitValue();
                 _logger.info("broker aborted: " + exit);
                 cleanBroker();
                 throw new RuntimeException("broker aborted: " + exit);
@@ -349,7 +373,8 @@ public class QpidTestCase extends TestCase
                 // this is expect if the broker started succesfully
             }
         }
-        _brokerStarted = true;
+
+        _brokers.put(port, process);
     }
 
     public void cleanBroker()
@@ -387,22 +412,21 @@ public class QpidTestCase extends TestCase
 
     public void stopBroker(int port) throws Exception
     {
-        _logger.info("stopping broker: " + _broker);
-        if (_brokerProcess != null)
+        port = getPort(port);
+
+        _logger.info("stopping broker: " + getBrokerCommand(port));
+        Process process = _brokers.remove(port);
+        if (process != null)
         {
-            _brokerProcess.destroy();
-            _brokerProcess.waitFor();
-            _logger.info("broker exited: " + _brokerProcess.exitValue());
-            _brokerProcess = null;
+            process.destroy();
+            process.waitFor();
+            _logger.info("broker exited: " + process.exitValue());
         }
         else if (_broker.equals(VM))
         {
-            port = port == 0 ? DEFAULT_VM_PORT : port;
-
             TransportConnection.killVMBroker(port);
             ApplicationRegistry.remove(port);
         }
-        _brokerStarted = false;
     }
 
     protected void setSystemProperty(String property, String value)
@@ -489,14 +513,7 @@ public class QpidTestCase extends TestCase
         _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
-            if (_broker.equals(VM))
-            {
-                _connectionFactory = getConnectionFactory("vm");
-            }
-            else
-            {
-                _connectionFactory = getConnectionFactory("local");
-            }
+            _connectionFactory = getConnectionFactory("default");
         }
         return _connectionFactory;
     }
@@ -512,6 +529,11 @@ public class QpidTestCase extends TestCase
      */
     public AMQConnectionFactory getConnectionFactory(String factoryName) throws NamingException
     {
+        if (_broker.equals(VM))
+        {
+            factoryName += ".vm";
+        }
+
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
 
@@ -559,12 +581,9 @@ public class QpidTestCase extends TestCase
     protected void tearDown() throws java.lang.Exception
     {
         // close all the connections used by this test.
-        if (_brokerStarted)
+        for (Connection c : _connections)
         {
-            for (Connection c : _connections)
-            {
-                c.close();
-            }
+            c.close();
         }
 
         revertSystemProperties();

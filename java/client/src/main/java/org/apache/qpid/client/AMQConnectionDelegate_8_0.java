@@ -247,4 +247,41 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             throw new AMQException(null, "Error reopening channel " + channelId + " after failover: " + e, e);
         }
     }
+
+    public <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E
+    {
+        while (true)
+        {
+            try
+            {
+                _conn.blockUntilNotFailingOver();
+            }
+            catch (InterruptedException e)
+            {
+                _logger.debug("Interrupted: " + e, e);
+
+                return null;
+            }
+
+            synchronized (_conn.getFailoverMutex())
+            {
+                try
+                {
+                    return operation.execute();
+                }
+                catch (FailoverException e)
+                {
+                    _logger.debug("Failover exception caught during operation: " + e, e);
+                }
+                catch (IllegalStateException e)
+                {
+                    if (!(e.getMessage().startsWith("Fail-over interupted no-op failover support")))
+                    {
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+
 }

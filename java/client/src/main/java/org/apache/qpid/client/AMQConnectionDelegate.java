@@ -27,20 +27,24 @@ import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
 
 public interface AMQConnectionDelegate
 {
-    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException;
+    ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException;
 
-    public Session createSession(final boolean transacted, final int acknowledgeMode,
-            final int prefetchHigh, final int prefetchLow) throws JMSException;
+    Session createSession(final boolean transacted, final int acknowledgeMode,
+     final int prefetchHigh, final int prefetchLow) throws JMSException;
 
-    public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException;
+    XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException;
 
-    public void resubscribeSessions() throws JMSException, AMQException, FailoverException;
+    void resubscribeSessions() throws JMSException, AMQException, FailoverException;
 
-    public void closeConnection(long timeout) throws JMSException, AMQException;
+    void closeConnection(long timeout) throws JMSException, AMQException;
+
+    <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E;
+
 }
