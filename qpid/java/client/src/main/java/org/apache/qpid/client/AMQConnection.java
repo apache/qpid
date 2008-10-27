@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -626,6 +627,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
         return _delegate.makeBrokerConnection(brokerDetail);
+    }
+
+    public <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E
+    {
+        return _delegate.executeRetrySupport(operation);
     }
 
     /**

@@ -37,11 +37,14 @@ import java.util.LinkedList;
  */
 public class MultipleJCAProviderRegistrationTest extends QpidTestCase
 {
+
     public void setUp() throws Exception
     {
         super.setUp();
 
         stopBroker();
+
+        _broker = VM;
 
         final String QpidHome = System.getProperty("QPID_HOME");
 
@@ -60,9 +63,7 @@ public class MultipleJCAProviderRegistrationTest extends QpidTestCase
         // This is a bit evil it should be updated with QPID-1103
         config.getConfiguration().setProperty("management.enabled", "false");
 
-        ApplicationRegistry.initialise(config, 1);
-
-        TransportConnection.createVMBroker(1);
+        startBroker();
     }
 
     public void test() throws Exception
@@ -98,4 +99,5 @@ public class MultipleJCAProviderRegistrationTest extends QpidTestCase
 
         assertTrue("Client did not register any providers", additions.size() > 0);
     }
+
 }

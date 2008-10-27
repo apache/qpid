@@ -261,6 +261,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Holds the highest received delivery tag. */
     private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
+    private final AtomicLong _rollbackMark = new AtomicLong(-1);
 
     /** All the not yet acknowledged message tags */
     protected ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
@@ -1809,6 +1810,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _failedOverDirty = true;
         }
+        
+        _rollbackMark.set(-1);
         resubscribeProducers();
         resubscribeConsumers();
     }
@@ -2601,7 +2604,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Used for debugging in the dispatcher. */
     private static final Logger _dispatcherLogger = LoggerFactory.getLogger("org.apache.qpid.client.AMQSession.Dispatcher");
-    
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
     class Dispatcher extends Thread
@@ -2611,7 +2613,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         private final AtomicBoolean _closed = new AtomicBoolean(false);
 
         private final Object _lock = new Object();
-        private final AtomicLong _rollbackMark = new AtomicLong(-1);
         private String dispatcherID = "" + System.identityHashCode(this);
 
 

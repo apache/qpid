@@ -174,7 +174,10 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         _logger.info("Awaiting Failover completion");
         try
         {
-            failoverComplete.await(delay, TimeUnit.MILLISECONDS);
+            if (!failoverComplete.await(delay, TimeUnit.MILLISECONDS))
+            {
+                fail("failover did not complete");
+            }
         }
         catch (InterruptedException e)
         {
