@@ -126,8 +126,8 @@ class SubscriptionManager : public sys::Runnable
      */
     bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
 
-    /** Get a subscription by name, returns a null Subscription handle
-     * if not found.
+    /** Get a subscription by name.
+     *@throw Exception if not found.
      */
     Subscription getSubscription(const std::string& name) const;
     
