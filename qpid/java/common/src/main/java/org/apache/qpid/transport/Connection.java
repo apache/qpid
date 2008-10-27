@@ -62,7 +62,7 @@ public class Connection extends ConnectionInvoker
         public void opened(Connection conn) {}
         public void exception(Connection conn, ConnectionException exception)
         {
-            throw exception;
+            log.error(exception, "connection exception");
         }
         public void closed(Connection conn) {}
     }
@@ -155,7 +155,12 @@ public class Connection extends ConnectionInvoker
         return saslClient;
     }
 
-    public void connect(String host, int port, String vhost, String username, String password,boolean ssl)
+    public void connect(String host, int port, String vhost, String username, String password)
+    {
+        connect(host, port, vhost, username, password, false);
+    }
+
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
     {
         synchronized (lock)
         {
@@ -163,7 +168,7 @@ public class Connection extends ConnectionInvoker
 
             delegate = new ClientDelegate(vhost, username, password);
 
-            IoTransport.connect(host, port, ConnectionBinding.get(this),ssl);
+            IoTransport.connect(host, port, ConnectionBinding.get(this), ssl);
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);
@@ -371,12 +376,11 @@ public class Connection extends ConnectionInvoker
             case CLOSING:
                 error = e;
                 lock.notifyAll();
-                break;
-            default:
-                listener.exception(this, e);
-                break;
+                return;
             }
         }
+
+        listener.exception(this, e);
     }
 
     public void exception(Throwable t)
@@ -402,12 +406,12 @@ public class Connection extends ConnectionInvoker
 
     public void closed()
     {
-        log.debug("connection closed: %s", this);
-
         if (state == OPEN)
         {
             exception(new ConnectionException("connection aborted"));
         }
+
+        log.debug("connection closed: %s", this);
 
         synchronized (lock)
         {

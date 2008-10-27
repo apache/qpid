@@ -48,6 +48,7 @@ public class ConnectionTest extends TestCase implements SessionListener
     private int port;
     private volatile boolean queue = false;
     private List<MessageTransfer> messages = new ArrayList<MessageTransfer>();
+    private List<MessageTransfer> incoming = new ArrayList<MessageTransfer>();
 
     protected void setUp() throws Exception
     {
@@ -71,7 +72,7 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     public void opened(Session ssn) {}
 
-    public void message(Session ssn, MessageTransfer xfr)
+    public void message(final Session ssn, MessageTransfer xfr)
     {
         if (queue)
         {
@@ -85,6 +86,25 @@ public class ConnectionTest extends TestCase implements SessionListener
         if (body.startsWith("CLOSE"))
         {
             ssn.getConnection().close();
+        }
+        else if (body.startsWith("DELAYED_CLOSE"))
+        {
+            ssn.processed(xfr);
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        sleep(3000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                    ssn.getConnection().close();
+                }
+            }.start();
         }
         else if (body.startsWith("ECHO"))
         {
@@ -139,7 +159,7 @@ public class ConnectionTest extends TestCase implements SessionListener
                 }
             }
         });
-        conn.connect("localhost", port, null, "guest", "guest",false);
+        conn.connect("localhost", port, null, "guest", "guest", false);
         return conn;
     }
 
@@ -148,7 +168,7 @@ public class ConnectionTest extends TestCase implements SessionListener
         Condition closed = new Condition();
         Connection conn = connect(closed);
 
-        Session ssn = conn.createSession();
+        Session ssn = conn.createSession(1);
         send(ssn, "CLOSE");
 
         if (!closed.get(3000))
@@ -167,44 +187,47 @@ public class ConnectionTest extends TestCase implements SessionListener
         }
     }
 
-    public void testResume() throws Exception
+    class FailoverConnectionListener implements ConnectionListener
+    {
+        public void opened(Connection conn) {}
+
+        public void exception(Connection conn, ConnectionException e)
+        {
+            throw e;
+        }
+
+        public void closed(Connection conn)
+        {
+            queue = true;
+            conn.connect("localhost", port, null, "guest", "guest");
+            conn.resume();
+        }
+    }
+
+    class TestSessionListener implements SessionListener
+    {
+        public void opened(Session s) {}
+        public void exception(Session s, SessionException e) {}
+        public void message(Session s, MessageTransfer xfr)
+        {
+            synchronized (incoming)
+            {
+                incoming.add(xfr);
+                incoming.notifyAll();
+            }
+
+            s.processed(xfr);
+        }
+        public void closed(Session s) {}
+    }
+
+    public void testResumeNonemptyReplayBuffer() throws Exception
     {
         Connection conn = new Connection();
-        conn.connect("localhost", port, null, "guest", "guest",false);
-
-        conn.setConnectionListener(new ConnectionListener()
-        {
-            public void opened(Connection conn) {}
-            public void exception(Connection conn, ConnectionException e)
-            {
-                throw e;
-            }
-            public void closed(Connection conn)
-            {
-                queue = true;
-                conn.connect("localhost", port, null, "guest", "guest",false);
-                conn.resume();
-            }
-        });
-
+        conn.setConnectionListener(new FailoverConnectionListener());
+        conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession(1);
-        final List<MessageTransfer> incoming = new ArrayList<MessageTransfer>();
-        ssn.setSessionListener(new SessionListener()
-        {
-            public void opened(Session s) {}
-            public void exception(Session s, SessionException e) {}
-            public void message(Session s, MessageTransfer xfr)
-            {
-                synchronized (incoming)
-                {
-                    incoming.add(xfr);
-                    incoming.notifyAll();
-                }
-
-                s.processed(xfr);
-            }
-            public void closed(Session s) {}
-        });
+        ssn.setSessionListener(new TestSessionListener());
 
         send(ssn, "SINK 0");
         send(ssn, "ECHO 1");
@@ -249,6 +272,26 @@ public class ConnectionTest extends TestCase implements SessionListener
             assertEquals("ECHO 9", incoming.get(3).getBodyString());
             assertEquals(1, incoming.get(1).getId());
         }
+    }
+
+    public void testResumeEmptyReplayBuffer() throws InterruptedException
+    {
+        Connection conn = new Connection();
+        conn.setConnectionListener(new FailoverConnectionListener());
+        conn.connect("localhost", port, null, "guest", "guest");
+        Session ssn = conn.createSession(1);
+        ssn.setSessionListener(new TestSessionListener());
+
+        send(ssn, "SINK 0");
+        send(ssn, "SINK 1");
+        send(ssn, "DELAYED_CLOSE 2");
+        ssn.sync();
+        Thread.sleep(6000);
+        send(ssn, "SINK 3");
+        ssn.sync();
+        System.out.println(messages);
+        assertEquals(1, messages.size());
+        assertEquals("SINK 3", messages.get(0).getBodyString());
     }
 
 }

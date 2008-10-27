@@ -23,6 +23,9 @@ package org.apache.qpid.client;
 
 import java.io.IOException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.XASession;
@@ -31,6 +34,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
@@ -61,11 +65,14 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      * The QpidConeection instance that is mapped with thie JMS connection.
      */
     org.apache.qpid.transport.Connection _qpidConnection;
+    private ConnectionException exception = null;
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
     {
         _conn = conn;
+        _qpidConnection = new Connection();
+        _qpidConnection.setConnectionListener(this);
     }
 
     /**
@@ -129,16 +136,16 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      */
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
-        _qpidConnection = new Connection();
         try
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("creating connection with broker " + " host: " + brokerDetail
-                        .getHost() + " port: " + brokerDetail.getPort() + " virtualhost: " + _conn
-                        .getVirtualHost() + "user name: " + _conn.getUsername() + "password: " + _conn.getPassword());
+                _logger.debug("connecting to host: " + brokerDetail.getHost() +
+                              " port: " + brokerDetail.getPort() +
+                              " vhost: " + _conn.getVirtualHost() +
+                              " username: " + _conn.getUsername() +
+                              " password: " + _conn.getPassword());
             }
-            _qpidConnection.setConnectionListener(this);
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL());
             _conn._connected = true;
@@ -160,8 +167,13 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      */
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
-        //NOT implemented as railover is handled at a lower level
-        throw new FailoverException("failing to reconnect during failover, operation not supported.");
+        List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
+        _logger.info(String.format("Resubscribing sessions = %s sessions.size=%s", sessions, sessions.size()));
+        for (AMQSession s : sessions)
+        {
+            ((AMQSession_0_10) s)._qpidConnection = _qpidConnection;
+            s.resubscribe();
+        }
     }
 
 
@@ -181,6 +193,43 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void exception(Connection conn, ConnectionException exc)
     {
+        if (exception != null)
+        {
+            _logger.error("previous exception", exception);
+        }
+
+        exception = exc;
+    }
+
+    public void closed(Connection conn)
+    {
+        ConnectionException exc = exception;
+        exception = null;
+
+        ConnectionClose close = exc.getClose();
+        if (close == null)
+        {
+            try
+            {
+                if (_conn.firePreFailover(false) && _conn.attemptReconnection())
+                {
+                    _qpidConnection.resume();
+
+                    if (_conn.firePreResubscribe())
+                    {
+                        _conn.resubscribeSessions();
+                    }
+
+                    _conn.fireFailoverComplete();
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.error("error during failover", e);
+            }
+        }
+
         ExceptionListener listener = _conn._exceptionListener;
         if (listener == null)
         {
@@ -188,19 +237,28 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
         else
         {
-            ConnectionClose close = exc.getClose();
             String code = null;
             if (close != null)
             {
                 code = close.getReplyCode().toString();
             }
+
             JMSException ex = new JMSException(exc.getMessage(), code);
             ex.initCause(exc);
-
-            _conn._exceptionListener.onException(ex);
+            listener.onException(ex);
         }
     }
 
-    public void closed(Connection conn) {}
+    public <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E
+    {
+        try
+        {
+            return operation.execute();
+        }
+        catch (FailoverException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
