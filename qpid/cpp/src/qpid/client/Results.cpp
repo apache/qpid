@@ -32,7 +32,7 @@ namespace client {
 Results::Results() {}
 
 Results::~Results() {
-    try { close(); } catch (const std::exception& e) { assert(0); }
+  try { close(); } catch (const std::exception& /*e*/) { assert(0); }
 }
 
 void Results::close()

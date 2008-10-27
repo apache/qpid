@@ -35,7 +35,7 @@
 namespace qpid {
 namespace client {
 
-class ConnectionSettings;
+struct ConnectionSettings;
 
 
 class FailoverConnection

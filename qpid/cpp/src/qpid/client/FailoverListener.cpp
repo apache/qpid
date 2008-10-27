@@ -66,7 +66,7 @@ FailoverListener::FailoverListener(const boost::shared_ptr<ConnectionImpl>& c, c
 
 FailoverListener::~FailoverListener() {
     try { stop(); }
-    catch (const std::exception& e) {}
+    catch (const std::exception& /*e*/) {}
 }
 
 void FailoverListener::stop() {
