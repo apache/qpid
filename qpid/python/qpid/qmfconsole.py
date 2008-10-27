@@ -106,6 +106,9 @@ class BrokerURL:
   def name(self):
     return self.host + ":" + str(self.port)
 
+  def match(self, host, port):
+    return socket.gethostbyname(self.host) == socket.gethostbyname(host) and self.port == port
+
 class Session:
   """
   An instance of the Session class represents a console session running
