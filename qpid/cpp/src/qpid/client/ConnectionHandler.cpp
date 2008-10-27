@@ -30,7 +30,6 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
-using namespace boost;
 
 namespace {
 const std::string OK("OK");
@@ -43,7 +42,7 @@ const std::string INVALID_STATE_OPEN_OK("open-ok received in invalid state");
 const std::string INVALID_STATE_CLOSE_OK("close-ok received in invalid state");
 }
 
-ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, framing::ProtocolVersion& v) 
+ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v) 
     : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler), errorCode(200), version(v)
 {    
     insist = true;
@@ -158,7 +157,7 @@ void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSize
     proxy.open(virtualhost, capabilities, insist);
 }
 
-void ConnectionHandler::openOk ( const framing::Array& knownBrokers )
+void ConnectionHandler::openOk ( const Array& knownBrokers )
 {
     checkState(OPENING, INVALID_STATE_OPEN_OK);
     knownBrokersUrls.clear();

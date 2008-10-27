@@ -27,7 +27,7 @@
 
 namespace qpid {
 
-class Url;
+struct Url;
 
 namespace client {
 
