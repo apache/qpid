@@ -68,7 +68,7 @@ class Codec(Packer):
   def read_int16(self):
     return self.unpack("!h")
   def write_int16(self, n):
-    return self.unpack("!h", n)
+    self.pack("!h", n)
 
 
   def read_uint32(self):
