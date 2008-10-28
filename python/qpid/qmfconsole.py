@@ -27,7 +27,7 @@ import re
 from qpid.peer       import Closed
 from qpid.connection import Connection, ConnectionFailed
 from qpid.datatypes  import uuid4, Message, RangedSet
-from qpid.util       import connect
+from qpid.util       import connect, ssl, URL
 from qpid.codec010   import StringCodec as Codec
 from threading       import Lock, Condition
 from time            import time, strftime, gmtime
@@ -86,21 +86,17 @@ class Console:
     """ """
     pass
 
-class BrokerURL:
+class BrokerURL(URL):
   def __init__(self, text):
-    rex = re.compile(r"""
-    # [   <user>  [   / <password> ] @]  <host>  [   :<port>   ]
-    ^ (?: ([^/]*) (?: / ([^@]*)   )? @)? ([^:]+) (?: :([0-9]+))?$""", re.X)
-    match = rex.match(text)
-    if not match: raise ValueError("'%s' is not a valid broker url" % (text))
-    user, password, host, port = match.groups()
-
-    socket.gethostbyname(host)
-    self.host = host
-    if port: self.port = int(port)
-    else: self.port = 5672
-    self.authName = user or "guest"
-    self.authPass = password or "guest"
+    URL.__init__(self, text)
+    socket.gethostbyname(self.host)
+    if self.port is None:
+      if self.scheme == URL.AMQPS:
+        self.port = 5671
+      else:
+        self.port = 5672
+    self.authName = self.user or "guest"
+    self.authPass = self.password or "guest"
     self.authMech = "PLAIN"
 
   def name(self):
@@ -178,7 +174,8 @@ class Session:
   def addBroker(self, target="localhost"):
     """ Connect to a Qpid broker.  Returns an object of type Broker. """
     url = BrokerURL(target)
-    broker = Broker(self, url.host, url.port, url.authMech, url.authName, url.authPass)
+    broker = Broker(self, url.host, url.port, url.authMech, url.authName, url.authPass,
+                    ssl = url.scheme == URL.AMQPS)
     if not broker.isConnected and not self.manageConnections:
       raise Exception(broker.error)
 
@@ -1075,10 +1072,11 @@ class Broker:
   """ """
   SYNC_TIME = 60
 
-  def __init__(self, session, host, port, authMech, authUser, authPass):
+  def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False):
     self.session  = session
     self.host     = host
     self.port     = port
+    self.ssl = ssl
     self.authUser = authUser
     self.authPass = authPass
     self.agents   = {}
@@ -1129,7 +1127,10 @@ class Broker:
   def _tryToConnect(self):
     try:
       self.amqpSessionId = "%s.%d" % (os.uname()[1], os.getpid())
-      self.conn = Connection(connect(self.host, self.port), username=self.authUser, password=self.authPass)
+      sock = connect(self.host, self.port)
+      if self.ssl:
+        sock = ssl(sock)
+      self.conn = Connection(sock, username=self.authUser, password=self.authPass)
       self.conn.start()
       self.replyName = "reply-%s" % self.amqpSessionId
       self.amqpSession = self.conn.session(self.amqpSessionId)
