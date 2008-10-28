@@ -367,8 +367,8 @@ class SchemaProperty:
     stream.write ("    ft.setString (NAME, \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (TYPE, TYPE_" + self.type.type.base +");\n")
     stream.write ("    ft.setInt    (ACCESS, ACCESS_" + self.access + ");\n")
-    stream.write ("    ft.setInt    (INDEX, " + str (self.isIndex) + ");\n")
-    stream.write ("    ft.setInt    (OPTIONAL, " + str (self.isOptional) + ");\n")
+    stream.write ("    ft.setInt    (IS_INDEX, " + str (self.isIndex) + ");\n")
+    stream.write ("    ft.setInt    (IS_OPTIONAL, " + str (self.isOptional) + ");\n")
     if self.unit != None:
       stream.write ("    ft.setString (UNIT,   \"" + self.unit   + "\");\n")
     if self.min != None:
