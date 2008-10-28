@@ -125,7 +125,6 @@ void RdmaIOHandler::idle(Rdma::AsynchIO&) {
     }
     if (codec == 0) return;
     if (codec->canEncode()) {
-        // Try and get a queued buffer if not then construct new one
         Rdma::Buffer* buff = aio->getBuffer();
         size_t encoded=codec->encode(buff->bytes, buff->byteCount);
         buff->dataCount = encoded;
