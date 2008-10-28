@@ -50,7 +50,7 @@ public class QMan
      * Starts QMan.
      * @throws StartupFailureException when it's not possible to proceed with startup.
      */
-    void start() throws StartupFailureException
+    public void start() throws StartupFailureException
     {
         LOGGER.info(Messages.QMAN_000001_STARTING_QMAN);
         LOGGER.info(Messages.QMAN_000002_READING_CONFIGURATION);
