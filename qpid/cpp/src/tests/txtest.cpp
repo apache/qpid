@@ -159,6 +159,7 @@ struct Transfer : public Client, public Runnable
                     session.messageTransfer(arg::content=out, arg::acceptMode=1);
                 }
                 sub.accept(sub.getUnaccepted());
+                session.sendCompletion();
                 if (opts.dtx) {
                     session.dtxEnd(arg::xid=xid);
                     session.dtxPrepare(arg::xid=xid);
