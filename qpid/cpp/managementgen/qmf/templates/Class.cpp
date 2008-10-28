@@ -72,8 +72,8 @@ namespace {
     const string NAME("name");
     const string TYPE("type");
     const string ACCESS("access");
-    const string INDEX("index");
-    const string OPTIONAL("optional");
+    const string IS_INDEX("index");
+    const string IS_OPTIONAL("optional");
     const string UNIT("unit");
     const string MIN("min");
     const string MAX("max");
