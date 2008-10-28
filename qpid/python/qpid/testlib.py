@@ -32,7 +32,7 @@ from qpid.message import Message
 #0-10 support
 from qpid.connection import Connection
 from qpid.spec010 import load
-from qpid.util import connect
+from qpid.util import connect, ssl, URL
 
 def findmodules(root):
     """Find potential python modules under directory root"""
@@ -70,8 +70,9 @@ Options:
   -s/--spec <spec.xml> : URL of AMQP XML specification or one of these abbreviations:
                            0-8 - use the default 0-8 specification.
                            0-9 - use the default 0-9 specification.
+                           0-10-errata - use the 0-10 specification with qpid errata.
   -e/--errata <errata.xml> : file containing amqp XML errata
-  -b/--broker [<user>[/<password>]@]<host>[:<port>] : broker to connect to
+  -b/--broker [amqps://][<user>[/<password>]@]<host>[:<port>] : broker to connect to
   -v/--verbose             : verbose - lists tests as they are run.
   -d/--debug               : enable debug logging.
   -i/--ignore <test>       : ignore the named test.
@@ -82,15 +83,20 @@ Options:
         sys.exit(1)
 
     def setBroker(self, broker):
-        rex = re.compile(r"""
-        # [   <user>  [   / <password> ] @]  <host>  [   :<port>   ]
-        ^ (?: ([^/]*) (?: / ([^@]*)   )? @)? ([^:]+) (?: :([0-9]+))?$""", re.X)
-        match = rex.match(broker)
-        if not match: self._die("'%s' is not a valid broker" % (broker))
-        self.user, self.password, self.host, self.port = match.groups()
-        self.port = int(default(self.port, 5672))
-        self.user = default(self.user, "guest")
-        self.password = default(self.password, "guest")
+        try:
+            self.url = URL(broker)
+        except ValueError:
+            self._die("'%s' is not a valid broker" % (broker))
+        self.user = default(self.url.user, "guest")
+        self.password = default(self.url.password, "guest")
+        self.host = self.url.host
+        if self.url.scheme == URL.AMQPS:
+            self.ssl = True
+            default_port = 5671
+        else:
+            self.ssl = False
+            default_port = 5672
+        self.port = default(self.url.port, default_port)
 
     def ignoreFile(self, filename):
         f = file(filename)
@@ -129,6 +135,7 @@ Options:
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
             if opt in ("-S", "--skip-self-test"): self.skip_self_test = True
             if opt in ("-F", "--spec-folder"): TestRunner.SPEC_FOLDER = value
+
 	# Abbreviations for default settings.
         if (self.specfile == "0-10"):
             self.spec = load(self.get_spec_file("amqp.0-10.xml"))
@@ -352,20 +359,20 @@ class TestBase010(unittest.TestCase):
     """
 
     def setUp(self):
-        spec = testrunner.spec
-        self.conn = Connection(connect(testrunner.host, testrunner.port), spec,
-                               username=testrunner.user, password=testrunner.password)
-        self.conn.start(timeout=10)        
+        self.conn = self.connect()
         self.session = self.conn.session("test-session", timeout=10)
         self.qmf = None
 
     def startQmf(self):
         self.qmf = qpid.qmfconsole.Session()
-        self.qmf_broker = self.qmf.addBroker("%s:%d" % (testrunner.host, testrunner.port))
+        self.qmf_broker = self.qmf.addBroker(str(testrunner.url))
 
     def connect(self, host=None, port=None):
-        spec = testrunner.spec
-        conn = Connection(connect(host or testrunner.host, port or testrunner.port), spec)
+        sock = connect(host or testrunner.host, port or testrunner.port)
+        if testrunner.url.scheme == URL.AMQPS:
+            sock = ssl(sock)
+        conn = Connection(sock, testrunner.spec, username=testrunner.user,
+                          password=testrunner.password)
         conn.start(timeout=10)
         return conn
 
