@@ -86,3 +86,7 @@ class CodecTest(TestCase):
 
   def testArrayNone(self):
     self.check("array", None)
+
+  def testInt16(self):
+    self.check("int16", 3)
+    self.check("int16", -3)
