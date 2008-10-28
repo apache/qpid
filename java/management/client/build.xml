@@ -35,7 +35,6 @@
         <mkdir dir="${servlet.root}"/>
         <mkdir dir="${servlet.web-inf}"/>
         <mkdir dir="${servlet.classes}"/>
-        <mkdir dir="${servlet.lib}"/>
         <copy file="./web.xml" todir="${servlet.web-inf}" verbose="false"/>
         <copy todir="${servlet.classes}" verbose="false">
             <fileset dir="${module.classes}">
