@@ -166,7 +166,7 @@ class Generator:
     try:
       mode = os.stat (path)[ST_MODE]
     except OSError, (err,text):
-      if err == ENOENT:
+      if err == ENOENT or err == ESRCH:
         exists = False
       else:
         raise
