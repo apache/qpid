@@ -7,7 +7,11 @@ srcdir=`dirname $0`
 PYTHON_DIR=$srcdir/../../../python
 test -f qpidd.port && QPID_PORT=`cat qpidd.port`
 
-./header_test -p $QPID_PORT
-export PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
-$srcdir/header_test.py "localhost" $QPID_PORT
+if test -d ${PYTHON_DIR} ;  then
+    ./header_test -p $QPID_PORT
+    export PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
+    $srcdir/header_test.py "localhost" $QPID_PORT
+else 
+    echo "Skipping header test as python libs not found"
+fi
 
