@@ -17,7 +17,9 @@
 # under the License.
 #
 
-import os, socket, time, textwrap
+import os, socket, time, textwrap, re
+
+ssl = socket.ssl
 
 def connect(host, port):
   sock = socket.socket()
@@ -76,3 +78,40 @@ def fill(text, indent, heading = None):
     init = sub
   w = textwrap.TextWrapper(initial_indent = init, subsequent_indent = sub)
   return w.fill(" ".join(text.split()))
+
+class URL:
+
+  RE = re.compile(r"""
+        # [   <scheme>://  ] [    <user>   [   / <password>   ] @]   <host>   [   :<port>   ]
+        ^ (?: ([^:/@]+)://)? (?: ([^:/@]+) (?: / ([^:/@]+)   )? @)? ([^@:/]+) (?: :([0-9]+))?$
+""", re.X)
+
+  AMQPS = "amqps"
+  AMQP = "amqp"
+
+  def __init__(self, s):
+    match = URL.RE.match(s)
+    if match is None:
+      raise ValueError(s)
+    self.scheme, self.user, self.password, self.host, port = match.groups()
+    if port is None:
+      self.port = None
+    else:
+      self.port = int(port)
+
+  def __repr__(self):
+    return "URL(%r)" % str(self)
+
+  def __str__(self):
+    s = ""
+    if self.scheme:
+      s += "%s://" % self.scheme
+    if self.user:
+      s += self.user
+      if self.password:
+        s += "/%s" % self.password
+      s += "@"
+    s += self.host
+    if self.port:
+      s += ":%s" % self.port
+    return s

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import datatypes, session
+import datatypes, session, socket
 from threading import Thread, Condition, RLock
 from util import wait, notify
 from assembler import Assembler, Segment
@@ -44,10 +44,27 @@ def client(*args, **kwargs):
 def server(*args, **kwargs):
   return delegates.Server(*args, **kwargs)
 
+class SSLWrapper:
+
+  def __init__(self, ssl):
+    self.ssl = ssl
+
+  def recv(self, n):
+    return self.ssl.read(n)
+
+  def send(self, s):
+    return self.ssl.write(s)
+
+def sslwrap(sock):
+  if isinstance(sock, socket.SSLType):
+    return SSLWrapper(sock)
+  else:
+    return sock
+
 class Connection(Assembler):
 
   def __init__(self, sock, spec=None, delegate=client, **args):
-    Assembler.__init__(self, sock)
+    Assembler.__init__(self, sslwrap(sock))
     if spec == None:
       spec = load(default())
     self.spec = spec
