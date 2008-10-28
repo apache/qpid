@@ -302,7 +302,9 @@
     </copy>
   </target>
 
-  <target name="build" depends="jar,jar-tests,libs,copy-bin,copy-etc" description="compile and copy resources into build tree"/>
+  <target name="postbuild" description="run after a build"/>
+
+  <target name="build" depends="jar,jar-tests,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
   <target name="jar.manifest" depends="compile" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}"/>
   </target>
