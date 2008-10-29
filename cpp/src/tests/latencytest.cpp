@@ -26,13 +26,13 @@
 #include <memory>
 #include <sstream>
 #include <vector>
-#include <unistd.h>
 
 #include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/sys/Time.h"
 
 using namespace qpid;
 using namespace qpid::client;
@@ -342,7 +342,7 @@ void Sender::sendByRate()
 
         uint64_t timeTaken = (now - start_msg) / TIME_USEC;
         if (timeTaken < interval) {
-            usleep(interval - timeTaken);
+            qpid::sys::usleep(interval - timeTaken);
         } else if (timeTaken > interval &&
                    !opts.csv && !opts.cumulative) { // Don't be so verbose in this case, we're piping the results to another program
             std::cout << "Could not achieve desired rate! (Took " << timeTaken 
@@ -411,7 +411,7 @@ int main(int argc, char** argv)
         }
         if (opts.rate && !opts.timeLimit) {
             while (true) {
-                usleep(opts.reportFrequency * 1000);
+                qpid::sys::usleep(opts.reportFrequency * 1000);
                 //print latency report:
                 for (boost::ptr_vector<Test>::iterator i = tests.begin(); i != tests.end(); i++) {
                     i->report();

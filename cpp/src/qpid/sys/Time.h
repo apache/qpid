@@ -23,6 +23,16 @@
  */
 
 #include "qpid/sys/IntegerTypes.h"
+/*
+ * The platform defines its notion of time as a TimePrivate type. The
+ * platform's implementation knows how to handle this type.
+ */
+#if defined (_WIN32)
+#  include "windows/Time.h"
+#else
+#  include "posix/Time.h"
+#endif
+
 #include <limits>
 #include <iosfwd>
 
@@ -31,16 +41,20 @@ namespace sys {
 
 class Duration;
 
-/** Class to represent an instant in time:
+/**
+ * @class AbsTime
+ *
+ * Class to represent an instant in time.
+ *
  * The time resolution is in nanosecs, and this is held with 64 bits
  * giving a total time span from about 25 million years ago to 25 million
  * years hence. As an aside the internal time can sensibly be negative
  * meaning before the epoch (probably 1/1/1970 although this class doesn't
  * care).
  *
- * The AbsTime class is a value class and so you don't need to add any accessors
- * to its internal state. If you think you want to replace its value,i
- * You need to construct a new AbsTime and assign it, viz:
+ * The AbsTime class is a value class and so you don't need to add any
+ * accessors to its internal state. If you think you want to replace its value,
+ * you need to construct a new AbsTime and assign it, viz:
  *
  *  AbsTime when = AbsTime::now();
  *  ...
@@ -53,32 +67,35 @@ class Duration;
  *
  *  int64_t ns = Duration(now);
  *
- * However note that the nanosecond value that is returned here is not defined to be
- * anything in particular and could vary from platform to platform.
+ * However note that the nanosecond value that is returned here is not
+ * defined to be anything in particular and could vary from platform to
+ * platform.
  *
- * There are some sensible operations that are currently missing from AbsTime, but
- * nearly all that's needed can be done with a mixture of AbsTimes and Durations.
+ * There are some sensible operations that are currently missing from
+ * AbsTime, but nearly all that's needed can be done with a mixture of
+ * AbsTimes and Durations.
  *
- * For example, convenience operators to add a Duration and AbsTime returning an AbsTime
- * would fit here (although you can already perform the operation with one of the AbsTime
- * constructors). However trying to add 2 AbsTimes doesn't make sense.
+ * For example, convenience operators to add a Duration and AbsTime returning
+ * an AbsTime would fit here (although you can already perform the operation
+ * with one of the AbsTime constructors). However trying to add 2 AbsTimes
+ * doesn't make sense.
  */
 class AbsTime {
-    static int64_t max() { return std::numeric_limits<int64_t>::max(); }
-    int64_t time_ns;
-    
     friend class Duration;
+
+    TimePrivate timepoint;
 	
 public:
     inline AbsTime() {}
-    inline AbsTime(const AbsTime& time0, const Duration& duration);
+    AbsTime(const AbsTime& time0, const Duration& duration);
     // Default assignment operation fine
     // Default copy constructor fine
 	 
     static AbsTime now();
-    inline static AbsTime FarFuture();
-    bool operator==(const AbsTime& t) const { return t.time_ns == time_ns; }
-    template <class S> void serialize(S& s) { s(time_ns); }
+    static AbsTime FarFuture();
+    const TimePrivate& getPrivate(void) const { return timepoint; }
+    bool operator==(const AbsTime& t) const { return t.timepoint == timepoint; }
+    template <class S> void serialize(S& s) { s(timepoint); }
 
     friend bool operator<(const AbsTime& a, const AbsTime& b);
     friend bool operator>(const AbsTime& a, const AbsTime& b);
@@ -87,11 +104,14 @@ public:
 
 std::ostream& operator << (std::ostream&, const AbsTime&);
 
-/** Class to represent the duration between instants of time:
- * As AbsTime this class also uses nanosecs for its time
- * resolution. For the most part a duration can be dealt with like a
- * 64 bit integer, and indeed there is an implicit conversion which
- * makes this quite conveient.
+/**
+ * @class Duration
+ * Class to represent the duration between instants of time.
+ *
+ * As AbsTime, this class also uses nanosecs for its time
+ * resolution where possible. For the most part a duration can be dealt
+ * with like a 64 bit integer, and indeed there is an implicit conversion which
+ * makes this quite convenient.
  */
 class Duration {
     static int64_t max() { return std::numeric_limits<int64_t>::max(); }
@@ -101,34 +121,22 @@ class Duration {
 
 public:
     inline Duration(int64_t time0);
-    inline explicit Duration(const AbsTime& time0);
-    inline explicit Duration(const AbsTime& start, const AbsTime& finish);
+    explicit Duration(const AbsTime& time0);
+    explicit Duration(const AbsTime& start, const AbsTime& finish);
     inline operator int64_t() const;
 };
 
 std::ostream& operator << (std::ostream&, const Duration&);
 
-AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
-    time_ns(d == Duration::max() ? max() : t.time_ns+d.nanosecs)
-{}
-
-AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = max(); return ff;}
-
 inline AbsTime now() { return AbsTime::now(); }
 
-inline bool operator<(const AbsTime& a, const AbsTime& b) { return a.time_ns < b.time_ns; }
-inline bool operator>(const AbsTime& a, const AbsTime& b) { return a.time_ns > b.time_ns; }
+inline bool operator<(const AbsTime& a, const AbsTime& b)
+{ return a.timepoint < b.timepoint; }
+inline bool operator>(const AbsTime& a, const AbsTime& b)
+{ return a.timepoint > b.timepoint; }
 
 Duration::Duration(int64_t time0) :
     nanosecs(time0)
-{}
-
-Duration::Duration(const AbsTime& time0) :
-    nanosecs(time0.time_ns)
-{}
-
-Duration::Duration(const AbsTime& start, const AbsTime& finish) :
-    nanosecs(finish.time_ns - start.time_ns)
 {}
 
 Duration::operator int64_t() const
@@ -148,6 +156,12 @@ const Duration TIME_INFINITE = std::numeric_limits<int64_t>::max();
 
 /** Time greater than any other time */
 const AbsTime FAR_FUTURE = AbsTime::FarFuture();
+ 
+/** Portable sleep for a number of seconds */
+void sleep(int secs);
+
+/** Portable sleep for a number of microseconds */
+void usleep(uint64_t usecs);
 
 }}
 
