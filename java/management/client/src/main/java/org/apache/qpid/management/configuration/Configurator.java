@@ -30,6 +30,7 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.EventContentMessageHandler;
+import org.apache.qpid.management.domain.handler.impl.HeartBeatIndicationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.MethodResponseMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
@@ -144,7 +145,12 @@ public class Configurator extends DefaultHandler
         Configuration.getInstance().addMethodReplyMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.SCHEMA_RESPONSE_OPCODE,
-                        SchemaResponseMessageHandler.class.getName()));        
+                        SchemaResponseMessageHandler.class.getName()));  
+        
+        Configuration.getInstance().addMethodReplyMessageHandlerMapping(
+                new MessageHandlerMapping(
+                        Protocol.HEARTBEAT_INDICATION_RESPONSE_OPCODE,
+                        HeartBeatIndicationMessageHandler.class.getName()));          
     }
 
     /**

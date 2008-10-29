@@ -55,8 +55,6 @@ public class QMan
         LOGGER.info(Messages.QMAN_000001_STARTING_QMAN);
         LOGGER.info(Messages.QMAN_000002_READING_CONFIGURATION);
 
-    	addShutDownHook();
-
         Configurator configurator = new Configurator();
         try
         {
@@ -95,19 +93,27 @@ public class QMan
             @Override
             public void run ()
             {
-                LOGGER.info(Messages.QMAN_000020_SHUTTING_DOWN_QMAN);
-                try 
-                {
-                    for (ManagementClient client : managementClients)
-                    {   
-                        client.shutdown();  
-                    }
-                } catch(Exception exception)
-                {
-                }
-                LOGGER.info(Messages.QMAN_000021_SHUT_DOWN);                
+            	QMan.this.stop();
             }
         });    	
+    }
+    
+    /**
+     * Stop Qman
+     */
+    public void stop() 
+    {
+        LOGGER.info(Messages.QMAN_000020_SHUTTING_DOWN_QMAN);
+        try 
+        {
+            for (ManagementClient client : managementClients)
+            {   
+                client.shutdown();  
+            }
+        } catch(Exception exception)
+        {
+        }
+        LOGGER.info(Messages.QMAN_000021_SHUT_DOWN);                    	
     }
     
     /**
@@ -124,6 +130,7 @@ public class QMan
     	}
     	
 		QMan qman = new QMan();
+		qman.addShutDownHook();
 		try 
 		{
 			qman.start();
