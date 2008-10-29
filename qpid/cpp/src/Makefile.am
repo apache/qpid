@@ -93,7 +93,8 @@ posix_plat_hdr = \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
   qpid/sys/posix/PollableCondition.h \
-  qpid/sys/posix/IntegerTypes.h
+  qpid/sys/posix/IntegerTypes.h \
+  qpid/sys/posix/Time.h
 
 if HAVE_EPOLL 
   poller = qpid/sys/epoll/EpollPoller.cpp
