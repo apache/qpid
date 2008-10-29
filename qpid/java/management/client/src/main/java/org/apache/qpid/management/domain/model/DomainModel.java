@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.domain.model;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,8 @@ public class DomainModel
     /** Here the known packages of the remote broker are stored. */
     Map<String,QpidPackage> _packages = new HashMap<String, QpidPackage>();
 
+    private Date _lastRefreshDate = new Date();
+    
     private IMethodInvocationListener _methodInvocationListener;
     
     /**
@@ -85,6 +88,24 @@ public class DomainModel
     {
         QpidPackage qpidPackage = getPackageByName(packageName);
         qpidPackage.addClassDefinition(className,classHash,properties,statistics,methods);
+    }
+    
+    /**
+     * Updates the last refresh date.
+     */
+    public void updateLastRefreshDate() 
+    {
+    	this._lastRefreshDate = new Date();
+    }
+    
+    /**
+     * Returns the last refresh date.
+     * 
+     * @return the last refresh date.
+     */
+    public Date getLastRefreshDate()
+    {
+    	return _lastRefreshDate;
     }
     
     /**

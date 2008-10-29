@@ -61,6 +61,6 @@ public class QManServlet extends HttpServlet {
 	@Override
 	public void destroy() 
 	{
-		// qman.stop();
+		qman.stop();
 	}
 }
