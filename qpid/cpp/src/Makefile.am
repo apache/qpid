@@ -64,8 +64,10 @@ qpidd_LDADD =					\
   libqpidbroker.la				\
   libqpidcommon.la
 
+posix_qpidd_src = posix/QpiddBroker.cpp
+
 sbin_PROGRAMS = qpidd
-qpidd_SOURCES = qpidd.cpp
+qpidd_SOURCES = qpidd.cpp $(posix_qpidd_src)
 
 posix_plat_src = \
   qpid/log/posix/SinkOptions.cpp \
