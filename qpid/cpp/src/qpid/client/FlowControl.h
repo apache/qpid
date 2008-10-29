@@ -42,8 +42,9 @@ namespace client {
  * is renewed.
  *
  * In "window mode" credit is automatically renewed when a message is
- * accepted. In non-window mode credit is not automatically renewed,
- * it must be explicitly re-set (@see Subscription)
+ * completed (which by default happens when it is accepted). In
+ * non-window mode credit is not automatically renewed, it must be
+ * explicitly re-set (@see Subscription)
  */
 struct FlowControl {
     static const uint32_t UNLIMITED=0xFFFFFFFF;

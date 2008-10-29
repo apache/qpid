@@ -134,7 +134,7 @@ header_test_LDADD=$(lib_client)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
-system_tests = client_test quick_perftest quick_topictest run_header_test
+system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
 TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests
 
 EXTRA_DIST +=								\
@@ -142,6 +142,7 @@ EXTRA_DIST +=								\
   run-unit-tests start_broker python_tests stop_broker 			\
   quick_topictest							\
   quick_perftest							\
+  quick_txtest								\
   topictest								\
   run_header_test							\
   header_test.py							\

@@ -39,22 +39,33 @@ struct SubscriptionSettings
         FlowControl flow=FlowControl::unlimited(),
         AcceptMode accept=ACCEPT_MODE_EXPLICIT,
         AcquireMode acquire=ACQUIRE_MODE_PRE_ACQUIRED,
-        unsigned int autoAck_=1
-    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_) {}
+        unsigned int autoAck_=1,
+        bool autoComplete_=true
+    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_), autoComplete(autoComplete_) {}
                          
     FlowControl flowControl;    ///@< Flow control settings. @see FlowControl
     AcceptMode acceptMode;      ///@< ACCEPT_MODE_EXPLICIT or ACCEPT_MODE_NONE
     AcquireMode acquireMode;    ///@< ACQUIRE_MODE_PRE_ACQUIRED or ACQUIRE_MODE_NOT_ACQUIRED
 
-    /** Automatically acknowledge (acquire and accept) batches of autoAck messages.
-     * 0 means no automatic acknowledgement. What it means to "acknowledge" a message depends on
-     * acceptMode and acquireMode:
-     *  - ACCEPT_MODE_NONE and ACQUIRE_MODE_PRE_ACQUIRED: do nothing
-     *  - ACCEPT_MODE_NONE and ACQUIRE_MODE_NOT_ACQUIRED: send an "acquire" command
-     *  - ACCEPT_MODE_EXPLICIT and ACQUIRE_MODE_PRE_ACQUIRED: send "accept" command
-     *  - ACCEPT_MODE_EXPLICIT and ACQUIRE_MODE_NOT_ACQUIRED: send "acquire" and "accept" commands
-     */
+    /** Automatically acknowledge (accept) batches of autoAck
+     *  messages. 0 means no automatic acknowledgement. This has no
+     *  effect for messsages received for a subscription with
+     *  ACCEPT_MODE_NODE.*/
     unsigned int autoAck;
+    /**
+     * If set to true, messages will be marked as completed (in
+     * windowing mode, completion of a message will cause the credit
+     * used up by that message to be reallocated) once they have been
+     * received. The server will be explicitly notified of all
+     * completed messages when the next accept is sent through the
+     * subscription (either explictly or through autAck). However the
+     * server may also periodically request information on the
+     * completed messages.
+     * 
+     * If set to false the application is responsible for completing
+     * messages (@see Session::markCompleted()).
+     */
+    bool autoComplete;
 };
 
 }} // namespace qpid::client
