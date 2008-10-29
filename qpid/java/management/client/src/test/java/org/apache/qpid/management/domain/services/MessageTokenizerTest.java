@@ -66,6 +66,7 @@ public class MessageTokenizerTest extends TestCase {
 		Random randomizer = new Random();
 		
 		int howManyLoops = randomizer.nextInt(10000);
+		howManyLoops = (howManyLoops == 0) ? 10 : howManyLoops;
 		byte [] compoundMessageData = new byte [12 * howManyLoops];
 		
 		List<byte []> messages = new ArrayList<byte[]>(howManyLoops);
@@ -81,6 +82,7 @@ public class MessageTokenizerTest extends TestCase {
 			for (int c = 3; c < 12; c++) 
 			{
 				byte aByte = (byte)randomizer.nextInt(127);
+				if (aByte == 77) aByte = (byte)c;
 				compoundMessageData[position++] = aByte;
 				message[c] = aByte;
 			}
