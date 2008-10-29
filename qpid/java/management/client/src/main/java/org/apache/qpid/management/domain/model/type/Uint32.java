@@ -39,6 +39,6 @@ public class Uint32 extends Type
     @Override
     public void encode (Object value, AmqpCoDec encoder)
     {
-        encoder.pack32((Integer)value);
+        encoder.pack32(((Number)value).intValue());
     }    
 }

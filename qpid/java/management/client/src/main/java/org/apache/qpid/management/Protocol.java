@@ -40,6 +40,8 @@ public interface Protocol
     char EVENT_CONTENT_RESPONSE_OPCDE = 'e';
     char INSTR_AND_CONFIG_CONTENT_RESPONSE_OPCODE = 'g';
     
+    char HEARTBEAT_INDICATION_RESPONSE_OPCODE = 'h';
+    
     int CLASS = 1;
     int EVENT = 2;
 }
