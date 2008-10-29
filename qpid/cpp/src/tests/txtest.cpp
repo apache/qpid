@@ -51,11 +51,12 @@ struct Args : public qpid::TestOptions {
     uint txCount;
     uint totalMsgCount;
     bool dtx;
+    bool quiet;
 
     Args() : init(true), transfer(true), check(true), 
              size(256), durable(true), queues(2), 
              base("tx-test"), msgsPerTx(1), txCount(1), totalMsgCount(10),
-             dtx(false)
+             dtx(false), quiet(false)
     {
         addOptions()            
 
@@ -69,7 +70,8 @@ struct Args : public qpid::TestOptions {
             ("messages-per-tx", optValue(msgsPerTx, "N"), "number of messages transferred per transaction")
             ("tx-count", optValue(txCount, "N"), "number of transactions per 'agent'")
             ("total-messages", optValue(totalMsgCount, "N"), "total number of messages in 'circulation'")
-            ("dtx", optValue(dtx, "yes|no"), "use distributed transactions");
+            ("dtx", optValue(dtx, "yes|no"), "use distributed transactions")
+            ("quiet", optValue(quiet), "reduce output from test");
     }
 };
 
@@ -159,7 +161,6 @@ struct Transfer : public Client, public Runnable
                     session.messageTransfer(arg::content=out, arg::acceptMode=1);
                 }
                 sub.accept(sub.getUnaccepted());
-                session.sendCompletion();
                 if (opts.dtx) {
                     session.dtxEnd(arg::xid=xid);
                     session.dtxPrepare(arg::xid=xid);
@@ -219,7 +220,7 @@ struct Controller : public Client
             StringSet::iterator next = i + 1;
             if (next == queues.end()) next = queues.begin();
 
-            std::cout << "Transfering from " << *i << " to " << *next << std::endl;
+            if (!opts.quiet) std::cout << "Transfering from " << *i << " to " << *next << std::endl;
             agents.push_back(new Transfer(*i, *next));
             agents.back().thread = Thread(agents.back());
         }
@@ -241,13 +242,13 @@ struct Controller : public Client
             xidArr.collect(inDoubtXids);
 
             if (inDoubtXids.size()) {
-                std::cout << "Recovering DTX in-doubt transaction(s):" << std::endl;
+                if (!opts.quiet) std::cout << "Recovering DTX in-doubt transaction(s):" << std::endl;
                 framing::StructHelper decoder;
                 framing::Xid xid;
                 // abort even, commit odd transactions
                 for (unsigned i = 0; i < inDoubtXids.size(); i++) {
                     decoder.decode(xid, inDoubtXids[i]);
-                    std::cout << (i%2 ? " * aborting " : " * committing ");
+                    if (!opts.quiet) std::cout << (i%2 ? " * aborting " : " * committing ");
                     xid.print(std::cout);
                     std::cout << std::endl;
                     if (i%2) {
@@ -276,7 +277,7 @@ struct Controller : public Client
                 drained.push_back(m.getMessageProperties().getCorrelationId());
                 ++count;
             }
-            std::cout << "Drained " << count << " messages from " << *i << std::endl;
+            if (!opts.quiet) std::cout << "Drained " << count << " messages from " << *i << std::endl;
         }
 
         sort(ids.begin(), ids.end());
