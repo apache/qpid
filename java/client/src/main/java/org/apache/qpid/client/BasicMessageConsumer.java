@@ -40,8 +40,9 @@ import java.util.SortedSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,7 +79,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
      * <p/> Argument true indicates we want strict FIFO semantics
      */
-    protected final ArrayBlockingQueue _synchronousQueue;
+    protected final BlockingQueue _synchronousQueue;
 
     protected final MessageFactoryRegistry _messageFactory;
 
@@ -182,7 +183,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
 
-        _synchronousQueue = new ArrayBlockingQueue(prefetchHigh, true);
+        _synchronousQueue = new LinkedBlockingQueue();
         _autoClose = autoClose;
         _noConsume = noConsume;
 
