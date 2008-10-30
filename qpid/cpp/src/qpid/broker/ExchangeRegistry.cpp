@@ -19,7 +19,6 @@
  *
  */
 
-#include "config.h"
 #include "ExchangeRegistry.h"
 #include "DirectExchange.h"
 #include "FanOutExchange.h"
