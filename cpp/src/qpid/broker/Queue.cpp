@@ -380,15 +380,12 @@ struct PositionEquals {
 };
 }// namespace
 
-bool Queue::find(QueuedMessage& msg, SequenceNumber pos) const {
+QueuedMessage Queue::find(SequenceNumber pos) const {
     Mutex::ScopedLock locker(messageLock);
     Messages::const_iterator i = std::find_if(messages.begin(), messages.end(), PositionEquals(pos));
-    if (i == messages.end())
-        return false;
-    else {
-        msg = *i;
-        return true;
-    }
+    if (i != messages.end())
+        return *i;
+    return QueuedMessage();
 }
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
@@ -876,9 +873,6 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
 }
 
 void Queue::setPosition(SequenceNumber n) {
-    if (n <= sequence)
-        throw InvalidArgumentException(QPID_MSG("Invalid position " << n << " < " << sequence
-                                                      << " for queue " << name));
+    Mutex::ScopedLock locker(messageLock);
     sequence = n;
-    --sequence;                 // Decrement so ++sequence will return n.
 }

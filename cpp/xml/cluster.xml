@@ -70,8 +70,7 @@
 	 A connection is dumped as followed:
 	 - open as a normal connection.
 	 - attach sessions, create consumers, set flow with normal AMQP cokmmands.
-	 - reset session state by sending session-state for each session.
-	  - frames following session-state are replay frames.
+	 - send /reset additional session state with controls below.
 	 - send shadow-ready to mark end of shadow dump.
 	 - send dump-complete when entire dump is complete.
     -->
@@ -83,8 +82,22 @@
       <field name="notifyEnabled" type="bit"/>
     </control>
 
+    <!-- Delivery-record for outgoing messages sent but not yet accepted. -->
+    <control name="delivery-record" code ="0x11">
+      <field name="queue" type="str8"/>
+      <field name="position" type="sequence-no"/>
+      <field name="tag" type="str8"/>
+      <field name="id" type="sequence-no"/>
+      <field name="acquired" type="bit"/>		       <!--If not set, message follows. -->
+      <field name="accepted" type="bit"/>
+      <field name="cancelled" type="bit"/>
+      <field name="completed" type="bit"/>
+      <field name="ended" type="bit"/>
+      <field name="windowing" type="bit"/>
+    </control>
+    
     <!-- Complete a session state dump. -->
-    <control name="session-state" code="0x11" label="Set session state during a brain dump.">
+    <control name="session-state" code="0x1F" label="Set session state during a brain dump.">
       <!-- Target session deduced from channel number.  -->
       <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
       <field name="command-point" type="sequence-no"/>	       <!-- Id of next command sent -->
@@ -97,15 +110,22 @@
     </control>
 
     <!-- Complete a shadow connection dump. -->
-    <control name="shadow-ready" code="0x12" label="End of shadow connection dump.">
+    <control name="shadow-ready" code="0x20" label="End of shadow connection dump.">
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
     </control>
 
     <!-- Complete a cluster state dump. -->
-    <control name="membership" code="0x13" label="Cluster membership details.">
+    <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="newbies" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
     </control>
+
+    <!-- Set the position of a replicated queue. -->
+    <control name="queue-position" code="0x30">
+      <field name="queue" type="str8"/>
+      <field name="position" type="sequence-no"/>
+    </control>
+    
   </class>
 </amqp>

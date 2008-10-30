@@ -100,10 +100,12 @@ class SessionState : public qpid::SessionState,
 
     void readyToSend();
 
+    // Used by cluster to create replica sessions.
     template <class F> void eachConsumer(F f) { semanticState.eachConsumer(f); }
+    template <class F> void eachUnacked(F f) { semanticState.eachUnacked(f); }
     SemanticState::ConsumerImpl& getConsumer(const string& dest) { return semanticState.find(dest); } 
-
     boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
+    void record(const DeliveryRecord& delivery) { semanticState.record(delivery); }
 
   private:
 

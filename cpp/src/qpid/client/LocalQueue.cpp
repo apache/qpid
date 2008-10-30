@@ -33,12 +33,12 @@ using namespace framing;
 LocalQueue::LocalQueue() {}
 LocalQueue::~LocalQueue() {}
 
-Message LocalQueue::pop() { return get(); }
+Message LocalQueue::pop(sys::Duration timeout) { return get(timeout); }
 
-Message LocalQueue::get() {
+Message LocalQueue::get(sys::Duration timeout) {
     Message result;
-    bool ok = get(result, sys::TIME_INFINITE);
-    assert(ok); (void) ok;
+    bool ok = get(result, timeout);
+    if (!ok) throw Exception("Timed out waiting for a message");
     return result;
 }
 

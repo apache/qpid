@@ -94,17 +94,30 @@ class Connection :
     // ==== Used in catch-up mode to build initial state.
     // 
     // State dump methods.
-    void sessionState(const SequenceNumber& replayStart,
-                      const SequenceNumber& sendCommandPoint,
-                      const SequenceSet& sentIncomplete,
-                      const SequenceNumber& expected,
-                      const SequenceNumber& received,
-                      const SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
+    void sessionState(const framing::SequenceNumber& replayStart,
+                      const framing::SequenceNumber& sendCommandPoint,
+                      const framing::SequenceSet& sentIncomplete,
+                      const framing::SequenceNumber& expected,
+                      const framing::SequenceNumber& received,
+                      const framing::SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
     
     void shadowReady(uint64_t memberId, uint64_t connectionId);
 
     void membership(const framing::FieldTable&, const framing::FieldTable&);
 
+    void deliveryRecord(const std::string& queue,
+                        const framing::SequenceNumber& position,
+                        const std::string& tag,
+                        const framing::SequenceNumber& id,
+                        bool acquired,
+                        bool accepted,
+                        bool cancelled,
+                        bool completed,
+                        bool ended,
+                        bool windowing);
+
+    void queuePosition(const std::string&, const framing::SequenceNumber&);
+    
   private:
     bool catcUp;
 

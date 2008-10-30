@@ -230,12 +230,8 @@ RateTracker dequeueTracker;
              */
             QueuedMessage get();
 
-            /** Get the message at position pos
-             *@param msg out parameter, assigned to the message found.
-             *@param pos position to search for.
-             *@return True if there is a message at pos, false otherwise.
-             */
-            bool find(QueuedMessage& msg, framing::SequenceNumber pos) const;
+            /** Get the message at position pos */
+            QueuedMessage find(framing::SequenceNumber pos) const;
 
             const QueuePolicy* getPolicy();
 
