@@ -20,8 +20,6 @@
  *
  */
 
-#include "config.h"
-
 #include "ConnectionHandler.h"
 #include "Connection.h"
 #include "qpid/framing/ClientInvoker.h"
@@ -109,7 +107,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     if (connection.isFederationLink()) {
-    	if (acl && !acl->authorise(connection.getUserId(),acl::CREATE,acl::LINK,"")){
+    	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
             client.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
             return;
         }
