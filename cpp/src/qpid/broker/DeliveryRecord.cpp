@@ -26,8 +26,8 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/MessageTransferBody.h"
 
+using namespace qpid;
 using namespace qpid::broker;
-using namespace qpid::framing;
 using std::string;
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
@@ -88,10 +88,10 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
 {
     id = deliveryId;
     if (msg.payload->getRedelivered()){
-        msg.payload->getProperties<DeliveryProperties>()->setRedelivered(true);
+        msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
     }
 
-    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1));
+    framing::AMQFrame method(framing::in_place<framing::MessageTransferBody>(framing::ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1));
     method.setEof(false);
     h.handle(method);
     msg.payload->sendHeader(h, framesize);

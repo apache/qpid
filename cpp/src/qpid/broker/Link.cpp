@@ -50,7 +50,7 @@ Link::Link(LinkRegistry*  _links,
            string&        _username,
            string&        _password,
            Broker*        _broker,
-           management::Manageable* parent)
+           Manageable*    parent)
     : links(_links), store(_store), host(_host), port(_port), 
       transport(_transport), 
       durable(_durable),
@@ -161,7 +161,7 @@ void Link::destroy ()
 
     AclModule* acl = getBroker()->getAcl();
     std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
-    if (acl && !acl->authorise(userID,acl::DELETE,acl::LINK,"")){
+    if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
     	throw NotAllowedException("ACL denied delete link request");
     }
 
@@ -336,7 +336,7 @@ ManagementObject* Link::GetManagementObject (void) const
     return (ManagementObject*) mgmtObject;
 }
 
-Manageable::status_t Link::ManagementMethod (uint32_t op, management::Args& args, string& text)
+Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& text)
 {
     switch (op)
     {
