@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
