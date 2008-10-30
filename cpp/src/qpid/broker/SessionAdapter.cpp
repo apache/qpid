@@ -66,11 +66,11 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         std::map<acl::Property, std::string> params;
-        params.insert(make_pair(acl::TYPE, type));
-        params.insert(make_pair(acl::ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
-        params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
-        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchange,&params) )
+        params.insert(make_pair(acl::PROP_TYPE, type));
+        params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? "true" : "false") ));
+        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? "true" : "false")));
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchange,&params) )
             throw NotAllowedException("ACL denied exhange declare request");
     }
     
@@ -105,7 +105,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                                                              alternateExchange, durable, false, args,
                                                              response.second ? "created" : "existing"));
 
-        }catch(UnknownExchangeTypeException& e){
+        }catch(UnknownExchangeTypeException& /*e*/){
             throw CommandInvalidException(QPID_MSG("Exchange type not implemented: " << type));
         }
     }
@@ -130,7 +130,7 @@ void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifU
 {
     AclModule* acl = getBroker().getAcl();
     if (acl) {
-        if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::EXCHANGE,name,NULL) )
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
             throw NotAllowedException("ACL denied exhange delete request");
     }
 
@@ -150,14 +150,14 @@ ExchangeQueryResult SessionAdapter::ExchangeHandlerImpl::query(const string& nam
 {
     AclModule* acl = getBroker().getAcl();
     if (acl) {
-        if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::EXCHANGE,name,NULL) )
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,name,NULL) )
             throw NotAllowedException("ACL denied exhange query request");
     }
 
     try {
         Exchange::shared_ptr exchange(getBroker().getExchanges().get(name));
         return ExchangeQueryResult(exchange->getType(), exchange->isDurable(), false, exchange->getArgs());
-    } catch (const NotFoundException& e) {
+    } catch (const NotFoundException& /*e*/) {
         return ExchangeQueryResult("", false, true, FieldTable());        
     }
 }
@@ -168,7 +168,7 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
 {
     AclModule* acl = getBroker().getAcl();
     if (acl) {
-        if (!acl->authorise(getConnection().getUserId(),acl::BIND,acl::EXCHANGE,exchangeName,routingKey) )
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,routingKey) )
             throw NotAllowedException("ACL denied exhange bind request");
     }
 
@@ -198,9 +198,9 @@ void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         std::map<acl::Property, std::string> params;
-        params.insert(make_pair(acl::QUEUENAME, queueName));
-        params.insert(make_pair(acl::ROUTINGKEY, routingKey));
-        if (!acl->authorise(getConnection().getUserId(),acl::UNBIND,acl::EXCHANGE,exchangeName,&params) )
+        params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
+        params.insert(make_pair(acl::PROP_ROUTINGKEY, routingKey));
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_UNBIND,acl::OBJ_EXCHANGE,exchangeName,&params) )
             throw NotAllowedException("ACL denied exchange unbind request");
     }
 
@@ -229,9 +229,9 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         std::map<acl::Property, std::string> params;
-        params.insert(make_pair(acl::QUEUENAME, queueName));
-        params.insert(make_pair(acl::ROUTINGKEY, key));
-        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::EXCHANGE,exchangeName,&params) )
+        params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
+        params.insert(make_pair(acl::PROP_ROUTINGKEY, key));
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchangeName,&params) )
             throw NotAllowedException("ACL denied exhange bound request");
     }
     
@@ -297,7 +297,7 @@ QueueQueryResult SessionAdapter::QueueHandlerImpl::query(const string& name)
 {
     AclModule* acl = getBroker().getAcl();
     if (acl) {
-        if (!acl->authorise(getConnection().getUserId(),acl::ACCESS,acl::QUEUE,name,NULL) )
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_QUEUE,name,NULL) )
             throw NotAllowedException("ACL denied queue query request");
     }
     
@@ -326,12 +326,12 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         std::map<acl::Property, std::string> params;
-        params.insert(make_pair(acl::ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PASSIVE, std::string(passive ? "true" : "false") ));
-        params.insert(make_pair(acl::DURABLE, std::string(durable ? "true" : "false")));
-        params.insert(make_pair(acl::EXCLUSIVE, std::string(exclusive ? "true" : "false")));
-        params.insert(make_pair(acl::AUTODELETE, std::string(autoDelete ? "true" : "false")));
-        if (!acl->authorise(getConnection().getUserId(),acl::CREATE,acl::QUEUE,name,&params) )
+        params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? "true" : "false") ));
+        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? "true" : "false")));
+        params.insert(make_pair(acl::PROP_EXCLUSIVE, std::string(exclusive ? "true" : "false")));
+        params.insert(make_pair(acl::PROP_AUTODELETE, std::string(autoDelete ? "true" : "false")));
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw NotAllowedException("ACL denied queue create request");
     }
 
@@ -390,7 +390,7 @@ void SessionAdapter::QueueHandlerImpl::purge(const string& queue){
     AclModule* acl = getBroker().getAcl();
     if (acl)
     {
-         if (!acl->authorise(getConnection().getUserId(),acl::PURGE,acl::QUEUE,queue,NULL) )
+         if (!acl->authorise(getConnection().getUserId(),acl::ACT_PURGE,acl::OBJ_QUEUE,queue,NULL) )
             throw NotAllowedException("ACL denied queue purge request");
     }
     getQueue(queue)->purge();
@@ -401,7 +401,7 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
     AclModule* acl = getBroker().getAcl();
     if (acl)
     {
-         if (!acl->authorise(getConnection().getUserId(),acl::DELETE,acl::QUEUE,queue,NULL) )
+         if (!acl->authorise(getConnection().getUserId(),acl::ACT_DELETE,acl::OBJ_QUEUE,queue,NULL) )
             throw NotAllowedException("ACL denied queue delete request");
     }
 
@@ -468,7 +468,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     if (acl)
     {
         // add flags as needed
-         if (!acl->authorise(getConnection().getUserId(),acl::CONSUME,acl::QUEUE,queueName,NULL) )
+         if (!acl->authorise(getConnection().getUserId(),acl::ACT_CONSUME,acl::OBJ_QUEUE,queueName,NULL) )
             throw NotAllowedException("ACL denied Queue subscribe request");
     }
 
@@ -637,7 +637,7 @@ XaResult SessionAdapter::DtxHandlerImpl::end(const Xid& xid,
             }
             return XaResult(XA_STATUS_XA_OK);
         }
-    } catch (const DtxTimeoutException& e) {
+    } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
@@ -656,7 +656,7 @@ XaResult SessionAdapter::DtxHandlerImpl::start(const Xid& xid,
             state.startDtx(convert(xid), getBroker().getDtxManager(), join);
         }
         return XaResult(XA_STATUS_XA_OK);
-    } catch (const DtxTimeoutException& e) {
+    } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
@@ -666,7 +666,7 @@ XaResult SessionAdapter::DtxHandlerImpl::prepare(const Xid& xid)
     try {
         bool ok = getBroker().getDtxManager().prepare(convert(xid));
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
-    } catch (const DtxTimeoutException& e) {
+    } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
@@ -677,7 +677,7 @@ XaResult SessionAdapter::DtxHandlerImpl::commit(const Xid& xid,
     try {
         bool ok = getBroker().getDtxManager().commit(convert(xid), onePhase);
         return XaResult(ok ? XA_STATUS_XA_OK : XA_STATUS_XA_RBROLLBACK);
-    } catch (const DtxTimeoutException& e) {
+    } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
@@ -688,7 +688,7 @@ XaResult SessionAdapter::DtxHandlerImpl::rollback(const Xid& xid)
     try {
         getBroker().getDtxManager().rollback(convert(xid));
         return XaResult(XA_STATUS_XA_OK);
-    } catch (const DtxTimeoutException& e) {
+    } catch (const DtxTimeoutException& /*e*/) {
         return XaResult(XA_STATUS_XA_RBTIMEOUT);        
     }
 }
