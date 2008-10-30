@@ -145,7 +145,6 @@ typedef framing::SequenceSet SequenceSet;
 // Forward declare class types.
 class Map;
 class Struct32;
-class List;
 class UnknownType;
 
 template <class T> struct  ArrayDomain;
