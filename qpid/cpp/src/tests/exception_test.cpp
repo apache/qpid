@@ -92,7 +92,7 @@ QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
-    Catcher<ConnectionException> pop(bind(&LocalQueue::pop, boost::ref(fix.lq)));
+    Catcher<ConnectionException> pop(bind(&LocalQueue::pop, &fix.lq, sys::TIME_SEC));
     fix.connection.proxy.close();
     BOOST_CHECK(pop.join());
 }

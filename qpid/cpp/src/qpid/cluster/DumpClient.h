@@ -43,6 +43,7 @@ class QueueBindings;
 class QueueBinding;
 class QueuedMessage;
 class SessionHandler;
+class DeliveryRecord;
 
 } // namespace broker
 
@@ -57,6 +58,8 @@ class ClusterMap;
  */
 class DumpClient : public sys::Runnable {
   public:
+    static const std::string DUMP; // Name for special dump queue and exchange.
+    
     DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url&,
                broker::Broker& donor, const ClusterMap& map, const std::vector<boost::intrusive_ptr<Connection> >& ,
                const boost::function<void()>& done,
@@ -70,10 +73,12 @@ class DumpClient : public sys::Runnable {
     void dumpQueue(const boost::shared_ptr<broker::Queue>&);
     void dumpExchange(const boost::shared_ptr<broker::Exchange>&);
     void dumpMessage(const broker::QueuedMessage&);
+    void dumpMessageTo(const broker::QueuedMessage&, const std::string& queue, client::Session s);
     void dumpBinding(const std::string& queue, const broker::QueueBinding& binding);
     void dumpConnection(const boost::intrusive_ptr<Connection>& connection);
     void dumpSession(broker::SessionHandler& s);
-    void dumpConsumer(broker::SemanticState::ConsumerImpl*);
+    void dumpConsumer(const broker::SemanticState::ConsumerImpl*);
+    void dumpUnacked(const broker::DeliveryRecord&);
     
   private:
     MemberId dumperId;
