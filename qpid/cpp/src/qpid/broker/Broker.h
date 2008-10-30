@@ -60,7 +60,7 @@ namespace sys {
     class Poller;
 }
 
-class Url;
+struct Url;
 
 namespace broker {
 
