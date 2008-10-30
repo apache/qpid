@@ -20,6 +20,7 @@
  */
 
 #include "RefCountedBuffer.h"
+#include <new>
 
 namespace qpid {
 
