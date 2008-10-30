@@ -26,6 +26,7 @@
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Time.h"
 
 #include "qpid/client/FailoverConnection.h"
 #include "qpid/client/FailoverSession.h"
@@ -377,7 +378,7 @@ FailoverSession::messageTransfer ( const string& destination,
         if ( ! failover_in_progress )
           break;
 
-        usleep ( 1000 );
+        qpid::sys::usleep ( 1000 );
       }
     }
 }
@@ -1416,7 +1417,7 @@ FailoverSession::prepareForFailover ( Connection newConnection )
     {
         newSession = newConnection.newSession();
     }
-    catch ( const std::exception& error )
+    catch ( const std::exception& /*error*/ )
     {
         throw Exception(QPID_MSG("Can't create failover session."));
     }

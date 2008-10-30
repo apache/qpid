@@ -65,9 +65,7 @@ void Condition::wait(Mutex& mutex) {
 }
 
 bool Condition::wait(Mutex& mutex, const AbsTime& absoluteTime){
-    boost::system_time st;
-    toPtime(st, absoluteTime);
-    return condition.timed_wait(mutex.mutex, st);
+    return condition.timed_wait(mutex.mutex, absoluteTime.getPrivate());
 }
 
 void Condition::notify(){
