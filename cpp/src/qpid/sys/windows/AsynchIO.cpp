@@ -32,6 +32,7 @@
 
 #include <boost/thread/once.hpp>
 
+#include <queue>
 #include <winsock2.h>
 #include <mswsock.h>
 #include <windows.h>
@@ -147,7 +148,7 @@ void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
     restart ();
 }
 
-void AsynchAcceptor::restart(void) {
+void AsynchAcceptorPrivate::restart(void) {
     DWORD bytesReceived = 0;  // Not used, needed for AcceptEx API
     AsynchAcceptResult *result = new AsynchAcceptResult(acceptedCallback,
                                                         this,
@@ -166,7 +167,7 @@ void AsynchAcceptor::restart(void) {
 
 
 AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
-                                       AsynchAcceptor *acceptor,
+                                       AsynchAcceptorPrivate *acceptor,
                                        SOCKET listener)
   : callback(cb), acceptor(acceptor), listener(listener) {
     newSocket.reset (new Socket());
@@ -318,21 +319,27 @@ private:
     volatile bool queuedClose;
 
 private:
-    void close(void);
+    // Dispatch events that have completed.
+    void dispatchReadComplete(AsynchIO::BufferBase *buffer);
+    void notifyEof(void);
+    void notifyDisconnect(void);
+    void notifyClosed(void);
+    void notifyBuffersEmpty(void);
+    void notifyIdle(void);
 
     /**
      * Initiate a read operation. AsynchIO::dispatchReadComplete() will be
      * called when the read is complete and data is available.
      */
-    virtual void startRead(void);
+    void startRead(void);
 
     /**
      * Initiate a write of the specified buffer. There's no callback for
      * write completion to the AsynchIO object.
      */
-    virtual void startWrite(AsynchIO::BufferBase* buff);
+    void startWrite(AsynchIO::BufferBase* buff);
 
-    virtual bool writesNotComplete();
+    void close(void);
 
     /**
      * readComplete is called when a read request is complete.
@@ -602,10 +609,6 @@ void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
     return;
 }
 
-bool AsynchIO::writesNotComplete() {
-    return writeInProgress;
-}
-
 /*
  * Close the socket and callback to say we've done it
  */
@@ -726,4 +729,17 @@ void AsynchIO::completion(AsynchIoResult *result) {
         delete this;
 }
 
-}}  // namespace qpid::windows
+} // namespace windows
+
+AsynchIO* qpid::sys::AsynchIO::create(const Socket& s,
+                                      AsynchIO::ReadCallback rCb,
+                                      AsynchIO::EofCallback eofCb,
+                                      AsynchIO::DisconnectCallback disCb,
+                                      AsynchIO::ClosedCallback cCb,
+                                      AsynchIO::BuffersEmptyCallback eCb,
+                                      AsynchIO::IdleCallback iCb)
+{
+    return new qpid::sys::windows::AsynchIO(s, rCb, eofCb, disCb, cCb, eCb, iCb);
+}
+
+}}  // namespace qpid::sys

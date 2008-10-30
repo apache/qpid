@@ -26,11 +26,25 @@ namespace qpid {
 namespace sys {
 
 /**
- * This is a class intended to abstract the Unix concept of file descriptor or the Windows concept of HANDLE
+ * This is a class intended to abstract the Unix concept of file descriptor
+ * or the Windows concept of HANDLE
  */
+// Windows-related classes
+class AsynchAcceptorPrivate;
+class AsynchAcceptResult;
+namespace windows {
+    class AsynchIO;
+}
+
+// General classes
 class PollerHandle;
 class IOHandlePrivate;
 class IOHandle {
+
+    friend class AsynchAcceptorPrivate;
+    friend class AsynchAcceptResult;
+    friend class windows::AsynchIO;
+
     friend class PollerHandle;
 
 protected:

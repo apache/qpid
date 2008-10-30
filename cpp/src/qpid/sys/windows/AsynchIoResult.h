@@ -22,7 +22,7 @@
  *
  */
 
-#include "AsynchIO.h"
+#include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Socket.h"
 #include <memory.h>
 #include <winsock2.h>
@@ -100,8 +100,6 @@ private:
            SOCKADDRBUFLEN = 2 * SOCKADDRMAXLEN };
     char addressBuffer[SOCKADDRBUFLEN];
 };
-
-class AsynchIO;
 
 class AsynchIoResult : public AsynchResult {
 public:
