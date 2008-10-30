@@ -130,7 +130,7 @@ void AclReader::loadDecisionData( boost::shared_ptr<AclData> d )
 				for (int acnt= ((*i)->actionAll?0:(*i)->action); 
         				 acnt< acl::ACTIONSIZE; (*i)->actionAll?acnt++:acnt=acl::ACTIONSIZE )  {
 
-            		if (acnt == acl::PUBLISH) d->transferAcl = true; // we have transfer ACL
+            		if (acnt == acl::ACT_PUBLISH) d->transferAcl = true; // we have transfer ACL
 					
 					QPID_LOG(debug, "ACL Adding action:" << AclHelper::getActionStr((Action)acnt) );
 
@@ -414,7 +414,7 @@ bool AclReader::processAclLine(tokList& toks) {
             errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Tokens found after action \"all\".";
             return false;
         }
-        action = CONSUME; // dummy; compiler must initialize action for this code path
+        action = ACT_CONSUME; // dummy; compiler must initialize action for this code path
     } else {
         try {
             action = AclHelper::getAction(toks[3]);

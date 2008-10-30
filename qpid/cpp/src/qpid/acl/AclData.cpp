@@ -71,7 +71,7 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 					for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
 					{
                         //match name is exists first
-						if (pMItr->first == acl::NAME){
+						if (pMItr->first == acl::PROP_NAME){
 						     if (!matchProp(pMItr->second, name)){  
 							     match= false;
 							 }
@@ -109,11 +109,11 @@ AclResult AclData::lookup(const std::string& id, const Action& action, const Obj
 					for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
 					{
                         //match name is exists first
-						if (pMItr->first == acl::NAME){
+						if (pMItr->first == acl::PROP_NAME){
 						     if (!matchProp(pMItr->second, name)){  
 							     match= false;
 							 }
-						}else if (pMItr->first == acl::ROUTINGKEY){
+						}else if (pMItr->first == acl::PROP_ROUTINGKEY){
 						     if (!matchProp(pMItr->second, RoutingKey)){  
 							     match= false;
 							 }
