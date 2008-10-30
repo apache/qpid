@@ -160,7 +160,7 @@ void DtxManager::DtxCleanup::fire()
 {
     try {
         mgr.remove(xid);
-    } catch (ConnectionException& e) {
+    } catch (ConnectionException& /*e*/) {
         //assume it was explicitly cleaned up after a call to prepare, commit or rollback
     }
 }

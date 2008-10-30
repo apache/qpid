@@ -113,7 +113,7 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
         if (exchange) {
             exchange->bind(queue, queue->getName(), 0);
         }
-    } catch (const framing::NotFoundException& e) {
+    } catch (const framing::NotFoundException& /*e*/) {
         //assume no default exchange has been declared
     }
     return RecoverableQueue::shared_ptr(new RecoverableQueueImpl(queue));

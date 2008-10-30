@@ -489,10 +489,10 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
     if (acl != 0) {
         string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
         std::map<acl::Property, string> params;
-        params[acl::SCHEMAPACKAGE] = packageName;
-        params[acl::SCHEMACLASS]   = className;
+        params[acl::PROP_SCHEMAPACKAGE] = packageName;
+        params[acl::PROP_SCHEMACLASS]   = className;
 
-        if (!acl->authorise(userId, acl::ACCESS, acl::METHOD, methodName, &params)) {
+        if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params)) {
             outBuffer.putLong(Manageable::STATUS_FORBIDDEN);
             outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
             outLen = MA_BUFFER_SIZE - outBuffer.available();
@@ -909,10 +909,10 @@ bool ManagementBroker::authorizeAgentMessageLH(Message& msg)
         inBuffer.getBin128(hash);
         inBuffer.getShortString(methodName);
 
-        params[acl::SCHEMAPACKAGE] = packageName;
-        params[acl::SCHEMACLASS]   = className;
+        params[acl::PROP_SCHEMAPACKAGE] = packageName;
+        params[acl::PROP_SCHEMACLASS]   = className;
 
-        if (acl->authorise(userId, acl::ACCESS, acl::METHOD, methodName, &params))
+        if (acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params))
             return true;
 
         const framing::MessageProperties* p =
@@ -1090,7 +1090,7 @@ size_t ManagementBroker::validateTableSchema(Buffer& inBuffer)
                 aft.decode(inBuffer);
             }
         }
-    } catch (std::exception& e) {
+    } catch (std::exception& /*e*/) {
         return 0;
     }
 
@@ -1122,7 +1122,7 @@ size_t ManagementBroker::validateEventSchema(Buffer& inBuffer)
             FieldTable ft;
             ft.decode(inBuffer);
         }
-    } catch (std::exception& e) {
+    } catch (std::exception& /*e*/) {
         return 0;
     }
 
