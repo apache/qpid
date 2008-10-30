@@ -22,7 +22,7 @@
 // This source is only used on Windows; SSPI is the Windows mechanism for
 // accessing authentication mechanisms, analogous to Cyrus SASL.
 
-#include "Connection.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 
