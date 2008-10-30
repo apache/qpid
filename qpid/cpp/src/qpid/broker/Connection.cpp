@@ -35,7 +35,6 @@
 #include <iostream>
 #include <assert.h>
 
-using namespace boost;
 using namespace qpid::sys;
 using namespace qpid::framing;
 using namespace qpid::sys;
