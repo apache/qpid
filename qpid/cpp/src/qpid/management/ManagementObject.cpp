@@ -23,10 +23,12 @@
 #include "ManagementObject.h"
 #include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Thread.h"
 
-using namespace qpid::framing;
+#include <stdlib.h>
+
+using namespace qpid;
 using namespace qpid::management;
-using namespace qpid::sys;
 
 void AgentAttachment::setBanks(uint32_t broker, uint32_t bank)
 {
@@ -57,20 +59,24 @@ ObjectId::ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq, uint64_
 
 ObjectId::ObjectId(std::istream& in) : agent(0)
 {
-    string text;
+    std::string text;
     in >> text;
     fromString(text);
 }
 
-ObjectId::ObjectId(const string& text) : agent(0)
+ObjectId::ObjectId(const std::string& text) : agent(0)
 {
     fromString(text);
 }
 
-void ObjectId::fromString(const string& text)
+void ObjectId::fromString(const std::string& text)
 {
 #define FIELDS 5
-    string copy(text.c_str());
+#if defined (_WIN32) && !defined (atoll)
+#  define atoll(X) _atoi64(X)
+#endif
+
+    std::string copy(text.c_str());
     char* cText;
     char* field[FIELDS];
     bool  atFieldStart = true;
@@ -152,12 +158,12 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 
 int ManagementObject::nextThreadIndex = 0;
 
-void ManagementObject::writeTimestamps (Buffer& buf)
+void ManagementObject::writeTimestamps (framing::Buffer& buf)
 {
     buf.putShortString (getPackageName ());
     buf.putShortString (getClassName ());
     buf.putBin128      (getMd5Sum ());
-    buf.putLongLong    (uint64_t (Duration (now ())));
+    buf.putLongLong    (uint64_t (sys::Duration (sys::now ())));
     buf.putLongLong    (createTime);
     buf.putLongLong    (destroyTime);
     objectId.encode(buf);
@@ -166,7 +172,7 @@ void ManagementObject::writeTimestamps (Buffer& buf)
 void ManagementObject::setReference(ObjectId) {}
 
 int ManagementObject::getThreadIndex() {
-    static __thread int thisIndex = -1;
+    static QPID_TSS int thisIndex = -1;
     if (thisIndex == -1) {
         sys::Mutex::ScopedLock mutex(accessLock);
         thisIndex = nextThreadIndex;

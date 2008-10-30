@@ -33,17 +33,19 @@
 #include <time.h>
 
 using boost::intrusive_ptr;
-using namespace qpid::broker;
-using namespace qpid::framing;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::TIME_MSEC;
 using qpid::sys::FAR_FUTURE;
 using std::string;
+using namespace qpid::framing;
+
+namespace qpid {
+namespace broker {
 
 TransferAdapter Message::TRANSFER;
 
-Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false),
+  Message::Message(const framing::SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false),
                                              staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
                                              expiration(FAR_FUTURE) {}
 
@@ -109,7 +111,7 @@ void Message::encode(framing::Buffer& buffer) const
     frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
 
     //then encode the payload of each content frame
-    EncodeBody f2(buffer);
+    framing::EncodeBody f2(buffer);
     frames.map_if(f2, TypeFilter<CONTENT_BODY>());
 }
 
@@ -338,3 +340,5 @@ void Message::setReplacementMessage(boost::intrusive_ptr<Message> msg, const Que
 {
     replacement[qfor] = msg;
 }
+
+}} // namespace qpid::broker

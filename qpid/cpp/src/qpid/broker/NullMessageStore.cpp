@@ -44,11 +44,6 @@ public:
     }
 };
 
-}
-}
-
-using namespace qpid::broker;
-
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn), nextPersistenceId(1) {}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
@@ -168,3 +163,6 @@ void NullMessageStore::collectPreparedXids(std::set<string>& out)
 {
     out.insert(prepared.begin(), prepared.end());
 }
+
+
+}}  // namespace qpid::broker

@@ -26,8 +26,10 @@
 #define TRANSFER_EXCEPTION(fn) try { fn; } catch (std::exception& e) { throw Exception(e.what()); }
 
 using boost::intrusive_ptr;
-using namespace qpid::broker;
 using qpid::framing::FieldTable;
+
+namespace qpid {
+namespace broker {
 
 MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}
 
@@ -162,3 +164,5 @@ void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
 {
     TRANSFER_EXCEPTION(store->collectPreparedXids(xids));
 }
+
+}} // namespace qpid::broker
