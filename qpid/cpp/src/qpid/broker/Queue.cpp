@@ -749,7 +749,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
     persistenceId = _persistenceId;
 }
 
-void Queue::encode(framing::Buffer& buffer) const 
+void Queue::encode(Buffer& buffer) const 
 {
     buffer.putShortString(name);
     buffer.put(settings);
@@ -760,7 +760,7 @@ uint32_t Queue::encodedSize() const
     return name.size() + 1/*short string size octet*/ + settings.encodedSize();
 }
 
-Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
+Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
 {
     string name;
     buffer.getShortString(name);
