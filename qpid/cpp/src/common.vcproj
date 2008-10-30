@@ -708,6 +708,9 @@
 				RelativePath="qpid\framing\Buffer.cpp">
 			</File>
 			<File
+				RelativePath="qpid\framing\Endian.cpp">
+			</File>
+			<File
 				RelativePath="qpid\framing\FieldTable.cpp">
 			</File>
 			<File
@@ -1370,6 +1373,9 @@
 			</File>
 			<File
 				RelativePath="qpid\framing\ChannelHandler.h">
+			</File>
+			<File
+				RelativePath="qpid\framing\Endian.h">
 			</File>
 			<File
 				RelativePath="qpid\framing\FieldTable.h">

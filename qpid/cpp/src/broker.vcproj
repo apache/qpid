@@ -60,7 +60,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800;4290"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -139,7 +139,7 @@
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800;4290"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -223,7 +223,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800;4290"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -303,7 +303,7 @@
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800;4290"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -874,7 +874,13 @@
 				RelativePath="qpid\management\ManagementExchange.cpp">
 			</File>
 			<File
+				RelativePath="qpid\sys\TCPIOPlugin.cpp">
+			</File>
+			<File
 				RelativePath="qpidd.cpp">
+			</File>
+			<File
+				RelativePath="windows\QpiddBroker.cpp">
 			</File>
 		</Filter>
 		<Filter
