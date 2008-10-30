@@ -33,11 +33,15 @@ namespace qpid {
 
 namespace acl {
 
-enum ObjectType {QUEUE, EXCHANGE, BROKER, LINK, ROUTE, METHOD, OBJECTSIZE}; // OBJECTSIZE must be last in list
-enum Action {CONSUME, PUBLISH, CREATE, ACCESS, BIND, UNBIND, DELETE, PURGE,
-             UPDATE, ACTIONSIZE}; // ACTIONSIZE must be last in list
-enum Property {NAME, DURABLE, OWNER, ROUTINGKEY, PASSIVE, AUTODELETE, EXCLUSIVE, TYPE, ALTERNATE,
-               QUEUENAME, SCHEMAPACKAGE, SCHEMACLASS};
+enum ObjectType {OBJ_QUEUE, OBJ_EXCHANGE, OBJ_BROKER, OBJ_LINK, OBJ_ROUTE,
+                 OBJ_METHOD, OBJECTSIZE}; // OBJECTSIZE must be last in list
+enum Action {ACT_CONSUME, ACT_PUBLISH, ACT_CREATE, ACT_ACCESS, ACT_BIND,
+             ACT_UNBIND, ACT_DELETE, ACT_PURGE, ACT_UPDATE,
+             ACTIONSIZE}; // ACTIONSIZE must be last in list
+enum Property {PROP_NAME, PROP_DURABLE, PROP_OWNER, PROP_ROUTINGKEY,
+               PROP_PASSIVE, PROP_AUTODELETE, PROP_EXCLUSIVE, PROP_TYPE,
+               PROP_ALTERNATE, PROP_QUEUENAME, PROP_SCHEMAPACKAGE,
+               PROP_SCHEMACLASS};
 enum AclResult {ALLOW, ALLOWLOG, DENY, DENYLOG};	
 
 } // namespace acl
@@ -71,82 +75,82 @@ class AclHelper {
     AclHelper(){}
   public:
     static inline ObjectType getObjectType(const std::string& str) {
-        if (str.compare("queue") == 0) return QUEUE;
-        if (str.compare("exchange") == 0) return EXCHANGE;
-        if (str.compare("broker") == 0) return BROKER;
-        if (str.compare("link") == 0) return LINK;
-        if (str.compare("route") == 0) return ROUTE;
-        if (str.compare("method") == 0) return METHOD;
+        if (str.compare("queue") == 0) return OBJ_QUEUE;
+        if (str.compare("exchange") == 0) return OBJ_EXCHANGE;
+        if (str.compare("broker") == 0) return OBJ_BROKER;
+        if (str.compare("link") == 0) return OBJ_LINK;
+        if (str.compare("route") == 0) return OBJ_ROUTE;
+        if (str.compare("method") == 0) return OBJ_METHOD;
         throw str;
     }
     static inline std::string getObjectTypeStr(const ObjectType o) {
         switch (o) {
-          case QUEUE: return "queue";
-          case EXCHANGE: return "exchange";
-          case BROKER: return "broker";
-          case LINK: return "link";
-          case ROUTE: return "route";
-          case METHOD: return "method";
+          case OBJ_QUEUE: return "queue";
+          case OBJ_EXCHANGE: return "exchange";
+          case OBJ_BROKER: return "broker";
+          case OBJ_LINK: return "link";
+          case OBJ_ROUTE: return "route";
+          case OBJ_METHOD: return "method";
           default: assert(false); // should never get here
         }
         return "";
     }
     static inline Action getAction(const std::string& str) {
-        if (str.compare("consume") == 0) return CONSUME;
-        if (str.compare("publish") == 0) return PUBLISH;
-        if (str.compare("create") == 0) return CREATE;
-        if (str.compare("access") == 0) return ACCESS;
-        if (str.compare("bind") == 0) return BIND;
-        if (str.compare("unbind") == 0) return UNBIND;
-        if (str.compare("delete") == 0) return DELETE;
-        if (str.compare("purge") == 0) return PURGE;
-        if (str.compare("update") == 0) return UPDATE;
+        if (str.compare("consume") == 0) return ACT_CONSUME;
+        if (str.compare("publish") == 0) return ACT_PUBLISH;
+        if (str.compare("create") == 0) return ACT_CREATE;
+        if (str.compare("access") == 0) return ACT_ACCESS;
+        if (str.compare("bind") == 0) return ACT_BIND;
+        if (str.compare("unbind") == 0) return ACT_UNBIND;
+        if (str.compare("delete") == 0) return ACT_DELETE;
+        if (str.compare("purge") == 0) return ACT_PURGE;
+        if (str.compare("update") == 0) return ACT_UPDATE;
         throw str;
     }
     static inline std::string getActionStr(const Action a) {
         switch (a) {
-          case CONSUME: return "consume";
-          case PUBLISH: return "publish";
-          case CREATE: return "create";
-          case ACCESS: return "access";
-          case BIND: return "bind";
-          case UNBIND: return "unbind";
-          case DELETE: return "delete";
-          case PURGE: return "purge";
-          case UPDATE: return "update";
+          case ACT_CONSUME: return "consume";
+          case ACT_PUBLISH: return "publish";
+          case ACT_CREATE: return "create";
+          case ACT_ACCESS: return "access";
+          case ACT_BIND: return "bind";
+          case ACT_UNBIND: return "unbind";
+          case ACT_DELETE: return "delete";
+          case ACT_PURGE: return "purge";
+          case ACT_UPDATE: return "update";
           default: assert(false); // should never get here
         }
         return "";
     }
     static inline Property getProperty(const std::string& str) {
-        if (str.compare("name") == 0) return NAME;
-        if (str.compare("durable") == 0) return DURABLE;
-        if (str.compare("owner") == 0) return OWNER;
-        if (str.compare("routingkey") == 0) return ROUTINGKEY;
-        if (str.compare("passive") == 0) return PASSIVE;
-        if (str.compare("autodelete") == 0) return AUTODELETE;
-        if (str.compare("exclusive") == 0) return EXCLUSIVE;
-        if (str.compare("type") == 0) return TYPE;
-        if (str.compare("alternate") == 0) return ALTERNATE;
-        if (str.compare("queuename") == 0) return QUEUENAME;
-        if (str.compare("schemapackage") == 0) return SCHEMAPACKAGE;
-        if (str.compare("schemaclass") == 0) return SCHEMACLASS;
+        if (str.compare("name") == 0) return PROP_NAME;
+        if (str.compare("durable") == 0) return PROP_DURABLE;
+        if (str.compare("owner") == 0) return PROP_OWNER;
+        if (str.compare("routingkey") == 0) return PROP_ROUTINGKEY;
+        if (str.compare("passive") == 0) return PROP_PASSIVE;
+        if (str.compare("autodelete") == 0) return PROP_AUTODELETE;
+        if (str.compare("exclusive") == 0) return PROP_EXCLUSIVE;
+        if (str.compare("type") == 0) return PROP_TYPE;
+        if (str.compare("alternate") == 0) return PROP_ALTERNATE;
+        if (str.compare("queuename") == 0) return PROP_QUEUENAME;
+        if (str.compare("schemapackage") == 0) return PROP_SCHEMAPACKAGE;
+        if (str.compare("schemaclass") == 0) return PROP_SCHEMACLASS;
         throw str;
     }
     static inline std::string getPropertyStr(const Property p) {
         switch (p) {
-          case NAME: return "name";
-          case DURABLE: return "durable";
-          case OWNER: return "owner";
-          case ROUTINGKEY: return "routingkey";
-          case PASSIVE: return "passive";
-          case AUTODELETE: return "autodelete";
-          case EXCLUSIVE: return "exclusive";
-          case TYPE: return "type";
-          case ALTERNATE: return "alternate";
-          case QUEUENAME: return "queuename";
-          case SCHEMAPACKAGE: return "schemapackage";
-          case SCHEMACLASS: return "schemaclass";
+          case PROP_NAME: return "name";
+          case PROP_DURABLE: return "durable";
+          case PROP_OWNER: return "owner";
+          case PROP_ROUTINGKEY: return "routingkey";
+          case PROP_PASSIVE: return "passive";
+          case PROP_AUTODELETE: return "autodelete";
+          case PROP_EXCLUSIVE: return "exclusive";
+          case PROP_TYPE: return "type";
+          case PROP_ALTERNATE: return "alternate";
+          case PROP_QUEUENAME: return "queuename";
+          case PROP_SCHEMAPACKAGE: return "schemapackage";
+          case PROP_SCHEMACLASS: return "schemaclass";
           default: assert(false); // should never get here
         }
         return "";
@@ -188,72 +192,72 @@ class AclHelper {
         // == Exchanges ==
 
         propSetPtr p1(new propSet);
-        p1->insert(TYPE);
-        p1->insert(ALTERNATE);
-        p1->insert(PASSIVE);
-        p1->insert(DURABLE);
+        p1->insert(PROP_TYPE);
+        p1->insert(PROP_ALTERNATE);
+        p1->insert(PROP_PASSIVE);
+        p1->insert(PROP_DURABLE);
 
         propSetPtr p2(new propSet);
-        p2->insert(ROUTINGKEY);
+        p2->insert(PROP_ROUTINGKEY);
 
         propSetPtr p3(new propSet);
-        p3->insert(QUEUENAME);
-        p3->insert(ROUTINGKEY);
+        p3->insert(PROP_QUEUENAME);
+        p3->insert(PROP_ROUTINGKEY);
 
         actionMapPtr a0(new actionMap);
-        a0->insert(actionPair(CREATE,  p1));
-        a0->insert(actionPair(DELETE,  p0));
-        a0->insert(actionPair(ACCESS,  p0));
-        a0->insert(actionPair(BIND,    p2));
-        a0->insert(actionPair(UNBIND,  p2));
-        a0->insert(actionPair(ACCESS,  p3));
-        a0->insert(actionPair(PUBLISH, p0));
+        a0->insert(actionPair(ACT_CREATE,  p1));
+        a0->insert(actionPair(ACT_DELETE,  p0));
+        a0->insert(actionPair(ACT_ACCESS,  p0));
+        a0->insert(actionPair(ACT_BIND,    p2));
+        a0->insert(actionPair(ACT_UNBIND,  p2));
+        a0->insert(actionPair(ACT_ACCESS,  p3));
+        a0->insert(actionPair(ACT_PUBLISH, p0));
 
-        map->insert(objectPair(EXCHANGE, a0));
+        map->insert(objectPair(OBJ_EXCHANGE, a0));
 
         // == Queues ==
 
         propSetPtr p4(new propSet);
-        p3->insert(ALTERNATE);
-        p3->insert(PASSIVE);
-        p3->insert(DURABLE);
-        p3->insert(EXCLUSIVE);
-        p3->insert(AUTODELETE);
+        p3->insert(PROP_ALTERNATE);
+        p3->insert(PROP_PASSIVE);
+        p3->insert(PROP_DURABLE);
+        p3->insert(PROP_EXCLUSIVE);
+        p3->insert(PROP_AUTODELETE);
 
         actionMapPtr a1(new actionMap);
-        a1->insert(actionPair(ACCESS,  p0));
-        a1->insert(actionPair(CREATE,  p4));
-        a1->insert(actionPair(PURGE,   p0));
-        a1->insert(actionPair(DELETE,  p0));
-        a1->insert(actionPair(CONSUME, p0));
+        a1->insert(actionPair(ACT_ACCESS,  p0));
+        a1->insert(actionPair(ACT_CREATE,  p4));
+        a1->insert(actionPair(ACT_PURGE,   p0));
+        a1->insert(actionPair(ACT_DELETE,  p0));
+        a1->insert(actionPair(ACT_CONSUME, p0));
 
-        map->insert(objectPair(QUEUE, a1));
+        map->insert(objectPair(OBJ_QUEUE, a1));
 
         // == Links ==
 
         actionMapPtr a2(new actionMap);
-        a2->insert(actionPair(CREATE,  p0));
+        a2->insert(actionPair(ACT_CREATE,  p0));
         
-        map->insert(objectPair(LINK, a2));
+        map->insert(objectPair(OBJ_LINK, a2));
 
         // == Route ==
 
         actionMapPtr a3(new actionMap);
-        a3->insert(actionPair(CREATE,  p0));
-        a3->insert(actionPair(DELETE,  p0));
+        a3->insert(actionPair(ACT_CREATE,  p0));
+        a3->insert(actionPair(ACT_DELETE,  p0));
         
-        map->insert(objectPair(ROUTE, a3));
+        map->insert(objectPair(OBJ_ROUTE, a3));
 
         // == Method ==
 
         propSetPtr p5(new propSet);
-        p5->insert(SCHEMAPACKAGE);
-        p5->insert(SCHEMACLASS);
+        p5->insert(PROP_SCHEMAPACKAGE);
+        p5->insert(PROP_SCHEMACLASS);
 
         actionMapPtr a4(new actionMap);
-        a4->insert(actionPair(ACCESS, p5));
+        a4->insert(actionPair(ACT_ACCESS, p5));
 
-        map->insert(objectPair(METHOD, a4));
+        map->insert(objectPair(OBJ_METHOD, a4));
     }
 };
 

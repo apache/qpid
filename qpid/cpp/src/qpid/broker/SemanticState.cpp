@@ -379,7 +379,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
 
     if (acl && acl->doTransferAcl())
     {
-        if (!acl->authorise(getSession().getConnection().getUserId(),acl::PUBLISH,acl::EXCHANGE,exchangeName, msg->getRoutingKey() ))
+        if (!acl->authorise(getSession().getConnection().getUserId(),acl::ACT_PUBLISH,acl::OBJ_EXCHANGE,exchangeName, msg->getRoutingKey() ))
             throw NotAllowedException(QPID_MSG(getSession().getConnection().getUserId() << " cannot publish to " <<
                                                exchangeName << " with routing-key " << msg->getRoutingKey()));
     }
