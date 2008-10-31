@@ -121,6 +121,7 @@ class Connection :
   private:
     bool catcUp;
 
+    bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
     void sendDoOutput();
