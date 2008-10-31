@@ -264,12 +264,9 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q1").getMessageCount(), 1u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q2").getMessageCount(), 2u);
 
-    BOOST_CHECK(c1.subs.get(m, "q1", TIME_SEC));
-    BOOST_CHECK_EQUAL(m.getData(), "11");
-    BOOST_CHECK(c1.subs.get(m, "q2", TIME_SEC));
-    BOOST_CHECK_EQUAL(m.getData(), "21");
-    BOOST_CHECK(c1.subs.get(m, "q2", TIME_SEC));
-    BOOST_CHECK_EQUAL(m.getData(), "22");
+    BOOST_CHECK_EQUAL(c1.subs.get("q1", TIME_SEC).getData(), "11");
+    BOOST_CHECK_EQUAL(c1.subs.get("q2", TIME_SEC).getData(), "21");
+    BOOST_CHECK_EQUAL(c1.subs.get("q2", TIME_SEC).getData(), "22");
 }
 
 QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testDumpTxState, 1) {

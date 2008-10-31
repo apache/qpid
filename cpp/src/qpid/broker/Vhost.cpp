@@ -24,7 +24,9 @@ using namespace qpid::broker;
 using qpid::management::ManagementAgent;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-class qpid::management::Manageable;
+namespace qpid { namespace management {
+class Manageable;
+}}
 
 Vhost::Vhost (qpid::management::Manageable* parentBroker) : mgmtObject(0)
 {

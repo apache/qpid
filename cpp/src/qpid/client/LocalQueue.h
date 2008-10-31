@@ -58,11 +58,13 @@ class LocalQueue {
 
     /** Get the next message off the local queue, or wait up to the timeout
      * for message from the broker queue.
-     *@exception ClosedException if subscription is closed or timeout exceeded.
+     *@param timeout wait up this timeout for a message to appear.
+     *@return message from the queue.
+     *@throw ClosedException if subscription is closed or timeout exceeded.
      */
     Message get(sys::Duration timeout=sys::TIME_INFINITE);
 
-    /** Synonym for get(). */
+    /** Synonym for get() */
     Message pop(sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Return true if local queue is empty. */
