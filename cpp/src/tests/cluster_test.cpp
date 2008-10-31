@@ -220,6 +220,20 @@ class Sender {
     uint16_t channel;
 };
 
+QPID_AUTO_TEST_CASE(testUnsupported) {
+    ScopedSuppressLogging sl;
+    ClusterFixture cluster(1);
+    Client c0(cluster[0], "c0");
+    BOOST_CHECK_THROW(c0.session.txSelect(), Exception);
+    BOOST_CHECK(!c0.connection.isOpen());
+    Client c1(cluster[0], "c1");
+    BOOST_CHECK_THROW(c1.session.dtxCommit(), Exception);    
+    Client c2(cluster[0], "c2");
+    Message  m;
+    m.getDeliveryProperties().setTtl(1);
+    BOOST_CHECK_THROW(c2.session.messageTransfer(arg::content=m), Exception);    
+}
+
 QPID_AUTO_TEST_CASE(testUnacked) {
     // Verify replication of unacknowledged messages.
     ClusterFixture cluster(1);

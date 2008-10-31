@@ -24,8 +24,10 @@
 
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/SemanticState.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AllInvoker.h"
+#include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
@@ -98,14 +100,33 @@ void Connection::received(framing::AMQFrame& f) {
     }
 }
 
+bool Connection::checkUnsupported(const AMQBody& body) {
+    std::string message;
+    if (body.getMethod()) {
+        switch (body.getMethod()->amqpClassId()) {
+          case TX_CLASS_ID: message = "TX transactions are not currently supported by cluster."; break;
+          case DTX_CLASS_ID: message = "DTX transactions are not currently supported by cluster."; break;
+        }
+    }
+    else if (body.type() == HEADER_BODY) {
+        const DeliveryProperties* dp = static_cast<const AMQHeaderBody&>(body).get<DeliveryProperties>();
+        if (dp && dp->getTtl()) message = "Message TTL is not currently supported by cluster.";
+    }
+    if (!message.empty())
+        connection.close(execution::ERROR_CODE_INTERNAL_ERROR, message, 0, 0);
+    return !message.empty();
+}
+
 // Delivered from cluster.
 void Connection::delivered(framing::AMQFrame& f) {
     QPID_LOG(trace, cluster << "DLVR " << *this << ": " << f);
     assert(!catchUp);
-    // Handle connection controls, deliver other frames to connection.
-    currentChannel = f.getChannel();
-    if (!framing::invoke(*this, *f.getBody()).wasHandled())
-        connection.received(f);
+    currentChannel = f.getChannel(); 
+    if (!framing::invoke(*this, *f.getBody()).wasHandled() // Connection contol.
+        && !checkUnsupported(*f.getBody())) // Unsupported operation.
+    {
+        connection.received(f); // Pass to broker connection.
+    }
 }
 
 void Connection::closed() {
