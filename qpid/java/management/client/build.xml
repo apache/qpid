@@ -25,7 +25,7 @@
     <import file="../../module.xml"/>
 
 
-    <property name="servlet.war" value="qmanServlet.war"/>
+    <property name="servlet.war" value="qman.war"/>
     <property name="servlet.root" value="${module.build}/servlet"/>
     <property name="servlet.web-inf" value="${servlet.root}/WEB-INF"/>
     <property name="servlet.classes" value="${servlet.web-inf}/classes"/>
