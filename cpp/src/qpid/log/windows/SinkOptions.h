@@ -45,6 +45,7 @@ struct SinkOptions : public qpid::log::SinkOptions {
     bool logToStderr;
     bool logToStdout;
     bool logToEventLog;
+    std::string eventSource;
     std::string logFile;
 };
 
