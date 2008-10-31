@@ -27,6 +27,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
+#include <iostream>
 
 using qpid::framing::FieldTable;
 using qpid::framing::Uuid;
@@ -59,7 +60,9 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
     link(_link), id(_id), args(_args), mgmtObject(0),
     listener(l), name(Uuid(true).str()), queueName("bridge_queue_"), persistenceId(0)
 {
-    queueName += link->getBroker()->getFederationTag();
+    std::stringstream title;
+    title << id << "_" << link->getBroker()->getFederationTag();
+    queueName += title.str();
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0) {
         mgmtObject = new _qmf::Bridge
