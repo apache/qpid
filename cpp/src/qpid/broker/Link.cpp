@@ -139,8 +139,10 @@ void Link::closed (int, std::string text)
     if (state == STATE_OPERATIONAL)
         QPID_LOG (warning, "Inter-broker link disconnected from " << host << ":" << port);
 
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++)
+    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+        (*i)->cancel();
         created.push_back(*i);
+    }
     active.clear();
 
     if (state != STATE_FAILED)
