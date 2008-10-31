@@ -147,14 +147,6 @@
     <statistic name="byteTxnDequeues"     type="count64"  unit="octet"       desc="Transactional messages dequeued"/>
     <statistic name="bytePersistEnqueues" type="count64"  unit="octet"       desc="Persistent messages enqueued"/>
     <statistic name="bytePersistDequeues" type="count64"  unit="octet"       desc="Persistent messages dequeued"/>
-    <statistic name="enqueueTxnStarts"    type="count64"  unit="transaction" desc="Total enqueue transactions started "/>
-    <statistic name="enqueueTxnCommits"   type="count64"  unit="transaction" desc="Total enqueue transactions committed"/>
-    <statistic name="enqueueTxnRejects"   type="count64"  unit="transaction" desc="Total enqueue transactions rejected"/>
-    <statistic name="enqueueTxnCount"     type="count32"  unit="transaction" desc="Current pending enqueue transactions"/>
-    <statistic name="dequeueTxnStarts"    type="count64"  unit="transaction" desc="Total dequeue transactions started"/>
-    <statistic name="dequeueTxnCommits"   type="count64"  unit="transaction" desc="Total dequeue transactions committed"/>
-    <statistic name="dequeueTxnRejects"   type="count64"  unit="transaction" desc="Total dequeue transactions rejected"/>
-    <statistic name="dequeueTxnCount"     type="count32"  unit="transaction" desc="Current pending dequeue transactions"/>
     <statistic name="consumerCount"       type="hilo32"   unit="consumer"    desc="Current consumers on queue"/>
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
@@ -204,7 +196,7 @@
   
   <!--
   ===============================================================
-  Client
+  Connection
   ===============================================================
   -->
   <class name="Connection">
@@ -293,6 +285,11 @@
     <property name="expireTime"       type="absTime" access="RO" optional="y"/>
 
     <statistic name="framesOutstanding" type="count32"/>
+
+    <statistic name="TxnStarts"    type="count64"  unit="transaction" desc="Total transactions started "/>
+    <statistic name="TxnCommits"   type="count64"  unit="transaction" desc="Total transactions committed"/>
+    <statistic name="TxnRejects"   type="count64"  unit="transaction" desc="Total transactions rejected"/>
+    <statistic name="TxnCount"     type="count32"  unit="transaction" desc="Current pending transactions"/>
 
     <method name="solicitAck"/>
     <method name="detach"/>
