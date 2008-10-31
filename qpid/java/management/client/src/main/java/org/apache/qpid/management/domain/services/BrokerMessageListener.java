@@ -150,7 +150,6 @@ class BrokerMessageListener implements MessageListener
     {
     	 ByteBuffer buffer = message.readData();
 
-         // TODO : Should be better...!
          String magicNumber = new String(new byte[] {buffer.get(),buffer.get(),buffer.get()});
          if (!Protocol.MAGIC_NUMBER.equals(magicNumber))
          {

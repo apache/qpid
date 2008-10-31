@@ -22,7 +22,7 @@ package org.apache.qpid.management.domain.model;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.management.configuration.StubConfigurator;
+import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.type.Str16;
 
 public class QpidStringPropertyTest extends TestCase
@@ -33,8 +33,8 @@ public class QpidStringPropertyTest extends TestCase
     @Override
     protected void setUp () throws Exception
     {
-        StubConfigurator configurator = new StubConfigurator();
-        configurator.addTypeMapping("1", Str16.class.getName(),QpidProperty.StringValidator.class.getName());
+        Configurator configurator = new Configurator();
+        configurator.configure();
         _property = new QpidProperty();
         _property.setName("name");
         _property.setAccessMode(AccessMode.RW);

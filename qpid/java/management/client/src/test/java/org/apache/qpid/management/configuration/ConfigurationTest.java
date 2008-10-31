@@ -57,11 +57,8 @@ public class ConfigurationTest extends TestCase
      */
     public void testGetTypeOk() throws UnknownTypeCodeException 
     {
-        TypeMapping mapping = new TypeMapping();
-        mapping.setCode(String.valueOf(TestConstants.VALID_CODE));
-        mapping.setType(Uint8.class.getName());
+        TypeMapping mapping = new TypeMapping(TestConstants.VALID_CODE,new Uint8());
         Configuration.getInstance().addTypeMapping(mapping);
-        
         Type type = Configuration.getInstance().getType(TestConstants.VALID_CODE);
         
         assertTrue(type instanceof Uint8);
@@ -93,14 +90,10 @@ public class ConfigurationTest extends TestCase
      */
     public void testGetAccessModeOk() throws UnknownAccessCodeException
     {
-        String accessModeAsString = "RW";
-        
-        AccessModeMapping mapping = new AccessModeMapping();
-        mapping.setCode(String.valueOf(TestConstants.VALID_CODE));
-        mapping.setAccessMode(accessModeAsString);
+        AccessModeMapping mapping = new AccessModeMapping(TestConstants.VALID_CODE,AccessMode.RW);
         Configuration.getInstance().addAccessModeMapping(mapping);
-        
         AccessMode accessMode = Configuration.getInstance().getAccessMode(TestConstants.VALID_CODE);
+
         assertSame(AccessMode.RW,accessMode);
     }
     

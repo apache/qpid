@@ -21,6 +21,7 @@
 package org.apache.qpid.management.messages;
 
 import org.apache.qpid.management.Messages;
+import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.domain.model.QpidMethod;
@@ -58,7 +59,7 @@ public abstract class MethodInvocationRequestMessage extends ManagementMessage
 	     _messageProperties = new MessageProperties();
 	     _messageProperties.setReplyTo(replyTo);
 
-	     String routingKey = String.format("agent.%s.%s", brokerId,bankId);
+	     String routingKey = String.format(Names.AGENT_ROUTING_KEY_PREFIX+"%s.%s", brokerId,bankId);
 	     
 	     LOGGER.debug(Messages.QMAN_200032_COMMAND_MESSAGE_ROUTING_KEY, routingKey);
 	     

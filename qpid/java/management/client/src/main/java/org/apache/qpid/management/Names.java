@@ -35,9 +35,8 @@ public interface Names
     String METHOD_REPLY_QUEUE_PREFIX = "reply.";
    
     String AMQ_DIRECT_QUEUE = "amq.direct";
-    String AGENT_ROUTING_KEY = "agent.1.0";
-   
-    String BROKER_ROUTING_KEY = "broker";
+    String AGENT_ROUTING_KEY_PREFIX = "agent.";
+    String AGENT_ROUTING_KEY = AGENT_ROUTING_KEY_PREFIX+"1.0";
     
     // Attributes
     String PACKAGE = "package";
@@ -45,9 +44,14 @@ public interface Names
     String OBJECT_ID="objectID";    
     String BROKER_ID = "brokerID";
     String DOMAIN_NAME = "Q-MAN";
-    
-    String CONFIGURATION_FILE_NAME = "/org/apache/qpid/management/config.xml";
-    
+        
     String ARG_COUNT_PARAM_NAME = "argCount";
     String DEFAULT_PARAM_NAME ="default";
+    
+    String NUMBER_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$NumberValidator";
+    String STRING_VALIDATOR = "org.apache.qpid.management.domain.model.QpidProperty$StringValidator";
+    
+    String QMAN_CONFIG_OPTION_NAME = "qman-config";
+    
+    String ADD_BROKER_OPERATION_NAME = "addBroker";
 }

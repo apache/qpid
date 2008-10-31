@@ -52,13 +52,11 @@ class MessageTokenizer implements Enumeration<Message>
 		build(compoundMessage);
 	}
 	
-	@Override
 	public boolean hasMoreElements() 
 	{
 		return _iterator.hasNext();
 	}
 
-	@Override
 	public Message nextElement() 
 	{
 		return _iterator.next();

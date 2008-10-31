@@ -29,20 +29,21 @@ import org.apache.qpid.management.domain.model.AccessMode;
  */
 class AccessModeMapping
 {
-    private int _code;
-    private AccessMode _accessMode;
+    private final int _code;
+    private final AccessMode _accessMode;
     
     /**
-     * Sets the code for this mapping.
-     * Note that the given string must be a valid number (integer).
+     * Builds a new access mode mapping with the given parameters.
      * 
-     * @param codeAsString the code value as a string.
-     * @throws NumberFormatException when the given string is not a number.
+     * @param code the access code. 
+     * @param accessMode the access mode.
      */
-    void setCode(String codeAsString) {
-        this._code = Integer.parseInt(codeAsString);
+    AccessModeMapping(int code, AccessMode accessMode)
+    {
+    	this._code = code;
+    	this._accessMode = accessMode;
     }
-
+    
     /**
      * Returns the access mode of this mapping.
      * 
@@ -51,18 +52,6 @@ class AccessModeMapping
     AccessMode getAccessMode ()
     {
         return _accessMode;
-    }
-
-    /**
-     * Sets the access mode for this mapping.
-     * Note that the given string must correspond to a valid access mode value (RW,RC, RO).
-     * 
-     * @param accessModeAsString acces mode as a string.
-     * @throws IllegalArgumentException when the given string is not a valid access code.
-     */
-    void setAccessMode (String accessModeAsString)
-    {
-        this._accessMode = AccessMode.valueOf(accessModeAsString);
     }
 
     /**

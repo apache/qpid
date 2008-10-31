@@ -22,7 +22,7 @@ package org.apache.qpid.management.domain.model;
 
 import org.apache.qpid.management.configuration.Configurator;
 
-import junit.framework.TestCase;;
+import junit.framework.TestCase;
 
 /**
  * Layer supertype for all domain model related test cases.

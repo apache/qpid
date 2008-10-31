@@ -56,19 +56,19 @@ public class QpidMethodBuilderTest extends BaseQpidFeatureBuilderTestCase
         
         Map<String,Object> arg1 = new HashMap<String,Object>();
         arg1.put(name.name(), "arg1");
-        arg1.put(type.name(),_type);
+        arg1.put(type.name(),1);
         arg1.put(dir.name(),Direction.I.name());
         arg1.put(unit.name(), "bytes");
                 
         Map<String,Object> arg2 = new HashMap<String,Object>();
         arg2.put(name.name(), "arg2");
-        arg2.put(type.name(),_type);
+        arg2.put(type.name(),1);
         arg2.put(dir.name(),Direction.O.name());
         arg2.put(unit.name(), "bytes");
 
         Map<String,Object> arg3 = new HashMap<String,Object>();
         arg3.put(name.name(), "arg3");
-        arg3.put(type.name(),_type);
+        arg3.put(type.name(),1);
         arg3.put(dir.name(),Direction.IO.name());
         arg3.put(unit.name(), "bytes");
 

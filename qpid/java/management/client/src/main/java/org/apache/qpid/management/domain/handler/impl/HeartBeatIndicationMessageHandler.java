@@ -11,7 +11,6 @@ import org.apache.qpid.transport.codec.ManagementDecoder;
  */
 public class HeartBeatIndicationMessageHandler extends BaseMessageHandler 
 {
-	@Override
 	public void process(ManagementDecoder decoder, int sequenceNumber) 
 	{
 		_domainModel.updateLastRefreshDate();
