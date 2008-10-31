@@ -30,6 +30,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
+using qpid::sys::Mutex;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -180,11 +181,15 @@ void Exchange::registerDynamicBridge(DynamicBridge* db)
     if (!supportsDynamicBinding())
         throw Exception("Exchange type does not support dynamic binding");
 
-    for (std::vector<DynamicBridge*>::iterator iter = bridgeVector.begin();
-         iter != bridgeVector.end(); iter++)
-        (*iter)->sendReorigin();
+    {
+        Mutex::ScopedLock l(bridgeLock);
+        for (std::vector<DynamicBridge*>::iterator iter = bridgeVector.begin();
+             iter != bridgeVector.end(); iter++)
+            (*iter)->sendReorigin();
 
-    bridgeVector.push_back(db);
+        bridgeVector.push_back(db);
+    }
+
     FieldTable args;
     args.setString(qpidFedOp, fedOpReorigin);
     bind(Queue::shared_ptr(), string(), &args);
@@ -192,6 +197,7 @@ void Exchange::registerDynamicBridge(DynamicBridge* db)
 
 void Exchange::removeDynamicBridge(DynamicBridge* db)
 {
+    Mutex::ScopedLock l(bridgeLock);
     for (std::vector<DynamicBridge*>::iterator iter = bridgeVector.begin();
          iter != bridgeVector.end(); iter++)
         if (*iter == db) {
@@ -206,6 +212,7 @@ void Exchange::handleHelloRequest()
 
 void Exchange::propagateFedOp(const string& routingKey, const string& tags, const string& op, const string& origin)
 {
+    Mutex::ScopedLock l(bridgeLock);
     string myOp(op.empty() ? fedOpBind : op);
 
     for (std::vector<DynamicBridge*>::iterator iter = bridgeVector.begin();

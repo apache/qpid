@@ -165,6 +165,7 @@ public:
     virtual bool supportsDynamicBinding() { return false; }
 
 protected:
+    qpid::sys::Mutex bridgeLock;
     std::vector<DynamicBridge*> bridgeVector;
 
     virtual void handleHelloRequest();
