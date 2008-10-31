@@ -28,9 +28,8 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.management.configuration.StubConfigurator;
+import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute;
-import org.apache.qpid.management.domain.model.type.Uint16;
 
 /**
  * Layer supertype for feature builder test cases.
@@ -42,23 +41,18 @@ public abstract class BaseQpidFeatureBuilderTestCase extends TestCase
     protected final static String NAME = "aName";
 
     protected final static String DESCRIPTION = "A description.";
-    protected Integer _type;
     
     protected Map <String,Object> _featureDefinition;
     protected QpidFeatureBuilder _builder;
 
-    protected StubConfigurator configurator;
-    
     /**
      * Set up fixture for all concrete builder test cases.
      */
     @Override
     protected void setUp () throws Exception
     {
-        _type = 1;
-        configurator = new StubConfigurator();
-        configurator.addTypeMapping(_type.toString(),Uint16.class.getName());
-        
+        Configurator configurator = new Configurator();
+        configurator.configure();
         _featureDefinition = new HashMap<String, Object>();
         _featureDefinition.put(name.name(),NAME);
         _featureDefinition.put(desc.name(), DESCRIPTION);

@@ -29,6 +29,8 @@ public interface Messages
 	String QMAN_000019_QMAN_STARTED = "<QMAN-000019> : Q-Man open for e-business.";
 	String QMAN_000020_SHUTTING_DOWN_QMAN = "<QMAN-000020> : Shutting down Q-Man...";
 	String QMAN_000021_SHUT_DOWN = "<QMAN-000021> : Q-Man shut down.";
+	String QMAN_000022_NO_BROKER_CONFIGURED = "<QMAN-000022> : Q-Man has no configured broker : in order to connect with a running one use Q-Man Administration interface.";
+	String QMAN_000023_QMAN_REGISTERED_AS_MBEAN = "<QMAN-000023> : Q-Man service is now available on MBeanServer.";
 	
 	 // DEBUG
 	String QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED = "<QMAN-200001> : New incoming message has been received. Message content is %s";
@@ -67,7 +69,9 @@ public interface Messages
 	// WARNING
     String QMAN_300001_MESSAGE_DISCARDED = "<QMAN-300001> : No handler has been configured for processing messages with \"%s\" as opcode. Message will be discarded.";
 	String QMAN_300002_UNKNOWN_SEQUENCE_NUMBER = "<QMAN-300002> : Unable to deal with incoming message because it contains a unknown sequence number (%s).";
-    
+    String QMAN_300003_BROKER_ALREADY_CONNECTED = "<QMAN-300003> : Unable to enlist given broker connection data : QMan is already connected with broker %s";
+    String QMAN_300004_UNVALID_CONFIGURATION_FILE = "<QMAN-300004> : The given configuration file (%s) is not valid (it doesn't exist or cannot be read)";
+	
 	// ERROR
 	String QMAN_100001_BAD_MAGIC_NUMBER_FAILURE = "<QMAN-100001> : Message processing failure : incoming message contains a bad magic number (%s) and therefore will be discaded.";
 	String QMAN_100002_MESSAGE_READ_FAILURE = "<QMAN-100002> : Message I/O failure : unable to read byte message content and therefore it will be discarded.";
@@ -86,9 +90,9 @@ public interface Messages
 	String QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST = "<QMAN-100015> : Unable to send a schema request schema for %s.%s";
 	String QMAN_100016_UNABLE_TO_DECODE_FEATURE_VALUE = "<QMAN-100016> : Unable to decode value for %s::%s::%s";
 	String QMAN_100017_UNABLE_TO_CONNECT = "<QMAN-100017>: Cannot connect to broker %s on %s";
+	String QMAN_100018_UNABLE_TO_STARTUP_CORRECTLY = "<QMAN-100018> : Q-Man was unable to startup correctly : see logs for further details.";
 	
 	// MESSAGES
 	String EVENT_SEVERITY_ATTRIBUTE_DESCRIPTION = "Severity level for this event.";
 	String EVENT_TIMESTAMP_ATTRIBUTE_DESCRIPTION = "Current timestamp of this event.";
-	String UNABLE_TO_STARTUP_CORRECTLY = "<QMAN-100002> : Q-Man was unable to startup correctly : a configuration error occurred.";
 }

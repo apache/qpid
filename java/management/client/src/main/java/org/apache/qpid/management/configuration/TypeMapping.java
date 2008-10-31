@@ -21,6 +21,7 @@
 package org.apache.qpid.management.configuration;
 
 import org.apache.qpid.management.domain.model.type.Type;
+
 /**
  * Type Mapping used for associating a code with a management type.
  * 
@@ -28,9 +29,34 @@ import org.apache.qpid.management.domain.model.type.Type;
  */
 class TypeMapping
 {
-    private int _code;
-    private Type _type;
-    private String _validatorClass;
+    private final int _code;
+    private final Type _type;
+    private final String _validatorClass;
+    
+    /**
+     * Builds a new type mapping with the given parameters and no validator.
+     * 
+     * @param code the code.
+     * @param type the management type.
+     */
+    TypeMapping(int code, Type type)
+    {
+    	this(code,type,null);
+    }
+    
+    /**
+     * Builds a new type mapping with the given parameters.
+     * 
+     * @param code the code.
+     * @param type the management type.
+     * @param validatorClassName the class name of the validator to be used.
+     */
+    TypeMapping(int code, Type type, String validatorClassName)
+    {
+    	this._code = code;
+    	this._type = type;
+    	this._validatorClass = validatorClassName;
+    }
     
     /**
      * Returns the code of this mapping.
@@ -43,18 +69,6 @@ class TypeMapping
     }
 
     /**
-     * Sets the code for this mapping.
-     * Note that the given string must be a valid number (integer).
-     * 
-     * @param codeAsString the code as a string.
-     * @throws NumberFormatException when the given string is not a valid number.
-     */
-    void setCode (String codeAsString)
-    {
-      this._code = Integer.parseInt(codeAsString);
-    }
-
-    /**
      * Returns the type for this mapping.
      * 
      * @return the type for this mapping.
@@ -64,33 +78,6 @@ class TypeMapping
         return _type;
     }
 
-    /**
-     * Sets the type of this mapping. 
-     * 
-     * @param typeClass the type class as a string.
-     * @throw IllegalArgumentException when it's not possible to load the given class.
-     */
-    void setType (String typeClass)
-    {
-        try
-        {
-            this._type = (Type) Class.forName(typeClass).newInstance();
-        } catch (Exception exception)
-        {
-            throw new IllegalArgumentException(exception);
-        } 
-    }
-
-    /**
-     * Sets the validator class that will be used for validation.
-     * 
-     * @param className the fully qualified name of the validation class. 
-     */
-    public void setValidatorClassName (String className)
-    {
-        this._validatorClass = className;
-    }
-    
     /**
      * Returns the validator class of this mapping.
      * 

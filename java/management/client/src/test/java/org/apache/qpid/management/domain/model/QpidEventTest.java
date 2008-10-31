@@ -35,7 +35,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
-import org.apache.qpid.management.configuration.StubConfigurator;
+import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.QpidEvent.QpidManagedEvent;
 
 /**
@@ -142,7 +142,7 @@ public class QpidEventTest extends TestCase
     		}
     	};
     	
-        StubConfigurator configurator = new StubConfigurator();
+       Configurator configurator = new Configurator();
         configurator.configure();
 
         List<Map<String,Object>> arguments = new ArrayList<Map<String, Object>>();
@@ -168,14 +168,14 @@ public class QpidEventTest extends TestCase
         assertEquals(TestConstants.AGE_ATTRIBUTE_NAME,argument.getName());
         assertEquals(AccessMode.RO,argument.getAccessMode());
         assertEquals(TestConstants.AGE_ATTRIBUTE_DESCRIPTION,argument.getDescription());
-        assertEquals(String.class,argument.getJavaType());
+        assertEquals(Short.class,argument.getJavaType());
         assertFalse(argument.isOptional());
         
         argument = _event._arguments.get(TestConstants.SURNAME_ATTRIBUTE_NAME);
         assertEquals(TestConstants.SURNAME_ATTRIBUTE_NAME,argument.getName());
         assertEquals(AccessMode.RO,argument.getAccessMode());
         assertEquals(TestConstants.SURNAME_ATTRIBUTE_DESCRIPTION,argument.getDescription());
-        assertEquals(String.class,argument.getJavaType());
+        assertEquals(Short.class,argument.getJavaType());
         assertFalse(argument.isOptional());
         
         assertEquals(1,_event._eventInstances.size());

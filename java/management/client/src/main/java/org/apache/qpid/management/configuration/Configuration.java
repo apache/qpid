@@ -86,6 +86,16 @@ public final class Configuration
     }  
     
     /**
+     * Returns true if this configuration has at least one broker connection data.
+     * 
+     * @return true if this configuration has at least one broker connection data.
+     */
+    public boolean hasOneOrMoreBrokersDefined()
+    {
+    	return !_brokerConnectionInfos.isEmpty();
+    }
+    
+    /**
      * Returns the type associated to the given code.
      * 
      * @param code the code used as search criteria.
@@ -321,14 +331,27 @@ public final class Configuration
      * 
      * @param brokerId the broker identifier.
      * @param connectionData the connection data.
-     * @throws Exception 
+     * @throws BrokerAlreadyConnectedException when the broker is already connected.
+     * @throws BrokerConnectionException when a connection cannot be estabilished.
      */
-    void addBrokerConnectionData (UUID brokerId, BrokerConnectionData connectionData) throws Exception
+    void addBrokerConnectionData (UUID brokerId, BrokerConnectionData connectionData) throws BrokerAlreadyConnectedException, BrokerConnectionException 
     {
-        QpidDatasource.getInstance().addConnectionPool(brokerId, connectionData);
-      _brokerConnectionInfos.put(brokerId,connectionData);
+    	if (_brokerConnectionInfos.containsValue(connectionData))
+    	{
+    		throw new BrokerAlreadyConnectedException(connectionData);
+    	}
+    	
+    	try 
+    	{
+        	QpidDatasource.getInstance().addConnectionPool(brokerId, connectionData);
+            _brokerConnectionInfos.put(brokerId,connectionData);
+
+            LOGGER.info(Messages.QMAN_000009_BROKER_DATA_CONFIGURED,brokerId,connectionData);        
+    	} catch(Exception exception)
+    	{
+    		throw new BrokerConnectionException(exception);
+    	}
       
-      LOGGER.info(Messages.QMAN_000009_BROKER_DATA_CONFIGURED,brokerId,connectionData);        
     }
     
     /**

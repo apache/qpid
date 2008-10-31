@@ -52,7 +52,6 @@ public class InstrumentationMessageHandler extends ContentIndicationMessageHandl
             long timeObjectWasDeleted, 
             byte[] contentData)
     {
-        // TODO : deal with timestamps, too
         _domainModel.addInstrumentationRawData(packageName,className,classHash,objectId,contentData);        
     }
  }

@@ -37,6 +37,38 @@ public class BrokerConnectionData
     private long _maxWaitTimeout;
     
     /**
+     * Builds a connection data with the given parameters.
+     * 
+ 	 * @param host the hostname where the broker is running.
+	 * @param port the port where the broker is running.
+	 * @param username the username for connecting with the broker.
+	 * @param password the password for connecting with the broker.
+	 * @param virtualHost the virtual host.
+	 * @param initialPoolCapacity the number of the connection that must  be immediately opened.
+	 * @param maxPoolCapacity the maximum number of opened connection.
+	 * @param maxWaitTimeout the maximum amount of time that a client will wait for obtaining a connection.
+     */
+    public BrokerConnectionData(
+    		String host, 
+    		int port, 
+    		String virtualHost,
+			String username, 
+			String password, 
+			int initialPoolCapacity,
+			int maxPoolCapacity, 
+			long waitTimeout) {
+
+    	this._host = host;
+		this._port = port;
+		this._virtualHost = virtualHost;
+		this._username = username;
+		this._password = password;
+		_maxPoolCapacity = maxPoolCapacity;
+		_initialPoolCapacity = initialPoolCapacity;
+		_maxWaitTimeout = waitTimeout;
+	}
+
+	/**
      * Builds a new empty broker connection data object.
      */
     BrokerConnectionData()
@@ -198,14 +230,41 @@ public class BrokerConnectionData
         return _maxWaitTimeout;
     }
 
-    public void setInitialPoolCapacity (String value)
+    /**
+     * Sets the initial connection pool capacity.
+     * 
+     * @param capacity the initial connection pool capacity.
+     */
+    public void setInitialPoolCapacity (String capacity)
     {
-        _initialPoolCapacity = Integer.parseInt(value);
+        _initialPoolCapacity = Integer.parseInt(capacity);
     }
     
+    /**
+     * Returns the initial connection pool capacity.
+     * 
+     * @return the initial connection pool capacity.
+     */
     public int getInitialPoolCapacity ()
     {
         return _initialPoolCapacity;
     }
     
+    @Override
+    public boolean equals(Object object) {
+    	try 
+    	{
+			BrokerConnectionData connectionData = (BrokerConnectionData) object;
+			return (_host.equals(connectionData._host) )
+					&& (_port == connectionData._port)
+					&& (_virtualHost.equals(connectionData._virtualHost));
+		} catch (Exception exception) {
+			return false;
+		}
+    }
+    
+    @Override
+    public int hashCode() {
+    	return _host.hashCode()+_port+_virtualHost.hashCode();
+    }
 }

@@ -25,9 +25,6 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.management.TestConstants;
-import org.apache.qpid.management.domain.model.AccessMode;
-import org.apache.qpid.management.domain.model.type.Type;
-import org.apache.qpid.management.domain.model.type.Uint8;
 
 /**
  * Test case for mapping parsers.
@@ -36,25 +33,6 @@ import org.apache.qpid.management.domain.model.type.Uint8;
  */
 public class MappingParsersTest extends TestCase
 {
-    /**
-     * Tests the execution of the access mode mapping parser.
-     * 
-     * <br>precondition: An access mode mapping is built by the parser;
-     * <br>postcondition: the corresponding access mode is available on the configuration.
-     */
-    public void testAccessModeMappingParser() throws UnknownAccessCodeException 
-    {
-        AccessModeMappingParser parser = new AccessModeMappingParser();
-        parser.setCurrrentAttributeValue(String.valueOf(TestConstants.VALID_CODE));
-        parser.setCurrentAttributeName(Tag.CODE.toString());
-        parser.setCurrrentAttributeValue("RW");
-        parser.setCurrentAttributeName(Tag.VALUE.toString());
-        parser.setCurrentAttributeName(Tag.MAPPING.toString());
-        
-        AccessMode result = Configuration.getInstance().getAccessMode(TestConstants.VALID_CODE);
-        assertEquals(AccessMode.RW,result);
-    }    
-
     /**
      * Tests the execution of the broker connection data mapping parser.
      * 
@@ -97,33 +75,5 @@ public class MappingParsersTest extends TestCase
         assertEquals(virtualHost,result.getVirtualHost());
         assertEquals(username,result.getUsername());
         assertEquals(password,result.getPassword());
-    }
-    
-    /**
-     * Tests the execution of the type mapping parser.
-     * 
-     * <br>precondition: two type mappings are built by the parser;
-     * <br>postcondition: the corresponding types are available on the configuration.
-     */
-    public void testMappingParser() throws NumberFormatException, UnknownTypeCodeException 
-    {
-        TypeMappingParser parser = new TypeMappingParser();
-        
-        String className = Uint8.class.getName();
-        String validatorClassName = "a.b.c.Validator";
-        
-        parser.setCurrrentAttributeValue(String.valueOf(TestConstants.VALID_CODE));
-        parser.setCurrentAttributeName(Tag.CODE.toString());
-        parser.setCurrrentAttributeValue(className);
-        parser.setCurrentAttributeName(Tag.CLASS_NAME.toString());
-        parser.setCurrrentAttributeValue(validatorClassName);
-        parser.setCurrentAttributeName(Tag.VALIDATOR_CLASS_NAME.toString());
-        parser.setCurrentAttributeName(Tag.MAPPING.toString());
-        
-        Type type =Configuration.getInstance().getType(TestConstants.VALID_CODE);
-        String vClassName = Configuration.getInstance().getValidatorClassName(type);
-        
-        assertEquals(Uint8.class, type.getClass());
-        assertEquals(validatorClassName,vClassName);
     }
 }

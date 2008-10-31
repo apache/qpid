@@ -60,7 +60,6 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	 */
 	final IProcessor _classSchemaProcessor = new IProcessor()
 	{
-		@Override
 		public void process(ManagementDecoder decoder) 
 		{
 	        try 
@@ -93,7 +92,6 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	 */
 	final IProcessor _eventSchemaProcessor = new IProcessor()
 	{
-		@Override
 		public void process(ManagementDecoder decoder) 
 		{
 	        try 
