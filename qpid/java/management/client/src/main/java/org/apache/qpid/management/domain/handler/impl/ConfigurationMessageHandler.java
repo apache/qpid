@@ -52,7 +52,6 @@ public class ConfigurationMessageHandler extends ContentIndicationMessageHandler
             long timeObjectWasDeleted, 
             byte[] contentData)
     {
-        // TODO : deal with timestamps, too
         _domainModel.addConfigurationRawData(packageName,className,classHash,objectId,contentData);        
     }
  }

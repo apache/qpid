@@ -52,14 +52,12 @@ public class QpidPropertyBuilderTest extends BaseQpidFeatureBuilderTestCase
         super.setUp();
 
         _access = 1;
-        configurator.addAccessModeMapping(_access.toString(), AccessMode.RW.name());
-        
         _featureDefinition.put(access.name(), _access);
         _featureDefinition.put(unit.name(),UNIT);
         _featureDefinition.put(min.name(), MIN);
         _featureDefinition.put(max.name(),MAX);
 
-        _featureDefinition.put(type.name(), _type);
+        _featureDefinition.put(type.name(), 1);
         _featureDefinition.put(optional.name(),0);
         _featureDefinition.put(index.name(), 0);
         
@@ -255,13 +253,13 @@ public class QpidPropertyBuilderTest extends BaseQpidFeatureBuilderTestCase
         MBeanAttributeInfo info = (MBeanAttributeInfo) _builder.getManagementFeature();
         
         assertEquals(NAME,property.getName());
-        assertEquals(AccessMode.RW,property.getAccessMode());
+        assertEquals(AccessMode.RC,property.getAccessMode());
         assertEquals(UNIT,property.getUnit());
         assertEquals(MIN.intValue(),property.getMinValue());
         assertEquals(MAX.intValue(),property.getMaxValue());
         assertEquals(Integer.MIN_VALUE,property.getMaxLength());
         assertEquals(DESCRIPTION,property.getDescription());
-        assertEquals(Integer.class,property.getJavaType());
+        assertEquals(Short.class,property.getJavaType());
         assertFalse(property.isOptional());
         
         assertEquals(property.getDescription(),info.getDescription());

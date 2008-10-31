@@ -42,7 +42,7 @@ public class QpidStatisticBuilderTest extends BaseQpidFeatureBuilderTestCase
     {  
         super.setUp();
         _featureDefinition.put(unit.name(),UNIT);
-        _featureDefinition.put(type.name(), _type);
+        _featureDefinition.put(type.name(), 1);
         
         _builder = QpidFeatureBuilder.createStatisticBuilder(_featureDefinition);
     }
@@ -150,7 +150,7 @@ public class QpidStatisticBuilderTest extends BaseQpidFeatureBuilderTestCase
         assertEquals(NAME,statistic.getName());
         assertEquals(UNIT,statistic.getUnit());
         assertEquals(DESCRIPTION,statistic.getDescription());
-        assertEquals(Integer.class,statistic.getJavaType());
+        assertEquals(Short.class,statistic.getJavaType());
         
         assertEquals(statistic.getDescription(),info.getDescription());
         assertEquals(statistic.getName(),info.getName());

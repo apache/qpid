@@ -662,7 +662,6 @@ class QpidClass extends QpidEntity
             _methodInvocationListener.operationIsGoingToBeInvoked(new InvocationEvent(this,sequenceNumber,_exchangeChannelForMethodInvocations));
            _service.invoke(_parent.getName(), _name, _hash,objectId,parameters, method,sequenceNumber,objectId.getBankId(),objectId.getBrokerId());
              
-            // TODO : Shoudl be configurable?
             InvocationResult result = _exchangeChannelForMethodInvocations.poll(5000,TimeUnit.MILLISECONDS);
             
             if (result == null) 

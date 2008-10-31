@@ -24,6 +24,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -33,6 +34,7 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
 import org.apache.qpid.management.domain.model.QpidEvent.QpidManagedEvent;
 import org.apache.qpid.management.domain.model.type.Binary;
+import org.apache.qpid.management.domain.services.QMan;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -40,10 +42,30 @@ import org.apache.qpid.transport.util.Logger;
  * 
  * @author Andrea Gazzarini
  */
-class JmxService
+public class JmxService
 {
     private final static Logger LOGGER = Logger.get(JmxService.class);
     MBeanServer _mxServer = ManagementFactory.getPlatformMBeanServer();
+    
+    /**
+     * Registers QMan with the MBeanServer.
+     * After that QMan management interface will be JMX-exposed. 
+     * 
+     * @param qman QMan
+     * @throws MBeanException when some error occurs during registration.
+     */
+    public void registerQManService(QMan qman) throws MBeanException 
+    {
+    	ObjectName name = createQManName();
+    	if (!_mxServer.isRegistered(name))
+    	{
+    		try {
+				_mxServer.registerMBean(qman, name);
+			} catch (Exception exception) {
+				throw new MBeanException(exception);
+			}
+    	}
+    }
     
 	void registerEventInstance(
 			QpidManagedEvent eventInstance,
@@ -220,45 +242,7 @@ class JmxService
             throw new RuntimeException(exception);
         } 
     }
-    
-    /**
-     * Factory method for ObjectNames.
-     * 
-     * @param brokerId the broker identifier.
-     * @param packageName the name of the package containing this instance.
-     * @param className the name of the owner class of this instance.
-     * @return the object name built according to the given parameters.
-     */
-    private ObjectName createEventName(UUID brokerId, String packageName, String className) 
-    {
-        String asString = new StringBuilder()
-            .append(Names.DOMAIN_NAME)
-            .append(':')
-            .append(Names.BROKER_ID)
-            .append('=')
-            .append(brokerId)
-            .append(",type=Event,")
-            .append(Names.PACKAGE)
-            .append('=')
-            .append(packageName)
-            .append(',')
-            .append(Names.CLASS)
-            .append('=')
-            .append(className)
-            .append(',')
-            .append(Names.OBJECT_ID)
-            .append('=')
-            .append(UUID.randomUUID())
-            .toString();
-        try
-        {
-            return new ObjectName(asString);
-        } catch (MalformedObjectNameException exception)
-        {
-            throw new RuntimeException(exception);
-        } 
-    }    
-    
+        
     /**
      * Creates an object name that will be used for searching all registered events.
      * 
@@ -301,5 +285,64 @@ class JmxService
         {
             throw new RuntimeException(exception);
         } 
-    }            
+    }
+    
+    /**
+     * Factory method for ObjectNames.
+     * 
+     * @param brokerId the broker identifier.
+     * @param packageName the name of the package containing this instance.
+     * @param className the name of the owner class of this instance.
+     * @return the object name built according to the given parameters.
+     */
+    private ObjectName createEventName(UUID brokerId, String packageName, String className) 
+    {
+        String asString = new StringBuilder()
+            .append(Names.DOMAIN_NAME)
+            .append(':')
+            .append(Names.BROKER_ID)
+            .append('=')
+            .append(brokerId)
+            .append(",type=Event,")
+            .append(Names.PACKAGE)
+            .append('=')
+            .append(packageName)
+            .append(',')
+            .append(Names.CLASS)
+            .append('=')
+            .append(className)
+            .append(',')
+            .append(Names.OBJECT_ID)
+            .append('=')
+            .append(UUID.randomUUID())
+            .toString();
+        try
+        {
+            return new ObjectName(asString);
+        } catch (MalformedObjectNameException exception)
+        {
+            throw new RuntimeException(exception);
+        } 
+    }        
+    
+    /**
+     * Creates the QMan object name.
+     * 
+     * @return the QMan object name.
+     */
+    private ObjectName createQManName() 
+    {
+        String asString = new StringBuilder()
+            .append(Names.DOMAIN_NAME)
+            .append(':')
+            .append("Type=Service")
+            .toString();
+        try
+        {
+            return new ObjectName(asString);
+        } catch (MalformedObjectNameException exception)
+        {
+            throw new RuntimeException(exception);
+        } 
+    }        
 }

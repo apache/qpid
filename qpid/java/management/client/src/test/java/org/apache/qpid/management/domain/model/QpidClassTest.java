@@ -14,7 +14,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
-import org.apache.qpid.management.configuration.StubConfigurator;
+import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
 
@@ -31,7 +31,7 @@ public class QpidClassTest extends TestCase
     @Override
     protected void setUp () throws ConfigurationException
     {
-    	StubConfigurator configurator = new StubConfigurator();
+    	Configurator configurator = new Configurator();
     	configurator.configure();
     	_package = new QpidPackage(TestConstants.QPID_PACKAGE_NAME,TestConstants.DOMAIN_MODEL);
         _class = new QpidClass(TestConstants.EXCHANGE_CLASS_NAME,TestConstants.HASH,_package);
@@ -214,7 +214,7 @@ public class QpidClassTest extends TestCase
         assertEquals(TestConstants.SAMPLE_MAX_VALUE,property.getMaxValue());
         assertEquals(Integer.MIN_VALUE,property.getMaxLength());
         assertEquals(TestConstants.AGE_ATTRIBUTE_DESCRIPTION,property.getDescription());
-        assertEquals(String.class,property.getJavaType());
+        assertEquals(Short.class,property.getJavaType());
         assertFalse(property.isOptional());
         
         property = _class._properties.get(TestConstants.SURNAME_ATTRIBUTE_NAME);
@@ -225,7 +225,7 @@ public class QpidClassTest extends TestCase
         assertEquals(Integer.MIN_VALUE,property.getMaxValue());
         assertEquals(TestConstants.SAMPLE_MAX_VALUE,property.getMaxLength());
         assertEquals(TestConstants.SURNAME_ATTRIBUTE_DESCRIPTION,property.getDescription());
-        assertEquals(String.class,property.getJavaType());
+        assertEquals(Short.class,property.getJavaType());
         assertTrue(property.isOptional());
         
         MBeanInfo mbeanInfo = _class._metadata;
@@ -239,14 +239,14 @@ public class QpidClassTest extends TestCase
         assertEquals(TestConstants.AGE_ATTRIBUTE_DESCRIPTION,attribute.getDescription());
         assertFalse(attribute.isWritable());
         assertTrue(attribute.isReadable());
-        assertEquals(String.class.getName(),attribute.getType());
+        assertEquals(Short.class.getName(),attribute.getType());
         
         attribute = attributes[1];
         assertEquals(TestConstants.SURNAME_ATTRIBUTE_NAME,attribute.getName());
         assertEquals(TestConstants.SURNAME_ATTRIBUTE_DESCRIPTION,attribute.getDescription());
         assertFalse(attribute.isWritable());
         assertTrue(attribute.isReadable());
-        assertEquals(String.class.getName(),attribute.getType());
+        assertEquals(Short.class.getName(),attribute.getType());
     }
         
     /**
