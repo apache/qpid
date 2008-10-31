@@ -107,6 +107,13 @@ bool SubscriptionManager::get(Message& result, const std::string& queue, sys::Du
     return lq.get(result, 0);
 }
 
+Message SubscriptionManager::get(const std::string& queue, sys::Duration timeout) {
+    Message result;
+    if (!get(result, queue, timeout))
+        throw Exception("Timed out waiting for a message");
+    return result;
+}
+
 Session SubscriptionManager::getSession() const { return session; }
 
 Subscription SubscriptionManager::getSubscription(const std::string& name) const {
