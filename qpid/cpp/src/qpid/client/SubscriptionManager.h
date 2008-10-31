@@ -120,11 +120,17 @@ class SubscriptionManager : public sys::Runnable
 
     /** Get a single message from a queue.
      *@param result is set to the message from the queue.
-     *@
      *@param timeout wait up this timeout for a message to appear. 
      *@return true if result was set, false if no message available after timeout.
      */
     bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
+
+    /** Get a single message from a queue.
+     *@param timeout wait up this timeout for a message to appear. 
+     *@return message from the queue.
+     *@throw Exception if the timeout is exceeded.
+     */
+    Message get(const std::string& queue, sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Get a subscription by name.
      *@throw Exception if not found.
