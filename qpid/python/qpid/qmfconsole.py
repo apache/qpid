@@ -1227,6 +1227,7 @@ class Broker:
       if self.session.console != None:
         self.amqpSession.incoming("tdest").stop()
       self.amqpSession.close()
+      self.conn.close()
       self.isConnected = False
     else:
       raise Exception("Broker already disconnected")
