@@ -542,7 +542,7 @@ void SessionImpl::completed(const framing::SequenceSet& commands, bool timelyRep
 {
     Lock l(state);
     incompleteOut.remove(commands);
-    state.notify();//notify any waiters of completion
+    state.notifyAll();//notify any waiters of completion
     completedOut.add(commands);
     //notify any waiting results of completion
     results.completed(commands);
