@@ -511,6 +511,8 @@ class Session:
       self.packages[pname][(cname, hash)] = _class
     finally:
       self.cv.release()
+      
+    self.seqMgr._release(seq)
     broker._decOutstanding()
     if self.console != None:
       self.console.newClass(kind, classKey)
@@ -759,7 +761,7 @@ class SchemaProperty:
     self.unit     = None
     self.min      = None
     self.max      = None
-    self.maxlan   = None
+    self.maxlen   = None
     self.desc     = None
 
     for key, value in map.items():
@@ -916,6 +918,10 @@ class Object(object):
       for statistic in schema.getStatistics():
         self._statistics.append((statistic, self._session._decodeValue(codec, statistic.type)))
 
+  def getBroker(self):
+    """ Return the broker from which this object was sent """
+    return self._broker
+
   def getObjectId(self):
     """ Return the object identifier for this object """
     return self._objectId
@@ -972,7 +978,7 @@ class Object(object):
       if name == property.name:
         return value
       if name == "_" + property.name + "_" and property.type == 10:  # Dereference references
-        deref = self._session.getObjects(_objectId=value)
+        deref = self._session.getObjects(_objectId=value, _broker=self._broker)
         if len(deref) != 1:
           return None
         else:
@@ -1090,6 +1096,7 @@ class Broker:
     self.error     = None
     self.brokerId  = None
     self.isConnected = False
+    self.amqpSessionId = "%s.%d" % (os.uname()[1], os.getpid())
     self._tryToConnect()
 
   def isConnected(self):
@@ -1126,7 +1133,6 @@ class Broker:
 
   def _tryToConnect(self):
     try:
-      self.amqpSessionId = "%s.%d" % (os.uname()[1], os.getpid())
       sock = connect(self.host, self.port)
       if self.ssl:
         sock = ssl(sock)
