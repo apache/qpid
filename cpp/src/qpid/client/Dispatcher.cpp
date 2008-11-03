@@ -91,9 +91,9 @@ void Dispatcher::run()
         if ( failoverHandler ) {
             QPID_LOG(debug, QPID_MSG(session.getId() << " failover: " << e.what()));
             failoverHandler();
-        }
-        else {
+        } else {
             QPID_LOG(error, session.getId() << " error: " << e.what());
+            throw;
         }
     }
 }

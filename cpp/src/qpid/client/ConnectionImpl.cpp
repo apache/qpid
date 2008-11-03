@@ -129,17 +129,22 @@ void ConnectionImpl::close()
 {
     if (!handler.isOpen()) return;
     handler.close();
-    closed(CLOSE_CODE_NORMAL, "Closed by client");
 }
 
 
 template <class F> void ConnectionImpl::closeInternal(const F& f) {
     connector->close();
-    for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
+    //notifying sessions of failure can result in those session being
+    //deleted which in turn results in a call to erase(); this can
+    //even happen on this thread, when 's' goes out of scope
+    //below. Using a copy prevents the map being modified as we
+    //iterate through.
+    SessionMap copy;
+    sessions.swap(copy);
+    for (SessionMap::iterator i = copy.begin(); i != copy.end(); ++i) {
         boost::shared_ptr<SessionImpl> s = i->second.lock();
         if (s) f(s);
     }
-    sessions.clear();
 }
 
 void ConnectionImpl::closed(uint16_t code, const std::string& text) { 
@@ -148,7 +153,7 @@ void ConnectionImpl::closed(uint16_t code, const std::string& text) {
     closeInternal(boost::bind(&SessionImpl::connectionClosed, _1, code, text));
 }
 
-static const std::string CONN_CLOSED("Connection closed by broker");
+static const std::string CONN_CLOSED("Connection closed");
 
 void ConnectionImpl::shutdown() {
     if ( failureCallback )
@@ -158,10 +163,12 @@ void ConnectionImpl::shutdown() {
 
     // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
     // an appropriate close-code. connection-forced is not right.
-    if (!handler.isClosing()) 
-        closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
-    setException(new ConnectionException(CLOSE_CODE_CONNECTION_FORCED, CONN_CLOSED));
-    handler.fail(CONN_CLOSED);
+    bool isClosing = handler.isClosing();
+    handler.fail(CONN_CLOSED);//ensure connection is marked as failed before notifying sessions
+    Mutex::ScopedLock l(lock);
+    if (!isClosing) 
+        closeInternal(boost::bind(&SessionImpl::connectionBroke, _1, CONN_CLOSED));
+    setException(new TransportFailure(CONN_CLOSED));
 }
 
 void ConnectionImpl::erase(uint16_t ch) {

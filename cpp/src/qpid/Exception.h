@@ -80,6 +80,13 @@ struct ClosedException : public Exception {
     std::string getPrefix() const;
 };
 
+/**
+ * Exception representing transport failure
+ */
+struct TransportFailure : public Exception {
+    TransportFailure(const std::string& msg=std::string()) : Exception(msg) {}
+};
+
 } // namespace qpid
  
 #endif  /*!_Exception_*/

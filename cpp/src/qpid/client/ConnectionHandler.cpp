@@ -89,7 +89,7 @@ void ConnectionHandler::outgoing(AMQFrame& frame)
     if (getState() == OPEN) 
         out(frame);
     else
-        throw Exception(errorText.empty() ? "Connection is not open." : errorText);
+        throw TransportFailure(errorText.empty() ? "Connection is not open." : errorText);
 }
 
 void ConnectionHandler::waitForOpen()
