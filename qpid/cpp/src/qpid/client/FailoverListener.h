@@ -25,6 +25,7 @@
 #include "qpid/client/MessageListener.h"
 #include "qpid/Url.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include <vector>
 
@@ -36,7 +37,8 @@ class SubscriptionManager;
 /**
  * @internal Listen for failover updates from the amq.failover exchange.
  */
-class FailoverListener : public MessageListener {
+class FailoverListener : public MessageListener, private qpid::sys::Runnable 
+{
   public:
     FailoverListener(const boost::shared_ptr<ConnectionImpl>&, const std::vector<Url>& initUrls);
     ~FailoverListener();
@@ -44,6 +46,7 @@ class FailoverListener : public MessageListener {
 
     std::vector<Url> getKnownBrokers() const;
     void received(Message& msg);
+    void run();
     
   private:
     mutable sys::Mutex lock;

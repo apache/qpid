@@ -61,7 +61,17 @@ FailoverListener::FailoverListener(const boost::shared_ptr<ConnectionImpl>& c, c
     session.queueDeclare(arg::queue=qname, arg::exclusive=true, arg::autoDelete=true);
     session.exchangeBind(arg::queue=qname, arg::exchange=AMQ_FAILOVER);
     subscriptions->subscribe(*this, qname, SubscriptionSettings(FlowControl::unlimited(), ACCEPT_MODE_NONE));
-    thread = sys::Thread(*subscriptions);
+    thread = sys::Thread(*this);
+}
+
+void FailoverListener::run() 
+{
+    try {
+        subscriptions->run();
+    } catch (const TransportFailure&) {
+    } catch (const std::exception& e) {
+        QPID_LOG(error, QPID_MSG(e.what()));
+    }
 }
 
 FailoverListener::~FailoverListener() {

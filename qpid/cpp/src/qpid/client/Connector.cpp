@@ -35,6 +35,7 @@
 #include <map>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/weak_ptr.hpp>
 
 namespace qpid {
 namespace client {
@@ -140,7 +141,7 @@ class TCPConnector : public Connector, private sys::Runnable
 
     std::string identifier;
 
-    ConnectionImpl* impl;
+    boost::weak_ptr<ConnectionImpl> impl;
     
     void connect(const std::string& host, int port);
     void init();
@@ -183,7 +184,7 @@ TCPConnector::TCPConnector(ProtocolVersion ver,
       shutdownHandler(0),
       writer(maxFrameSize, cimpl),
       aio(0),
-      impl(cimpl)
+      impl(cimpl->shared_from_this())
 {
     QPID_LOG(debug, "TCPConnector created for " << version.toString());
     settings.configureSocket(socket);
@@ -380,7 +381,7 @@ void TCPConnector::eof(AsynchIO&) {
 // will never be called
 void TCPConnector::run(){
     // Keep the connection impl in memory until run() completes.
-    boost::shared_ptr<ConnectionImpl> protect = impl->shared_from_this();
+    boost::shared_ptr<ConnectionImpl> protect = impl.lock();
     assert(protect);
     try {
         Dispatcher d(poller);

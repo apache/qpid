@@ -99,7 +99,7 @@ public:
     
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
-    void connectionBroke(uint16_t code, const std::string& text);
+    void connectionBroke(const std::string& text);
 
     /** Set timeout in seconds, returns actual timeout allowed by broker */ 
     uint32_t setTimeout(uint32_t requestedSeconds);
