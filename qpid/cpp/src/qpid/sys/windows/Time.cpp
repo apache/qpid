@@ -80,7 +80,7 @@ void sleep(int secs) {
     ::Sleep(secs * 1000);
 }
 
-void usleep(uint32_t usecs) {
+void usleep(uint64_t usecs) {
     DWORD msecs = usecs / 1000;
     if (msecs == 0)
         msecs = 1;
