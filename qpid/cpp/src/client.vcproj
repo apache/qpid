@@ -411,6 +411,12 @@
 				RelativePath="qpid\client\StateManager.cpp">
 			</File>
 			<File
+				RelativePath="qpid\client\Subscription.cpp">
+			</File>
+			<File
+				RelativePath="qpid\client\SubscriptionImpl.cpp">
+			</File>
+			<File
 				RelativePath="qpid\client\SubscriptionManager.cpp">
 			</File>
 		</Filter>
@@ -532,7 +538,16 @@
 				RelativePath="qpid\client\StateManager.h">
 			</File>
 			<File
+				RelativePath="qpid\client\Subscription.h">
+			</File>
+			<File
+				RelativePath="qpid\client\SubscriptionImpl.h">
+			</File>
+			<File
 				RelativePath="qpid\client\SubscriptionManager.h">
+			</File>
+			<File
+				RelativePath="qpid\client\SubscriptionSettings.h">
 			</File>
 			<File
 				RelativePath="qpid\client\TypedResult.h">
