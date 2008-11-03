@@ -152,7 +152,9 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     buffer.getShortString(type);
     buffer.get(args);
 
-    return exchanges.declare(name, type, durable, args).first;
+    Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
+    exch->sequenceNo = buffer.getInt64();
+    return exch;
 }
 
 void Exchange::encode(Buffer& buffer) const 
@@ -161,6 +163,7 @@ void Exchange::encode(Buffer& buffer) const
     buffer.putOctet(durable);
     buffer.putShortString(getType());
     buffer.put(args);
+    buffer.putInt64(sequenceNo);
 }
 
 uint32_t Exchange::encodedSize() const 
@@ -168,7 +171,8 @@ uint32_t Exchange::encodedSize() const
     return name.size() + 1/*short string size*/
         + 1 /*durable*/
         + getType().size() + 1/*short string size*/
-        + args.encodedSize(); 
+        + args.encodedSize()
+        + 8; /*int64 */ 
 }
 
 ManagementObject* Exchange::GetManagementObject (void) const
