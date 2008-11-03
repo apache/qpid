@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import javax.naming.InitialContext;
 import javax.jms.*;
 import java.util.Properties;
+import java.io.*;
 
 
 /**
@@ -46,15 +47,24 @@ public class UTF8Test extends QpidTestCase
 
     public void testPlainEn() throws Exception
     {
-        runTest("exhangeName", "queueName", "routingkey", "data");
+         invoke("UTF8En");
     }
 
 
     public void testUTF8Jp() throws Exception
     {
-        runTest("設定がそのように構成されていなければな", "的某些更新没有出现在这个 README 中。你可以访问下面的", "的发行版本包括多张光盘，其中包括安装光盘和源码光盘", "目のインストール CD は、ほとんどの最近のシス");
+        invoke("UTF8Jp");
     }
 
+
+    private void invoke(String name) throws Exception
+    {
+        String path = System.getProperties().getProperty("QPID_HOME");
+        path = path + "/../systests/src/main/java/org/apache/qpid/test/unit/message/" + name;
+         BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF8"));
+        runTest(in.readLine(), in.readLine(), in.readLine(), in.readLine());
+        in.close();
+    }
     private void runTest(String exchangeName, String queueName, String routingKey, String data) throws Exception
     {
         _logger.info("Running test for exchange: " + exchangeName
@@ -94,8 +104,7 @@ public class UTF8Test extends QpidTestCase
             sess.queueDeclare(qname, null, null);
             sess.exchangeBind(qname, exch, routkey, null);
             sess.sync();
-
-            conn.close();
+            conn.close();        
     }
 
     private Destination getDestination(String exch, String routkey, String qname)
