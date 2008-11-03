@@ -260,8 +260,9 @@ void SessionImpl::connectionClosed(uint16_t code, const std::string& text)  {
  * Called by ConnectionImpl to notify active sessions when connection
  * is disconnected
  */
-void SessionImpl::connectionBroke(uint16_t _code, const std::string& _text) {
-    connectionClosed(_code, _text);
+void SessionImpl::connectionBroke(const std::string& _text) {
+    setException(sys::ExceptionHolder(new TransportFailure(_text)));
+    handleClosed();
 }
 
 Future SessionImpl::send(const AMQBody& command)

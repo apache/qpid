@@ -92,7 +92,7 @@ QPID_AUTO_TEST_CASE(DisconnectedPop) {
     ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
-    Catcher<ConnectionException> pop(bind(&LocalQueue::pop, &fix.lq, sys::TIME_SEC));
+    Catcher<TransportFailure> pop(bind(&LocalQueue::pop, &fix.lq, sys::TIME_SEC));
     fix.connection.proxy.close();
     BOOST_CHECK(pop.join());
 }
@@ -106,11 +106,10 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(l, "q");
 
-    ScopedSuppressLogging sl; // Suppress messages for expected errors.
-    Thread t(fix.subs);
+    Catcher<TransportFailure> runner(bind(&SubscriptionManager::run, boost::ref(fix.subs)));
     fix.connection.proxy.close();
-    t.join();
-    BOOST_CHECK_THROW(fix.session.close(), ConnectionException);    
+    runner.join();
+    BOOST_CHECK_THROW(fix.session.close(), TransportFailure);    
 }
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
