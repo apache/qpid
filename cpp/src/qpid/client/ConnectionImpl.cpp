@@ -129,6 +129,7 @@ void ConnectionImpl::close()
 {
     if (!handler.isOpen()) return;
     handler.close();
+    closed(CLOSE_CODE_NORMAL, "Closed by client");
 }
 
 
