@@ -50,7 +50,7 @@ private:
 protected:
     bool sequence;
     mutable qpid::sys::Mutex sequenceLock;
-    uint64_t sequenceNo;
+    int64_t sequenceNo;
     bool ive;
     boost::intrusive_ptr<Message> lastMsg;
 
