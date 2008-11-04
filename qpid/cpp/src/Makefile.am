@@ -381,6 +381,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
   qpid/client/FailoverConnection.cpp            \
+  qpid/client/FailoverManager.cpp            \
   qpid/client/FailoverSession.cpp               \
   qpid/client/FailoverSubscriptionManager.cpp   \
   qpid/client/FailoverListener.h		\
@@ -393,6 +394,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
   qpid/client/MessageListener.cpp		\
+  qpid/client/MessageReplayTracker.cpp		\
   qpid/client/QueueOptions.cpp			\
   qpid/client/Results.cpp			\
   qpid/client/SessionBase_0_10.cpp		\
@@ -519,6 +521,7 @@ nobase_include_HEADERS = \
   qpid/client/Dispatcher.h \
   qpid/client/Execution.h \
   qpid/client/FailoverConnection.h \
+  qpid/client/FailoverManager.h \
   qpid/client/FailoverSession.h \
   qpid/client/Subscription.h \
   qpid/client/SubscriptionImpl.h \
@@ -533,6 +536,7 @@ nobase_include_HEADERS = \
   qpid/client/QueueOptions.h \
   qpid/client/Message.h \
   qpid/client/MessageListener.h \
+  qpid/client/MessageReplayTracker.h \
   qpid/client/Results.h \
   qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \
