@@ -22,7 +22,6 @@
 #include "qpid/management/ManagementObject.h"
 #include "ManagementAgentImpl.h"
 #include <list>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -597,11 +596,12 @@ void ManagementAgentImpl::periodicProcessing()
         Buffer msgBuffer(msgChars, BUFSIZE);
         encodeHeader(msgBuffer, 'h');
         msgBuffer.putLongLong(uint64_t(Duration(now())));
+        stringstream key;
+        key << "console.heartbeat." << assignedBrokerBank << "." << assignedAgentBank;
 
         contentSize = BUFSIZE - msgBuffer.available();
         msgBuffer.reset();
-        routingKey = "console.heartbeat";
-        connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
+        connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
     }
 
     moveNewObjectsLH();

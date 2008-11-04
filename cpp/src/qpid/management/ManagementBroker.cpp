@@ -351,7 +351,7 @@ void ManagementBroker::periodicProcessing (void)
 
         contentSize = BUFSIZE - msgBuffer.available ();
         msgBuffer.reset ();
-        routingKey = "console.heartbeat";
+        routingKey = "console.heartbeat.1.0";
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
     }
 
