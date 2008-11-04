@@ -69,7 +69,7 @@ public class IoAcceptor<E> extends Thread
             try
             {
                 Socket sock = socket.accept();
-                IoTransport<E> transport = new IoTransport<E>(sock, binding);
+                IoTransport<E> transport = new IoTransport<E>(sock, binding,false);
             }
             catch (IOException e)
             {
