@@ -53,20 +53,20 @@ RELEASE_DIR="release"
 
 # Command Binaries
 SVN='svn'
-SVN_BIN='/usr/bin/svn'
+SVN_BIN='svn'
 HTTP='http'
 FTP='ftp'
-WGET_BIN='/usr/bin/wget'
+WGET_BIN='wget'
 FILE='file'
-CP_BIN='/bin/cp'
-PATCH_BIN='/usr/bin/patch'
-FILE_BIN='/usr/bin/file'
-LS_BIN='/bin/ls'
-TAR_BIN='/bin/tar'
-BZIP2_BIN='/usr/bin/bzip2'
-UNZIP_BIN='/usr/bin/unzip'
-ECHO_BIN='/bin/echo'
-SVNVERSION_BIN='/usr/bin/svnversion'
+CP_BIN='cp'
+PATCH_BIN='patch'
+FILE_BIN='file'
+LS_BIN='ls'
+TAR_BIN='tar'
+BZIP2_BIN='bzip2'
+UNZIP_BIN='unzip'
+ECHO_BIN='echo'
+SVNVERSION_BIN='svnversion'
 
 
 
@@ -169,8 +169,6 @@ def main():
     log("Logging Enabled")
     verbose("Verbose Output Enabled")
     debug("Debug Enabled")
-
-    checkSystemRequirements()
 
     if (len(args) > 2):
         showUsage()
