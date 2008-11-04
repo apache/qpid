@@ -489,10 +489,21 @@ class Session:
       if self.console:
         self.console.methodResponse(broker, seq, result)
 
-  def _handleHeartbeatInd(self, broker, codec, seq):
+  def _handleHeartbeatInd(self, broker, codec, seq, msg):
+    brokerBank = 1
+    agentBank = 0
+    dp = msg.get("delivery_properties")
+    if dp:
+      key = dp["routing_key"]
+      keyElements = key.split(".")
+      if len(keyElements) == 4:
+        brokerBank = int(keyElements[2])
+        agentBank = int(keyElements[3])
+
+    agent = broker.getAgent(brokerBank, agentBank)
     timestamp = codec.read_uint64()
     if self.console != None:
-      self.console.heartbeat(None, timestamp)
+      self.console.heartbeat(agent, timestamp)
 
   def _handleEventInd(self, broker, codec, seq):
     if self.console != None:
@@ -1086,7 +1097,7 @@ class Broker:
     self.authUser = authUser
     self.authPass = authPass
     self.agents   = {}
-    self.agents[0] = Agent(self, "1.0", "BrokerAgent")
+    self.agents["1.0"] = Agent(self, "1.0", "BrokerAgent")
     self.topicBound = False
     self.cv = Condition()
     self.syncInFlight = False
@@ -1111,6 +1122,12 @@ class Broker:
 
   def getBrokerBank(self):
     return 1
+
+  def getAgent(self, brokerBank, agentBank):
+    bankKey = "%d.%d" % (brokerBank, agentBank)
+    if bankKey in self.agents:
+      return self.agents[bankKey]
+    return None
 
   def getSessionId(self):
     """ Get the identifier of the AMQP session to the broker """
@@ -1287,7 +1304,7 @@ class Broker:
       elif opcode == 'z': self.session._handleCommandComplete (self, codec, seq)
       elif opcode == 'q': self.session._handleClassInd        (self, codec, seq)
       elif opcode == 'm': self.session._handleMethodResp      (self, codec, seq)
-      elif opcode == 'h': self.session._handleHeartbeatInd    (self, codec, seq)
+      elif opcode == 'h': self.session._handleHeartbeatInd    (self, codec, seq, msg)
       elif opcode == 'e': self.session._handleEventInd        (self, codec, seq)
       elif opcode == 's': self.session._handleSchemaResp      (self, codec, seq)
       elif opcode == 'c': self.session._handleContentInd      (self, codec, seq, prop=True)
