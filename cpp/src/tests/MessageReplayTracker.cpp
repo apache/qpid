@@ -23,7 +23,7 @@
 #include "qpid/client/MessageReplayTracker.h"
 #include "qpid/sys/Time.h"
 
-QPID_AUTO_TEST_SUITE(MessageReplayTracker)
+QPID_AUTO_TEST_SUITE(MessageReplayTrackerTests)
 
 using namespace qpid::client;
 using namespace qpid::sys;
