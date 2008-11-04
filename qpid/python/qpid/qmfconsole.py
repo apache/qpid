@@ -671,7 +671,7 @@ class Session:
             self._encodeValue(sendCodec, argList[aIdx], arg.type)
             aIdx += 1
         smsg = broker._message(sendCodec.encoded, "agent.%d.%d" %
-                               (objectId.getBroker(), objectId.getBank()))
+                               (objectId.getBrokerBank(), objectId.getAgentBank()))
         broker._send(smsg)
         return seq
     return None
@@ -866,7 +866,7 @@ class ObjectId:
 
   def __repr__(self):
     return "%d-%d-%d-%d-%d" % (self.getFlags(), self.getSequence(),
-                               self.getBroker(), self.getBank(), self.getObject())
+                               self.getBrokerBank(), self.getAgentBank(), self.getObject())
 
   def index(self):
     return (self.first, self.second)
@@ -877,10 +877,10 @@ class ObjectId:
   def getSequence(self):
     return (self.first & 0x0FFF000000000000) >> 48
 
-  def getBroker(self):
+  def getBrokerBank(self):
     return (self.first & 0x0000FFFFF0000000) >> 28
 
-  def getBank(self):
+  def getAgentBank(self):
     return self.first & 0x000000000FFFFFFF
 
   def getObject(self):
@@ -1014,7 +1014,7 @@ class Object(object):
             self._session._encodeValue(sendCodec, args[aIdx], arg.type)
             aIdx += 1
         smsg = self._broker._message(sendCodec.encoded, "agent.%d.%d" %
-                                     (self._objectId.getBroker(), self._objectId.getBank()))
+                                     (self._objectId.getBrokerBank(), self._objectId.getAgentBank()))
         if synchronous:
           try:
             self._broker.cv.acquire()
@@ -1108,6 +1108,9 @@ class Broker:
   def getBrokerId(self):
     """ Get broker's unique identifier (UUID) """
     return self.brokerId
+
+  def getBrokerBank(self):
+    return 1
 
   def getSessionId(self):
     """ Get the identifier of the AMQP session to the broker """
@@ -1315,6 +1318,9 @@ class Agent:
 
   def getBroker(self):
     return self.broker
+
+  def getAgentBank(self):
+    return self.bank
 
 class Event:
   """ """
