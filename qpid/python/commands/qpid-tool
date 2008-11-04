@@ -148,7 +148,7 @@ class Mcli (Cmd):
     self.dataObject.close ()
 
 def Usage ():
-  print "Usage:  qpid-tool [<target-host[:<tcp-port>]]"
+  print "Usage:  qpid-tool [[<username>/<password>@]<target-host>[:<tcp-port>]]"
   print
   sys.exit (1)
 
