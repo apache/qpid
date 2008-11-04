@@ -24,17 +24,17 @@ QPID_AUTO_TEST_SUITE(FieldValueTestSuite)
 
 using namespace qpid::framing;
 
-StringValue s("abc");
+Str16Value s("abc");
 IntegerValue i(42);
 //DecimalValue d(1234,2);
 //FieldTableValue ft;
 //EmptyValue e;
 
-QPID_AUTO_TEST_CASE(testStringValueEquals)
+QPID_AUTO_TEST_CASE(testStr16ValueEquals)
 {
     
-    BOOST_CHECK(StringValue("abc") == s);
-    BOOST_CHECK(StringValue("foo") != s);
+    BOOST_CHECK(Str16Value("abc") == s);
+    BOOST_CHECK(Str16Value("foo") != s);
     BOOST_CHECK(s != i);
     BOOST_CHECK(s.convertsTo<std::string>() == true);
     BOOST_CHECK(s.convertsTo<int>() == false);

@@ -165,7 +165,7 @@ class AmqpElement
   # The root <amqp> element.
   def root() @root ||=parent ? parent.root : self; end
 
- def to_s() "#<#{self.class}(#{fqname})>"; end
+  def to_s() "#<#{self.class}(#{fqname})>"; end
   def inspect() to_s; end
 
   # Text of doc child if there is one.
@@ -180,6 +180,21 @@ class AmqpElement
   def containing_class()
     return self if is_a? AmqpClass
     return parent && parent.containing_class
+  end
+
+  # 0-10 array domains are missing element type information, add it here.
+  ArrayTypes={
+    "str16-array" => "str-16",
+    "amqp-host-array" => "connection.amqp-host-url",
+    "command-fragments" => "session.command-fragment",
+    "in-doubt" => "dtx.xid",
+    "tx-publish" => "str-8",
+    "queues" => "str-8"
+  }
+
+  def array_type(name)
+    return  ArrayTypes[name] if ArrayTypes[name]
+    raise "Missing ArrayType entry for " + name
   end
   
 end
@@ -203,14 +218,6 @@ class AmqpEnum < AmqpElement
   def initialize(xml,parent) super; end
   amqp_child_reader :choice
 end
-
-# 0-10 array domains are missing element type information, add it here.
-ArrayTypes={
-  "str16-array" => "str-16",
-  "amqp-host-array" => "connection.amqp-host-url",
-  "command-fragments" => "session.command-fragment",
-  "in-doubt" => "dtx.xid"
-}
 
 class AmqpDomain < AmqpElement
   def initialize(xml, parent)
