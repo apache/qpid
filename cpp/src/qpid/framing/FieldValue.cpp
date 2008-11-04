@@ -109,10 +109,10 @@ bool FieldValue::operator==(const FieldValue& v) const
         *data == *v.data;
 }
 
-StringValue::StringValue(const std::string& v) :
+Str8Value::Str8Value(const std::string& v) :
     FieldValue(
-        0xA4,
-        new VariableWidthValue<4>(
+        TYPE_CODE_STR8,
+        new VariableWidthValue<1>(
             reinterpret_cast<const uint8_t*>(v.data()),
             reinterpret_cast<const uint8_t*>(v.data()+v.size())))
 {
@@ -166,6 +166,15 @@ FieldTableValue::FieldTableValue(const FieldTable& f) : FieldValue(0xa8, new Enc
 
 ArrayValue::ArrayValue(const Array& a) : FieldValue(0xaa, new EncodedValue<Array>(a))
 {
+}
+
+void FieldValue::print(std::ostream& out) const {
+    data->print(out);
+    out << TypeCode(typeOctet) << '(';
+    if (data->convertsToString()) out << data->getString();
+    else if (data->convertsToInt()) out << data->getInt();
+    else data->print(out);
+    out << ')';
 }
 
 }}

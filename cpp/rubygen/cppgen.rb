@@ -147,7 +147,7 @@ end
 class AmqpElement
   # convert my amqp type_ attribute to a C++ type.
   def amqp2cpp()
-    return "ArrayDomain<#{ArrayTypes[name].amqp2cpp}> " if type_=="array" 
+    return "ArrayDomain<#{array_type(name).amqp2cpp}> " if type_=="array"
     return type_.amqp2cpp
   end
 

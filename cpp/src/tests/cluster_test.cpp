@@ -216,6 +216,51 @@ class Sender {
     uint16_t channel;
 };
 
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testTxTransaction, 1) {
+    ClusterFixture cluster(1, 1); // FIXME aconway 2008-11-04: local broker at index 1
+    Client c0(cluster[0], "c0");
+    c0.session.queueDeclare(arg::queue="q");
+    c0.session.messageTransfer(arg::content=Message("A", "q"));
+    c0.session.messageTransfer(arg::content=Message("B", "q"));
+
+    // Start a transaction that will commit.
+    Session commitSession = c0.connection.newSession("commit");
+    SubscriptionManager commitSubs(commitSession);
+    commitSession.txSelect();
+    commitSession.messageTransfer(arg::content=Message("a", "q"));
+    commitSession.messageTransfer(arg::content=Message("b", "q"));
+    BOOST_CHECK_EQUAL(commitSubs.get("q", TIME_SEC).getData(), "A");
+
+    // Start a transaction that will roll back.
+    Session rollbackSession = c0.connection.newSession("rollback");
+    SubscriptionManager rollbackSubs(rollbackSession);
+    rollbackSession.txSelect();
+    rollbackSession.messageTransfer(arg::content=Message("1", "q"));
+    BOOST_CHECK_EQUAL(rollbackSubs.get("q", TIME_SEC).getData(), "B");
+
+    BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
+    // Add new member mid transaction.
+    cluster.add();            
+    Client c1(cluster[1], "c1");
+
+    // More transactional work
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
+    rollbackSession.messageTransfer(arg::content=Message("2", "q"));
+    commitSession.messageTransfer(arg::content=Message("c", "q"));
+    rollbackSession.messageTransfer(arg::content=Message("3", "q"));
+
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);    
+    // Commit/roll back.
+    commitSession.txCommit();
+    rollbackSession.txRollback();
+    // Verify queue status: just the comitted messages
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 4u);
+    BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "B");
+    BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "a");
+    BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "b");
+    BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "c");
+}
+
 QPID_AUTO_TEST_CASE(testUnsupported) {
     ScopedSuppressLogging sl;
     ClusterFixture cluster(1);

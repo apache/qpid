@@ -89,7 +89,8 @@ class FieldValue {
     void decode(Buffer& buffer);
     bool operator==(const FieldValue&) const;
     bool operator!=(const FieldValue& v) const { return !(*this == v); }
-    void print(std::ostream& out) const { out << "(0x" << std::hex << int(typeOctet) << ")"; data->print(out); }
+    
+    void print(std::ostream& out) const;
     
     template <typename T> bool convertsTo() const { return false; }
     template <typename T> T get() const { throw InvalidConversionException(); }
@@ -239,12 +240,9 @@ class EncodedValue : public FieldValue::Data {
     void print(std::ostream& o) const { o << "[" << value << "]"; };
 };
 
-/*
- * Basic string value encodes as iso-8859-15 with 32 bit length
- */ 
-class StringValue : public FieldValue {
+class Str8Value : public FieldValue {
   public:
-    StringValue(const std::string& v);
+    Str8Value(const std::string& v);
 };
 
 class Str16Value : public FieldValue {

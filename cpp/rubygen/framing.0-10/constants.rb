@@ -46,6 +46,62 @@ class ConstantsGen < CppGen
     }
   end
 
+  def typecode_enum(t) "TYPE_CODE_#{t.name.shout}" end
+
+  def typecode_h_cpp
+    path="#{@dir}/TypeCode"
+    h_file(path) {
+      include("<iosfwd>")
+      namespace(@namespace) { 
+        scope("enum TypeCode {", "};") {
+          genl @amqp.types.map { |t| "#{typecode_enum t} = #{t.code}" if t.code }.compact.join(",\n")
+        }
+        genl <<EOS
+
+/** True if t is a valid TypeCode value */
+bool isTypeCode(uint8_t t);
+
+/** Throw exception if not a valid TypeCode */
+TypeCode typeCode(uint8_t);
+
+/**@return 0 if t is not a valid enum TypeCode value. */
+const char* typeName(TypeCode t);
+
+std::ostream& operator<<(std::ostream&, TypeCode);
+EOS
+      }
+    }
+
+    cpp_file(path) {
+      include(path);
+      include("qpid/Exception.h")
+      include("<ostream>")
+      namespace(@namespace) { 
+        scope("const char* typeName(TypeCode t) {") {
+          scope("switch (t) {") {
+            @amqp.types.each { |t| genl "case #{typecode_enum t}: return \"#{t.name}\";" if t.code }
+            genl "default: break;"
+          }
+          genl "return 0;";
+        }
+        genl <<EOS
+
+bool isTypeCode(uint8_t t) { return typeName(TypeCode(t)); }
+
+TypeCode typeCode(uint8_t t) {
+    if (!isTypeCode(t)) throw Exception(QPID_MSG("Invalid TypeCode " << t));
+    return TypeCode(t);
+}
+
+std::ostream& operator<<(std::ostream& o, TypeCode t) {
+    if (isTypeCode(t)) return o << typeName(t);
+    else return o << "Invalid TypeCode " << t;
+}
+EOS
+      }
+    }
+  end
+  
   def enum_h()
     h_file("#{@dir}/enum") {
       # Constants for enum domains.
@@ -134,6 +190,7 @@ class ConstantsGen < CppGen
     enum_h
     reply_exceptions_h
     reply_exceptions_cpp
+    typecode_h_cpp
   end
 end
 

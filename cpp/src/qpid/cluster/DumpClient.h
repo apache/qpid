@@ -44,6 +44,8 @@ class QueueBinding;
 class QueuedMessage;
 class SessionHandler;
 class DeliveryRecord;
+class SessionState;
+class SemanticState;
 
 } // namespace broker
 
@@ -79,8 +81,9 @@ class DumpClient : public sys::Runnable {
     void dumpSession(broker::SessionHandler& s);
     void dumpConsumer(const broker::SemanticState::ConsumerImpl*);
     void dumpUnacked(const broker::DeliveryRecord&);
-    
-  private:
+    void dumpDeliveryRecord(const broker::DeliveryRecord&);
+    void dumpDeliveryRecordMessage(const broker::DeliveryRecord&);
+
     MemberId dumperId;
     MemberId dumpeeId;
     Url dumpeeUrl;

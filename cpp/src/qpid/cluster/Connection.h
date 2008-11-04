@@ -40,6 +40,13 @@ namespace qpid {
 
 namespace framing { class AMQFrame; }
 
+namespace broker {
+class SemanticState;
+class QueuedMessage;
+class TxBuffer;
+class TxAccept;
+}
+
 namespace cluster {
 class Cluster;
 
@@ -117,14 +124,16 @@ class Connection :
                         bool windowing);
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
-    
-  private:
-    bool catcUp;
 
+  private:
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
     void sendDoOutput();
+
+    broker::SessionState& sessionState();
+    broker::SemanticState& semanticState();
+    broker::QueuedMessage getDumpMessage();
 
     static NoOpConnectionOutputHandler discardHandler;
 
