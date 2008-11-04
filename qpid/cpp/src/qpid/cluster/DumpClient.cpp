@@ -39,9 +39,11 @@
 #include "qpid/framing/ClusterConnectionConsumerStateBody.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/ProtocolVersion.h"
+#include "qpid/framing/TypeCode.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
 #include <boost/bind.hpp>
+
 
 namespace qpid {
 namespace cluster {
@@ -103,7 +105,7 @@ void DumpClient::dump() {
     // Dump exchange is used to route messages to the proper queue without modifying routing key.
     session.exchangeDeclare(arg::exchange=DUMP, arg::type="fanout", arg::autoDelete=true);
     b.getQueues().eachQueue(boost::bind(&DumpClient::dumpQueue, this, _1));
-// Dump queue is used to transfer acquired messages that are no longer on their original queue.
+    // Dump queue is used to transfer acquired messages that are no longer on their original queue.
     session.queueDeclare(arg::queue=DUMP, arg::autoDelete=true);
     session.sync();
     session.close();
@@ -154,7 +156,7 @@ class MessageDumper {
         session.exchangeUnbind(queue, DumpClient::DUMP);
     }
 
-    void dump(const broker::QueuedMessage& message) {
+    void dumpQueuedMessage(const broker::QueuedMessage& message) {
         if (!haveLastPos || message.position - lastPos != 1)  {
             ClusterConnectionProxy(session).queuePosition(queue, message.position.getValue()-1);
             haveLastPos = true;
@@ -164,6 +166,10 @@ class MessageDumper {
         framing::MessageTransferBody transfer(
             framing::ProtocolVersion(), DumpClient::DUMP, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
         sb.get()->send(transfer, message.payload->getFrames());
+    }
+
+    void dumpMessage(const boost::intrusive_ptr<broker::Message>& message) {
+        dumpQueuedMessage(broker::QueuedMessage(0, message, haveLastPos? lastPos.getValue()+1 : 1));
     }
 };
 
@@ -178,7 +184,7 @@ void DumpClient::dumpQueue(const boost::shared_ptr<Queue>& q) {
         arg::autoDelete=q->isAutoDelete(),
         arg::arguments=q->getSettings());
     MessageDumper dumper(q->getName(), session);
-    q->eachMessage(boost::bind(&MessageDumper::dump, &dumper, _1));
+    q->eachMessage(boost::bind(&MessageDumper::dumpQueuedMessage, &dumper, _1));
     q->eachBinding(boost::bind(&DumpClient::dumpBinding, this, q->getName(), _1));
 }
 
@@ -217,11 +223,14 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
     // Re-create session state on remote connection.
 
     // Dump consumers. For reasons unknown, boost::bind does not work here with boost 1.33.
-    ss->eachConsumer(std::bind1st(std::mem_fun(&DumpClient::dumpConsumer),this));
-    ss->eachUnacked(boost::bind(&DumpClient::dumpUnacked, this, _1));
+    QPID_LOG(debug, dumperId << " dumping consumers.");
+    ss->getSemanticState().eachConsumer(std::bind1st(std::mem_fun(&DumpClient::dumpConsumer),this));
 
+    QPID_LOG(debug, dumperId << " dumping unacknowledged messages.");
+    ss->getSemanticState().eachUnacked(boost::bind(&DumpClient::dumpUnacked, this, _1));
+
+    //  Adjust for command counter for message in progress, will be sent after state update.
     boost::intrusive_ptr<Message> inProgress = ss->getMessageInProgress();
-    //  Adjust for message in progress, will be sent after state update.
     SequenceNumber received = ss->receiverGetReceived().command;
     if (inProgress)  
         --received;
@@ -274,14 +283,22 @@ void DumpClient::dumpConsumer(const broker::SemanticState::ConsumerImpl* ci) {
 }
     
 void DumpClient::dumpUnacked(const broker::DeliveryRecord& dr) {
-    assert(dr.isEnded() || dr.getMessage().payload);
+    dumpDeliveryRecordMessage(dr);
+    dumpDeliveryRecord(dr);
+}
 
-    if (!dr.isEnded() && dr.isAcquired()) {
+void DumpClient::dumpDeliveryRecordMessage(const broker::DeliveryRecord& dr) {
+    // Dump the message associated with a dr if need be.
+    if (!dr.isEnded() && dr.isAcquired() && dr.getMessage().payload) {
         // If the message is acquired then it is no longer on the
         // dumpees queue, put it on the dump queue for dumpee to pick up.
         //
-        MessageDumper(DUMP, shadowSession).dump(dr.getMessage());
+        MessageDumper(DUMP, shadowSession).dumpQueuedMessage(dr.getMessage());
     }
+}
+
+void DumpClient::dumpDeliveryRecord(const broker::DeliveryRecord& dr) {
+    // Assumes the associated message has already been dumped (if needed)
     ClusterConnectionProxy(shadowSession).deliveryRecord(
         dr.getQueue()->getName(),
         dr.getMessage().position,
