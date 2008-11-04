@@ -206,7 +206,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         ConnectionException exc = exception;
         exception = null;
 
-        ConnectionClose close = exc.getClose();
+        ConnectionClose close = (exc == null ? null : exc.getClose());
         if (close == null)
         {
             try
