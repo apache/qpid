@@ -152,7 +152,7 @@ EOS
           assign = "holder = new #{c.name.caps}Exception(text); " unless c.name == "normal"
           genl "case #{c.value}: #{assign}break;" 
         }
-        genl "    holder = new #{invalid}(QPID_MSG(\"Bad exception code: \" << code << \": \" << text));"
+        genl "default: holder = new #{invalid}(QPID_MSG(\"Bad #{enum.parent.name}: \" << code << \": \" << text));"
       }
       genl "return holder;"
     }

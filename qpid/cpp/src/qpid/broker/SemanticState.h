@@ -134,7 +134,7 @@ class SemanticState : public sys::OutputTask,
     DeliveryAdapter& deliveryAdapter;
     ConsumerImplMap consumers;
     NameGenerator tagGenerator;
-    std::list<DeliveryRecord> unacked;
+    DeliveryRecords unacked;
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
@@ -216,8 +216,11 @@ class SemanticState : public sys::OutputTask,
     static ConsumerImpl* castToConsumerImpl(OutputTask* p) { return boost::polymorphic_downcast<ConsumerImpl*>(p); }
 
     template <class F> void eachConsumer(F f) { outputTasks.eachOutput(boost::bind(f, boost::bind(castToConsumerImpl, _1))); }
-    template <class F> void eachUnacked(F f) { std::for_each(unacked.begin(), unacked.end(), f); }
-
+    DeliveryRecords& getUnacked() { return unacked; }
+    framing::SequenceSet getAccumulatedAck() const { return accumulatedAck; }
+    TxBuffer::shared_ptr getTxBuffer() const { return txBuffer; }
+    void setTxBuffer(const TxBuffer::shared_ptr& txb) { txBuffer = txb; }
+    void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
     void record(const DeliveryRecord& delivery);
 };
 

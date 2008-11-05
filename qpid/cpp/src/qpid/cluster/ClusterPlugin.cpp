@@ -90,7 +90,4 @@ struct ClusterPlugin : public Plugin {
 
 static ClusterPlugin instance; // Static initialization.
 
-// For test purposes.
-Cluster& getGlobalCluster() { assert(instance.cluster); return *instance.cluster; }
-    
 }} // namespace qpid::cluster

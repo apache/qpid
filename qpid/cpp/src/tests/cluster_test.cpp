@@ -45,13 +45,6 @@
 #include <algorithm>
 #include <iterator>
 
-namespace qpid {
-namespace cluster {
-// FIXME aconway 2008-11-04: remove.
-Cluster& getGlobalCluster(); // Defined in qpid/cluster/ClusterPlugin.cpp
-}} // namespace qpid::cluster
-
-
 namespace std {                 // ostream operators in std:: namespace
 template <class T>
 ostream& operator<<(ostream& o, const std::set<T>& s) { return seqPrint(o, s); }
@@ -69,7 +62,6 @@ using qpid::sys::TIME_SEC;
 using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
-using qpid::cluster::getGlobalCluster;
 
 /** Parse broker & cluster options */
 Broker::Options parseOpts(size_t argc, const char* argv[]) {
@@ -216,8 +208,19 @@ class Sender {
     uint16_t channel;
 };
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testTxTransaction, 1) {
-    ClusterFixture cluster(1, 1); // FIXME aconway 2008-11-04: local broker at index 1
+QPID_AUTO_TEST_CASE(testUnsupported) {
+    ScopedSuppressLogging sl;
+    ClusterFixture cluster(1);
+    Client c1(cluster[0], "c1");
+    BOOST_CHECK_THROW(c1.session.dtxSelect(), FramingErrorException);    
+    Client c2(cluster[0], "c2");
+    Message  m;
+    m.getDeliveryProperties().setTtl(1);
+    BOOST_CHECK_THROW(c2.session.messageTransfer(arg::content=m), Exception);    
+}
+
+QPID_AUTO_TEST_CASE(testTxTransaction) {
+    ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
     c0.session.queueDeclare(arg::queue="q");
     c0.session.messageTransfer(arg::content=Message("A", "q"));
@@ -236,7 +239,8 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testTxTransaction, 1) {
     SubscriptionManager rollbackSubs(rollbackSession);
     rollbackSession.txSelect();
     rollbackSession.messageTransfer(arg::content=Message("1", "q"));
-    BOOST_CHECK_EQUAL(rollbackSubs.get("q", TIME_SEC).getData(), "B");
+    Message rollbackMessage = rollbackSubs.get("q", TIME_SEC);
+    BOOST_CHECK_EQUAL(rollbackMessage.getData(), "B");
 
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
     // Add new member mid transaction.
@@ -250,29 +254,19 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testTxTransaction, 1) {
     rollbackSession.messageTransfer(arg::content=Message("3", "q"));
 
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);    
+
     // Commit/roll back.
     commitSession.txCommit();
     rollbackSession.txRollback();
-    // Verify queue status: just the comitted messages
+    rollbackSession.messageRelease(rollbackMessage.getId());
+
+
+    // Verify queue status: just the comitted messages and dequeues should remain.
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 4u);
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "B");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "a");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "b");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIME_SEC).getData(), "c");
-}
-
-QPID_AUTO_TEST_CASE(testUnsupported) {
-    ScopedSuppressLogging sl;
-    ClusterFixture cluster(1);
-    Client c0(cluster[0], "c0");
-    BOOST_CHECK_THROW(c0.session.txSelect(), Exception);
-    BOOST_CHECK(!c0.connection.isOpen());
-    Client c1(cluster[0], "c1");
-    BOOST_CHECK_THROW(c1.session.dtxCommit(), Exception);    
-    Client c2(cluster[0], "c2");
-    Message  m;
-    m.getDeliveryProperties().setTtl(1);
-    BOOST_CHECK_THROW(c2.session.messageTransfer(arg::content=m), Exception);    
 }
 
 QPID_AUTO_TEST_CASE(testUnacked) {
@@ -388,8 +382,7 @@ QPID_AUTO_TEST_CASE(testDumpMessageBuilder) {
     Client c1(cluster[1], "c1");
     BOOST_CHECK(c1.subs.get(m, "q", TIME_SEC));
     BOOST_CHECK_EQUAL(m.getData(), "abcd");
-
-    BOOST_CHECK_EQUAL(2u, getGlobalCluster().getUrls().size());
+    BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c1.connection).size());
 }
 
 QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {

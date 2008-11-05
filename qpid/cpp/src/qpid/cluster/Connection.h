@@ -125,12 +125,21 @@ class Connection :
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
 
+    void txStart();
+    void txAccept(const framing::SequenceSet&);
+    void txDequeue(const std::string&);
+    void txEnqueue(const std::string&);
+    void txPublish(const qpid::framing::Array&, bool);
+    void txEnd();
+    void accumulatedAck(const qpid::framing::SequenceSet&);
+
   private:
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
     void sendDoOutput();
 
+    boost::shared_ptr<broker::Queue> findQueue(const std::string& qname);
     broker::SessionState& sessionState();
     broker::SemanticState& semanticState();
     broker::QueuedMessage getDumpMessage();
@@ -148,6 +157,7 @@ class Connection :
     framing::SequenceNumber mcastSeq;
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
+    boost::shared_ptr<broker::TxBuffer> txBuffer;
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };

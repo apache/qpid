@@ -69,7 +69,7 @@ void TxAccept::RangeOps::commit()
     }
 }
 
-TxAccept::TxAccept(SequenceSet& _acked, std::list<DeliveryRecord>& _unacked) : 
+TxAccept::TxAccept(const SequenceSet& _acked, DeliveryRecords& _unacked) : 
     acked(_acked), unacked(_unacked), ops(unacked) 
 {
     //populate the ops

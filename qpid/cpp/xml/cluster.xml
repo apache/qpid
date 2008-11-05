@@ -96,6 +96,18 @@
       <field name="windowing" type="bit"/>
     </control>
     
+    <!-- Tx transaction state. -->
+    <control name="tx-start" code="0x12"/> 
+    <control name="tx-accept" code="0x13"> <field name="commands" type="sequence-set"/> </control>
+    <control name="tx-dequeue" code="0x14"> <field name="queue" type="str8"/> </control>
+    <control name="tx-enqueue" code="0x15"> <field name="queue" type="str8"/> </control>
+    <control name="tx-publish" code="0x16">
+      <field name="queues" type="array"/>  <!--Array of str8 -->
+      <field name="delivered" type="bit"/>
+    </control>
+    <control name="tx-end" code="0x17"/>
+    <control name="accumulated-ack" code="0x18"> <field name="commands" type="sequence-set"/> </control>
+    
     <!-- Complete a session state dump. -->
     <control name="session-state" code="0x1F" label="Set session state during a brain dump.">
       <!-- Target session deduced from channel number.  -->

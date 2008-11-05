@@ -71,6 +71,8 @@ class DumpClient : public sys::Runnable {
     void dump();
     void run();                 // Will delete this when finished.
 
+    void dumpUnacked(const broker::DeliveryRecord&);
+
   private:
     void dumpQueue(const boost::shared_ptr<broker::Queue>&);
     void dumpExchange(const boost::shared_ptr<broker::Exchange>&);
@@ -79,10 +81,8 @@ class DumpClient : public sys::Runnable {
     void dumpBinding(const std::string& queue, const broker::QueueBinding& binding);
     void dumpConnection(const boost::intrusive_ptr<Connection>& connection);
     void dumpSession(broker::SessionHandler& s);
+    void dumpTxState(broker::SemanticState& s);
     void dumpConsumer(const broker::SemanticState::ConsumerImpl*);
-    void dumpUnacked(const broker::DeliveryRecord&);
-    void dumpDeliveryRecord(const broker::DeliveryRecord&);
-    void dumpDeliveryRecordMessage(const broker::DeliveryRecord&);
 
     MemberId dumperId;
     MemberId dumpeeId;
