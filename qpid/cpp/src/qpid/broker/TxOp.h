@@ -28,8 +28,6 @@
 namespace qpid {
     namespace broker {
 
-class TxOpConstVisitor;
-    
         class TxOp{
         public:
             typedef boost::shared_ptr<TxOp> shared_ptr;
