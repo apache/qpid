@@ -565,6 +565,17 @@ void Cluster::memberUpdate(Lock& l) {
         }
         mgmtObject->set_members(urlstr);
     }
+
+    //close connections belonging to members that have now been excluded
+    for (ConnectionMap::iterator i = connections.begin(); i != connections.end();) {
+        MemberId member = i->first.getMember();
+        if (member != myId && !map.isMember(member)) { 
+            i->second->left();
+            connections.erase(i++);
+        } else {
+            i++;
+        }
+    }
 }
 
 std::ostream& operator<<(std::ostream& o, const Cluster& cluster) {
