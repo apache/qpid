@@ -468,7 +468,7 @@ QPID_AUTO_TEST_CASE(DumpConsumers) {
     
     // Kill the subscribing member, ensure further messages are not removed.
     cluster.killWithSilencer(0,c0.connection,9);
-    BOOST_REQUIRE_EQUAL(knownBrokerPorts(c1.connection, 2).size(), 2);
+    BOOST_REQUIRE_EQUAL(knownBrokerPorts(c1.connection, 2).size(), 2u);
     for (int i = 0; i < 10; ++i) {
         c1.session.messageTransfer(arg::content=Message("xxx", "q"));
         BOOST_REQUIRE(c1.subs.get(m, "q", TIME_SEC));
@@ -495,7 +495,7 @@ QPID_AUTO_TEST_CASE(testCatchupSharedState) {
     c0.session.messageTransfer(arg::content=Message("pfoo","p"));
 
     // Do some work post-join
-    BOOST_REQUIRE_EQUAL(knownBrokerPorts(c0.connection, 2).size(), 2);
+    BOOST_REQUIRE_EQUAL(knownBrokerPorts(c0.connection, 2).size(), 2u);
     c0.session.messageTransfer(arg::content=Message("pbar","p"));
 
     // Verify new brokers have state.
