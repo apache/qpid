@@ -40,13 +40,16 @@ using namespace qpid::sys;
 
 namespace {
 
-/*
- * Make *process* not generate SIGPIPE when writing to closed
- * pipe/socket (necessary as default action is to terminate process)
- */
-void ignoreSigpipe() {
-    ::signal(SIGPIPE, SIG_IGN);
-}
+struct StaticInit {
+    StaticInit() {
+
+        /**
+         * Make *process* not generate SIGPIPE when writing to closed
+         * pipe/socket (necessary as default action is to terminate process)
+         */
+        ::signal(SIGPIPE, SIG_IGN);
+        };
+} init;
 
 /*
  * We keep per thread state to avoid locking overhead. The assumption is that
@@ -103,7 +106,6 @@ AsynchAcceptorPrivate::AsynchAcceptorPrivate(const Socket& s,
     socket(s) {
 
     s.setNonblocking();
-    ignoreSigpipe();
 }
 
 void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
