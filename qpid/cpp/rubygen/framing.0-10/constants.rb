@@ -52,6 +52,7 @@ class ConstantsGen < CppGen
     path="#{@dir}/TypeCode"
     h_file(path) {
       include("<iosfwd>")
+      include("\"qpid/sys/IntegerTypes.h\"")
       namespace(@namespace) { 
         scope("enum TypeCode {", "};") {
           genl @amqp.types.map { |t| "#{typecode_enum t} = #{t.code}" if t.code }.compact.join(",\n")
