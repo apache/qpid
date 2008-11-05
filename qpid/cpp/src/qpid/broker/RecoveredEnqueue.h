@@ -45,6 +45,11 @@ namespace qpid {
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~RecoveredEnqueue(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
+
+            Queue::shared_ptr getQueue() const { return queue; }
+            boost::intrusive_ptr<Message> getMessage() const { return msg; }
+            
         };
     }
 }
