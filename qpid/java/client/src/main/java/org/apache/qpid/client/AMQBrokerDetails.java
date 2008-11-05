@@ -79,6 +79,10 @@ public class AMQBrokerDetails implements BrokerDetails
                         }
                     }
                 }
+                else if (url.indexOf("//") == -1)
+                {
+                    throw new URLSyntaxException(url, "Missing '//' after the transport In broker URL",transport.length()+1,1);
+                }
             }
             else
             {
