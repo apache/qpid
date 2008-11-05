@@ -117,12 +117,13 @@ ClusterFixture::ClusterFixture(size_t n, int localIndex_) : name(Uuid(true).str(
 void ClusterFixture::add() {
     if (size() != size_t(localIndex))  { // fork a broker process.
         std::ostringstream os; os << "fork" << size();
+        std::string prefix = os.str();
         const char* argv[] = {
             "qpidd " __FILE__ ,
             "--load-module=../.libs/cluster.so",
             "--cluster-name", name.c_str(), 
             "--auth=no", "--no-data-dir",
-            "--log-prefix", os.str().c_str(),
+            "--log-prefix", prefix.c_str(),
         };
         size_t argc = sizeof(argv)/sizeof(argv[0]);
         forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(argc, argv)));

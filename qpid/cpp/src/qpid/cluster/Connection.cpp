@@ -141,6 +141,7 @@ void Connection::delivered(framing::AMQFrame& f) {
     }
 }
 
+// A local connection is closed by the network layer.
 void Connection::closed() {
     try {
         if (catchUp) {
@@ -165,10 +166,17 @@ void Connection::closed() {
     }
 }
 
+// Self-delivery of close message, close the connection.
 void Connection::deliverClose () {
     assert(!catchUp);
     connection.closed();
     cluster.erase(self);
+}
+
+// Member of a shadow connection left the cluster.
+void Connection::left() {
+    assert(isShadow());
+    connection.closed();
 }
 
 // Decode data from local clients.
