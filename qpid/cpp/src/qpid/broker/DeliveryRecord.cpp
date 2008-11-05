@@ -43,7 +43,8 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                   cancelled(false),
                                                   completed(false),
                                                   ended(accepted),
-                                                  windowing(_windowing)
+                                                  windowing(_windowing),
+                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : 0)
 {}
 
 void DeliveryRecord::setEnded()
@@ -153,7 +154,7 @@ void DeliveryRecord::reject()
 
 uint32_t DeliveryRecord::getCredit() const
 {
-    return msg.payload ? msg.payload->getRequiredCredit() : 0;
+    return credit;
 }
 
 void DeliveryRecord::acquire(DeliveryIds& results) {

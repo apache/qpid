@@ -104,6 +104,7 @@ class SessionBase_0_10 {
 
     Execution& getExecution();  
     void flush();
+    void markCompleted(const framing::SequenceSet& ids, bool notifyPeer);
     void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
     void sendCompletion();
 

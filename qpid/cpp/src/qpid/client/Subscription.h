@@ -79,11 +79,19 @@ class Subscription : public Handle<SubscriptionImpl> {
      */
     void accept(const SequenceSet& messageIds);
 
+    /** Release messageIds and remove them from the unaccepted set.
+     *@pre messageIds is a subset of getUnaccepted()
+     */
+    void release(const SequenceSet& messageIds);
+
     /* Acquire a single message */
     void acquire(const Message& m) { acquire(SequenceSet(m.getId())); }
 
     /* Accept a single message */
     void accept(const Message& m) { accept(SequenceSet(m.getId())); }
+
+    /* Release a single message */
+    void release(const Message& m) { release(SequenceSet(m.getId())); }
 
     /** Get the session associated with this subscription */
     Session getSession() const;

@@ -70,14 +70,20 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
     /** Acquire messageIds and remove them from the un-acquired set for the session. */
     void acquire(const SequenceSet& messageIds);
 
-    /** Accept messageIds and remove them from the un-acceptd set for the session. */
+    /** Accept messageIds and remove them from the un-accepted set for the session. */
     void accept(const SequenceSet& messageIds);
+
+    /** Release messageIds and remove them from the un-accepted set for the session. */
+    void release(const SequenceSet& messageIds);
 
     /** Get the session associated with this subscription */
     Session getSession() const;
 
     /** Get the subscription manager associated with this subscription */
     SubscriptionManager& getSubscriptionManager() const;
+
+    /** Send subscription request and issue appropriate flow control commands. */
+    void subscribe();
 
     /** Cancel the subscription. */
     void cancel();

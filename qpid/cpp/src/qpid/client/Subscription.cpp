@@ -38,6 +38,7 @@ SequenceSet Subscription::getUnacquired() const { return impl->getUnacquired(); 
 SequenceSet Subscription::getUnaccepted() const { return impl->getUnaccepted(); }
 void Subscription::acquire(const SequenceSet& messageIds) { impl->acquire(messageIds); }
 void Subscription::accept(const SequenceSet& messageIds) { impl->accept(messageIds); }
+void Subscription::release(const SequenceSet& messageIds) { impl->release(messageIds); }
 Session Subscription::getSession() const { return impl->getSession(); }
 SubscriptionManager&Subscription:: getSubscriptionManager() const { return impl->getSubscriptionManager(); }
 void Subscription::cancel() { impl->cancel(); }
