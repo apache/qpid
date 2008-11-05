@@ -239,6 +239,136 @@ which provides the same set of functions using normal non-keyword
 declarations.
 
 \\ingroup clientapi
+
+
+\\details 
+
+<h2>Publishing Messages</h2>
+<ul>
+<li><p>messageTransfer()</p>
+<pre>session.messageTransfer(arg::content=message, arg::destination="amq.topic");</pre></li>
+<li><p>messageTransfer() &mdash; asynchronous</p>
+<pre>#include &lt;qpid/client/AsyncSession.h>
+
+for (int i=0; i&lt;10; i++) {
+    message.setData(message_data.str());
+    async(session).messageTransfer(arg::content=message,  arg::destination="amq.direct");        
+}
+
+session.sync();
+</pre>
+</li>
+</ul>
+
+<h2>Exchanges</h2>
+<ul>
+<li><p>exchangeBind()</p>
+<pre>session.exchangeBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey=routing_key);</pre>
+</li>
+<li><p>exchangeUnbind()</p>
+<pre>session.exchangeUnBind(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey=routing_key);</pre></li>
+<li><p>exchangeBound()</p>
+<pre>if (session.exchangeBound(arg::exchange="amq.topic", arg::queue=queue, arg::bindingKey=rk)){...}</pre>
+<pre>if (session.exchangeBound(arg::exchange="amq.topic", arg::queue=queue)){...}</pre>
+</li>
+<li><p>exchangeDeclare()</p>
+<pre>session.exchangeDeclare(arg::exchange="my.topic", arg::type="topic");</pre>
+<pre>session.exchangeDeclare(arg::exchange="xml", arg::type="xml");</pre>
+</li>
+<li><p>exchangeDelete()</p>
+<pre>session.exchangeDeclare(arg::exchange="my.topic");</pre>
+<pre>session.exchangeDeclare(arg::exchange="xml", arg::ifUnused=true);</pre>
+</li>
+<li><p>exchangeQuery()</p>
+<pre>ExchangeQueryResult eqr = session.exchangeQuery(arg::exchange="my.topic");</pre></li>
+</ul>
+
+
+<h2>Configuring exchanges in session.exchangeDeclare</h2>
+
+<pre>arg::durable=true</pre>
+<p>Default: false.</p>
+<p>If durable=true, an exchange remains active even if the server is restarted. If durable=false, an exchange is purged when a server restarts.</p>
+
+<pre>arg::autoDelete=true</pre>
+<p>Default: false.</p>
+<p>If autoDelete=true, deleting the last binding for an exchange also deletes the exchange.</p>
+
+<pre>arg::alternatExchange="my.exchange"</pre>
+<p>Default: none.</p>
+<p>If an alternate exchange is specified, messages that can not be delivered to any queue are sent to the alternate exchange.</p>
+
+<h2>Queues</h2>
+<ul>
+<li><p>queueDeclare()</p>
+<pre>session.queueDeclare(arg::queue="message_queue");</pre>
+</li>
+<li><p>queueDelete()</p>
+<pre>session.queueDelete(arg::queue="message_queue");</pre></li>
+<li><p>queuePurge()</p>
+<pre>session.queuePurge(arg::queue="message_queue");</pre></li>
+<li><p>queueQuery()</p>
+<pre>QueueQueryResult qqr = session.queueQuery(arg::queue="message_queue");</pre></li>
+</ul>
+
+
+<h2>Configuring queues with session.queueDeclare</h2>
+<pre>arg::durable=true</pre>
+<p>Default: false.</p>
+<p>If durable=true, a queue remains active if the server is restarted. If durable=false, a queue and its contents are lost when a server restarts.</p>
+<br/>
+
+<pre>arg::autoDelete=true</pre>
+<p>Default: false.</p>
+<p>If autoDelete=true, the queue is deleted when the last active Subscription to the Queue is canceled.</p>
+<br/>
+
+<pre>arg::exclusive=true</pre>
+<p>Default: false.</p>
+<p>If exclusive=true, only the Session that created a queue can access it.</p>
+<br/>
+
+<pre>arg::alternateExchange="my.exchange"</pre>
+<p>Default: none. </p>
+<p>If an alternate exchange is specified, messages are routed to it if (1) they are rejected by a client, or (2) they remain on the queue when it is deleted.</p>
+<br/>
+
+
+<h2>Accepting, Acquiring, Rejecting, or Releasing Messages</h2>
+<ul>
+<li><p>messageAccept()  &mdash; acknowledges messages</p>
+<pre>SequenceSet tobeAccepted; 
+toAccepted.add(msg.getId()); 
+session.messageAccept(toBeAccepted);</pre>
+</li>
+<li><p>messageAcquire()</p>
+<pre>SequenceSet tobeAcquired;
+toBeAcquired.add(msg.getId()); 
+session.messageAcquire(toBeAcquired);</pre>
+</li>
+<li><p>messageReject()</p>
+<pre>SequenceSet tobeRejected; 
+toRejected.add(msg.getId()); 
+session.messageReject(toBeRejected);</pre>
+</li>
+<li><p>messageRelease()</p>
+<pre>SequenceSet tobeReleased; 
+toReleased.add(msg.getId()); 
+session.messageRelease(toBeReleased);</pre></li>
+</ul>
+
+<h2>Transactions</h2>
+<ul>
+<li><p>txSelect()</p>
+<pre>session.txSelect();</pre>
+</li>
+<li><p>txCommit()</p>
+<pre>session.txSelect();</pre></li>
+<li><p>txRollback()</p>
+<pre>session.txRollback();</pre></li>
+</ul>
+
+
 EOS
         }
         # Session class.
