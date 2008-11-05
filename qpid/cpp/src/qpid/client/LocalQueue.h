@@ -37,7 +37,37 @@ namespace client {
  * local queue until you retrieve them.
  *
  * \ingroup clientapi
+ *
+ * \details Using a Local Queue
+ *
+ * <pre>
+ * LocalQueue local_queue;
+ * subscriptions.subscribe(local_queue, string("message_queue"));
+ * for (int i=0; i&lt;10; i++) {
+ *   Message message = local_queue.get();
+ *   std::cout &lt;&lt; message.getData() &lt;&lt; std::endl;
+ * }
+ * </pre>
+ * 
+ * <h2>Getting Messages</h2>
+ *
+ * <ul><li>
+ * <p>get()</p>
+ * <pre>Message message = local_queue.get();</pre>
+ * <pre>// Specifying timeouts (TIME_SEC, TIME_MSEC, TIME_USEC, TIME_NSEC)
+ *#include <qpid/sys/Time.h>
+ *Message message;
+ *local_queue.get(message, 5*sys::TIME_SEC);</pre></li></ul>
+ * 
+ * <h2>Checking size</h2>
+ * <ul><li>
+ * <p>empty()</p>
+ * <pre>if (local_queue.empty()) { ... }</pre></li>
+ * <li><p>size()</p>
+ * <pre>std::cout &lt;&lt; local_queue.size();</pre></li>
+ * </ul>
  */
+
 class LocalQueue {
   public:
     /** Create a local queue. Subscribe the local queue to a remote broker

@@ -30,6 +30,8 @@ class CppGen
     }
   end
 
+  
+  # Generates a doxygen comment for AmqpMethod m.
   def doxygen(m)
     doxygen_comment {
       genl m.doc
