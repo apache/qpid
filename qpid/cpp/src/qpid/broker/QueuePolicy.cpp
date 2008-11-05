@@ -48,12 +48,16 @@ bool QueuePolicy::checkLimit(const QueuedMessage& m)
     if (exceeded) {
         if (!policyExceeded) {
             policyExceeded = true;
-            QPID_LOG(info, "Queue size exceeded policy for " << m.queue->getName());
+            if (m.queue) {
+                QPID_LOG(info, "Queue size exceeded policy for " << m.queue->getName());
+            }
         }
     } else {
         if (policyExceeded) {
             policyExceeded = false;
-            QPID_LOG(info, "Queue size within policy for " << m.queue->getName());
+            if (m.queue) {
+                QPID_LOG(info, "Queue size within policy for " << m.queue->getName());
+            }
         }
     }
     return !exceeded;

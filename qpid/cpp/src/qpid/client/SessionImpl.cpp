@@ -217,6 +217,16 @@ struct MarkCompleted
 
 };
 
+void SessionImpl::markCompleted(const SequenceSet& ids, bool notifyPeer)
+{
+    Lock l(state);
+    incompleteIn.remove(ids);
+    completedIn.add(ids);
+    if (notifyPeer) {
+        sendCompletion();
+    }    
+}
+
 void SessionImpl::markCompleted(const SequenceNumber& id, bool cumulative, bool notifyPeer)
 {
     Lock l(state);

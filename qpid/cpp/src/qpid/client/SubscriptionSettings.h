@@ -30,6 +30,11 @@ namespace client {
 /** Bring AMQP enum definitions for message class into this namespace. */
 using namespace qpid::framing::message;
 
+enum CompletionMode {
+    MANUAL_COMPLETION = 0,
+    COMPLETE_ON_DELIVERY = 1,
+    COMPLETE_ON_ACCEPT = 2
+};
 /**
  * Settings for a subscription.
  */
@@ -40,8 +45,8 @@ struct SubscriptionSettings
         AcceptMode accept=ACCEPT_MODE_EXPLICIT,
         AcquireMode acquire=ACQUIRE_MODE_PRE_ACQUIRED,
         unsigned int autoAck_=1,
-        bool autoComplete_=true
-    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_), autoComplete(autoComplete_) {}
+        CompletionMode completion=COMPLETE_ON_DELIVERY
+    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_), completionMode(completion) {}
                          
     FlowControl flowControl;    ///@< Flow control settings. @see FlowControl
     AcceptMode acceptMode;      ///@< ACCEPT_MODE_EXPLICIT or ACCEPT_MODE_NONE
@@ -53,19 +58,28 @@ struct SubscriptionSettings
      *  ACCEPT_MODE_NODE.*/
     unsigned int autoAck;
     /**
-     * If set to true, messages will be marked as completed (in
-     * windowing mode, completion of a message will cause the credit
-     * used up by that message to be reallocated) once they have been
-     * received. The server will be explicitly notified of all
-     * completed messages when the next accept is sent through the
+     * In windowing mode, completion of a message will cause the
+     * credit used up by that message to be reallocated. The
+     * subscriptions completion mode controls how completion is
+     * managed.
+     * 
+     * If set to COMPLETE_ON_DELIVERY (which is the default), messages
+     * will be marked as completed once they have been received. The
+     * server will be explicitly notified of all completed messages
+     * for the session when the next accept is sent through the
      * subscription (either explictly or through autAck). However the
      * server may also periodically request information on the
      * completed messages.
      * 
-     * If set to false the application is responsible for completing
-     * messages (@see Session::markCompleted()).
+     * If set to COMPLETE_ON_ACCEPT, messages will be marked as
+     * completed once they are accepted (via the Subscription class)
+     * and the server will also be notified of all completed messages
+     * for the session.
+     * 
+     * If set to MANUAL_COMPLETION the application is responsible for
+     * completing messages (@see Session::markCompleted()).
      */
-    bool autoComplete;
+    CompletionMode completionMode;
 };
 
 }} // namespace qpid::client
