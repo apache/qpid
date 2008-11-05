@@ -56,8 +56,8 @@ namespace qpid {
                 void commit();    
             };
 
-            framing::SequenceSet& acked;
-            std::list<DeliveryRecord>& unacked;
+            framing::SequenceSet acked;
+            DeliveryRecords& unacked;
             RangeOps ops;
 
         public:
@@ -66,11 +66,15 @@ namespace qpid {
              * acks received
              * @param unacked the record of delivered messages
              */
-            TxAccept(framing::SequenceSet& acked, std::list<DeliveryRecord>& unacked);
+            TxAccept(const framing::SequenceSet& acked, DeliveryRecords& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~TxAccept(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
+
+            // Used by cluster replication.
+            const framing::SequenceSet& getAcked() const { return acked; }
         };
     }
 }

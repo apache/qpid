@@ -31,9 +31,9 @@ class Buffer;
 class SequenceSet : public RangeSet<SequenceNumber> {
   public:
     SequenceSet() {}
-    explicit SequenceSet(const RangeSet<SequenceNumber>& r)
+    SequenceSet(const RangeSet<SequenceNumber>& r)
         : RangeSet<SequenceNumber>(r) {}
-    explicit SequenceSet(const SequenceNumber& s) { add(s); }
+    SequenceSet(const SequenceNumber& s) { add(s); }
     SequenceSet(const SequenceNumber& start, const SequenceNumber finish) { add(start,finish); }
     
     

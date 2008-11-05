@@ -39,6 +39,7 @@ namespace qpid {
             virtual void commit() throw();
             virtual void rollback() throw();
             virtual ~DtxAck(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
         };
     }
 }

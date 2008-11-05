@@ -506,6 +506,7 @@ nobase_include_HEADERS = \
   qpid/broker/TxAccept.h \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \
+  qpid/broker/TxOpVisitor.h \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.h \
   qpid/client/AckMode.h \

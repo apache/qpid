@@ -75,8 +75,12 @@ namespace qpid {
             virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
 
             virtual ~TxPublish(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
 
             uint64_t contentSize();
+
+            boost::intrusive_ptr<Message> getMessage() const { return msg; }
+            const std::list<Queue::shared_ptr> getQueues() const { return queues; }
         };
     }
 }

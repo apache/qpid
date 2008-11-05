@@ -114,6 +114,9 @@ public:
     void check(){
         assertEqualVector(expected, actual);
     }
+
+    void accept(TxOpConstVisitor&) const {}
+    
     ~MockTxOp(){}        
 };
 

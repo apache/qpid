@@ -436,7 +436,7 @@ void SemanticState::recover(bool requeue)
     if(requeue){
         //take copy and clear unacked as requeue may result in redelivery to this session
         //which will in turn result in additions to unacked
-        std::list<DeliveryRecord> copy = unacked;
+        DeliveryRecords copy = unacked;
         unacked.clear();
         for_each(copy.rbegin(), copy.rend(), mem_fun_ref(&DeliveryRecord::requeue));
     }else{
