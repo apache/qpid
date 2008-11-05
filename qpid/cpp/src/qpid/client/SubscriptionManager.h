@@ -43,6 +43,65 @@ namespace client {
  * delivered.
  *  
  * \ingroup clientapi
+ *
+ * \details
+ * 
+ * <h2>Subscribing and canceling subscriptions</h2>
+ *
+ * <ul>
+ * <li> 
+ * <p>subscribe()</p>
+ * <pre> SubscriptionManager subscriptions(session);
+ * Listener listener(subscriptions);
+ * subscriptions.subscribe(listener, myQueue);</pre>
+ * <pre> SubscriptionManager subscriptions(session);
+ * LocalQueue local_queue;
+ * subscriptions.subscribe(local_queue, string("message_queue"));</pre></li>
+ * <li>
+ * <p>cancel()</p>
+ * <pre>subscriptions.cancel();</pre></li>
+ * </ul>
+ * 
+ * <h2>Waiting for messages (and returning)</h2>
+ *
+ * <ul>
+ * <li> 
+ * <p>run()</p>
+ * <pre> // Give up control to receive messages
+ * subscriptions.run();</pre></li>
+ * <li>
+ * <p>stop()</p>
+ * <pre>.// Use this code in a listener to return from run()
+ * subscriptions.stop();</pre></li>
+ * <li>
+ * <p>setAutoStop()</p>
+ * <pre>.// Return from subscriptions.run() when last subscription is cancelled
+ *.subscriptions.setAutoStop(true);
+ *.subscriptons.run();
+ * </pre></li>
+ * <li>
+ * <p>Ending a subscription in a listener</p>
+ * <pre>
+ * void Listener::received(Message&amp; message) {
+ * 
+ *  if (message.getData() == "That's all, folks!") {
+ *       subscriptions.cancel(message.getDestination());
+ *   }
+ * }
+ * </pre>
+ * </li>
+ * </ul>
+ * 
+ * 
+ * <h2>Setting Accept Mode, Acquire Mode, Ack Policy</h2>
+ * 
+ * <p>setAcceptMode()</p>
+ * <pre>subscriptions.setAcceptMode(true);</pre>
+ * <p>setAcquireMode()</p>
+ * <pre>subscriptions.setAcquireMode(false);</pre>
+ * 
+ * 
+ * 
  */
 class SubscriptionManager : public sys::Runnable
 {

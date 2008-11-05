@@ -35,7 +35,54 @@ namespace client {
      * Another way to receive messages is by using a LocalQueue.
      * 
      * \ingroup clientapi
+     * \details 
+     *
+     * <h2>Using a MessageListener</h2>
+     * 
+     * <ul>
+     * <li>
+     * <p>The received() function is called when a message arrives:</p>
+     * <pre>virtual void received(Message&amp; message)=0;</pre>
+     * </li>
+     * <li>
+     * <p>Derive your own listener, implement the received() function:</p>
+     * <pre>
+     * class Listener : public MessageListener {
+     *  private:
+     *    SubscriptionManager&amp; subscriptions;
+     *  public:
+     *    Listener(SubscriptionManager&amp; subscriptions);
+     *    virtual void received(Message&amp; message);
+     * };
+     * 
+     * Listener::Listener(SubscriptionManager&amp; subs) : subscriptions(subs)
+     * {}
+     * 
+     * void Listener::received(Message&amp; message) {
+     *   std::cout &lt;&lt; "Message: " &lt;&lt; message.getData() &lt;&lt; std::endl;
+     *   if (message.getData() == "That's all, folks!") {
+     *       std::cout &lt;&lt; "Shutting down listener for " &lt;&lt; message.getDestination()
+     *                &lt;&lt; std::endl;
+     *       subscriptions.cancel(message.getDestination());
+     *   }
+     * }
+     *</pre>
+     * <pre>
+     * SubscriptionManager subscriptions(session);
+     * 
+     * // Create a listener and subscribe it to the queue named "message_queue"
+     * Listener listener(subscriptions);
+     * subscriptions.subscribe(listener, "message_queue");
+     * 
+     * // Receive messages until the subscription is cancelled
+     * // by Listener::received()
+     * subscriptions.run();
+     * </pre>
+     * </li>
+     * </ul>
+     * 
      */
+
     class MessageListener{
     public:
         virtual ~MessageListener();
