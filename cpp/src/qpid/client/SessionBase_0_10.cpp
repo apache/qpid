@@ -49,6 +49,11 @@ void SessionBase_0_10::sync()
     impl->send(b).wait(*impl);
 }
 
+void SessionBase_0_10::markCompleted(const framing::SequenceSet& ids, bool notifyPeer)
+{
+    impl->markCompleted(ids, notifyPeer);
+}
+
 void SessionBase_0_10::markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer)
 {
     impl->markCompleted(id, cumulative, notifyPeer);

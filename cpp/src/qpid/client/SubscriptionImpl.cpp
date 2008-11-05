@@ -31,6 +31,9 @@ using framing::MessageAcquireResult;
 
 SubscriptionImpl::SubscriptionImpl(SubscriptionManager& m, const std::string& q, const SubscriptionSettings& s, const std::string& n, MessageListener* l)
     : manager(m), name(n), queue(q), settings(s), listener(l)
+{}
+
+void SubscriptionImpl::subscribe()
 {
     async(manager.getSession()).messageSubscribe( 
         arg::queue=queue,
@@ -79,9 +82,23 @@ void SubscriptionImpl::accept(const SequenceSet& messageIds) {
     Mutex::ScopedLock l(lock);
     manager.getSession().messageAccept(messageIds);
     unaccepted.remove(messageIds);
-    if (settings.autoComplete) {
+    switch (settings.completionMode) {
+      case COMPLETE_ON_ACCEPT:
+        manager.getSession().markCompleted(messageIds, true);
+        break;
+      case COMPLETE_ON_DELIVERY:
         manager.getSession().sendCompletion();
+        break;
+      default://do nothing
+        break;
     }
+}
+
+void SubscriptionImpl::release(const SequenceSet& messageIds) {
+    Mutex::ScopedLock l(lock);
+    manager.getSession().messageRelease(messageIds);
+    if (settings.acceptMode == ACCEPT_MODE_EXPLICIT)
+        unaccepted.remove(messageIds);
 }
 
 Session SubscriptionImpl::getSession() const { return manager.getSession(); }
@@ -102,16 +119,23 @@ void SubscriptionImpl::received(Message& m) {
         listener->received(m);
     }
 
-    if (settings.autoComplete) {
+    if (settings.completionMode == COMPLETE_ON_DELIVERY) {
         manager.getSession().markCompleted(m.getId(), false, false);
     }
     if (settings.autoAck) {
         if (unaccepted.size() >= settings.autoAck) {
             async(manager.getSession()).messageAccept(unaccepted);
-            unaccepted.clear();
-            if (settings.autoComplete) {
+            switch (settings.completionMode) {
+              case COMPLETE_ON_ACCEPT:
+                manager.getSession().markCompleted(unaccepted, true);
+                break;
+              case COMPLETE_ON_DELIVERY:
                 manager.getSession().sendCompletion();
+                break;
+              default://do nothing
+                break;
             }
+            unaccepted.clear();
         }
     }
 }

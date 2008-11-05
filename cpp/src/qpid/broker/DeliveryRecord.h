@@ -64,6 +64,15 @@ class DeliveryRecord
     bool ended;
     const bool windowing;
 
+    /**
+     * Record required credit on construction as the pointer to the
+     * message may be reset once we no longer need to deliver it
+     * (e.g. when it is accepted), but we will still need to be able
+     * to reallocate credit when it is completed (which could happen
+     * after that).
+     */
+    const uint32_t credit;
+
   public:
     DeliveryRecord(
         const QueuedMessage& msg,

@@ -44,6 +44,8 @@ Subscription SubscriptionManager::subscribe(
     std::string name=n.empty() ? q:n;
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, &listener);
     dispatcher.listen(si);
+    //issue subscription request after listener is registered with dispatcher
+    si->subscribe();
     return subscriptions[name] = Subscription(si.get());
 }
 
@@ -53,6 +55,7 @@ Subscription SubscriptionManager::subscribe(
     std::string name=n.empty() ? q:n;
     lq.queue=session.getExecution().getDemux().add(name, ByTransferDest(name));
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, 0);
+    si->subscribe();
     lq.subscription = Subscription(si.get());
     return subscriptions[name] = lq.subscription;
 }
