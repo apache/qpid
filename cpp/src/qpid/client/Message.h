@@ -33,7 +33,77 @@ namespace client {
  * A message sent to or received from the broker.
  *
  * \ingroup clientapi
+ * \details 
+ * 
+ * <h2>Getting and setting message contents</h2>
+ *
+ * <ul>
+ * <li> 
+ * <p>getData()</p>
+ * <pre>std::cout &lt;&lt; "Response: " &lt;&lt; message.getData() &lt;&lt; std::endl;</pre>
+ * </li>
+ * <li>
+ * <p>setData()</p>
+ * <pre>message.setData("That's all, folks!");</pre></li>
+ * <li>
+ * <p>appendData()</p>
+ * <pre>message.appendData(" ... let's add a bit more ...");</pre></li>
+ * </ul>
+ * 
+ * <h2>Getting and Setting Delivery Properties</h2>
+ * 
+ * <ul>
+ * <li>
+ * <p>getDeliveryProperties()</p>
+ * <pre>message.getDeliveryProperties().setRoutingKey("control");</pre>
+ * <pre>message.getDeliveryProperties().setDeliveryMode(PERSISTENT);</pre>
+ * <pre>message.getDeliveryProperties().setPriority(9);</pre>
+ * <pre>message.getDeliveryProperties().setTtl(100);</pre></li>
+ * 
+ * <li>
+ * <p>hasDeliveryProperties()</p>
+ * <pre>if (! message.hasDeliveryProperties()) {
+ *  ...
+ *}</pre></li>
+ * </ul>
+ * 
+ * <h2>Getting and Setting Message Properties</h2>
+ * 
+ * <ul>
+ * <li>
+ * <p>getMessageProperties()</p>
+ * <pre>
+ *request.getMessageProperties().setReplyTo(ReplyTo("amq.direct", response_queue.str()));
+ * </pre>
+ * <pre>
+ *routingKey = request.getMessageProperties().getReplyTo().getRoutingKey();
+ *exchange = request.getMessageProperties().getReplyTo().getExchange();
+ * </pre>
+ * <pre>message.getMessageProperties().setContentType("text/plain");</pre>
+ * <pre>message.getMessageProperties().setContentEncoding("text/plain");</pre>
+ * </li>
+ * <li>
+ * <p>hasMessageProperties()</p>
+ * <pre>request.getMessageProperties().hasReplyTo();</pre>
+ * </li>
+ * </ul>
+ * 
+ * <h2>Getting and Setting Application Headers</h2>
+ * 
+ * <ul>
+ * <li>
+ * <p>getHeaders()</p>
+ * <pre>
+ *message.getHeaders().getString("control");
+ * </pre>
+ * <pre>
+ *message.getHeaders().setString("control","continue");
+ * </pre></li>
+ * </ul>
+ * 
+ * 
  */
+
 class Message : public framing::TransferContent 
 {
 public:
