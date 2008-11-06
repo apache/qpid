@@ -88,6 +88,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
         SequenceNumber commandId;
         if (getState()) commandId =  getState()->receiverGetCurrent();
         execution.exception(e.code, commandId, m ? m->amqpClassId() : 0, m ? m->amqpMethodId() : 0, 0, e.what(), FieldTable());
+        detaching();
         sendDetach();
     }
     catch(const ChannelException& e){

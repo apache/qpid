@@ -71,6 +71,12 @@ void SessionHandler::setState(const std::string& name, bool force) {
     session = connection.broker.getSessionManager().attach(*this, id, force);
 }
 
+void SessionHandler::detaching() 
+{
+    assert(session.get());
+    session->disableOutput();
+}
+
 FrameHandler* SessionHandler::getInHandler() { return session.get() ? &session->in : 0; }
 qpid::SessionState* SessionHandler::getState() { return session.get(); }
 

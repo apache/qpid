@@ -93,11 +93,16 @@ bool SessionState::isLocal(const ConnectionToken* t) const
 
 void SessionState::detach() {
     QPID_LOG(debug, getId() << ": detached on broker.");
-    semanticState.detached();//prevents further activateOutput calls until reattached
-    getConnection().outputTasks.removeOutputTask(&semanticState);
+    disableOutput();
     handler = 0;
     if (mgmtObject != 0)
         mgmtObject->set_attached  (0);
+}
+
+void SessionState::disableOutput() 
+{
+    semanticState.detached();//prevents further activateOutput calls until reattached
+    getConnection().outputTasks.removeOutputTask(&semanticState);
 }
 
 void SessionState::attach(SessionHandler& h) {
