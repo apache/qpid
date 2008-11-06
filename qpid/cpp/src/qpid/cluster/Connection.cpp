@@ -125,7 +125,7 @@ bool Connection::checkUnsupported(const AMQBody& body) {
         if (dp && dp->getTtl()) message = "Message TTL is not currently supported by cluster.";
     }
     if (!message.empty())
-        connection.close(connection::CLOSE_CODE_FRAMING_ERROR, message, 0, 0);
+        connection.close(connection::CLOSE_CODE_FRAMING_ERROR, message);
     return !message.empty();
 }
 

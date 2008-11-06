@@ -29,6 +29,7 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
@@ -84,7 +85,7 @@ class ConnectionHandler : public framing::FrameHandler
     std::auto_ptr<Handler> handler;
   public:
     ConnectionHandler(Connection& connection, bool isClient);
-    void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
+    void close(framing::connection::CloseCode code, const std::string& text);
     void handle(framing::AMQFrame& frame);
 };
 

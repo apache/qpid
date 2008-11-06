@@ -22,7 +22,6 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
-#include "qpid/amqp_0_10/exceptions.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/agent/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
@@ -405,7 +404,6 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
             throw NotAllowedException("ACL denied queue delete request");
     }
 
-    ChannelException error(0, "");
     Queue::shared_ptr q = getQueue(queue);
     if(ifEmpty && q->getMessageCount() > 0){
         throw PreconditionFailedException("Queue not empty.");
@@ -731,11 +729,11 @@ void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid& xid,
 Queue::shared_ptr SessionAdapter::HandlerHelper::getQueue(const string& name) const {
     Queue::shared_ptr queue;
     if (name.empty()) {
-        throw amqp_0_10::IllegalArgumentException(QPID_MSG("No queue name specified."));
+        throw framing::IllegalArgumentException(QPID_MSG("No queue name specified."));
     } else {
         queue = session.getBroker().getQueues().find(name);
         if (!queue)
-            throw amqp_0_10::NotFoundException(QPID_MSG("Queue not found: "<<name));
+            throw framing::NotFoundException(QPID_MSG("Queue not found: "<<name));
     }
     return queue;
 }

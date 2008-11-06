@@ -29,6 +29,7 @@
 #include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/Array.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/InputHandler.h"
@@ -57,7 +58,7 @@ class ConnectionHandler : private StateManager,
 
     Adapter outHandler;
     framing::AMQP_ServerProxy::Connection proxy;
-    uint16_t errorCode;
+    framing::connection::CloseCode errorCode;
     std::string errorText;
     bool insist;
     framing::ProtocolVersion version;
@@ -106,6 +107,8 @@ public:
     ErrorListener onError;
 
     std::vector<Url> knownBrokersUrls;
+
+    static framing::connection::CloseCode convert(uint16_t replyCode);
 };
 
 }}

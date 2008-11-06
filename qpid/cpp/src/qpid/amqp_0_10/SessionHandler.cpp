@@ -48,6 +48,17 @@ bool isSessionDetachedControl(AMQMethodBody* m) {
     return isSessionControl(m) &&
         m->amqpMethodId() == SESSION_DETACHED_METHOD_ID;
 }
+
+session::DetachCode convert(uint8_t code) {
+    switch(code) {
+      case 0: return session::DETACH_CODE_NORMAL;
+      case 1: return session::DETACH_CODE_SESSION_BUSY;
+      case 2: return session::DETACH_CODE_TRANSPORT_BUSY;
+      case 3: return session::DETACH_CODE_NOT_ATTACHED;
+      case 4: default: return session::DETACH_CODE_UNKNOWN_IDS;
+    }
+}
+
 } // namespace
 
 void SessionHandler::checkAttached() {
@@ -167,7 +178,7 @@ void SessionHandler::detached(const std::string& name, uint8_t code) {
     checkName(name);
     ignoring = false;
     if (code != session::DETACH_CODE_NORMAL)
-        channelException(code, "session.detached from peer.");
+        channelException(convert(code), "session.detached from peer.");
     else {
         handleDetach();
     }

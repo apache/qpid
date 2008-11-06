@@ -69,10 +69,7 @@ class Connection : public sys::ConnectionInputHandler,
     SessionHandler& getChannel(framing::ChannelId channel);
 
     /** Close the connection */
-    void close(framing::ReplyCode code = 403,
-               const string& text = string(),
-               framing::ClassId classId = 0,
-               framing::MethodId methodId = 0);
+    void close(framing::connection::CloseCode code, const string& text);
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);

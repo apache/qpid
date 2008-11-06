@@ -150,7 +150,7 @@ template <class F> void ConnectionImpl::closeInternal(const F& f) {
 
 void ConnectionImpl::closed(uint16_t code, const std::string& text) { 
     Mutex::ScopedLock l(lock);
-    setException(new ConnectionException(code, text));
+    setException(new ConnectionException(ConnectionHandler::convert(code), text));
     closeInternal(boost::bind(&SessionImpl::connectionClosed, _1, code, text));
 }
 
