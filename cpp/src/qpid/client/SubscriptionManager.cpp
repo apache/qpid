@@ -92,6 +92,11 @@ void SubscriptionManager::start()
     dispatcher.start();
 }
 
+void SubscriptionManager::wait()
+{
+    dispatcher.wait();
+}
+
 void SubscriptionManager::stop()
 {
     dispatcher.stop();
