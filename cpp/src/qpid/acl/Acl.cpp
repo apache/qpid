@@ -64,28 +64,26 @@ Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transfer
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
    {
-      if (!aclValues.enforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
-      
-      // add real ACL check here... 
+
+      // add real ACL check here...
       AclResult aclreslt = dataLocal->lookup(id,action,objType,name,params);
-	  
-	  
-	  return result(aclreslt, id, action, objType, name); 
+
+
+	  return result(aclreslt, id, action, objType, name);
    }
 
    bool Acl::authorise(const std::string& id, const Action& action, const ObjectType& objType, const std::string& ExchangeName, const std::string& RoutingKey)
    {
-      if (!aclValues.enforce) return true;
       boost::shared_ptr<AclData> dataLocal = data;  //rcu copy
-      
+
       // only use dataLocal here...
-      AclResult aclreslt = dataLocal->lookup(id,action,objType,ExchangeName,RoutingKey);  
-	  
-	  return result(aclreslt, id, action, objType, ExchangeName); 
+      AclResult aclreslt = dataLocal->lookup(id,action,objType,ExchangeName,RoutingKey);
+
+	  return result(aclreslt, id, action, objType, ExchangeName);
    }
 
-   
+
    bool Acl::result(const AclResult& aclreslt, const std::string& id, const Action& action, const ObjectType& objType, const std::string& name)
    {
 	  switch (aclreslt)

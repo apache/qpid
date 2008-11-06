@@ -33,7 +33,7 @@ namespace qpid {
 
 namespace acl {
 
-enum ObjectType {OBJ_QUEUE, OBJ_EXCHANGE, OBJ_BROKER, OBJ_LINK, OBJ_ROUTE,
+enum ObjectType {OBJ_QUEUE, OBJ_EXCHANGE, OBJ_BROKER, OBJ_LINK,
                  OBJ_METHOD, OBJECTSIZE}; // OBJECTSIZE must be last in list
 enum Action {ACT_CONSUME, ACT_PUBLISH, ACT_CREATE, ACT_ACCESS, ACT_BIND,
              ACT_UNBIND, ACT_DELETE, ACT_PURGE, ACT_UPDATE,
@@ -79,7 +79,6 @@ class AclHelper {
         if (str.compare("exchange") == 0) return OBJ_EXCHANGE;
         if (str.compare("broker") == 0) return OBJ_BROKER;
         if (str.compare("link") == 0) return OBJ_LINK;
-        if (str.compare("route") == 0) return OBJ_ROUTE;
         if (str.compare("method") == 0) return OBJ_METHOD;
         throw str;
     }
@@ -89,7 +88,6 @@ class AclHelper {
           case OBJ_EXCHANGE: return "exchange";
           case OBJ_BROKER: return "broker";
           case OBJ_LINK: return "link";
-          case OBJ_ROUTE: return "route";
           case OBJ_METHOD: return "method";
           default: assert(false); // should never get here
         }
@@ -237,16 +235,8 @@ class AclHelper {
 
         actionMapPtr a2(new actionMap);
         a2->insert(actionPair(ACT_CREATE,  p0));
-        
+
         map->insert(objectPair(OBJ_LINK, a2));
-
-        // == Route ==
-
-        actionMapPtr a3(new actionMap);
-        a3->insert(actionPair(ACT_CREATE,  p0));
-        a3->insert(actionPair(ACT_DELETE,  p0));
-        
-        map->insert(objectPair(OBJ_ROUTE, a3));
 
         // == Method ==
 
