@@ -169,6 +169,8 @@ void Connection::close(
 {
     QPID_LOG_IF(error, code != 200, "Connection " << mgmtId << " closed by error: " << text << "(" << code << ")");
     adapter.close(code, text, classId, methodId);
+    //make sure we delete dangling pointers from outputTasks before deleting sessions
+    outputTasks.removeAll();
     channels.clear();
     getOutput().close();
 }
