@@ -28,8 +28,8 @@ MessageReplayTracker::MessageReplayTracker(uint f) : flushInterval(f), count(0) 
 
 void MessageReplayTracker::send(const Message& message, const std::string& destination)
 {
-    ReplayRecord record(message, destination);
-    record.send(*this);
+    buffer.push_back(ReplayRecord(message, destination));    
+    buffer.back().send(*this);
     if (flushInterval && ++count >= flushInterval) {
         checkCompletion();
         if (!buffer.empty()) session.flush();
@@ -70,7 +70,6 @@ MessageReplayTracker::ReplayRecord::ReplayRecord(const Message& m, const std::st
 void MessageReplayTracker::ReplayRecord::send(MessageReplayTracker& tracker)
 {
     status = tracker.session.messageTransfer(arg::destination=destination, arg::content=message);
-    tracker.buffer.push_back(*this);    
 }
 
 bool MessageReplayTracker::ReplayRecord::isComplete()
