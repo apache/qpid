@@ -54,6 +54,11 @@ void Dispatcher::start()
     worker = Thread(this);
 }
 
+void Dispatcher::wait()
+{
+    worker.join();
+}
+
 void Dispatcher::run()
 {
     Mutex::ScopedLock l(lock);

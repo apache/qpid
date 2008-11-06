@@ -210,6 +210,11 @@ class SubscriptionManager : public sys::Runnable
      * @see start
      */
     void start();
+
+    /**
+     * Wait for the thread started by a call to start() to complete.
+     */
+    void wait();
     
     /** If set true, run() will stop when all subscriptions
      * are cancelled. If false, run will only stop when stop()

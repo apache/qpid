@@ -63,6 +63,7 @@ public:
     Dispatcher(const Session& session, const std::string& queue = "");
 
     void start();
+    void wait();
     void run();
     void stop();
     void setAutoStop(bool b);
