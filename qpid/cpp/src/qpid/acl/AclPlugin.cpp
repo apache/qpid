@@ -36,13 +36,11 @@ using namespace std;
  *  New boost allows a shared_ptr but that's not compatible with old boost.
  */
 struct AclOptions : public Options {
-    AclValues& values; 
+    AclValues& values;
 
     AclOptions(AclValues& v) : Options("ACL Options"), values(v) {
         addOptions()
-            ("enforce-acl", optValue(values.enforce), "Enforce ACL")
-            ("acl-file", optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir")
-            ;
+            ("acl-file", optValue(values.aclFile, "FILE"), "The policy file to load from, loaded from data dir");
     }
 };
 
@@ -51,20 +49,22 @@ struct AclPlugin : public Plugin {
     AclValues values;
     AclOptions options;
     boost::intrusive_ptr<Acl> acl;
-    
+
     AclPlugin() : options(values) {}
 
     Options* getOptions() { return &options; }
 
     void init(broker::Broker& b) {
-        if (!values.enforce){
-		    QPID_LOG(info, "ACL Disabled, no ACL checking being done.");
-			return;  
-		}
-        if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
+        if (values.aclFile.empty()){
+            QPID_LOG(info, "Policy file not specified. ACL Disabled, no ACL checking being done!");
+        	return;
+        }
+
+    	if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
         std::ostringstream oss;
         oss << b.getDataDir().getPath() << "/" << values.aclFile;
         values.aclFile = oss.str();
+
         acl = new Acl(values, b);
 		b.setAcl(acl.get());
         b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
