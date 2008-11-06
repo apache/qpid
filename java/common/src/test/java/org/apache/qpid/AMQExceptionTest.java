@@ -42,14 +42,10 @@ public class AMQExceptionTest extends TestCase
     {
         AMQException test = new AMQException(AMQConstant.ACCESS_REFUSED, "refused", new RuntimeException());
 
-        try
-        {
-            reThrowException(test);
-        }
-        catch (AMQException e)
-        {
-            assertEquals("Exception not of correct class", AMQException.class, e.getClass());
-        }
+        AMQException e = reThrowException(test);
+
+        assertEquals("Exception not of correct class", AMQException.class, e.getClass());
+
     }
 
     /**
@@ -60,14 +56,9 @@ public class AMQExceptionTest extends TestCase
         AMQFrameDecodingException test = new AMQFrameDecodingException(AMQConstant.INTERNAL_ERROR,
                                                                        "Error",
                                                                        new Exception());
-        try
-        {
-            reThrowException(test);
-        }
-        catch (AMQException e)
-        {
-            assertEquals("Exception not of correct class", AMQFrameDecodingException.class, e.getClass());
-        }
+        AMQException e = reThrowException(test);
+
+        assertEquals("Exception not of correct class", AMQFrameDecodingException.class, e.getClass());
     }
 
     /**
@@ -77,14 +68,10 @@ public class AMQExceptionTest extends TestCase
     public void testRethrowAMQESubclassNoConstructor()
     {
         AMQExceptionSubclass test = new AMQExceptionSubclass("Invalid Argument Exception");
-        try
-        {
-            reThrowException(test);
-        }
-        catch (AMQException e)
-        {
-            assertEquals("Exception not of correct class", AMQException.class, e.getClass());
-        }
+
+        AMQException e = reThrowException(test);
+
+        assertEquals("Exception not of correct class", AMQException.class, e.getClass());
     }
 
     /**
@@ -92,25 +79,16 @@ public class AMQExceptionTest extends TestCase
      * @param test Exception to rethrow
      * @throws AMQException the rethrown exception
      */
-    private void reThrowException(AMQException test) throws AMQException
+    private AMQException reThrowException(AMQException test)
     {
-        try
-        {
-            test.rethrow();
-        }
-        catch (AMQException amqe)
-        {
-            assertEquals("Error code does not match.", test.getErrorCode(), amqe.getErrorCode());
-            assertTrue("Exception message does not start as expected.", amqe.getMessage().startsWith(test.getMessage()));
-            assertEquals("Test Exception is not set as the cause", test, amqe.getCause());
-            assertEquals("Cause is not correct", test.getCause(), amqe.getCause().getCause());
-            throw amqe;
-        }
-        catch (Throwable e)
-        {
-            fail("Throwable recieved when AMQException expected:" + e);
-        }
+        AMQException amqe = test.cloneForCurrentThread();
 
+        assertEquals("Error code does not match.", test.getErrorCode(), amqe.getErrorCode());
+        assertTrue("Exception message does not start as expected.", amqe.getMessage().startsWith(test.getMessage()));
+        assertEquals("Test Exception is not set as the cause", test, amqe.getCause());
+        assertEquals("Cause is not correct", test.getCause(), amqe.getCause().getCause());
+
+        return amqe;
     }
 
     /**

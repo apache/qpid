@@ -673,7 +673,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                         {
                             AMQException amqe = (AMQException) e;
 
-                            amqe.rethrow();
+                            throw amqe.cloneForCurrentThread();
                         }
                         else
                         {
