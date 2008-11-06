@@ -24,6 +24,7 @@
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/constants.h"
+#include "qpid/framing/enum.h"
 #include "qpid/sys/StrError.h"
 #include "qpid/Msg.h"
 
@@ -58,20 +59,20 @@ struct ErrnoException : public Exception {
 };
     
 struct SessionException : public Exception {
-    const framing::ReplyCode code;
-    SessionException(framing::ReplyCode code_, const std::string& message)
+    const framing::execution::ErrorCode code;
+    SessionException(framing::execution::ErrorCode code_, const std::string& message)
         : Exception(message), code(code_) {}
 };
 
 struct ChannelException : public Exception {
-    const framing::ReplyCode code;
-    ChannelException(framing::ReplyCode _code, const std::string& message)
+    const framing::session::DetachCode code;
+    ChannelException(framing::session::DetachCode _code, const std::string& message)
         : Exception(message), code(_code) {}
 };
 
 struct ConnectionException : public Exception {
-    const framing::ReplyCode code;
-    ConnectionException(framing::ReplyCode _code, const std::string& message)
+    const framing::connection::CloseCode code;
+    ConnectionException(framing::connection::CloseCode _code, const std::string& message)
         : Exception(message), code(_code) {}
 };
 

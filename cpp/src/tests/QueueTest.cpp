@@ -65,7 +65,7 @@ public:
     Message& getMessage() { return msg; }
 };
 
-intrusive_ptr<Message> message(std::string exchange, std::string routingKey) {
+intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey) {
     intrusive_ptr<Message> msg(new Message());
     AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
     AMQFrame header(in_place<AMQHeaderBody>());
@@ -86,7 +86,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     
     
     //Test basic delivery:
-    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
     msg1->enqueueAsync();//this is done on enqueue which is not called from process
     queue->process(msg1);
     sleep(2);
@@ -101,7 +101,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     
 QPID_AUTO_TEST_CASE(testAsyncMessageCount){
     Queue::shared_ptr queue(new Queue("my_test_queue", true));
-    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
     msg1->enqueueAsync();//this is done on enqueue which is not called from process
     
     queue->process(msg1);
@@ -125,9 +125,9 @@ QPID_AUTO_TEST_CASE(testConsumers){
     BOOST_CHECK_EQUAL(uint32_t(2), queue->getConsumerCount());
     
     //Test basic delivery:
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
     
     queue->deliver(msg1);
     BOOST_CHECK(queue->dispatch(c1));
@@ -171,9 +171,9 @@ QPID_AUTO_TEST_CASE(testRegistry){
 
 QPID_AUTO_TEST_CASE(testDequeue){
     Queue::shared_ptr queue(new Queue("my_queue", true));
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
     intrusive_ptr<Message> received;
     
     queue->deliver(msg1);
@@ -247,9 +247,9 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 	Queue::shared_ptr queue(new Queue("my-queue", true));
     queue->configure(args);
 	
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
 
 	//enqueue 2 messages
     queue->deliver(msg1);
@@ -300,7 +300,7 @@ QPID_AUTO_TEST_CASE(testOptimisticConsume){
 	Queue::shared_ptr queue(new Queue("my-queue", true, &store));
 	queue->setLastNodeFailure();
 	
-    intrusive_ptr<Message> msg1 = message("e", "A");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
 	msg1->forcePersistent();
 
 	//change mode
@@ -330,10 +330,10 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
 	Queue::shared_ptr queue(new Queue("my-queue", true ));
 	queue->configure(args);
 	
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
-    intrusive_ptr<Message> msg4 = message("e", "D");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
+    intrusive_ptr<Message> msg4 = create_message("e", "D");
     intrusive_ptr<Message> received;
 
     //set deliever match for LVQ a,b,c,a
@@ -365,9 +365,9 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     received = queue->get().payload;
     BOOST_CHECK_EQUAL(msg3.get(), received.get());
 
-    intrusive_ptr<Message> msg5 = message("e", "A");
-    intrusive_ptr<Message> msg6 = message("e", "B");
-    intrusive_ptr<Message> msg7 = message("e", "C");
+    intrusive_ptr<Message> msg5 = create_message("e", "A");
+    intrusive_ptr<Message> msg6 = create_message("e", "B");
+    intrusive_ptr<Message> msg7 = create_message("e", "C");
 	msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
 	msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
 	msg7->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
@@ -397,11 +397,11 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     Queue::shared_ptr queue(new Queue("my-queue", true ));
     queue->configure(args);
 	
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "B");
-    intrusive_ptr<Message> msg3 = message("e", "C");
-    intrusive_ptr<Message> msg4 = message("e", "D");
-    intrusive_ptr<Message> msg5 = message("e", "F");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
+    intrusive_ptr<Message> msg4 = create_message("e", "D");
+    intrusive_ptr<Message> msg5 = create_message("e", "F");
 
     //set deliever match for LVQ a,b,c,a
 
@@ -450,8 +450,8 @@ QPID_AUTO_TEST_CASE(testLVQMultiQueue){
     queue1->configure(args);
     queue2->configure(args);
 	
-    intrusive_ptr<Message> msg1 = message("e", "A");
-    intrusive_ptr<Message> msg2 = message("e", "A");
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "A");
 
     string key;
     args.getLVQKey(key);
@@ -475,7 +475,7 @@ QPID_AUTO_TEST_CASE(testLVQMultiQueue){
 void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTtl = 0) 
 {
     for (uint i = 0; i < count; i++) {
-        intrusive_ptr<Message> m = message("exchange", "key");
+        intrusive_ptr<Message> m = create_message("exchange", "key");
         if (i % 2) {
             if (oddTtl) m->getProperties<DeliveryProperties>()->setTtl(oddTtl);
         } else {

@@ -30,6 +30,7 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
+using namespace qpid::framing::connection;
 
 namespace {
 const std::string OK("OK");
@@ -40,10 +41,23 @@ const std::string INVALID_STATE_START("start received in invalid state");
 const std::string INVALID_STATE_TUNE("tune received in invalid state");
 const std::string INVALID_STATE_OPEN_OK("open-ok received in invalid state");
 const std::string INVALID_STATE_CLOSE_OK("close-ok received in invalid state");
+
+}
+
+CloseCode ConnectionHandler::convert(uint16_t replyCode)
+{
+    switch (replyCode) {
+      case 200: return CLOSE_CODE_NORMAL;
+      case 320: return CLOSE_CODE_CONNECTION_FORCED;
+      case 402: return CLOSE_CODE_INVALID_PATH;
+      case 501: default:
+        return CLOSE_CODE_FRAMING_ERROR;
+    }
 }
 
 ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v) 
-    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler), errorCode(200), version(v)
+    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler), 
+      errorCode(CLOSE_CODE_NORMAL), version(v)
 {    
     insist = true;
 
@@ -125,7 +139,7 @@ void ConnectionHandler::checkState(STATES s, const std::string& msg)
 
 void ConnectionHandler::fail(const std::string& message)
 {
-    errorCode = 502;
+    errorCode = CLOSE_CODE_FRAMING_ERROR;
     errorText = message;
     QPID_LOG(warning, message);
     setState(FAILED);
@@ -177,7 +191,7 @@ void ConnectionHandler::redirect(const std::string& /*host*/, const Array& /*kno
 void ConnectionHandler::close(uint16_t replyCode, const std::string& replyText)
 {
     proxy.closeOk();
-    errorCode = replyCode;
+    errorCode = convert(replyCode);
     errorText = replyText;
     setState(CLOSED);
     QPID_LOG(warning, "Broker closed connection: " << replyCode << ", " << replyText);

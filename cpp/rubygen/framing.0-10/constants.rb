@@ -127,19 +127,20 @@ EOS
     }
   end
 
-  def declare_exception(c, base, package)
+  def declare_exception(c, base, package, enum)
     name=c.name.caps+"Exception"
+    value="#{package}::#{enum.parent.name.shout}_#{c.name.shout}"
     genl
     doxygen_comment { genl c.doc }
     struct(c.name.caps+"Exception", base) {
       genl "std::string getPrefix() const { return \"#{c.name}\"; }"
-      genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{c.value}, \"\"+msg) {}"
+      genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{value}, \"\"+msg) {}"
     }
   end
 
   def declare_exceptions(class_name, domain_name, base)
     enum = @amqp.class_(class_name).domain(domain_name).enum
-    enum.choices.each { |c| declare_exception(c, base, class_name) unless c.name == "normal" }
+    enum.choices.each { |c| declare_exception(c, base, class_name, enum) unless c.name == "normal" }
     genl
     genl "sys::ExceptionHolder create#{base}(int code, const std::string& text);"
   end
@@ -163,6 +164,7 @@ EOS
     h_file("#{@dir}/reply_exceptions") {
       include "qpid/Exception"
       include "qpid/sys/ExceptionHolder"
+      include "enum"
       namespace(@namespace) {
         declare_exceptions("execution", "error-code", "SessionException")
         declare_exceptions("connection", "close-code", "ConnectionException")

@@ -43,7 +43,7 @@ const std::string QPID_FED_LINK = "qpid.fed_link";
 const std::string QPID_FED_TAG  = "qpid.federation_tag";
 }
 
-void ConnectionHandler::close(ReplyCode code, const string& text, ClassId, MethodId)
+void ConnectionHandler::close(connection::CloseCode code, const string& text)
 {
     handler->client.close(code, text);
 }
