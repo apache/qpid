@@ -167,6 +167,5 @@ void DtxManager::DtxCleanup::fire()
 
 void DtxManager::setStore (TransactionalStore* _store)
 {
-    assert (store == 0 && _store != 0);
     store = _store;
 }

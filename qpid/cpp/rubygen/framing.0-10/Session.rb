@@ -23,11 +23,12 @@ $: << '..'
 require 'cppgen'
 
 class CppGen
-  def session_methods
+  def session_methods(sync_default)
     excludes = ["connection", "session", "file", "stream"]
     gen_methods=@amqp.methods_on(@chassis).reject { |m|
       excludes.include? m.parent.name or m.body_name.include?("010")
     }
+    gen_methods.each { |m| m.set_sync_default(sync_default) }
   end
 
   
@@ -70,6 +71,8 @@ module SyncAsync
       genl "return *this;"
     }
   end
+
+  def sync_default() !@async end
 end
 
 class ContentField               # For extra content parameters
@@ -80,13 +83,23 @@ class ContentField               # For extra content parameters
   def doc() "Message content"; end
 end
 
+class SyncField               # For extra sync parameters
+  def initialize(default_value) @default_value=default_value ? "true" : "false" end
+  def cppname() "sync"  end
+  def signature() "bool sync" end
+  def sig_default() signature+"="+@default_value end
+  def unpack() "p[arg::sync|#{@default_value}]"; end
+  def doc() "If true the broker will respond with completion status as soon as possible."; end
+end
+
 class AmqpField
   def unpack() "p[arg::#{cppname}|#{default_value}]"; end
   def sig_default() signature+"="+default_value; end
 end
 
 class AmqpMethod
-  def fields_c() content ? fields+[ContentField.new] : fields end
+  def set_sync_default(sync_default) @sync_default=sync_default end
+  def fields_c() result = fields + (content ? [ContentField.new] : []) + [SyncField.new(@sync_default)] end
   def param_names_c() fields_c.map { |f| f.cppname} end
   def signature_c()  fields_c.map { |f| f.signature }; end
   def sig_c_default()  fields_c.map { |f| f.sig_default }; end
@@ -134,7 +147,7 @@ class SessionNoKeywordGen < CppGen
         cpp_class(@classname, "public #{@version_base}") {
           public
           decl_ctor_opeq()
-          session_methods.each { |m|
+          session_methods(sync_default).each { |m|
             genl
             doxygen(m)
             args=m.sig_c_default.join(", ") 
@@ -148,14 +161,14 @@ class SessionNoKeywordGen < CppGen
       include "qpid/framing/all_method_bodies.h"
       namespace(@namespace) {
         genl "using namespace framing;"
-        session_methods.each { |m|
+        session_methods(sync_default).each { |m|
           genl
           sig=m.signature_c.join(", ")
           func="#{@classname}::#{m.session_function}"
           scope("#{m.return_type(@async)} #{func}(#{sig}) {") {
             args=(["ProtocolVersion(#{@amqp.major},#{@amqp.minor})"]+m.param_names).join(", ")
             genl "#{m.body_name} body(#{args});";
-            genl "body.setSync(#{@async ? 'false':'true'});"
+            genl "body.setSync(sync);"
             sendargs="body"
             sendargs << ", content" if m.content
             async_retval="#{m.return_type(true)}(impl->send(#{sendargs}), impl)"
@@ -200,7 +213,7 @@ class SessionGen < CppGen
   end
 
   def generate()
-    keyword_methods=session_methods.reject { |m| m.fields_c.empty? }
+    keyword_methods=session_methods(sync_default).reject { |m| m.fields_c.empty? }
     max_arity = keyword_methods.map{ |m| m.fields_c.size }.max
 
     h_file("qpid/client/arg.h") {

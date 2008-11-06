@@ -112,7 +112,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options config;
     management::ManagementAgent::Singleton managementAgentSingleton;
     ProtocolFactoryMap protocolFactories;
-    MessageStore* store;
+    std::auto_ptr<MessageStore> store;
     AclModule* acl;
     DataDir dataDir;
 

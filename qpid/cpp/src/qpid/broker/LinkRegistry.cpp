@@ -180,7 +180,6 @@ void LinkRegistry::destroy(const std::string& host,
 
 void LinkRegistry::setStore (MessageStore* _store)
 {
-    assert (store == 0 && _store != 0);
     store = _store;
 }
 

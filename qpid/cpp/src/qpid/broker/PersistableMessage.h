@@ -68,9 +68,14 @@ class PersistableMessage : public Persistable
     syncList synclist;
 
   protected:
-    MessageStore* store;
-    
+    /** Called when all enqueues are complete for this message. */
+    virtual void allEnqueuesComplete() = 0;
+    /** Called when all dequeues are complete for this message. */
+    virtual void allDequeuesComplete() = 0;
+
     void setContentReleased();
+
+    MessageStore* store;
 
   public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;

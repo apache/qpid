@@ -66,10 +66,11 @@ public:
         return true;
     }
 
-    T pop() {
+    T pop(Duration timeout=TIME_INFINITE) {
         T result;
-        bool ok = pop(result);
-        assert(ok); (void) ok;  // Infinite wait.
+        bool ok = pop(result, timeout);
+        if (!ok)
+            throw Exception("Timed out waiting on a blocking queue");
         return result;
     }
         

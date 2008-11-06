@@ -85,7 +85,6 @@ string QueueRegistry::generateName(){
 
 void QueueRegistry::setStore (MessageStore* _store)
 {
-    assert (store == 0 && _store != 0);
     store = _store;
 }
 

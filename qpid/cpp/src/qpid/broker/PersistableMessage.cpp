@@ -87,6 +87,7 @@ void PersistableMessage::enqueueComplete() {
         }
     }
     if (notify) {
+        allEnqueuesComplete();
         sys::ScopedLock<sys::Mutex> l(storeLock);
         if (store) {
             for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
@@ -118,13 +119,17 @@ bool PersistableMessage::isDequeueComplete() {
 }
     
 void PersistableMessage::dequeueComplete() { 
-
-    sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-    if (asyncDequeueCounter > 0) {
-        if (--asyncDequeueCounter == 0) {
-            asyncDequeueLock.notify();
+    bool notify = false;
+    {
+        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
+        if (asyncDequeueCounter > 0) {
+            if (--asyncDequeueCounter == 0) {
+                notify = true;
+                asyncDequeueLock.notify();
+            }
         }
     }
+    if (notify) allDequeuesComplete();
 }
 
 void PersistableMessage::waitForDequeueComplete() {
