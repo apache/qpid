@@ -29,6 +29,7 @@
 #include "qmf/org/apache/qpid/agent/example/EventChildCreated.h"
 #include "qmf/org/apache/qpid/agent/example/Package.h"
 
+#include <signal.h>
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
@@ -149,14 +150,25 @@ ChildClass::ChildClass(ManagementAgent* agent, CoreClass* parent, string name)
 //==============================================================
 // Main program
 //==============================================================
+
+ManagementAgent::Singleton* singleton;
+
+void shutdown(int)
+{
+    delete singleton;
+    exit(0);
+}
+
 int main_int(int argc, char** argv)
 {
-    ManagementAgent::Singleton singleton;
+    singleton = new ManagementAgent::Singleton();
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
 
+    signal(SIGINT, shutdown);
+
     // Create the qmf management agent
-    ManagementAgent* agent = singleton.getInstance();
+    ManagementAgent* agent = singleton->getInstance();
 
     // Register the Qmf_example schema with the agent
     _qmf::Package packageInit(agent);
