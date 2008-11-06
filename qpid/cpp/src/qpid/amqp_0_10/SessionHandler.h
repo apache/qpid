@@ -87,7 +87,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     virtual void setState(const std::string& sessionName, bool force) = 0;
     virtual void channelException(uint16_t code, const std::string& msg) = 0;
     virtual void connectionException(uint16_t code, const std::string& msg) = 0;
-
+    virtual void detaching() = 0;
 
     // Notification of events
     virtual void readyToSend() {}
