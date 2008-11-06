@@ -62,14 +62,14 @@ class FieldTable
     bool isSet(const std::string& name) const { return get(name).get() != 0; }
 
     void setString(const std::string& name, const std::string& value);
-    void setInt(const std::string& name, int value);
-    void setInt64(const std::string& name, int64_t value);
-    void setTimestamp(const std::string& name, uint64_t value);
-    void setUInt64(const std::string& name, uint64_t value);
+    void setInt(const std::string& name, const int value);
+    void setInt64(const std::string& name, const int64_t value);
+    void setTimestamp(const std::string& name, const uint64_t value);
+    void setUInt64(const std::string& name, const uint64_t value);
     void setTable(const std::string& name, const FieldTable& value);
     void setArray(const std::string& name, const Array& value);
-    void setFloat(const std::string& name, float value);
-    void setDouble(const std::string& name, double value);
+    void setFloat(const std::string& name, const float value);
+    void setDouble(const std::string& name, const double value);
     //void setDecimal(string& name, xxx& value);
 
     int getAsInt(const std::string& name) const;

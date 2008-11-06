@@ -42,7 +42,7 @@ class Exchange : public PersistableExchange, public management::Manageable {
 private:
     const std::string name;
     const bool durable;
-    qpid::framing::FieldTable args;
+    mutable qpid::framing::FieldTable args;
     boost::shared_ptr<Exchange> alternate;
     uint32_t alternateUsers;
     mutable uint64_t persistenceId;
