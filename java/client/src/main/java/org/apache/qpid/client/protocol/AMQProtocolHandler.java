@@ -452,13 +452,16 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void propagateExceptionToFrameListeners(Exception e)
     {
-        if (!_frameListeners.isEmpty())
+        synchronized (_frameListeners)
         {
-            final Iterator it = _frameListeners.iterator();
-            while (it.hasNext())
+            if (!_frameListeners.isEmpty())
             {
-                final AMQMethodListener ml = (AMQMethodListener) it.next();
-                ml.error(e);
+                final Iterator it = _frameListeners.iterator();
+                while (it.hasNext())
+                {
+                    final AMQMethodListener ml = (AMQMethodListener) it.next();
+                    ml.error(e);
+                }
             }
         }
     }
@@ -558,18 +561,20 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         {
 
             boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-            if (!_frameListeners.isEmpty())
+            synchronized (_frameListeners)
             {
-                //This iterator is safe from the error state as the frame listeners always add before they send so their
-                // will be ready and waiting for this response.
-                Iterator it = _frameListeners.iterator();
-                while (it.hasNext())
+                if (!_frameListeners.isEmpty())
                 {
-                    final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                    //This iterator is safe from the error state as the frame listeners always add before they send so their
+                    // will be ready and waiting for this response.
+                    Iterator it = _frameListeners.iterator();
+                    while (it.hasNext())
+                    {
+                        final AMQMethodListener listener = (AMQMethodListener) it.next();
+                        wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                    }
                 }
             }
-
             if (!wasAnyoneInterested)
             {
                 throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
@@ -657,6 +662,24 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 if (_lastFailoverException != null)
                 {
                     throw _lastFailoverException;
+                }
+
+                if(_stateManager.getCurrentState() == AMQState.CONNECTION_CLOSED)
+                {
+                    Exception e = _stateManager.getLastException();
+                    if (e != null)
+                    {
+                        if (e instanceof AMQException)
+                        {
+                            AMQException amqe = (AMQException) e;
+
+                            amqe.rethrow();
+                        }
+                        else
+                        {
+                            throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
+                        }
+                    }
                 }
 
                 _frameListeners.add(listener);
