@@ -43,7 +43,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
   public:
 
     ManagementAgentImpl();
-    virtual ~ManagementAgentImpl() {};
+    virtual ~ManagementAgentImpl();
 
     //
     // Methods from ManagementAgent
@@ -156,17 +156,22 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
         client::Session      session;
         client::SubscriptionManager* subscriptions;
         std::stringstream queueName;
-        sys::Mutex        connLock;
+        mutable sys::Mutex   connLock;
+        bool              shutdown;
+        bool              sleeping;
         void run();
     public:
         ConnectionThread(ManagementAgentImpl& _agent) :
-            operational(false), agent(_agent), subscriptions(0) {}
+            operational(false), agent(_agent), subscriptions(0),
+            shutdown(false), sleeping(false) {}
         ~ConnectionThread();
         void sendBuffer(qpid::framing::Buffer& buf,
                         uint32_t               length,
                         const std::string&     exchange,
                         const std::string&     routingKey);
         void bindToBank(uint32_t brokerBank, uint32_t agentBank);
+        void close();
+        bool isSleeping() const;
     };
 
     class PublishThread : public sys::Runnable

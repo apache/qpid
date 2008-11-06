@@ -87,6 +87,17 @@ ManagementAgentImpl::ManagementAgentImpl() :
     // TODO: Establish system ID
 }
 
+ManagementAgentImpl::~ManagementAgentImpl()
+{
+    connThreadBody.close();
+
+    // If the thread is doing work on the connection, we must wait for it to
+    // complete before shutting down.
+    if (!connThreadBody.isSleeping()) {
+        connThread.join();
+    }
+}
+
 void ManagementAgentImpl::init(string    brokerHost,
                                uint16_t  brokerPort,
                                uint16_t  intervalSeconds,
@@ -725,21 +736,31 @@ void ManagementAgentImpl::ConnectionThread::run()
                 delete subscriptions;
                 subscriptions = 0;
                 session.close();
+                connection.close();
             }
         } catch (std::exception &e) {
             if (delay < delayMax)
                 delay *= delayFactor;
         }
 
-        ::sleep(delay);
+        {
+             Mutex::ScopedLock _lock(connLock);
+             if (shutdown)
+                 return;
+             sleeping = true;
+             {
+                  Mutex::ScopedUnlock _unlock(connLock);
+                  ::sleep(delay);
+             }
+             sleeping = false;
+             if (shutdown)
+                 return;
+        }
     }
 }
 
 ManagementAgentImpl::ConnectionThread::~ConnectionThread()
 {
-    if (subscriptions != 0) {
-        delete subscriptions;
-    }
 }
 
 void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
@@ -771,6 +792,22 @@ void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint
     key << "agent." << brokerBank << "." << agentBank;
     session.exchangeBind(arg::exchange="qpid.management", arg::queue=queueName.str(),
                           arg::bindingKey=key.str());
+}
+
+void ManagementAgentImpl::ConnectionThread::close()
+{
+    {
+        Mutex::ScopedLock _lock(connLock);
+        shutdown = true;
+    }
+    if (subscriptions)
+        subscriptions->stop();
+}
+
+bool ManagementAgentImpl::ConnectionThread::isSleeping() const
+{
+    Mutex::ScopedLock _lock(connLock);
+    return sleeping;
 }
 
 
