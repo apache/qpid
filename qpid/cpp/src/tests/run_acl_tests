@@ -7,7 +7,7 @@ DATA_DIR=`pwd`/data_dir
 trap stop_brokers INT TERM QUIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module ../.libs/acl.so --enforce-acl --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module ../.libs/acl.so --acl-file policy.acl --auth no > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
 }
 
