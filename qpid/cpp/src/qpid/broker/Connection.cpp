@@ -164,11 +164,10 @@ void Connection::setFederationLink(bool b)
             mgmtObject->set_federationLink(b);
 }
 
-void Connection::close(
-    ReplyCode code, const string& text, ClassId classId, MethodId methodId)
+void Connection::close(connection::CloseCode code, const string& text)
 {
-    QPID_LOG_IF(error, code != 200, "Connection " << mgmtId << " closed by error: " << text << "(" << code << ")");
-    adapter.close(code, text, classId, methodId);
+    QPID_LOG_IF(error, code != connection::CLOSE_CODE_NORMAL, "Connection " << mgmtId << " closed by error: " << text << "(" << code << ")");
+    adapter.close(code, text);
     //make sure we delete dangling pointers from outputTasks before deleting sessions
     outputTasks.removeAll();
     channels.clear();
@@ -177,7 +176,7 @@ void Connection::close(
 
 // Send a close to the client but keep the channels. Used by cluster.
 void Connection::sendClose() {
-    adapter.close(200, "OK", 0, 0);
+    adapter.close(connection::CLOSE_CODE_NORMAL, "OK");
     getOutput().close();
 }
 
@@ -212,14 +211,14 @@ bool Connection::doOutput() {
         ioCallback = 0;
 
         if (mgmtClosing)
-            close(execution::ERROR_CODE_UNAUTHORIZED_ACCESS, "Closed by Management Request", 0, 0);
+            close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");
         else
             //then do other output as needed:
             return outputTasks.doOutput();
     }catch(ConnectionException& e){
-        close(e.code, e.getMessage(), 0, 0);
+        close(e.code, e.getMessage());
     }catch(std::exception& e){
-        close(execution::ERROR_CODE_INTERNAL_ERROR, e.what(), 0, 0);
+        close(connection::CLOSE_CODE_CONNECTION_FORCED, e.what());
     }
     return false;
 }

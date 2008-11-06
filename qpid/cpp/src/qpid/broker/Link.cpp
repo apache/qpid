@@ -26,6 +26,7 @@
 #include "qpid/agent/ManagementAgent.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "AclModule.h"
 
@@ -33,6 +34,7 @@ using namespace qpid::broker;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
 using qpid::framing::NotAllowedException;
+using qpid::framing::connection::CLOSE_CODE_CONNECTION_FORCED;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -78,7 +80,7 @@ Link::Link(LinkRegistry*  _links,
 Link::~Link ()
 {
     if (state == STATE_OPERATIONAL && connection != 0)
-        connection->close();
+        connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
 
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy ();
@@ -169,7 +171,7 @@ void Link::destroy ()
 
     QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
     if (connection)
-        connection->close(403, "closed by management");
+        connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
 
     setStateLH(STATE_CLOSED);
 

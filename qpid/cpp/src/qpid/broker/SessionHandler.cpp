@@ -44,12 +44,12 @@ ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
 MethodId methodId(AMQMethodBody* m) { return m ? m->amqpClassId() : 0; }
 } // namespace
 
-void SessionHandler::channelException(uint16_t, const std::string&) {
-        handleDetach();
+void SessionHandler::channelException(framing::session::DetachCode, const std::string&) {
+    handleDetach();
 }
 
-void SessionHandler::connectionException(uint16_t code, const std::string& msg) {
-    connection.close(code, msg, 0, 0);
+void SessionHandler::connectionException(framing::connection::CloseCode code, const std::string& msg) {
+    connection.close(code, msg);
 }
 
 ConnectionState& SessionHandler::getConnection() { return connection; }
