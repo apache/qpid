@@ -35,6 +35,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	exception_test.cpp \
 	RefCounted.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
+	AsyncCompletion.cpp \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	QueueOptionsTest.cpp \

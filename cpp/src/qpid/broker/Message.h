@@ -22,15 +22,15 @@
  *
  */
 
-#include <string>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/variant.hpp>
 #include "PersistableMessage.h"
 #include "MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
+#include "qpid/shared_ptr.h"
+#include <boost/function.hpp>
+#include <string>
+#include <vector>
 
 namespace qpid {
 	
@@ -48,6 +48,8 @@ class Queue;
 
 class Message : public PersistableMessage {
 public:
+    typedef boost::function<void (Message&)> MessageCallback;
+    
     Message(const framing::SequenceNumber& id = framing::SequenceNumber());
     ~Message();
         
@@ -142,7 +144,19 @@ public:
     boost::intrusive_ptr<Message>& getReplacementMessage(const Queue* qfor) const;
     void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
 
+    /** Call cb when enqueue is complete, may call immediately. Holds cb by reference. */
+    void setEnqueueCompleteCallback(const MessageCallback* cb);
+
+    /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
+    void setDequeueCompleteCallback(const MessageCallback& cb);
+
   private:
+    typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
+
+    MessageAdapter& getAdapter() const;
+    void allEnqueuesComplete();
+    void allDequeuesComplete();
+
     mutable sys::Mutex lock;
     framing::FrameSet frames;
     mutable boost::shared_ptr<Exchange> exchange;
@@ -157,11 +171,10 @@ public:
 
     static TransferAdapter TRANSFER;
 
-    MessageAdapter& getAdapter() const;
-	typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
-
     mutable Replacement replacement;
     mutable boost::intrusive_ptr<Message> empty;
+    MessageCallback* enqueueCallback;
+    MessageCallback* dequeueCallback;
 };
 
 }}

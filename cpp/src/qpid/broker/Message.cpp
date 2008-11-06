@@ -45,9 +45,10 @@ namespace broker {
 
 TransferAdapter Message::TRANSFER;
 
-  Message::Message(const framing::SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false),
-                                             staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
-                                             expiration(FAR_FUTURE) {}
+Message::Message(const framing::SequenceNumber& id) :
+    frames(id), persistenceId(0), redelivered(false), loaded(false),
+    staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
+    expiration(FAR_FUTURE), enqueueCallback(0), dequeueCallback(0) {}
 
 Message::~Message()
 {
@@ -268,7 +269,7 @@ bool Message::isContentLoaded() const
 
 namespace 
 {
-    const std::string X_QPID_TRACE("x-qpid.trace");
+const std::string X_QPID_TRACE("x-qpid.trace");
 }
 
 bool Message::isExcluded(const std::vector<std::string>& excludes) const
@@ -339,6 +340,24 @@ boost::intrusive_ptr<Message>& Message::getReplacementMessage(const Queue* qfor)
 void Message::setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor)
 {
     replacement[qfor] = msg;
+}
+
+void Message::allEnqueuesComplete() {
+    MessageCallback* cb = 0;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        swap(cb, enqueueCallback);
+    }
+    if (cb && *cb) (*cb)(*this);
+}
+
+void Message::allDequeuesComplete() {
+    MessageCallback* cb = 0;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        swap(cb, dequeueCallback);
+    }
+    if (cb && *cb) (*cb)(*this);
 }
 
 }} // namespace qpid::broker

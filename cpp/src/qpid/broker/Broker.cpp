@@ -194,16 +194,12 @@ Broker::Broker(const Broker::Options& conf) :
         (*i)->earlyInitialize(*this);
 
     // If no plugin store module registered itself, set up the null store.
-    if (store == 0)
+    if (store.get() == 0)
         setStore (new NullMessageStore (false));
-
-    queues.setStore     (store);
-    dtxManager.setStore (store);
-    links.setStore      (store);
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     
-    if (store != 0) {
+    if (store.get() != 0) {
         RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, 
                                       conf.stagingThreshold);
         store->recover(recoverer);
@@ -247,7 +243,7 @@ Broker::Broker(const Broker::Options& conf) :
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
 {
-    bool storeEnabled = store != NULL;
+    bool storeEnabled = store.get() != NULL;
     std::pair<Exchange::shared_ptr, bool> status = exchanges.declare(name, type, storeEnabled);
     if (status.second && storeEnabled) {
         store->create(*status.first, framing::FieldTable ());
@@ -269,9 +265,10 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
 
 void Broker::setStore (MessageStore* _store)
 {
-    assert (store == 0 && _store != 0);
-    if (store == 0 && _store != 0)
-        store = new MessageStoreModule (_store);
+    store.reset(new MessageStoreModule (_store));
+    queues.setStore     (store.get());
+    dtxManager.setStore (store.get());
+    links.setStore      (store.get());
 }
 
 void Broker::run() {
@@ -304,7 +301,6 @@ void Broker::shutdown() {
 Broker::~Broker() {
     shutdown();
     finalize();                 // Finalize any plugins.
-    delete store;    
     if (config.auth)
         SaslAuthenticator::fini();
     QPID_LOG(notice, "Shut down");
