@@ -65,6 +65,7 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     virtual framing::FrameHandler* getInHandler();
     virtual void channelException(uint16_t code, const std::string& msg);
     virtual void connectionException(uint16_t code, const std::string& msg);
+    virtual void detaching();
     virtual void readyToSend();
 
   private:
