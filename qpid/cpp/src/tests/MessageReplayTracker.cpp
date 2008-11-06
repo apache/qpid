@@ -29,6 +29,23 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+class ReplayBufferChecker
+{
+  public:
+
+    ReplayBufferChecker(uint from, uint to) : end(to), i(from) {}
+
+    void operator()(const Message& m)
+    {
+        if (i > end) BOOST_FAIL("Extra message found: " + m.getData());
+        BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i++)).str(), m.getData());
+    }
+  private:
+    const uint end;
+    uint i;
+
+};
+
 QPID_AUTO_TEST_CASE(testReplay)
 {
     ProxySessionFixture fix;
@@ -40,6 +57,9 @@ QPID_AUTO_TEST_CASE(testReplay)
         Message message((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
         tracker.send(message);
     }
+    ReplayBufferChecker checker(1, 10);
+    tracker.foreach(checker);
+
     tracker.replay(fix.session);
     for (uint j = 0; j < 2; j++) {//each message should have been sent twice
         for (uint i = 0; i < 5; i++) {        

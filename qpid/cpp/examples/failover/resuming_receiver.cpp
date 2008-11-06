@@ -41,14 +41,16 @@ class Listener : public MessageListener, public FailoverManager::Command
     Listener();
     void received(Message& message);
     void execute(AsyncSession& session, bool isRetry);
+    void check();
   private:
     Subscription subscription;
     uint count;
     uint skipped;
     uint lastSn;
+    bool gaps;
 };
 
-Listener::Listener() : count(0), skipped(0), lastSn(0) {}
+Listener::Listener() : count(0), skipped(0), lastSn(0), gaps(false) {}
 
 void Listener::received(Message & message) 
 {
@@ -62,7 +64,8 @@ void Listener::received(Message & message)
         uint sn = message.getHeaders().getAsInt("sn");
         if (lastSn < sn) {
             if (sn - lastSn > 1) {
-                std::cout << "Warning: gap in sequence between " << lastSn << " and " << sn << std::endl;
+                std::cout << "Error: gap in sequence between " << lastSn << " and " << sn << std::endl;
+                gaps = true;
             }
             lastSn = sn;
             ++count;
@@ -70,6 +73,11 @@ void Listener::received(Message & message)
             ++skipped;
         }
     }
+}
+
+void Listener::check()
+{
+    if (gaps) throw Exception("Detected gaps in sequence; messages appear to have been lost.");
 }
 
 void Listener::execute(AsyncSession& session, bool isRetry)
@@ -94,6 +102,7 @@ int main(int argc, char ** argv)
     try {
         connection.execute(listener);
         connection.close();
+        listener.check();
         std::cout << "Completed without error." << std::endl;
         return 0;
     } catch(const std::exception& error) {

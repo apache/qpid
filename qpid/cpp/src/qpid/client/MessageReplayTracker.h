@@ -44,6 +44,13 @@ class MessageReplayTracker
     void setFlushInterval(uint interval);
     uint getFlushInterval();
     void checkCompletion();
+
+    template <class F> void foreach(F& f) {
+        for (std::list<ReplayRecord>::const_iterator i = buffer.begin(); i != buffer.end(); i++) {
+            f(i->message);
+        }
+    }
+
   private:
     struct ReplayRecord
     {
