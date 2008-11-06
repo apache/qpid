@@ -71,19 +71,19 @@ void FieldTable::setString(const std::string& name, const std::string& value){
     values[name] = ValuePtr(new Str16Value(value));
 }
 
-void FieldTable::setInt(const std::string& name, int value){
+void FieldTable::setInt(const std::string& name, const int value){
     values[name] = ValuePtr(new IntegerValue(value));
 }
 
-void FieldTable::setInt64(const std::string& name, int64_t value){
+void FieldTable::setInt64(const std::string& name, const int64_t value){
     values[name] = ValuePtr(new Integer64Value(value));
 }
 
-void FieldTable::setTimestamp(const std::string& name, uint64_t value){
+void FieldTable::setTimestamp(const std::string& name, const uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
 }
 
-void FieldTable::setUInt64(const std::string& name, uint64_t value){
+void FieldTable::setUInt64(const std::string& name, const uint64_t value){
     values[name] = ValuePtr(new Unsigned64Value(value));
 }
 
@@ -96,7 +96,7 @@ void FieldTable::setArray(const std::string& name, const Array& value)
     values[name] = ValuePtr(new ArrayValue(value));
 }
 
-void FieldTable::setFloat(const std::string& name, float value){
+void FieldTable::setFloat(const std::string& name, const float value){
     values[name] = ValuePtr(new FloatValue(value));
 }
 
