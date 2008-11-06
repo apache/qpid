@@ -98,10 +98,9 @@ public class AMQException extends Exception
      * {AMQConstant.class, String.class, Throwable.class}
      *
      * Individual subclasses may override as requried to create a new instance.
-     *
-     * @throws AMQException
+     * 
      */
-    public void rethrow() throws AMQException
+    public AMQException cloneForCurrentThread()
     {
         Class amqeClass = this.getClass();
         Class<?>[] paramClasses = {AMQConstant.class, String.class, Throwable.class};
@@ -118,6 +117,6 @@ public class AMQException extends Exception
             newAMQE = new AMQException(getErrorCode(), getMessage(), this);
         }
 
-        throw newAMQE;
+        return newAMQE;
     }
 }
