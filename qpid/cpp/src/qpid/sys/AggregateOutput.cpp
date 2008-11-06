@@ -65,4 +65,9 @@ void AggregateOutput::removeOutputTask(OutputTask* t)
     if (i != tasks.end()) tasks.erase(i);
 }
 
+void AggregateOutput::removeAll()
+{
+    tasks.clear();
+}
+
 }} // namespace qpid::sys
