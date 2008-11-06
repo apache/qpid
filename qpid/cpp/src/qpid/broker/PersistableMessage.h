@@ -41,6 +41,7 @@ class MessageStore;
  */
 class PersistableMessage : public Persistable
 {
+    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
     sys::Monitor asyncEnqueueLock;
     sys::Monitor asyncDequeueLock;
     sys::Mutex storeLock;
@@ -62,15 +63,16 @@ class PersistableMessage : public Persistable
      * dequeues.
      */
     int asyncDequeueCounter;
-protected:
-    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
-    syncList synclist;
-    MessageStore* store;
-    bool contentReleased;
-    
-    inline void setContentReleased() {contentReleased = true; }
 
-public:
+    bool contentReleased;
+    syncList synclist;
+
+  protected:
+    MessageStore* store;
+    
+    void setContentReleased();
+
+  public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
 
     /**
@@ -78,106 +80,33 @@ public:
      */
     virtual uint32_t encodedHeaderSize() const = 0;
 
-    virtual ~PersistableMessage() {};
+    virtual ~PersistableMessage();
 
-    PersistableMessage(): 
-    	asyncEnqueueCounter(0), 
-    	asyncDequeueCounter(0),
-        store(0),
-        contentReleased(false) 
-        {}
+    PersistableMessage();
 
     void flush();
     
-    inline bool isContentReleased()const {return contentReleased; }
+    bool isContentReleased() const;
 	
-    inline void waitForEnqueueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        while (asyncEnqueueCounter > 0) {
-            asyncEnqueueLock.wait();
-        }
-    }
+    void waitForEnqueueComplete();
 
-    inline bool isEnqueueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        return asyncEnqueueCounter == 0;
-    }
+    bool isEnqueueComplete();
 
-    inline void enqueueComplete() {
-        bool notify = false;
-        {
-            sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-            if (asyncEnqueueCounter > 0) {
-                if (--asyncEnqueueCounter == 0) {
-                    asyncEnqueueLock.notify();
-                    notify = true;
-                }
-            }
-        }
-        if (notify) {
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            if (store) {
-                for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-                    PersistableQueue::shared_ptr q(i->lock());
-                    if (q) q->notifyDurableIOComplete();
-                } 
-            }            
-        }
-    }
+    void enqueueComplete();
 
-    inline void enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-        if (_store){
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            store = _store;
-            boost::weak_ptr<PersistableQueue> q(queue);
-            synclist.push_back(q);
-        }
-        enqueueAsync();
-    }
+    void enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store);
 
-    inline void enqueueAsync() { 
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        asyncEnqueueCounter++; 
-    }
+    void enqueueAsync();
 
-    inline bool isDequeueComplete() { 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        return asyncDequeueCounter == 0;
-    }
+    bool isDequeueComplete();
     
-    inline void dequeueComplete() { 
+    void dequeueComplete();
 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        if (asyncDequeueCounter > 0) {
-            if (--asyncDequeueCounter == 0) {
-                asyncDequeueLock.notify();
-            }
-        }
-    }
+    void waitForDequeueComplete();
 
-    inline void waitForDequeueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        while (asyncDequeueCounter > 0) {
-            asyncDequeueLock.wait();
-        }
-    }
+    void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store);
 
-    inline void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
-        if (_store){
-            sys::ScopedLock<sys::Mutex> l(storeLock);
-            store = _store;
-            boost::weak_ptr<PersistableQueue> q(queue);
-            synclist.push_back(q);
-        }
-        dequeueAsync();
-    }
-
-    inline void dequeueAsync() { 
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-        asyncDequeueCounter++; 
-    }
-
-    
+    void dequeueAsync();
 };
 
 }}
