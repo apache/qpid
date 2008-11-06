@@ -306,7 +306,7 @@ QPID_AUTO_TEST_CASE(testRelease) {
     }
 
     fix.subs.setAutoStop(false);
-    sys::Thread runner(fix.subs);//start dispatcher thread
+    fix.subs.start();
     SubscriptionSettings settings;
     settings.autoAck = 0;
 
@@ -330,7 +330,7 @@ QPID_AUTO_TEST_CASE(testRelease) {
     }
     
     fix.subs.stop();
-    runner.join();
+    fix.subs.wait();
     fix.session.close();
 }
 
