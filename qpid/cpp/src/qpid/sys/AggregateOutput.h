@@ -48,6 +48,7 @@ namespace sys {
         bool hasOutput();
         void addOutputTask(OutputTask* t);
         void removeOutputTask(OutputTask* t);
+        void removeAll();
 
         /** Apply f to each OutputTask* in the tasks list */
         template <class F> void eachOutput(F f) {
