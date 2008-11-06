@@ -327,7 +327,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExchangeRegistry.cpp \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
-  qpid/broker/IncomingExecutionContext.cpp \
   qpid/broker/IncompleteMessageList.cpp \
   qpid/broker/Link.cpp \
   qpid/broker/LinkRegistry.cpp \
@@ -466,7 +465,6 @@ nobase_include_HEADERS = \
   qpid/broker/FanOutExchange.h \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.h \
-  qpid/broker/IncomingExecutionContext.h \
   qpid/broker/IncompleteMessageList.h \
   qpid/broker/Link.h \
   qpid/broker/LinkRegistry.h \
