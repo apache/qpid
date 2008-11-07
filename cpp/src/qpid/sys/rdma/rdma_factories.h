@@ -38,8 +38,8 @@ namespace Rdma {
     void destroyQp(::ibv_qp* qp) throw ();
 
     inline boost::shared_ptr< ::rdma_event_channel > mkEChannel() {
-        return
-            boost::shared_ptr< ::rdma_event_channel >(::rdma_create_event_channel(), destroyEChannel);
+        ::rdma_event_channel* c = CHECK_NULL(::rdma_create_event_channel());
+        return boost::shared_ptr< ::rdma_event_channel >(c, destroyEChannel);
     }
 
     inline boost::shared_ptr< ::rdma_cm_id >

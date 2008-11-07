@@ -42,13 +42,12 @@ namespace {
 
 struct StaticInit {
     StaticInit() {
-
         /**
          * Make *process* not generate SIGPIPE when writing to closed
          * pipe/socket (necessary as default action is to terminate process)
          */
         ::signal(SIGPIPE, SIG_IGN);
-        };
+    };
 } init;
 
 /*

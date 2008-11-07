@@ -10,6 +10,13 @@ namespace Rdma {
         5,    // .retry_count
         7     // .rnr_retry_count
     };
+    
+    // This is moderately inefficient so don't use in a critical path
+    int deviceCount() {
+        int count;
+        ::ibv_free_device_list(::ibv_get_device_list(&count));
+        return count;
+    }
 
     ::rdma_conn_param ConnectionEvent::getConnectionParam() const {
         // It's badly documented, but it seems from the librdma source code that all the following
