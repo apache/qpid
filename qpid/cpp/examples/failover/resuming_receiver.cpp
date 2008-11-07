@@ -35,13 +35,16 @@ using namespace qpid::framing;
 using namespace std;
 
 
-class Listener : public MessageListener, public FailoverManager::Command
+class Listener : public MessageListener, 
+                 public FailoverManager::Command, 
+                 public FailoverManager::ReconnectionStrategy
 {
   public:
     Listener();
     void received(Message& message);
     void execute(AsyncSession& session, bool isRetry);
     void check();
+    void editUrlList(std::vector<Url>& urls);
   private:
     Subscription subscription;
     uint count;
@@ -90,14 +93,23 @@ void Listener::execute(AsyncSession& session, bool isRetry)
     subs.run();
 }
 
+void Listener::editUrlList(std::vector<Url>& urls)
+{
+    /**
+     * A more realistic algorithm would be to search through the list
+     * for prefered hosts and ensure they come first in the list.
+     */
+    if (urls.size() > 1) std::rotate(urls.begin(), urls.begin() + 1, urls.end());
+}
+
 int main(int argc, char ** argv)
 {
     ConnectionSettings settings;
     if (argc > 1) settings.host = argv[1];
     if (argc > 2) settings.port = atoi(argv[2]);
     
-    FailoverManager connection(settings);
     Listener listener;
+    FailoverManager connection(settings, &listener);
 
     try {
         connection.execute(listener);
