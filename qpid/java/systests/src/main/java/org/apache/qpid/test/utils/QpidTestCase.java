@@ -148,6 +148,8 @@ public class QpidTestCase extends TestCase
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
 
+    private String _testName;
+
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
 
@@ -163,7 +165,7 @@ public class QpidTestCase extends TestCase
 
     public void runBare() throws Throwable
     {
-        String name = getClass().getSimpleName() + "." + getName();
+        _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
 
         PrintStream oldOut = System.out;
@@ -179,7 +181,7 @@ public class QpidTestCase extends TestCase
             System.setErr(err);
         }
 
-        _logger.info("========== start " + name + " ==========");
+        _logger.info("========== start " + _testName + " ==========");
         startBroker();
         try
         {
@@ -195,7 +197,7 @@ public class QpidTestCase extends TestCase
             {
                 _logger.error("exception stopping broker", e);
             }
-            _logger.info("==========  stop " + name + " ==========");
+            _logger.info("==========  stop " + _testName + " ==========");
 
             if (redirected)
             {
@@ -346,6 +348,10 @@ public class QpidTestCase extends TestCase
 
             //Augment Path with bin directory in QPID_HOME.
             env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
+
+            //Set QPID_WORK on a per test basis to maintain broker logs.
+            String qpidWork = System.getProperty("QPID_WORK");
+            env.put("QPID_WORK",  qpidWork + File.separator + _testName );
 
             process = pb.start();
 
