@@ -91,16 +91,42 @@
     </category>
 
 
-    <!-- Examples of additional logging settings -->
-    <!-- Used to generate extra debug. See debug.log4j.xml -->
-    
-    <!--<category name="org.apache.qpid.server.store">
-        <priority value="debug"/>
-    </category-->
+    <!-- Default Qpid Logging -->
 
-    <!--category name="org.apache.qpid.server.txn">
+    <!-- Default logging to show :
+        Connection Closing
+        Queue Consumes (Start)
+        Queue Cancel   (Stop)
+        Queue Declartion
+        Queue Binding
+    -->
+
+    <!-- Shows the connection closing -->
+    <category name="org.apache.qpid.server.handler.ConnectionCloseMethodHandler">
+       <!-- Example : 2008-05-09 10:27:36,219 INFO  [pool-2-thread-1] handler.ConnectionCloseMethodHandler (ConnectionCloseMethodHandler.java:55) - ConnectionClose received with reply code/reply text 200/JMS client is closing the connection. for AMQProtocolSession(/127.0.0.1:4102) -->
+        <priority value="info"/>
+    </category>
+    <!-- Shows the subscriber starting -->
+    <category name="org.apache.qpid.server.handler.BasicConsumeMethodHandler">
+        <!-- Example: 2008-05-09 10:29:52,800 DEBUG [pool-4-thread-3] handler.BasicConsumeMethodHandler (BasicConsumeMethodHandler.java:70) - BasicConsume: from 'clientid:exampleClient' for:1 nowait:false args:null -->
         <priority value="debug"/>
-    </category>-->
+    </category>
+    <!-- Shows the subscriber closing -->
+    <category name="org.apache.qpid.server.handler.BasicCancelMethodHandler">
+        <!-- Example: 2008-05-09 10:32:37,537 DEBUG [pool-5-thread-4] handler.BasicCancelMethodHandler (BasicCancelMethodHandler.java:64) - BasicCancel: for:1 nowait:false -->
+        <priority value="debug"/>
+    </category>
+    <!-- Shows the name of the queue being created -->
+    <category name="org.apache.qpid.server.handler.QueueDeclareHandler">
+        <!-- Example: 2008-05-09 10:28:30,017 INFO  [pool-3-thread-2] handler.QueueDeclareHandler (QueueDeclareHandler.java:159) - Queue clientid:exampleClient declared successfully -->
+        <priority value="info"/>
+    </category>
+    <!-- Queue Binding shows queue|routing key|exchange tuple -->
+    <category name="org.apache.qpid.server.handler.QueueBindHandler">
+        <!-- Example: 2008-05-09 10:28:30,173 INFO  [pool-3-thread-3] handler.QueueBindHandler (QueueBindHandler.java:129) - Binding queue Queue(clientid:exampleClient)@24124380 to exchange org.apache.qpid.server.exchange.DestWildExchange[amq.topic] with routing key example.hierarical.topic -->
+        <priority value="info"/>
+    </category>    
+    
 
     <!-- Log all info events to file -->
     <root>
