@@ -48,7 +48,7 @@ class Queue;
 
 class Message : public PersistableMessage {
 public:
-    typedef boost::function<void (Message&)> MessageCallback;
+    typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
     
     Message(const framing::SequenceNumber& id = framing::SequenceNumber());
     ~Message();
@@ -145,10 +145,10 @@ public:
     void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
 
     /** Call cb when enqueue is complete, may call immediately. Holds cb by reference. */
-    void setEnqueueCompleteCallback(const MessageCallback* cb);
+    void setEnqueueCompleteCallback(MessageCallback& cb);
 
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
-    void setDequeueCompleteCallback(const MessageCallback& cb);
+    void setDequeueCompleteCallback(MessageCallback& cb);
 
   private:
     typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;

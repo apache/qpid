@@ -63,25 +63,17 @@ void PersistableMessage::setContentReleased() {contentReleased = true; }
 
 bool PersistableMessage::isContentReleased()const { return contentReleased; }
 	
-void PersistableMessage::waitForEnqueueComplete() {
-    sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-    while (asyncEnqueueCounter > 0) {
-        asyncEnqueueLock.wait();
-    }
-}
-
 bool PersistableMessage::isEnqueueComplete() {
-    sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
+    sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
     return asyncEnqueueCounter == 0;
 }
 
 void PersistableMessage::enqueueComplete() {
     bool notify = false;
     {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
+        sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
         if (asyncEnqueueCounter > 0) {
             if (--asyncEnqueueCounter == 0) {
-                asyncEnqueueLock.notify();
                 notify = true;
             }
         }
@@ -109,34 +101,26 @@ void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, Messag
 }
 
 void PersistableMessage::enqueueAsync() { 
-    sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
+    sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
     asyncEnqueueCounter++; 
 }
 
 bool PersistableMessage::isDequeueComplete() { 
-    sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
+    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
     return asyncDequeueCounter == 0;
 }
     
 void PersistableMessage::dequeueComplete() { 
     bool notify = false;
     {
-        sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
+        sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
         if (asyncDequeueCounter > 0) {
             if (--asyncDequeueCounter == 0) {
                 notify = true;
-                asyncDequeueLock.notify();
             }
         }
     }
     if (notify) allDequeuesComplete();
-}
-
-void PersistableMessage::waitForDequeueComplete() {
-    sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
-    while (asyncDequeueCounter > 0) {
-        asyncDequeueLock.wait();
-    }
 }
 
 void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
@@ -150,7 +134,7 @@ void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, Messag
 }
 
 void PersistableMessage::dequeueAsync() { 
-    sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
+    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
     asyncDequeueCounter++; 
 }
 
