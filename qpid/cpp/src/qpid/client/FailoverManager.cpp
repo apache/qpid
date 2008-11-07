@@ -28,7 +28,8 @@ namespace client {
 
 using qpid::sys::Monitor;
 
-FailoverManager::FailoverManager(const ConnectionSettings& s) : settings(s), state(IDLE) {}
+FailoverManager::FailoverManager(const ConnectionSettings& s, 
+                                 ReconnectionStrategy* rs) : settings(s), strategy(rs), state(IDLE) {}
 
 void FailoverManager::execute(Command& c)
 {
@@ -38,11 +39,11 @@ void FailoverManager::execute(Command& c)
         try {
             AsyncSession session = connect().newSession();
             c.execute(session, retry);
-            session.sync();//TODO: shouldn't be required, but seems there is a bug in session
+            session.sync();//TODO: shouldn't be required
             session.close();
             completed = true;
         } catch(const TransportFailure&) {
-            retry = true;
+            retry = true;            
         }            
     }
 }
@@ -86,6 +87,7 @@ Connection& FailoverManager::getConnection()
 void FailoverManager::attempt(Connection& c, ConnectionSettings s, std::vector<Url> urls)
 {
     Monitor::ScopedUnlock u(lock);
+    if (strategy) strategy->editUrlList(urls);
     if (urls.empty()) {
         attempt(c, s);
     } else {
@@ -105,7 +107,9 @@ void FailoverManager::attempt(Connection& c, ConnectionSettings s, std::vector<U
 void FailoverManager::attempt(Connection& c, ConnectionSettings s)
 {
     try {
+        QPID_LOG(info, "Attempting to connect to " << s.host << " on " << s.port << "..."); 
         c.open(s);
+        QPID_LOG(info, "Connected to " << s.host << " on " << s.port); 
     } catch (const Exception& e) {
         QPID_LOG(info, "Could not connect to " << s.host << " on " << s.port << ": " << e.what()); 
     }

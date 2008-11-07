@@ -19,67 +19,40 @@
  *
  */
 
-#include <qpid/client/FailoverConnection.h>
+#include <qpid/client/FailoverManager.h>
 #include <qpid/client/Session.h>
+#include <qpid/Exception.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
-#include <fstream>
 
 using namespace qpid::client;
-using namespace qpid::framing;
-
 
 using namespace std;
 
-
-
-
-int 
-main ( int argc, char ** argv) 
+int main(int argc, char ** argv) 
 {
-  if ( argc < 3 )
-  {
-    std::cerr << "Usage: ./declare_queues host cluster_port_file_name\n";
-    std::cerr << "i.e. for host: 127.0.0.1\n";
-    exit(1);
-  }
-
-  const char * host = argv[1];
-  int port = atoi(argv[2]);
-
-
-  try 
-  {
-    FailoverConnection connection;
-    FailoverSession    * session;
-
-    connection.open ( host, port );
-    session = connection.newSession();
-
-    session->queueDeclare ( "message_queue");
+    ConnectionSettings settings;
+    if (argc > 1) settings.host = argv[1];
+    if (argc > 2) settings.port = atoi(argv[2]);
     
-    /*
-    session->exchangeBind 
-      ( arg::exchange="amq.direct", 
-        arg::queue="message_queue", 
-        arg::bindingKey="routing_key"
-      );
-     * */
-    session->exchangeBind ( "message_queue",
-                           "amq.direct", 
-                           "routing_key"
-                         );
-    connection.close();
-    return 0;
-  }
-  catch ( const std::exception& error ) 
-  {
-    std::cout << error.what() << std::endl;
-  }
-
-  return 1;
+    FailoverManager connection(settings);
+    try {
+        bool complete = false;
+        while (!complete) {
+            Session session = connection.connect().newSession();
+            try {
+                session.queueDeclare(arg::queue="message_queue");
+                complete = true;
+            } catch (const qpid::TransportFailure&) {}
+        }
+        connection.close();
+        return 0;
+    } catch (const std::exception& error) {
+        std::cout << "Failed:" << error.what() << std::endl;
+        return 1;
+    }
+    
 }
 
 
