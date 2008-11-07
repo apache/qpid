@@ -348,7 +348,7 @@ void Message::allEnqueuesComplete() {
         sys::Mutex::ScopedLock l(lock);
         swap(cb, enqueueCallback);
     }
-    if (cb && *cb) (*cb)(*this);
+    if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
 
 void Message::allDequeuesComplete() {
@@ -357,7 +357,11 @@ void Message::allDequeuesComplete() {
         sys::Mutex::ScopedLock l(lock);
         swap(cb, dequeueCallback);
     }
-    if (cb && *cb) (*cb)(*this);
+    if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
+
+void Message::setEnqueueCompleteCallback(MessageCallback& cb) { enqueueCallback = &cb; }
+
+void Message::setDequeueCompleteCallback(MessageCallback& cb) { dequeueCallback = &cb; }
 
 }} // namespace qpid::broker
