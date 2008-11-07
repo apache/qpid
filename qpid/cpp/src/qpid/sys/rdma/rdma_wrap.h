@@ -47,6 +47,8 @@ namespace Rdma {
     const int DEFAULT_WR_ENTRIES = 64;
     extern const ::rdma_conn_param DEFAULT_CONNECT_PARAM;
 
+    int deviceCount();
+
     struct Buffer {
         friend class QueuePair;
 

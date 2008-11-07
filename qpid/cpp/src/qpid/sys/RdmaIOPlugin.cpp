@@ -214,12 +214,18 @@ static class RdmaIOPlugin : public Plugin {
     }
     
     void initialize(Target& target) {
+        // Check whether we actually have any rdma devices
+        if ( Rdma::deviceCount() == 0 ) {
+            QPID_LOG(info, "Rdma: Disabled: no rdma devices found");
+            return;
+        }
+
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
             ProtocolFactory::shared_ptr protocol(new RdmaIOProtocolFactory(opts.port, opts.connectionBacklog));
-            QPID_LOG(info, "Listening on RDMA port " << protocol->getPort());
+            QPID_LOG(info, "Rdma: Listening on RDMA port " << protocol->getPort());
             broker->registerProtocolFactory("rdma", protocol);
         }
     }
