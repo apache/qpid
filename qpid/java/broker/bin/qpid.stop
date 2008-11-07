@@ -23,7 +23,7 @@
 # Script checks for a given pid running DEFAULT_SEARCH and attempts to quit it
 #
 
-MAX_ATTEMPTS=1
+MAX_ATTEMPTS=2
 SLEEP_DELAY=1
 DEFAULT_SEARCH="PNAME=QPBRKR"
 
@@ -136,6 +136,7 @@ if [[ $[$result] == 0 ]] ; then
     echo "Process quit"
 else
 
+ attempt=0
  # Now attempt to force quit the process
     while [[ $[$result] > 0 && $[$attempt] < $[$MAX_ATTEMPTS] ]] ; do
         forceQuit $brokerspid
