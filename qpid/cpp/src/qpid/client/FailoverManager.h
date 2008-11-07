@@ -91,6 +91,9 @@ class FailoverManager
      * known brokers from the last connection will be used. If no list
      * is specified and this is the first connect attempt, the host
      * and port from the initial settings will be used.
+     * 
+     * If the full list is tried and all attempts fail,
+     * CannotConnectException is thrown.
      */
     Connection& connect(std::vector<Url> brokers = std::vector<Url>());
     /**
@@ -106,6 +109,12 @@ class FailoverManager
      * a session on which to carry out the work of the command,
      * handling failover occuring while exeuting that command and
      * re-starting the work.
+     * 
+     * Multiple concurrent threads can call execute with different
+     * commands; each thread will be allocated its own
+     * session. FailoverManager will coordinate the different threads
+     * on failover to ensure they continue to use the same logical
+     * connection.
      */
     void execute(Command&);
   private:
