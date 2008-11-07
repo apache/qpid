@@ -38,21 +38,75 @@ struct CannotConnectException : qpid::Exception
 };
 
 /**
- * Utility to handle reconnection.
+ * Utility to manage failover.
  */
 class FailoverManager
 {
   public:
+    /**
+     * Interface to implement for doing work that can be resumed on
+     * failover
+     */
     struct Command
     {
+        /**
+         * This method will be called with isRetry=false when the
+         * command is first executed. The session to use for the work
+         * will be passed to the implementing class. If the connection
+         * fails while the execute call is in progress, the
+         * FailoverManager controlling the execution will re-establish
+         * a connection, open a new session and call back to the
+         * Command implementations execute method with the new session
+         * and isRetry=true.
+         */
         virtual void execute(AsyncSession& session, bool isRetry) = 0;
         virtual ~Command() {}
     };
 
-    FailoverManager(const ConnectionSettings& settings);
+    struct ReconnectionStrategy
+    {
+        /**
+         * This method is called by the FailoverManager prior to
+         * establishing a connection (or re-connection) and can be
+         * used if the application wishes to edit or re-order the list
+         * which will default to the list of known brokers for the
+         * last connection.
+         */
+        virtual void editUrlList(std::vector<Url>&  urls) = 0;
+        virtual ~ReconnectionStrategy() {}
+    };
+
+    /**
+     * Create a manager to control failover for a logical connection.
+     * 
+     * @param settings the initial connection settings
+     * @param strategy optional stratgey callback allowing application
+     * to edit or reorder the list of urls to which reconnection is
+     * attempted
+     */
+    FailoverManager(const ConnectionSettings& settings, ReconnectionStrategy* strategy = 0);
+    /**
+     * Return the current connection if open or attept to reconnect to
+     * the specified list of urls. If no list is specified the list of
+     * known brokers from the last connection will be used. If no list
+     * is specified and this is the first connect attempt, the host
+     * and port from the initial settings will be used.
+     */
     Connection& connect(std::vector<Url> brokers = std::vector<Url>());
+    /**
+     * Return the current connection whether open or not
+     */
     Connection& getConnection();
+    /**
+     * Close the current connection
+     */
     void close();
+    /**
+     * Reliably execute the specified command. This involves creating
+     * a session on which to carry out the work of the command,
+     * handling failover occuring while exeuting that command and
+     * re-starting the work.
+     */
     void execute(Command&);
   private:
     enum State {IDLE, CONNECTING, CANT_CONNECT};
@@ -60,6 +114,7 @@ class FailoverManager
     qpid::sys::Monitor lock;
     Connection connection;
     ConnectionSettings settings;
+    ReconnectionStrategy* strategy;
     State state;
 
     void attempt(Connection&, ConnectionSettings settings, std::vector<Url> urls);
