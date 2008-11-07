@@ -349,9 +349,8 @@ public class QpidTestCase extends TestCase
             //Augment Path with bin directory in QPID_HOME.
             env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
 
-            //Set QPID_WORK on a per test basis to maintain broker logs.
-            String qpidWork = System.getProperty("QPID_WORK");
-            env.put("QPID_WORK",  qpidWork + File.separator + _testName );
+            //Add the test name to the broker run.
+            env.put("QPID_PNAME", "-DPNAME=\"" + _testName + "\"");
 
             process = pb.start();
 
