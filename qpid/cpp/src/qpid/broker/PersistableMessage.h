@@ -28,7 +28,7 @@
 #include <boost/weak_ptr.hpp>
 #include "Persistable.h"
 #include "qpid/framing/amqp_types.h"
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "PersistableQueue.h"
 
 namespace qpid {
@@ -42,8 +42,8 @@ class MessageStore;
 class PersistableMessage : public Persistable
 {
     typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
-    sys::Monitor asyncEnqueueLock;
-    sys::Monitor asyncDequeueLock;
+    sys::Mutex asyncEnqueueLock;
+    sys::Mutex asyncDequeueLock;
     sys::Mutex storeLock;
 	
     /**
@@ -93,8 +93,6 @@ class PersistableMessage : public Persistable
     
     bool isContentReleased() const;
 	
-    void waitForEnqueueComplete();
-
     bool isEnqueueComplete();
 
     void enqueueComplete();
@@ -106,8 +104,6 @@ class PersistableMessage : public Persistable
     bool isDequeueComplete();
     
     void dequeueComplete();
-
-    void waitForDequeueComplete();
 
     void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store);
 
