@@ -87,6 +87,7 @@ class ConnectionTest(TestCase):
     self.server.start()
 
     started.wait(3)
+    assert started.isSet()
 
   def tearDown(self):
     self.running = False
