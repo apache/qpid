@@ -23,6 +23,7 @@
 #include "ManagementAgentImpl.h"
 #include <list>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -80,11 +81,13 @@ ManagementAgentImpl::ManagementAgentImpl() :
     extThread(false), writeFd(-1), readFd(-1),
     connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
-    assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
+    assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0), debugLevel(0),
     connThreadBody(*this), connThread(connThreadBody),
     pubThreadBody(*this), pubThread(pubThreadBody)
 {
-    // TODO: Establish system ID
+    char* debug = ::getenv("QMF_DEBUG_LEVEL");
+    if (debug)
+        debugLevel = ::atoi(debug);
 }
 
 ManagementAgentImpl::~ManagementAgentImpl()
@@ -110,6 +113,10 @@ void ManagementAgentImpl::init(string    brokerHost,
     nextObjectId = 1;
     host         = brokerHost;
     port         = brokerPort;
+
+    if (debugLevel)
+        cout << "QMF Agent Initialized: broker=" << brokerHost << ":" << brokerPort <<
+            " interval=" << intervalSeconds << " storeFile=" << _storeFile << endl;
 
     // TODO: Abstract the socket calls for portability
     if (extThread) {
@@ -692,8 +699,13 @@ void ManagementAgentImpl::periodicProcessing()
     // Delete flagged objects
     for (std::list<ObjectId>::reverse_iterator iter = deleteList.rbegin();
          iter != deleteList.rend();
-         iter++)
-        managementObjects.erase(*iter);
+         iter++) {
+        ManagementObjectMap::iterator miter = managementObjects.find(*iter);
+        if (miter != managementObjects.end()) {
+            delete miter->second;
+            managementObjects.erase(*iter);
+        }
+    }
 
     deleteList.clear();
 }
@@ -712,6 +724,8 @@ void ManagementAgentImpl::ConnectionThread::run()
     while (true) {
         try {
             if (!agent.host.empty()) {
+                if (agent.debugLevel)
+                    cout << "QMF Agent attempting to connect to the broker..." << endl;
                 connection.open(agent.host.c_str(), agent.port);
                 session = connection.newSession(queueName.str());
                 subscriptions = new client::SubscriptionManager(session);
@@ -721,6 +735,8 @@ void ManagementAgentImpl::ConnectionThread::run()
                                      arg::bindingKey=queueName.str());
 
                 subscriptions->subscribe(agent, queueName.str(), dest);
+                if (agent.debugLevel)
+                    cout << "    Connection established" << endl;
                 {
                     Mutex::ScopedLock _lock(connLock);
                     operational = true;
@@ -729,6 +745,9 @@ void ManagementAgentImpl::ConnectionThread::run()
                         Mutex::ScopedUnlock _unlock(connLock);
                         subscriptions->run();
                     } catch (std::exception) {}
+
+                    if (agent.debugLevel)
+                        cout << "QMF Agent connection has been lost" << endl;
 
                     operational = false;
                 }
@@ -741,6 +760,8 @@ void ManagementAgentImpl::ConnectionThread::run()
         } catch (std::exception &e) {
             if (delay < delayMax)
                 delay *= delayFactor;
+            if (agent.debugLevel)
+                cout << "    Connection failed: exception=" << e.what() << endl;
         }
 
         {

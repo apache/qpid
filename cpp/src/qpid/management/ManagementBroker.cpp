@@ -409,8 +409,13 @@ void ManagementBroker::periodicProcessing (void)
     // Delete flagged objects
     for (std::list<ObjectId>::reverse_iterator iter = deleteList.rbegin ();
          iter != deleteList.rend ();
-         iter++)
-        managementObjects.erase (*iter);
+         iter++) {
+        ManagementObjectMap::iterator miter = managementObjects.find(*iter);
+        if (miter != managementObjects.end()) {
+            delete miter->second;
+            managementObjects.erase(*iter);
+        }
+    }
 
     if (!deleteList.empty()) {
         deleteList.clear();
