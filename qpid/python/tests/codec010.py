@@ -17,22 +17,27 @@
 # under the License.
 #
 
+import time
+
 from unittest import TestCase
 from qpid.spec010 import load
 from qpid.codec010 import StringCodec
 from qpid.testlib import testrunner
+from qpid.datatypes import timestamp
 
 class CodecTest(TestCase):
 
   def setUp(self):
     self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
 
-  def check(self, type, value):
+  def check(self, type, value, compare=True):
     t = self.spec[type]
     sc = StringCodec(self.spec)
     t.encode(sc, value)
     decoded = t.decode(sc)
-    assert decoded == value, "%s, %s" % (decoded, value)
+    if compare:
+      assert decoded == value, "%s, %s" % (decoded, value)
+    return decoded
 
   def testMapString(self):
     self.check("map", {"string": "this is a test"})
@@ -42,6 +47,15 @@ class CodecTest(TestCase):
 
   def testMapLong(self):
     self.check("map", {"long": 2**32})
+
+  def testMapTimestamp(self):
+    decoded = self.check("map", {"timestamp": timestamp(0)})
+    assert isinstance(decoded["timestamp"], timestamp)
+
+  def testMapDatetime(self):
+    decoded = self.check("map", {"datetime": timestamp(0).datetime()}, compare=False)
+    assert isinstance(decoded["datetime"], timestamp)
+    assert decoded["datetime"] == 0.0
 
   def testMapNone(self):
     self.check("map", {"none": None})
@@ -53,12 +67,14 @@ class CodecTest(TestCase):
     self.check("map", {"list": [1, "two", 3.0, -4]})
 
   def testMapAll(self):
-    self.check("map", {"string": "this is a test",
-                       "int": 3,
-                       "long": 2**32,
-                       "none": None,
-                       "map": {"string": "nested map"},
-                       "list": [1, "two", 3.0, -4]})
+    decoded = self.check("map", {"string": "this is a test",
+                                 "int": 3,
+                                 "long": 2**32,
+                                 "timestamp": timestamp(0),
+                                 "none": None,
+                                 "map": {"string": "nested map"},
+                                 "list": [1, "two", 3.0, -4]})
+    assert isinstance(decoded["timestamp"], timestamp)
 
   def testMapEmpty(self):
     self.check("map", {})
@@ -90,3 +106,7 @@ class CodecTest(TestCase):
   def testInt16(self):
     self.check("int16", 3)
     self.check("int16", -3)
+
+  def testDatetime(self):
+    self.check("datetime", timestamp(0))
+    self.check("datetime", timestamp(long(time.time())))

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import threading, struct
+import threading, struct, datetime, time
 
 class Struct:
 
@@ -296,3 +296,51 @@ class UUID:
 
   def __repr__(self):
     return "UUID(%r)" % str(self)
+
+class timestamp(float):
+
+  def __new__(cls, obj=None):
+    if obj is None:
+      obj = time.time()
+    elif isinstance(obj, datetime.datetime):
+      obj = time.mktime(obj.timetuple()) + 1e-6 * obj.microsecond
+    return super(timestamp, cls).__new__(cls, obj)
+
+  def datetime(self):
+    return datetime.datetime.fromtimestamp(self)
+
+  def __add__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() + other)
+    else:
+      return timestamp(float(self) + other)
+
+  def __sub__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() - other)
+    else:
+      return timestamp(float(self) - other)
+
+  def __radd__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() + other)
+    else:
+      return timestamp(other + float(self))
+
+  def __rsub__(self, other):
+    if isinstance(other, datetime.timedelta):
+      return timestamp(self.datetime() - other)
+    else:
+      return timestamp(other - float(self))
+
+  def __neg__(self):
+    return timestamp(-float(self))
+
+  def __pos__(self):
+    return self
+
+  def __abs__(self):
+    return timestamp(abs(float(self)))
+
+  def __repr__(self):
+    return "timestamp(%r)" % float(self)

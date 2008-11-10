@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, cPickle, datatypes
+import os, cPickle, datatypes, datetime
 from codec010 import StringCodec
 from util import mtime, fill
 
@@ -477,7 +477,9 @@ class Spec(Node):
     None.__class__: "void",
     list: "list",
     tuple: "list",
-    dict: "map"
+    dict: "map",
+    datatypes.timestamp: "datetime",
+    datetime.datetime: "datetime"
     }
 
   def __init__(self, major, minor, port, children):
