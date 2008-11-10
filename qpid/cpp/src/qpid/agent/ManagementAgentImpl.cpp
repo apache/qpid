@@ -36,6 +36,7 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::management;
 using namespace qpid::sys;
+using namespace std;
 using std::stringstream;
 using std::ofstream;
 using std::ifstream;
@@ -140,8 +141,8 @@ void ManagementAgentImpl::init(string    brokerHost,
     storeData(true);
 }
 
-void ManagementAgentImpl::registerClass(std::string& packageName,
-                                        std::string& className,
+void ManagementAgentImpl::registerClass(string& packageName,
+                                        string& className,
                                         uint8_t*     md5Sum,
                                         management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
@@ -150,8 +151,8 @@ void ManagementAgentImpl::registerClass(std::string& packageName,
     addClassLocal(ManagementItem::CLASS_KIND_TABLE, pIter, className, md5Sum, schemaCall);
 }
 
-void ManagementAgentImpl::registerEvent(std::string& packageName,
-                                        std::string& eventName,
+void ManagementAgentImpl::registerEvent(string& packageName,
+                                        string& eventName,
                                         uint8_t*     md5Sum,
                                         management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
@@ -399,7 +400,7 @@ void ManagementAgentImpl::invokeMethodRequest(Buffer& inBuffer, uint32_t sequenc
             try {
                 outBuffer.record();
                 iter->second->doMethod(methodName, inBuffer, outBuffer);
-            } catch(std::exception& e) {
+            } catch(exception& e) {
                 outBuffer.restore();
                 outBuffer.putLong(Manageable::STATUS_EXCEPTION);
                 outBuffer.putMediumString(e.what());
@@ -534,8 +535,8 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
         return pIter;
 
     // No such package found, create a new map entry.
-    std::pair<PackageMap::iterator, bool> result =
-        packages.insert(std::pair<string, ClassMap>(name, ClassMap()));
+    pair<PackageMap::iterator, bool> result =
+        packages.insert(pair<string, ClassMap>(name, ClassMap()));
 
     // Publish a package-indication message
     Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
@@ -577,7 +578,7 @@ void ManagementAgentImpl::addClassLocal(uint8_t               classKind,
         return;
 
     // No such class found, create a new class with local information.
-    cMap.insert(std::pair<SchemaClassKey, SchemaClass>(key, SchemaClass(schemaCall, classKind)));
+    cMap.insert(pair<SchemaClassKey, SchemaClass>(key, SchemaClass(schemaCall, classKind)));
 }
 
 void ManagementAgentImpl::encodePackageIndication(Buffer&              buf,
@@ -605,7 +606,7 @@ void ManagementAgentImpl::periodicProcessing()
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
-    std::list<ObjectId> deleteList;
+    list<pair<ObjectId, ManagementObject*> > deleteList;
 
     if (!connected)
         return;
@@ -681,7 +682,7 @@ void ManagementAgentImpl::periodicProcessing()
                 }
 
                 if (object->isDeleted())
-                    deleteList.push_back(iter->first);
+                    deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
 
                 if (msgBuffer.available() < (BUFSIZE / 2))
                     break;
@@ -697,14 +698,11 @@ void ManagementAgentImpl::periodicProcessing()
     }
 
     // Delete flagged objects
-    for (std::list<ObjectId>::reverse_iterator iter = deleteList.rbegin();
+    for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
          iter != deleteList.rend();
          iter++) {
-        ManagementObjectMap::iterator miter = managementObjects.find(*iter);
-        if (miter != managementObjects.end()) {
-            delete miter->second;
-            managementObjects.erase(*iter);
-        }
+        delete iter->second;
+        managementObjects.erase(iter->first);
     }
 
     deleteList.clear();
@@ -744,7 +742,7 @@ void ManagementAgentImpl::ConnectionThread::run()
                     try {
                         Mutex::ScopedUnlock _unlock(connLock);
                         subscriptions->run();
-                    } catch (std::exception) {}
+                    } catch (exception) {}
 
                     if (agent.debugLevel)
                         cout << "QMF Agent connection has been lost" << endl;
@@ -757,7 +755,7 @@ void ManagementAgentImpl::ConnectionThread::run()
                 session.close();
                 connection.close();
             }
-        } catch (std::exception &e) {
+        } catch (exception &e) {
             if (delay < delayMax)
                 delay *= delayFactor;
             if (agent.debugLevel)
@@ -804,7 +802,7 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
     msg.setData(data);
     try {
         session.messageTransfer(arg::content=msg, arg::destination=exchange);
-    } catch(std::exception&) {}
+    } catch(exception&) {}
 }
 
 void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint32_t agentBank)
