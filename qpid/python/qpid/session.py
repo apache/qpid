@@ -346,7 +346,7 @@ class Incoming(Queue):
   def start(self):
     self.session.message_set_flow_mode(self.destination, self.session.flow_mode.credit)
     for unit in self.session.credit_unit.values():
-      self.session.message_flow(self.destination, unit, 0xFFFFFFFF)
+      self.session.message_flow(self.destination, unit, 0xFFFFFFFFL)
 
   def stop(self):
     self.session.message_cancel(self.destination)
