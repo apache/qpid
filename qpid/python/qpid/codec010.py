@@ -17,8 +17,9 @@
 # under the License.
 #
 
+import datetime
 from packer import Packer
-from datatypes import serial, RangedSet, Struct
+from datatypes import serial, timestamp, RangedSet, Struct
 
 class CodecException(Exception): pass
 
@@ -103,9 +104,11 @@ class Codec(Packer):
     self.pack("!q", n)
 
   def read_datetime(self):
-    return self.read_uint64()
-  def write_datetime(self, n):
-    self.write_uint64(n)
+    return timestamp(self.read_uint64())
+  def write_datetime(self, t):
+    if isinstance(t, datetime.datetime):
+      t = timestamp(t)
+    self.write_uint64(t)
 
   def read_double(self):
     return self.unpack("!d")
