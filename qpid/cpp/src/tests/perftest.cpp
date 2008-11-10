@@ -226,8 +226,12 @@ struct Client : public Runnable {
     }
 
     ~Client() {
-        session.close();
-        connection.close();
+        try {
+            session.close();
+            connection.close();
+        } catch (const std::exception& e) {
+            std::cerr << "Error in shutdown: " << e.what() << std::endl;
+        }
     }
 };
 
@@ -429,7 +433,6 @@ struct Controller : public Client {
         }
         catch (const std::exception& e) {
             cout << "Controller exception: " << e.what() << endl;
-            exit(1);
         }
     }
 };
@@ -522,7 +525,6 @@ struct PublishThread : public Client {
         }
         catch (const std::exception& e) {
             cout << "PublishThread exception: " << e.what() << endl;
-            exit(1);
         }
     }
 };
@@ -621,7 +623,6 @@ struct SubscribeThread : public Client {
         }
         catch (const std::exception& e) {
             cout << "SubscribeThread exception: " << e.what() << endl;
-            exit(1);
         }
     }
 };
