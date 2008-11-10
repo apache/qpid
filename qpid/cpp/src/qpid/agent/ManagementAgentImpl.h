@@ -141,6 +141,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint32_t          assignedBrokerBank;
     uint32_t          assignedAgentBank;
     uint16_t          bootSequence;
+    uint8_t           debugLevel;
 
 #   define MA_BUFFER_SIZE 65536
     char outputBuffer[MA_BUFFER_SIZE];
