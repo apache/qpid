@@ -34,8 +34,8 @@ def listen(host, port, predicate = lambda: True, bound = lambda: None):
   sock = socket.socket()
   sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   sock.bind((host, port))
-  bound()
   sock.listen(5)
+  bound()
   while predicate():
     s, a = sock.accept()
     yield s
