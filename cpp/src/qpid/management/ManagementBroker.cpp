@@ -322,7 +322,7 @@ void ManagementBroker::sendBuffer(Buffer&  buf,
     DeliverableMessage deliverable (msg);
     try {
         exchange->route(deliverable, routingKey, 0);
-    } catch(std::exception&) {}
+    } catch(exception&) {}
 }
 
 void ManagementBroker::moveNewObjectsLH()
@@ -342,7 +342,7 @@ void ManagementBroker::periodicProcessing (void)
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
-    std::list<ObjectId> deleteList;
+    list<pair<ObjectId, ManagementObject*> > deleteList;
 
     {
         Buffer msgBuffer(msgChars, BUFSIZE);
@@ -402,19 +402,16 @@ void ManagementBroker::periodicProcessing (void)
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
-        if (object->isDeleted ())
-            deleteList.push_back (iter->first);
+        if (object->isDeleted())
+            deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
     }
 
     // Delete flagged objects
-    for (std::list<ObjectId>::reverse_iterator iter = deleteList.rbegin ();
-         iter != deleteList.rend ();
+    for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
+         iter != deleteList.rend();
          iter++) {
-        ManagementObjectMap::iterator miter = managementObjects.find(*iter);
-        if (miter != managementObjects.end()) {
-            delete miter->second;
-            managementObjects.erase(*iter);
-        }
+        delete iter->second;
+        managementObjects.erase(iter->first);
     }
 
     if (!deleteList.empty()) {
@@ -493,7 +490,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
 
     if (acl != 0) {
         string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
-        std::map<acl::Property, string> params;
+        map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
         params[acl::PROP_SCHEMACLASS]   = className;
 
@@ -521,7 +518,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
             try {
                 outBuffer.record();
                 iter->second->doMethod(methodName, inBuffer, outBuffer);
-            } catch(std::exception& e) {
+            } catch(exception& e) {
                 outBuffer.restore();
                 outBuffer.putLong(Manageable::STATUS_EXCEPTION);
                 outBuffer.putMediumString(e.what());
@@ -567,7 +564,7 @@ void ManagementBroker::handlePackageQueryLH (Buffer&, string replyToKey, uint32_
 
 void ManagementBroker::handlePackageIndLH (Buffer& inBuffer, string /*replyToKey*/, uint32_t /*sequence*/)
 {
-    std::string packageName;
+    string packageName;
 
     inBuffer.getShortString(packageName);
     findOrAddPackageLH(packageName);
@@ -575,7 +572,7 @@ void ManagementBroker::handlePackageIndLH (Buffer& inBuffer, string /*replyToKey
 
 void ManagementBroker::handleClassQueryLH(Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
-    std::string packageName;
+    string packageName;
 
     inBuffer.getShortString(packageName);
     PackageMap::iterator pIter = packages.find(packageName);
@@ -604,7 +601,7 @@ void ManagementBroker::handleClassQueryLH(Buffer& inBuffer, string replyToKey, u
 
 void ManagementBroker::handleClassIndLH (Buffer& inBuffer, string replyToKey, uint32_t)
 {
-    std::string packageName;
+    string packageName;
     SchemaClassKey key;
 
     uint8_t kind = inBuffer.getOctet();
@@ -907,7 +904,7 @@ bool ManagementBroker::authorizeAgentMessageLH(Message& msg)
         uint8_t hash[16];
         string  methodName;
 
-        std::map<acl::Property, string> params;
+        map<acl::Property, string> params;
         ObjectId objId(inBuffer);
         inBuffer.getShortString(packageName);
         inBuffer.getShortString(className);
@@ -983,7 +980,7 @@ void ManagementBroker::dispatchAgentCommandLH(Message& msg)
     else if (opcode == 'M') handleMethodRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
 }
 
-ManagementBroker::PackageMap::iterator ManagementBroker::findOrAddPackageLH(std::string name)
+ManagementBroker::PackageMap::iterator ManagementBroker::findOrAddPackageLH(string name)
 {
     PackageMap::iterator pIter = packages.find (name);
     if (pIter != packages.end ())
@@ -1095,7 +1092,7 @@ size_t ManagementBroker::validateTableSchema(Buffer& inBuffer)
                 aft.decode(inBuffer);
             }
         }
-    } catch (std::exception& /*e*/) {
+    } catch (exception& /*e*/) {
         return 0;
     }
 
@@ -1127,7 +1124,7 @@ size_t ManagementBroker::validateEventSchema(Buffer& inBuffer)
             FieldTable ft;
             ft.decode(inBuffer);
         }
-    } catch (std::exception& /*e*/) {
+    } catch (exception& /*e*/) {
         return 0;
     }
 
