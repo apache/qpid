@@ -223,3 +223,35 @@ class MessageTest(TestCase):
     assert m.get("fragment_properties") is None
     assert m.get("message_properties") == self.mp
     assert m.get("delivery_properties") == self.dp
+
+class TimestampTest(TestCase):
+
+  def check(self, expected, *values):
+    for v in values:
+      assert isinstance(v, timestamp)
+      assert v == expected
+      assert v == timestamp(expected)
+
+  def testAdd(self):
+    self.check(4.0,
+               timestamp(2.0) + 2.0,
+               2.0 + timestamp(2.0))
+
+  def testSub(self):
+    self.check(2.0,
+               timestamp(4.0) - 2.0,
+               4.0 - timestamp(2.0))
+
+  def testNeg(self):
+    self.check(-4.0, -timestamp(4.0))
+
+  def testPos(self):
+    self.check(+4.0, +timestamp(4.0))
+
+  def testAbs(self):
+    self.check(4.0, abs(timestamp(-4.0)))
+
+  def testConversion(self):
+    dt = timestamp(0).datetime()
+    t = timestamp(dt)
+    assert t == 0
