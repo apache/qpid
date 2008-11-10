@@ -19,26 +19,27 @@
  *
  */
 
-
 /**
  *  direct_producer.cpp:
  *
  *  This program is one of three programs designed to be used
- *  together. These programs do not specify the exchange type - the
- *  default exchange type is the direct exchange.
+ *  together. 
  *  
  *    create_queues.cpp:
  *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
+ *      Creates a queue named "message_queue" on a broker, binding the
+ *      queue to the "amq.direct" exchange, using the routing key
+ *      "routing_key".
  *
  *    direct_producer.cpp (this program):
  *
- *      Publishes to a broker, specifying a routing key.
+ *      Publishes to the "amq.direct" exchange, specifying the routing
+ *      key "routing_key"
  *
  *    listener.cpp
  *
- *      Reads from a queue on the broker using a message listener.
+ *      Reads  from the "message_queue"  queue on  the broker  using a
+ *      message listener.
  *
  */
 
@@ -65,7 +66,7 @@ int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     int count = argc>3 ? atoi(argv[3]) : 10;
-    string exchange(argc>4 ? argv[4] : "amq.direct");
+  
     Connection connection;
     Message message;
     try {
@@ -88,16 +89,13 @@ int main(int argc, char** argv) {
 	  message_data << "Message " << i;
 
 	  message.setData(message_data.str());
-          // Asynchronous transfer sends messages as quickly as
-          // possible without waiting for confirmation.
-          // async(session).messageTransfer(arg::content=message,  arg::destination=exchange);
-          session.messageTransfer(arg::content=message,  arg::destination=exchange);
+          session.messageTransfer(arg::content=message,  arg::destination="amq.direct");
 	}
 	
 	// And send a final message to indicate termination.
 
 	message.setData("That's all, folks!");
-        session.messageTransfer(arg::content=message,  arg::destination=exchange); 
+        session.messageTransfer(arg::content=message,  arg::destination="amq.direct"); 
 
   //-----------------------------------------------------------------------------
 

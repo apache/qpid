@@ -22,21 +22,24 @@
 /**
  *  topic_listener.cpp:
  *
- *  This program is one of three programs designed to be used
- *  together. These programs use the topic exchange.
- *  
- *    topic_config_queues.cpp:
+ *  This program is one of two programs designed to be used
+ *  together. These programs implement a publish-subscribe example
+ *  using the "amq.topic" exchange.
  *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
+ *   topic_publisher.cpp 
  *
- *    topic_publisher.cpp:
+ *      Sends messages to the "amq.topic" exchange, using the
+ *      multipart routing keys "usa.news", "usa.weather",
+ *      "europe.news", and "europe.weather".
  *
- *      Publishes to a broker, specifying a routing key.
+ *   topic_listener.cpp (this program)
  *
- *    topic_listener.cpp (this program):
+ *      Creates private queues for "news", "weather", "usa", and
+ *      "europe", binding them to the amq.topic exchange using
+ *      bindings that match the corresponding parts of the multipart
+ *      routing keys.
  *
- *      Reads from a queue on the broker using a message listener.
+ *      Multiple listeners can be run at the same time.
  *
  */
 
