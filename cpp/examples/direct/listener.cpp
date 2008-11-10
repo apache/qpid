@@ -20,9 +20,28 @@
  */
 
 /**
- *  listener.cpp: This program reads messages from a queue on
- *  the broker using a message listener.
+ *  listener.cpp: 
+ *
+ *  This program is one of three programs designed to be used
+ *  together. 
+ *  
+ *    create_queues.cpp:
+ *
+ *      Creates a queue named "message_queue" on a broker, binding the
+ *      queue to the "amq.direct" exchange, using the routing key
+ *      "routing_key".
+ *
+ *    direct_producer.cpp 
+ *
+ *      Publishes to the "amq.direct" exchange, specifying the routing
+ *      key "routing_key"
+ *
+ *    listener.cpp (this program):
+ *
+ *      Reads  from the "message_queue"  queue on  the broker  using a
+ *      message listener.
  */
+
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
