@@ -19,10 +19,29 @@
  *
  */
 
+
 /**
- *  listener.cpp: This program reads messages fro a queue on
- *  the broker using a message listener.
+ *
+ * listener.cpp
+ *
+ * This is one of three programs used to implement XML-based content
+ * routing in C++.
+ *
+ * declare_queues.cpp 
+ *
+ *       Creates a queue named "message_qaueue" on the broker,
+ *       declares an XML Exchange, subscribes the queue to the XML
+ *       Exchange using an XQuery in the binding, then exits.
+ *
+ * xml_producer.cpp 
+ *
+ *       Publishes messages to the XML Exchange.
+ *
+ * listener.cpp (this program)
+ *
+ *       Reads messages from the "message_queue" queue.
  */
+
 
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>

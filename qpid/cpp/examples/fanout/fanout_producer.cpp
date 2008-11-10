@@ -23,22 +23,21 @@
 /**
  *  fanout_producer.cpp:
  *
- *  This program is one of three programs designed to be used
- *  together. These programs do not specify the exchange type - the
- *  default exchange type is the direct exchange.
- *  
- *    declare_queues.cpp:
- *
- *      Creates a queue on a broker, binding a routing key to route
- *      messages to that queue.
+ *  This program is one of two programs designed to be used
+ *  together.
  *
  *    fanout_producer.cpp (this program):
  *
- *      Publishes to a broker, specifying a routing key.
+ *      Publishes messages to the "amq.fanout" exchange.
  *
  *    listener.cpp
  *
- *      Reads from a queue on the broker using a message listener.
+ *      Creates a private queue, binds it to the "amq.fanout"
+ *      exchange, and reads messages from its queue as they
+ *      arrive. Messages sent before the listener binds the queue are
+ *      not received.
+ *
+ *      Multiple listeners can run at the same time.
  *
  */
 
@@ -64,7 +63,7 @@ using std::string;
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
-    string exchange = argc>3 ? argv[3] : "amq.fanout";
+
     Connection connection;
     Message message;
     try {
@@ -87,13 +86,13 @@ int main(int argc, char** argv) {
 	  message.setData(message_data.str());
           // Asynchronous transfer sends messages as quickly as
           // possible without waiting for confirmation.
-          async(session).messageTransfer(arg::content=message, arg::destination=exchange);
+          async(session).messageTransfer(arg::content=message, arg::destination="amq.fanout");
 	}
 	
 	// And send a final message to indicate termination.
 
 	message.setData("That's all, folks!");
-        session.messageTransfer(arg::content=message, arg::destination=exchange);
+        session.messageTransfer(arg::content=message, arg::destination="amq.fanout");
 
   //-----------------------------------------------------------------------------
 
