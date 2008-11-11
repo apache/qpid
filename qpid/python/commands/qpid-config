@@ -22,6 +22,7 @@
 import os
 import getopt
 import sys
+import locale
 from qpid import qmfconsole
 
 _recursive         = False
@@ -305,9 +306,15 @@ try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=",
                 "last-value-queue", "optimistic-consume", "sequence", "ive")
-    (optlist, cargs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
+    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
+
+try:
+    encoding = locale.getpreferredencoding()
+    cargs = [a.decode(encoding) for a in encArgs]
+except:
+    cargs = encArgs
 
 for opt in optlist:
     if opt[0] == "-b" or opt[0] == "--bindings":
@@ -381,6 +388,7 @@ try:
             Usage ()
 except Exception,e:
     print "Failed:", e.message
+    raise
     sys.exit(1)
 
 bm.Disconnect()

@@ -479,7 +479,7 @@ class managementClient:
     elif typecode == 5:
       data = codec.read_uint8 ()
     elif typecode == 6:
-      data = str (codec.read_str8 ())
+      data = codec.read_str8 ()
     elif typecode == 7:
       data = codec.read_str16 ()
     elif typecode == 8:  # ABSTIME
@@ -534,7 +534,7 @@ class managementClient:
 
   def handleMethodReply (self, ch, codec, sequence):
     status = codec.read_uint32 ()
-    sText  = str (codec.read_str16 ())
+    sText  = codec.read_str16 ()
 
     data = self.seqMgr.release (sequence)
     if data == None:
@@ -570,7 +570,7 @@ class managementClient:
 
   def handleCommandComplete (self, ch, codec, seq):
     code = codec.read_uint32 ()
-    text = str (codec.read_str8 ())
+    text = codec.read_str8 ()
     data = (seq, code, text)
     context = self.seqMgr.release (seq)
     if context == "outstanding":
@@ -597,7 +597,7 @@ class managementClient:
     ch.send ("qpid.management", smsg)
 
   def handlePackageInd (self, ch, codec):
-    pname = str (codec.read_str8 ())
+    pname = codec.read_str8 ()
     if pname not in self.packages:
       self.packages[pname] = {}
 
@@ -614,8 +614,8 @@ class managementClient:
     kind  = codec.read_uint8()
     if kind != 1:  # This API doesn't handle new-style events
       return
-    pname = str (codec.read_str8())
-    cname = str (codec.read_str8())
+    pname = codec.read_str8()
+    cname = codec.read_str8()
     hash  = codec.read_bin128()
     if pname not in self.packages:
       return
@@ -642,10 +642,10 @@ class managementClient:
       return
     timestamp = codec.read_uint64()
     objId = objectId(codec)
-    packageName = str(codec.read_str8())
-    className   = str(codec.read_str8())
+    packageName = codec.read_str8()
+    className   = codec.read_str8()
     hash        = codec.read_bin128()
-    name        = str(codec.read_str8())
+    name        = codec.read_str8()
     classKey    = (packageName, className, hash)
     if classKey not in self.schema:
       return;
@@ -669,8 +669,8 @@ class managementClient:
     kind  = codec.read_uint8()
     if kind != 1:  # This API doesn't handle new-style events
       return
-    packageName = str (codec.read_str8 ())
-    className   = str (codec.read_str8 ())
+    packageName = codec.read_str8 ()
+    className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
@@ -808,8 +808,8 @@ class managementClient:
     if cls == 'I' and self.instCb == None:
       return
 
-    packageName = str (codec.read_str8 ())
-    className   = str (codec.read_str8 ())
+    packageName = codec.read_str8 ()
+    className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
     classKey    = (packageName, className, hash)
 
