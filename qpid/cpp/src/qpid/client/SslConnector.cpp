@@ -186,7 +186,13 @@ SslConnector::~SslConnector() {
 void SslConnector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
-    socket.connect(host, port);
+    try {
+        socket.connect(host, port);
+    } catch (const std::exception& e) {
+        socket.close();
+        throw;
+    }
+
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
     closed = false;
     poller = Poller::shared_ptr(new Poller);
