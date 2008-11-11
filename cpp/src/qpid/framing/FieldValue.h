@@ -139,7 +139,7 @@ class FixedWidthValue : public FieldValue::Data {
     }
     FixedWidthValue(uint64_t v)
     {
-        for (int i = width; i > 0; --i) {
+        for (int i = width; i > 1; --i) {
             octets[i-1] = (uint8_t) (0xFF & v); v >>= 8;
         }
         octets[0] = (uint8_t) (0xFF & v);
