@@ -23,6 +23,7 @@ import getopt
 import sys
 import socket
 import os
+import locale
 from qpid import qmfconsole
 
 def Usage():
@@ -116,11 +117,11 @@ class RouteManager:
             print "No Links Found"
         else:
             print
-            print "Host            Port    Durable  State             Last Error"
-            print "==================================================================="
+            print "Host            Port    Transport Durable  State             Last Error"
+            print "============================================================================="
             for link in links:
-                print "%-16s%-8d   %c     %-18s%s" % \
-                (link.host, link.port, YN(link.durable), link.state, link.lastError)
+                print "%-16s%-8d%-13s%c     %-18s%s" % \
+                (link.host, link.port, link.transport, YN(link.durable), link.state, link.lastError)
 
     def mapRoutes(self):
         qmf = self.qmf
@@ -401,9 +402,15 @@ def YN(val):
 
 try:
     longOpts = ("verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=")
-    (optlist, cargs) = getopt.gnu_getopt(sys.argv[1:], "vqdest:", longOpts)
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "vqdest:", longOpts)
 except:
     Usage()
+
+try:
+    encoding = locale.getpreferredencoding()
+    cargs = [a.decode(encoding) for a in encArgs]
+except:
+    cargs = encArgs
 
 for opt in optlist:
     if opt[0] == "-v" or opt[0] == "--verbose":

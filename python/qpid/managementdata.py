@@ -29,6 +29,7 @@ import re
 import socket
 import struct
 import os
+import locale
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
@@ -727,7 +728,11 @@ class ManagementData:
       self.schemaTable (data)
 
   def do_call (self, data):
-    tokens = data.split ()
+    encTokens = data.split ()
+    try:
+      tokens = [a.decode(locale.getpreferredencoding()) for a in encArgs]
+    except:
+      tokens = encTokens
     if len (tokens) < 2:
       print "Not enough arguments supplied"
       return

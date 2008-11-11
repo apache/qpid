@@ -26,7 +26,7 @@ import socket
 import re
 from qpid.peer       import Closed
 from qpid.connection import Connection, ConnectionFailed
-from qpid.datatypes  import uuid4, Message, RangedSet
+from qpid.datatypes  import UUID, uuid4, Message, RangedSet
 from qpid.util       import connect, ssl, URL
 from qpid.codec010   import StringCodec as Codec
 from threading       import Lock, Condition
@@ -384,7 +384,7 @@ class Session:
     pass
 
   def _handleBrokerResp(self, broker, codec, seq):
-    broker.brokerId = codec.read_uuid()
+    broker.brokerId = UUID(codec.read_uuid())
     if self.console != None:
       self.console.brokerInfo(broker)
 
@@ -397,7 +397,7 @@ class Session:
     broker._send(smsg)
 
   def _handlePackageInd(self, broker, codec, seq):
-    pname = str(codec.read_str8())
+    pname = codec.read_str8()
     notify = False
     try:
       self.cv.acquire()
@@ -420,7 +420,7 @@ class Session:
 
   def _handleCommandComplete(self, broker, codec, seq):
     code = codec.read_uint32()
-    text = str(codec.read_str8())
+    text = codec.read_str8()
     context = self.seqMgr._release(seq)
     if context == self._CONTEXT_STARTUP:
       broker._decOutstanding()
@@ -442,8 +442,8 @@ class Session:
 
   def _handleClassInd(self, broker, codec, seq):
     kind  = codec.read_uint8()
-    pname = str(codec.read_str8())
-    cname = str(codec.read_str8())
+    pname = codec.read_str8()
+    cname = codec.read_str8()
     hash  = codec.read_bin128()
     unknown = False
 
@@ -469,7 +469,7 @@ class Session:
 
   def _handleMethodResp(self, broker, codec, seq):
     code = codec.read_uint32()
-    text = str(codec.read_str16())
+    text = codec.read_str16()
     outArgs = {}
     method, synchronous = self.seqMgr._release(seq)
     if code == 0:
@@ -512,8 +512,8 @@ class Session:
 
   def _handleSchemaResp(self, broker, codec, seq):
     kind  = codec.read_uint8()
-    pname = str(codec.read_str8())
-    cname = str(codec.read_str8())
+    pname = codec.read_str8()
+    cname = codec.read_str8()
     hash  = codec.read_bin128()
     classKey = (pname, cname, hash)
     _class = SchemaClass(kind, classKey, codec)
@@ -529,8 +529,8 @@ class Session:
       self.console.newClass(kind, classKey)
 
   def _handleContentInd(self, broker, codec, seq, prop=False, stat=False):
-    pname = str(codec.read_str8())
-    cname = str(codec.read_str8())
+    pname = codec.read_str8()
+    cname = codec.read_str8()
     hash  = codec.read_bin128()
     classKey = (pname, cname, hash)
     try:
@@ -585,7 +585,7 @@ class Session:
     elif typecode == 2:  data = codec.read_uint16()     # U16
     elif typecode == 3:  data = codec.read_uint32()     # U32
     elif typecode == 4:  data = codec.read_uint64()     # U64
-    elif typecode == 6:  data = str(codec.read_str8())  # SSTR
+    elif typecode == 6:  data = codec.read_str8()       # SSTR
     elif typecode == 7:  data = codec.read_str16()      # LSTR
     elif typecode == 8:  data = codec.read_int64()      # ABSTIME
     elif typecode == 9:  data = codec.read_uint64()     # DELTATIME
@@ -593,7 +593,7 @@ class Session:
     elif typecode == 11: data = codec.read_uint8() != 0 # BOOL
     elif typecode == 12: data = codec.read_float()      # FLOAT
     elif typecode == 13: data = codec.read_double()     # DOUBLE
-    elif typecode == 14: data = codec.read_uuid()       # UUID
+    elif typecode == 14: data = UUID(codec.read_uuid()) # UUID
     elif typecode == 15: data = codec.read_map()        # FTABLE
     elif typecode == 16: data = codec.read_int8()       # S8
     elif typecode == 17: data = codec.read_int16()      # S16
@@ -617,7 +617,7 @@ class Session:
     elif typecode == 11: codec.write_uint8  (int(value))    # BOOL
     elif typecode == 12: codec.write_float  (float(value))  # FLOAT
     elif typecode == 13: codec.write_double (double(value)) # DOUBLE
-    elif typecode == 14: codec.write_uuid   (value)         # UUID
+    elif typecode == 14: codec.write_uuid   (value.bytes)   # UUID
     elif typecode == 15: codec.write_map    (value)         # FTABLE
     elif typecode == 16: codec.write_int8   (int(value))    # S8
     elif typecode == 17: codec.write_int16  (int(value))    # S16
@@ -628,26 +628,26 @@ class Session:
 
   def _displayValue(self, value, typecode):
     """ """
-    if   typecode == 1:  return str(value)
-    elif typecode == 2:  return str(value)
-    elif typecode == 3:  return str(value)
-    elif typecode == 4:  return str(value)
-    elif typecode == 6:  return str(value)
-    elif typecode == 7:  return str(value)
-    elif typecode == 8:  return strftime("%c", gmtime(value / 1000000000))
-    elif typecode == 9:  return str(value)
-    elif typecode == 10: return value.__repr__()
+    if   typecode == 1:  return unicode(value)
+    elif typecode == 2:  return unicode(value)
+    elif typecode == 3:  return unicode(value)
+    elif typecode == 4:  return unicode(value)
+    elif typecode == 6:  return value
+    elif typecode == 7:  return value
+    elif typecode == 8:  return unicode(strftime("%c", gmtime(value / 1000000000)))
+    elif typecode == 9:  return unicode(value)
+    elif typecode == 10: return unicode(value.__repr__())
     elif typecode == 11:
-      if value: return 'T'
-      else:     return 'F'
-    elif typecode == 12: return str(value)
-    elif typecode == 13: return str(value)
-    elif typecode == 14: return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", value)
-    elif typecode == 15: return value.__repr__()
-    elif typecode == 16: return str(value)
-    elif typecode == 17: return str(value)
-    elif typecode == 18: return str(value)
-    elif typecode == 19: return str(value)
+      if value: return u"T"
+      else:     return u"F"
+    elif typecode == 12: return unicode(value)
+    elif typecode == 13: return unicode(value)
+    elif typecode == 14: return unicode(value.__repr__())
+    elif typecode == 15: return unicode(value.__repr__())
+    elif typecode == 16: return unicode(value)
+    elif typecode == 17: return unicode(value)
+    elif typecode == 18: return unicode(value)
+    elif typecode == 19: return unicode(value)
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
     
@@ -764,7 +764,7 @@ class SchemaProperty:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name     = str(map["name"])
+    self.name     = map["name"]
     self.type     = map["type"]
     self.access   = map["access"]
     self.index    = map["index"] != 0
@@ -776,11 +776,11 @@ class SchemaProperty:
     self.desc     = None
 
     for key, value in map.items():
-      if   key == "unit"   : self.unit   = str(value)
+      if   key == "unit"   : self.unit   = value
       elif key == "min"    : self.min    = value
       elif key == "max"    : self.max    = value
       elif key == "maxlen" : self.maxlen = value
-      elif key == "desc"   : self.desc   = str(value)
+      elif key == "desc"   : self.desc   = value
 
   def __repr__(self):
     return self.name
@@ -789,14 +789,14 @@ class SchemaStatistic:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name     = str(map["name"])
+    self.name     = map["name"]
     self.type     = map["type"]
     self.unit     = None
     self.desc     = None
 
     for key, value in map.items():
-      if   key == "unit" : self.unit = str(value)
-      elif key == "desc" : self.desc = str(value)
+      if   key == "unit" : self.unit = value
+      elif key == "desc" : self.desc = value
 
   def __repr__(self):
     return self.name
@@ -805,10 +805,10 @@ class SchemaMethod:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name = str(map["name"])
+    self.name = map["name"]
     argCount  = map["argCount"]
     if "desc" in map:
-      self.desc = str(map["desc"])
+      self.desc = map["desc"]
     else:
       self.desc = None
     self.arguments = []
@@ -833,10 +833,10 @@ class SchemaArgument:
   """ """
   def __init__(self, codec, methodArg):
     map = codec.read_map()
-    self.name    = str(map["name"])
+    self.name    = map["name"]
     self.type    = map["type"]
     if methodArg:
-      self.dir   = str(map["dir"].upper())
+      self.dir   = map["dir"].upper()
     self.unit    = None
     self.min     = None
     self.max     = None
@@ -845,12 +845,12 @@ class SchemaArgument:
     self.default = None
 
     for key, value in map.items():
-      if   key == "unit"    : self.unit    = str(value)
+      if   key == "unit"    : self.unit    = value
       elif key == "min"     : self.min     = value
       elif key == "max"     : self.max     = value
       elif key == "maxlen"  : self.maxlen  = value
-      elif key == "desc"    : self.desc    = str(value)
-      elif key == "default" : self.default = str(value)
+      elif key == "desc"    : self.desc    = value
+      elif key == "default" : self.default = value
 
 class ObjectId:
   """ Object that represents QMF object identifiers """
@@ -904,7 +904,6 @@ class ObjectId:
     codec.write_uint64(self.first)
     codec.write_uint64(self.second)
 
-
 class Object(object):
   """ """
   def __init__(self, session, broker, schema, codec, prop, stat):
@@ -955,12 +954,16 @@ class Object(object):
 
   def getIndex(self):
     """ Return a string describing this object's primary key. """
-    result = ""
+    result = u""
     for property, value in self._properties:
       if property.index:
-        if result != "":
-          result += ":"
-        result += str(value)
+        if result != u"":
+          result += u":"
+        try:
+          valstr = unicode(value)
+        except:
+          valstr = u"<undecodable>"
+        result += valstr
     return result
 
   def getProperties(self):
@@ -979,7 +982,7 @@ class Object(object):
       self.statistics = newer.getStatistics()
 
   def __repr__(self):
-    return self.getIndex()
+    return self.getIndex().encode("utf8")
 
   def __getattr__(self, name):
     for method in self._schema.getMethods():
@@ -1365,7 +1368,8 @@ class Event:
     out += " " + self._sevName() + " " + self.classKey[0] + ":" + self.classKey[1]
     out += " broker=" + self.broker.getUrl()
     for arg in self.schema.arguments:
-      out += " " + arg.name + "=" + self.session._displayValue(self.arguments[arg.name], arg.type)
+      out += " " + arg.name + "=" + \
+          self.session._displayValue(self.arguments[arg.name], arg.type).encode("utf8")
     return out
 
   def _sevName(self):

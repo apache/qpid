@@ -40,7 +40,7 @@ class Display:
     for head in heads:
       width = len (head)
       for row in rows:
-        cellWidth = len (str (row[col]))
+        cellWidth = len (unicode (row[col]))
         if cellWidth > width:
           width = cellWidth
       colWidth.append (width + self.tableSpacing)
@@ -60,9 +60,9 @@ class Display:
       line = self.tablePrefix
       col  = 0
       for width in colWidth:
-        line = line + str (row[col])
+        line = line + unicode (row[col])
         if col < len (heads) - 1:
-          for i in range (width - len (str (row[col]))):
+          for i in range (width - len (unicode (row[col]))):
             line = line + " "
         col = col + 1
       print line
