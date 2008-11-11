@@ -41,7 +41,7 @@ int uuid_is_null (const uuid_t uu) {
 }
 
 int uuid_parse (const char *in, uuid_t uu) {
-    return UuidFromString ((unsigned char*)in, (UUID*)uu) == RPC_S_OK;
+    return UuidFromString ((unsigned char*)in, (UUID*)uu) == RPC_S_OK ? 0 : -1;
 }
 
 void uuid_unparse (const uuid_t uu, char *out) {
