@@ -161,12 +161,17 @@ QPID_AUTO_TEST_CASE(test64GetAndSetConverts)
 {
     FieldTable args;
     args.setInt64("a",100);
+    args.setInt64("b",-(int64_t) ((int64_t) 1<<34));
     
-    args.setUInt64("b",1u);
-    BOOST_CHECK_EQUAL(1u, args.getAsUInt64("b"));
+    args.setUInt64("c",1u);
+    args.setUInt64("d",(uint64_t) ((uint64_t) 1<<34));
+    BOOST_CHECK_EQUAL(1u, args.getAsUInt64("c"));
     BOOST_CHECK_EQUAL(100u, args.getAsUInt64("a"));
-    BOOST_CHECK_EQUAL(1, args.getAsInt64("b"));
+    BOOST_CHECK_EQUAL(1, args.getAsInt64("c"));
     BOOST_CHECK_EQUAL(100, args.getAsInt64("a"));
+    BOOST_CHECK_EQUAL(-(int64_t) ((int64_t) 1<<34), args.getAsInt64("b"));
+    BOOST_CHECK_EQUAL((uint64_t) ((uint64_t) 1<<34), args.getAsUInt64("d"));
+    BOOST_CHECK_EQUAL((int64_t) ((int64_t) 1<<34), args.getAsInt64("d"));
 
 }
  
