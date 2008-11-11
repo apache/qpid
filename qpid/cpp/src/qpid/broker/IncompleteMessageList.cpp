@@ -47,9 +47,12 @@ void IncompleteMessageList::process(const CompletionListener& listen, bool sync)
         boost::intrusive_ptr<Message>& msg = incomplete.front();
         if (!msg->isEnqueueComplete()) {
             if (sync){
-                msg->flush();
+                {
+                    sys::Mutex::ScopedUnlock u(lock);
+                    msg->flush(); // Can re-enter IncompleteMessageList::enqueueComplete
+                }
                 while (!msg->isEnqueueComplete())
-                    lock.wait();
+                       lock.wait();
             } else {
                 //leave the message as incomplete for now
                 return;
