@@ -308,7 +308,9 @@ void DumpClient::dumpUnacked(const broker::DeliveryRecord& dr) {
         dr.isCancelled(),
         dr.isComplete(),
         dr.isEnded(),
-        dr.isWindowing());
+        dr.isWindowing(),
+        dr.getCredit()
+    );
 }
 
 class TxOpDumper : public broker::TxOpConstVisitor, public MessageDumper {
