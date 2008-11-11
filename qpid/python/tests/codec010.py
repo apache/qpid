@@ -47,6 +47,8 @@ class CodecTest(TestCase):
 
   def testMapLong(self):
     self.check("map", {"long": 2**32})
+    self.check("map", {"long": 1 << 34})
+    self.check("map", {"long": -(1 << 34)})
 
   def testMapTimestamp(self):
     decoded = self.check("map", {"timestamp": timestamp(0)})
@@ -106,6 +108,12 @@ class CodecTest(TestCase):
   def testInt16(self):
     self.check("int16", 3)
     self.check("int16", -3)
+
+  def testInt64(self):
+    self.check("int64", 3)
+    self.check("int64", -3)
+    self.check("int64", 1<<34)
+    self.check("int64", -(1<<34))
 
   def testDatetime(self):
     self.check("datetime", timestamp(0))
