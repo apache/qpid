@@ -80,7 +80,8 @@ class DeliveryRecord
         const std::string& tag,
         bool acquired,
         bool accepted,
-        bool windowing
+        bool windowing,
+        uint32_t credit=0       // Only used if msg is empty.
     );
     
     bool matches(DeliveryId tag) const;

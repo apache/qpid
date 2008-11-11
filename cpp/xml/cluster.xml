@@ -94,6 +94,7 @@
       <field name="completed" type="bit"/>
       <field name="ended" type="bit"/>
       <field name="windowing" type="bit"/>
+      <field name="credit" type="uint32"/>
     </control>
     
     <!-- Tx transaction state. -->

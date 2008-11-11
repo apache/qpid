@@ -124,7 +124,8 @@ class Connection :
                         bool cancelled,
                         bool completed,
                         bool ended,
-                        bool windowing);
+                        bool windowing,
+                        uint32_t credit);
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
 

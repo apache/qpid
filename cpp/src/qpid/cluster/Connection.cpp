@@ -280,7 +280,8 @@ void Connection::deliveryRecord(const string& qname,
                                 bool cancelled,
                                 bool completed,
                                 bool ended,
-                                bool windowing)
+                                bool windowing,
+                                uint32_t credit)
 {
     broker::QueuedMessage m;
     broker::Queue::shared_ptr queue = findQueue(qname);
@@ -293,7 +294,7 @@ void Connection::deliveryRecord(const string& qname,
             throw Exception(QPID_MSG("deliveryRecord no dump message"));
     }
 
-    broker::DeliveryRecord dr(m, queue, tag, acquired, accepted, windowing);
+    broker::DeliveryRecord dr(m, queue, tag, acquired, accepted, windowing, credit);
     dr.setId(id);
     if (cancelled) dr.cancel(dr.getTag());
     if (completed) dr.complete();

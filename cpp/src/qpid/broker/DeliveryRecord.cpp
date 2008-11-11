@@ -35,7 +35,8 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                const std::string& _tag,
                                bool _acquired,
                                bool accepted, 
-                               bool _windowing) : msg(_msg), 
+                               bool _windowing,
+                               uint32_t _credit) : msg(_msg), 
                                                   queue(_queue), 
                                                   tag(_tag),
                                                   acquired(_acquired),
@@ -44,7 +45,7 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                   completed(false),
                                                   ended(accepted),
                                                   windowing(_windowing),
-                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : 0)
+                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
 {}
 
 void DeliveryRecord::setEnded()
