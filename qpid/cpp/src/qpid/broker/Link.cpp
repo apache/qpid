@@ -160,36 +160,37 @@ void Link::closed (int, std::string text)
 
 void Link::destroy ()
 {
-    Mutex::ScopedLock mutex(lock);
-    Bridges toDelete;
+    {
+        Mutex::ScopedLock mutex(lock);
+        Bridges toDelete;
 
-    AclModule* acl = getBroker()->getAcl();
-    std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
-    if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
-    	throw NotAllowedException("ACL denied delete link request");
+        AclModule* acl = getBroker()->getAcl();
+        std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
+        if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
+            throw NotAllowedException("ACL denied delete link request");
+        }
+
+        QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
+        if (connection)
+            connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
+
+        setStateLH(STATE_CLOSED);
+
+        // Move the bridges to be deleted into a local vector so there is no
+        // corruption of the iterator caused by bridge deletion.
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++)
+            toDelete.push_back(*i);
+        active.clear();
+
+        for (Bridges::iterator i = created.begin(); i != created.end(); i++)
+            toDelete.push_back(*i);
+        created.clear();
+
+        // Now delete all bridges on this link.
+        for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
+            (*i)->destroy();
+        toDelete.clear();
     }
-
-    QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
-    if (connection)
-        connection->close(CLOSE_CODE_CONNECTION_FORCED, "closed by management");
-
-    setStateLH(STATE_CLOSED);
-
-    // Move the bridges to be deleted into a local vector so there is no
-    // corruption of the iterator caused by bridge deletion.
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++)
-        toDelete.push_back(*i);
-    active.clear();
-
-    for (Bridges::iterator i = created.begin(); i != created.end(); i++)
-        toDelete.push_back(*i);
-    created.clear();
-
-    // Now delete all bridges on this link.
-    for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
-        (*i)->destroy();
-    toDelete.clear();
-
     links->destroy (host, port);
 }
 
