@@ -47,6 +47,7 @@ bool AggregateOutput::doOutput()
         //loop until a task generated some output
         while (!result) {
             result = tasks[next++]->doOutput();
+	    if (tasks.empty()) break;
             if (next >= tasks.size()) next = next % tasks.size();
             if (start == next) break;
         }
