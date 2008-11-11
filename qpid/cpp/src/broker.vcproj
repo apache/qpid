@@ -655,9 +655,6 @@
 				RelativePath="qpid\broker\HeadersExchange.cpp">
 			</File>
 			<File
-				RelativePath="qpid\broker\IncomingExecutionContext.cpp">
-			</File>
-			<File
 				RelativePath="qpid\broker\IncompleteMessageList.cpp">
 			</File>
 			<File
@@ -1083,9 +1080,6 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\HeadersExchange.h">
-			</File>
-			<File
-				RelativePath="qpid\broker\IncomingExecutionContext.h">
 			</File>
 			<File
 				RelativePath="qpid\broker\IncompleteMessageList.h">

@@ -354,9 +354,6 @@
 				RelativePath="qpid\client\Dispatcher.cpp">
 			</File>
 			<File
-				RelativePath="qpid\client\FailoverConnection.cpp">
-			</File>
-			<File
 				RelativePath="qpid\client\FailoverListener.cpp">
 			</File>
 			<File
@@ -364,12 +361,6 @@
 			</File>
 			<File
 				RelativePath="qpid\client\FailoverManager.cpp">
-			</File>
-			<File
-				RelativePath="qpid\client\FailoverSession.cpp">
-			</File>
-			<File
-				RelativePath="qpid\client\FailoverSubscriptionManager.cpp">
 			</File>
 			<File
 				RelativePath="qpid\client\Future.cpp">
@@ -490,19 +481,10 @@
 				RelativePath="qpid\client\Execution.h">
 			</File>
 			<File
-				RelativePath="qpid\client\FailoverConnection.h">
-			</File>
-			<File
 				RelativePath="qpid\client\FailoverListener.h">
 			</File>
 			<File
 				RelativePath="qpid\client\FailoverManager.h">
-			</File>
-			<File
-				RelativePath="qpid\client\FailoverSession.h">
-			</File>
-			<File
-				RelativePath="qpid\client\FailoverSubscriptionManager.h">
 			</File>
 			<File
 				RelativePath="qpid\client\FlowControl.h">
