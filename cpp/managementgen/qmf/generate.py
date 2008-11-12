@@ -140,6 +140,21 @@ class Makefile:
         stream.write (" \\\n    ")
       stream.write (file)
 
+  def genGeneratedFiles(self, stream, variables):
+    first = True
+    extensions = ("h", "cpp")
+    for ext in extensions:
+      for file in self.filelists[ext]:
+        if first:
+          first = False
+        else:
+          stream.write(" \\\n    ")
+        if "genprefix" in variables:
+          prefix = variables["genprefix"]
+          if prefix != "":
+            stream.write(prefix + "/")
+        stream.write(file)
+
   def genHeaderInstalls (self, stream, variables):
     for package in self.packagelist:
       name = "_".join(package.split("/"))
@@ -154,6 +169,11 @@ class Makefile:
             stream.write (" \\\n    ")
           stream.write(file)
       stream.write("\n\n")
+
+  def testQpidBroker(self, variables):
+    if "qpidbroker" in variables:
+      return variables["qpidbroker"]
+    return False
 
 
 class Generator:
@@ -332,10 +352,13 @@ class Generator:
     stream = template.expand (schema)
     self.writeIfChanged (stream, target, force)
 
-  def makeSingleFile (self, templateFile, target, force=False):
+  def makeSingleFile (self, templateFile, target, force=False, vars=None):
     """ Generate a single expanded template """
     makefile = Makefile (self.filelists, self.templateFiles, self.packagelist)
     template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     stream = template.expand (makefile)
     self.writeIfChanged (stream, target, force)
