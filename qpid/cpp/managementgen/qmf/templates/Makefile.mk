@@ -17,9 +17,10 @@
 # under the License.
 #
 /*MGEN:commentPrefix=#*/
+/*MGEN:Root.Disclaimer*/
+/*MGEN:IF(Makefile.QpidBroker)*/
 /*MGEN:mgenDir=$(mgen_dir)*/
 /*MGEN:specDir=$(top_srcdir)/../specs*/
-/*MGEN:Root.Disclaimer*/
 
 mgen_generator=/*MGEN:Makefile.GenSources*/
 
@@ -33,3 +34,7 @@ $(srcdir)/managementgen.mk: $(mgen_generator)
 
 $(mgen_generator):
 endif
+/*MGEN:ENDIF*/
+
+qmfgen_sources=/*MGEN:Makefile.GeneratedFiles*/
+
