@@ -102,10 +102,6 @@ struct Statement {
  * QPID_LOG(error, boost::format("Dohickey %s exploded") % dohicky.name());
  * @endcode
  *
- * All code with logging statements should be built with
- *   -DQPID_COMPONENT=<component name>
- * where component name is the name of the component this file belongs to.
- * 
  * You can subscribe to log messages by level, by component, by filename
  * or a combination @see Configuration.
 
