@@ -28,7 +28,7 @@ $(rgen_generator):
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -o gen/qmf \
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -o gen/qmf \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml
