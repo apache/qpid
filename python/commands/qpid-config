@@ -35,7 +35,6 @@ _maxQueueSize      = None
 _maxQueueCount     = None
 _policyType        = None
 _lvq               = False
-_optimisticConsume = False
 _msgSequence       = False
 _ive               = False
 
@@ -46,7 +45,6 @@ MAX_QUEUE_COUNT  = "qpid.max_count"
 POLICY_TYPE  = "qpid.policy_type"
 CLUSTER_DURABLE = "qpid.persist_last_node"
 LVQ = "qpid.last_value_queue"
-OPTIMISTIC_CONSUME = "qpid.optimistic_consume"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
 
@@ -76,7 +74,6 @@ def Usage ():
     print "    --max-queue-count N  Maximum in-memory queue size as a number of messages"
     print "    --policy-type TYPE   Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
     print "    --last-value-queue   Enable LVQ behavior on the queue"
-    print "    --optimistic-consume Enable optimistic consume on the queue"
     print
     print "Add Exchange Options:"
     print "    --durable    Exchange is durable"
@@ -191,7 +188,6 @@ class BrokerManager:
                 if MAX_QUEUE_COUNT in args: print "--max-queue-count=%d" % args[MAX_QUEUE_COUNT],
                 if POLICY_TYPE in args: print "--policy-type=%s" % args[POLICY_TYPE],
                 if LVQ in args and args[LVQ] == 1: print "--last-value-queue",
-                if OPTIMISTIC_CONSUME in args and args[OPTIMISTIC_CONSUME] == 1: print "--optimistic-consume",
                 print
 
     def QueueListRecurse (self, filter):
@@ -248,8 +244,6 @@ class BrokerManager:
             declArgs[CLUSTER_DURABLE] = 1
         if _lvq:
             declArgs[LVQ] = 1
-        if _optimisticConsume:
-            declArgs[OPTIMISTIC_CONSUME] = 1
 
         self.broker.getAmqpSession().queue_declare (queue=qname, durable=_durable, arguments=declArgs)
 
@@ -305,7 +299,7 @@ def YN (bool):
 try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=",
-                "last-value-queue", "optimistic-consume", "sequence", "ive")
+                "last-value-queue", "sequence", "ive")
     (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -337,8 +331,6 @@ for opt in optlist:
         _policyType = opt[1]
     if opt[0] == "--last-value-queue":
         _lvq = True
-    if opt[0] == "--optimistic-consume":
-        _optimisticConsume = True
     if opt[0] == "--sequence":
         _msgSequence = True
     if opt[0] == "--ive":
