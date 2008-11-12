@@ -250,8 +250,7 @@ namespace ExcelAddIn
             byte[] body = new byte[m.Body.Length - m.Body.Position];
             reader.Read(body, 0, body.Length);
             ASCIIEncoding enc = new ASCIIEncoding();            
-            res = enc.GetString(body);
-            res = res + " price: " + m.ApplicationHeaders["price"];
+            res = enc.GetString(body);           
             return res;
         }
 
