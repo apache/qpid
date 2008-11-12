@@ -36,9 +36,6 @@ void SignalHandler::setBroker(const boost::intrusive_ptr<Broker>& b) {
     signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
 
     signal(SIGCHLD,SIG_IGN); 
-    signal(SIGTSTP,SIG_IGN); 
-    signal(SIGTTOU,SIG_IGN);
-    signal(SIGTTIN,SIG_IGN);
 }
 
 void SignalHandler::shutdownHandler(int) {
