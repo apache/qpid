@@ -53,11 +53,10 @@ bool SystemInfo::getLocalHostname (TcpAddress &address) {
     return true;
 }
 
+static const string LOCALHOST("127.0.0.1");
+
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
-
-    static const string LOCALHOST("127.0.0.1");
-
     int s = socket (PF_INET, SOCK_STREAM, 0);
     for (int i=1;;i++) {
         struct ifreq ifr;
@@ -71,6 +70,9 @@ void SystemInfo::getLocalIpAddresses (uint16_t port,
         string addr(inet_ntoa(sin->sin_addr));
         if (addr != LOCALHOST)
             addrList.push_back(TcpAddress(addr, port));
+    }
+    if (addrList.empty()) {
+        addrList.push_back(TcpAddress(LOCALHOST, port));
     }
     close (s);
 }
