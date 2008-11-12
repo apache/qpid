@@ -516,6 +516,7 @@ nobase_include_HEADERS = \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
   qpid/client/Execution.h \
+  qpid/client/FailoverManager.h \
   qpid/client/Subscription.h \
   qpid/client/SubscriptionImpl.h \
   qpid/client/SubscriptionSettings.h \
