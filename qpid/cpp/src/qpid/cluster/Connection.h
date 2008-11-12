@@ -137,6 +137,10 @@ class Connection :
     void txEnd();
     void accumulatedAck(const qpid::framing::SequenceSet&);
 
+    // Encoded queue/exchange replication.
+    void queue(const std::string& encoded);
+    void exchange(const std::string& encoded);
+    
   private:
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();

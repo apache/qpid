@@ -133,14 +133,20 @@ void DumpClient::run() {
     delete this;
 }
 
+namespace {
+template <class T> std::string encode(const T& t) {
+    std::string encoded;
+    encoded.resize(t.encodedSize());
+    framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    t.encode(buf);
+    return encoded;
+}
+} // namespace
+
 void DumpClient::dumpExchange(const boost::shared_ptr<Exchange>& ex) {
-    session.exchangeDeclare(
-        ex->getName(), ex->getType(),
-        ex->getAlternate() ? ex->getAlternate()->getName() : std::string(),
-        arg::passive=false,
-        arg::durable=ex->isDurable(),
-        arg::autoDelete=false,
-        arg::arguments=ex->getArgs());
+    QPID_LOG(debug, dumperId << " dumping exchange " << ex->getName());
+    ClusterConnectionProxy proxy(session);
+    proxy.exchange(encode(*ex));
 }
 
 /** Bind a queue to the dump exchange and dump messges to it
@@ -181,14 +187,9 @@ class MessageDumper {
 
 
 void DumpClient::dumpQueue(const boost::shared_ptr<Queue>& q) {
-    session.queueDeclare(
-        q->getName(),
-        q->getAlternateExchange() ? q->getAlternateExchange()->getName() : std::string(),
-        arg::passive=false,
-        arg::durable=q->isDurable(),
-        arg::exclusive=q->hasExclusiveConsumer(),
-        arg::autoDelete=q->isAutoDelete(),
-        arg::arguments=q->getSettings());
+    QPID_LOG(debug, dumperId << " dumping queue " << q->getName());
+    ClusterConnectionProxy proxy(session);
+    proxy.queue(encode(*q));
     MessageDumper dumper(q->getName(), session);
     q->eachMessage(boost::bind(&MessageDumper::dumpQueuedMessage, &dumper, _1));
     q->eachBinding(boost::bind(&DumpClient::dumpBinding, this, q->getName(), _1));

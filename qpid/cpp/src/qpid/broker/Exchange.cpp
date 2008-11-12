@@ -40,6 +40,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace 
 {
 const std::string qpidMsgSequence("qpid.msg_sequence");
+const std::string qpidSequenceCounter("qpid.sequence_counter");
 const std::string qpidIVE("qpid.ive");
 const std::string qpidFedOp("qpid.fed.op");
 const std::string qpidFedTags("qpid.fed.tags");
@@ -119,7 +120,10 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
     }
 
     sequence = _args.get(qpidMsgSequence);
-    if (sequence) QPID_LOG(debug, "Configured exchange "+ _name +" with Msg sequencing");
+    if (sequence) {
+        QPID_LOG(debug, "Configured exchange "+ _name +" with Msg sequencing");
+        args.setInt64(std::string(qpidSequenceCounter), sequenceNo);
+    }
 
     ive = _args.get(qpidIVE);
     if (ive) QPID_LOG(debug, "Configured exchange "+ _name +" with Initial Value");
@@ -153,7 +157,7 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     buffer.get(args);
 
     Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
-    exch->sequenceNo = args.getAsInt64("qpid.sequence_counter");
+    exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
     return exch;
 }
 
@@ -162,7 +166,8 @@ void Exchange::encode(Buffer& buffer) const
     buffer.putShortString(name);
     buffer.putOctet(durable);
     buffer.putShortString(getType());
-    if (sequenceNo) args.setInt64(std::string("qpid.sequence_counter"),sequenceNo);
+    if (args.isSet(qpidSequenceCounter))
+        args.setInt64(std::string(qpidSequenceCounter),sequenceNo);
     buffer.put(args);
 }
 

@@ -29,6 +29,8 @@
 #include "qpid/broker/TxAccept.h"
 #include "qpid/broker/RecoveredEnqueue.h"
 #include "qpid/broker/RecoveredDequeue.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AllInvoker.h"
@@ -347,6 +349,17 @@ void Connection::accumulatedAck(const qpid::framing::SequenceSet& s) {
     semanticState().setAccumulatedAck(s);
 }
 
+void Connection::exchange(const std::string& encoded) {
+    Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    broker::Exchange::shared_ptr ex = broker::Exchange::decode(cluster.getBroker().getExchanges(), buf);
+    QPID_LOG(debug, cluster << " decoded exchange " << ex->getName());    
+}
+
+void Connection::queue(const std::string& encoded) {
+    Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    broker::Queue::shared_ptr q = broker::Queue::decode(cluster.getBroker().getQueues(), buf);
+    QPID_LOG(debug, cluster << " decoded queue " << q->getName());    
+}
 
 }} // namespace qpid::cluster
 

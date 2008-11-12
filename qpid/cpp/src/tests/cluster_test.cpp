@@ -209,6 +209,30 @@ class Sender {
     uint16_t channel;
 };
 
+int64_t getMsgSequence(const Message& m) {
+    return m.getMessageProperties().getApplicationHeaders().getAsInt64("qpid.msg_sequence");
+}
+
+QPID_AUTO_TEST_CASE(testSequenceOptions) {
+    // Make sure the exchange qpid.msg_sequence property is properly replicated.
+    ClusterFixture cluster(1);
+    Client c0(cluster[0], "c0");
+    FieldTable args;
+    args.setInt("qpid.msg_sequence", 1); // FIXME aconway 2008-11-11: works with "qpid.sequence_counter"??
+    c0.session.queueDeclare(arg::queue="q");
+    c0.session.exchangeDeclare(arg::exchange="ex", arg::type="direct", arg::arguments=args);
+    c0.session.exchangeBind(arg::exchange="ex", arg::queue="q", arg::bindingKey="k");
+    c0.session.messageTransfer(arg::content=Message("1", "k"), arg::destination="ex");
+    c0.session.messageTransfer(arg::content=Message("2", "k"), arg::destination="ex");
+    BOOST_CHECK_EQUAL(1, getMsgSequence(c0.subs.get("q", TIME_SEC)));
+    BOOST_CHECK_EQUAL(2, getMsgSequence(c0.subs.get("q", TIME_SEC)));
+
+    cluster.add();
+    Client c1(cluster[1]);
+    c1.session.messageTransfer(arg::content=Message("3", "k"), arg::destination="ex");    
+    BOOST_CHECK_EQUAL(3, getMsgSequence(c1.subs.get("q", TIME_SEC)));
+}
+
 QPID_AUTO_TEST_CASE(testUnsupported) {
     ScopedSuppressLogging sl;
     ClusterFixture cluster(1);
