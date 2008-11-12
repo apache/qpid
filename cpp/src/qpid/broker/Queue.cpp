@@ -60,7 +60,6 @@ const std::string qpidNoLocal("no-local");
 const std::string qpidTraceIdentity("qpid.trace.id");
 const std::string qpidTraceExclude("qpid.trace.exclude");
 const std::string qpidLastValueQueue("qpid.last_value_queue");
-const std::string qpidOptimisticConsume("qpid.optimistic_consume");
 const std::string qpidPersistLastNode("qpid.persist_last_node");
 const std::string qpidVQMatchProperty("qpid.LVQ_key");
 }
@@ -79,7 +78,6 @@ Queue::Queue(const string& _name, bool _autodelete,
     exclusive(0),
     noLocal(false),
     lastValueQueue(false),
-    optimisticConsume(false),
     persistLastNode(false),
     inLastNodeFailure(false),
     persistenceId(0),
@@ -277,12 +275,6 @@ bool Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 continue;
             }
 
-            if (!optimisticConsume && store && !msg.payload->isEnqueueComplete()) { 
-                QPID_LOG(debug, "Messages not ready to dispatch on queue '" << name << "'");
-                addListener(c);
-                return false;
-            }
-            
             if (c->filter(msg.payload)) {
                 if (c->accept(msg.payload)) {            
                     m = msg;
@@ -669,9 +661,6 @@ void Queue::configure(const FieldTable& _settings)
     lastValueQueue= _settings.get(qpidLastValueQueue);
     if (lastValueQueue) QPID_LOG(debug, "Configured queue as Last Value Queue");
 
-    optimisticConsume= _settings.get(qpidOptimisticConsume);
-    if (optimisticConsume) QPID_LOG(debug, "Configured queue with optimistic consume");
-    
     persistLastNode= _settings.get(qpidPersistLastNode);
     if (persistLastNode) QPID_LOG(debug, "Configured queue to Persist data if cluster fails to one node");
 
