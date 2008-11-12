@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Qpid Excel AddIn Producer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Built from svn revision number: ")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Software Foundation")]
 [assembly: AssemblyProduct("Qpid Excel AddIn Producer")]
-[assembly: AssemblyCopyright("Copyright © Apache Software Foundation 2008")]
+[assembly: AssemblyCopyright("Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.10.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
