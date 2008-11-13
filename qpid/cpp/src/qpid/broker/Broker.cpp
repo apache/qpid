@@ -239,6 +239,13 @@ Broker::Broker(const Broker::Options& conf) :
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
+
+    //initialize known broker urls:
+    try {
+        knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort(TCP_TRANSPORT) ) );
+    } catch (const NoSuchTransportException& e) {
+        QPID_LOG(error, "Could not send client known broker urls for cluster: " << e.what());
+    }
 }
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
@@ -430,13 +437,7 @@ boost::shared_ptr<sys::Poller> Broker::getPoller() { return poller; }
 std::vector<Url> 
 Broker::getKnownBrokersImpl()
 {
-  knownBrokers.clear();
-  try {
-      knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort(TCP_TRANSPORT) ) );
-  } catch (const NoSuchTransportException& e) {
-      QPID_LOG(error, "Could not send client known broker urls for cluster: " << e.what());
-  }
-  return knownBrokers;
+    return knownBrokers;
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
