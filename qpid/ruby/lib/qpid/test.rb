@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -6,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,35 +16,19 @@
 # under the License.
 #
 
-require "thread"
+require "qpid/spec08"
+require "qpid/client"
 
-module Qpid
+module Qpid08
 
-  class Closed < Exception; end
+  module Test
 
-  class Queue < Queue
-
-    @@END = Object.new()
-
-    def close()
-      # sentinal to indicate the end of the queue
-      self << @@END
+    def connect()
+      spec = Spec.load("../specs/amqp.0-8.xml")
+      c = Client.new("0.0.0.0", 5672, spec)
+      c.start({"LOGIN" => "guest", "PASSWORD" => "guest"})
+      return c
     end
-
-    def pop(*args)
-      result = super(*args)
-      if @@END.equal? result
-        # we put another sentinal on the end in case there are
-        # subsequent calls to pop by this or other threads
-        self << @@END
-        raise Closed.new()
-      else
-        return result
-      end
-    end
-
-    alias shift pop
-    alias deq pop
 
   end
 
