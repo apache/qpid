@@ -93,8 +93,9 @@ void ConnectionHandler::incoming(AMQFrame& frame)
     }catch(std::exception& e){
         QPID_LOG(warning, "Closing connection due to " << e.what());        
         setState(CLOSING);
+        errorCode = CLOSE_CODE_FRAMING_ERROR;
+        errorText = e.what();
         proxy.close(501, e.what());    
-        if (onError) onError(501, e.what());
     }
 }
 
@@ -203,7 +204,9 @@ void ConnectionHandler::close(uint16_t replyCode, const std::string& replyText)
 void ConnectionHandler::closeOk()
 {
     checkState(CLOSING, INVALID_STATE_CLOSE_OK);
-    if (onClose) {
+    if (onError && errorCode != CLOSE_CODE_NORMAL) {
+        onError(errorCode, errorText);
+    } else if (onClose) {
         onClose();
     }
     setState(CLOSED);
