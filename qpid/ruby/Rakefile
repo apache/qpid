@@ -1,0 +1,75 @@
+# Rakefile for ruby-rpm -*- ruby -*-
+require 'rake/clean'
+require 'rake/testtask'
+require 'rake/gempackagetask'
+require 'pathname'
+
+PKG_NAME='ruby-qpid'
+PKG_VERSION='0.10.2'
+GEM_NAME='qpid'
+
+AMQP_SPEC_SRC=Pathname.new("../specs").realpath
+AMQP_SPEC_PATH=["/usr/share/amqp", AMQP_SPEC_SRC].join(File::PATH_SEPARATOR)
+AMQP_SPEC_FILES = FileList["amqp.0-10-qpid-errata.xml"]
+
+ENV["AMQP_SPEC_PATH"] = AMQP_SPEC_PATH unless ENV["AMQP_SPEC_PATH"]
+
+#
+# Additional files for clean/clobber
+#
+
+CLEAN.include [ "**/*~", "lib/*/spec_cache" ]
+
+Rake::TestTask.new(:test) do |t|
+  t.test_files = FileList['tests/*.rb'].exclude("tests/util.rb")
+  t.libs = [ 'lib' ]
+end
+
+Rake::TestTask.new(:"test_0-8") do |t|
+  t.test_files = FileList["tests_0-8/*.rb"]
+  t.libs = [ 'lib' ]
+end
+
+desc "Create cached versions of the AMQP specs"
+task :spec_cache do |t|
+  AMQP_SPEC_FILES.each do |f|
+    pid = fork do
+      $: << "lib"
+      require 'qpid'
+      Qpid::Spec010::load(f)
+      puts "Cached #{f}"
+    end
+    Process.wait(pid)
+  end
+end
+
+#
+# Packaging
+#
+
+PKG_FILES = FileList[
+  "DISCLAIMER", "LICENSE.txt", "NOTICE.txt",
+  "Rakefile", "RELEASE_NOTES",
+  "lib/**/*.rb", "lib/*/spec_cache/*.rb*", "tests/**/*", "examples/**"
+]
+
+DIST_FILES = FileList[
+  "pkg/*.tgz", "pkg/*.gem"
+]
+
+SPEC = Gem::Specification.new do |s|
+  s.name = GEM_NAME
+  s.version = PKG_VERSION
+  s.email = "qpid-dev@incubator.apache.org"
+  s.homepage = "http://cwiki.apache.org/qpid/"
+  s.summary = "Ruby client for Qpid"
+  s.files = PKG_FILES
+  s.required_ruby_version = '>= 1.8.1'
+  s.description = "Ruby client for Qpid"
+end
+
+Rake::GemPackageTask.new(SPEC) do |pkg|
+  task pkg.package_dir => [ :spec_cache ]
+  pkg.need_tar = true
+  pkg.need_zip = true
+end

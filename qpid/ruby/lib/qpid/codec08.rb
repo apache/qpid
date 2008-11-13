@@ -17,7 +17,7 @@
 # under the License.
 #
 
-module Codec
+module Qpid08
   # is there a better way to do this?
   class StringWriter
 
@@ -119,7 +119,7 @@ module Codec
     def write(str)
       flushbits()
       @out.write(str)
-#      puts "OUT #{str.inspect()}"
+      #      puts "OUT #{str.inspect()}"
     end
 
     def pack(fmt, *args)
@@ -246,7 +246,7 @@ module Codec
       if result.nil? or result.empty?
         raise EOF.new()
       else
-#        puts " IN #{result.inspect()}"
+        #        puts " IN #{result.inspect()}"
         return result
       end
     end

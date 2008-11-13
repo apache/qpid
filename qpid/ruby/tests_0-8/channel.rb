@@ -23,7 +23,7 @@ require "qpid"
 
 class Channel < Test::Unit::TestCase
 
-  include Qpid::Test
+  include Qpid08::Test
 
   def test_channel_open_close()
     c = connect()
