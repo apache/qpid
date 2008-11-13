@@ -38,6 +38,8 @@ public:
     virtual void getMechanisms(framing::Array& mechanisms) = 0;
     virtual void start(const std::string& mechanism, const std::string& response) = 0;
     virtual void step(const std::string& response) = 0;
+    virtual void getUid(std::string&) {}
+    virtual void getError(std::string&) {}
 
     static bool available(void);
 

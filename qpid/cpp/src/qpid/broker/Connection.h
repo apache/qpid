@@ -39,6 +39,7 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/ProtocolVersion.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/ptr_map.h"
 #include "qpid/sys/AggregateOutput.h"
@@ -93,6 +94,9 @@ class Connection : public sys::ConnectionInputHandler,
     std::string getAuthCredentials();
     void notifyConnectionForced(const std::string& text);
     void setUserId(const string& uid);
+    const std::string& getUserId() const { return ConnectionState::getUserId(); }
+    const std::string& getMgmtId() const { return mgmtId; }
+    management::ManagementAgent* getAgent() const { return agent; }
     void setFederationLink(bool b);
 
     template <class F> void eachSessionHandler(F f) {
@@ -115,6 +119,7 @@ class Connection : public sys::ConnectionInputHandler,
     boost::function0<void> ioCallback;
     qmf::org::apache::qpid::broker::Connection* mgmtObject;
     LinkRegistry& links;
+    management::ManagementAgent* agent;
 };
 
 }}

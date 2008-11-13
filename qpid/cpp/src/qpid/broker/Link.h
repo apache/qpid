@@ -29,6 +29,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Link.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
@@ -65,6 +66,7 @@ namespace qpid {
             Bridges active;    // Bridges active
             uint channelCounter;
             Connection* connection;
+            management::ManagementAgent* agent;
 
             static const int STATE_WAITING     = 1;
             static const int STATE_CONNECTING  = 2;

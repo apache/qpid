@@ -70,6 +70,8 @@ public:
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string& response);
+    void getUid(std::string& uid);
+    void getError(std::string& error);
 };
 
 bool SaslAuthenticator::available(void)
@@ -200,6 +202,23 @@ CyrusAuthenticator::~CyrusAuthenticator()
         sasl_dispose(&sasl_conn);
         sasl_conn = 0;
     }
+}
+
+void CyrusAuthenticator::getError(string& error)
+{
+    error = string(sasl_errdetail(sasl_conn));
+}
+
+void CyrusAuthenticator::getUid(string& uid)
+{
+    int code;
+    const void* ptr;
+
+    code = sasl_getprop(sasl_conn, SASL_USERNAME, &ptr);
+    if (SASL_OK != code)
+        return;
+
+    uid = string(const_cast<char*>(static_cast<const char*>(ptr)));
 }
 
 void CyrusAuthenticator::getMechanisms(Array& mechanisms)
