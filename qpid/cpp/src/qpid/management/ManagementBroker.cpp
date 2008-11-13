@@ -113,7 +113,7 @@ ManagementBroker::~ManagementBroker ()
     }
 }
 
-void ManagementBroker::configure(string _dataDir, uint16_t _interval,
+void ManagementBroker::configure(const string& _dataDir, uint16_t _interval,
                                  qpid::broker::Broker* _broker, int _threads)
 {
     dataDir        = _dataDir;
@@ -178,8 +178,8 @@ void ManagementBroker::setExchange (qpid::broker::Exchange::shared_ptr _mexchang
     dExchange = _dexchange;
 }
 
-void ManagementBroker::registerClass (string&  packageName,
-                                      string&  className,
+void ManagementBroker::registerClass (const string&  packageName,
+                                      const string&  className,
                                       uint8_t* md5Sum,
                                       ManagementObject::writeSchemaCall_t schemaCall)
 {
@@ -188,8 +188,8 @@ void ManagementBroker::registerClass (string&  packageName,
     addClassLH(ManagementItem::CLASS_KIND_TABLE, pIter, className, md5Sum, schemaCall);
 }
 
-void ManagementBroker::registerEvent (string&  packageName,
-                                      string&  eventName,
+void ManagementBroker::registerEvent (const string&  packageName,
+                                      const string&  eventName,
                                       uint8_t* md5Sum,
                                       ManagementObject::writeSchemaCall_t schemaCall)
 {
@@ -251,7 +251,7 @@ void ManagementBroker::Periodic::fire ()
     broker.periodicProcessing ();
 }
 
-void ManagementBroker::clientAdded (void)
+void ManagementBroker::clientAdded (const std::string& /*routingKey*/)
 {
     Mutex::ScopedLock lock (userLock);
 
@@ -386,7 +386,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName ();
+            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName() + "1.0";
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
@@ -398,7 +398,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName ();
+            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName() + "1.0";
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
@@ -721,7 +721,7 @@ bool ManagementBroker::bankInUse (uint32_t bank)
     for (RemoteAgentMap::iterator aIter = remoteAgents.begin();
          aIter != remoteAgents.end();
          aIter++)
-        if (aIter->second->objIdBank == bank)
+        if (aIter->second->brokerBank == bank)
             return true;
     return false;
 }
@@ -796,7 +796,8 @@ void ManagementBroker::handleAttachRequestLH (Buffer& inBuffer, string replyToKe
     assignedBank = assignBankLH(requestedAgentBank);
 
     RemoteAgent* agent = new RemoteAgent;
-    agent->objIdBank  = assignedBank;
+    agent->brokerBank = brokerBank;
+    agent->agentBank  = assignedBank;
     agent->routingKey = replyToKey;
     agent->connectionRef = connectionRef;
     agent->mgmtObject = new _qmf::Agent (this, agent);
@@ -1006,7 +1007,7 @@ ManagementBroker::PackageMap::iterator ManagementBroker::findOrAddPackageLH(stri
 
 void ManagementBroker::addClassLH(uint8_t               kind,
                                   PackageMap::iterator  pIter,
-                                  string&               className,
+                                  const string&         className,
                                   uint8_t*              md5Sum,
                                   ManagementObject::writeSchemaCall_t schemaCall)
 {
