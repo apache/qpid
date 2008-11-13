@@ -80,7 +80,7 @@ const string ManagementAgentImpl::storeMagicNumber("MA02");
 
 ManagementAgentImpl::ManagementAgentImpl() :
     extThread(false), writeFd(-1), readFd(-1),
-    connected(false), lastFailure("never connected"),
+    initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0), debugLevel(0),
     connThreadBody(*this), connThread(connThreadBody),
@@ -102,18 +102,26 @@ ManagementAgentImpl::~ManagementAgentImpl()
     }
 }
 
-void ManagementAgentImpl::init(string    brokerHost,
-                               uint16_t  brokerPort,
-                               uint16_t  intervalSeconds,
-                               bool      useExternalThread,
-                               string    _storeFile)
+void ManagementAgentImpl::init(const string& brokerHost,
+                               uint16_t brokerPort,
+                               uint16_t intervalSeconds,
+                               bool useExternalThread,
+                               const string& _storeFile,
+                               const string& uid,
+                               const string& pwd,
+                               const string& mech,
+                               const string& proto)
 {
     interval     = intervalSeconds;
     extThread    = useExternalThread;
     storeFile    = _storeFile;
     nextObjectId = 1;
-    host         = brokerHost;
-    port         = brokerPort;
+    connectionSettings.protocol = proto;
+    connectionSettings.host = brokerHost;
+    connectionSettings.port = brokerPort;
+    connectionSettings.username = uid;
+    connectionSettings.password = pwd;
+    connectionSettings.mechanism = mech;
 
     if (debugLevel)
         cout << "QMF Agent Initialized: broker=" << brokerHost << ":" << brokerPort <<
@@ -139,10 +147,12 @@ void ManagementAgentImpl::init(string    brokerHost,
     if ((bootSequence & 0xF000) != 0)
         bootSequence = 1;
     storeData(true);
+
+    initialized = true;
 }
 
-void ManagementAgentImpl::registerClass(string& packageName,
-                                        string& className,
+void ManagementAgentImpl::registerClass(const string& packageName,
+                                        const string& className,
                                         uint8_t*     md5Sum,
                                         management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
@@ -151,8 +161,8 @@ void ManagementAgentImpl::registerClass(string& packageName,
     addClassLocal(ManagementItem::CLASS_KIND_TABLE, pIter, className, md5Sum, schemaCall);
 }
 
-void ManagementAgentImpl::registerEvent(string& packageName,
-                                        string& eventName,
+void ManagementAgentImpl::registerEvent(const string& packageName,
+                                        const string& eventName,
                                         uint8_t*     md5Sum,
                                         management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
@@ -605,7 +615,6 @@ void ManagementAgentImpl::periodicProcessing()
     Mutex::ScopedLock lock(agentLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
-    string              routingKey;
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
     if (!connected)
@@ -692,8 +701,10 @@ void ManagementAgentImpl::periodicProcessing()
         contentSize = BUFSIZE - msgBuffer.available();
         if (contentSize > 0) {
             msgBuffer.reset();
-            routingKey = "console.obj." + baseObject->getPackageName() + "." + baseObject->getClassName();
-            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", routingKey);
+            stringstream key;
+            key << "console.obj." << baseObject->getPackageName() << "." << baseObject->getClassName() << "." <<
+                assignedBrokerBank << "." << assignedAgentBank;
+            connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
         }
     }
 
@@ -721,10 +732,10 @@ void ManagementAgentImpl::ConnectionThread::run()
 
     while (true) {
         try {
-            if (!agent.host.empty()) {
+            if (agent.initialized) {
                 if (agent.debugLevel)
                     cout << "QMF Agent attempting to connect to the broker..." << endl;
-                connection.open(agent.host.c_str(), agent.port);
+                connection.open(agent.connectionSettings);
                 session = connection.newSession(queueName.str());
                 subscriptions = new client::SubscriptionManager(session);
 

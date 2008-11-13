@@ -217,7 +217,7 @@ module Qpid::Qmf
       @brokers.each do |broker|
         args = { :exchange => "qpid.management",
           :queue => broker.topicName,
-          :binding_key => "console.obj.#{package_name}" }
+          :binding_key => "console.obj.#{package_name}.#" }
         broker.amqpSession.exchange_bind(args)
       end
     end
@@ -230,7 +230,7 @@ module Qpid::Qmf
       @brokers.each do |broker|
         args = { :exchange => "qpid.management",
           :queue => broker.topicName,
-          :binding_key => "console.obj.#{pname}.#{cname}" }
+          :binding_key => "console.obj.#{pname}.#{cname}.#" }
         broker.amqpSession.exchange_bind(args)
       end
     end

@@ -22,6 +22,7 @@
 
 #include "ManagementAgent.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/AsyncSession.h"
@@ -49,19 +50,23 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     // Methods from ManagementAgent
     //
     int getMaxThreads() { return 1; }
-    void init(std::string brokerHost        = "localhost",
-              uint16_t    brokerPort        = 5672,
-              uint16_t    intervalSeconds   = 10,
-              bool        useExternalThread = false,
-              std::string storeFile         = "");
+    void init(const std::string& brokerHost = "localhost",
+              uint16_t brokerPort = 5672,
+              uint16_t intervalSeconds = 10,
+              bool useExternalThread = false,
+              const std::string& storeFile = "",
+              const std::string& uid = "guest",
+              const std::string& pwd = "guest",
+              const std::string& mech = "PLAIN",
+              const std::string& proto = "tcp");
     bool isConnected() { return connected; }
     std::string& getLastFailure() { return lastFailure; }
-    void registerClass(std::string& packageName,
-                       std::string& className,
+    void registerClass(const std::string& packageName,
+                       const std::string& className,
                        uint8_t*     md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
-    void registerEvent(std::string& packageName,
-                       std::string& eventName,
+    void registerEvent(const std::string& packageName,
+                       const std::string& eventName,
                        uint8_t*     md5Sum,
                        management::ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject(management::ManagementObject* objectPtr, uint64_t persistId = 0);
@@ -130,8 +135,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     sys::Mutex        agentLock;
     sys::Mutex        addLock;
     framing::Uuid     systemId;
-    std::string       host;
-    uint16_t          port;
+    client::ConnectionSettings connectionSettings;
+    bool              initialized;
     bool              connected;
     std::string       lastFailure;
 

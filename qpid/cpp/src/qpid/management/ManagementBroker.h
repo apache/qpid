@@ -47,30 +47,33 @@ public:
     ManagementBroker ();
     virtual ~ManagementBroker ();
 
-    void configure       (std::string dataDir, uint16_t interval, qpid::broker::Broker* broker, int threadPoolSize);
+    void configure       (const std::string& dataDir, uint16_t interval,
+                          qpid::broker::Broker* broker, int threadPoolSize);
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
                           qpid::broker::Exchange::shared_ptr directExchange);
     int  getMaxThreads   () { return threadPoolSize; }
-    void registerClass   (std::string& packageName,
-                          std::string& className,
+    void registerClass   (const std::string& packageName,
+                          const std::string& className,
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
-    void registerEvent   (std::string& packageName,
-                          std::string& eventName,
+    void registerEvent   (const std::string& packageName,
+                          const std::string& eventName,
                           uint8_t*    md5Sum,
                           ManagementObject::writeSchemaCall_t schemaCall);
     ObjectId addObject   (ManagementObject* object,
                           uint64_t          persistId = 0);
     void raiseEvent(const ManagementEvent& event, severity_t severity = SEV_DEFAULT);
-    void clientAdded     ();
+    void clientAdded     (const std::string& routingKey);
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
     const framing::Uuid& getUuid() const { return uuid; }
 
     // Stubs for remote management agent calls
-    void init (std::string, uint16_t, uint16_t, bool, std::string) { assert(0); }
+    void init (const std::string&, uint16_t, uint16_t, bool,
+               const std::string&, const std::string&, const std::string&,
+               const std::string&, const std::string&) { assert(0); }
     uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
     int getSignalFd () { assert(0); return -1; }
 
@@ -91,7 +94,8 @@ private:
     //
     struct RemoteAgent : public Manageable
     {
-        uint32_t          objIdBank;
+        uint32_t          brokerBank;
+        uint32_t          agentBank;
         std::string       routingKey;
         ObjectId          connectionRef;
         qmf::org::apache::qpid::broker::Agent*    mgmtObject;
@@ -195,7 +199,7 @@ private:
     PackageMap::iterator findOrAddPackageLH(std::string name);
     void addClassLH(uint8_t                      kind,
                     PackageMap::iterator         pIter,
-                    std::string&                 className,
+                    const std::string&           className,
                     uint8_t*                     md5Sum,
                     ManagementObject::writeSchemaCall_t schemaCall);
     void encodePackageIndication (framing::Buffer&     buf,
