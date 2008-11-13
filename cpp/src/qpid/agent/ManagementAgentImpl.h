@@ -148,6 +148,11 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint16_t          bootSequence;
     uint8_t           debugLevel;
 
+    static const uint8_t DEBUG_OFF     = 0;
+    static const uint8_t DEBUG_CONN    = 1;
+    static const uint8_t DEBUG_PROTO   = 2;
+    static const uint8_t DEBUG_PUBLISH = 3;
+
 #   define MA_BUFFER_SIZE 65536
     char outputBuffer[MA_BUFFER_SIZE];
     char eventBuffer[MA_BUFFER_SIZE];
