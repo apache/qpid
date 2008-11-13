@@ -47,14 +47,9 @@
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 
-#include <unistd.h>
-#include <cstdlib>
-#include <iostream>
 
 using namespace qpid::client;
 using namespace qpid::framing;
-
-using std::string;
 
 
 int main(int argc, char** argv) {

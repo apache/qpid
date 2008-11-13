@@ -79,8 +79,8 @@ void Listener::received(Message& message) {
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+
     Connection connection;
-    Message msg;
     try {
       connection.open(host, port);
       Session session =  connection.newSession();

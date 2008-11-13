@@ -57,17 +57,16 @@
 
 
 #include <qpid/client/Connection.h>
-#include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/Session.h>
+
 #include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
-
+#include <qpid/client/SubscriptionManager.h>
 
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
-#include <algorithm>
 
 #include <sstream>
 #include <string>
@@ -123,7 +122,7 @@ int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     Connection connection;
-    Message message;
+
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
