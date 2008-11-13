@@ -46,6 +46,10 @@ BootstrapOptions::BootstrapOptions(const char* argv0)
     add(log);
 }
 
+namespace {
+const std::string TCP = "tcp";
+}
+
 struct DaemonOptions : public qpid::Options {
     bool daemon;
     bool quit;
@@ -54,7 +58,7 @@ struct DaemonOptions : public qpid::Options {
     std::string piddir;
     std::string transport;
 
-    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
+    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10), transport(TCP)
     {
         char *home = ::getenv("HOME");
 
@@ -111,7 +115,7 @@ struct QpiddDaemon : public Daemon {
     /** Code for parent process */
     void parent() {
         uint16_t port = wait(options->daemon.wait);
-        if (options->parent->broker.port == 0 || !options->daemon.transport.empty())
+        if (options->parent->broker.port == 0 || options->daemon.transport != TCP)
             cout << port << endl; 
     }
 
@@ -156,7 +160,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
     else {                  // Non-daemon broker.
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         broker::SignalHandler::setBroker(brokerPtr);
-        if (options->broker.port == 0 || !myOptions->daemon.transport.empty())
+        if (options->broker.port == 0 || myOptions->daemon.transport != TCP)
             cout << uint16_t(brokerPtr->getPort(myOptions->daemon.transport)) << endl;
         brokerPtr->run();
     }
