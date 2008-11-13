@@ -23,7 +23,8 @@
 #include "LinkRegistry.h"
 #include "Broker.h"
 #include "Connection.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qmf/org/apache/qpid/broker/EventBrokerLinkUp.h"
+#include "qmf/org/apache/qpid/broker/EventBrokerLinkDown.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/enum.h"
@@ -40,6 +41,7 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
+using std::stringstream;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 Link::Link(LinkRegistry*  _links,
@@ -62,11 +64,12 @@ Link::Link(LinkRegistry*  _links,
       currentInterval(1),
       closing(false),
       channelCounter(1),
-      connection(0)
+      connection(0),
+      agent(0)
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        agent = ManagementAgent::Singleton::getInstance();
         if (agent != 0)
         {
             mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _transport, _durable);
@@ -123,8 +126,11 @@ void Link::startConnectionLH ()
 void Link::established ()
 {
     Mutex::ScopedLock mutex(lock);
+    stringstream addr;
+    addr << host << ":" << port;
 
-    QPID_LOG (info, "Inter-broker link established to " << host << ":" << port);
+    QPID_LOG (info, "Inter-broker link established to " << addr.str());
+    agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
     setStateLH(STATE_OPERATIONAL);
     currentInterval = 1;
     visitCount      = 0;
@@ -138,8 +144,12 @@ void Link::closed (int, std::string text)
 
     connection = 0;
 
-    if (state == STATE_OPERATIONAL)
-        QPID_LOG (warning, "Inter-broker link disconnected from " << host << ":" << port);
+    if (state == STATE_OPERATIONAL) {
+        stringstream addr;
+        addr << host << ":" << port;
+        QPID_LOG (warning, "Inter-broker link disconnected from " << addr.str());
+        agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
+    }
 
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
         (*i)->cancel();
