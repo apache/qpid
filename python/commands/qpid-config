@@ -380,7 +380,6 @@ try:
             Usage ()
 except Exception,e:
     print "Failed:", e.message
-    raise
     sys.exit(1)
 
 bm.Disconnect()
