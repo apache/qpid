@@ -86,7 +86,7 @@ This example also shows the use of the 'control' routing key which is used by
 control messages.
 
 In order to run this example,
-
+  
 On Linux:
   # ./topic_listener
   # ./topic_publisher
