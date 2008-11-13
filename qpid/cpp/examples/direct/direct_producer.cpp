@@ -68,7 +68,6 @@ int main(int argc, char** argv) {
     int count = argc>3 ? atoi(argv[3]) : 10;
   
     Connection connection;
-    Message message;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
@@ -80,6 +79,7 @@ int main(int argc, char** argv) {
 	// just once. (In most simple cases, there is no need to set
 	// other message properties.)
 
+    	Message message;
 	message.getDeliveryProperties().setRoutingKey("routing_key"); 
 
 	// Now send some messages ...

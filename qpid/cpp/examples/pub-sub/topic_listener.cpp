@@ -52,7 +52,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
-#include <set>
 
 using namespace qpid::client;
 using namespace qpid::framing;

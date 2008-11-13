@@ -55,12 +55,11 @@
  *
  */
 
-
 #include <qpid/client/Connection.h>
-#include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
+#include <qpid/client/SubscriptionManager.h>
 
 #include <unistd.h>
 #include <cstdlib>
@@ -70,6 +69,9 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
+
+using std::stringstream;
+using std::string;
 
 class Listener : public MessageListener{
   private:
@@ -94,14 +96,11 @@ void Listener::received(Message& message) {
 }
 
 
-using std::stringstream;
-using std::string;
 
 int main(int argc, char** argv) {
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
     Connection connection;
-    Message request;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
@@ -123,6 +122,7 @@ int main(int argc, char** argv) {
 	// Each client sends the name of their own response queue so
 	// the service knows where to route messages.
 
+    	Message request;
 	request.getDeliveryProperties().setRoutingKey("request");
 	request.getMessageProperties().setReplyTo(ReplyTo("amq.direct", response_queue.str()));
 
