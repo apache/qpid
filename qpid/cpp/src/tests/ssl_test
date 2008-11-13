@@ -43,6 +43,7 @@ fi
 
 start_broker || error "Could not start broker"
 echo "Running SSL test on port $PORT"
+export QPID_NO_MODULE_DIR=1
 export QPID_LOAD_MODULE=../.libs/sslconnector.so
 export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
