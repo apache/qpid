@@ -248,6 +248,10 @@ void ManagementAgentImpl::startProtocol()
     uint32_t length = 512 - buffer.available();
     buffer.reset();
     connThreadBody.sendBuffer(buffer, length, "qpid.management", "broker");
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "SENT AttachRequest: reqBroker=" << requestedBrokerBank <<
+            " reqAgent=" << requestedAgentBank << endl;
+    }
 }
 
 void ManagementAgentImpl::storeData(bool requested)
@@ -295,6 +299,9 @@ void ManagementAgentImpl::sendCommandComplete(string replyToKey, uint32_t sequen
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
     connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyToKey);
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "SENT CommandComplete: seq=" << sequence << " code=" << code << " text=" << text << endl;
+    }
 }
 
 void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
@@ -303,6 +310,12 @@ void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
 
     assignedBrokerBank = inBuffer.getLong();
     assignedAgentBank  = inBuffer.getLong();
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "RCVD AttachResponse: broker=" << assignedBrokerBank <<
+            " agent=" << assignedAgentBank << endl;
+    }
+
     if ((assignedBrokerBank != requestedBrokerBank) ||
         (assignedAgentBank  != requestedAgentBank)) {
         if (requestedAgentBank == 0)
@@ -355,20 +368,28 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
     inBuffer.getShortString(key.name);
     inBuffer.getBin128(key.hash);
 
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "RCVD SchemaRequest: package=" << packageName << " class=" << key.name << endl;
+    }
+
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
         ClassMap& cMap = pIter->second;
         ClassMap::iterator cIter = cMap.find(key);
         if (cIter != cMap.end()) {
             SchemaClass& schema = cIter->second;
-             Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
-             uint32_t outLen;
+            Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
+            uint32_t outLen;
 
-             encodeHeader(outBuffer, 's', sequence);
-             schema.writeSchemaCall(outBuffer);
-             outLen = MA_BUFFER_SIZE - outBuffer.available();
-             outBuffer.reset();
-             connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "broker");
+            encodeHeader(outBuffer, 's', sequence);
+            schema.writeSchemaCall(outBuffer);
+            outLen = MA_BUFFER_SIZE - outBuffer.available();
+            outBuffer.reset();
+            connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "broker");
+
+            if (debugLevel >= DEBUG_PROTO) {
+                cout << "SENT SchemaInd: package=" << packageName << " class=" << key.name << endl;
+            }
         }
     }
 }
@@ -377,6 +398,10 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
 {
     Mutex::ScopedLock lock(agentLock);
     clientWasAdded = true;
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "RCVD ConsoleAddedInd" << endl;
+    }
 }
 
 void ManagementAgentImpl::invokeMethodRequest(Buffer& inBuffer, uint32_t sequence, string replyTo)
@@ -430,6 +455,11 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
     moveNewObjectsLH();
 
     ft.decode(inBuffer);
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "RCVD GetQuery: map=" << ft << endl;
+    }
+
     value = ft.get("_class");
     if (value.get() == 0 || !value->convertsTo<string>()) {
         value = ft.get("_objectid");
@@ -449,6 +479,10 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             outLen = MA_BUFFER_SIZE - outBuffer.available ();
             outBuffer.reset ();
             connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+
+            if (debugLevel >= DEBUG_PROTO) {
+                cout << "SENT ObjectInd" << endl;
+            }
         }
         sendCommandComplete(replyTo, sequence);
         return;
@@ -470,6 +504,10 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
             connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+
+            if (debugLevel >= DEBUG_PROTO) {
+                cout << "SENT ObjectInd" << endl;
+            }
         }
     }
 
@@ -487,6 +525,10 @@ void ManagementAgentImpl::handleMethodRequest(Buffer& inBuffer, uint32_t sequenc
         write(writeFd, "X", 1);
     } else {
         invokeMethodRequest(inBuffer, sequence, replyTo);
+    }
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "RCVD MethodRequest" << endl;
     }
 }
 
@@ -595,6 +637,10 @@ void ManagementAgentImpl::encodePackageIndication(Buffer&              buf,
                                                   PackageMap::iterator pIter)
 {
     buf.putShortString((*pIter).first);
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "SENT PackageInd: package=" << (*pIter).first << endl;
+    }
 }
 
 void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
@@ -607,6 +653,10 @@ void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
     buf.putShortString((*pIter).first);
     buf.putShortString(key.name);
     buf.putBin128(key.hash);
+
+    if (debugLevel >= DEBUG_PROTO) {
+        cout << "SENT ClassInd: package=" << (*pIter).first << " class=" << key.name << endl;
+    }
 }
 
 void ManagementAgentImpl::periodicProcessing()
