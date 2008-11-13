@@ -104,7 +104,6 @@ int main(int argc, char** argv) {
     int port = argc>2 ? atoi(argv[2]) : 5672;
 
     Connection connection;
-    Message message;
     try {
         connection.open(host, port);
         Session session =  connection.newSession();
