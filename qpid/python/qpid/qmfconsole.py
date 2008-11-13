@@ -397,7 +397,7 @@ class Session:
     broker._send(smsg)
 
   def _handlePackageInd(self, broker, codec, seq):
-    pname = codec.read_str8()
+    pname = str(codec.read_str8())
     notify = False
     try:
       self.cv.acquire()
@@ -442,8 +442,8 @@ class Session:
 
   def _handleClassInd(self, broker, codec, seq):
     kind  = codec.read_uint8()
-    pname = codec.read_str8()
-    cname = codec.read_str8()
+    pname = str(codec.read_str8())
+    cname = str(codec.read_str8())
     hash  = codec.read_bin128()
     unknown = False
 
@@ -512,8 +512,8 @@ class Session:
 
   def _handleSchemaResp(self, broker, codec, seq):
     kind  = codec.read_uint8()
-    pname = codec.read_str8()
-    cname = codec.read_str8()
+    pname = str(codec.read_str8())
+    cname = str(codec.read_str8())
     hash  = codec.read_bin128()
     classKey = (pname, cname, hash)
     _class = SchemaClass(kind, classKey, codec)
@@ -529,8 +529,8 @@ class Session:
       self.console.newClass(kind, classKey)
 
   def _handleContentInd(self, broker, codec, seq, prop=False, stat=False):
-    pname = codec.read_str8()
-    cname = codec.read_str8()
+    pname = str(codec.read_str8())
+    cname = str(codec.read_str8())
     hash  = codec.read_bin128()
     classKey = (pname, cname, hash)
     try:
@@ -757,9 +757,9 @@ class SchemaProperty:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name     = map["name"]
+    self.name     = str(map["name"])
     self.type     = map["type"]
-    self.access   = map["access"]
+    self.access   = str(map["access"])
     self.index    = map["index"] != 0
     self.optional = map["optional"] != 0
     self.unit     = None
@@ -782,7 +782,7 @@ class SchemaStatistic:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name     = map["name"]
+    self.name     = str(map["name"])
     self.type     = map["type"]
     self.unit     = None
     self.desc     = None
@@ -798,7 +798,7 @@ class SchemaMethod:
   """ """
   def __init__(self, codec):
     map = codec.read_map()
-    self.name = map["name"]
+    self.name = str(map["name"])
     argCount  = map["argCount"]
     if "desc" in map:
       self.desc = map["desc"]
@@ -826,10 +826,10 @@ class SchemaArgument:
   """ """
   def __init__(self, codec, methodArg):
     map = codec.read_map()
-    self.name    = map["name"]
+    self.name    = str(map["name"])
     self.type    = map["type"]
     if methodArg:
-      self.dir   = map["dir"].upper()
+      self.dir   = str(map["dir"]).upper()
     self.unit    = None
     self.min     = None
     self.max     = None
@@ -1141,6 +1141,17 @@ class Broker:
     """ """
     return "%s:%d" % (self.host, self.port)
 
+  def getFullUrl(self, noAuthIfGuestDefault=True):
+    """ """
+    ssl = ""
+    if self.ssl:
+      ssl = "s"
+    auth = "%s/%s@" % (self.authUser, self.authPass)
+    if self.authUser == "" or \
+          (noAuthIfGuestDefault and self.authUser == "guest" and self.authPass == "guest"):
+      auth = ""
+    return "amqp%s://%s%s:%d" % (ssl, auth, self.host, self.port or 5672)
+
   def __repr__(self):
     if self.isConnected:
       return "Broker connected at: %s" % self.getUrl()
@@ -1340,8 +1351,8 @@ class Event:
   def __init__(self, session, broker, codec):
     self.session = session
     self.broker  = broker
-    pname = codec.read_str8()
-    cname = codec.read_str8()
+    pname = str(codec.read_str8())
+    cname = str(codec.read_str8())
     hash  = codec.read_bin128()
     self.classKey = (pname, cname, hash)
     self.timestamp = codec.read_int64()
@@ -1361,8 +1372,10 @@ class Event:
     out += " " + self._sevName() + " " + self.classKey[0] + ":" + self.classKey[1]
     out += " broker=" + self.broker.getUrl()
     for arg in self.schema.arguments:
-      out += " " + arg.name + "=" + \
-          self.session._displayValue(self.arguments[arg.name], arg.type).encode("utf8")
+      disp = self.session._displayValue(self.arguments[arg.name], arg.type).encode("utf8")
+      if " " in disp:
+        disp = "\"" + disp + "\""
+      out += " " + arg.name + "=" + disp
     return out
 
   def _sevName(self):
