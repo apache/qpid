@@ -307,18 +307,18 @@
     <arg name="exName"  type="sstr"   desc="Name of an exchange"/>
     <arg name="exType"  type="sstr"   desc="Type of an exchange"/>
     <arg name="excl"    type="bool"   desc="Created object is exclusive for the use of the owner only"/>
-    <arg name="key"     type="sstr"   desc="Key text used for routing or binding"/>
+    <arg name="key"     type="lstr"   desc="Key text used for routing or binding"/>
     <arg name="qName"   type="sstr"   desc="Name of a queue"/>
+    <arg name="reason"  type="lstr"   desc="Reason for a failure"/>
     <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
   </eventArguments>
 
   <event name="clientConnect"     sev="inform" args="rhost, user"/>
+  <event name="clientConnectFail" sev="warn"   args="rhost, user, reason"/>
   <event name="clientDisconnect"  sev="inform" args="rhost, user"/>
-  <event name="agentConnect"      sev="inform" args="rhost, user"/>
-  <event name="agentDisconnect"   sev="inform" args="rhost, user"/>
-  <event name="brokerConnect"     sev="inform" args="rhost, user"/>
-  <event name="brokerDisconnect"  sev="inform" args="rhost, user"/>
+  <event name="brokerLinkUp"      sev="inform" args="rhost"/>
+  <event name="brokerLinkDown"    sev="warn"   args="rhost"/>
   <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, args, disp"/>
   <event name="queueDelete"       sev="inform" args="rhost, user, qName"/>
   <event name="exchangeDeclare"   sev="inform" args="rhost, user, exName, exType, altEx, durable, autoDel, args, disp"/>

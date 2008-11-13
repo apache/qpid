@@ -28,11 +28,12 @@
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
 #include "AclModule.h"
+#include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
 
 using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
-
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace
 {
@@ -103,7 +104,19 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
                                          const string& response,
                                          const string& /*locale*/)
 {
-    authenticator->start(mechanism, response);
+    try {
+        authenticator->start(mechanism, response);
+    } catch (std::exception& e) {
+        management::ManagementAgent* agent = connection.getAgent();
+        if (agent) {
+            string error;
+            string uid;
+            authenticator->getError(error);
+            authenticator->getUid(uid);
+            agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+        }
+        throw;
+    }
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     if (connection.isFederationLink()) {
@@ -117,7 +130,19 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
 
 void ConnectionHandler::Handler::secureOk(const string& response)
 {
-    authenticator->step(response);
+    try {
+        authenticator->step(response);
+    } catch (std::exception& e) {
+        management::ManagementAgent* agent = connection.getAgent();
+        if (agent) {
+            string error;
+            string uid;
+            authenticator->getError(error);
+            authenticator->getUid(uid);
+            agent->raiseEvent(_qmf::EventClientConnectFail(connection.getMgmtId(), uid, error));
+        }
+        throw;
+    }
 }
 
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,

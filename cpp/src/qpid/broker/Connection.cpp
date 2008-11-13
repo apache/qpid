@@ -25,8 +25,9 @@
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/enum.h"
+#include "qmf/org/apache/qpid/broker/EventClientConnect.h"
+#include "qmf/org/apache/qpid/broker/EventClientDisconnect.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -55,7 +56,8 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     mgmtClosing(false),
     mgmtId(mgmtId_),
     mgmtObject(0),
-    links(broker_.getLinks())
+    links(broker_.getLinks()),
+    agent(0)
 {
     Manageable* parent = broker.GetVhostObject();
 
@@ -64,7 +66,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        agent = ManagementAgent::Singleton::getInstance();
 		
 		
         // TODO set last bool true if system connection
@@ -83,8 +85,11 @@ void Connection::requestIOProcessing(boost::function0<void> callback)
 
 Connection::~Connection()
 {
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
         mgmtObject->resourceDestroy();
+        if (!isLink)
+            agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
+    }
     if (isLink)
         links.notifyClosed(mgmtId);
 }
@@ -153,8 +158,10 @@ void Connection::notifyConnectionForced(const string& text)
 void Connection::setUserId(const string& userId)
 {
     ConnectionState::setUserId(userId);
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
         mgmtObject->set_authIdentity(userId);
+        agent->raiseEvent(_qmf::EventClientConnect(mgmtId, userId));
+    }
 }
 
 void Connection::setFederationLink(bool b)
