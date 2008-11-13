@@ -331,7 +331,8 @@ module Qpid::Qmf
         end
         broker.set_header(send_codec, ?G, seq)
         send_codec.write_map(map)
-        smsg = broker.message(send_codec.encoded, "agent.#{agent.bank}")
+        bank_key = "%d.%d" % [broker.broker_bank, agent.agent_bank]
+        smsg = broker.message(send_codec.encoded, "agent.#{bank_key}")
         broker.emit(smsg)
       end
 
@@ -471,7 +472,7 @@ module Qpid::Qmf
           key_elements = key.split(".")
           if key_elements.length == 4
             broker_bank = key_elements[2].to_i
-            agent_bank = key_lements[2].to_i
+            agent_bank = key_elements[3].to_i
           end
         end
         agent = broker.agent(broker_bank, agent_bank)
@@ -639,7 +640,7 @@ module Qpid::Qmf
           key_list << "console.obj.org.apache.qpid.broker.agent"
         end
         key_list << "console.event.#" if @rcv_events
-        key_list << "console.heartbeat" if @rcv_heartbeats
+        key_list << "console.heartbeat.#" if @rcv_heartbeats
       end
       return key_list
     end
@@ -1084,7 +1085,7 @@ module Qpid::Qmf
 
     attr_reader :amqp_session_id, :amqp_session, :conn
 
-    attr_accessor :broker_id, :sync_result
+    attr_accessor :broker_id, :sync_result, :broker_bank
 
     def initialize(session, host, port, auth_mech, auth_user, auth_pass)
       super()
@@ -1098,7 +1099,7 @@ module Qpid::Qmf
       @auth_user = auth_user
       @auth_pass = auth_pass
       @agents   = {}
-      @agents["1.0"] = Agent.new(self, "1.0", "BrokerAgent")
+      @agents["1.0"] = Agent.new(self, 0, "BrokerAgent")
       @topic_bound = false
       @cv = new_cond
       @sync_in_flight = false
@@ -1107,6 +1108,7 @@ module Qpid::Qmf
       @reqs_outstanding = 1
       @error     = nil
       @broker_id  = nil
+      @broker_bank = 1
       @is_connected = false
       @conn = nil
       try_to_connect
@@ -1215,7 +1217,7 @@ module Qpid::Qmf
       bank_key = "%d.%d" % [obj.brokerBank, obj.agentBank]
       if obj.delete_time == 0
         unless @agents.include?(bank_key)
-          agent = Agent.new(self, bank_key, obj.label)
+          agent = Agent.new(self, obj.agentBank, obj.label)
           @agents[bank_key] = agent
           @session.console.new_agent(agent) if @session.console
         end
@@ -1359,16 +1361,16 @@ module Qpid::Qmf
   end
 
   class Agent
-    attr_reader :broker, :bank
+    attr_reader :broker, :agent_bank, :label
 
-    def initialize(broker, bank, label)
+    def initialize(broker, agent_bank, label)
       @broker = broker
-      @bank   = bank
+      @agent_bank = agent_bank
       @label  = label
     end
 
     def to_s
-      "Agent at bank %s (%s)" % [@bank, @label]
+      "Agent at bank %d.%d (%s)" % [@broker.broker_bank, @agent_bank, @label]
     end
   end
 
