@@ -240,11 +240,10 @@ Broker::Broker(const Broker::Options& conf) :
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
 
-    //initialize known broker urls:
-    try {
-        knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( getPort(TCP_TRANSPORT) ) );
-    } catch (const NoSuchTransportException& e) {
-        QPID_LOG(error, "Could not send client known broker urls for cluster: " << e.what());
+    //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
+    boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
+    if (factory) { 
+        knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
     }
 }
 
