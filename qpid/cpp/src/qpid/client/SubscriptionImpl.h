@@ -25,6 +25,7 @@
 #include "qpid/client/SubscriptionSettings.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/MessageListener.h"
+#include "qpid/framing/enum.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/RefCounted.h"
@@ -87,6 +88,9 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
 
     /** Cancel the subscription. */
     void cancel();
+
+    /** Grant specified credit for this subscription **/
+    void grantCredit(framing::message::CreditUnit unit, uint32_t value);
 
     void received(Message&);
     
