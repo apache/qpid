@@ -149,6 +149,7 @@ EXTRA_DIST +=								\
   run_header_test							\
   header_test.py							\
   ssl_test								\
+  config.null								\
   run_federation_tests							\
   run_acl_tests								\
   .valgrind.supp							\
