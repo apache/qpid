@@ -25,8 +25,6 @@ module Qpid::Spec010
 
   include Qpid::Spec
 
-  AMQP_SPEC_DEFAULT_DIR = "/usr/share/amqp"
-
   # XXX: workaround for ruby bug/missfeature
   Reference = Reference
   Loader = Loader
@@ -435,63 +433,53 @@ module Qpid::Spec010
 
   # XXX: could be shared
   def self.load(spec = nil)
-      return spec if spec.is_a?(Qpid::Spec010::Spec)
-      if spec.nil?
-          # FIXME: Need to add a packaging setup in here so we know where
-          # the installed spec is going to be.
-          specfile = nil
-          if ENV['AMQP_SPEC']
-              specfile = ENV['AMQP_SPEC']
-          else
-              topdir = File::dirname(File::dirname(File::expand_path(__FILE__)))
-              specfile = File::join(topdir, "../../specs", "amqp.0-10-qpid-errata.xml")
-          end
+    return spec if spec.is_a?(Qpid::Spec010::Spec)
+    if spec.nil?
+      # FIXME: Need to add a packaging setup in here so we know where
+      # the installed spec is going to be.
+      specfile = nil
+      if ENV['AMQP_SPEC']
+        specfile = ENV['AMQP_SPEC']
       else
-          specfile = spec
+        require "qpid/config"
+        specfile = Qpid::Config.amqp_spec
       end
+    else
+      specfile = spec
+    end
 
-      unless Pathname.new(specfile).absolute?
-          path = ENV["AMQP_SPEC_PATH"] || AMQP_SPEC_DEFAULT_DIR
-
-          p = path.split(File::PATH_SEPARATOR).collect { |p|
-              Pathname.new(p).join(specfile)
-          }.find { |p| p.file? }
-          raise "Can not find file for spec #{spec}" unless p
-          specfile = p.to_s
-      end
-
-      specfile_cache = spec_cache(specfile)
-      # FIXME: Check that cache is newer than specfile
-      if File::exist?(specfile_cache)
-          begin
-              spec = File::open(specfile_cache, "r") do |f|
-                  Marshal::load(f)
-              end
-              return spec
-          rescue
-              # Ignore, will load from XML
-          end
-      end
-
-      doc = File::open(specfile, "r") { |f| Document.new(f) }
-      spec = Loader010.new().load(doc.root)
-      spec.traverse! do |o|
-          if o.is_a?(Reference)
-              o.resolve(spec)
-          else
-              o
-          end
-      end
-
-      spec.children.each { |c| c.parent = spec }
-
+    specfile_cache = spec_cache(specfile)
+    # FIXME: Check that cache is newer than specfile
+    if File::exist?(specfile_cache)
       begin
-          FileUtils::mkdir_p(File::dirname(specfile_cache))
-          File::open(specfile_cache, "w") { |f| Marshal::dump(spec, f) }
+        spec = File::open(specfile_cache, "r") do |f|
+          Marshal::load(f)
+        end
+        return spec
       rescue
-          # Ignore, we are fine without the cached spec
+        # Ignore, will load from XML
       end
-      return spec
+    end
+
+    doc = File::open(specfile, "r") { |f| Document.new(f) }
+    spec = Loader010.new().load(doc.root)
+    spec.traverse! do |o|
+      if o.is_a?(Reference)
+        o.resolve(spec)
+      else
+        o
+      end
+    end
+
+    spec.children.each { |c| c.parent = spec }
+
+    begin
+      FileUtils::mkdir_p(File::dirname(specfile_cache))
+      File::open(specfile_cache, "w") { |f| Marshal::dump(spec, f) }
+    rescue
+      # Ignore, we are fine without the cached spec
+    end
+    return spec
   end
 
 end
