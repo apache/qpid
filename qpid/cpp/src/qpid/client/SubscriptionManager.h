@@ -92,16 +92,6 @@ namespace client {
  * </li>
  * </ul>
  * 
- * 
- * <h2>Setting Accept Mode, Acquire Mode, Ack Policy</h2>
- * 
- * <p>setAcceptMode()</p>
- * <pre>subscriptions.setAcceptMode(true);</pre>
- * <p>setAcquireMode()</p>
- * <pre>subscriptions.setAcquireMode(false);</pre>
- * 
- * 
- * 
  */
 class SubscriptionManager : public sys::Runnable
 {

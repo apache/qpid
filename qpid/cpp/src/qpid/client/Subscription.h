@@ -101,6 +101,12 @@ class Subscription : public Handle<SubscriptionImpl> {
 
     /** Cancel the subscription. */
     void cancel();
+
+    /** Grant the specified amount of message credit */
+    void grantMessageCredit(uint32_t);
+
+    /** Grant the specified amount of byte credit */
+    void grantByteCredit(uint32_t);
 };
 }} // namespace qpid::client
 

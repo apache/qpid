@@ -22,6 +22,7 @@
 #include "Subscription.h"
 #include "SubscriptionImpl.h"
 #include "HandlePrivate.h"
+#include "qpid/framing/enum.h"
 
 namespace qpid {
 namespace client {
@@ -42,7 +43,8 @@ void Subscription::release(const SequenceSet& messageIds) { impl->release(messag
 Session Subscription::getSession() const { return impl->getSession(); }
 SubscriptionManager&Subscription:: getSubscriptionManager() const { return impl->getSubscriptionManager(); }
 void Subscription::cancel() { impl->cancel(); }
-
+void Subscription::grantMessageCredit(uint32_t value) { impl->grantCredit(framing::message::CREDIT_UNIT_MESSAGE, value); }
+void Subscription::grantByteCredit(uint32_t value) { impl->grantCredit(framing::message::CREDIT_UNIT_BYTE, value); }
 }} // namespace qpid::client
 
 
