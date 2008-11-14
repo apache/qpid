@@ -287,7 +287,8 @@ void Stats::reset()
 {
     Mutex::ScopedLock l(lock);
     count = 0;
-    totalLatency = maxLatency = minLatency = 0;           
+    totalLatency = maxLatency = 0;
+    minLatency = std::numeric_limits<double>::max();
 }
 
 Sender::Sender(const string& q, Receiver& receiver) : Client(q), receiver(receiver), data(generateData(opts.size)) {}
