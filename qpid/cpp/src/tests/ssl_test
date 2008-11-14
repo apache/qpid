@@ -1,6 +1,7 @@
 #!/bin/sh
 # Run a simple test over SSL
 
+CONFIG=$(dirname $0)/config.null
 CERT_DIR=`pwd`/test_cert_db
 CERT_PW_FILE=`pwd`/cert.password
 HOSTNAME=`hostname`
@@ -18,7 +19,7 @@ create_certs() {
 }
 
 start_broker() {
-    ../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no --config config.null\
+    ../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no --config $CONFIG\
         --load-module ../.libs/ssl.so --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE > qpidd.port
     PORT=`cat qpidd.port`
 }
