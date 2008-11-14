@@ -62,6 +62,10 @@ void SubscriptionImpl::setFlowControl(const FlowControl& f) {
     s.sync();
 }
 
+void SubscriptionImpl::grantCredit(framing::message::CreditUnit unit, uint32_t value) {
+    async(manager.getSession()).messageFlow(name, unit, value);
+}
+
 void SubscriptionImpl::setAutoAck(size_t n) {
     Mutex::ScopedLock l(lock);
     settings.autoAck = n;
@@ -103,7 +107,7 @@ void SubscriptionImpl::release(const SequenceSet& messageIds) {
 
 Session SubscriptionImpl::getSession() const { return manager.getSession(); }
 
-SubscriptionManager&SubscriptionImpl:: getSubscriptionManager() const { return manager; }
+SubscriptionManager& SubscriptionImpl::getSubscriptionManager() const { return manager; }
 
 void SubscriptionImpl::cancel() { manager.cancel(name); }
 
