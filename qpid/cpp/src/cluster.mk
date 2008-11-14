@@ -34,10 +34,6 @@ cluster_la_SOURCES = \
 
 cluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
 
-else
-# Empty stub library to satisfy rpm spec file.
-cluster_la_SOURCES = 
-
 endif
 
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
