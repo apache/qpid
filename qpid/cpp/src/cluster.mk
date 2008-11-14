@@ -1,9 +1,9 @@
 #
 # Cluster library makefile fragment, to be included in Makefile.am
 # 
-dmodule_LTLIBRARIES += cluster.la
-
 if CPG
+
+dmodule_LTLIBRARIES += cluster.la
 
 cluster_la_SOURCES = \
   qpid/cluster/types.h \
@@ -34,6 +34,7 @@ cluster_la_SOURCES = \
 
 cluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
 
+cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
+
 endif
 
-cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
