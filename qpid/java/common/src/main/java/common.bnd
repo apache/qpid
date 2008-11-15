@@ -1,4 +1,4 @@
-ver: M3
+ver: M4
 
 Bundle-SymbolicName: qpid_common
 Bundle-Version: ${ver}

@@ -1,7 +1,7 @@
-Apache Qpid Incubating Java M3 Release Notes
+Apache Qpid Incubating Java M4 Release Notes
 -------------------------------------------
 
-The Qpid M3 release contains support for AMQP 0-8, 0-9 and 0-10. You
+The Qpid M4 release contains support for AMQP 0-8, 0-9 and 0-10. You
 can access the specifications from
 http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
 
@@ -28,10 +28,6 @@ Known Issues/Outstanding Work
 -----------------------------
 
 QPID-959: Fail over between a 0-9 and a 0-10 broker is not supported.
-
-QPID-1190: A "protocol not supported" exception is logged when a Java client
-connects to a Java broker because it initially attempts to negotiate
-AMQP 0-10. 
 
 QPID-1251: On windows platforms the following run time exception is thrown and displayed when initiating a connection with an 0.9 broker:
   Exception in thread "IoReceiver - localhost/localhost:5672"

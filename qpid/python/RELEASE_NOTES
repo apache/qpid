@@ -1,7 +1,7 @@
-Apache Incubator Qpid Python M3 Release Notes
+Apache Incubator Qpid Python M4 Release Notes
 -------------------------------------------
 
-The Qpid M3 release of the python client contains support the for both
+The Qpid M4 release of the python client contains support the for both
  0-8 and 0-10 of the AMQP specification as well as support for the
 non-WIP portion of the 0-9 specification.  You can access these
 specficiations from:
