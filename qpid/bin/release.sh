@@ -25,7 +25,7 @@
 REV=$1
 VER=$2
 
-if [ -z "$REV" || -z "$VER" ]; then
+if [ -z "$REV" -o -z "$VER" ]; then
     echo "Usage: release.sh <revision> <version>"
     exit 1
 fi
