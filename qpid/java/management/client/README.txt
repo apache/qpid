@@ -89,8 +89,8 @@ QMan is able to connect with one or more brokers. In order to do that each broke
 <broker>
 
 *** DEPENDENCIES ***
-qpid-common-incubating-M3.jar (already part of qpid)
-qpid-client-incubating-M3.jar (already part of qpid)
+qpid-common-incubating-M4.jar (already part of qpid)
+qpid-client-incubating-M4.jar (already part of qpid)
 slf4j-api-1.4.0.jar (already part of qpid)
 slf4j-log4j12-1.4.0.jar (already part of qpid)
 mina-filter-ssl-1.0.1.jar (already part of qpid)
