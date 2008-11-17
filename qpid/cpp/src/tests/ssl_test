@@ -25,7 +25,7 @@ start_broker() {
 }
 
 stop_broker() {
-    if [[ -x $PORT ]] ; then
+    if [[ $PORT ]] ; then
         ../qpidd -q --port $PORT
     fi
 }
