@@ -34,48 +34,44 @@ QPID_AUTO_TEST_CASE(testSizePolicy)
 {
     QueueOptions ft;
 	
-	ft.setSizePolicy(REJECT,1,2);
+    ft.setSizePolicy(REJECT,1,2);
 	
     BOOST_CHECK(QueueOptions::strREJECT == ft.getAsString(QueueOptions::strTypeKey));
     BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strMaxSizeKey));
     BOOST_CHECK(2 == ft.getAsInt(QueueOptions::strMaxCountKey));
 
-	ft.setSizePolicy(FLOW_TO_DISK,0,2);
+    ft.setSizePolicy(FLOW_TO_DISK,0,2);
     BOOST_CHECK(QueueOptions::strFLOW_TO_DISK == ft.getAsString(QueueOptions::strTypeKey));
     BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strMaxSizeKey));
     BOOST_CHECK(2 == ft.getAsInt(QueueOptions::strMaxCountKey));
 
-	ft.setSizePolicy(RING,1,0);
+    ft.setSizePolicy(RING,1,0);
     BOOST_CHECK(QueueOptions::strRING == ft.getAsString(QueueOptions::strTypeKey));
 
-	ft.setSizePolicy(RING_STRICT,1,0);
+    ft.setSizePolicy(RING_STRICT,1,0);
     BOOST_CHECK(QueueOptions::strRING_STRICT == ft.getAsString(QueueOptions::strTypeKey));
 	
-	ft.clearSizePolicy();
-	BOOST_CHECK(!ft.isSet(QueueOptions::strTypeKey));
-	BOOST_CHECK(!ft.isSet(QueueOptions::strMaxSizeKey));
-	BOOST_CHECK(!ft.isSet(QueueOptions::strMaxCountKey));
+    ft.clearSizePolicy();
+    BOOST_CHECK(!ft.isSet(QueueOptions::strTypeKey));
+    BOOST_CHECK(!ft.isSet(QueueOptions::strMaxSizeKey));
+    BOOST_CHECK(!ft.isSet(QueueOptions::strMaxCountKey));
 }
 
 QPID_AUTO_TEST_CASE(testFlags)
 {
     QueueOptions ft;
 	
-	ft.setOptimisticConsume();
-	ft.setPersistLastNode();
+    ft.setPersistLastNode();
     ft.setOrdering(LVQ);
 	
-    BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strOptimisticConsume));
     BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strPersistLastNode));
     BOOST_CHECK(1 == ft.getAsInt(QueueOptions::strLastValueQueue));
 	
-	ft.clearOptimisticConsume();
-	ft.clearPersistLastNode();
+    ft.clearPersistLastNode();
     ft.setOrdering(FIFO);
 
-	BOOST_CHECK(!ft.isSet(QueueOptions::strOptimisticConsume));
-	BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
-	BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
+    BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
+    BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
 
 }
 

@@ -35,6 +35,7 @@ const std::string SSL_ERROR_BAD_CERT_DOMAIN_STR =
 const std::string SSL_ERROR_BAD_CERT_ALERT_STR = "SSL peer cannot verify your certificate.";
 const std::string SEC_ERROR_BAD_DATABASE_STR = "Security library: bad database.";
 const std::string SSL_ERROR_NO_CERTIFICATE_STR = "Unable to find the certificate or key necessary for authentication.";
+const std::string SSL_ERROR_UNKNOWN = "Unknown NSS error code.";
 
 ErrorString::ErrorString() : code(PR_GetError()), buffer(new char[PR_GetErrorTextLength()]), used(PR_GetErrorText(buffer)) {}    
 
@@ -55,6 +56,7 @@ std::string ErrorString::getString() const
           case SSL_ERROR_BAD_CERT_ALERT: msg = SSL_ERROR_BAD_CERT_ALERT_STR; break;
           case SEC_ERROR_BAD_DATABASE: msg = SEC_ERROR_BAD_DATABASE_STR; break;
           case SSL_ERROR_NO_CERTIFICATE: msg = SSL_ERROR_NO_CERTIFICATE_STR; break;
+          default: msg = SSL_ERROR_UNKNOWN; break;
         }
     }
     return str(format("%1% [%2%]") % msg % code);
