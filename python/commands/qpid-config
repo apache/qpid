@@ -379,7 +379,7 @@ try:
         else:
             Usage ()
 except Exception,e:
-    print "Failed:", e.message
+    print "Failed:", e.args[0]
     sys.exit(1)
 
 bm.Disconnect()
