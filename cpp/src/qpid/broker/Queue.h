@@ -76,7 +76,6 @@ namespace qpid {
             OwnershipToken* exclusive;
             bool noLocal;
             bool lastValueQueue;
-            bool optimisticConsume;
             bool persistLastNode;
             bool inLastNodeFailure;
             std::string traceId;

@@ -54,12 +54,6 @@ class QueueOptions: public framing::FieldTable
     void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
 
     /**
-     * Enables optimistic consume allowing the consumer to dequeue the message before the
-     * broker has safe stored it.
-     */
-    void setOptimisticConsume();
-	
-    /**
      * Enables the persisting of a queue to the store module when a cluster fails down to it's last
      * node. Does so optimistically. Will start persisting when cluster count >1 again.
      */
@@ -74,11 +68,6 @@ class QueueOptions: public framing::FieldTable
      * Use broker defualt sizing ploicy
      */
     void clearSizePolicy();
-	
-    /**
-     * Clear Optimistic Consume Policy
-     */ 
-    void clearOptimisticConsume();
 	
     /**
      * Clear Persist Last Node Policy
@@ -103,7 +92,6 @@ class QueueOptions: public framing::FieldTable
     static const std::string strRING;
     static const std::string strRING_STRICT;
     static const std::string strLastValueQueue;
-    static const std::string strOptimisticConsume;
     static const std::string strPersistLastNode;
     static const std::string strLVQMatchProperty;
 };

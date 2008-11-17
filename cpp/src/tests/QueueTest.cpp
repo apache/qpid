@@ -289,38 +289,6 @@ class TestMessageStoreOC : public NullMessageStore
 };
 
 
-QPID_AUTO_TEST_CASE(testOptimisticConsume){
-
-    client::QueueOptions args;
-	args.setPersistLastNode();
-
-    // set queue mode
-	
-	TestMessageStoreOC store;
-	Queue::shared_ptr queue(new Queue("my-queue", true, &store));
-	queue->setLastNodeFailure();
-	
-    intrusive_ptr<Message> msg1 = create_message("e", "A");
-	msg1->forcePersistent();
-
-	//change mode
-	args.setOptimisticConsume();
-    queue->configure(args);
-	
-	//enqueue 1 message
-    queue->deliver(msg1);
-	
-    TestConsumer::shared_ptr consumer(new TestConsumer());
-    queue->consume(consumer);
-    queue->dispatch(consumer);
-    if (!consumer->received)
-        sleep(2);
-
-    BOOST_CHECK_EQUAL(msg1.get(), consumer->last.get());
-    BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
-
-}
-
 QPID_AUTO_TEST_CASE(testLVQOrdering){
 
     client::QueueOptions args;
