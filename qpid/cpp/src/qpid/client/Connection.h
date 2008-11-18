@@ -37,9 +37,10 @@ class ConnectionImpl;
 /**
  * Represents a connection to an AMQP broker. All communication is
  * initiated by establishing a connection, then creating one or more
- * Session objecst using the connection. @see newSession()
+ * Session objects using the connection. @see newSession()
  * 
  * \ingroup clientapi
+ *
  */
 class Connection
 {
@@ -108,7 +109,31 @@ class Connection
     /**
      * Opens a connection to a broker.
      * 
-     * @param the settings to use (host, port etc) @see ConnectionSettings
+     * @param the settings to use (host, port etc)
+     *
+     * Specifying connection parameters with ConnectionSettings
+     *
+     * @code
+     * #include <qpid/client/ConnectionSettings.h>
+     * #include <qpid/client/Connection.h>
+     * #include <qpid/client/Session.h>
+     * 
+     * using namespace qpid::client;
+     * 
+     * int main(int , char** ) {
+     * 
+     *     ConnectionSettings connectionSettings;
+     *     connectionSettings.host = "localhost";
+     *     connectionSettings.port = 5672;
+     *     connectionSettings.tcpNoDelay = true;
+     *     connectionSettings.maxFrameSize = 65535;
+     *     connectionSettings.bounds = 4;
+     * 
+     *     Connection connection;
+     *     try {
+     *         connection.open(connectionSettings);
+     *         Session session =  connection.newSession();
+     * @endcode
      */
     void open(const ConnectionSettings& settings);
 
