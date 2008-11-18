@@ -86,6 +86,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
 };
 
 Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
+    isQuorate(isQuorateImpl),
     broker(b),
     poller(b.getPoller()),
     cpg(*this),
@@ -589,6 +590,17 @@ MemberId Cluster::getId() const {
 
 broker::Broker& Cluster::getBroker() const {
     return broker; // Immutable,  no need to lock.
+}
+
+/** Default implementation for isQuorateImpl when there is no quorum service. */
+bool Cluster::isQuorateImpl() { return true; }
+
+void Cluster::checkQuorum() {
+    if (!isQuorate()) {
+        QPID_LOG(critical, *this << " disconnected from cluster quorum, shutting down");
+        leave();
+        throw Exception(QPID_MSG(*this << " disconnected from cluster quorum."));
+    }
 }
 
 void Cluster::setClusterId(const Uuid& uuid) {

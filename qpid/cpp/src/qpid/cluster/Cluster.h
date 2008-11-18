@@ -92,6 +92,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     MemberId getId() const;
     broker::Broker& getBroker() const;
 
+    boost::function<bool ()> isQuorate;
+    void checkQuorum();
+    
   private:
     typedef sys::LockPtr<Cluster,sys::Monitor> LockPtr;
     typedef sys::LockPtr<const Cluster,sys::Monitor> ConstLockPtr;
@@ -173,7 +176,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void dumpOutDone(Lock&);
 
     void setClusterId(const framing::Uuid&);
-    
+    static bool isQuorateImpl();
+
     mutable sys::Monitor lock;
 
     broker::Broker& broker;

@@ -166,7 +166,7 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
 # Link with whichever variant of libboost_thread is available.
 AC_SEARCH_LIBS([_ZN5boost6thread4joinEv],[boost_thread-mt boost_thread],,[AC_MSG_ERROR([No boost thread library found])])
 
-# Check for optional CPG requirement.
+# Check for optional cluster requirements.
 tmp_LIBS=$LIBS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
 AC_ARG_WITH([cpg],  
@@ -180,16 +180,34 @@ AC_ARG_WITH([cpg],
     no) with_CPG=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
-   [		   # not specified - default no
-    with_CPG=no
+   [		   # not specified - use if present
+    with_CPG=yes
+    AC_CHECK_LIB([cpg],[cpg_local_get],,[with_CPG=no])
+    AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
    ]
 )
-LIBS=$tmp_LIBS
+AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_CPG = xyes])
 
-AM_CONDITIONAL([CPG], [test x$with_CPG = xyes])
-if test x$with_CPG = xyes; then
-  CPPFLAGS+=" -DCPG"
-fi
+AC_ARG_WITH([libcman],  
+  [AS_HELP_STRING([--with-libcman], [Integration with libcman quorum service.])],
+  [case "${withval}" in
+    yes)			# yes - enable
+    with_LIBCMAN=yes
+    AC_CHECK_LIB([cman],[cman_is_quorate],,[AC_MSG_ERROR([libcman not found, install libcman package.])])
+    AC_CHECK_HEADERS([libcman.h],,[AC_MSG_ERROR([libcman.h not found, install cman-devel])])
+    ;;
+    no) with_LIBCMAN=no ;; 
+    *) AC_MSG_ERROR([Bad value ${withval} for --with-libcman option]) ;;
+   esac],
+   [		   # not specified - use if present and with_CPG=yes
+    with_LIBCMAN=$with_CPG
+    AC_CHECK_LIB([cman],[cman_is_quorate],,with_LIBCMAN=no)
+    AC_CHECK_HEADERS([libcman.h],,with_LIBCMAN=no)
+   ]
+)
+AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_LIBCMAN = xyes])
+
+LIBS=$tmp_LIBS
 
 # Setup --with-sasl/--without-sasl as arguments to configure
 AC_ARG_WITH([sasl],
