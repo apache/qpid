@@ -28,7 +28,8 @@ Table of Contents
 Note that the daemon and client API can be installed separately. 
 
 This document describes how to build the Qpid/C++ broker and client, either
-from a checkout of the source or from a source distribution.
+from a checkout of the source or from a source distribution, on Linux/UNIX.
+Please see INSTALL-WINDOWS for information on building on Windows.
 
 This also explains how to install the required prerequisites for Qpid/C++.
 
