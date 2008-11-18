@@ -1,11 +1,20 @@
 #
 # Cluster library makefile fragment, to be included in Makefile.am
 # 
-if CPG
+# Optional CMAN support
+if HAVE_LIBCMAN
+CMAN_SOURCES= qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp
+libcman = -lcman
+else
+CMAN_SOURCES= qpid/cluster/Quorum_null.h
+endif
+
+if HAVE_LIBCPG
 
 dmodule_LTLIBRARIES += cluster.la
 
 cluster_la_SOURCES = \
+  $(CMAN_SOURCES) \
   qpid/cluster/types.h \
   qpid/cluster/Cluster.cpp \
   qpid/cluster/Cluster.h \
@@ -32,9 +41,7 @@ cluster_la_SOURCES = \
   qpid/cluster/FailoverExchange.h \
   qpid/cluster/FailoverExchange.cpp
 
-cluster_la_LIBADD= -lcpg libqpidbroker.la libqpidclient.la
-
+cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
-endif
-
+endif				# HAVE_LIBCPG
