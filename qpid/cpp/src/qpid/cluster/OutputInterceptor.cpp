@@ -37,6 +37,7 @@ OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutp
 {}
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
+    parent.getCluster().checkQuorum();
     Locker l(lock); 
     next->send(f);
     if (!parent.isCatchUp())
