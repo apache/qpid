@@ -1,6 +1,43 @@
 SUBDIRS = . tests
 
-EXTRA_DIST= $(platform_dist) $(rgen_srcs)
+# The Windows-only sources are not compiled using this Makefile, but
+# are listed here to ensure they're included in releases. They are built
+# using Visual Studio solutions/projects.
+windows_dist = \
+  qpid.sln \
+  broker.vcproj \
+  common.vcproj \
+  client.vcproj \
+  MaxMethodBodySize.vcproj \
+  protocol_gen.mak \
+  qpid/log/windows/SinkOptions.cpp \
+  qpid/log/windows/SinkOptions.h \
+  qpid/sys/windows/check.h \
+  qpid/sys/windows/AsynchIO.cpp \
+  qpid/sys/windows/AsynchIoResult.h \
+  qpid/sys/windows/Condition.h \
+  qpid/sys/windows/FileSysDir.cpp \
+  qpid/sys/windows/IntegerTypes.h \
+  qpid/sys/windows/IocpDispatcher.cpp \
+  qpid/sys/windows/IocpPoller.cpp \
+  qpid/sys/windows/IOHandle.cpp \
+  qpid/sys/windows/IoHandlePrivate.h \
+  qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/Mutex.h \
+  qpid/sys/windows/Shlib.cpp \
+  qpid/sys/windows/Socket.cpp \
+  qpid/sys/windows/StrError.cpp \
+  qpid/sys/windows/SystemInfo.cpp \
+  qpid/sys/windows/Thread.cpp \
+  qpid/sys/windows/Time.cpp \
+  qpid/sys/windows/Time.h \
+  qpid/sys/windows/uuid.cpp \
+  qpid/sys/windows/uuid.h \
+  windows/QpiddBroker.cpp \
+  qpid/broker/windows/BrokerDefaults.cpp \
+  qpid/broker/windows/SaslAuthenticator.cpp
+
+EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 
 ## Generated code
 
