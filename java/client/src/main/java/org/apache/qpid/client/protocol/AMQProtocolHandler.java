@@ -164,6 +164,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     /** Defines the default timeout to use for synchronous protocol commands. */
     private final long DEFAULT_SYNC_TIMEOUT = Long.getLong("amqj.default_syncwrite_timeout", 1000 * 30);
 
+    /** Object to lock on when changing the latch */
+    private Object _failoverLatchChange = new Object();
+
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
      *
@@ -774,9 +777,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void blockUntilNotFailingOver() throws InterruptedException
     {
-        if (_failoverLatch != null)
+        synchronized(_failoverLatchChange)
         {
-            _failoverLatch.await();
+            if (_failoverLatch != null)
+            {
+                _failoverLatch.await();
+            }
         }
     }
 
@@ -792,7 +798,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void setFailoverLatch(CountDownLatch failoverLatch)
     {
-        _failoverLatch = failoverLatch;
+        synchronized (_failoverLatchChange)
+        {
+            _failoverLatch = failoverLatch;
+        }
     }
 
     public AMQConnection getConnection()
