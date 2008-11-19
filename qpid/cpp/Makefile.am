@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
   LICENSE NOTICE README SSL RELEASE_NOTES DESIGN DISCLAIMER\
-  xml/cluster.xml
+  xml/cluster.xml INSTALL-WINDOWS
 
 SUBDIRS = managementgen etc src docs/api docs/man examples
 
