@@ -22,10 +22,6 @@
  *
  */
 
-// FIXME aconway 2008-08-11: this could be of more general interest,
-// move to common lib.
-// 
-
 #include "PollableCondition.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/Exception.h"

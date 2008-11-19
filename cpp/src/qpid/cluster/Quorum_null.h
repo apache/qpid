@@ -28,12 +28,10 @@ namespace cluster {
 
 class Quorum {
   public:
-    void init();
+    void init() {}
     bool isQuorate() { return true; }
-    void addOption(Options& opts) {}
 };
 
-#endif
-
-
 #endif  /*!QPID_CLUSTER_QUORUM_NULL_H*/
+
+}} // namespace qpid::cluster
