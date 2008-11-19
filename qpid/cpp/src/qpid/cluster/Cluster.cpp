@@ -113,12 +113,12 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     }
     broker.getKnownBrokers = boost::bind(&Cluster::getUrls, this);
     failoverExchange.reset(new FailoverExchange(this));
-    broker.addFinalizer(boost::bind(&Cluster::brokerShutdown, this));
     cpgDispatchHandle.startWatch(poller);
     deliverQueue.start();
     QPID_LOG(notice, *this << " joining cluster " << name.str());
     if (useQuorum) quorum.init();
     cpg.join(name);
+    broker.addFinalizer(boost::bind(&Cluster::brokerShutdown, this)); // Must be last for exception safety.
 }
 
 Cluster::~Cluster() {
