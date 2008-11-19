@@ -61,9 +61,7 @@ class ForkedBroker {
     void kill(int sig=SIGINT) {
         if (pid == 0) return;
         int savePid = pid;      
-        pid = 0;                // Always reset pid, even in case of an exception below. 
-        ::close(pipeFds[1]);
-
+        pid = 0;                // Reset pid here in case of an exception.
         using qpid::ErrnoException;
         if (::kill(savePid, sig) < 0) 
             throw ErrnoException("kill failed");
@@ -79,10 +77,16 @@ class ForkedBroker {
 
   private:
 
+    template <class F> struct OnExit {
+        F fn;
+        OnExit(F f) : fn(f) {}
+        ~OnExit()  { fn(); }
+    };
+        
     void init(const std::vector<const char*>& args) {
         using qpid::ErrnoException;
-        pid = 0;
         port = 0;
+        int pipeFds[2];
         if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");
         pid = ::fork();
         if (pid < 0) throw ErrnoException("Fork failed");
@@ -94,10 +98,11 @@ class ForkedBroker {
                 if (ferror(f)) throw ErrnoException("Error reading port number from child.");
                 else throw qpid::Exception("EOF reading port number from child.");
             }
+            ::close(pipeFds[0]);
         }
         else {                  // child
             ::close(pipeFds[0]);
-            int fd = ::dup2(pipeFds[1], 1);
+            int fd = ::dup2(pipeFds[1], 1); // pipe stdout to the parent.
             if (fd < 0) throw ErrnoException("dup2 failed");
             const char* prog = "../qpidd";
             std::vector<const char*> args2(args);
@@ -109,7 +114,6 @@ class ForkedBroker {
         }
     }
 
-    int pipeFds[2];
     pid_t pid;
     int port;
 };
