@@ -85,8 +85,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
-Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
-    isQuorate(isQuorateImpl),
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool useQuorum) :
     broker(b),
     poller(b.getPoller()),
     cpg(*this),
@@ -117,8 +116,9 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b) :
     broker.addFinalizer(boost::bind(&Cluster::brokerShutdown, this));
     cpgDispatchHandle.startWatch(poller);
     deliverQueue.start();
+    QPID_LOG(notice, *this << " joining cluster " << name.str());
+    if (useQuorum) quorum.init();
     cpg.join(name);
-    QPID_LOG(notice, *this << " will join cluster " << name.str());
 }
 
 Cluster::~Cluster() {
@@ -592,11 +592,8 @@ broker::Broker& Cluster::getBroker() const {
     return broker; // Immutable,  no need to lock.
 }
 
-/** Default implementation for isQuorateImpl when there is no quorum service. */
-bool Cluster::isQuorateImpl() { return true; }
-
 void Cluster::checkQuorum() {
-    if (!isQuorate()) {
+    if (!quorum.isQuorate()) {
         QPID_LOG(critical, *this << " disconnected from cluster quorum, shutting down");
         leave();
         throw Exception(QPID_MSG(*this << " disconnected from cluster quorum."));

@@ -36,7 +36,6 @@ class Quorum {
   public:
     Quorum();
     ~Quorum();
-    void addOption(Options& opts);
     void init();
     bool isQuorate();
     
@@ -47,7 +46,5 @@ class Quorum {
 
 
 }} // namespace qpid::cluster
-
- // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_QUORUM_CMAN_H*/

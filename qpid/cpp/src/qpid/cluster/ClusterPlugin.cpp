@@ -39,7 +39,10 @@ using broker::Broker;
 struct ClusterValues {
     string name;
     string url;
+    bool quorum;
 
+    ClusterValues() : quorum(false) {}
+  
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
         return Url(url);
@@ -59,6 +62,9 @@ struct ClusterOptions : public Options {
             ("cluster-url", optValue(values.url,"URL"),
              "URL of this broker, advertized to the cluster.\n"
              "Defaults to a URL listing all the local IP addresses\n")
+#if HAVE_LIBCMAN
+            ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
+#endif
             ;
     }
 };
@@ -78,7 +84,7 @@ struct ClusterPlugin : public Plugin {
         if (values.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        cluster = new Cluster(values.name, values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)), *broker);
+        cluster = new Cluster(values.name, values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)), *broker, values.quorum);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
