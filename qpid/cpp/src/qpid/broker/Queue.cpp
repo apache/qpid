@@ -496,7 +496,6 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
         QueuedMessage qm(this, msg, ++sequence);
         if (policy.get()) policy->tryEnqueue(qm);
          
-        //if (lastValueQueue && LVQinsert(qm) ) return; // LVQ update of existing message
         LVQ::iterator i;
         if (lastValueQueue){
             const framing::FieldTable* ft = msg->getApplicationHeaders();

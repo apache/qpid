@@ -146,9 +146,11 @@ public:
 
     /** Call cb when enqueue is complete, may call immediately. Holds cb by reference. */
     void setEnqueueCompleteCallback(MessageCallback& cb);
+    void resetEnqueueCompleteCallback();
 
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
     void setDequeueCompleteCallback(MessageCallback& cb);
+    void resetDequeueCompleteCallback();
 
   private:
     typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
