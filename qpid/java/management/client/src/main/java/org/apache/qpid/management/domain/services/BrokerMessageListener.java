@@ -33,7 +33,7 @@ import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.nclient.util.MessageListener;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -162,7 +162,7 @@ class BrokerMessageListener implements MessageListener
          IMessageHandler handler = _handlers.get(opcode); 
          if (handler != null) 
          {
-             ManagementDecoder decoder = new ManagementDecoder();
+             BBDecoder decoder = new BBDecoder();
              decoder.init(buffer);
              
              LOGGER.debug(Messages.QMAN_200003_MESSAGE_FORWARDING,opcode,handler);

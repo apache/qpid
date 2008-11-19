@@ -22,7 +22,7 @@ package org.apache.qpid.management.domain.model;
 
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.model.type.Type;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -86,7 +86,7 @@ class QpidAttribute extends QpidFeature
      * @param decoder the decoder used to extract the value.
      * @return the value of this feature according to its type definition
      */
-    Object decodeValue(ManagementDecoder decoder)
+    Object decodeValue(Decoder decoder)
     {
         try {
             return _type.decode(decoder);

@@ -32,7 +32,7 @@ import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 
 /**
  * Test case for Broker Message Listener.
@@ -44,7 +44,7 @@ public class BrokerMessageListenerTest extends TestCase
     // An empty message handler user for test.
     private IMessageHandler _emptyMessageHandler = new IMessageHandler() 
     {
-        public void process (ManagementDecoder decoder, int sequenceNumber)
+        public void process (Decoder decoder, int sequenceNumber)
         {
         }
         public void setDomainModel (DomainModel domainModel) 
@@ -55,7 +55,7 @@ public class BrokerMessageListenerTest extends TestCase
     // Another empty message handler user for test.
     private IMessageHandler _anotherEmptyMessageHandler = new IMessageHandler() 
     {
-        public void process (ManagementDecoder decoder, int sequenceNumber)
+        public void process (Decoder decoder, int sequenceNumber)
         {
         }
         public void setDomainModel (DomainModel domainModel)
@@ -111,7 +111,7 @@ public class BrokerMessageListenerTest extends TestCase
         IMessageHandler wrongMessageHandler = new IMessageHandler()
         {
 
-            public void process (ManagementDecoder decoder, int sequenceNumber)
+            public void process (Decoder decoder, int sequenceNumber)
             {
             }
 
@@ -148,7 +148,7 @@ public class BrokerMessageListenerTest extends TestCase
         IMessageHandler neverCallMe = new IMessageHandler()
         {
 
-            public void process (ManagementDecoder decoder, int sequenceNumber)
+            public void process (Decoder decoder, int sequenceNumber)
             {
                 fail("This test shouldn't never arrive at this point...");
             }
@@ -189,7 +189,7 @@ public class BrokerMessageListenerTest extends TestCase
     			this._opcode = opcode;
 			}
     		
-            public void process (ManagementDecoder decoder, int sequenceNumber)
+            public void process (Decoder decoder, int sequenceNumber)
             {
             	handlersMap.remove(_opcode);
             }

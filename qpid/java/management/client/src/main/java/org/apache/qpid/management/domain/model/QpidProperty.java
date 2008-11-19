@@ -25,7 +25,6 @@ import java.lang.reflect.Constructor;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.domain.model.type.Type;
-import org.apache.qpid.transport.codec.ManagementDecoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -46,7 +45,7 @@ class QpidProperty extends QpidAttribute
      */
     interface Decoder
     {
-        Object decodeValue(ManagementDecoder decoder,byte [] presenceBitMasks); 
+        Object decodeValue(org.apache.qpid.transport.codec.Decoder decoder,byte [] presenceBitMasks); 
     }
     
     /**
@@ -54,7 +53,7 @@ class QpidProperty extends QpidAttribute
      */
     final Decoder _optionalPropertyDecoder = new Decoder() {
 
-        public Object decodeValue (ManagementDecoder decoder, byte[] presenceBitMasks)
+        public Object decodeValue (org.apache.qpid.transport.codec.Decoder decoder, byte[] presenceBitMasks)
         {
             return ((presenceBitMasks[_optionalIndex/8] &  MASKS[_maskIndex]) != 0) 
                 ? QpidProperty.this.decodeValue(decoder) 
@@ -67,7 +66,7 @@ class QpidProperty extends QpidAttribute
      */
     final Decoder _mandatoryPropertyDecoder = new Decoder() {
 
-        public Object decodeValue (ManagementDecoder decoder, byte[] presenceBitMasks)
+        public Object decodeValue (org.apache.qpid.transport.codec.Decoder decoder, byte[] presenceBitMasks)
         {
             return QpidProperty.this.decodeValue(decoder);
         }
@@ -186,7 +185,7 @@ class QpidProperty extends QpidAttribute
      * @param decoder the decoder used to extract the value.
      * @return the value of this feature according to its type definition
      */
-    Object decodeValue(ManagementDecoder decoder,byte [] presenceBitMasks)
+    Object decodeValue(org.apache.qpid.transport.codec.Decoder decoder,byte [] presenceBitMasks)
     {
         return _decoder.decodeValue(decoder, presenceBitMasks);
     }

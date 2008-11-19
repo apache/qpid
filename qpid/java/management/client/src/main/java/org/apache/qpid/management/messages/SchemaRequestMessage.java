@@ -61,8 +61,8 @@ public abstract class SchemaRequestMessage extends ManagementMessage
     @Override
     final void specificMessageEncoding ()
     {
-        _codec.packStr8(packageName());
-        _codec.packStr8(className());
+    	_codec.writeStr8(packageName());
+    	_codec.writeStr8(className());
         schemaHash().encode(_codec);
     }
 }

@@ -41,6 +41,10 @@ import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandl
 import org.apache.qpid.management.domain.model.AccessMode;
 import org.apache.qpid.management.domain.model.type.AbsTime;
 import org.apache.qpid.management.domain.model.type.DeltaTime;
+import org.apache.qpid.management.domain.model.type.Int16;
+import org.apache.qpid.management.domain.model.type.Int32;
+import org.apache.qpid.management.domain.model.type.Int64;
+import org.apache.qpid.management.domain.model.type.Int8;
 import org.apache.qpid.management.domain.model.type.ObjectReference;
 import org.apache.qpid.management.domain.model.type.Str16;
 import org.apache.qpid.management.domain.model.type.Str8;
@@ -228,8 +232,14 @@ public class Configurator extends DefaultHandler
     	configuration.addTypeMapping(new TypeMapping(9,new DeltaTime()));
     	configuration.addTypeMapping(new TypeMapping(10,new ObjectReference()));
     	configuration.addTypeMapping(new TypeMapping(11,new org.apache.qpid.management.domain.model.type.Boolean()));
+    	configuration.addTypeMapping(new TypeMapping(12,new org.apache.qpid.management.domain.model.type.Float(),Names.NUMBER_VALIDATOR));
+    	configuration.addTypeMapping(new TypeMapping(13,new org.apache.qpid.management.domain.model.type.Double(),Names.NUMBER_VALIDATOR));
     	configuration.addTypeMapping(new TypeMapping(14,new org.apache.qpid.management.domain.model.type.Uuid()));
     	configuration.addTypeMapping(new TypeMapping(15,new org.apache.qpid.management.domain.model.type.Map()));
+    	configuration.addTypeMapping(new TypeMapping(16,new Int8(),Names.NUMBER_VALIDATOR));
+    	configuration.addTypeMapping(new TypeMapping(17,new Int16(),Names.NUMBER_VALIDATOR));
+    	configuration.addTypeMapping(new TypeMapping(18,new Int32(),Names.NUMBER_VALIDATOR));
+    	configuration.addTypeMapping(new TypeMapping(19,new Int64(),Names.NUMBER_VALIDATOR));
     }
     
     /**

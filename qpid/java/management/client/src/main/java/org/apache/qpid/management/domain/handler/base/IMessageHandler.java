@@ -21,7 +21,7 @@
 package org.apache.qpid.management.domain.handler.base;
 
 import org.apache.qpid.management.domain.model.DomainModel;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 
 /**
  * Interface definition for a processor able to deal with a specific message.
@@ -41,7 +41,7 @@ public interface IMessageHandler
      * @param decoder the stream decoder.
      * @param sequenceNumber the sequence number of the message.
      */
-    void process (ManagementDecoder decoder, int sequenceNumber);
+    void process (Decoder decoder, int sequenceNumber);
     
     /**
      * Injects the domain model into this handler.

@@ -28,7 +28,7 @@ import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.management.domain.model.InvocationEvent;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -70,7 +70,7 @@ public class MethodResponseMessageHandler extends BaseMessageHandler
      * @param decoder the decoder used for parsing incoming data.
      * @param sequenceNumber the sequence number of the incoming message.
      */
-    public void process (ManagementDecoder decoder, int sequenceNumber)
+    public void process (Decoder decoder, int sequenceNumber)
     {        
         InvocationResult result = new InvocationResult(decoder.readUint32(), decoder.readStr16(),decoder.readReaminingBytes());
         BlockingQueue<InvocationResult> exchangeChannel = _exchangeChannels.remove(sequenceNumber);

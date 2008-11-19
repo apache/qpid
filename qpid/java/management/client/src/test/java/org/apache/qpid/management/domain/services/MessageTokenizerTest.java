@@ -2,16 +2,13 @@ package org.apache.qpid.management.domain.services;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.*;
-import java.util.Random;
 
 import junit.framework.TestCase;
 
 import org.apache.qpid.api.Message;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
  * Tests case for messaeg tokenizer.
@@ -114,7 +111,7 @@ public class MessageTokenizerTest extends TestCase {
 	private void assertEquals(Message message, byte [] expected) throws IOException 
 	{
 		ByteBuffer messageContent = message.readData();
-		ManagementDecoder decoder = new ManagementDecoder();
+		BBDecoder decoder = new BBDecoder();
 		decoder.init(messageContent);
 		byte [] content = decoder.readReaminingBytes();	
 		assertTrue(Arrays.equals(content, expected));		
