@@ -29,6 +29,7 @@ import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.codec.BBEncoder;
 
 /**
  * Message implementation used for specific management purposes.
@@ -63,17 +64,18 @@ public abstract class ManagementMessage implements Message
     IDataBuilderStrategy ACCUMULATING = new IDataBuilderStrategy()
     {
         public ByteBuffer getData() {
-            _codec.pack8((byte)opcode());
-            _codec.pack32(sequenceNumber());
+        	_codec.writeInt8((byte)opcode());
+            _codec.writeSequenceNo(sequenceNumber());
             
             specificMessageEncoding();
-            _data =_codec.getEncodedBuffer(); 
+            
+            _data =_codec.segment(); 
             _reader = READING;
             return _data;
         }
     };    
     
-    protected AmqpCoDec _codec;
+    protected BBEncoder _codec;
     protected ByteBuffer _data;
     private int _messageTransferId;
     private IDataBuilderStrategy _reader = ACCUMULATING;    
@@ -83,7 +85,8 @@ public abstract class ManagementMessage implements Message
      */
     ManagementMessage()
     {
-        _codec = new AmqpCoDec();
+        _codec = new BBEncoder(100);
+        _codec.writeMagicNumber();
     }
 
     /**

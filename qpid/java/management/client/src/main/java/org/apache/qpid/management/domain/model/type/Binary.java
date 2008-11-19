@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.apache.qpid.management.messages.AmqpCoDec;
+import org.apache.qpid.transport.codec.Encoder;
 
 /**
  * It is a simple wrapper for a byte array (for example a 128bin).
@@ -117,9 +118,9 @@ public final class Binary implements Serializable
      * 
      * @param encoder the encoder used to encode instance content.
      */
-    public void encode(AmqpCoDec encoder)
+    public void encode(Encoder encoder)
     {
-      encoder.pack(_bytes);  
+    	encoder.writeBin128(_bytes);
     }
     
     @Override

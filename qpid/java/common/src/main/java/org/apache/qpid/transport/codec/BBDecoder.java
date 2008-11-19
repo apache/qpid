@@ -25,16 +25,14 @@ import java.nio.ByteOrder;
 
 import org.apache.qpid.transport.Binary;
 
-
 /**
- * BBDecoder
+ * Byte Buffer Decoder.
+ * Decoder concrete implementor using a backing byte buffer for decoding data.
  *
  * @author Rafael H. Schloming
  */
-
 public final class BBDecoder extends AbstractDecoder
 {
-
     private ByteBuffer in;
 
     public void init(ByteBuffer in)
@@ -93,4 +91,54 @@ public final class BBDecoder extends AbstractDecoder
         return in.getLong();
     }
 
+	public byte[] readBin128()
+	{
+		byte[] result = new byte[16];
+		get(result);
+		return result;
+	}
+	
+	public byte[] readBytes(int howManyBytes)
+	{
+		byte[] result = new byte[howManyBytes];
+		get(result);
+		return result;
+	}
+	
+	public double readDouble()
+	{
+		return in.getDouble();
+	}
+
+	public float readFloat()
+	{
+		return in.getFloat();
+	}
+
+	public short readInt16()
+	{
+		return in.getShort();
+	}
+
+	public int readInt32()
+	{
+		return in.getInt();
+	}
+
+	public byte readInt8()
+	{
+		return in.get();
+	}
+
+	public byte[] readReaminingBytes()
+	{
+      byte[] result = new byte[in.limit() - in.position()];
+      get(result);
+      return result;		
+	}
+
+	public long readInt64()
+	{
+		return in.getLong();
+	}
 }

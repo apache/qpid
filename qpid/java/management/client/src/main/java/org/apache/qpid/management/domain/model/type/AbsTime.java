@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
-import org.apache.qpid.management.messages.AmqpCoDec;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
+import org.apache.qpid.transport.codec.Encoder;
 
 public class AbsTime extends Type
 {
@@ -31,14 +31,14 @@ public class AbsTime extends Type
     }
 
     @Override
-    public Object decode (ManagementDecoder decoder)
+    public Object decode (Decoder decoder)
     {
-        return decoder.readUint64();
+        return decoder.readInt64();
     }
 
     @Override
-    public void encode (Object value, AmqpCoDec encoder)
+    public void encode (Object value, Encoder encoder)
     {
-        encoder.pack64((Long)value);
+    	encoder.writeInt64((Long)value);
     }  
 }

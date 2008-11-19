@@ -40,7 +40,7 @@ import javax.management.RuntimeOperationsException;
 
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.model.type.Binary;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
  * Qpid event definition.
@@ -408,7 +408,7 @@ class QpidEvent extends QpidEntity
      */
     void updateEventInstanceWithData(QpidManagedEvent instance)
     {
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(instance._rawEventData));
 
         for (QpidProperty property : _schemaOrderedArguments)

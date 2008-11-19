@@ -1,116 +1,117 @@
+1)DESCRIPTION
+Q-Man is a Management bridge that exposes one (or several) Qpid broker domain model as MBeans that are accessible through the Java Management Extensions (JMX).
+The following README content could be read also in http://cwiki.apache.org/confluence/display/qpid/Qman+Tool
 
-*** FEATURES INCLUDED ***
+2)HOW TO RUN Q-Man
 
-- Content indication response message ('i') handler;
-- Content indication response message ('c') handler;
-- Schema response ('s') handler;
-- Optional properties management;
-- Properties validation against using constraints defined in the schema (max, min, maxlen);
-- Schema-hash / class-hash management. QMan is able to work with classes having different schema inside the same package.
-- Method invocation (see open issue below for this point) with arguments validation using constraints define in the schema;
-- Graceful shutdown (At shutdown all management clients are shutdown and corresponding resources are released)
-- Connection Pool : for each connected broker you can define (using configuration) a dedicated connecton pool. Properties of connection pool are : max capacity, initial capacity, max wait timeout. If you want for example to open all connections at startup set the initial capacity = max capacity.
-- Each class is responsible to request and build its own schema. So, for example, if a runtime, the remote broker adds a new class and sends instrumentation or configuration data, a corresponding (empty) class definition will be created on QMan; immediately after that, the just created class will request its schema.
+2.1)PREREQUISITES
+QMan is a standalone application that is packaged as qpid-management-client-incubating-M3.jar. To run QMan you need to add the following jars in your CLASSPATH:
 
-*** OPEN POINTS ***
+log4j-1.2.12.jar
+slf4j-api-1.4.0.jar
+slf4j-log4j12-1.4.0.jar
+commons-pool-1.4.jar
+commons-codec-1.3.jar
+commons-lang-2.2.jar
+commons-collections-3.2.jar
+commons-configuration-1.2.jar
+qpid-client-incubating-Mx.jar (were x is the current qpid version)
+qpid-common-incubating-Mx.jar (were x is the current qpid version)
 
-1) Logging should be better : I mean, all messages should be prefixed with an id like <QMAN-xxxxxx>. At the moment not all messages are in this format.
-2) Code used for sending messages should be better (see QpidClass.schemaRequest() and QpidClass.methodRequest());
-3) Overloaded methods : At the moment each method is defined using its name as identifier and that thing doesn't work for overloaded methods...
-4) Default handlers (opcode handlers) must be hard-coded. Only add-on handler must be configurable. At the moment you can add & remove handler using configuration but in this way it's possible to remove the default handlers from the configuration and therefore QMan won't work at all!
-5) Method invocation : there is an echo() method on broker object instance that is throwing an exception while getting the response. It's strange because other method invocations are working (solicitAck(), close(), purge()). I'm working on that...
-5) Return values : are not handled at the moment : command messages must be sent synchronously in order to get the response message and pack the return value(s) in a composite structure used a return object; At the moment the corresponding handler for 'm' message is simply log (debug level) the content of the message, including status text and status code.
-6) It's not clear how to represent events on QMan (Is it useful?)
-7) Offline testcase must be made for all QMan features. There's still a lot of code duplication too :(
-8) Online testcase are missing.
-9) Performance test cases (using something like JPerf) are missing.
-10) ManagementDecoder & ManagementEncoder : I don't like very much those classes. For my opinionthe additional behaviour should be added on the
-corresponding BBDecoder & BBEncoder.
+alternatively you can run the following script (that add all the qpid jars to the CLASSPATH):
 
-*** Configuration file (org.apache.qpid.management.config.xml) ****
+> CLASSPATH=`find <lib-root> -name '*.jar' | tr '\n' ":"`
 
-1) RESPONSE MESSAGE HANDLERS
+Where <lib-root> is the directory containing the qpid jars (when qpid is built from source <lib-root> is equal to qpid/java/build/lib)
 
-An handler is responsible to handle a message response with a specific opcode. You can configure handlers under the /configuration/message-handlers.
-First, you can configure an handler for response messages coming from management queue and / or method-reply queue.
-The first category can be defined under the /configuration/message-handlers/method-reply-queue while the second one under /configuration/message-handlers/management-queue.
-An handler is configured defining two parameters
-
-<opcode>x</opcode> --> the opcode
-<class-name>xxx.xxx.xx.xxx</class-name> --> the implementation class
-
-2) TYPE MAPPINGS
-A type mapping declares a mapping between a code (defined in management specification) and a concrete implementor of org.apache.qpid.management.domain.model.type.Type.
-At the moment concrete implementors are:
-
-org.apache.qpid.management.domain.model.type.AbsTime.java
-org.apache.qpid.management.domain.model.type.Binary.java
-org.apache.qpid.management.domain.model.type.Boolean.java
-org.apache.qpid.management.domain.model.type.DeltaTime.java
-org.apache.qpid.management.domain.model.type.Map.java
-org.apache.qpid.management.domain.model.type.ObjectReference.java
-org.apache.qpid.management.domain.model.type.Str16.java
-org.apache.qpid.management.domain.model.type.Str8.java
-org.apache.qpid.management.domain.model.type.Type.java
-org.apache.qpid.management.domain.model.type.Uint16.java
-org.apache.qpid.management.domain.model.type.Uint32.java
-org.apache.qpid.management.domain.model.type.Uint64.java
-org.apache.qpid.management.domain.model.type.Uint8.java
-org.apache.qpid.management.domain.model.type.Uuid.java
-
-Anyway a type is defined under the /configuration/type-mappings/mapping using specifying properties:
-
-<mapping>
-<code>x</code> --> as defined in the management specification
-<class-name>xx.xxx.xxx.xx.x</class-name> --> a concrete implementor of org.apache.qpid.management.domain.model.type.Type (see above)
-</mapping>
-
-3) ACCESS MODE MAPPINGS
-A mapping between a code and a Access mode as defined on management specification.
-It is configured under /configuration/access-mode-mappings/mapping using these properties :
-
-<mapping>
-<code>x</code> --> as defined in the management specification
-<value>x</class-name> --> RC,RW,RO
-<mapping>
-
-4) BROKERS
-QMan is able to connect with one or more brokers. In order to do that each broker is configured under a dedicated /configuraton/brokers/broker using the following properties :
-
-<broker>
-<host>192.168.148.131</host> --> host name
-<port>5672</port> --> port
-<virtual-host>test</virtual-host> --> virtual host
-<user>pippo</user> --> username
-<password>pluto</password> --> password
-<max-pool-capacity>4</max-pool-capacity> --> connection pool max capacity
-<initial-pool-capacity>4</initial-pool-capacity> --> connetion pool initial capacity
-<max-wait-timeout>-1</max-wait-timeout> --> wait time timeout (-1 stands for forever)
-<broker>
-
-*** DEPENDENCIES ***
-qpid-common-incubating-M4.jar (already part of qpid)
-qpid-client-incubating-M4.jar (already part of qpid)
-slf4j-api-1.4.0.jar (already part of qpid)
-slf4j-log4j12-1.4.0.jar (already part of qpid)
-mina-filter-ssl-1.0.1.jar (already part of qpid)
-mina-core-1.0.1.jar (already part of qpid)
-log4j-1.2.12.jar (already part of qpid)
-commons-pool-1.4.jar (not part of qpid but attached to this post)
-
-
-*** PREREQUISITES ****
-
-You should have in your classpath a log4j.xml configuration file with a category defined as this :
+You should have in your classpath a log4j.xml configuration file too with a category defined as this :
 
 <category name="org.apache.qpid.management">
 <priority value="INFO"/>
 </category>
 
-it should be better if output is redirected to a file using a FileAppender.
+2.2) CONFIGURATION
+QMan can be connected at run time against any broker. However if you wish to automatically connect to one or several brokers you can do so by providing a configuration file as follows:
 
-Now after set the classpath with the mentioned dependencies run :
+<configuration>
+  <brokers>
+	<broker>
+	  <host>localhost</host>
+	  <port>5672</port>
+	  <virtual-host>test</virtual-host>
+	  <user>guest</user>
+	  <password>guest</password>
+	  <max-pool-capacity>4</max-pool-capacity>
+	  <initial-pool-capacity>0</initial-pool-capacity>
+	  <max-wait-timeout>-1</max-wait-timeout>
+	</broker>
+        <broker>
+	  <host>myhost</host>
+	  <port>5672</port>
+	  <virtual-host>test</virtual-host>
+	  <user>guest</user>
+	  <password>guest</password>
+	  <max-pool-capacity>4</max-pool-capacity>
+	  <initial-pool-capacity>0</initial-pool-capacity>
+	  <max-wait-timeout>-1</max-wait-timeout>
+	</broker>
+  </brokers>
+</configuration>
+The configuration above specifies that QMan should connect to two brokers, one on localhos and one on myhost, both listening on port 5672.
+
+The configuration file to use is specified through the JVM parameter "qman-config" that must point onto a valid configuration file.
+
+2.3)RUNNING Q-Man
+
+To run QMan in a console run the following command:
 
 > java -Dcom.sun.management.jmxremote org.apache.qpid.management.domain.services.QMan
 
-If you open the jconsole ($JAVA_HOME/bin/jconsole) you will be able to see (under a Q-MAN domain) all the objects of the connected broker(s) as MBeans.
+Messages similar to those should be displayed:
+
+... [org.apache.qpid.management.domain.services.QMan] <QMAN-000001> : Starting Q-Man...
+...
+Type "q" to quit.
+
+if you wish to use a configuration file <home>/myconfiguration.xml so QMan establishes a connection with one or several brokers, run the following command:
+
+java -Dqman-config="<home>/myconfiguration.xml" org.apache.qpid.management.domain.services.QMan 
+
+
+2.4) STOPPING Q-Man
+Type "q" In the console from which QMan has been started.
+
+3) Browsing Manageable Beans using JConsole
+The jconsole tool (JMX-compliant graphical tool for monitoring a Java virtual machine) can be used for monitoring and QMan Mbeans. for more information see http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html
+
+The jconsole executable can be found in JDK_HOME/bin, where JDK_HOME is the directory in which the JDK software is installed. If this directory is in your system path, you can start JConsole by simply typing jconsole in a console. Otherwise, you have to type the full path to the executable file.
+
+As jconsole needs to perform operations invocation you will need to add the QMan jar in jconsole classpath. In a console type:
+
+jconsole -J-Djava.class.path=$CLASSPATH:$JAVA_HOME/lib/jconsole.jar:$JAVA_HOME/lib/tools.jar
+Where CLASSPATH contains the QMan jars and JAVA_HOME point on your JDK home.
+
+NOte that in order to see QMan JVM on JConsole you need to add the following command line option to QMan launcher : -Dcom.sun.management.jmxremote
+
+4) Deploying Q-Man on JBoss 
+QMan comes with a servlet that can be deployed in any application server. In the following we show how to deploy the qman servlet within JBoss application server.
+
+4.1) PREREQUISITES 
+You mus install JBoss:
+
+- Download the latest stable version from: http://www.jboss.org/jbossas/downloads/
+- Unzip the download archive in <jboss-home>
+
+4.2) Deploying 
+First you need to copy the provided qman.war in <jboss-home>/server/default/deploy/ (note that you can use another server configuration like for example minimal)
+
+Then run JBoss:
+
+Add the following option-Djboss.platform.mbeanserver to JAVA_OPTS (for example: export JAVA_OPTS=-Djboss.platform.mbeanserver)
+Execute <jboss-home>/binrun.sh (or run.bat on a windows platform)
+Notes:
+
+If you wish to configure QMan via a configuration file so QMan establishes a connection with one or several broker at starting time then add the options -Dqman-config=myconfigFile.xml to JAVA_OPTS.
+When Qpid is built form source, the war archive qman.war is located in qpid/java/build/management/client/servlet
+
+Enjoy!

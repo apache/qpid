@@ -150,12 +150,12 @@ public abstract class MethodInvocationRequestMessage extends ManagementMessage
     void specificMessageEncoding ()
     {
         objectId().encode(_codec);
-        _codec.packStr8(packageName());
-        _codec.packStr8(className());
+        _codec.writeStr8(packageName());
+        _codec.writeStr8(className());        
         schemaHash().encode(_codec);
         
         QpidMethod method = method();
-       _codec.packStr8(method.getName());
+        _codec.writeStr8(method.getName());
        method.encodeParameters(parameters(), _codec);
     }
 }

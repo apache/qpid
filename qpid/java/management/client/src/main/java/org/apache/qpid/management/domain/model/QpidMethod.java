@@ -26,8 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.management.messages.AmqpCoDec;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.transport.codec.Encoder;
 
 
 /**
@@ -92,7 +92,7 @@ public class QpidMethod extends QpidFeature
      * @param parameters the parameters values.
      * @param encoder the encoder used for encoding.
      */
-    public void encodeParameters (Object[] parameters, AmqpCoDec encoder) 
+    public void encodeParameters (Object[] parameters, Encoder encoder) 
     {
         int index = 0;
         for (QpidArgument argument : arguments)
@@ -113,7 +113,7 @@ public class QpidMethod extends QpidFeature
      */
     public Map<String, Object> decodeParameters (byte [] values) 
     {
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(values));
         Map<String, Object> result = new HashMap<String, Object>();
         

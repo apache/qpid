@@ -29,7 +29,7 @@ import junit.framework.TestCase;
  * 
  * @author Andrea Gazzarini
  */
-public class BaseDomainModelTestCase extends TestCase
+public abstract class BaseDomainModelTestCase extends TestCase
 {
     /**
      * Set up fixture for this test case.

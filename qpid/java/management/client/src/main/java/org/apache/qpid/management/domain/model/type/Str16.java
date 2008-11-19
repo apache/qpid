@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
-import org.apache.qpid.management.messages.AmqpCoDec;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
+import org.apache.qpid.transport.codec.Encoder;
 
 public class Str16 extends Type
 {
@@ -31,14 +31,14 @@ public class Str16 extends Type
     }
 
     @Override
-    public Object decode (ManagementDecoder decoder)
+    public Object decode (Decoder decoder)
     {
         return decoder.readStr16();
     }
 
     @Override
-    public void encode (Object value, AmqpCoDec encoder)
+    public void encode (Object value, Encoder encoder)
     {
-        encoder.packStr16((String)value);
+    	encoder.writeStr16((String)value);
     }
 }

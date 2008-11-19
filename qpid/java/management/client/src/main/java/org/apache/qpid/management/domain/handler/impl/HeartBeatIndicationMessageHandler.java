@@ -1,7 +1,7 @@
 package org.apache.qpid.management.domain.handler.impl;
 
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 
 /**
  * This is the handler responsible for processing the heartbeat indication response messages.
@@ -11,7 +11,7 @@ import org.apache.qpid.transport.codec.ManagementDecoder;
  */
 public class HeartBeatIndicationMessageHandler extends BaseMessageHandler 
 {
-	public void process(ManagementDecoder decoder, int sequenceNumber) 
+	public void process(Decoder decoder, int sequenceNumber) 
 	{
 		_domainModel.updateLastRefreshDate();
 	}
