@@ -1,8 +1,8 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 685281)
+--- configure.ac	(revision 718931)
 +++ configure.ac	(working copy)
-@@ -64,7 +64,6 @@
+@@ -66,7 +66,6 @@
  	# -Wunreachable-code -Wpadded -Winline
  	# -Wshadow - warns about boost headers.
  	if test "${enableval}" = yes; then
@@ -12,13 +12,14 @@ Index: configure.ac
  	    gl_COMPILER_FLAGS(-Wextra)
 Index: src/Makefile.am
 ===================================================================
---- src/Makefile.am	(revision 685281)
+--- src/Makefile.am	(revision 718931)
 +++ src/Makefile.am	(working copy)
-@@ -1,6 +1,6 @@
- SUBDIRS = . tests
+@@ -37,7 +37,7 @@
+   qpid/broker/windows/BrokerDefaults.cpp \
+   qpid/broker/windows/SaslAuthenticator.cpp
  
--EXTRA_DIST= $(platform_dist) $(rgen_srcs)
-+EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(top_srcdir)/src/boost
+-EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
++EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist) $(top_srcdir)/src/boost
  
  ## Generated code
  
