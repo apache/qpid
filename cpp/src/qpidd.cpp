@@ -23,6 +23,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/Version.h"
 #include "qpid/log/Logger.h"
+#include "qpid/log/Statement.h"
 #include "qpid/sys/Shlib.h"
 
 #include <iostream>
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
         return broker.execute(options.get());
     }
     catch(const exception& e) {
-        cerr << e.what() << endl;
+        QPID_LOG(critical, "Broker start-up failed: " << e.what());
     }
     return 1;
 }
