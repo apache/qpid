@@ -116,9 +116,14 @@ PollerHandle::PollerHandle(const IOHandle& h) :
 {}
 
 PollerHandle::~PollerHandle() {
+    {
     ScopedLock<Mutex> l(impl->lock);
+    if (impl->isDeleted()) {
+    	return;
+    }
     if (impl->isActive()) {
         impl->setDeleted();
+    }
     }
     PollerHandleDeletionManager.markForDeletion(impl);
 }
