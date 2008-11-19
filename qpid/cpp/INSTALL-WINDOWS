@@ -7,20 +7,13 @@ Table of Contents
 
 2. Prerequisites
    2.1. What to Install
-   2.2. How to Install
-      2.2.1. Using Package Management Tools
-      2.2.2. From Source
-	 a. openais
-	 b. boost
-         c. autotools
-   2.3. Important Environment Variable Settings
+   2.2. Important Environment Variable Settings
 
 3. Building from a Source Distribution
 4. Building a Repository Working Copy
-5. Portability
-6. Tests
-7. Doxygen
-8. Troubleshooting
+5. Tests
+6. Doxygen
+7. Troubleshooting
 
 
 1. Introduction
