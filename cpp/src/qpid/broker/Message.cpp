@@ -361,7 +361,9 @@ void Message::allDequeuesComplete() {
 }
 
 void Message::setEnqueueCompleteCallback(MessageCallback& cb) { enqueueCallback = &cb; }
+void Message::resetEnqueueCompleteCallback() { enqueueCallback = 0; }
 
 void Message::setDequeueCompleteCallback(MessageCallback& cb) { dequeueCallback = &cb; }
+void Message::resetDequeueCompleteCallback() { dequeueCallback = 0; }
 
 }} // namespace qpid::broker

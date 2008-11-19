@@ -44,6 +44,7 @@ public:
     typedef Message::MessageCallback CompletionListener;    
 
     IncompleteMessageList();
+    ~IncompleteMessageList();
     
     void add(boost::intrusive_ptr<Message> msg);
     void process(const CompletionListener& l, bool sync);
