@@ -22,8 +22,8 @@ package org.apache.qpid.management.domain.model.type;
 
 import java.util.UUID;
 
-import org.apache.qpid.management.messages.AmqpCoDec;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
+import org.apache.qpid.transport.codec.Encoder;
 
 public class Uuid extends Type
 {
@@ -33,15 +33,14 @@ public class Uuid extends Type
     }
 
     @Override
-    public Object decode (ManagementDecoder decoder)
+    public Object decode (Decoder decoder)
     {
         return decoder.readUuid();
     }
     
     @Override
-    public void encode (Object value, AmqpCoDec encoder)
+    public void encode (Object value, Encoder encoder)
     {
-        throw new RuntimeException("Not yet implemented encode for UUID type.");
-//        encoder.writeUuid((UUID)value);
+    	encoder.writeUuid((UUID)value);
     }    
 }

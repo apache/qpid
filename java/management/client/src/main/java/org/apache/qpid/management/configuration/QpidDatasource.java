@@ -99,7 +99,7 @@ public final class QpidDatasource
 
         public void exception(Throwable t)
         {
-            super.exception(t);
+            //super.exception(t);
             _valid = false;
         }
     }

@@ -74,11 +74,11 @@ public class ConfigurationTest extends TestCase
     {
         try
         {
-            Configuration.getInstance().getType(TestConstants.VALID_CODE+1);
+            Configuration.getInstance().getType(Integer.MIN_VALUE);
             fail("If an unknwon code is supplied an exception must be thrown.");
         } catch (UnknownTypeCodeException expected)
         {
-            assertEquals(TestConstants.VALID_CODE+1,expected.getCode());
+            assertEquals(Integer.MIN_VALUE,expected.getCode());
         }        
     }
     
@@ -107,11 +107,11 @@ public class ConfigurationTest extends TestCase
     {
         try
         {
-            Configuration.getInstance().getAccessMode(TestConstants.VALID_CODE+1);
+            Configuration.getInstance().getAccessMode(Integer.MIN_VALUE);
             fail("If an unknwon code is supplied an exception must be thrown.");
         } catch (UnknownAccessCodeException expected)
         {
-            assertEquals(TestConstants.VALID_CODE+1,expected.getCode());
+            assertEquals(Integer.MIN_VALUE,expected.getCode());
         }        
     }    
     
@@ -199,7 +199,6 @@ public class ConfigurationTest extends TestCase
         
         Map<Character, IMessageHandler> handlerMappings = Configuration.getInstance().getManagementQueueHandlers();
         
-        assertEquals(2,handlerMappings.size());
         assertEquals(instrMessageHandlerClassName,handlerMappings.get(instrMapping.getOpcode()).getClass().getName());
         assertEquals(configMessageHandlerClassName,handlerMappings.get(configMapping.getOpcode()).getClass().getName());        
     }

@@ -27,7 +27,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.qpid.management.domain.model.type.Uint64;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 
 public class OptionalPropertiesTest extends TestCase
 {
@@ -60,7 +60,7 @@ public class OptionalPropertiesTest extends TestCase
         QpidProperty property = new QpidProperty();
         
         // We don't need a decoder so in order to be sure that it won't be invoked set it to null.
-        ManagementDecoder nullDecoder = null;
+        BBDecoder nullDecoder = null;
         
         for (int i = 0; i < 8; i++)
         {
@@ -92,7 +92,7 @@ public class OptionalPropertiesTest extends TestCase
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.putLong(_44);
         buffer.rewind();
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         
         decoder.init(buffer);
         assertEquals(_44,property.decodeValue(decoder, presenceBytes));
@@ -164,7 +164,7 @@ public class OptionalPropertiesTest extends TestCase
             }
         }
         buffer.rewind();
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         
         decoder.init(buffer);
         int index = 0;

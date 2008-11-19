@@ -21,7 +21,7 @@
 package org.apache.qpid.management.domain.handler.base;
 
 import org.apache.qpid.management.domain.model.type.Binary;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 
 /**
  * Base class for content indication message handlers.
@@ -36,7 +36,7 @@ public abstract class ContentIndicationMessageHandler extends BaseMessageHandler
      * @param decoder the decoder used to parse the message.
      * @param sequenceNumber the sequence number of the message.
      */
-    public final void process (ManagementDecoder decoder, int sequenceNumber)
+    public final void process (Decoder decoder, int sequenceNumber)
     {      
         String packageName = decoder.readStr8();
         String className = decoder.readStr8();

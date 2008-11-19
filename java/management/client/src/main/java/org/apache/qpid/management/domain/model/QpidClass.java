@@ -52,7 +52,7 @@ import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -693,7 +693,7 @@ class QpidClass extends QpidEntity
      */
     void updateInstanceWithConfigurationData(QpidManagedObject instance,byte [] rawData)
     {
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
 
         byte [] presenceBitMasks = decoder.readBytes(_howManyPresenceBitMasks);
@@ -716,7 +716,7 @@ class QpidClass extends QpidEntity
      */
     void updateInstanceWithInstrumentationData(QpidManagedObject instance,byte [] rawData)
     {
-        ManagementDecoder decoder = new ManagementDecoder();
+        BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
 
         for (QpidStatistic statistic : _schemaOrderedStatistics)

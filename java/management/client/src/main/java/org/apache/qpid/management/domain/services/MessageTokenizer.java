@@ -9,7 +9,7 @@ import org.apache.qpid.api.Message;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -101,7 +101,7 @@ class MessageTokenizer implements Enumeration<Message>
 		int startIndex = 0;
 		int indexOfMagicNumber = 0;
 		
-		ManagementDecoder decoder = new ManagementDecoder();
+		BBDecoder decoder = new BBDecoder();
 		decoder.init(compoundMessage.readData());
 		byte [] source = decoder.readReaminingBytes();			
 		

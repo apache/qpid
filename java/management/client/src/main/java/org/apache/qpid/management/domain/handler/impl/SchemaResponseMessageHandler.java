@@ -29,7 +29,7 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.BaseMessageHandler;
 import org.apache.qpid.management.domain.model.type.Binary;
-import org.apache.qpid.transport.codec.ManagementDecoder;
+import org.apache.qpid.transport.codec.Decoder;
 
 /**
  * Schema Response message handler.
@@ -52,7 +52,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 		 * 
 		 * @param decoder the decoder used for dealing with incoming message.
 		 */
-		void process(ManagementDecoder decoder);
+		void process(Decoder decoder);
 	}
 	
 	/**
@@ -60,7 +60,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	 */
 	final IProcessor _classSchemaProcessor = new IProcessor()
 	{
-		public void process(ManagementDecoder decoder) 
+		public void process(Decoder decoder) 
 		{
 	        try 
 	        {	        	
@@ -92,7 +92,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
 	 */
 	final IProcessor _eventSchemaProcessor = new IProcessor()
 	{
-		public void process(ManagementDecoder decoder) 
+		public void process(Decoder decoder) 
 		{
 	        try 
 	        {	        
@@ -120,7 +120,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
      *  @param decoder the decoder used for parsing the incoming stream.
      *  @param sequenceNumber the sequence number of the incoming message.
      */
-    public void process (ManagementDecoder decoder, int sequenceNumber)
+    public void process (Decoder decoder, int sequenceNumber)
     {        
         try 
         {
@@ -155,7 +155,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
      * @param howManyProperties the number of properties to read. 
      * @return a list of maps. Each map contains a property definition.
      */
-    List<Map<String, Object>> getAttributes(ManagementDecoder decoder,int howMany) 
+    List<Map<String, Object>> getAttributes(Decoder decoder,int howMany) 
     {
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(howMany);        
         for (int i = 0; i < howMany; i++ )
@@ -172,7 +172,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
      * @param howManyMethods the number of methods to read. 
      * @return a list method definitions.
      */
-    List<MethodOrEventDataTransferObject> getMethods(ManagementDecoder decoder, int howManyMethods)
+    List<MethodOrEventDataTransferObject> getMethods(Decoder decoder, int howManyMethods)
     {
         List<MethodOrEventDataTransferObject> result = new ArrayList<MethodOrEventDataTransferObject>(howManyMethods);
         for (int i  = 0; i < howManyMethods; i++) 
@@ -197,7 +197,7 @@ public class SchemaResponseMessageHandler extends BaseMessageHandler
      * @param howManyEvents the number of events to read. 
      * @return a list event definitions.
      */
-    List<MethodOrEventDataTransferObject> getEvents(ManagementDecoder decoder, int howManyEvents)
+    List<MethodOrEventDataTransferObject> getEvents(Decoder decoder, int howManyEvents)
     {
         List<MethodOrEventDataTransferObject> result = new ArrayList<MethodOrEventDataTransferObject>(howManyEvents);
         for (int i  = 0; i < howManyEvents; i++) 

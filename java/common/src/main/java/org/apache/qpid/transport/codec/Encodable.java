@@ -26,12 +26,19 @@ package org.apache.qpid.transport.codec;
  *
  * @author Rafael H. Schloming
  */
-
 public interface Encodable
 {
+	/**
+	 * Encodes this encodable using the given encoder.
+	 * 
+	 * @param encoder the encoder.
+	 */
+    void write(Encoder encoder);
 
-    void write(Encoder enc);
-
-    void read(Decoder dec);
-
+    /**
+     * Decodes this encodable using the given decoder.
+     * 
+     * @param decoder the decoder.
+     */
+    void read(Decoder decoder);
 }
