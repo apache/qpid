@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Quorum.h"
+#include "Quorum_cman.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Options.h"
 #include "qpid/sys/Time.h"
@@ -30,24 +30,20 @@ Quorum::Quorum() : enable(false), cman(0) {}
 
 Quorum::~Quorum() { if (cman) cman_finish(cman); }
 
-void Quorum::addOption(Options& opts) {
-    opts.addOptions()("cluster-cman", optValue(enable), "Enable integration with CMAN Cluster Manager");
-}
-
 void Quorum::init() {
-    if (enable) {
-        cman = cman_init(0);
-        if (cman == 0) throw ErrnoException("Can't connect to cman service");
-        // FIXME aconway 2008-11-13: configure max wait.
-        for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
-            QPID_LOG(notice, "Waiting for cluster quorum: " << sys::strError(errno));
-            sys::sleep(1);
-        }
-        if (!cman_is_quorate(cman))
-            throw ErrnoException("Timed out waiting for cluster quorum");
+    QPID_LOG(info, "Waiting for cluster quorum");
+    enable = true;
+    cman = cman_init(0);
+    if (cman == 0) throw ErrnoException("Can't connect to cman service");
+    // FIXME aconway 2008-11-13: configure max wait.
+    for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
+        QPID_LOG(info, "Waiting for cluster quorum: " << sys::strError(errno));
+        sys::sleep(1);
     }
+    if (!cman_is_quorate(cman))
+        throw ErrnoException("Timed out waiting for cluster quorum.");
 }
 
-bool Quorum::isQuorate() { return cman_is_quorate(cman); }
+bool Quorum::isQuorate() { return enable ? cman_is_quorate(cman) : true; }
 
 }} // namespace qpid::cluster

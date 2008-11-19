@@ -24,6 +24,7 @@
 #include "NoOpConnectionOutputHandler.h"
 #include "ClusterMap.h"
 #include "FailoverExchange.h"
+#include "Quorum.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/PollableQueue.h"
@@ -66,7 +67,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
      */
-    Cluster(const std::string& name, const Url& url, broker::Broker&);
+    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum);
 
     virtual ~Cluster();
 
@@ -176,7 +177,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void dumpOutDone(Lock&);
 
     void setClusterId(const framing::Uuid&);
-    static bool isQuorateImpl();
 
     mutable sys::Monitor lock;
 
@@ -214,6 +214,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     
     size_t lastSize;
     boost::shared_ptr<FailoverExchange> failoverExchange;
+
+    Quorum quorum;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;
