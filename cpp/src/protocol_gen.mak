@@ -18,18 +18,10 @@ mgmt_specs=$(specdir)\management-schema.xml .\qpid\acl\management-schema.xml
 # To add cluser management, add the next line to mgen_specs:
 #	.\qpid\cluster\management-schema.xml
 
-all: rubygen.mk managementgen.mk qpid\framing\MaxMethodBodySize.h
+all: rubygen.mk gen\generate_MaxMethodBodySize_h.cpp managementgen.mk
 
 rubygen.mk gen\generate_MaxMethodBodySize_h.cpp: $(specs)
   ruby -I $(rgen_dir) $(rgen_dir)\generate gen $(specs) all rubygen.mk
-
-CPPFLAGS = /Od /I. /Igen /I"$(BOOST_ROOT)" /I"$(BOOST_ROOT)/include" /DWIN32 /D_CONSOLE /D_CRT_NONSTDC_NO_WARNINGS /DNOMINMAX /FD /EHsc /RTC1 /MTd /W3 /Zi /TP
-
-generate_MaxMethodBodySize_h.exe: gen/generate_MaxMethodBodySize_h.cpp
-  $(CPP) $(CPPFLAGS) gen/generate_MaxMethodBodySize_h.cpp
-
-qpid\framing\MaxMethodBodySize.h: generate_MaxMethodBodySize_h.exe
-  .\generate_MaxMethodBodySize_h
 
 # Management code generation... uses Python
 
