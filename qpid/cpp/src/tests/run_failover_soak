@@ -1,0 +1,13 @@
+#!/bin/sh
+
+host=127.0.0.1
+
+src_root=..
+module_dir=$src_root/.libs
+n_messages=300000
+report_frequency=10000
+verbosity=1
+
+
+exec `dirname $0`/failover_soak $src_root $module_dir $host ./declare_queues ./replaying_sender ./resuming_receiver $n_messages $report_frequency $verbosity
+
