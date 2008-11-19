@@ -134,6 +134,22 @@ check_PROGRAMS+=header_test
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
 
+check_PROGRAMS+=failover_soak
+failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
+failover_soak_LDADD=$(lib_client) 
+
+check_PROGRAMS+=declare_queues
+declare_queues_SOURCES=declare_queues.cpp  
+declare_queues_LDADD=$(lib_client) 
+
+check_PROGRAMS+=replaying_sender
+replaying_sender_SOURCES=replaying_sender.cpp  
+replaying_sender_LDADD=$(lib_client) 
+
+check_PROGRAMS+=resuming_receiver
+resuming_receiver_SOURCES=resuming_receiver.cpp  
+resuming_receiver_LDADD=$(lib_client) 
+
 check_PROGRAMS+=txshift
 txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
 txshift_LDADD=$(lib_client) 
@@ -153,7 +169,7 @@ sender_LDADD=$(lib_client)
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests 
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -201,7 +217,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
-LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
+LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak
 EXTRA_DIST+=$(LONG_TESTS) run_perftest
 check-long:
 	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=

@@ -59,17 +59,23 @@ class ForkedBroker {
     }
 
     void kill(int sig=SIGINT) {
-        using qpid::ErrnoException;
         if (pid == 0) return;
-        if (::kill(pid, sig) < 0) throw ErrnoException("kill failed");
+        int savePid = pid;      
+        pid = 0;                // Always reset pid, even in case of an exception below. 
+        ::close(pipeFds[1]);
+
+        using qpid::ErrnoException;
+        if (::kill(savePid, sig) < 0) 
+            throw ErrnoException("kill failed");
         int status;
-        if (::waitpid(pid, &status, 0) < 0) throw ErrnoException("wait for forked process failed");
-        if (WEXITSTATUS(status) != 0)
-            throw qpid::Exception(QPID_MSG("forked broker exited with: " << WEXITSTATUS(status)));
-        pid = 0;
+        if (::waitpid(savePid, &status, 0) < 0) 
+            throw ErrnoException("wait for forked process failed");
+        if (WEXITSTATUS(status) != 0) 
+            throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
     }
 
     uint16_t getPort() { return port; }
+    pid_t getPID() { return pid; }
 
   private:
 
@@ -77,7 +83,6 @@ class ForkedBroker {
         using qpid::ErrnoException;
         pid = 0;
         port = 0;
-        int pipeFds[2];
         if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");
         pid = ::fork();
         if (pid < 0) throw ErrnoException("Fork failed");
@@ -104,6 +109,7 @@ class ForkedBroker {
         }
     }
 
+    int pipeFds[2];
     pid_t pid;
     int port;
 };
