@@ -237,7 +237,7 @@ void ManagementBroker::raiseEvent(const ManagementEvent& event, severity_t sever
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
     sendBuffer(outBuffer, outLen, mExchange,
-               "console.event." + event.getPackageName() + "." + event.getEventName());
+               "console.event.1.0." + event.getPackageName() + "." + event.getEventName());
 }
 
 ManagementBroker::Periodic::Periodic (ManagementBroker& _broker, uint32_t _seconds)
@@ -357,13 +357,11 @@ void ManagementBroker::periodicProcessing (void)
 
     moveNewObjectsLH();
 
-    if (clientWasAdded)
-    {
+    if (clientWasAdded) {
         clientWasAdded = false;
         for (ManagementObjectMap::iterator iter = managementObjects.begin ();
              iter != managementObjects.end ();
-             iter++)
-        {
+             iter++) {
             ManagementObject* object = iter->second;
             object->setAllChanged ();
         }
@@ -386,7 +384,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName() + "1.0";
+            routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
@@ -398,7 +396,7 @@ void ManagementBroker::periodicProcessing (void)
 
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
-            routingKey = "console.obj." + object->getPackageName() + "." + object->getClassName() + "1.0";
+            routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
