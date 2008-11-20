@@ -100,6 +100,20 @@ ManagementAgentImpl::~ManagementAgentImpl()
     if (!connThreadBody.isSleeping()) {
         connThread.join();
     }
+
+    // Release the memory associated with stored management objects.
+    {
+        Mutex::ScopedLock lock(agentLock);
+
+        moveNewObjectsLH();
+        for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+             iter != managementObjects.end ();
+             iter++) {
+            ManagementObject* object = iter->second;
+            delete object;
+        }
+        managementObjects.clear();
+    }
 }
 
 void ManagementAgentImpl::init(const string& brokerHost,
