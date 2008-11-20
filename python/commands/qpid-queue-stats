@@ -26,7 +26,7 @@ import re
 import socket
 import qpid
 from threading       import Condition
-from qpid.qmfconsole import Session, Console
+from qmf.console     import Session, Console
 from qpid.peer       import Closed
 from qpid.connection import Connection, ConnectionFailed
 from qpid.util       import connect

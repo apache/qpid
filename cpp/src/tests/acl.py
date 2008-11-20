@@ -24,7 +24,7 @@ from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import uuid4
 from qpid.testlib import TestBase010, testrunner
-from qpid.qmfconsole import Session
+from qmf.console import Session
 from qpid.datatypes import Message
 
 def scan_args(name, default=None, args=sys.argv[1:]):

@@ -22,7 +22,7 @@
 #
 
 import sys, re, unittest, os, random, logging, traceback
-import qpid.client, qpid.spec, qpid.qmfconsole
+import qpid.client, qpid.spec, qmf.console
 import Queue
 from fnmatch import fnmatch
 from getopt import getopt, GetoptError
@@ -364,7 +364,7 @@ class TestBase010(unittest.TestCase):
         self.qmf = None
 
     def startQmf(self):
-        self.qmf = qpid.qmfconsole.Session()
+        self.qmf = qmf.console.Session()
         self.qmf_broker = self.qmf.addBroker(str(testrunner.url))
 
     def connect(self, host=None, port=None):
