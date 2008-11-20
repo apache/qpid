@@ -81,7 +81,7 @@ int main(int argc, char** argv)
         }
 
         if (opts.quit) {
-            async(session).messageTransfer(arg::content=Message("quit", opts.workQueue));            
+            async(session).messageTransfer(arg::content=Message("quit", opts.workQueue));
         }
 
         session.sync();
