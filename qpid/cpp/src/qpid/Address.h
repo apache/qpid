@@ -22,7 +22,7 @@
 #include "qpid/sys/IntegerTypes.h"
 
 #include <boost/variant.hpp>
-#include <ostream>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -31,39 +31,54 @@ namespace qpid {
 /** TCP address of a broker - host:port */
 struct TcpAddress {
     static const uint16_t DEFAULT_PORT=5672;
-    explicit TcpAddress(const std::string& host_=std::string(),
-                        uint16_t port_=DEFAULT_PORT)
-        : host(host_), port(port_) {}
+    explicit TcpAddress(const std::string& host_=std::string(),uint16_t port_=DEFAULT_PORT);
     std::string host;
     uint16_t port;
 };
-
-inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
-    return y.host==x.host && y.port == x.port;
-}
-
+bool operator==(const TcpAddress& x, const TcpAddress& y);
 std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
 
+/**@internal Not a real address type, this is a placeholder to
+ * demonstrate and validate multi-protocol Urls for unit tests and
+ * developer education only. An example address holds just a char.
+ */
+struct ExampleAddress {
+    explicit ExampleAddress(char data);
+    char data;
+};
+bool operator==(const ExampleAddress& x, const ExampleAddress& y);
+std::ostream& operator<<(std::ostream& os, const ExampleAddress& a);
+
 /**
- * Address is a variant of all address types, more coming in future.
- *
- * Address wraps a boost::variant rather than be defined in terms of
- * boost::variant to prevent users from having to deal directly with
- * boost.
+ * Contains the address of an AMQP broker. Can any supported type of
+ * broker address.  Currently only TcpAddress is supported.
  */
 struct Address  {
 public:
     Address(const Address& a) : value(a.value) {}
     Address(const TcpAddress& tcp) : value(tcp) {}
-    template <class T> Address& operator=(const T& t) { value=t; return *this; }
-    template <class T> T* get() { return boost::get<T>(&value); }
-    template <class T> const T* get() const { return boost::get<T>(&value); }
+    Address(const ExampleAddress& eg) : value(eg) {} ///<@internal
+
+    template <class AddressType> Address& operator=(const AddressType& t) { value=t; return *this; }
+
+    /** Get the address of type AddressType.
+     *@return AddressType* pointing to the contained address or 0 if
+     *contained address is not of type AddressType.  
+     */
+    template <class AddressType> AddressType* get() { return boost::get<AddressType>(&value); }
+
+    /** Get the address of type AddressType.
+     *@return AddressType* pointing to the contained address or 0 if
+     *contained address is not of type AddressType.  
+     */
+    template <class AddressType> const AddressType* get() const { return boost::get<AddressType>(&value); }
 
 private:
-    boost::variant<TcpAddress> value;
+    boost::variant<TcpAddress,ExampleAddress> value;
+  friend std::ostream& operator<<(std::ostream& os, const Address& addr);
 };
 
-std::ostream& operator<<(std::ostream& os, const Address& addr);
+
 
 } // namespace qpid
 
