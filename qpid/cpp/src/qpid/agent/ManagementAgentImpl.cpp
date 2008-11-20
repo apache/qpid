@@ -192,6 +192,10 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
     Buffer outBuffer(eventBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
     uint8_t sev = (severity == SEV_DEFAULT) ? event.getSeverity() : (uint8_t) severity;
+    stringstream key;
+
+    key << "console.event." << assignedBrokerBank << "." << assignedAgentBank << "." <<
+        event.getPackageName() << "." << event.getEventName();
 
     encodeHeader(outBuffer, 'e');
     outBuffer.putShortString(event.getPackageName());
@@ -202,8 +206,7 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
     event.encode(outBuffer);
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management",
-                              "console.event." + event.getPackageName() + "." + event.getEventName());
+    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", key.str());
 }
 
 uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
@@ -684,6 +687,10 @@ void ManagementAgentImpl::periodicProcessing()
 
     moveNewObjectsLH();
 
+    if (debugLevel >= DEBUG_PUBLISH) {
+        cout << "Objects managed: " << managementObjects.size() << endl;
+    }
+
     if (clientWasAdded) {
         clientWasAdded = false;
         for (ManagementObjectMap::iterator iter = managementObjects.begin();
@@ -752,10 +759,14 @@ void ManagementAgentImpl::periodicProcessing()
         if (contentSize > 0) {
             msgBuffer.reset();
             stringstream key;
-            key << "console.obj." << baseObject->getPackageName() << "." << baseObject->getClassName() << "." <<
-                assignedBrokerBank << "." << assignedAgentBank;
+            key << "console.obj." << assignedBrokerBank << "." << assignedAgentBank << "." <<
+                baseObject->getPackageName() << "." << baseObject->getClassName();
             connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
         }
+    }
+
+    if (debugLevel >= DEBUG_PUBLISH && !deleteList.empty()) {
+        cout << "Deleting " << deleteList.size() << " objects" << endl;
     }
 
     // Delete flagged objects
@@ -798,6 +809,8 @@ void ManagementAgentImpl::ConnectionThread::run()
                     cout << "    Connection established" << endl;
                 {
                     Mutex::ScopedLock _lock(connLock);
+                    if (shutdown)
+                        return;
                     operational = true;
                     agent.startProtocol();
                     try {
@@ -809,12 +822,12 @@ void ManagementAgentImpl::ConnectionThread::run()
                         cout << "QMF Agent connection has been lost" << endl;
 
                     operational = false;
+                    agent.connected = false;
                 }
                 delay = delayMin;
+                connection.close();
                 delete subscriptions;
                 subscriptions = 0;
-                session.close();
-                connection.close();
             }
         } catch (exception &e) {
             if (delay < delayMax)

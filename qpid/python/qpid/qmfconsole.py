@@ -224,7 +224,7 @@ class Session:
       raise Exception("userBindings option not set for Session")
     for broker in self.brokers:
       broker.amqpSession.exchange_bind(exchange="qpid.management", queue=broker.topicName,
-                                       binding_key="console.obj.%s.#" % packageName)
+                                       binding_key="console.obj.*.*.%s.#" % packageName)
 
   def bindClass(self, classKey):
     """ """
@@ -233,7 +233,7 @@ class Session:
     pname, cname, hash = classKey
     for broker in self.brokers:
       broker.amqpSession.exchange_bind(exchange="qpid.management", queue=broker.topicName,
-                                       binding_key="console.obj.%s.%s.#" % (pname, cname))
+                                       binding_key="console.obj.*.*.%s.%s.#" % (pname, cname))
 
   def getAgents(self, broker=None):
     """ Get a list of currently known agents """
@@ -370,7 +370,7 @@ class Session:
       if self.rcvObjects and not self.userBindings:
         keyList.append("console.obj.#")
       else:
-        keyList.append("console.obj.org.apache.qpid.broker.agent")
+        keyList.append("console.obj.*.*.org.apache.qpid.broker.agent")
       if self.rcvEvents:
         keyList.append("console.event.#")
       if self.rcvHeartbeats:
