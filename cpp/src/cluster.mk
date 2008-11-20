@@ -1,12 +1,17 @@
 #
 # Cluster library makefile fragment, to be included in Makefile.am
 # 
+
 # Optional CMAN support
+
+# Distribute all sources.
+EXTRA_DIST += qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp qpid/cluster/Quorum_null.h
+
 if HAVE_LIBCMAN
-CMAN_SOURCES= qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp
+CMAN_SOURCES = qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp
 libcman = -lcman
 else
-CMAN_SOURCES= qpid/cluster/Quorum_null.h
+CMAN_SOURCES = qpid/cluster/Quorum_null.h
 endif
 
 if HAVE_LIBCPG
@@ -39,7 +44,8 @@ cluster_la_SOURCES = \
   qpid/cluster/ClusterMap.h \
   qpid/cluster/ClusterMap.cpp \
   qpid/cluster/FailoverExchange.h \
-  qpid/cluster/FailoverExchange.cpp
+  qpid/cluster/FailoverExchange.cpp \
+  qpid/cluster/Quorum.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
