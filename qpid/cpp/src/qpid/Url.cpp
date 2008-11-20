@@ -22,22 +22,12 @@
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/StrError.h"
 
-#include <limits.h>             // NB: must be before boost/spirit headers.
-#define BOOST_SPIRIT_THREADSAFE
-
-#include <boost/spirit.hpp>
-#include <boost/spirit/actor.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <sstream>
-#include <map>
 #include <algorithm>
-#include <limits>
 
-#include <stdio.h>
-#include <errno.h>
+#include <string.h>
 
-using namespace boost::spirit;
 using namespace std;
 using boost::lexical_cast;
 
@@ -191,63 +181,6 @@ class UrlParser {
 };
 
 const string UrlParser::LOCALHOST("127.0.0.1");
-
-// Addition to boost::spirit parsers: accept any character from a
-// string. Vastly more compile-time-efficient than long rules of the
-// form: ch_p('x') | ch_p('y') |...
-// 
-struct ch_in : public char_parser<ch_in> {
-    ch_in(const string& chars_) : chars(chars_) {}
-    bool test(char ch_) const {
-        return chars.find(ch_) != string::npos;
-    }
-    string chars;
-};
-
-inline ch_in ch_in_p(const string& chars) {
-    return ch_in(chars);
-}
-
-/** Grammar for AMQP URLs. */
-struct UrlGrammar : public grammar<UrlGrammar>
-{
-    Url& addr;
-    
-    UrlGrammar(Url& addr_) : addr(addr_) {}
-
-    template <class ScannerT>
-    struct definition {
-        TcpAddress tcp;
-
-        definition(const UrlGrammar& self)
-        {
-            first = eps_p[clear_a(self.addr)] >> amqp_url;
-            amqp_url = str_p("amqp:") >> prot_addr_list >>
-                !(str_p("/") >> !parameters);
-            prot_addr_list = prot_addr % ',';            
-            prot_addr      = tcp_prot_addr; // Extend for TLS etc.
-
-            // TCP addresses
-            tcp_prot_addr  = tcp_id >> tcp_addr[push_back_a(self.addr, tcp)];
-            tcp_id         = !str_p("tcp:"); 
-            tcp_addr       = !(host[assign_a(tcp.host)] >> !(':' >> port));
-            
-            // See http://www.apps.ietf.org/rfc/rfc3986.html#sec-A
-            // for real host grammar. Shortcut:
-            port           = uint_parser<uint16_t>()[assign_a(tcp.port)];
-            host           = *( unreserved | pct_encoded );
-            unreserved    = alnum_p | ch_in_p("-._~");
-            pct_encoded   = "%" >> xdigit_p >> xdigit_p;
-            parameters = *anychar_p >> end_p; // Ignore, not used yet.
-        }
-
-        const rule<ScannerT>& start() const { return first; }
-
-        rule<ScannerT> first, amqp_url, prot_addr_list, prot_addr,
-            tcp_prot_addr, tcp_id, tcp_addr, host, port,
-            unreserved, pct_encoded, parameters;
-    };
-};
 
 void Url::parse(const char* url) {
     parseNoThrow(url);
