@@ -40,9 +40,7 @@ struct Url : public std::vector<Address> {
      * on a multi-homed host. */
     static Url getIpAddressesUrl(uint16_t port);
 
-    struct InvalidUrl : public Exception {
-        InvalidUrl(const std::string& s) : Exception(s) {}
-    };
+    struct Invalid : public Exception { Invalid(const std::string& s); };
 
     /** Convert to string form. */
     std::string str() const;
@@ -53,22 +51,22 @@ struct Url : public std::vector<Address> {
     /** URL containing a single address */
     explicit Url(const Address& addr) { push_back(addr); }
 
-    /** Parse url, throw InvalidUrl if invalid. */
+    /** Parse url, throw Invalid if invalid. */
     explicit Url(const std::string& url) { parse(url.c_str()); }
 
-    /** Parse url, throw InvalidUrl if invalid. */
+    /** Parse url, throw Invalid if invalid. */
     explicit Url(const char* url) { parse(url); }
 
     Url& operator=(const Url& u) { this->std::vector<Address>::operator=(u); cache=u.cache; return *this; }
     Url& operator=(const char* s) { parse(s); return *this; }
     Url& operator=(const std::string& s) { parse(s); return *this; }
     
-    /** Throw InvalidUrl if the URL does not contain any addresses. */
+    /** Throw Invalid if the URL does not contain any addresses. */
     void throwIfEmpty() const;
 
     /** Replace contents with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
-     *@exception InvalidUrl if the url is invalid.
+     *@exception Invalid if the url is invalid.
      */
     void parse(const char* url);
     void parse(const std::string& url) { parse(url.c_str()); }
