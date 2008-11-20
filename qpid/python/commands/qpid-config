@@ -23,7 +23,7 @@ import os
 import getopt
 import sys
 import locale
-from qpid import qmfconsole
+from qmf.console import Session
 
 _recursive         = False
 _host              = "localhost"
@@ -93,7 +93,7 @@ class BrokerManager:
 
     def SetBroker (self, brokerUrl):
         self.url = brokerUrl
-        self.qmf = qmfconsole.Session()
+        self.qmf = Session()
         self.broker = self.qmf.addBroker(brokerUrl)
 
     def Disconnect(self):

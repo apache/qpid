@@ -24,7 +24,7 @@ import sys
 import socket
 import os
 import locale
-from qpid import qmfconsole
+from qmf.console import Session, BrokerURL
 
 def Usage():
     print "Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]"
@@ -65,9 +65,9 @@ _transport = "tcp"
 
 class RouteManager:
     def __init__(self, localBroker):
-        self.local = qmfconsole.BrokerURL(localBroker)
+        self.local = BrokerURL(localBroker)
         self.remote  = None
-        self.qmf = qmfconsole.Session()
+        self.qmf = Session()
         self.broker = self.qmf.addBroker(localBroker)
 
     def disconnect(self):
@@ -81,7 +81,7 @@ class RouteManager:
         return None
 
     def addLink(self, remoteBroker):
-        self.remote = qmfconsole.BrokerURL(remoteBroker)
+        self.remote = BrokerURL(remoteBroker)
         if self.local.match(self.remote.host, self.remote.port):
             raise Exception("Linking broker to itself is not permitted")
 
@@ -100,7 +100,7 @@ class RouteManager:
                 print "Connect method returned:", res.status, res.text
 
     def delLink(self, remoteBroker):
-        self.remote = qmfconsole.BrokerURL(remoteBroker)
+        self.remote = BrokerURL(remoteBroker)
         brokers = self.qmf.getObjects(_class="broker")
         broker = brokers[0]
         link = self.getLink()
@@ -137,7 +137,7 @@ class RouteManager:
             added = False
             links = qmf.getObjects(_class="link")
             for link in links:
-                url = qmfconsole.BrokerURL("%s:%d" % (link.host, link.port))
+                url = BrokerURL("%s:%d" % (link.host, link.port))
                 if url.name() not in brokerList:
                     print "    %s..." % url.name(),
                     try:
@@ -263,7 +263,7 @@ class RouteManager:
             print "Bridge method returned:", res.status, res.text
 
     def delQueueRoute(self, remoteBroker, exchange, queue):
-        self.remote = qmfconsole.BrokerURL(remoteBroker)
+        self.remote = BrokerURL(remoteBroker)
         link = self.getLink()
         if link == None:
             if not _quiet:
@@ -293,7 +293,7 @@ class RouteManager:
             raise Exception("Route not found")
 
     def delRoute(self, remoteBroker, exchange, routingKey, dynamic=False):
-        self.remote = qmfconsole.BrokerURL(remoteBroker)
+        self.remote = BrokerURL(remoteBroker)
         link = self.getLink()
         if link == None:
             if not _quiet:

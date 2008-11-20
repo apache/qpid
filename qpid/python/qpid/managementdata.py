@@ -21,7 +21,7 @@
 
 
 ###############################################################################
-## This file is being obsoleted by qpid/qmfconsole.py
+## This file is being obsoleted by qmf/console.py
 ###############################################################################
 
 import qpid
