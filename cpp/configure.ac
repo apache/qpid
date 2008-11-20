@@ -163,9 +163,6 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Link with whichever variant of libboost_thread is available.
-AC_SEARCH_LIBS([_ZN5boost6thread4joinEv],[boost_thread-mt boost_thread],,[AC_MSG_ERROR([No boost thread library found])])
-
 # Check for optional cluster requirements.
 tmp_LIBS=$LIBS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
