@@ -125,7 +125,7 @@ class UrlParser {
 
     bool pctEncoded() { return literal("%") && hexDigit() && hexDigit(); }
 
-    bool hexDigit() { return ::strchr("01234567890abcdefABCDEF", *i) && advance(); }
+    bool hexDigit() { return i < end && ::strchr("01234567890abcdefABCDEF", *i) && advance(); }
     
     bool port(uint16_t& p) { return decimalInt(p); }
 
@@ -133,12 +133,15 @@ class UrlParser {
     
     template <class IntType> bool decimalInt(IntType& n) {
         const char* start = i;
-        while (::isdigit(*i)) ++i;
+        while (decDigit())
+            ;
         try {
             n = lexical_cast<IntType>(string(start, i)); 
             return true;
         } catch(...) { return false; }
     }
+
+    bool decDigit() { return i < end && ::isdigit(*i) && advance(); }
 
     bool literal(const char* s) {
         int n = ::strlen(s);
