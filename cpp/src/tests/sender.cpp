@@ -39,14 +39,14 @@ struct Args : public qpid::TestOptions
 {
     string destination;
     string key;
-    bool sendEos;
+    uint sendEos;
 
-    Args() : key("test-queue"), sendEos(false)
+    Args() : key("test-queue"), sendEos(0)
     {
         addOptions()            
             ("exchange", qpid::optValue(destination, "EXCHANGE"), "Exchange to send messages to")
             ("routing-key", qpid::optValue(key, "KEY"), "Routing key to add to messages")
-            ("send-eos", qpid::optValue(sendEos), "Send EOS message to mark end of input");
+            ("send-eos", qpid::optValue(sendEos, "N"), "Send N EOS messages to mark end of input");
     }
 };
 
@@ -55,16 +55,16 @@ const string EOS("eos");
 class Sender : public FailoverManager::Command
 {
   public:
-    Sender(const std::string& destination, const std::string& key, bool sendEos);
+    Sender(const std::string& destination, const std::string& key, uint sendEos);
     void execute(AsyncSession& session, bool isRetry);
   private:
     MessageReplayTracker sender;
     Message message;  
-    const bool sendEos;
+    const uint sendEos;
     uint sent;
 };
 
-Sender::Sender(const std::string& destination, const std::string& key, bool eos) : 
+Sender::Sender(const std::string& destination, const std::string& key, uint eos) : 
     sender(10), message(destination, key), sendEos(eos), sent(0) {}
 
 void Sender::execute(AsyncSession& session, bool isRetry)
@@ -77,7 +77,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         message.getHeaders().setInt("sn", ++sent);
         sender.send(message);
     }
-    if (sendEos) {
+    for (uint i = sendEos; i > 0; --i) {
         message.setData(EOS);
         sender.send(message);
     }
