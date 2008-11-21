@@ -20,9 +20,9 @@
 #
 import sys
 import os
-from qmf.schema   import SchemaPackage, SchemaClass
-from qmf.generate import Generator
-from optparse     import OptionParser
+from qmfgen.schema   import SchemaPackage, SchemaClass
+from qmfgen.generate import Generator
+from optparse        import OptionParser
 
 dataPath = os.path.dirname(Generator.getModulePath())
 defaultTypeFile    = dataPath + "/management-types.xml"

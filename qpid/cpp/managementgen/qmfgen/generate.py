@@ -109,9 +109,9 @@ class Makefile:
     mdir = variables["mgenDir"]
     sdir = variables["specDir"]
     stream.write (mdir + "/qmf-gen \\\n")
-    stream.write ("    " + mdir + "/qmf/generate.py \\\n")
-    stream.write ("    " + mdir + "/qmf/schema.py \\\n")
-    stream.write ("    " + mdir + "/qmf/management-types.xml \\\n")
+    stream.write ("    " + mdir + "/qmfgen/generate.py \\\n")
+    stream.write ("    " + mdir + "/qmfgen/schema.py \\\n")
+    stream.write ("    " + mdir + "/qmfgen/management-types.xml \\\n")
     stream.write ("    " + sdir + "/management-schema.xml \\\n")
     first = True
     for template in self.templateFiles:
@@ -120,7 +120,7 @@ class Makefile:
         stream.write ("    ")
       else:
         stream.write (" \\\n    ")
-      stream.write (mdir + "/qmf/templates/" + template)
+      stream.write (mdir + "/qmfgen/templates/" + template)
 
   def genGenCppFiles (self, stream, variables):
     first = True

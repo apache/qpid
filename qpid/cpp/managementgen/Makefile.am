@@ -2,17 +2,17 @@ qmfpythondir = $(pythondir)
 dist_bin_SCRIPTS = \
 	qmf-gen
 nobase_qmfpython_DATA = \
-	qmf/__init__.py \
-	qmf/generate.py \
-	qmf/schema.py \
-	qmf/templates/Args.h \
-	qmf/templates/Class.cpp \
-	qmf/templates/Class.h \
-	qmf/templates/Event.cpp \
-	qmf/templates/Event.h \
-	qmf/templates/Makefile.mk \
-	qmf/templates/Package.cpp \
-	qmf/templates/Package.h \
-	qmf/management-types.xml
+	qmfgen/__init__.py \
+	qmfgen/generate.py \
+	qmfgen/schema.py \
+	qmfgen/templates/Args.h \
+	qmfgen/templates/Class.cpp \
+	qmfgen/templates/Class.h \
+	qmfgen/templates/Event.cpp \
+	qmfgen/templates/Event.h \
+	qmfgen/templates/Makefile.mk \
+	qmfgen/templates/Package.cpp \
+	qmfgen/templates/Package.h \
+	qmfgen/management-types.xml
 
 EXTRA_DIST = $(nobase_qmfpython_DATA)
