@@ -30,6 +30,7 @@ import javax.jms.Session;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.thread.Threading;
 
 /**
  * Test Description
@@ -131,8 +132,23 @@ public class ResourceLeakTest extends BaseTest
 
     public static void main(String[] args)
     {
-        ResourceLeakTest test = new ResourceLeakTest();
-        test.test();
+        final ResourceLeakTest test = new ResourceLeakTest();
+        Runnable r = new Runnable(){    
+            public void run()
+            {
+                test.test();
+            }
+        };    
+        
+        Thread t;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating test thread",e);
+        }
     }
 
 }

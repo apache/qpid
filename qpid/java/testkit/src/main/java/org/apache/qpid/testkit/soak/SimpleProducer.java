@@ -33,6 +33,7 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.thread.Threading;
 
 /**
  * Test Description
@@ -138,9 +139,24 @@ public class SimpleProducer extends BaseTest
 
     public static void main(String[] args)
     {
-        SimpleProducer test = new SimpleProducer();
-        test.setUp();
-        test.test();
+        final SimpleProducer test = new SimpleProducer();
+        Runnable r = new Runnable(){    
+            public void run()
+            {
+                test.setUp();
+                test.test();
+            }
+        };    
+        
+        Thread t;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating producer thread",e);
+        }
     }
 
 }
