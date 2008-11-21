@@ -27,6 +27,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 
 import org.apache.qpid.testkit.MessageFactory;
+import org.apache.qpid.thread.Threading;
 
 /**
  * PerfProducer sends an x no of messages in warmup mode and wait for a confirmation
@@ -201,7 +202,24 @@ public class PerfProducer extends PerfBase
 
     public static void main(String[] args)
     {
-        PerfProducer prod = new PerfProducer();
-        prod.test();
+        final PerfProducer prod = new PerfProducer();
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                prod.test();
+            }
+        };
+        
+        Thread t;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating producer thread",e);
+        }
+        t.start();            
     }
 }

@@ -29,6 +29,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.thread.Threading;
+
 /**
  * Test Description
  * ================
@@ -126,9 +128,24 @@ public class SimpleConsumer extends BaseTest
 
     public static void main(String[] args)
     {
-        SimpleConsumer test = new SimpleConsumer();
-        test.setUp();
-        test.test();
+        final SimpleConsumer test = new SimpleConsumer();
+        Runnable r = new Runnable(){    
+            public void run()
+            {
+                test.setUp();
+                test.test();
+            }
+        };    
+        
+        Thread t;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating consumer thread",e);
+        }
     }
 
 }
