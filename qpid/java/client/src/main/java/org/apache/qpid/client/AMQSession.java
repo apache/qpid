@@ -67,26 +67,16 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.CloseConsumerMessage;
-import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -281,8 +271,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /** Holds the dispatcher thread for this session. */
     protected Dispatcher _dispatcher;
-    
-    protected Thread _dispatcherThread;
 
     /** Holds the message factory factory for this session. */
     protected MessageFactoryRegistry _messageFactoryRegistry;
@@ -680,7 +668,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             if (_dispatcher != null)
             {
                 // Failover failed and ain't coming back. Knife the dispatcher.
-                _dispatcherThread.interrupt();
+                _dispatcher.interrupt();
             }
         }
 
@@ -1864,7 +1852,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     void startDispatcherIfNecessary()
     {
         //If we are the dispatcher then we don't need to check we are started
-        if (Thread.currentThread() == _dispatcherThread)
+        if (Thread.currentThread() == _dispatcher)
         {
             return;
         }
@@ -1895,23 +1883,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         if (_dispatcher == null)
         {
             _dispatcher = new Dispatcher();
-            try
-            {
-                _dispatcherThread = Threading.getThreadFactory().createThread(_dispatcher);       
-                
-            }
-            catch(Exception e)
-            {
-                throw new Error("Error creating Dispatcher thread",e);
-            }            
-            _dispatcherThread.setName("Dispatcher-Channel-" + _channelId);
-            _dispatcherThread.setDaemon(true);
+            _dispatcher.setDaemon(true);
             _dispatcher.setConnectionStopped(initiallyStopped);
-            _dispatcherThread.start();
-            if (_dispatcherLogger.isInfoEnabled())
-            {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " created");
-            }
+            _dispatcher.start();
         }
         else
         {
@@ -2632,7 +2606,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private static final Logger _dispatcherLogger = LoggerFactory.getLogger("org.apache.qpid.client.AMQSession.Dispatcher");
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
-    class Dispatcher implements Runnable
+    class Dispatcher extends Thread
     {
 
         /** Track the 'stopped' state of the dispatcher, a session starts in the stopped state. */
@@ -2641,14 +2615,21 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         private final Object _lock = new Object();
         private String dispatcherID = "" + System.identityHashCode(this);
 
+
+
         public Dispatcher()
         {
+            super("Dispatcher-Channel-" + _channelId);
+            if (_dispatcherLogger.isInfoEnabled())
+            {
+                _dispatcherLogger.info(getName() + " created");
+            }
         }
 
         public void close()
         {
             _closed.set(true);
-            _dispatcherThread.interrupt();
+            interrupt();
 
             // fixme awaitTermination
 
@@ -2727,7 +2708,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             if (_dispatcherLogger.isInfoEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " started");
+                _dispatcherLogger.info(getName() + " started");
             }
 
             UnprocessedMessage message;
@@ -2790,7 +2771,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             if (_dispatcherLogger.isInfoEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId);
+                _dispatcherLogger.info(getName() + " thread terminating for channel " + _channelId);
             }
         }
 

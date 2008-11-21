@@ -37,7 +37,6 @@ import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.testkit.MessageFactory;
-import org.apache.qpid.thread.Threading;
 
 /**
  * Latency test sends an x number of messages in warmup mode and wait for a confirmation
@@ -315,36 +314,19 @@ public class LatencyTest extends PerfBase implements MessageListener
 
     public static void main(String[] args)
     {
-        final LatencyTest latencyTest = new LatencyTest();        
-        Runnable r = new Runnable()
+        LatencyTest latencyTest = new LatencyTest();
+        latencyTest.test();
+        latencyTest.printToConsole();
+        if (System.getProperty("file") != null)
         {
-            public void run()
+            try
             {
-                latencyTest.test();
-                latencyTest.printToConsole();
-                if (System.getProperty("file") != null)
-                {
-                    try
-                    {
-                        latencyTest.writeToFile();
-                    }
-                    catch(Exception e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
+                latencyTest.writeToFile();
             }
-        };
-        
-        Thread t;
-        try
-        {
-            t = Threading.getThreadFactory().createThread(r);                      
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
         }
-        catch(Exception e)
-        {
-            throw new Error("Error creating latency test thread",e);
-        }
-        t.start(); 
     }
 }
