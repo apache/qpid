@@ -32,7 +32,6 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.thread.Threading;
 
 /**
  * Test Description
@@ -80,7 +79,7 @@ public class MultiThreadedProducer extends SimpleProducer
             for (int i = 0; i < session_count; i++)
             {
                 final Session session = con.createSession(transacted, Session.AUTO_ACKNOWLEDGE);
-                Runnable r = new Runnable()
+                Thread t = new Thread(new Runnable()
                 {
                     private Random gen = new Random();
 
@@ -143,16 +142,7 @@ public class MultiThreadedProducer extends SimpleProducer
 
                     }
 
-                };
-                Thread t;
-                try
-                {
-                    t = Threading.getThreadFactory().createThread(r);                      
-                }
-                catch(Exception e)
-                {
-                    throw new Error("Error creating producer thread",e);
-                }
+                });
                 t.setName("session-" + i);
                 t.start();
 
