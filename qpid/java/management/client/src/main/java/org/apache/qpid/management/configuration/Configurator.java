@@ -139,7 +139,8 @@ public class Configurator extends DefaultHandler
 	                InputSource source = new InputSource(reader);
 	                parser.parse(source, this);        		
         		} else {
-        			LOGGER.warn(Messages.QMAN_300004_UNVALID_CONFIGURATION_FILE, initialConfigFileName);
+        			LOGGER.warn(Messages.QMAN_300004_INVALID_CONFIGURATION_FILE, initialConfigFileName);
+        			throw new ConfigurationException(String.format(Messages.QMAN_300004_INVALID_CONFIGURATION_FILE, initialConfigFileName));
         		}
         	}
             
