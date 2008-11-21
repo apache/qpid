@@ -163,7 +163,7 @@ void ManagementObject::writeTimestamps (framing::Buffer& buf)
     buf.putShortString (getPackageName ());
     buf.putShortString (getClassName ());
     buf.putBin128      (getMd5Sum ());
-    buf.putLongLong    (uint64_t (sys::Duration (sys::now ())));
+    buf.putLongLong    (updateTime);
     buf.putLongLong    (createTime);
     buf.putLongLong    (destroyTime);
     objectId.encode(buf);
