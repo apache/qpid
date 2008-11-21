@@ -344,17 +344,6 @@ void ManagementBroker::periodicProcessing (void)
     string              routingKey;
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
-    {
-        Buffer msgBuffer(msgChars, BUFSIZE);
-        encodeHeader(msgBuffer, 'h');
-        msgBuffer.putLongLong(uint64_t(Duration(now())));
-
-        contentSize = BUFSIZE - msgBuffer.available ();
-        msgBuffer.reset ();
-        routingKey = "console.heartbeat.1.0";
-        sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
-    }
-
     moveNewObjectsLH();
 
     if (clientWasAdded) {
@@ -367,9 +356,6 @@ void ManagementBroker::periodicProcessing (void)
         }
     }
 
-    if (managementObjects.empty ())
-        return;
-        
     for (ManagementObjectMap::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
          iter++)
@@ -415,6 +401,17 @@ void ManagementBroker::periodicProcessing (void)
     if (!deleteList.empty()) {
         deleteList.clear();
         deleteOrphanedAgentsLH();
+    }
+
+    {
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        encodeHeader(msgBuffer, 'h');
+        msgBuffer.putLongLong(uint64_t(Duration(now())));
+
+        contentSize = BUFSIZE - msgBuffer.available ();
+        msgBuffer.reset ();
+        routingKey = "console.heartbeat.1.0";
+        sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
     }
 }
 

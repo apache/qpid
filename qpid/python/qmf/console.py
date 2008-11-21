@@ -340,7 +340,7 @@ class Session:
         self.cv.release()
       broker._setHeader(sendCodec, 'G', seq)
       sendCodec.write_map(map)
-      smsg = broker._message(sendCodec.encoded, "agent.%s" % agent.bank)
+      smsg = broker._message(sendCodec.encoded, "agent.%d.%d" % (agent.brokerBank, agent.agentBank))
       broker._send(smsg)
 
     starttime = time()
@@ -507,7 +507,7 @@ class Session:
 
     agent = broker.getAgent(brokerBank, agentBank)
     timestamp = codec.read_uint64()
-    if self.console != None:
+    if self.console != None and agent != None:
       self.console.heartbeat(agent, timestamp)
 
   def _handleEventInd(self, broker, codec, seq):
@@ -1135,7 +1135,7 @@ class Broker:
     self.authPass = authPass
     self.topicCredits = topicCredits
     self.agents = {}
-    self.agents["1.0"] = Agent(self, "1.0", "BrokerAgent")
+    self.agents[(1,0)] = Agent(self, 0, "BrokerAgent")
     self.topicBound = False
     self.cv = Condition()
     self.syncInFlight = False
@@ -1162,7 +1162,7 @@ class Broker:
     return 1
 
   def getAgent(self, brokerBank, agentBank):
-    bankKey = "%d.%d" % (brokerBank, agentBank)
+    bankKey = (brokerBank, agentBank)
     if bankKey in self.agents:
       return self.agents[bankKey]
     return None
@@ -1250,10 +1250,10 @@ class Broker:
       self.error = "Connect Failed %d - %s" % (e[0], e[1])
 
   def _updateAgent(self, obj):
-    bankKey = "%d.%d" % (obj.brokerBank, obj.agentBank)
+    bankKey = (obj.brokerBank, obj.agentBank)
     if obj._deleteTime == 0:
       if bankKey not in self.agents:
-        agent = Agent(self, bankKey, obj.label)
+        agent = Agent(self, obj.agentBank, obj.label)
         self.agents[bankKey] = agent
         if self.session.console != None:
           self.session.console.newAgent(agent)
@@ -1377,19 +1377,23 @@ class Broker:
 
 class Agent:
   """ """
-  def __init__(self, broker, bank, label):
+  def __init__(self, broker, agentBank, label):
     self.broker = broker
-    self.bank   = bank
-    self.label  = label
+    self.brokerBank = broker.getBrokerBank()
+    self.agentBank = agentBank
+    self.label = label
 
   def __repr__(self):
-    return "Agent at bank %s (%s)" % (self.bank, self.label)
+    return "Agent at bank %d.%d (%s)" % (self.brokerBank, self.agentBank, self.label)
 
   def getBroker(self):
     return self.broker
 
+  def getBrokerBank(self):
+    return self.brokerBank
+
   def getAgentBank(self):
-    return self.bank
+    return self.agentBank
 
 class Event:
   """ """
