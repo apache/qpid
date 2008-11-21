@@ -687,18 +687,6 @@ void ManagementAgentImpl::periodicProcessing()
     if (!connected)
         return;
 
-    {
-        Buffer msgBuffer(msgChars, BUFSIZE);
-        encodeHeader(msgBuffer, 'h');
-        msgBuffer.putLongLong(uint64_t(Duration(now())));
-        stringstream key;
-        key << "console.heartbeat." << assignedBrokerBank << "." << assignedAgentBank;
-
-        contentSize = BUFSIZE - msgBuffer.available();
-        msgBuffer.reset();
-        connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
-    }
-
     moveNewObjectsLH();
 
     if (debugLevel >= DEBUG_PUBLISH) {
@@ -714,9 +702,6 @@ void ManagementAgentImpl::periodicProcessing()
             object->setAllChanged();
         }
     }
-
-    if (managementObjects.empty())
-        return;
 
     //
     //  Clear the been-here flag on all objects in the map.
@@ -792,6 +777,18 @@ void ManagementAgentImpl::periodicProcessing()
     }
 
     deleteList.clear();
+
+    {
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        encodeHeader(msgBuffer, 'h');
+        msgBuffer.putLongLong(uint64_t(Duration(now())));
+        stringstream key;
+        key << "console.heartbeat." << assignedBrokerBank << "." << assignedAgentBank;
+
+        contentSize = BUFSIZE - msgBuffer.available();
+        msgBuffer.reset();
+        connThreadBody.sendBuffer(msgBuffer, contentSize, "qpid.management", key.str());
+    }
 }
 
 void ManagementAgentImpl::ConnectionThread::run()

@@ -114,6 +114,7 @@ class ManagementObject : public ManagementItem
     
     uint64_t         createTime;
     uint64_t         destroyTime;
+    uint64_t         updateTime;
     ObjectId         objectId;
     bool             configChanged;
     bool             instChanged;
@@ -132,11 +133,11 @@ class ManagementObject : public ManagementItem
   public:
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
-    ManagementObject (ManagementAgent* _agent, Manageable* _core) :
-        destroyTime(0), configChanged(true),
-        instChanged(true), deleted(false), coreObject(_core), agent(_agent)
-    { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
-    virtual ~ManagementObject () {}
+    ManagementObject(ManagementAgent* _agent, Manageable* _core) :
+        createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),
+        destroyTime(0), updateTime(createTime), configChanged(true),
+        instChanged(true), deleted(false), coreObject(_core), agent(_agent) {}
+    virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
     virtual void writeProperties(qpid::framing::Buffer& buf) = 0;
@@ -159,6 +160,7 @@ class ManagementObject : public ManagementItem
         configChanged = true;
         instChanged   = true;
     }
+    inline void setUpdateTime() { updateTime = (uint64_t(sys::Duration(sys::now()))); }
 
     inline void resourceDestroy  (void) {
         destroyTime = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
