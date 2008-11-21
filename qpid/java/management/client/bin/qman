@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "$QPID_LIB_PATH" = "" ] ; then
+    QPID_LIB_PATH=/usr/share/java
+fi
+
+if [ "$QPID_CONFIG_PATH" = "" ] ; then
+    QPID_CONFIG_PATH=/etc
+fi
+
+QMAN_CLASSPATH=`find $QPID_LIB_PATH | tr '\n' ":"`
+
+java -cp $QMAN_CLASSPATH -Dcom.sun.management.jmxremote -Dlog4j.configuration=qman.log4j -Dqman-config=$QPID_CONFIG_PATH/qman-config.xml org.apache.qpid.management.domain.services.QMan
