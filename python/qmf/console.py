@@ -691,11 +691,28 @@ class Package:
     self.name = name
 
 class ClassKey:
-  """ """
-  def __init__(self, codec):
-    self.pname = str(codec.read_str8())
-    self.cname = str(codec.read_str8())
-    self.hash  = codec.read_bin128()
+  """ A ClassKey uniquely identifies a class from the schema. """
+  def __init__(self, constructor):
+    if type(constructor) == str:
+      # construct from __repr__ string
+      try:
+        self.pname, cls = constructor.split(":")
+        self.cname, hsh = cls.split("(")
+        hsh = hsh.strip(")")
+        hexValues = hsh.split("-")
+        h0 = int(hexValues[0], 16)
+        h1 = int(hexValues[1], 16)
+        h2 = int(hexValues[2], 16)
+        h3 = int(hexValues[3], 16)
+        self.hash = struct.pack("!LLLL", h0, h1, h2, h3)
+      except:
+        raise Exception("Invalid ClassKey format")
+    else:
+      # construct from codec
+      codec = constructor
+      self.pname = str(codec.read_str8())
+      self.cname = str(codec.read_str8())
+      self.hash  = codec.read_bin128()
 
   def encode(self, codec):
     codec.write_str8(self.pname)
@@ -712,7 +729,7 @@ class ClassKey:
     return self.hash
 
   def getHashString(self):
-    return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", self.hash)
+    return "%08x-%08x-%08x-%08x" % struct.unpack ("!LLLL", self.hash)
 
   def getPackageKey(self):
     return (self.cname, self.hash)
