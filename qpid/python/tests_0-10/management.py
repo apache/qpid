@@ -71,10 +71,27 @@ class ManagementTest (TestBase010):
             self.assertEqual (res.sequence, seq)
             self.assertEqual (res.body,     body)
 
-    def test_system_object (self):
+    def test_get_objects(self):
         self.startQmf()
-        systems = self.qmf.getObjects(_class="system")
-        self.assertEqual (len (systems), 1)
+
+        # get the package list, verify that the qpid broker package is there
+        packages = self.qmf.getPackages()
+        assert 'org.apache.qpid.broker' in packages
+
+        # get the schema class keys for the broker, verify the broker table and link-down event
+        keys = self.qmf.getClasses('org.apache.qpid.broker')
+        broker = None
+        linkDown = None
+        for key in keys:
+            if key.getClassName() == "broker":  broker = key
+            if key.getClassName() == "brokerLinkDown" : linkDown = key
+        assert broker
+        assert linkDown
+
+        brokerObjs = self.qmf.getObjects(_class="broker")
+        assert len(brokerObjs) == 1
+        brokerObjs = self.qmf.getObjects(_key=broker)
+        assert len(brokerObjs) == 1
 
     def test_self_session_id (self):
         self.startQmf()
