@@ -29,6 +29,11 @@ public class ConfigurationException extends Exception
 {
     private static final long serialVersionUID = 8238481177714286259L;
 
+    public ConfigurationException(String msg)
+    {
+        super(msg);
+    }
+    
     /**
      * Builds a new ConfigurationException with the given cause.
      * 
@@ -37,5 +42,10 @@ public class ConfigurationException extends Exception
     public ConfigurationException(Exception exception)
     {
         super(exception);
+    }
+    
+    public ConfigurationException(String msg,Exception exception)
+    {
+        super(msg,exception);
     }
 }
