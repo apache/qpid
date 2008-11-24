@@ -181,7 +181,17 @@ public class Connection extends ConnectionInvoker
             {
                 ConnectionException t = error;
                 error = null;
-                close();
+                try
+                {
+                    close();
+                }
+                catch (ConnectionException ce)
+                {
+                    if (!(t instanceof ProtocolVersionException))
+                    {
+                        throw ce;
+                    }
+                }
                 t.rethrow();
             }
 

@@ -35,6 +35,8 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Collections;
+import java.io.IOException;
 
 /**
  * ConnectionTest
@@ -56,18 +58,6 @@ public class ConnectionTest extends TestCase implements SessionListener
 
         port = AvailablePortFinder.getNextAvailable(12000);
 
-        ConnectionDelegate server = new ServerDelegate() {
-            @Override public Session getSession(Connection conn, SessionAttach atc)
-            {
-                Session ssn = super.getSession(conn, atc);
-                ssn.setSessionListener(ConnectionTest.this);
-                return ssn;
-            }
-        };
-
-        IoAcceptor ioa = new IoAcceptor
-            ("localhost", port, ConnectionBinding.get(server));
-        ioa.start();
     }
 
     public void opened(Session ssn) {}
@@ -163,8 +153,78 @@ public class ConnectionTest extends TestCase implements SessionListener
         return conn;
     }
 
+    public void testProtocolNegotiationExceptionOverridesCloseException() throws Exception
+    {
+        // Force os.name to be windows to exercise code in IoReceiver
+        // that looks for the value of os.name
+        System.setProperty("os.name","windows");
+
+        // Start server as 0-9 to froce a ProtocolVersionException
+        startServer(new ProtocolHeader(1, 0, 9));
+        
+        Condition closed = new Condition();
+
+        try
+        {
+            connect(closed);
+            fail("ProtocolVersionException expected");
+        }
+        catch (ProtocolVersionException pve)
+        {
+            //Expected code path
+        }
+        catch (Exception e)
+        {
+            fail("ProtocolVersionException expected. Got:" + e.getMessage());
+        }
+    }
+
+    private void startServer()
+    {
+        startServer(new ProtocolHeader(1, 0, 10));
+    }
+
+    private void startServer(final ProtocolHeader protocolHeader)
+    {
+        ConnectionDelegate server = new ServerDelegate()
+        {
+            @Override
+            public void init(Connection conn, ProtocolHeader hdr)
+            {
+                conn.send(protocolHeader);
+                List<Object> utf8 = new ArrayList<Object>();
+                utf8.add("utf8");
+                conn.connectionStart(null, Collections.EMPTY_LIST, utf8);
+            }
+
+            @Override
+            public Session getSession(Connection conn, SessionAttach atc)
+            {
+                Session ssn = super.getSession(conn, atc);
+                ssn.setSessionListener(ConnectionTest.this);
+                return ssn;
+            }
+        };
+
+        IoAcceptor ioa = null;
+        try
+        {
+            ioa = new IoAcceptor
+                    ("localhost", port, ConnectionBinding.get(server));
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            fail("Unable to start Server for test due to:" + e.getMessage());
+        }
+
+        ioa.start();
+    }
+
     public void testClosedNotificationAndWriteToClosed() throws Exception
     {
+        startServer();
+
         Condition closed = new Condition();
         Connection conn = connect(closed);
 
@@ -223,6 +283,8 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     public void testResumeNonemptyReplayBuffer() throws Exception
     {
+        startServer();
+
         Connection conn = new Connection();
         conn.setConnectionListener(new FailoverConnectionListener());
         conn.connect("localhost", port, null, "guest", "guest");
@@ -276,6 +338,8 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     public void testResumeEmptyReplayBuffer() throws InterruptedException
     {
+        startServer();
+
         Connection conn = new Connection();
         conn.setConnectionListener(new FailoverConnectionListener());
         conn.connect("localhost", port, null, "guest", "guest");
