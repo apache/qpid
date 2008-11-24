@@ -270,8 +270,10 @@ startNewBroker ( brokerVector & brokers,
                  char const * moduleDir,
                  string const clusterName ) 
 {
-    stringstream path;
+    static int brokerId = 0;
+    stringstream path, prefix;
     path << srcRoot << "/qpidd";
+    prefix << "soak-" << brokerId++;
   
     const char * const argv[] = 
     {
@@ -285,6 +287,7 @@ startNewBroker ( brokerVector & brokers,
         "--auth=no", 
         "--no-data-dir",
         "--mgmt-enable=no",
+        "--log-prefix", prefix.str().c_str(),
         0
     };
 
