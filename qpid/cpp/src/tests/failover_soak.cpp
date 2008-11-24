@@ -271,7 +271,8 @@ startNewBroker ( brokerVector & brokers,
                  string const clusterName ) 
 {
     static int brokerId = 0;
-    stringstream path, prefix;
+    stringstream path, prefix, module;
+    module << moduleDir << "/cluster.so";
     path << srcRoot << "/qpidd";
     prefix << "soak-" << brokerId++;
   
@@ -279,8 +280,6 @@ startNewBroker ( brokerVector & brokers,
     {
         "qpidd",
         "-p0",
-        "--module-dir",
-        moduleDir,
         "--load-module=cluster.so",
         "--cluster-name",
         clusterName.c_str(),
