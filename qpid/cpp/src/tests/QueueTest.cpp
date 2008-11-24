@@ -284,7 +284,7 @@ class TestMessageStoreOC : public NullMessageStore
     {
     }
 
-    TestMessageStoreOC() : NullMessageStore(false) {}
+    TestMessageStoreOC() : NullMessageStore() {}
     ~TestMessageStoreOC(){}
 };
 

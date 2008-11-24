@@ -44,14 +44,14 @@ public:
     }
 };
 
-NullMessageStore::NullMessageStore(bool _warn) : warn(_warn), nextPersistenceId(1) {}
+NullMessageStore::NullMessageStore() : nextPersistenceId(1) {
+    QPID_LOG(info, "No message store configured, persistence is disabled.")
+}
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
 void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {
-    QPID_LOG(info, "Queue '" << queue.getName() 
-             << "' will not be durable. Persistence not enabled.");
     queue.setPersistenceId(nextPersistenceId++);
 }
 
@@ -61,8 +61,6 @@ void NullMessageStore::destroy(PersistableQueue&)
 
 void NullMessageStore::create(const PersistableExchange& exchange, const framing::FieldTable& /*args*/)
 {
-    QPID_LOG(info, "Exchange'" << exchange.getName() 
-             << "' will not be durable. Persistence not enabled.");
     exchange.setPersistenceId(nextPersistenceId++);
 }
 
@@ -75,47 +73,28 @@ void NullMessageStore::unbind(const PersistableExchange&, const PersistableQueue
 
 void NullMessageStore::create(const PersistableConfig& config)
 {
-    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
     config.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(const PersistableConfig&)
-{
-    QPID_LOG(info, "Persistence not enabled, configuration not stored.");
-}
+void NullMessageStore::destroy(const PersistableConfig&) {}
 
-void NullMessageStore::recover(RecoveryManager&)
-{
-    QPID_LOG(info, "Persistence not enabled, no recovery attempted.");
-}
+void NullMessageStore::recover(RecoveryManager&) {}
 
-void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&)
-{
-    QPID_LOG(info, "Can't stage message. Persistence not enabled.");
-}
+void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&) {}
 
-void NullMessageStore::destroy(PersistableMessage&)
-{
-}
+void NullMessageStore::destroy(PersistableMessage&) {}
 
-void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&)
-{
-    QPID_LOG(info, "Can't append content. Persistence not enabled.");
-}
+void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&) {}
 
 void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
                                    const intrusive_ptr<const PersistableMessage>&,
-                                   string&, uint64_t, uint32_t)
-{
-    QPID_LOG(info, "Can't load content. Persistence not enabled.");
-}
+                                   string&, uint64_t, uint32_t) {}
 
 void NullMessageStore::enqueue(TransactionContext*,
                                const intrusive_ptr<PersistableMessage>& msg,
-                               const PersistableQueue& queue)
+                               const PersistableQueue&)
 {
     msg->enqueueComplete(); 
-    QPID_LOG(info, "Message is not durably recorded on '" << queue.getName() << "'. Persistence not enabled.");
 }
 
 void NullMessageStore::dequeue(TransactionContext*,
@@ -125,12 +104,9 @@ void NullMessageStore::dequeue(TransactionContext*,
     msg->dequeueComplete();
 }
 
-void NullMessageStore::flush(const qpid::broker::PersistableQueue&)
-{
-}
+void NullMessageStore::flush(const qpid::broker::PersistableQueue&) {}
 
-uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
-{
+uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& ) {
     return 0;
 }
 

@@ -36,10 +36,9 @@ namespace broker {
 class NullMessageStore : public MessageStore
 {
     std::set<std::string> prepared;
-    const bool warn;
     uint64_t nextPersistenceId;
   public:
-    NullMessageStore(bool warn = false);
+    NullMessageStore();
 
     virtual bool init(const Options* options);
     virtual std::auto_ptr<TransactionContext> begin();

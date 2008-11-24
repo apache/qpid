@@ -195,7 +195,7 @@ Broker::Broker(const Broker::Options& conf) :
 
     // If no plugin store module registered itself, set up the null store.
     if (store.get() == 0)
-        setStore (new NullMessageStore (false));
+        setStore (new NullMessageStore());
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     
