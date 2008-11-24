@@ -48,8 +48,7 @@ void Bounds::reduce(size_t size) {
     if (current == 0) return;
     current -= std::min(size, current);
     if (current < max && lock.hasWaiters()) {
-        assert(lock.hasWaiters() == 1);
-        lock.notify();
+        lock.notifyAll();
     }
 }
 

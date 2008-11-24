@@ -451,8 +451,8 @@ void SessionImpl::sendFrame(AMQFrame& frame, bool canBlock)
 {
     boost::shared_ptr<ConnectionImpl> c =  connectionWeak.lock();
     if (c) {
-        c->expand(frame.encodedSize(), canBlock);
         channel.handle(frame);
+        c->expand(frame.encodedSize(), canBlock);
     }
 }
 
