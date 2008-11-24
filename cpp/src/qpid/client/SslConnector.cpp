@@ -283,7 +283,7 @@ void SslConnector::Writer::init(std::string id, sys::ssl::SslIO* a) {
 void SslConnector::Writer::handle(framing::AMQFrame& frame) { 
     Mutex::ScopedLock l(lock);
     frames.push_back(frame);
-    if (frame.getEof()) {//or if we already have a buffers worth
+    if (frame.getEof() || (bounds && bounds->getCurrentSize() >= maxFrameSize)) {
         lastEof = frames.size();
         aio->notifyPendingWrite();
     }
