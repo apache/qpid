@@ -294,7 +294,9 @@ void TCPConnector::Writer::init(std::string id, sys::AsynchIO* a) {
 void TCPConnector::Writer::handle(framing::AMQFrame& frame) { 
     Mutex::ScopedLock l(lock);
     frames.push_back(frame);
-    if (frame.getEof()) {//or if we already have a buffers worth
+    //only try to write if this is the end of a frameset or if we
+    //already have a buffers worth of data
+    if (frame.getEof() || (bounds && bounds->getCurrentSize() >= maxFrameSize)) {
         lastEof = frames.size();
         aio->notifyPendingWrite();
     }
