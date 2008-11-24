@@ -37,10 +37,15 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.io.BufferedReader;
+import java.io.BufferedInputStream;
+import java.io.Reader;
+import java.io.InputStreamReader;
+import java.io.IOException;
 
 public class Server implements MessageListener
 {
-    final String BROKER = "tcp://localhost:1234";
+    final String BROKER = "localhost";
 
     final String INITIAL_CONTEXT_FACTORY = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
 
@@ -49,9 +54,6 @@ public class Server implements MessageListener
 
     final String QUEUE_JNDI_NAME = "queue";
     final String QUEUE_NAME = "example.RequestQueue";
-
-    private static boolean TRANSACTED = true;
-    private static final boolean NOT_TRANSACTED = !TRANSACTED;
 
 
     private InitialContext _ctx;
@@ -68,7 +70,7 @@ public class Server implements MessageListener
         {
             connection = ((ConnectionFactory) lookupJNDI(CONNECTION_JNDI_NAME)).createConnection();
 
-            _session = connection.createSession(NOT_TRANSACTED, Session.AUTO_ACKNOWLEDGE);
+            _session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             Destination requestQueue = (Queue) lookupJNDI(QUEUE_JNDI_NAME);
 
@@ -91,6 +93,8 @@ public class Server implements MessageListener
             System.err.println("JMSException occured setting up server :" + e);
             return;
         }
+
+        System.out.println("Server process started and waiting for messages.");
 
         //Wait to process an single message then quit.
         try
@@ -135,10 +139,19 @@ public class Server implements MessageListener
             //Set the correlation ID from the received message to be the correlation id of the response message
             //this lets the client identify which message this is a response to if it has more than
             //one outstanding message to the server
-            response.setJMSCorrelationID(message.getJMSCorrelationID());
+            response.setJMSCorrelationID(message.getJMSMessageID());
 
-            //Send the response to the Destination specified by the JMSReplyTo field of the received message,
-            //this is presumably a temporary queue created by the client
+            try
+            {
+                System.out.println("Received message press enter to send response....");
+                new BufferedReader(new InputStreamReader(System.in)).readLine();
+            }
+            catch (IOException e)
+            {
+                //Error attemptying to pause
+            }
+
+            //Send the response to the Destination specified by the JMSReplyTo field of the received message.            
             _replyProducer.send(message.getJMSReplyTo(), response);
         }
         catch (JMSException e)
