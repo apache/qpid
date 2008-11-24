@@ -51,7 +51,7 @@ class TestMessageStore : public NullMessageStore
         enqueued.push_back(msg_queue_pair(queue.getName(), msg));
     }
 
-    TestMessageStore() : NullMessageStore(false) {}
+    TestMessageStore() : NullMessageStore() {}
     ~TestMessageStore(){}
 };
 
