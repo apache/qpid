@@ -91,6 +91,10 @@ void Dispatcher::run()
     }
     catch (const ClosedException&) {
         QPID_LOG(debug, QPID_MSG(session.getId() << ": closed by peer"));
+    } 
+    catch (const TransportFailure&) {
+        QPID_LOG(info, QPID_MSG(session.getId() << ": transport failure"));
+        throw;
     }
     catch (const std::exception& e) {
         if ( failoverHandler ) {
