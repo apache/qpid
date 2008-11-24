@@ -171,11 +171,11 @@ class Session:
   def __repr__(self):
     return "QMF Console Session Manager (brokers connected: %d)" % len(self.brokers)
 
-  def addBroker(self, target="localhost", initialTopicCredits=0xFFFFFFFF):
+  def addBroker(self, target="localhost"):
     """ Connect to a Qpid broker.  Returns an object of type Broker. """
     url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, url.authMech, url.authName, url.authPass,
-                    ssl = url.scheme == URL.AMQPS, topicCredits=initialTopicCredits)
+                    ssl = url.scheme == URL.AMQPS)
     if not broker.isConnected and not self.manageConnections:
       raise Exception(broker.error)
 
@@ -1125,15 +1125,13 @@ class Broker:
   """ """
   SYNC_TIME = 60
 
-  def __init__(self, session, host, port, authMech, authUser, authPass,
-               ssl=False, topicCredits=0xFFFFFFFF):
+  def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False):
     self.session  = session
     self.host = host
     self.port = port
     self.ssl = ssl
     self.authUser = authUser
     self.authPass = authPass
-    self.topicCredits = topicCredits
     self.agents = {}
     self.agents[(1,0)] = Agent(self, 0, "BrokerAgent")
     self.topicBound = False
@@ -1194,9 +1192,6 @@ class Broker:
       auth = ""
     return "amqp%s://%s%s:%d" % (ssl, auth, self.host, self.port or 5672)
 
-  def replenishCredits(self, credits):
-    self.amqpSession.message_flow(destination="tdest", unit=0, value=credits)
-
   def __repr__(self):
     if self.isConnected:
       return "Broker connected at: %s" % self.getUrl()
@@ -1230,8 +1225,8 @@ class Broker:
                                          accept_mode=self.amqpSession.accept_mode.none,
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
       self.amqpSession.incoming("tdest").listen(self._replyCb)
-      self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=0)
-      self.amqpSession.message_flow(destination="tdest", unit=0, value=self.topicCredits)
+      self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=1)
+      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFF)
       self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFF)
 
       self.isConnected = True
