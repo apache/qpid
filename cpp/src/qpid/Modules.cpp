@@ -61,6 +61,10 @@ void loadModuleDir (std::string dirname, bool isDefault)
             return;
         throw Exception ("Directory not found: " + dirname);
     }
+    if (!fs::is_directory(dirPath)) 
+    {
+        throw Exception ("Invalid value for module-dir: " + dirname + " is not a directory");
+    }
 
     fs::directory_iterator endItr;
     for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
