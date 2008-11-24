@@ -23,12 +23,19 @@ import os
 import optparse
 import sys
 import socket
-import time
+from time import time, strftime, gmtime, sleep
 from qmf.console import Console, Session
 
 class EventConsole(Console):
   def event(self, broker, event):
     print event
+
+  def brokerConnected(self, broker):
+    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnected broker=%s" % broker.getUrl()
+
+  def brokerDisconnected(self, broker):
+    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerDisconnected broker=%s" % broker.getUrl()
+
 
 ##
 ## Main Program
@@ -48,14 +55,17 @@ ex: localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost
     arguments.append("localhost")
 
   console = EventConsole()
-  session = Session(console, rcvObjects=False, rcvHeartbeats=False)
+  session = Session(console, rcvObjects=False, rcvHeartbeats=False, manageConnections=True)
+  brokers = []
   for host in arguments:
-    session.addBroker(host)
+    brokers.append(session.addBroker(host))
 
   try:
     while (True):
-      time.sleep(10)
+      sleep(10)
   except KeyboardInterrupt:
+    for broker in brokers:
+      session.delBroker(broker)
     print
     sys.exit(0)
  
