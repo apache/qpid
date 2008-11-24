@@ -53,8 +53,6 @@ public class Client implements MessageListener
 
     private InitialContext _ctx;
 
-    private static boolean TRANSACTED = true;
-    private static final boolean NOT_TRANSACTED = !TRANSACTED;
     private CountDownLatch _shutdownHook = new CountDownLatch(1);
 
     public Client()
@@ -71,7 +69,7 @@ public class Client implements MessageListener
         {
             connection = ((ConnectionFactory) lookupJNDI(CONNECTION_JNDI_NAME)).createConnection();
 
-            session = connection.createSession(NOT_TRANSACTED, Session.AUTO_ACKNOWLEDGE);
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             Destination requestQueue = (Queue) lookupJNDI(QUEUE_JNDI_NAME);
 
@@ -131,6 +129,15 @@ public class Client implements MessageListener
             //Handle the exception appropriately
         }
 
+        try
+        {
+            System.out.println("Sent Request Message ID :" + txtMessage.getJMSMessageID());
+        }
+        catch (JMSException e)
+        {
+            //Handle exception more appropriately.
+        }
+
         //Wait for the return message to arrive
         try
         {
@@ -161,7 +168,7 @@ public class Client implements MessageListener
      */
     public void onMessage(Message message)
     {
-        String messageText = null;
+        String messageText;
         try
         {
             if (message instanceof TextMessage)
