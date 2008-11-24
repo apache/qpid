@@ -30,6 +30,8 @@
 
 #include <boost/optional.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/bind.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include <vector>
 
@@ -378,6 +380,60 @@ QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
 
     fix.session.queueDelete(arg::queue="HELP_FIND_ME");
 
+}
+
+namespace
+{
+struct Publisher : qpid::sys::Runnable
+{
+    AsyncSession session;
+    Message message;
+    uint count;
+    Thread thread;
+
+    Publisher(Connection& con, Message m, uint c) : session(con.newSession()), message(m), count(c) {}
+
+    void start()
+    {
+        thread = Thread(*this);
+    }
+
+    void join()
+    {
+        thread.join();
+    }
+
+    void run()
+    {
+        for (uint i = 0; i < count; i++) {
+            session.messageTransfer(arg::content=message);
+        }
+        session.sync();
+        session.close();
+    }
+};
+}
+
+QPID_AUTO_TEST_CASE(testConcurrentSenders)
+{
+    //Ensure concurrent publishing sessions on a connection don't
+    //cause assertions, deadlocks or other undesirables:
+    BrokerFixture fix;
+    Connection connection;
+    ConnectionSettings settings;
+    settings.maxFrameSize = 1024;
+    settings.port = fix.broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
+    connection.open(settings);
+    AsyncSession session = connection.newSession();
+    Message message(string(512, 'X'));
+    
+    boost::ptr_vector<Publisher> publishers;
+    for (size_t i = 0; i < 5; i++) {
+        publishers.push_back(new Publisher(connection, message, 100));
+    }
+    for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::start, _1));
+    for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::join, _1));
+    connection.close();
 }
 
 QPID_AUTO_TEST_SUITE_END()
