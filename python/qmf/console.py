@@ -940,6 +940,12 @@ class ObjectId:
     codec.write_uint64(self.first)
     codec.write_uint64(self.second)
 
+  def __hash__(self):
+    return (self.first, self.second).__hash__()
+
+  def __eq__(self, other):
+    return (self.first, self.second).__eq__(other)
+
 class Object(object):
   """ """
   def __init__(self, session, broker, schema, codec, prop, stat):
