@@ -65,7 +65,7 @@ public class Server implements MessageListener
     {
         setupJNDI();
 
-        Connection connection = null;
+        Connection connection;
         try
         {
             connection = ((ConnectionFactory) lookupJNDI(CONNECTION_JNDI_NAME)).createConnection();
@@ -97,13 +97,16 @@ public class Server implements MessageListener
         System.out.println("Server process started and waiting for messages.");
 
         //Wait to process an single message then quit.
-        try
+        while (_shutdownHook.getCount() != 0)
         {
-            _shutdownHook.await();
-        }
-        catch (InterruptedException e)
-        {
-            // Ignore this as we are quitting anyway.
+            try
+            {
+                _shutdownHook.await();
+            }
+            catch (InterruptedException e)
+            {
+                // Ignore this as we are quitting anyway.
+            }
         }
 
         //Close the connection
