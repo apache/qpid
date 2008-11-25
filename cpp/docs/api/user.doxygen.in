@@ -264,7 +264,7 @@ HIDE_UNDOC_MEMBERS     = NO
 # If set to NO (the default) these classes will be included in the various 
 # overviews. This option has no effect if EXTRACT_ALL is enabled.
 
-HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_CLASSES     = NO   # jwr 2008-11-25
 
 # If the HIDE_FRIEND_COMPOUNDS tag is set to YES, Doxygen will hide all 
 # friend (class|struct|union) declarations. 
@@ -457,7 +457,7 @@ WARN_LOGFILE           = doxygen.log
 # with spaces.
 
 # INPUT      		= ../../src/qpid ../../src/gen/qpid
-INPUT      		= ../../src/qpid/client  ../../src/qpid/framing ../../src/gen/qpid/client .
+INPUT      		= ../../src/qpid/client  ../../src/qpid/framing ../../src/gen/qpid/client . ../../src/gen/qpid/framing
 
 
 # If the value of the INPUT tag contains directories, you can use the 
