@@ -285,6 +285,7 @@ startNewBroker ( brokerVector & brokers,
         clusterName.c_str(),
         "--auth=no", 
         "--no-data-dir",
+        "--no-module-dir",
         "--mgmt-enable=no",
         "--log-prefix", prefix.str().c_str(),
         0
