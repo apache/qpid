@@ -121,6 +121,36 @@ void QueuePolicy::setDefaultMaxSize(uint64_t s)
     defaultMaxSize = s;
 }
 
+
+
+
+
+void QueuePolicy::encode(Buffer& buffer) const
+{
+  buffer.putLong(maxCount);
+  buffer.putLongLong(maxSize);
+  buffer.putLong(count.get());
+  buffer.putLongLong(size.get());
+}
+
+void QueuePolicy::decode ( Buffer& buffer ) 
+{
+  maxCount = buffer.getLong();
+  maxSize  = buffer.getLongLong();
+  count    = buffer.getLong();
+  size     = buffer.getLongLong();
+}
+
+
+uint32_t QueuePolicy::encodedSize() const {
+  return sizeof(uint32_t) +  // maxCount
+         sizeof(uint64_t) +  // maxSize
+         sizeof(uint32_t) +  // count
+         sizeof(uint64_t);   // size
+}
+
+
+
 const std::string QueuePolicy::maxCountKey("qpid.max_count");
 const std::string QueuePolicy::maxSizeKey("qpid.max_size");
 const std::string QueuePolicy::typeKey("qpid.policy_type");
@@ -231,8 +261,7 @@ std::auto_ptr<QueuePolicy> QueuePolicy::createQueuePolicy(uint32_t maxCount, uin
     }
 
 }
-
-
+ 
 namespace qpid {
     namespace broker {
 

@@ -36,8 +36,8 @@ class QueuePolicy
 {
     static uint64_t defaultMaxSize;
 
-    const uint32_t maxCount;
-    const uint64_t maxSize;
+    uint32_t maxCount;
+    uint64_t maxSize;
     const std::string type;
     qpid::sys::AtomicValue<uint32_t> count;
     qpid::sys::AtomicValue<uint64_t> size;
@@ -63,6 +63,10 @@ class QueuePolicy
     void update(qpid::framing::FieldTable& settings);
     uint32_t getMaxCount() const { return maxCount; }
     uint64_t getMaxSize() const { return maxSize; }           
+    void encode(framing::Buffer& buffer) const;
+    void decode ( framing::Buffer& buffer );
+    uint32_t encodedSize() const;
+
 
     static std::auto_ptr<QueuePolicy> createQueuePolicy(const qpid::framing::FieldTable& settings);
     static std::auto_ptr<QueuePolicy> createQueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
