@@ -57,6 +57,11 @@ public class VersionAction extends Action
                 _text = "Build Version : " + _buildVersion + "\n" +
                         "Release Version : " + _releaseVersion;
             }
+            else
+            {
+                _text = "Build Version :  \n" +
+                        "Release Version :  ";
+            }
         }
         catch (Exception ex)
         {
