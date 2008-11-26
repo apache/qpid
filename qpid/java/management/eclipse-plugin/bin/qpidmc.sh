@@ -18,14 +18,13 @@
 # under the License.
 #
 
-if [ "$JAVA_HOME" == "" ]; then
-    echo "The JAVA_HOME environment variable is not defined";
-    exit 0;
+if [ -z "$JAVA" ]; then
+    JAVA=java
 fi
 
-if [ "$QPIDMC_HOME" == "" ]; then
-    echo "The QPIDMC_HOME environment variable is not defined correctly";
-    exit 0;
+if [ -z "$QPIDMC_HOME" ]; then
+    export QPIDMC_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPIDMC_HOME}/bin
 fi
 
 # Test if we're running on cygwin.
@@ -38,27 +37,39 @@ if $cygwin; then
   QPIDMC_HOME=$(cygpath -w $QPIDMC_HOME)
 fi
 
-os=win32
-ws=win32
-arch=x86
-
-##echo $os
-##echo $ws
-##echo $arch
 
 ## If this is to be run on different platform other than windows then following parameters should be passed
-## qpidmc.sh <operating system> <windowing system> <platform achitecture>
-## eg. qpidmc.sh linux motif x86
-if [ $# -eq 3 ]; then
-    os=$1
-    ws=$2
-    arch=$3
+## qpidmc.sh <windowing system>
+## eg. qpidmc.sh motif
+
+if [ $# -eq 1 ] ; then
+    QPIDMC_WS=$1
+else
+    # If the WS is not set via QPIDMC_WS then query uname for the WS
+    if [ -z "$QPIDMC_WS" ] ; then
+       echo "Usage qpidmc.sh <windowing system>
+       echo "Alternatively set QPIDMC_WS to the windowing system you wish to use
+       exit 1
+    fi
 fi
 
-if [ $os = "SunOS" ]; then
-    os="solaris"
-elif [ $os = "Linux" ]; then
-    os="linux"
+# If the OS is not set via QPIDMC_OS then query uname for the OS
+if [ -z "$QPIDMC_OS" ] ; then
+    QPIDMC_OS=`uname | tr A-Z a-z`
+else
+    # Force OS to be lower case
+    QPIDMC_OS=`echo $QPIDMC_OS | tr A-Z a-z`
 fi
 
-"$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=false -jar $QPIDMC_HOME/eclipse/startup.jar org.eclipse.core.launcher.Main -launcher $QPIDMC_HOME/eclipse/eclipse -name "Qpid Management Console" -showsplash 600 -configuration "file:$QPIDMC_HOME/configuration" -os $os -ws $ws -arch $arch
+# If the ARCH is not set via QPIDMC_ARCH then query uname for the arch,
+if [ -z "$QPIDMC_ARCH" ] ; then
+    QPIDMC_ARCH=`uname -i`
+fi
+
+# Note that it sometimes returns i386 which needs to be changed to x86
+if [ "$QPIDMC_ARCH" == "i386" ] ; then
+    QPIDMC_ARCH="x86"
+fi
+
+
+"$JAVA" -Xms40m -Xmx256m -Declipse.consoleLog=true -jar $QPIDMC_HOME/eclipse/startup.jar org.eclipse.core.launcher.Main -name "Qpid Management Console" -showsplash 600 -configuration "file:$QPIDMC_HOME/configuration" -os $QPIDMC_OS -ws $QPIDMC_WS -arch $QPIDMC_ARCH
