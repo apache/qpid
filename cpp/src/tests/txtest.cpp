@@ -33,6 +33,7 @@
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/sys/uuid.h"
 
 using namespace qpid;
 using namespace qpid::client;
@@ -128,10 +129,11 @@ struct Transfer : public Client, public Runnable
     std::string src;
     std::string dest;
     Thread thread;
-    unsigned long xid_cnt;
+    uuid_t uuid;
+    char uuidStr[37]; // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx + trailing \0
     framing::Xid xid;
 
-    Transfer(const std::string& to, const std::string& from) : src(to), dest(from), xid_cnt(0), xid(0x4c414e47, "", from) {}
+    Transfer(const std::string& to, const std::string& from) : src(to), dest(from), xid(0x4c414e47, "", from) {}
 
     void run() 
     {
@@ -150,7 +152,7 @@ struct Transfer : public Client, public Runnable
                 Message in;
                 Message out("", dest);
                 if (opts.dtx) {
-                    setNextXid(xid);
+                    setNewXid(xid);
                     session.dtxStart(arg::xid=xid);
                 }
                 for (uint m = 0; m < opts.msgsPerTx; m++) {
@@ -174,10 +176,10 @@ struct Transfer : public Client, public Runnable
         }
     }
 
-    void setNextXid(framing::Xid& xid) {
-        std::ostringstream oss;
-        oss << std::setfill('0') << std::hex << "xid-" << std::setw(12) << (++xid_cnt);
-        xid.setGlobalId(oss.str());
+    void setNewXid(framing::Xid& xid) {
+        ::uuid_generate(uuid);
+        ::uuid_unparse(uuid, uuidStr);
+        xid.setGlobalId(uuidStr);
     }
 };
 
