@@ -120,6 +120,7 @@ void ClusterFixture::add() {
         std::string prefix = os.str();
         const char* argv[] = {
             "qpidd " __FILE__ ,
+            "--no-module-dir",
             "--load-module=../.libs/cluster.so",
             "--cluster-name", name.c_str(), 
             "--auth=no", "--no-data-dir",

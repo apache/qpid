@@ -213,6 +213,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::optional<ClusterMap> dumpedMap;
     
     size_t lastSize;
+    bool lastBroker;
     boost::shared_ptr<FailoverExchange> failoverExchange;
 
     Quorum quorum;
