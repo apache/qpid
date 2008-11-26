@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,7 +36,7 @@
 namespace qpid {
 namespace sys {
 
-// Deletion manager to handle deferring deletion of PollerHandles to when they definitely aren't being used 
+// Deletion manager to handle deferring deletion of PollerHandles to when they definitely aren't being used
 DeletionManager<PollerHandlePrivate> PollerHandleDeletionManager;
 
 //  Instantiate (and define) class static for DeletionManager
@@ -101,7 +101,7 @@ class PollerHandlePrivate {
         assert(stat == MONITORED);
         stat = HUNGUP;
     }
-    
+
     bool isDeleted() const {
         return stat == DELETED;
     }
@@ -139,7 +139,7 @@ class PollerPrivate {
 
     struct ReadablePipe {
         int fds[2];
-        
+
         /**
          * This encapsulates an always readable pipe which we can add
          * to the epoll set to force epoll_wait to return
@@ -149,19 +149,19 @@ class PollerPrivate {
             // Just write the pipe's fds to the pipe
             QPID_POSIX_CHECK(::write(fds[1], fds, 2));
         }
-        
+
         ~ReadablePipe() {
             ::close(fds[0]);
             ::close(fds[1]);
         }
-        
+
         int getFD() {
             return fds[0];
         }
     };
-    
+
     static ReadablePipe alwaysReadable;
-    
+
     const int epollFd;
     bool isShutdown;
 
@@ -173,7 +173,7 @@ class PollerPrivate {
             default: return 0;
         }
     }
-    
+
     static Poller::EventType epollToDirection(::__uint32_t events) {
         // POLLOUT & POLLHUP are mutually exclusive really, but at least socketpairs
         // can give you both!
@@ -208,7 +208,7 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
     ScopedLock<Mutex> l(eh.lock);
     ::epoll_event epe;
     int op;
-    
+
     if (eh.isIdle()) {
         op = EPOLL_CTL_ADD;
         epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
@@ -217,10 +217,11 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
         op = EPOLL_CTL_MOD;
         epe.events = eh.events | PollerPrivate::directionToEpollEvent(dir);
     }
+    epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
-    
+
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, eh.fd, &epe));
-    
+
     // Record monitoring state of this fd
     eh.events = epe.events;
     eh.setActive();
@@ -244,13 +245,14 @@ void Poller::modFd(PollerHandle& handle, Direction dir) {
     PollerHandlePrivate& eh = *handle.impl;
     ScopedLock<Mutex> l(eh.lock);
     assert(!eh.isIdle());
-    
+
     ::epoll_event epe;
     epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
+    epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
-    
+
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
-    
+
     // Record monitoring state of this fd
     eh.events = epe.events;
     eh.setActive();
@@ -262,7 +264,8 @@ void Poller::rearmFd(PollerHandle& handle) {
     assert(eh.isInactive());
 
     ::epoll_event epe;
-    epe.events = eh.events;        
+    epe.events = eh.events;
+    epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
 
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
@@ -281,11 +284,12 @@ void Poller::shutdown() {
     // Don't use any locking here - isshutdown will be visible to all
     // after the epoll_ctl() anyway (it's a memory barrier)
     impl->isShutdown = true;
-    
+
     // Add always readable fd to epoll (not EPOLLONESHOT)
     int fd = impl->alwaysReadable.getFD();
     ::epoll_event epe;
     epe.events = ::EPOLLIN;
+    epe.data.u64 = 0; // Keep valgrind happy - don't strictly need next line now
     epe.data.ptr = 0;
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_ADD, fd, &epe));
 }
@@ -298,20 +302,20 @@ Poller::Event Poller::wait(Duration timeout) {
     do {
         PollerHandleDeletionManager.markAllUnusedInThisThread();
         int rc = ::epoll_wait(impl->epollFd, &epe, 1, timeoutMs);
-        
+
         if (impl->isShutdown) {
             PollerHandleDeletionManager.markAllUnusedInThisThread();
-            return Event(0, SHUTDOWN);            
+            return Event(0, SHUTDOWN);
         }
-        
+
         if (rc ==-1 && errno != EINTR) {
             QPID_POSIX_CHECK(rc);
         } else if (rc > 0) {
             assert(rc == 1);
             PollerHandlePrivate& eh = *static_cast<PollerHandlePrivate*>(epe.data.ptr);
-            
+
             ScopedLock<Mutex> l(eh.lock);
-            
+
             // the handle could have gone inactive since we left the epoll_wait
             if (eh.isActive()) {
                 PollerHandle* handle = eh.pollerHandle;
