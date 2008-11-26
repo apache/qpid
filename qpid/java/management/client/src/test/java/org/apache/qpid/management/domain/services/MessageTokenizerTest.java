@@ -79,7 +79,7 @@ public class MessageTokenizerTest extends TestCase {
 			for (int c = 3; c < 12; c++) 
 			{
 				byte aByte = (byte)randomizer.nextInt(127);
-				if (aByte == 77) aByte = (byte)c;
+				aByte = (aByte == 77) ? (byte)c : aByte;
 				compoundMessageData[position++] = aByte;
 				message[c] = aByte;
 			}
