@@ -51,7 +51,10 @@ class FieldTable
     typedef std::map<std::string, ValuePtr> ValueMap;
     typedef ValueMap::iterator iterator;
 
+    FieldTable() {};
+    FieldTable(const FieldTable& ft);
     ~FieldTable();
+    FieldTable& operator=(const FieldTable& ft);
     uint32_t encodedSize() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
