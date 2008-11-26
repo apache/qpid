@@ -10,10 +10,10 @@ cat <<EOF
 usage: $0 <perftest-args> -- <client-hosts ...> [ --- <broker hosts...> ]
 Client & broker hosts can also be set in env vars CLIENTS and BROKERS.
 
-Run perftest with clients running on the clients and brokers running
-on the specified hosts. Clients are assigned to client hosts round
-robin: publishers first, then subscribers. If there are multiple
-brokers (for cluster tests) clients connect to them round robin.
+Run perftest clients on the client hosts against brokers on the broker
+hosts Clients are assigned to client hosts round robin: publishers
+first, then subscribers. If there are multiple brokers (for cluster
+tests) clients connect to them round robin.
 
 Broker hosts can be listed with -b in perftest-args or after ---
 at the end of the arguments.

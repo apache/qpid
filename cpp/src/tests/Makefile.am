@@ -197,6 +197,10 @@ libdlclose_noop_la_SOURCES = dlclose_noop.c
 
 CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 
+check_PROGRAMS+=tsxtest
+tsxtest_SOURCES=tsxtest.cpp
+tsxtest_LDADD=$(lib_client) 
+
 # FIXME aconway 2008-05-23: Disabled interop_runner because it uses
 # the obsolete Channel class.  Convert to Session and re-enable.
 # 
