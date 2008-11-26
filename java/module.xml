@@ -26,6 +26,12 @@
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
+  <map property="module.name" value="${module}">
+    <filtermapper>
+        <replacestring from="${file.separator}" to="-"/>
+    </filtermapper>
+  </map>	
+	
   <echo message="Running ant for module : ${module}" level="info"/>
 
   <property file="${project.root}/build.deps"/>
@@ -43,7 +49,7 @@
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
     
-  <property name="module.namever"              value="${project.name}-${module}-${project.version}"/>
+  <property name="module.namever"              value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.release.base"	       value="${basedir}/release"/>
   <property name="module.release"              value="${module.release.base}/${module.namever}"/>
   <property name="module.release.lib"	       value="${module.release}/lib"/>
@@ -61,12 +67,6 @@
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
-
-  <map property="module.name" value="${module}">
-    <filtermapper>
-      <replacestring from="${file.separator}" to="-"/>
-    </filtermapper>
-  </map>
 
   <indirect name="module.libs"         variable="${module.name}.libs"/>
   <indirect name="module.test.libs"    variable="${module.name}.test.libs"/>

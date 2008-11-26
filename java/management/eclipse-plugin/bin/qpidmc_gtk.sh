@@ -18,7 +18,9 @@
 # under the License.
 #
 
-os=`uname | tr A-Z a-z`
-arch=`uname -p`
+if [ -z "$QPIDMC_HOME" ]; then
+    export QPIDMC_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPIDMC_HOME}/bin
+fi
 
-$QPIDMC_HOME/bin/qpidmc.sh $os gtk $arch
+$QPIDMC_HOME/bin/qpidmc.sh gtk

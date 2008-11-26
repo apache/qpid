@@ -51,32 +51,42 @@ integrationtests.libs=${systests.libs}
 client-example.libs=${client.libs}
 testkit.libs=${client.libs}
 
-ibm-icu=lib/com.ibm.icu-3.4.4.jar
-ecl-core-jface=lib/org.eclipse.jface-3.2.0.jar
-ecl-core-commands=lib/org.eclipse.core.commands-3.2.0.jar
-ecl-core-contenttype=lib/org.eclipse.core.contenttype-3.2.0.jar
-ecl-core-expressions=lib/org.eclipse.core.expressions-3.2.0.jar
-ecl-core-jobs=lib/org.eclipse.core.jobs-3.2.0.jar
-ecl-core-runtime=lib/org.eclipse.core.runtime-3.2.0.jar
-ecl-core-runtime-compat-auth=lib/org.eclipse.core.runtime.compatibility.auth-3.2.0.jar
-ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry-3.2.0.jar
-ecl-equinox-common=lib/org.eclipse.equinox.common-3.2.0.jar
-ecl-equinox-prefs=lib/org.eclipse.equinox.preferences-3.2.0.jar
-ecl-equinox-registry=lib/org.eclipse.equinox.registry-3.2.0.jar
-ecl-help=lib/org.eclipse.help-3.2.0.jar
-ecl-osgi=lib/org.eclipse.osgi-3.2.0.jar
-ecl-swt=lib/org.eclipse.swt-3.2.0.jar
-ecl-swt-win32=lib/org.eclipse.swt.win32.win32.x86-3.2.0.jar
-ecl-ui=lib/org.eclipse.ui-3.2.0.jar
-ecl-ui-forms=lib/org.eclipse.ui.forms-3.2.0.jar
-ecl-ui-workbench=lib/org.eclipse.ui.workbench-3.2.1.jar
+ibm-icu=lib/com.ibm.icu_3.4.4.jar
+ecl-core-jface=lib/org.eclipse.jface_3.2.0.jar
+ecl-core-commands=lib/org.eclipse.core.commands_3.2.0.jar
+ecl-core-contenttype=lib/org.eclipse.core.contenttype_3.2.0.jar
+ecl-core-expressions=lib/org.eclipse.core.expressions_3.2.0.jar
+ecl-core-jobs=lib/org.eclipse.core.jobs_3.2.0.jar
+ecl-core-runtime=lib/org.eclipse.core.runtime_3.2.0.jar
+ecl-core-runtime-compat-auth=lib/org.eclipse.core.runtime.compatibility.auth_3.2.0.jar
+ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry_3.2.0.jar
+ecl-equinox-common=lib/org.eclipse.equinox.common_3.2.0.jar
+ecl-equinox-prefs=lib/org.eclipse.equinox.preferences_3.2.0.jar
+ecl-equinox-registry=lib/org.eclipse.equinox.registry_3.2.0.jar
+ecl-help=lib/org.eclipse.help_3.2.0.jar
+ecl-osgi=lib/org.eclipse.osgi_3.4.2.R34x_v20080826-1230.jar
+ecl-swt=lib/org.eclipse.swt_3.4.1.v3449c.jar
+ecl-swt-win32-win32-x86=lib/org.eclipse.swt.win32.win32.x86_3.2.0.jar
+ecl-swt-linux-gtk-x86=lib/org.eclipse.swt.gtk.linux.x86_3.4.1.v3449c.jar \
+  lib/org.eclipse.equinox.launcher.gtk.linux.x86_1.0.101.R34x_v20080805/ \
+  lib/org.eclipse.equinox.launcher_1.0.101.R34x_v20080819.jar
 
-management-eclipse-plugin.libs=${commons-codec} ${ibm-icu} ${ecl-core-jface} \
+ecl-ui=lib/org.eclipse.ui_3.2.0.jar
+ecl-ui-forms=lib/org.eclipse.ui.forms_3.2.0.jar
+ecl-ui-workbench=lib/org.eclipse.ui.workbench_3.2.1.jar
+
+management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} \
     ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-expressions} \
     ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-auth} \
     ${ecl-core-runtime-compat-registry} ${ecl-equinox-common} \
     ${ecl-equinox-prefs} ${ecl-equinox-registry} ${ecl-help} ${ecl-osgi} \
-    ${ecl-swt} ${ecl-swt-win32} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
+    ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
+    
+management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} ${ecl-swt-win32-win32-x86}
+management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} ${ecl-swt-linux-gtk-x86}
+
+management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86}
+    
 management-tools-qpid-cli.libs=${common.libs} ${jline}
 
 common.test.libs=${test.libs}
