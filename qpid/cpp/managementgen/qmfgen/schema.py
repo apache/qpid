@@ -367,7 +367,7 @@ class SchemaProperty:
     stream.write (indent + prefix + self.name + " = " + val + ";\n")
 
   def genSchema (self, stream):
-    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.clear();\n")
     stream.write ("    ft.setString (NAME, \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (TYPE, TYPE_" + self.type.type.base +");\n")
     stream.write ("    ft.setInt    (ACCESS, ACCESS_" + self.access + ");\n")
@@ -458,7 +458,7 @@ class SchemaStatistic:
     self.type.type.genPerThreadHiLoStatResets (stream, self.name, self.type.type.cpp)
 
   def genSchemaText (self, stream, name, desc):
-    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.clear();\n")
     stream.write ("    ft.setString (NAME,   \"" + name + "\");\n")
     stream.write ("    ft.setInt    (TYPE,   TYPE_" + self.type.type.base +");\n")
     if self.unit != None:
@@ -603,7 +603,7 @@ class SchemaArg:
     return self.dir
 
   def genSchema (self, stream, event=False):
-    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.clear();\n")
     stream.write ("    ft.setString (NAME,    \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (TYPE,    TYPE_" + self.type.type.base +");\n")
     if (not event):
@@ -693,7 +693,7 @@ class SchemaMethod:
     self.parent.genNamePackageLower(stream, variables)
 
   def genSchema (self, stream, variables):
-    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.clear();\n")
     stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
     if self.desc != None:

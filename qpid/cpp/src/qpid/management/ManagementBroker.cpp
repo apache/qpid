@@ -251,21 +251,23 @@ void ManagementBroker::Periodic::fire ()
     broker.periodicProcessing ();
 }
 
-void ManagementBroker::clientAdded (const std::string& /*routingKey*/)
+void ManagementBroker::clientAdded (const std::string& routingKey)
 {
-    Mutex::ScopedLock lock (userLock);
+    if (routingKey.find("console") != 0)
+        return;
 
     clientWasAdded = true;
     for (RemoteAgentMap::iterator aIter = remoteAgents.begin();
          aIter != remoteAgents.end();
          aIter++) {
-        Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
+        char     localBuffer[16];
+        Buffer   outBuffer(localBuffer, 16);
         uint32_t outLen;
 
-        encodeHeader (outBuffer, 'x');
-        outLen = MA_BUFFER_SIZE - outBuffer.available ();
-        outBuffer.reset ();
-        sendBuffer (outBuffer, outLen, dExchange, aIter->second->routingKey);
+        encodeHeader(outBuffer, 'x');
+        outLen = outBuffer.getPosition();
+        outBuffer.reset();
+        sendBuffer(outBuffer, outLen, dExchange, aIter->second->routingKey);
     }
 }
 
@@ -716,7 +718,7 @@ bool ManagementBroker::bankInUse (uint32_t bank)
     for (RemoteAgentMap::iterator aIter = remoteAgents.begin();
          aIter != remoteAgents.end();
          aIter++)
-        if (aIter->second->brokerBank == bank)
+        if (aIter->second->agentBank == bank)
             return true;
     return false;
 }
@@ -959,21 +961,24 @@ void ManagementBroker::dispatchAgentCommandLH(Message& msg)
     }
 
     msg.encodeContent(inBuffer);
+    uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    if (!checkHeader(inBuffer, &opcode, &sequence))
-        return;
+    while (inBuffer.getPosition() < bufferLen) {
+        if (!checkHeader(inBuffer, &opcode, &sequence))
+            return;
 
-    if      (opcode == 'B') handleBrokerRequestLH  (inBuffer, replyToKey, sequence);
-    else if (opcode == 'P') handlePackageQueryLH   (inBuffer, replyToKey, sequence);
-    else if (opcode == 'p') handlePackageIndLH     (inBuffer, replyToKey, sequence);
-    else if (opcode == 'Q') handleClassQueryLH     (inBuffer, replyToKey, sequence);
-    else if (opcode == 'q') handleClassIndLH       (inBuffer, replyToKey, sequence);
-    else if (opcode == 'S') handleSchemaRequestLH  (inBuffer, replyToKey, sequence);
-    else if (opcode == 's') handleSchemaResponseLH (inBuffer, replyToKey, sequence);
-    else if (opcode == 'A') handleAttachRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
-    else if (opcode == 'G') handleGetQueryLH       (inBuffer, replyToKey, sequence);
-    else if (opcode == 'M') handleMethodRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
+        if      (opcode == 'B') handleBrokerRequestLH  (inBuffer, replyToKey, sequence);
+        else if (opcode == 'P') handlePackageQueryLH   (inBuffer, replyToKey, sequence);
+        else if (opcode == 'p') handlePackageIndLH     (inBuffer, replyToKey, sequence);
+        else if (opcode == 'Q') handleClassQueryLH     (inBuffer, replyToKey, sequence);
+        else if (opcode == 'q') handleClassIndLH       (inBuffer, replyToKey, sequence);
+        else if (opcode == 'S') handleSchemaRequestLH  (inBuffer, replyToKey, sequence);
+        else if (opcode == 's') handleSchemaResponseLH (inBuffer, replyToKey, sequence);
+        else if (opcode == 'A') handleAttachRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
+        else if (opcode == 'G') handleGetQueryLH       (inBuffer, replyToKey, sequence);
+        else if (opcode == 'M') handleMethodRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
+    }
 }
 
 ManagementBroker::PackageMap::iterator ManagementBroker::findOrAddPackageLH(string name)
