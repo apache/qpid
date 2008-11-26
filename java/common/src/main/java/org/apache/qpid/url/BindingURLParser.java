@@ -44,7 +44,7 @@ public class BindingURLParser
     private static final char COLON_CHAR = ':';
     private static final char END_OF_URL_MARKER_CHAR = '%';
 
-    private static final Logger _logger = LoggerFactory.getLogger(BindingURLImpl.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BindingURLParser.class);
 
     private char[] _url;
     private AMQBindingURL _bindingURL;
