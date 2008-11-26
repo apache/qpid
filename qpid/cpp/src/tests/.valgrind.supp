@@ -24,13 +24,6 @@
 }
 
 {
-   Bogus epoll_ctl error on i386
-   Memcheck:Param
-   epoll_ctl(event)
-   fun:epoll_ctl
-}
-
-{
    boost 103200 -- we think Boost is responsible for these leaks.
    Memcheck:Leak
    fun:_Znwm
