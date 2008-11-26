@@ -262,7 +262,7 @@ void ManagementAgentImpl::startProtocol()
     systemId.encode (buffer);
     buffer.putLong(requestedBrokerBank);
     buffer.putLong(requestedAgentBank);
-    uint32_t length = 512 - buffer.available();
+    uint32_t length = buffer.getPosition();
     buffer.reset();
     connThreadBody.sendBuffer(buffer, length, "qpid.management", "broker");
     if (debugLevel >= DEBUG_PROTO) {
@@ -607,15 +607,17 @@ ManagementAgentImpl::PackageMap::iterator ManagementAgentImpl::findOrAddPackage(
     pair<PackageMap::iterator, bool> result =
         packages.insert(pair<string, ClassMap>(name, ClassMap()));
 
-    // Publish a package-indication message
-    Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
-    uint32_t outLen;
+    if (connected) {
+        // Publish a package-indication message
+        Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
+        uint32_t outLen;
 
-    encodeHeader(outBuffer, 'p');
-    encodePackageIndication(outBuffer, result.first);
-    outLen = MA_BUFFER_SIZE - outBuffer.available();
-    outBuffer.reset();
-    connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "schema.package");
+        encodeHeader(outBuffer, 'p');
+        encodePackageIndication(outBuffer, result.first);
+        outLen = MA_BUFFER_SIZE - outBuffer.available();
+        outBuffer.reset();
+        connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "schema.package");
+    }
 
     return result.first;
 }
