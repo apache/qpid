@@ -30,6 +30,18 @@
 namespace qpid {
 namespace framing {
 
+FieldTable::FieldTable(const FieldTable& ft)
+{
+  *this = ft;
+}
+
+FieldTable& FieldTable::operator=(const FieldTable& ft)
+{
+  clear();
+  values = ft.values;
+  return *this;
+}
+
 FieldTable::~FieldTable() {}
 
 uint32_t FieldTable::encodedSize() const {
