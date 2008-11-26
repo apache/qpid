@@ -741,11 +741,12 @@ void Queue::encode(Buffer& buffer) const
 {
     buffer.putShortString(name);
     buffer.put(settings);
+    buffer.put(*policy);
 }
 
 uint32_t Queue::encodedSize() const
 {
-    return name.size() + 1/*short string size octet*/ + settings.encodedSize();
+    return name.size() + 1/*short string size octet*/ + settings.encodedSize() + (*policy).encodedSize();
 }
 
 Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
@@ -755,6 +756,7 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
     buffer.get(result.first->settings);
     result.first->configure(result.first->settings);
+    buffer.get ( *(result.first->policy) );
     return result.first;
 }
 

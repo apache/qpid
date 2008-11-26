@@ -53,6 +53,8 @@ class AtomicValue
     inline T operator++(int) { return fetchAndAdd(1); }
     inline T operator--(int) { return fetchAndSub(1); }
 
+    AtomicValue& operator=(T newval) { Lock l(lock); value = newval; return *this; }
+
     /** If current value == testval then set to newval. Returns the old value. */
     T valueCompareAndSwap(T testval, T newval) {
         Lock l(lock);
