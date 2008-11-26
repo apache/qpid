@@ -347,7 +347,7 @@ QPID_AUTO_TEST_CASE(testUnacked) {
 
     // Complete the empty credit message, should unblock the message behind it.
     BOOST_CHECK_THROW(q3.get(0), Exception);
-    C0.session.markCompleted(SequenceSet(m31.getId()), true);
+    c0.session.markCompleted(SequenceSet(m31.getId()), true);
     BOOST_CHECK_EQUAL(q3.get(TIME_SEC).getData(), "32");
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q3").getMessageCount(), 0u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q3").getMessageCount(), 0u);
