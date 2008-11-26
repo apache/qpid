@@ -270,7 +270,7 @@ public abstract class AMQDestination implements Destination, Referenceable
             sb.append("://");
             sb.append(_exchangeName);
 
-            sb.append("//");
+            sb.append("/"+_routingKey+"/");
 
             if (_queueName != null)
             {
