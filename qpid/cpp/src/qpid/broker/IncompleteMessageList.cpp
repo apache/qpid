@@ -25,20 +25,13 @@ namespace qpid {
 namespace broker {
 
 IncompleteMessageList::IncompleteMessageList() :
-    callback(boost::bind(&IncompleteMessageList::enqueueComplete, this, _1)), closed(false)
+    callback(boost::bind(&IncompleteMessageList::enqueueComplete, this, _1))
 {}
 
 IncompleteMessageList::~IncompleteMessageList() 
 {
-    close();
-}
-
-void IncompleteMessageList::close() 
-{
     sys::Mutex::ScopedLock l(lock);
-    closed = true;
     std::for_each(incomplete.begin(), incomplete.end(), boost::bind(&Message::resetEnqueueCompleteCallback, _1));
-    lock.notify();
 }
 
 void IncompleteMessageList::add(boost::intrusive_ptr<Message> msg)
@@ -64,9 +57,8 @@ void IncompleteMessageList::process(const CompletionListener& listen, bool sync)
                     sys::Mutex::ScopedUnlock u(lock);
                     msg->flush(); // Can re-enter IncompleteMessageList::enqueueComplete
                 }
-                while (!msg->isEnqueueComplete() && !closed)
+                while (!msg->isEnqueueComplete())
                     lock.wait();
-                if (closed) return;
             } else {
                 //leave the message as incomplete for now
                 return;

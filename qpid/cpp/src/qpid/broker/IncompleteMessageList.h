@@ -39,7 +39,6 @@ class IncompleteMessageList
     sys::Monitor lock;
     Messages incomplete;
     Message::MessageCallback callback;
-    bool closed;
 
 public:
     typedef Message::MessageCallback CompletionListener;    
@@ -47,7 +46,6 @@ public:
     IncompleteMessageList();
     ~IncompleteMessageList();
     
-    void close();
     void add(boost::intrusive_ptr<Message> msg);
     void process(const CompletionListener& l, bool sync);
     void each(const CompletionListener& l);

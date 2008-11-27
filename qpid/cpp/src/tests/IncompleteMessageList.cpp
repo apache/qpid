@@ -24,8 +24,6 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/IncompleteMessageList.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Thread.h"
 
 #include "unit_test.h"
 
@@ -95,6 +93,7 @@ QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
     list.process(Checker(3, 5), false);    
 }
 
+
 struct MockStore : public NullMessageStore
 {
     Queue::shared_ptr queue;
@@ -124,40 +123,6 @@ QPID_AUTO_TEST_CASE(testSyncProcessWithIncomplete)
     }
     //process with sync bit specified and ensure that all messages are passed to listener
     list.process(Checker(1, 5), true);
-}
-
-struct AsyncProcessor : qpid::sys::Runnable
-{
-    Checker checker;
-    IncompleteMessageList& list;
-
-    AsyncProcessor(uint start, uint end, IncompleteMessageList& list_) : checker(start, end), list(list_) {}
-    
-    void run() 
-    {
-        list.process(checker, true);
-    }
-};
-
-QPID_AUTO_TEST_CASE(testSyncProcessInterruptedOnClose)
-{
-    IncompleteMessageList list;
-    SequenceNumber counter(1);
-    NullMessageStore store;
-    Queue::shared_ptr queue(new Queue("mock-queue"));
-    //fill up list with messages
-    for (int i = 0; i < 5; i++) {
-        boost::intrusive_ptr<Message> msg(new Message(counter++));
-        list.add(msg);
-        if (i == 2) {
-            //mark a message in the middle as incomplete
-            msg->enqueueAsync(queue, &store);
-        }
-    }
-    AsyncProcessor ap(1, 2, list);
-    qpid::sys::Thread thread(ap);
-    list.close();
-    thread.join();
 }
 
 QPID_AUTO_TEST_SUITE_END()
