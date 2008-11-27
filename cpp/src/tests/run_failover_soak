@@ -1,5 +1,29 @@
 #!/bin/sh
 
+# Check AIS requirements and run tests if found.
+id -ng | grep '\<ais\>' >/dev/null || \
+    NOGROUP="The ais group is not your primary group."
+ps -u root | grep aisexec >/dev/null || \
+    NOAISEXEC="The aisexec daemon is not running as root"
+
+if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
+    cat <<EOF
+
+    =========== WARNING: NOT RUNNING AIS TESTS ==============
+
+    Tests that depend on the openais library (used for clustering)
+    will not be run because:
+
+    $NOGROUP
+    $NOAISEXEC
+
+    ==========================================================
+    
+EOF
+    exit 0;                     # A warning, not a failure.
+fi
+
+
 host=127.0.0.1
 
 src_root=..
