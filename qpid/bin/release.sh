@@ -36,6 +36,8 @@ svn export -r ${REV} https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid 
 
 mkdir artifacts
 
+echo ${REV} > artifacts/qpid-${VER}.svnversion
+
 tar -czf artifacts/qpid-${VER}.tar.gz qpid-${VER}
 tar -czf artifacts/qpid-ruby-${VER}.tar.gz qpid-${VER}/ruby qpid-${VER}/specs
 tar -czf artifacts/qpid-python-${VER}.tar.gz qpid-${VER}/python qpid-${VER}/specs
@@ -64,5 +66,5 @@ cp qpid-${VER}/dotnet/bin/mono-2.0/release/*.zip artifacts/qpid-dotnet-${VER}.zi
 cp qpid-${VER}/dotnet/client-010/bin/mono-2.0/debug/*.zip artifacts/qpid-dotnet-0-10-${VER}.zip
 
 cd artifacts
-sha1sum *.zip *.gz > SHA1SUM
-for i in `find . | egrep 'jar$|pom$|gz$|zip$|SHA1SUM'`; do gpg --sign --armor --detach $i; done;
+sha1sum *.zip *.gz *.svnversion > SHA1SUM
+for i in `find . | egrep 'jar$|pom$|gz$|zip$|svnversion$|SHA1SUM'`; do gpg --sign --armor --detach $i; done;
