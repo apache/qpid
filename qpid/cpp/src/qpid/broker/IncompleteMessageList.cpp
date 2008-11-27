@@ -58,7 +58,7 @@ void IncompleteMessageList::process(const CompletionListener& listen, bool sync)
                     msg->flush(); // Can re-enter IncompleteMessageList::enqueueComplete
                 }
                 while (!msg->isEnqueueComplete())
-                       lock.wait();
+                    lock.wait();
             } else {
                 //leave the message as incomplete for now
                 return;

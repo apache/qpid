@@ -387,8 +387,9 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
 
     if (!strategy.delivered) {
-        //TODO:if reject-unroutable, then reject
-        //else route to alternate exchange
+        //TODO:if discard-unroutable, just drop it
+        //TODO:else if accept-mode is explicit, reject it 
+        //else route it to alternate exchange
         if (cacheExchange->getAlternate()) {
             cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
         }
