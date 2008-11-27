@@ -240,20 +240,28 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, TopicPattern& pattern)
 }
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
-    RWlock::ScopedRlock l(lock);
+    Binding::vector mb;
     PreRoute pr(msg, this);
     uint32_t count(0);
+
+    {
+    RWlock::ScopedRlock l(lock);
     Tokens   tokens(routingKey);
 
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(tokens)) {
             Binding::vector& qv(i->second.bindingVector);
             for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++, count++){
-                msg.deliverTo((*j)->queue);
-                if ((*j)->mgmtBinding != 0)
-                    (*j)->mgmtBinding->inc_msgMatched ();
+                mb.push_back(*j);
             }
         }
+    }
+    }
+    
+    for (Binding::vector::iterator j = mb.begin(); j != mb.end(); ++j) {
+        msg.deliverTo((*j)->queue);
+        if ((*j)->mgmtBinding != 0)
+            (*j)->mgmtBinding->inc_msgMatched ();
     }
 
     if (mgmtExchange != 0)
