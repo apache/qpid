@@ -140,5 +140,15 @@ void NullMessageStore::collectPreparedXids(std::set<string>& out)
     out.insert(prepared.begin(), prepared.end());
 }
 
+bool NullMessageStore::isNull() const
+{
+    return true;
+}
+
+bool NullMessageStore::isNullStore(const MessageStore* store)
+{
+    const NullMessageStore* test = dynamic_cast<const NullMessageStore*>(store);
+    return test && test->isNull();
+}
 
 }}  // namespace qpid::broker

@@ -24,6 +24,7 @@
 #include "Exchange.h"
 #include "DeliverableMessage.h"
 #include "MessageStore.h"
+#include "NullMessageStore.h"
 #include "QueueRegistry.h"
 
 #include "qpid/StringUtils.h"
@@ -741,12 +742,15 @@ void Queue::encode(Buffer& buffer) const
 {
     buffer.putShortString(name);
     buffer.put(settings);
-    buffer.put(*policy);
+    if (policy.get()) { 
+        buffer.put(*policy);
+    }
 }
 
 uint32_t Queue::encodedSize() const
 {
-    return name.size() + 1/*short string size octet*/ + settings.encodedSize() + (*policy).encodedSize();
+    return name.size() + 1/*short string size octet*/ + settings.encodedSize() 
+        + (policy.get() ? (*policy).encodedSize() : 0);
 }
 
 Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
@@ -756,7 +760,9 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
     buffer.get(result.first->settings);
     result.first->configure(result.first->settings);
-    buffer.get ( *(result.first->policy) );
+    if (result.first->policy.get()) {
+        buffer.get ( *(result.first->policy) );
+    }
     return result.first;
 }
 
@@ -828,7 +834,7 @@ void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
 
 bool Queue::releaseMessageContent(const QueuedMessage& m)
 {
-    if (store) {
+    if (store && !NullMessageStore::isNullStore(store)) {
         QPID_LOG(debug, "Message " << m.position << " on " << name << " released from memory");
         m.payload->releaseContent(store);
         return true;

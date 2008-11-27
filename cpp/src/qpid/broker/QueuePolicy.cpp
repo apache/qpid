@@ -20,6 +20,7 @@
  */
 #include "QueuePolicy.h"
 #include "Queue.h"
+#include "qpid/Exception.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
@@ -38,8 +39,23 @@ void QueuePolicy::enqueued(uint64_t _size)
 
 void QueuePolicy::dequeued(uint64_t _size)
 {
-    if (maxCount) --count;
-    if (maxSize) size -= _size;
+    //Note: underflow detection is not reliable in the face of
+    //concurrent updates (at present locking in Queue.cpp prevents
+    //these anyway); updates are atomic and are safe regardless.
+    if (maxCount) {
+        if (count.get() > 0) {
+            --count;
+        } else {
+            throw Exception(QPID_MSG("Attempted count underflow on dequeue(" << _size << "): " << *this));
+        }
+    }
+    if (maxSize) {
+        if (_size > size.get()) {
+            throw Exception(QPID_MSG("Attempted size underflow on dequeue(" << _size << "): " << *this));
+        } else {
+            size -= _size;
+        }
+    }
 }
 
 bool QueuePolicy::checkLimit(const QueuedMessage& m)

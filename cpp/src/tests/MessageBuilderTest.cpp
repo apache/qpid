@@ -82,6 +82,13 @@ class MockMessageStore : public NullMessageStore
     {
         return ops.empty();
     }
+
+    //don't treat this store as a null impl
+    bool isNull() const
+    {
+        return false;
+    }
+
 };
     
 QPID_AUTO_TEST_SUITE(MessageBuilderTestSuite)
