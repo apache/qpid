@@ -7,7 +7,7 @@
 *.lo
 .dirstamp
 Makefile*
-config.*
+config\.*
 configure
 .deps
 .libs
