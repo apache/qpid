@@ -760,7 +760,7 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
     buffer.get(result.first->settings);
     result.first->configure(result.first->settings);
-    if (result.first->policy.get()) {
+    if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
     }
     return result.first;
