@@ -76,6 +76,9 @@ class NullMessageStore : public MessageStore
     virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     virtual void flush(const qpid::broker::PersistableQueue& queue);
     ~NullMessageStore(){}
+
+    virtual bool isNull() const;
+    static bool isNullStore(const MessageStore*);
 };
 
 }

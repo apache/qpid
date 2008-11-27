@@ -22,6 +22,7 @@
 
 #include "Message.h"
 #include "MessageStore.h"
+#include "NullMessageStore.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -72,7 +73,11 @@ void MessageBuilder::handle(AMQFrame& frame)
     } else {
         message->getFrames().append(frame);
         //have we reached the staging limit? if so stage message and release content
-        if (state == CONTENT && stagingThreshold && message->getFrames().getContentSize() >= stagingThreshold) {
+        if (state == CONTENT 
+            && stagingThreshold 
+            && message->getFrames().getContentSize() >= stagingThreshold
+            && !NullMessageStore::isNullStore(store)) 
+        {
             message->releaseContent(store); 
             staging = true;
         }
