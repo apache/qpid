@@ -69,7 +69,7 @@ struct DaemonOptions : public qpid::Options {
         piddir += "/.qpidd";
 
         addOptions()
-            ("daemon,d", optValue(daemon), "Run as a daemon. --log-output defaults to syslog in this mode.")
+            ("daemon,d", optValue(daemon), "Run as a daemon. Logs to syslog by default in this mode.")
             ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
             ("pid-dir", optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
             ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
