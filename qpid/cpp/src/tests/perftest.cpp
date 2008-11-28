@@ -564,7 +564,7 @@ struct SubscribeThread : public Client {
             SubscriptionManager subs(session);
             SubscriptionSettings settings;
             settings.autoAck = opts.txSub ? opts.txSub : opts.ack;
-            settings.acceptMode = (opts.txSub || opts.ack ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT);
+            settings.acceptMode = (opts.txSub || opts.ack ? ACCEPT_MODE_EXPLICIT : ACCEPT_MODE_NONE);
             settings.flowControl = FlowControl::messageCredit(opts.subQuota);
             LocalQueue lq;
             Subscription subscription = subs.subscribe(lq, queue, settings);
