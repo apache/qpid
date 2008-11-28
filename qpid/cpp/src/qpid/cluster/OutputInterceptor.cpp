@@ -46,12 +46,11 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
 
 void OutputInterceptor::activateOutput() {
     Locker l(lock);
-
     if (parent.isCatchUp())
         next->activateOutput();
     else {
+        QPID_LOG(trace,  parent << " activateOutput - sending doOutput");
         moreOutput = true;
-        QPID_LOG(trace,  &parent << " activateOutput - sending doOutput");
         sendDoOutput();
     }
 }
@@ -59,10 +58,13 @@ void OutputInterceptor::activateOutput() {
 // Called in write thread when the IO layer has no more data to write.
 // We do nothing in the write thread, we run doOutput only on delivery
 // of doOutput requests.
-bool  OutputInterceptor::doOutput() { return false; }
+bool  OutputInterceptor::doOutput() {
+    QPID_LOG(trace, parent << " write idle.");
+    return false;
+}
 
 // Delivery of doOutput allows us to run the real connection doOutput()
-// which stocks up the write buffers with data.
+// which tranfers frames to the codec for writing.
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
     Locker l(lock);
@@ -81,18 +83,11 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
     QPID_LOG(trace, "Delivered doOutput: requested=" << requested << " output=" << sent << " more=" << moreOutput);
 
     if (parent.isLocal() && moreOutput)  {
-        QPID_LOG(trace,  &parent << " deliverDoOutput - sending doOutput, more output available.");
+        QPID_LOG(trace,  parent << " deliverDoOutput - sending doOutput, more output available.");
         sendDoOutput();
     }
     else
         doingOutput = false;
-}
-
-void OutputInterceptor::startDoOutput() {
-    if (!doingOutput)  {
-        QPID_LOG(trace,  &parent << " startDoOutput - sending doOutput, more output available.");
-        sendDoOutput();
-    }
 }
 
 // Send a doOutput request if one is not already in flight.
@@ -109,7 +104,7 @@ void OutputInterceptor::sendDoOutput() {
     //
     // FIXME aconway 2008-10-16: use ++parent.mcastSeq as sequence no,not 0
     parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), parent.getId(), 0);
-    QPID_LOG(trace, &parent << "Send doOutput request for " << request);
+    QPID_LOG(trace, parent << "Send doOutput request for " << request);
 }
 
 void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {

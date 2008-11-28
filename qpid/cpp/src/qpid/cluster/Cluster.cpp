@@ -208,8 +208,7 @@ void Cluster::leave(Lock&) {
         }
         try { broker.shutdown(); }
         catch (const std::exception& e) {
-            QPID_LOG(critical, *this << " error during shutdown, aborting: " << e.what());
-            abort();            // Big trouble.
+            QPID_LOG(critical, *this << " error during shutdown: " << e.what());
         }
     }
 }
@@ -218,7 +217,7 @@ boost::intrusive_ptr<Connection> Cluster::getConnection(const ConnectionId& conn
     ConnectionMap::iterator i = connections.find(connectionId);
     if (i == connections.end()) { 
         if (connectionId.getMember() == myId) { // Closed local connection
-            QPID_LOG(warning, *this << " attempt to use closed connection " << connectionId);
+            QPID_LOG(debug, *this << " activity on closed connection: " << connectionId);
             return boost::intrusive_ptr<Connection>();
         }
         else {                  // New shadow connection
@@ -343,7 +342,11 @@ void Cluster::dispatch(sys::DispatchHandle& h) {
 // Entry point: called if disconnected from  CPG.
 void Cluster::disconnect(sys::DispatchHandle& ) {
     QPID_LOG(critical, *this << " error disconnected from cluster");
-    broker.shutdown();
+    try {
+        broker.shutdown();
+    } catch (const std::exception& e) {
+        QPID_LOG(error, *this << " error in shutdown: " << e.what());
+    }
 }
 
 void Cluster::configChange ( 
@@ -382,7 +385,7 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
         }
         else {                  // Joining established group.
             state = NEWBIE;
-            QPID_LOG(info, *this << " request state dump");
+            QPID_LOG(info, *this << " joining established cluster");
             mcastControl(ClusterDumpRequestBody(ProtocolVersion(), myUrl.str()), l);
         }
     }
@@ -427,7 +430,7 @@ void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
         memberUpdate(l);
     if (state == CATCHUP && id == myId) {
         state = READY;
-        QPID_LOG(notice, *this << " caught up");
+        QPID_LOG(notice, *this << " caught up, active cluster member");
         if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
         for_each(mcastQueue.begin(), mcastQueue.end(), boost::bind(&Cluster::mcast, this, _1, boost::ref(l)));
         mcastQueue.clear();
@@ -542,7 +545,7 @@ void Cluster::stopFullCluster(Lock& l) {
 }
 
 void Cluster::memberUpdate(Lock& l) {
-    QPID_LOG(debug, *this << " member update, map=" << map);
+    QPID_LOG(info, *this << " member update, map=" << map);
     std::vector<Url> urls = getUrls(l);
     size_t size = urls.size();
     failoverExchange->setUrls(urls);
