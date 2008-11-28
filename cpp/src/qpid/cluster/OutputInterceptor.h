@@ -58,7 +58,6 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
   private:
     typedef sys::Mutex::ScopedLock Locker;
 
-    void startDoOutput();
     void sendDoOutput();
 
     mutable sys::Mutex lock;
