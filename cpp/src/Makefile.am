@@ -347,6 +347,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/QueueCleaner.cpp \
+  qpid/broker/QueueListeners.cpp \
   qpid/broker/PersistableMessage.cpp \
   qpid/broker/Bridge.cpp \
   qpid/broker/Connection.cpp \
@@ -473,6 +474,7 @@ nobase_include_HEADERS = \
   qpid/broker/SessionAdapter.h \
   qpid/broker/Exchange.h \
   qpid/broker/Queue.h \
+  qpid/broker/QueueListeners.h \
   qpid/broker/QueueCleaner.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
