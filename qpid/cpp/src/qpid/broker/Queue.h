@@ -27,6 +27,7 @@
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
+#include "QueueListeners.h"
 #include "RateTracker.h"
 
 #include "qpid/framing/FieldTable.h"
@@ -64,7 +65,6 @@ namespace qpid {
         class Queue : public boost::enable_shared_from_this<Queue>,
             public PersistableQueue, public management::Manageable {
 
-            typedef std::list<Consumer::shared_ptr> Listeners;
             typedef std::deque<QueuedMessage> Messages;
             typedef std::map<string,boost::intrusive_ptr<Message> > LVQ;
 
@@ -80,7 +80,7 @@ namespace qpid {
             bool inLastNodeFailure;
             std::string traceId;
             std::vector<std::string> traceExclude;
-            Listeners listeners;
+            QueueListeners listeners;
             Messages messages;
             LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
@@ -94,7 +94,7 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
             qmf::org::apache::qpid::broker::Queue* mgmtObject;
-RateTracker dequeueTracker;
+            RateTracker dequeueTracker;
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -104,7 +104,6 @@ RateTracker dequeueTracker;
             bool browseNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
 
             void removeListener(Consumer::shared_ptr);
-            void addListener(Consumer::shared_ptr);
 
             bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
