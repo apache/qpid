@@ -29,7 +29,6 @@ from threading       import Condition
 from qmf.console     import Session, Console
 from qpid.peer       import Closed
 from qpid.connection import Connection, ConnectionFailed
-from qpid.util       import connect
 from time            import sleep
 
 class BrokerManager(Console):
@@ -54,7 +53,7 @@ class BrokerManager(Console):
     self.filter = filter
 
   def objectProps(self, broker, record):
-    className = record.getClassKey()[1]
+    className = record.getClassKey().getClassName()
     if className != "queue":
       return
 
@@ -63,7 +62,7 @@ class BrokerManager(Console):
       self.objects[id] = (record.name, None, None)
 
   def objectStats(self, broker, record):
-    className = record.getClassKey()[1]
+    className = record.getClassKey().getClassName()
     if className != "queue":
       return
 
@@ -103,11 +102,7 @@ class BrokerManager(Console):
 
 
   def Display (self):
-    classes = self.session.getClasses("org.apache.qpid.broker")
-    for cls in classes:
-      if cls[1] == "queue":
-        queueClassKey = cls
-    self.session.bindClass(queueClassKey)
+    self.session.bindClass("org.apache.qpid.broker", "queue")
     print "Queue Name                                     Sec       Depth     Enq Rate     Deq Rate"
     print "========================================================================================"
     try:
