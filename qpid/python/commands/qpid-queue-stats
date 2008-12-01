@@ -36,21 +36,23 @@ class BrokerManager(Console):
     self.url = host
     self.objects = {}
     self.filter  = None
-    self.session = Session(self, rcvEvents=False, rcvHeartbeats=False, userBindings=True)
-    try:
-      self.broker  = self.session.addBroker(self.url)
-    except socket.error, e:
-      print "Socket Error %s - %s" % (e[0], e[1])
-      sys.exit (1)
-    except Closed, e:
-      print "Connect Failed %d - %s" % (e[0], e[1])
-      sys.exit (1)
-    except ConnectionFailed, e:
-      print "Connect Failed %d - %s" % (e[0], e[1])
-      sys.exit(1)
+    self.session = Session(self, rcvEvents=False, rcvHeartbeats=False,
+                           userBindings=True, manageConnections=True)
+    self.broker  = self.session.addBroker(self.url)
+    self.firstError = True
 
   def setFilter(self,filter):
     self.filter = filter
+
+  def brokerConnected(self, broker):
+    if not self.firstError:
+      print "*** Broker connected"
+    self.firstError = False
+
+  def brokerDisconnected(self, broker):
+    print "*** Broker connection lost - %s, retrying..." % broker.getError()
+    self.firstError = False
+    self.objects.clear()
 
   def objectProps(self, broker, record):
     className = record.getClassKey().getClassName()
@@ -108,6 +110,9 @@ class BrokerManager(Console):
     try:
       while True:
         sleep (1)
+        if self.firstError and self.broker.getError():
+          self.firstError = False
+          print "*** Error: %s, retrying..." % self.broker.getError()
     except KeyboardInterrupt:
       print
     self.session.delBroker(self.broker)
