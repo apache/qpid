@@ -1,5 +1,5 @@
-Apache Incubator Qpid C++ M4 Release Notes
--------------------------------------------
+Apache Qpid C++ M4 Release Notes
+--------------------------------
 
 The Qpid M4 release of the c++ client and broker support the 0-10
 version of the AMQP specification.  You can access this specification
