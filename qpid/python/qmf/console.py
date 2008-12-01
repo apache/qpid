@@ -1182,7 +1182,7 @@ class ManagedConnection(Thread):
           if self.canceled:
             return
           delay = self.DELAY_MIN
-        except:
+        finally:
           self.cv.release()
       except:
         if delay < self.DELAY_MAX:
