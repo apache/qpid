@@ -695,23 +695,20 @@ void ManagementAgentImpl::periodicProcessing()
         cout << "Objects managed: " << managementObjects.size() << endl;
     }
 
-    if (clientWasAdded) {
-        clientWasAdded = false;
-        for (ManagementObjectMap::iterator iter = managementObjects.begin();
-             iter != managementObjects.end();
-             iter++) {
-            ManagementObject* object = iter->second;
-            object->setAllChanged();
-        }
-    }
-
     //
     //  Clear the been-here flag on all objects in the map.
     //
     for (ManagementObjectMap::iterator iter = managementObjects.begin();
          iter != managementObjects.end();
-         iter++)
-        iter->second->setFlags(0);
+         iter++) {
+        ManagementObject* object = iter->second;
+        object->setFlags(0);
+        if (clientWasAdded) {
+            object->setForcePublish(true);
+        }
+    }
+
+    clientWasAdded = false;
 
     //
     //  Process the entire object map.
@@ -727,6 +724,7 @@ void ManagementAgentImpl::periodicProcessing()
         if (baseObject->getFlags() == 1 ||
             (!baseObject->getConfigChanged() &&
              !baseObject->getInstChanged() &&
+             !baseObject->getForcePublish() &&
              !baseObject->isDeleted()))
             continue;
 
@@ -737,19 +735,22 @@ void ManagementAgentImpl::periodicProcessing()
             ManagementObject* object = iter->second;
             if (baseObject->isSameClass(*object) && object->getFlags() == 0) {
                 object->setFlags(1);
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
 
-                if (object->getConfigChanged() || object->isDeleted()) {
+                if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
                     encodeHeader(msgBuffer, 'c');
                     object->writeProperties(msgBuffer);
                 }
         
-                if (object->getInstChanged()) {
+                if (object->getInstChanged() || object->getForcePublish()) {
                     encodeHeader(msgBuffer, 'i');
                     object->writeStatistics(msgBuffer);
                 }
 
                 if (object->isDeleted())
                     deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
+                object->setForcePublish(false);
 
                 if (msgBuffer.available() < (BUFSIZE / 2))
                     break;
