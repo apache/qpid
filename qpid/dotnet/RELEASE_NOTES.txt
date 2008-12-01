@@ -1,5 +1,18 @@
-Apache Incubator Qpid .NET M2 Release Notes
--------------------------------------------
+
+
+
+
+NOTE: The non 0-10 client located in client-010 
+
+
+
+
+This file contains release notes for 0-8 AMQP client completed
+for M2.
+
+
+Apache Qpid .NET 0-8 RELEASE NOTES
+----------------------------------
 
 The Qpid M2 release contains support the for AMQP 0-8 specification.
 You can access the 0-8 specification using the following link.
