@@ -450,7 +450,7 @@ class managementClient:
     elif typecode == 12: # FLOAT
       codec.write_float  (float (value))
     elif typecode == 13: # DOUBLE
-      codec.write_double (double (value))
+      codec.write_double (float (value))
     elif typecode == 14: # UUID
       codec.write_uuid   (value)
     elif typecode == 15: # FTABLE

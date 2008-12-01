@@ -630,7 +630,7 @@ class Session:
     elif typecode == 10: value.encode       (codec)         # REF
     elif typecode == 11: codec.write_uint8  (int(value))    # BOOL
     elif typecode == 12: codec.write_float  (float(value))  # FLOAT
-    elif typecode == 13: codec.write_double (double(value)) # DOUBLE
+    elif typecode == 13: codec.write_double (float(value))  # DOUBLE
     elif typecode == 14: codec.write_uuid   (value.bytes)   # UUID
     elif typecode == 15: codec.write_map    (value)         # FTABLE
     elif typecode == 16: codec.write_int8   (int(value))    # S8
