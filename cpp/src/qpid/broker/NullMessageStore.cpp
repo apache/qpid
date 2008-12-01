@@ -32,6 +32,8 @@ namespace broker{
 
 const std::string nullxid = "";
 
+class SimpleDummyCtxt : public TransactionContext {};
+
 class DummyCtxt : public TPCTransactionContext 
 {
     const std::string xid;
@@ -112,7 +114,7 @@ uint32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& ) {
 
 std::auto_ptr<TransactionContext> NullMessageStore::begin()
 {
-    return std::auto_ptr<TransactionContext>();
+    return std::auto_ptr<TransactionContext>(new SimpleDummyCtxt());
 }
 
 std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string& xid)

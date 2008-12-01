@@ -139,6 +139,10 @@ void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
     }
 }
 
+void DeliveryRecord::committed() const{
+    queue->dequeueCommitted(msg);
+}
+
 void DeliveryRecord::reject() 
 {    
     Exchange::shared_ptr alternate = queue->getAlternateExchange();

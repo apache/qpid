@@ -222,6 +222,11 @@ namespace qpid {
              * dequeue from store (only done once messages is acknowledged)
              */
             bool dequeue(TransactionContext* ctxt, const QueuedMessage &msg);
+            /**
+             * Inform the queue that a previous transactional dequeue
+             * committed.
+             */
+            void dequeueCommitted(const QueuedMessage& msg);
 
             /**
              * Gets the next available message 
