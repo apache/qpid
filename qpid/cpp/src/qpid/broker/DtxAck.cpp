@@ -48,6 +48,7 @@ bool DtxAck::prepare(TransactionContext* ctxt) throw()
 
 void DtxAck::commit() throw()
 {
+    for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::committed));
     pending.clear();
 }
 

@@ -37,6 +37,7 @@ void TxAccept::RangeOp::prepare(TransactionContext* ctxt)
 
 void TxAccept::RangeOp::commit()
 {
+    for_each(range.start, range.end, bind(&DeliveryRecord::committed, _1));
     for_each(range.start, range.end, bind(&DeliveryRecord::setEnded, _1));
 }
 

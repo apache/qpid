@@ -99,6 +99,7 @@ class DeliveryRecord
     void complete();
     void accept(TransactionContext* ctxt);
     void setEnded();
+    void committed() const;
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }

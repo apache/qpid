@@ -609,7 +609,9 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
     if (policy.get() && !policy->isEnqueued(msg)) return false;
     {
         Mutex::ScopedLock locker(messageLock);
-        dequeued(msg);
+        if (!ctxt) { 
+            dequeued(msg);
+        }
     }
     if (msg.payload->isPersistent() && store && !lastValueQueue) {
         msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
@@ -618,6 +620,12 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
         return true;
     }
     return false;
+}
+
+void Queue::dequeueCommitted(const QueuedMessage& msg)
+{
+    Mutex::ScopedLock locker(messageLock);
+    dequeued(msg);    
 }
 
 /**
