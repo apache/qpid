@@ -1,7 +1,10 @@
 Info
 ====
 
-AMQP version currently 0.10
+AMQP 0.10 Native .NET client supporting WCF and xcel
+
+This client is self contained, all dependancies are in this
+directory.
 
 
 Setup
