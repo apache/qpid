@@ -145,7 +145,6 @@ class SchemaType:
         stream.write ("            " + prefix + varName + "Max = val;\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
-        stream.write ("        setUpdateTime();\n")
       stream.write ("    }\n")
       if self.style != "mma":
         stream.write ("    inline " + self.asArg + " get_" + varName + "() {\n");
@@ -158,7 +157,6 @@ class SchemaType:
         stream.write ("        presenceMask[presenceByte_%s] &= ~presenceMask_%s;\n" % (varName, varName))
         if changeFlag != None:
           stream.write ("        " + changeFlag + " = true;\n")
-          stream.write ("        setUpdateTime();\n")
         stream.write ("    }\n")
         stream.write ("    inline bool isSet_" + varName + "() {\n")
         stream.write ("        return (presenceMask[presenceByte_%s] & presenceMask_%s) != 0;\n" % (varName, varName))
@@ -173,7 +171,6 @@ class SchemaType:
         stream.write ("            " + varName + "High = " + varName + ";\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
-        stream.write ("        setUpdateTime();\n")
       stream.write ("    }\n");
       stream.write ("    inline void dec_" + varName + " (" + self.asArg + " by = 1) {\n");
       if not self.perThread:
@@ -184,7 +181,6 @@ class SchemaType:
         stream.write ("            " + varName + "Low = " + varName + ";\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
-        stream.write ("        setUpdateTime();\n")
       stream.write ("    }\n");
 
   def genHiLoStatResets (self, stream, varName):

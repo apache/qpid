@@ -126,6 +126,7 @@ class ManagementObject : public ManagementItem
     uint32_t         flags;
 
     static int nextThreadIndex;
+    bool             forcePublish;
         
     int  getThreadIndex();
     void writeTimestamps (qpid::framing::Buffer& buf);
@@ -136,7 +137,8 @@ class ManagementObject : public ManagementItem
     ManagementObject(ManagementAgent* _agent, Manageable* _core) :
         createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),
         destroyTime(0), updateTime(createTime), configChanged(true),
-        instChanged(true), deleted(false), coreObject(_core), agent(_agent) {}
+        instChanged(true), deleted(false),
+        coreObject(_core), agent(_agent), forcePublish(false) {}
     virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
@@ -156,11 +158,9 @@ class ManagementObject : public ManagementItem
     ObjectId     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
     virtual bool getInstChanged   (void) { return instChanged; }
-    inline  void setAllChanged    (void) {
-        configChanged = true;
-        instChanged   = true;
-    }
-    inline void setUpdateTime() { updateTime = (uint64_t(sys::Duration(sys::now()))); }
+    inline  void setForcePublish(bool f) { forcePublish = f; }
+    inline  bool getForcePublish() { return forcePublish; }
+    inline  void setUpdateTime() { updateTime = (uint64_t(sys::Duration(sys::now()))); }
 
     inline void resourceDestroy  (void) {
         destroyTime = uint64_t (qpid::sys::Duration (qpid::sys::now ()));

@@ -558,7 +558,7 @@ class Session:
       self.cv.release()
 
     object = Object(self, broker, schema, codec, prop, stat)
-    if pname == "org.apache.qpid.broker" and classKey.getClassName() == "agent":
+    if pname == "org.apache.qpid.broker" and classKey.getClassName() == "agent" and prop:
       broker._updateAgent(object)
 
     try:

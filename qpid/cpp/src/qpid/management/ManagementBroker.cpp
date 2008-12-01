@@ -354,7 +354,7 @@ void ManagementBroker::periodicProcessing (void)
              iter != managementObjects.end ();
              iter++) {
             ManagementObject* object = iter->second;
-            object->setAllChanged ();
+            object->setForcePublish(true);
         }
     }
 
@@ -364,7 +364,10 @@ void ManagementBroker::periodicProcessing (void)
     {
         ManagementObject* object = iter->second;
 
-        if (object->getConfigChanged () || object->isDeleted ())
+        if (object->getConfigChanged() || object->getInstChanged())
+            object->setUpdateTime();
+
+        if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
             encodeHeader (msgBuffer, 'c');
@@ -376,7 +379,7 @@ void ManagementBroker::periodicProcessing (void)
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
-        if (object->getInstChanged ())
+        if (object->getInstChanged() || object->getForcePublish())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
             encodeHeader (msgBuffer, 'i');
@@ -390,6 +393,7 @@ void ManagementBroker::periodicProcessing (void)
 
         if (object->isDeleted())
             deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
+        object->setForcePublish(false);
     }
 
     // Delete flagged objects
