@@ -302,10 +302,17 @@ class Session:
       if agent.broker.isConnected():
         agentList.append(agent)
     else:
-      for broker in brokerList:
-        for agent in broker.getAgents():
-          if agent.broker.isConnected():
-            agentList.append(agent)
+      if "_objectId" in kwargs:
+        oid = kwargs["_objectId"]
+        for broker in brokerList:
+          for agent in broker.getAgents():
+            if agent.getBrokerBank() == oid.getBrokerBank() and agent.getAgentBank() == oid.getAgentBank():
+              agentList.append(agent)
+      else:
+        for broker in brokerList:
+          for agent in broker.getAgents():
+            if agent.broker.isConnected():
+              agentList.append(agent)
 
     if len(agentList) == 0:
       return []
