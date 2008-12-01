@@ -46,18 +46,12 @@ void QueuePolicy::dequeued(uint64_t _size)
         if (count.get() > 0) {
             --count;
         } else {
-            //Temporarily disabling checking as it causes java dtx test to fail
-            //TODO: renable these once all tests are passing again
-            //throw Exception(QPID_MSG("Attempted count underflow on dequeue(" << _size << "): " << *this));
-            QPID_LOG(error, "Attempted count underflow on dequeue(" << _size << "): " << *this);
+            throw Exception(QPID_MSG("Attempted count underflow on dequeue(" << _size << "): " << *this));
         }
     }
     if (maxSize) {
         if (_size > size.get()) {
-            //Temporarily disabling checking as it causes java dtx test to fail
-            //TODO: renable these once all tests are passing again
-            //throw Exception(QPID_MSG("Attempted size underflow on dequeue(" << _size << "): " << *this));
-            QPID_LOG(error, "Attempted size underflow on dequeue(" << _size << "): " << *this);
+            throw Exception(QPID_MSG("Attempted size underflow on dequeue(" << _size << "): " << *this));
         } else {
             size -= _size;
         }

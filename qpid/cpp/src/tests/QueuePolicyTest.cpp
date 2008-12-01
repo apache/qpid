@@ -185,5 +185,62 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
     } catch (const ResourceLimitExceededException&) {}    
 }
 
+QPID_AUTO_TEST_CASE(testPolicyWithDtx) 
+{
+    FieldTable args;
+    std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy(5, 0, QueuePolicy::REJECT);
+    policy->update(args);
+
+    ProxySessionFixture f;
+    std::string q("my-policy-queue");
+    f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+    LocalQueue incoming;
+    SubscriptionSettings settings(FlowControl::unlimited());
+    settings.autoAck = 0; // no auto ack.
+    Subscription sub = f.subs.subscribe(incoming, q, settings); 
+    f.session.dtxSelect();
+    Xid tx1(1, "test-dtx-mgr", "tx1");
+    f.session.dtxStart(arg::xid=tx1);
+    for (int i = 0; i < 5; i++) {
+        f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
+    }
+    f.session.dtxEnd(arg::xid=tx1);
+    f.session.dtxCommit(arg::xid=tx1, arg::onePhase=true);
+
+    Xid tx2(1, "test-dtx-mgr", "tx2");
+    f.session.dtxStart(arg::xid=tx2);
+    for (int i = 0; i < 5; i++) {
+        BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
+    }
+    SequenceSet accepting=sub.getUnaccepted();
+    f.session.messageAccept(accepting);
+    f.session.dtxEnd(arg::xid=tx2);
+    f.session.dtxPrepare(arg::xid=tx2);
+    f.session.dtxRollback(arg::xid=tx2);
+    f.session.messageRelease(accepting);
+
+    Xid tx3(1, "test-dtx-mgr", "tx3");
+    f.session.dtxStart(arg::xid=tx3);
+    for (int i = 0; i < 5; i++) {
+        incoming.pop();
+    }
+    accepting=sub.getUnaccepted();
+    f.session.messageAccept(accepting);
+    f.session.dtxEnd(arg::xid=tx3);
+    f.session.dtxPrepare(arg::xid=tx3);
+
+    Session other = f.connection.newSession();
+    try {
+        ScopedSuppressLogging sl; // Suppress messages for expected errors.
+        other.messageTransfer(arg::content=client::Message("Message_6", q));
+        BOOST_FAIL("expecting ResourceLimitExceededException.");
+    } catch (const ResourceLimitExceededException&) {}    
+
+    f.session.dtxCommit(arg::xid=tx3);
+    //now retry and this time should succeed
+    other = f.connection.newSession();
+    other.messageTransfer(arg::content=client::Message("Message_6", q));
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
