@@ -346,7 +346,7 @@ void Message::allEnqueuesComplete() {
     MessageCallback* cb = 0;
     {
         sys::Mutex::ScopedLock l(lock);
-        swap(cb, enqueueCallback);
+        std::swap(cb, enqueueCallback);
     }
     if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
@@ -355,7 +355,7 @@ void Message::allDequeuesComplete() {
     MessageCallback* cb = 0;
     {
         sys::Mutex::ScopedLock l(lock);
-        swap(cb, dequeueCallback);
+        std::swap(cb, dequeueCallback);
     }
     if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
