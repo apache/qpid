@@ -190,8 +190,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ConnectionMap connections;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
-    PollableEventQueue deliverQueue;
-    PlainEventQueue mcastQueue;
+    PollableEventQueue deliverQueue, mcastQueue;
+    PlainEventQueue mcastStallQueue;
     uint32_t mcastId;
     framing::Uuid clusterId;
 
