@@ -1,5 +1,5 @@
-Apache Incubator Qpid Ruby M4 Release Notes
----------------------------------------------
+Apache Qpid Ruby M4 Release Notes
+---------------------------------
 
 The Qpid M4 release of the ruby client contains support the for AMQP
 0-10 & 0-8 specifications (as well as support for the non-WIP portion
