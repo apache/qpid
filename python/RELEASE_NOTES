@@ -1,5 +1,5 @@
-Apache Incubator Qpid Python M4 Release Notes
--------------------------------------------
+Apache Python M4 Release Notes
+------------------------------
 
 The Qpid M4 release of the python client contains support the for both
  0-8 and 0-10 of the AMQP specification as well as support for the
