@@ -193,11 +193,7 @@ class Channel:
     self.futures = {}
     self.control_queue = Queue(0)#used for incoming methods that appas may want to handle themselves
 
-    # Use reliable framing if version == 0-9.
-    if spec.major == 0 and spec.minor == 9:
-      self.invoker = self.invoke_reliable
-    else:
-      self.invoker = self.invoke_method
+    self.invoker = self.invoke_method
     self.use_execution_layer = (spec.major == 0 and spec.minor == 10) or (spec.major == 99 and spec.minor == 0)
     self.synchronous = True
 

@@ -108,6 +108,10 @@ Options:
         # NB: AMQP 0-8 identifies itself as 8-0 for historical reasons.
         return self.spec.major==8 and self.spec.minor==0
 
+    def use09spec(self):
+        "True if we are running with the 0-9 (non-wip) spec."
+        return self.spec.major==0 and self.spec.minor==9
+
     def _parseargs(self, args):
         # Defaults
         self.setBroker("localhost")
@@ -157,14 +161,12 @@ Options:
         if len(self.tests) == 0:
             if not self.skip_self_test:
                 self.tests=findmodules("tests")
-            if self.use08spec():
+            if self.use08spec() or self.use09spec():
                 self.tests+=findmodules("tests_0-8")
             elif (self.spec.major == 99 and self.spec.minor == 0):
                 self.tests+=findmodules("tests_0-10_preview")                
             elif (self.spec.major == 0 and self.spec.minor == 10):
                 self.tests+=findmodules("tests_0-10")
-            else:
-                self.tests+=findmodules("tests_0-9")
 
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
@@ -232,7 +234,7 @@ class TestBase(unittest.TestCase):
         self.client = self.connect()
         self.channel = self.client.channel(1)
         self.version = (self.client.spec.major, self.client.spec.minor)
-        if self.version == (8, 0):
+        if self.version == (8, 0) or self.version == (0, 9):
             self.channel.channel_open()
         else:
             self.channel.session_open()
@@ -278,7 +280,7 @@ class TestBase(unittest.TestCase):
 
     def consume(self, queueName):
         """Consume from named queue returns the Queue object."""
-        if testrunner.use08spec():
+        if testrunner.use08spec() or testrunner.use09spec():
             reply = self.channel.basic_consume(queue=queueName, no_ack=True)
             return self.client.queue(reply.consumer_tag)
         else:
@@ -309,7 +311,7 @@ class TestBase(unittest.TestCase):
         Publish to exchange and assert queue.get() returns the same message.
         """
         body = self.uniqueString()
-        if testrunner.use08spec():
+        if testrunner.use08spec() or testrunner.use09spec():
             self.channel.basic_publish(
                 exchange=exchange,
                 content=Content(body, properties=properties),
@@ -319,7 +321,7 @@ class TestBase(unittest.TestCase):
                 destination=exchange,
                 content=Content(body, properties={'application_headers':properties,'routing_key':routing_key}))
         msg = queue.get(timeout=1)
-        if testrunner.use08spec():
+        if testrunner.use08spec() or testrunner.use09spec():
             self.assertEqual(body, msg.content.body)
             if (properties):
                 self.assertEqual(properties, msg.content.properties)
@@ -336,7 +338,7 @@ class TestBase(unittest.TestCase):
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
     def assertChannelException(self, expectedCode, message):
-        if self.version == (8, 0): #or "transitional" in self.client.spec.file:
+        if self.version == (8, 0) or self.version == (0, 9):
             if not isinstance(message, Message): self.fail("expected channel_close method, got %s" % (message))
             self.assertEqual("channel", message.method.klass.name)
             self.assertEqual("close", message.method.name)
