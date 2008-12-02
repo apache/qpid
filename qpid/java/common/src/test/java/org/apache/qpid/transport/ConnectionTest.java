@@ -26,7 +26,6 @@ import org.apache.qpid.util.concurrent.Condition;
 
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
-import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
 
@@ -34,7 +33,6 @@ import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.Collections;
 import java.io.IOException;
 
@@ -52,12 +50,20 @@ public class ConnectionTest extends TestCase implements SessionListener
     private List<MessageTransfer> messages = new ArrayList<MessageTransfer>();
     private List<MessageTransfer> incoming = new ArrayList<MessageTransfer>();
 
+    private IoAcceptor _ioa = null;
+
+
     protected void setUp() throws Exception
     {
         super.setUp();
 
         port = AvailablePortFinder.getNextAvailable(12000);
+    }
 
+    protected void tearDown() throws Exception
+    {
+        _ioa.close();
+        super.tearDown();
     }
 
     public void opened(Session ssn) {}
@@ -206,11 +212,9 @@ public class ConnectionTest extends TestCase implements SessionListener
             }
         };
 
-        IoAcceptor ioa = null;
         try
         {
-            ioa = new IoAcceptor
-                    ("localhost", port, ConnectionBinding.get(server));
+            _ioa = new IoAcceptor("localhost", port, ConnectionBinding.get(server));
         }
         catch (IOException e)
         {
@@ -218,7 +222,7 @@ public class ConnectionTest extends TestCase implements SessionListener
             fail("Unable to start Server for test due to:" + e.getMessage());
         }
 
-        ioa.start();
+        _ioa.start();
     }
 
     public void testClosedNotificationAndWriteToClosed() throws Exception
