@@ -79,7 +79,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
 
 
-        @Override
         public boolean isBrowser()
         {
             return true;
@@ -127,7 +126,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
 
 
-        @Override
         public boolean isBrowser()
         {
             return false;
@@ -197,7 +195,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
-        @Override
+
         public boolean isBrowser()
         {
             return false;
