@@ -122,6 +122,12 @@ class Connection:
       raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
     return frame
 
+  def write_0_9(self, frame):
+    self.write_8_0(frame)
+
+  def read_0_9(self):
+    return self.read_8_0()
+
   def write_0_10(self, frame):
     c = self.codec
     flags = 0
