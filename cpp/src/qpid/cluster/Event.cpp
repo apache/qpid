@@ -56,14 +56,14 @@ Event Event::control(const framing::AMQBody& body, const ConnectionId& cid, uint
     return e;
 }
     
-void Event::mcast (const Cpg::Name& name, Cpg& cpg) const {
+bool Event::mcast (Cpg& cpg) const {
     char header[OVERHEAD];
     Buffer b(header, OVERHEAD);
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(id);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
-    cpg.mcast(name, iov, sizeof(iov)/sizeof(*iov));
+    return cpg.mcast(iov, sizeof(iov)/sizeof(*iov));
 }
 
 Event::operator Buffer() const  {

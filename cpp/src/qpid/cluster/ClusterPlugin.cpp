@@ -29,6 +29,7 @@
 #include "qpid/log/Statement.h"
 
 #include <boost/utility/in_place_factory.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace qpid {
 namespace cluster {

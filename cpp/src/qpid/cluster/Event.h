@@ -51,7 +51,7 @@ class Event {
     /** Create an event containing a control */
     static Event control(const framing::AMQBody&, const ConnectionId&, uint32_t id=0);
     
-    void mcast(const Cpg::Name& name, Cpg& cpg) const;
+    bool mcast(Cpg& cpg) const;
     
     EventType getType() const { return type; }
     ConnectionId getConnectionId() const { return connectionId; }
