@@ -121,14 +121,18 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     assert(dispatcher.id() == 0 || dispatcher.id() == Thread::current().id());
     dispatcher = Thread::current();
     while (!stopped && !queue.empty()) {
+        T value = queue.front();
+        queue.pop_front();
         bool ok = false;
         {   // unlock to allow concurrent push or call to stop() in callback.
             ScopedUnlock u(lock);
-            // FIXME aconway 2008-12-02: exception-safe if callback throws.
-            ok = callback(queue.front());
+            // FIXME aconway 2008-12-02: not exception safe if callback throws.
+            ok = callback(value);
         }
-        if (ok) queue.pop_front();
-        else stopped=true;
+        if (!ok) { // callback cannot process value,  put it back.
+            queue.push_front(value);
+            stopped=true;
+        }
     }
     dispatcher = Thread();
     if (queue.empty()) condition.clear();

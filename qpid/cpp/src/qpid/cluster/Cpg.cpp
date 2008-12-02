@@ -103,11 +103,6 @@ bool Cpg::isFlowControlEnabled() {
 }
 
 bool Cpg::mcast(const iovec* iov, int iovLen) {
-    // Thread-safety note : the cpg_ calls are thread safe, but there
-    // is a race below between calling cpg_flow_control_state_get()
-    // and calling mcast_joined() where N threads could see the state
-    // as disabled and call mcast, but only M < N messages can be sent
-    // without exceeding flow control limits.
     if (isFlowControlEnabled()) {
         QPID_LOG(warning, "CPG flow control enabled")
         return false;
@@ -135,13 +130,13 @@ void Cpg::dispatch(cpg_dispatch_t type) {
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
     switch (err) {
       case CPG_OK: return msg+": ok";
-      case CPG_ERR_LIBRARY: return msg+": library";
+      case CPG_ERR_LIBRARY: return msg+": library error";
       case CPG_ERR_TIMEOUT: return msg+": timeout";
       case CPG_ERR_TRY_AGAIN: return msg+": timeout. The aisexec daemon may not be running";
       case CPG_ERR_INVALID_PARAM: return msg+": invalid param";
       case CPG_ERR_NO_MEMORY: return msg+": no memory";
       case CPG_ERR_BAD_HANDLE: return msg+": bad handle";
-      case CPG_ERR_ACCESS: return msg+": access denied. You may need to set your group ID to 'ais'";
+      case CPG_ERR_ACCESS: return msg+": access denied.";
       case CPG_ERR_NOT_EXIST: return msg+": not exist";
       case CPG_ERR_EXIST: return msg+": exist";
       case CPG_ERR_NOT_SUPPORTED: return msg+": not supported";
