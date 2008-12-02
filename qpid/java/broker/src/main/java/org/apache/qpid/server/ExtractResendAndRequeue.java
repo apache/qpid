@@ -54,7 +54,6 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
         _storeContext = storeContext;
     }
 
-    @Override
     public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
     {
 
@@ -101,7 +100,6 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
         return false;
     }
 
-    @Override
     public void visitComplete()
     {
         _unacknowledgedMessageMap.clear();

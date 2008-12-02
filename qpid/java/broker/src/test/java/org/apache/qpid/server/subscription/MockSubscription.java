@@ -41,7 +41,6 @@ public class MockSubscription implements Subscription
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
 
-    @Override
     public void close()
     {
         _closed = true;
@@ -52,111 +51,92 @@ public class MockSubscription implements Subscription
         _state = State.CLOSED;
     }
 
-    @Override
     public boolean filtersMessages()
     {
         return false;
     }
 
-    @Override
     public AMQChannel getChannel()
     {
         return null;
     }
 
-    @Override
     public AMQShortString getConsumerTag()
     {
         return tag ;
     }
 
-    @Override
     public QueueEntry getLastSeenEntry()
     {
         return lastSeen;
     }
 
-    @Override
     public SubscriptionAcquiredState getOwningState()
     {
         return new QueueEntry.SubscriptionAcquiredState(this);
     }
 
-    @Override
     public AMQQueue getQueue()
     {
         return queue;
     }
 
-    @Override
     public void getSendLock()
     {
     }
 
-    @Override
     public boolean hasInterest(QueueEntry msg)
     {
         return true;
     }
 
-    @Override
     public boolean isActive()
     {
         return true;
     }
 
-    @Override
     public boolean isAutoClose()
     {
         return false;
     }
 
-    @Override
     public boolean isBrowser()
     {
         return false;
     }
 
-    @Override
     public boolean isClosed()
     {
         return _closed;
     }
 
-    @Override
     public boolean isSuspended()
     {
         return false;
     }
 
-    @Override
     public void queueDeleted(AMQQueue queue)
     {
     }
 
-    @Override
     public void releaseSendLock()
     {
     }
 
-    @Override
     public void resend(QueueEntry entry) throws AMQException
     {
     }
 
-    @Override
     public void restoreCredit(QueueEntry queueEntry)
     {
     }
 
-    @Override
     public void send(QueueEntry msg) throws AMQException
     {
         lastSeen = msg;
         messages.add(msg);
     }
 
-    @Override
     public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)
     {
         boolean result = false;
@@ -168,13 +148,11 @@ public class MockSubscription implements Subscription
         return result;
     }
 
-    @Override
     public void setQueue(AMQQueue queue)
     {
         this.queue = queue;
     }
 
-    @Override
     public void setStateListener(StateListener listener)
     {
         this._listener = listener;
@@ -185,7 +163,6 @@ public class MockSubscription implements Subscription
         return _state;
     }
 
-    @Override
     public boolean wouldSuspend(QueueEntry msg)
     {
         return false;
