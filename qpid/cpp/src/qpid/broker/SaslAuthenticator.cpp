@@ -118,10 +118,12 @@ void SaslAuthenticator::fini(void)
 
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connection& c)
 {
+    static bool needWarning = true;
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c));
     } else {
         QPID_LOG(warning, "SASL: No Authentication Performed");
+        needWarning = false;
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c));
     }
 }
