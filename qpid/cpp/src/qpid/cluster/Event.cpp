@@ -39,7 +39,8 @@ Event::Event(EventType t, const ConnectionId& c,  size_t s, uint32_t i)
 
 Event Event::delivered(const MemberId& m, void* d, size_t s) {
     Buffer buf(static_cast<char*>(d), s);
-    EventType type((EventType)buf.getOctet()); 
+    EventType type((EventType)buf.getOctet());
+    assert(type == DATA || type == CONTROL);
     ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
     uint32_t id = buf.getLong();
     assert(buf.getPosition() == OVERHEAD);
@@ -62,6 +63,7 @@ bool Event::mcast (Cpg& cpg) const {
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(id);
+    assert(buf.getPosition() == OVERHEAD);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
     return cpg.mcast(iov, sizeof(iov)/sizeof(*iov));
 }
