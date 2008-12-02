@@ -626,6 +626,10 @@ void Queue::dequeueCommitted(const QueuedMessage& msg)
 {
     Mutex::ScopedLock locker(messageLock);
     dequeued(msg);    
+    if (mgmtObject != 0) {
+        mgmtObject->inc_msgTxnDequeues();
+        mgmtObject->inc_byteTxnDequeues(msg.payload->contentSize());
+    }
 }
 
 /**
