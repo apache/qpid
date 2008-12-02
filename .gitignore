@@ -51,12 +51,12 @@ qpid/cpp/managementgen/management-types.xml
 *.class
 velocity.log
 qpid/java/build
-qpid/java/release
+release
 .classpath
 .project
 .settings
 generated/
-target/
+target
 # Intellij Project files
 *.iml
 *.ipr
@@ -73,3 +73,5 @@ target/
 *.exe
 *.lib
 *.dll
+# MacOS File
+.DS_Store
