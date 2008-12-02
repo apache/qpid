@@ -118,6 +118,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave(Lock&);
     std::vector<Url> getUrls(Lock&) const;
 
+    bool sendMcast(const Event& e);
+    
     // Called via CPG, deliverQueue or DumpClient threads. 
     void tryMakeOffer(const MemberId&, Lock&);
 
@@ -133,7 +135,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    void delivered(const Event&); // deliverQueue callback
+    bool delivered(const Event&); // deliverQueue callback
     void delivered(const Event&, Lock&); // unlocked version
 
     // CPG callbacks, called in CPG IO thread.
@@ -183,7 +185,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     broker::Broker& broker;
     boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
-    const Cpg::Name name;
+    const std::string name;
     const Url myUrl;
     const MemberId myId;
 

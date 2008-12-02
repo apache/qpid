@@ -85,11 +85,11 @@ void send(client::AsyncSession& s, const AMQBody& body) {
 
 // TODO aconway 2008-09-24: optimization: dump connections/sessions in parallel.
 
-DumpClient::DumpClient(const MemberId& from, const MemberId& to, const Url& url,
+DumpClient::DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url& url,
                        broker::Broker& broker, const ClusterMap& m, const Cluster::Connections& cons,
                        const boost::function<void()>& ok,
                        const boost::function<void(const std::exception&)>& fail)
-    : dumperId(to), dumpeeId(from), dumpeeUrl(url), dumperBroker(broker), map(m), connections(cons), 
+    : dumperId(dumper), dumpeeId(dumpee), dumpeeUrl(url), dumperBroker(broker), map(m), connections(cons), 
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
       done(ok), failed(fail)
 {
