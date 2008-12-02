@@ -56,6 +56,17 @@ public class IoAcceptor<E> extends Thread
         setName(String.format("IoAcceptor - %s", socket.getInetAddress()));
     }
 
+    /**
+        Close the underlying ServerSocket if it has not already been closed.
+     */
+    public void close() throws IOException
+    {
+        if (!socket.isClosed())
+        {
+            socket.close();
+        }
+    }
+
     public IoAcceptor(String host, int port, Binding<E,ByteBuffer> binding)
         throws IOException
     {
