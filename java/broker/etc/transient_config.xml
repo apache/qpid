@@ -35,7 +35,7 @@
         <socketSendBuffer>32768</socketSendBuffer>
     </connector>
     <management>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <jmxport>8999</jmxport>
     </management>
     <advanced>
