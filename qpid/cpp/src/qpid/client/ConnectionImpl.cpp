@@ -134,7 +134,10 @@ void ConnectionImpl::close()
 
 
 template <class F> void ConnectionImpl::closeInternal(const F& f) {
-    connector->close();
+    {
+        Mutex::ScopedUnlock u(lock);
+        connector->close();
+    }
     //notifying sessions of failure can result in those session being
     //deleted which in turn results in a call to erase(); this can
     //even happen on this thread, when 's' goes out of scope
