@@ -612,7 +612,7 @@ void ManagementBroker::handleClassIndLH (Buffer& inBuffer, string replyToKey, ui
 
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
     ClassMap::iterator   cIter = pIter->second.find(key);
-    if (cIter == pIter->second.end()) {
+    if (cIter == pIter->second.end() || !cIter->second.hasSchema()) {
         Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
         uint32_t outLen;
         uint32_t sequence = nextRequestSequence++;
@@ -624,6 +624,9 @@ void ManagementBroker::handleClassIndLH (Buffer& inBuffer, string replyToKey, ui
         outLen = MA_BUFFER_SIZE - outBuffer.available ();
         outBuffer.reset ();
         sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+
+        if (cIter != pIter->second.end())
+            pIter->second.erase(key);
 
         pIter->second.insert(pair<SchemaClassKey, SchemaClass>(key, SchemaClass(kind, sequence)));
     }
@@ -697,8 +700,7 @@ void ManagementBroker::handleSchemaResponseLH(Buffer& inBuffer, string /*replyTo
             if (length == 0) {
                 QPID_LOG(warning, "Management Broker received invalid schema response: " << packageName << "." << key.name);
                 cMap.erase(key);
-            }
-            else {
+            } else {
                 cIter->second.buffer    = (uint8_t*) malloc(length);
                 cIter->second.bufferLen = length;
                 inBuffer.getRawData(cIter->second.buffer, cIter->second.bufferLen);
