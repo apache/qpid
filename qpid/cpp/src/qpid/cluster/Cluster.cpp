@@ -261,7 +261,8 @@ void Cluster::deliver(
 {
     Mutex::ScopedLock l(lock);
     MemberId from(nodeid, pid);
-    deliver(Event::delivered(from, msg, msg_len), l);
+    framing::Buffer buf(static_cast<char*>(msg), msg_len);
+    deliver(Event::decode(from, buf), l);
 }
 
 void Cluster::deliver(const Event& e, Lock&) {
