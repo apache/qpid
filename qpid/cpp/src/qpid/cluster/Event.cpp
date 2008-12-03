@@ -63,7 +63,7 @@ bool Event::mcast (Cpg& cpg) const {
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(id);
-    assert(buf.getPosition() == OVERHEAD);
+    assert(b.getPosition() == OVERHEAD);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
     return cpg.mcast(iov, sizeof(iov)/sizeof(*iov));
 }
