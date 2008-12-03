@@ -46,7 +46,7 @@ class Event {
     Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0, uint32_t id=0);
 
     /** Create an event copied from delivered data. */
-    static Event delivered(const MemberId& m, void* data, size_t size);
+    static Event decode(const MemberId& m, framing::Buffer&);
 
     /** Create an event containing a control */
     static Event control(const framing::AMQBody&, const ConnectionId&, uint32_t id=0);

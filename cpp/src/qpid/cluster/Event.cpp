@@ -32,20 +32,21 @@ namespace cluster {
 
 using framing::Buffer;
 
-const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(uint32_t);
+const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
 
 Event::Event(EventType t, const ConnectionId& c,  size_t s, uint32_t i)
     : type(t), connectionId(c), size(s), data(RefCountedBuffer::create(s)), id(i) {}
 
-Event Event::delivered(const MemberId& m, void* d, size_t s) {
-    Buffer buf(static_cast<char*>(d), s);
+Event Event::decode(const MemberId& m, framing::Buffer& buf) {
+    assert(buf.available() > OVERHEAD);
     EventType type((EventType)buf.getOctet());
     assert(type == DATA || type == CONTROL);
     ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
     uint32_t id = buf.getLong();
-    assert(buf.getPosition() == OVERHEAD);
-    Event e(type, connection, s-OVERHEAD, id);
-    memcpy(e.getData(), static_cast<char*>(d)+OVERHEAD, s-OVERHEAD);
+    uint32_t size = buf.getLong();
+    Event e(type, connection, size, id);
+    assert(buf.available() >= size);
+    memcpy(e.getData(), buf.getPointer() + buf.getPosition(), size);
     return e;
 }
 
@@ -63,6 +64,7 @@ bool Event::mcast (Cpg& cpg) const {
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(id);
+    b.putLong(size);
     assert(b.getPosition() == OVERHEAD);
     iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
     return cpg.mcast(iov, sizeof(iov)/sizeof(*iov));
