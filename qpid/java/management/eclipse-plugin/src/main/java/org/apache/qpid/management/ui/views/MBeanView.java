@@ -135,7 +135,7 @@ public class MBeanView extends ViewPart
     {
         try
         {
-            if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
+            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
                 NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
             {
                 return;
