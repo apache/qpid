@@ -4,10 +4,17 @@ Bundle-Name: Qpid Management Console Plug-in
 Bundle-SymbolicName: org.apache.qpid.management.ui; singleton:=true
 Bundle-Version: 0.1.0
 Bundle-Activator: org.apache.qpid.management.ui.Activator
+Bundle-Vendor: Apache Software Foundation
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.ui.forms,
- jmxremote.sasl
+ jmxremote.sasl;resolution:=optional
 Eclipse-LazyStart: true
-Bundle-Vendor: Apache Software Foundation
+Export-Package: org.apache.qpid.management.ui,
+ org.apache.qpid.management.ui.actions,
+ org.apache.qpid.management.ui.exceptions,
+ org.apache.qpid.management.ui.jmx,
+ org.apache.qpid.management.ui.model,
+ org.apache.qpid.management.ui.sasl,
+ org.apache.qpid.management.ui.views
