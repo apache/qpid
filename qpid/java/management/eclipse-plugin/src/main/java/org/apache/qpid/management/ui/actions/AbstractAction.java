@@ -46,7 +46,9 @@ public class AbstractAction
     public static final String RMI_SASL_ERROR = "non-JRMP server";
     public static final String SECURITY_FAILURE = "User authentication has failed";   
     public static final String SERVER_UNAVAILABLE = "Qpid server is not running";
-   
+    public static final String INVALID_PERSPECTIVE = "Invalid Perspective";
+    public static final String CHANGE_PERSPECTIVE = "Please use the Qpid Management Perspective";
+      
     /**
      * We will cache window object in order to
      * be able to provide parent shell for the message dialog.
@@ -75,6 +77,14 @@ public class AbstractAction
     protected void handleException(Throwable ex, String title, String msg)
     {
         MBeanUtility.printStackTrace(ex);
+        NavigationView view = (NavigationView)_window.getActivePage().findView(NavigationView.ID);
+        if (view == null)
+        {
+            IStatus status = new Status(IStatus.WARNING, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
+                    IStatus.OK, CHANGE_PERSPECTIVE, null); 
+            ErrorDialog.openError(_window.getShell(), "Warning", INVALID_PERSPECTIVE, status);
+            return;
+        }
         if (msg == null)
         {
             if (ex instanceof IOException)
