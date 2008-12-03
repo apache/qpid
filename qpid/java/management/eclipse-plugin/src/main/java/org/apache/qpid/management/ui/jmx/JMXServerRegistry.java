@@ -22,7 +22,6 @@ package org.apache.qpid.management.ui.jmx;
 
 import static org.apache.qpid.management.ui.Constants.*;
 
-import java.lang.reflect.Constructor;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,11 +98,10 @@ public class JMXServerRegistry extends ServerRegistry
     {
         super(server);
         String securityMechanism = ApplicationRegistry.getSecurityMechanism();
-        String connectorClassName = ApplicationRegistry.getJMXConnectorClass();
        
-        if ((securityMechanism != null) && (connectorClassName != null))
+        if (securityMechanism != null)
         { 
-            createSASLConnector(securityMechanism, connectorClassName);
+            createSASLConnector(securityMechanism);
         }
         else
         {
@@ -126,15 +124,28 @@ public class JMXServerRegistry extends ServerRegistry
         return _mbsc;
     }
     
-    private void createSASLConnector(String mech, String className) throws Exception
+    private void createSASLConnector(String mech) throws Exception
     {
         String text = "Security mechanism " + mech + " is not supported.";
-        // Check if the given connector, which supports SASL is available
-        Class connectorClass = Class.forName(className);
+        String jmxmpcClass="javax.management.remote.jmxmp.JMXMPConnector";
+        // Check if the JMXMPConnector is available to provide SASL support
+        try
+        {
+        	Class connectorClass = Class.forName(jmxmpcClass, false, this.getClass().getClassLoader());
+        }
+        catch(ClassNotFoundException cnfe)
+        {
+        	throw new Exception("JMXMPConnector class was not found, security unavailable.");
+        }
 
         _jmxUrl = new JMXServiceURL("jmxmp", getManagedServer().getHost(), getManagedServer().getPort());
         _env = new HashMap<String, Object>();
         CallbackHandler handler;
+        
+        /* set the package in which to find the JMXMP ClientProvider.class file
+         * loaded by the jmxremote.sasl plugin (from the jmxremote_optional.jar) */
+        _env.put("jmx.remote.protocol.provider.pkgs","com.sun.jmx.remote.protocol");
+
         if (MECH_CRAMMD5.equals(mech))
         {
             // For SASL/CRAM-MD5
@@ -162,15 +173,7 @@ public class JMXServerRegistry extends ServerRegistry
             MBeanUtility.printOutput(text);
             throw new Exception(text);
         }
-        // Now create the instance of JMXMPConnector                                               
-        Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
-        Constructor cons = connectorClass.getConstructor(paramTypes);
 
-        Object[] args = {_jmxUrl, _env};           
-        Object theObject = cons.newInstance(args);
-
-        _jmxc = (JMXConnector)theObject;
-        
         Thread connectorThread = new Thread(new ConnectorThread());
         connectorThread.start();
         long timeNow = System.currentTimeMillis();
@@ -197,8 +200,9 @@ public class JMXServerRegistry extends ServerRegistry
             {
                 _connected = false;
                 _connectionException = null;
-                
-                _jmxc.connect();
+
+                _jmxc = JMXConnectorFactory.connect(_jmxUrl, _env);
+
                 _connected = true;
             }
             catch (Exception ex)

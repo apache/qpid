@@ -43,7 +43,6 @@ public abstract class ApplicationRegistry
     private static FontRegistry fontRegistry = new FontRegistry();
     public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
     public static final String securityMechanism = System.getProperty("security", null);
-    public static final String connectorClass =  System.getProperty("jmxconnector");
     public static final long timeout = Long.parseLong(System.getProperty("timeout", "5000"));
     
     static
@@ -139,9 +138,5 @@ public abstract class ApplicationRegistry
     {
         return securityMechanism;
     }
-    
-    public static String getJMXConnectorClass()
-    {
-        return connectorClass;
-    }
+
 }
