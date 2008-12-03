@@ -39,7 +39,7 @@
   <property name="build.data"            location="${build}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
   <property name="build.coveragereport"  location="${build}/coverage"/>
-  
+
   <property name="java.target"           value="1.5"/>
   <property name="java.source"           value="1.5"/>
 
@@ -52,6 +52,7 @@
   <property name="javac.compiler.args"   value=""/>
 
   <property name="cobertura.dir" value="${project.root}/lib/cobertura" />
+  <property name="mllib.dir" value="${project.root}/../python" />
 
   <path id="cobertura.classpath">
     <fileset dir="${cobertura.dir}">
@@ -61,7 +62,7 @@
   </path>
 
   <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
-  
+
   <macrodef name="indirect">
     <attribute name="name"/>
     <attribute name="variable"/>
@@ -86,6 +87,21 @@
     <attribute name="name"/>
     <sequential>
       <echo message="@{name} = ${@{name}}"/>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="jython">
+    <attribute name="path"/>
+    <element name="args"/>
+    <sequential>
+      <java classname="org.python.util.jython" fork="true" failonerror="true">
+        <arg value="-Dpython.cachedir.skip=true"/>
+        <arg value="-Dpython.path=${project.root}/lib/jython-lib.jar/Lib${path.separator}@{path}"/>
+        <args/>
+        <classpath>
+          <pathelement location="${project.root}/lib/jython-2.2-rc2.jar"/>
+        </classpath>
+      </java>
     </sequential>
   </macrodef>
 

@@ -19,6 +19,8 @@
 log4j.rootLogger=${root.logging.level}
 
 
+log4j.logger.org.apache.mina=${amqj.logging.level}
+
 log4j.logger.org.apache.qpid=${amqj.logging.level}, console
 log4j.additivity.org.apache.qpid=false
 
@@ -27,9 +29,8 @@ log4j.logger.org.apache.qpid.pingpong=${amqj.test.logging.level}
 log4j.logger.org.apache.qpid.ping=${amqj.test.logging.level}
 log4j.logger.org.apache.qpid.topic=${amqj.test.logging.level}
 
-
-log4j.logger.uk.co.thebadgerset.junit.extensions=${badger.level}, console
-log4j.additivity.uk.co.thebadgerset.junit.extensions=false
+log4j.logger.org.apache.qpid.junit.extensions=${badger.level}, console
+log4j.additivity.org.apache.qpid.junit.extensions=false
 
 log4j.appender.console=org.apache.log4j.ConsoleAppender
 log4j.appender.console.Threshold=all

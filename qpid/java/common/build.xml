@@ -28,7 +28,6 @@
   <property name="xml.spec.dir" location="${project.root}/../specs" />
   <property name="xml.spec.deps" value="amqp.0-8.xml amqp.0-9.xml" />
   <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/amqp.0-9.xml" />
-  <property name="mllib.dir" value="${project.root}/../python" />
   <property name="gentools.timestamp" location="${generated.dir}/gentools.timestamp" />
   <property name="jython.timestamp" location="${generated.dir}/jython.timestamp" />
 
@@ -39,17 +38,14 @@
   </target>
 
   <target name="jython" depends="check_jython_deps" unless="jython.notRequired">
-    <java classname="org.python.util.jython" fork="true" failonerror="true">
-      <arg value="-Dpython.cachedir.skip=true"/>
-      <arg value="-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}"/>
-      <arg value="${basedir}/codegen"/>
-      <arg value="${module.precompiled}"/>
-      <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
-      <arg value="${basedir}"/>
-      <classpath>
-        <pathelement location="jython-2.2-rc2.jar"/>
-      </classpath>
-    </java>
+    <jython path="${mllib.dir}">
+      <args>
+        <arg value="${basedir}/codegen"/>
+        <arg value="${module.precompiled}"/>
+        <arg value="${xml.spec.dir}/amqp.0-10-qpid-errata.xml"/>
+        <arg value="${basedir}"/>
+      </args>
+    </jython>
     <touch file="${jython.timestamp}" />
   </target>
 
