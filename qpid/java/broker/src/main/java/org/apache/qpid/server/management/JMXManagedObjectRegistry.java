@@ -28,6 +28,7 @@ import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrinci
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -36,13 +37,6 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.sasl.AuthorizeCallback;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
@@ -128,9 +122,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
             else if (db instanceof PlainPasswordFilePrincipalDatabase)
             {
+                PlainInitialiser initialiser = new PlainInitialiser();
+                initialiser.initialise(db);
+                env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
                 env.put("jmx.remote.profiles", "SASL/PLAIN");
-                env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(db));
             }
+
+            //workaround NPE generated from env map classloader issue when using Eclipse 3.4 to launch
+            env.put("jmx.remote.profile.provider.class.loader", this.getClass().getClassLoader());
 
             // Enable the SSL security and server authentication
             /*
@@ -222,62 +221,4 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
     }
 
-    /** This class is used for SASL enabled JMXConnector for performing user authentication. */
-    private class UserCallbackHandler implements CallbackHandler
-    {
-        private final PrincipalDatabase _principalDatabase;
-
-        protected UserCallbackHandler(PrincipalDatabase database)
-        {
-            _principalDatabase = database;
-        }
-
-        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
-        {
-            // Retrieve callbacks
-            NameCallback ncb = null;
-            PasswordCallback pcb = null;
-            for (int i = 0; i < callbacks.length; i++)
-            {
-                if (callbacks[i] instanceof NameCallback)
-                {
-                    ncb = (NameCallback) callbacks[i];
-                }
-                else if (callbacks[i] instanceof PasswordCallback)
-                {
-                    pcb = (PasswordCallback) callbacks[i];
-                }
-                else if (callbacks[i] instanceof AuthorizeCallback)
-                {
-                    ((AuthorizeCallback) callbacks[i]).setAuthorized(true);
-                }
-                else
-                {
-                    throw new UnsupportedCallbackException(callbacks[i]);
-                }
-            }
-
-            boolean authorized = false;
-            // Process retrieval of password; can get password if username is available in NameCallback
-            if ((ncb != null) && (pcb != null))
-            {
-                String username = ncb.getDefaultName();
-                try
-                {
-                    authorized = _principalDatabase.verifyPassword(username, pcb.getPassword());
-                }
-                catch (AccountNotFoundException e)
-                {
-                    IOException ioe = new IOException("User not authorized.  " + e);
-                    ioe.initCause(e);
-                    throw ioe;
-                }
-            }
-
-            if (!authorized)
-            {
-                throw new IOException("User not authorized.");
-            }
-        }
-    }
 }
