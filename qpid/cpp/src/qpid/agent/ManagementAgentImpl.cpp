@@ -342,6 +342,8 @@ void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
             cout << "Collision in object-id! New bank assigned: " << assignedBrokerBank <<
                 "." << assignedAgentBank << endl;
         storeData();
+        requestedBrokerBank = assignedBrokerBank;
+        requestedAgentBank = assignedAgentBank;
     }
 
     attachment.setBanks(assignedBrokerBank, assignedAgentBank);
