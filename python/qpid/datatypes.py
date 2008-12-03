@@ -297,6 +297,9 @@ class UUID:
   def __repr__(self):
     return "UUID(%r)" % str(self)
 
+  def __hash__(self):
+    return self.bytes.__hash__()
+
 class timestamp(float):
 
   def __new__(cls, obj=None):

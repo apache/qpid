@@ -1191,9 +1191,16 @@ class ManagedConnection(Thread):
           delay = self.DELAY_MIN
         finally:
           self.cv.release()
-      except:
+      except socket.error:
         if delay < self.DELAY_MAX:
           delay *= self.DELAY_FACTOR
+      except SessionDetached:
+        if delay < self.DELAY_MAX:
+          delay *= self.DELAY_FACTOR
+      except Closed:
+        if delay < self.DELAY_MAX:
+          delay *= self.DELAY_FACTOR
+
       try:
         self.cv.acquire()
         self.cv.wait(delay)
@@ -1332,13 +1339,13 @@ class Broker:
 
     except socket.error, e:
       self.error = "Socket Error %s - %s" % (e[0], e[1])
-      raise Exception(self.error)
+      raise
     except Closed, e:
       self.error = "Connect Failed %d - %s" % (e[0], e[1])
-      raise Exception(self.error)
+      raise
     except ConnectionFailed, e:
       self.error = "Connect Failed %d - %s" % (e[0], e[1])
-      raise Exception(self.error)
+      raise
 
   def _updateAgent(self, obj):
     bankKey = (obj.brokerBank, obj.agentBank)

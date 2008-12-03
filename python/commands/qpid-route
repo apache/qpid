@@ -508,7 +508,7 @@ try:
             Usage()
 
 except Exception,e:
-    print "Failed:", e.args[0]
+    print "Failed:", e.args
     sys.exit(1)
 
 rm.disconnect()
