@@ -95,6 +95,8 @@ class BrokerManager(Console):
     self.objects[id] = (name, first, record)
 
     deltaTime   = float (record.getTimestamps()[0] - lastSample.getTimestamps()[0])
+    if deltaTime < 1000000000.0:
+      return
     enqueueRate = float (record.msgTotalEnqueues - lastSample.msgTotalEnqueues) / \
         (deltaTime / 1000000000.0)
     dequeueRate = float (record.msgTotalDequeues - lastSample.msgTotalDequeues) / \
