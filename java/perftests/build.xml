@@ -30,10 +30,22 @@
     <property name="qpid.logging.level" value="-Damqj.logging.level=warn"/>
     <property name="log4j.config" value="-Dlog4j.configuration=perftests.log4j"/>
     <property name="properties" value="perftests.properties"/>
+    <property name="scripts.dir" value="${build.bin}/${module.name}"/>
 
     <condition property="results" value="${result-path}/results" else="${project.root}/${module}/results">
       <isset property="result-path"/>
     </condition>
+
+    <target name="precompile">
+      <mkdir dir="${scripts.dir}"/>
+      <jython path="${mllib.dir}">
+        <args>
+          <arg value="generate-scripts"/>
+          <arg value="scripts.xml"/>
+          <arg value="${scripts.dir}"/>
+        </args>
+      </jython>
+    </target>
 
     <target name="all-tests" depends="all-queue-tests,all-topic-tests"/>
 
