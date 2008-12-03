@@ -103,9 +103,8 @@ struct ConnectionSettings {
      */
     uint16_t maxFrameSize;
     /**
-     * Allows the size of outgoing frames to be limited. The value
-     * should be a mutliple of the maximum buffer size in use (which
-     * is in turn set through the maxFrameSize setting above).
+     * Limit the size of the connections send buffer . The buffer
+     * is limited to bounds * maxFrameSize.
      */
     uint bounds;
     /**
