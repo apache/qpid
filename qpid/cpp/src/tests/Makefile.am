@@ -166,6 +166,10 @@ check_PROGRAMS+=sender
 sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 sender_LDADD=$(lib_client) 
 
+check_PROGRAMS+=tsxtest
+tsxtest_SOURCES=tsxtest.cpp  TestOptions.h ConnectionOptions.h
+tsxtest_LDADD=$(lib_client) 
+
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
