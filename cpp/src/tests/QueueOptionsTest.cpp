@@ -75,5 +75,24 @@ QPID_AUTO_TEST_CASE(testFlags)
 
 }
 
+QPID_AUTO_TEST_CASE(testSetOrdering)
+{
+    //ensure setOrdering(FIFO) works even if not preceded by a call to
+    //setOrdering(LVQ)
+    QueueOptions ft;	
+    ft.setOrdering(FIFO);	
+    BOOST_CHECK(!ft.isSet(QueueOptions::strLastValueQueue));
+
+}
+
+QPID_AUTO_TEST_CASE(testClearPersistLastNode)
+{
+    //ensure clear works even if not preceded by the setting on the
+    //option
+    QueueOptions ft;	
+    ft.clearPersistLastNode();
+    BOOST_CHECK(!ft.isSet(QueueOptions::strPersistLastNode));
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
