@@ -232,7 +232,8 @@ bool FieldTable::operator==(const FieldTable& x) const {
 
 void FieldTable::erase(const std::string& name) 
 {
-    values.erase(values.find(name));
+    if (values.find(name) != values.end()) 
+        values.erase(name);
 }
 
 }
