@@ -388,19 +388,7 @@
 				RelativePath="gen\qmf\org\apache\qpid\broker\Connection.cpp">
 			</File>
 			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventAgentConnect.cpp">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventAgentDisconnect.cpp">
-			</File>
-			<File
 				RelativePath="gen\qmf\org\apache\qpid\broker\EventBind.cpp">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerConnect.cpp">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerDisconnect.cpp">
 			</File>
 			<File
 				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerLinkDown.cpp">
@@ -751,6 +739,9 @@
 				RelativePath="qpid\broker\QueueCleaner.cpp">
 			</File>
 			<File
+				RelativePath="qpid\broker\QueueListeners.cpp">
+			</File>
+			<File
 				RelativePath="qpid\broker\QueuePolicy.cpp">
 			</File>
 			<File
@@ -941,19 +932,7 @@
 				RelativePath="gen\qmf\org\apache\qpid\broker\Connection.h">
 			</File>
 			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventAgentConnect.h">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventAgentDisconnect.h">
-			</File>
-			<File
 				RelativePath="gen\qmf\org\apache\qpid\broker\EventBind.h">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerConnect.h">
-			</File>
-			<File
-				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerDisconnect.h">
 			</File>
 			<File
 				RelativePath="gen\qmf\org\apache\qpid\broker\EventBrokerLinkDown.h">
@@ -1158,6 +1137,9 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\QueueCleaner.h">
+			</File>
+			<File
+				RelativePath="qpid\broker\QueueListeners.h">
 			</File>
 			<File
 				RelativePath="qpid\broker\QueueMessage.h">
