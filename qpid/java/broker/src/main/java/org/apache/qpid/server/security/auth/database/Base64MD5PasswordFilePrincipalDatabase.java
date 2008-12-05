@@ -21,30 +21,26 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
-import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.EncoderException;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.io.PrintStream;
-import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.concurrent.locks.ReentrantLock;
 import java.security.Principal;
-import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -64,7 +60,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     private Map<String, AuthenticationProviderInitialiser> _saslServers;
 
     AMQUserManagementMBean _mbean;
-    private static final String DEFAULT_ENCODING = "utf-8";
+    public static final String DEFAULT_ENCODING = "utf-8";
     private Map<String, User> _users = new HashMap<String, User>();
     private ReentrantLock _userUpdate = new ReentrantLock();
 
@@ -284,7 +280,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return true;
     }
 
-
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
@@ -324,7 +319,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return user.getPassword();
         }
     }
-
 
     private void loadPasswordFile() throws IOException
     {
@@ -382,6 +376,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             {
                 tmp.delete();
             }
+
             try
             {
                 writer = new PrintStream(tmp);
@@ -394,6 +389,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     if (result == null || result.length < 2 || result[0].startsWith("#"))
                     {
                         writer.write(line.getBytes(DEFAULT_ENCODING));
+                        writer.println();
                         continue;
                     }
 
@@ -485,114 +481,4 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    private class User implements Principal
-    {
-        String _name;
-        char[] _password;
-        byte[] _encodedPassword = null;
-        private boolean _modified = false;
-        private boolean _deleted = false;
-
-        User(String[] data) throws UnsupportedEncodingException
-        {
-            if (data.length != 2)
-            {
-                throw new IllegalArgumentException("User Data should be lenght 2, username, password");
-            }
-
-            _name = data[0];
-
-            byte[] encoded_password = data[1].getBytes(DEFAULT_ENCODING);
-
-            Base64 b64 = new Base64();
-            byte[] decoded = b64.decode(encoded_password);
-
-            _encodedPassword = encoded_password;
-
-            _password = new char[decoded.length];
-
-            int index = 0;
-            for (byte c : decoded)
-            {
-                _password[index++] = (char) c;
-            }
-        }
-
-        public User(String name, char[] password)
-        {
-            _name = name;
-            setPassword(password);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public String toString()
-        {
-            if (_logger.isDebugEnabled())
-            {
-                return getName() + ((_encodedPassword == null) ? "" : ":" + new String(_encodedPassword));
-            }
-            else
-            {
-                return _name;
-            }
-        }
-
-        char[] getPassword()
-        {
-            return _password;
-        }
-
-        void setPassword(char[] password)
-        {
-            _password = password;
-            _modified = true;
-            _encodedPassword = null;
-        }
-
-
-        byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
-        {
-            if (_encodedPassword == null)
-            {
-                encodePassword();
-            }
-            return _encodedPassword;
-        }
-
-        private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
-        {
-            byte[] byteArray = new byte[_password.length];
-            int index = 0;
-            for (char c : _password)
-            {
-                byteArray[index++] = (byte) c;
-            }
-            _encodedPassword = (new Base64()).encode(byteArray);
-        }
-
-        public boolean isModified()
-        {
-            return _modified;
-        }
-
-        public boolean isDeleted()
-        {
-            return _deleted;
-        }
-
-        public void delete()
-        {
-            _deleted = true;
-        }
-
-        public void saved()
-        {
-            _modified = false;
-        }
-
-    }
 }
