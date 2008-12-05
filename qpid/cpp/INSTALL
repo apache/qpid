@@ -51,7 +51,9 @@ a source distribution:
  * e2fsprogs  <http://e2fsprogs.sourceforge.net/>      	(1.39)
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> 	(0.21)
 
-(*) earlier versions of boost e.g. 1.33 also work
+(*) earlier versions of boost e.g. 1.33 also work and there is a patch
+to get 1.32 working in the svn tree though that is only recommended as
+a last resort.
 
 Optional cluster functionality requires:
  * openais <http://openais.org/> 	       		(0.80.3)
@@ -65,7 +67,7 @@ Optional SSL support requires:
 * nspr <http://www.mozilla.org/projects/nspr/>
 
 Qpid has been built using the GNU C++ compiler:
- * gcc     <http://gcc.gnu.org/>            		(3.2.3)
+ * gcc     <http://gcc.gnu.org/>            		(3.4.6)
 
 If you want to build directly from the SVN repository you will need
 all of the above plus:
