@@ -123,7 +123,7 @@ Options:
 
         try:
             opts, self.tests = getopt(args, "s:e:b:h?dvSi:I:F:",
-                                      ["help", "spec", "errata=", "server",
+                                      ["help", "spec", "errata=", "broker=",
                                        "verbose", "skip-self-test", "ignore",
                                        "ignore-file", "spec-folder"])
         except GetoptError, e:
