@@ -75,7 +75,7 @@ void Connection::init() {
     QPID_LOG(debug, cluster << " new connection: " << *this);
     if (isLocal() && !isCatchUp()) {
         // FIXME aconway 2008-12-05: configurable credit limit
-        output.giveReadCredit(3);
+        output.giveReadCredit(10);
     }
 }
 
@@ -91,7 +91,7 @@ bool Connection::doOutput() {
 // which stocks up the write buffers with data.
 //
 void Connection::deliverDoOutput(uint32_t requested) {
-    assert(!catchUp);
+
     output.deliverDoOutput(requested);
 }
 
@@ -191,7 +191,6 @@ size_t Connection::decode(const char* buffer, size_t size) {
         Buffer buf(const_cast<char*>(buffer), size);
         while (localDecoder.decode(buf))
             received(localDecoder.frame);
-        output.giveReadCredit(1);
     }
     else {                      // Multicast local connections.
         assert(isLocal());
@@ -205,8 +204,7 @@ void Connection::deliverBuffer(Buffer& buf) {
     ++deliverSeq;
     while (mcastDecoder.decode(buf))
         delivered(mcastDecoder.frame);
-    if (isLocal()) 
-        output.giveReadCredit(1);
+    output.giveReadCredit(1);
 }
 
 broker::SessionState& Connection::sessionState() {
