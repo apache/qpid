@@ -23,6 +23,7 @@
 #include "Event.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "ClusterMap.h"
+#include "ConnectionMap.h"
 #include "FailoverExchange.h"
 #include "Quorum.h"
 
@@ -72,7 +73,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     virtual ~Cluster();
 
     // Connection map
-    bool insert(const ConnectionPtr&); 
+    void insert(const ConnectionPtr&); 
     void erase(ConnectionId);       
     
     // Send to the cluster 
@@ -101,7 +102,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef sys::LockPtr<const Cluster,sys::Monitor> ConstLockPtr;
     typedef sys::Monitor::ScopedLock Lock;
 
-    typedef std::map<ConnectionId, boost::intrusive_ptr<cluster::Connection> > ConnectionMap;
     typedef sys::PollableQueue<Event> PollableEventQueue;
     typedef std::deque<Event> PlainEventQueue;
 
@@ -160,8 +160,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         struct cpg_address */*joined*/, int /*nJoined*/
     );
 
-    boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&, Lock&);
-    Connections getConnections(Lock&); 
+    boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
     virtual qpid::management::ManagementObject* GetManagementObject() const;
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);

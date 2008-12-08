@@ -31,6 +31,7 @@ cluster_la_SOURCES = \
   qpid/cluster/ConnectionCodec.cpp \
   qpid/cluster/Connection.h \
   qpid/cluster/Connection.cpp \
+  qpid/cluster/ConnectionMap.h \
   qpid/cluster/NoOpConnectionOutputHandler.h \
   qpid/cluster/WriteEstimate.h \
   qpid/cluster/WriteEstimate.cpp \
