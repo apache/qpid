@@ -68,30 +68,31 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void aggregatePerThreadStats(struct PerThreadStats*);
 /*MGEN:ENDIF*/
     // Private Methods
-    static void writeSchema (::qpid::framing::Buffer& buf);
-    void writeProperties    (::qpid::framing::Buffer& buf);
-    void writeStatistics    (::qpid::framing::Buffer& buf,
-                             bool skipHeaders = false);
-    void doMethod           (std::string& methodName,
-                             ::qpid::framing::Buffer& inBuf,
-                             ::qpid::framing::Buffer& outBuf);
-    writeSchemaCall_t getWriteSchemaCall(void) { return writeSchema; }
+    static void writeSchema(::qpid::framing::Buffer& buf);
+    void writeProperties(::qpid::framing::Buffer& buf);
+    void writeStatistics(::qpid::framing::Buffer& buf,
+                         bool skipHeaders = false);
+    void doMethod(std::string& methodName,
+                  ::qpid::framing::Buffer& inBuf,
+                  ::qpid::framing::Buffer& outBuf);
+    writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }
 /*MGEN:IF(Class.NoStatistics)*/
     // Stub for getInstChanged.  There are no statistics in this class.
-    bool getInstChanged (void) { return false; }
+    bool getInstChanged() { return false; }
+    bool hasInst() { return false; }
 /*MGEN:ENDIF*/
   public:
 
-    /*MGEN:Class.NameCap*/ (::qpid::management::ManagementAgent* agent,
+    /*MGEN:Class.NameCap*/(::qpid::management::ManagementAgent* agent,
                             ::qpid::management::Manageable* coreObject/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/);
-    ~/*MGEN:Class.NameCap*/ (void);
+    ~/*MGEN:Class.NameCap*/();
 
     /*MGEN:Class.SetGeneralReferenceDeclaration*/
 
-    static void  registerSelf   (::qpid::management::ManagementAgent* agent);
-    std::string& getPackageName (void) const { return packageName; }
-    std::string& getClassName   (void) const { return className; }
-    uint8_t*     getMd5Sum      (void) const { return md5Sum; }
+    static void registerSelf(::qpid::management::ManagementAgent* agent);
+    std::string& getPackageName() const { return packageName; }
+    std::string& getClassName() const { return className; }
+    uint8_t* getMd5Sum() const { return md5Sum; }
 
     // Method IDs
 /*MGEN:Class.MethodIdDeclarations*/
