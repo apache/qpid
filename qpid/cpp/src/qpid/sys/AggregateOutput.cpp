@@ -26,10 +26,9 @@
 namespace qpid {
 namespace sys {
     
-void AggregateOutput::activateOutput()
-{
-    control.activateOutput();
-}
+void AggregateOutput::activateOutput() { control.activateOutput(); }
+
+void AggregateOutput::giveReadCredit(int32_t credit) { control.giveReadCredit(credit); }
 
 bool AggregateOutput::hasOutput() {
     for (TaskList::const_iterator i = tasks.begin(); i != tasks.end(); ++i) 

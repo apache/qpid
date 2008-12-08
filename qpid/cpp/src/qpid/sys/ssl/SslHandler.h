@@ -58,6 +58,7 @@ class SslHandler : public OutputControl {
     // Output side
     void close();
     void activateOutput();
+    void giveReadCredit(int32_t);
 
     // Input side
     void readbuff(SslIO& aio, SslIOBufferBase* buff);

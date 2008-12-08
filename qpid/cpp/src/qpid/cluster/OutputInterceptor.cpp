@@ -55,6 +55,8 @@ void OutputInterceptor::activateOutput() {
     }
 }
 
+void OutputInterceptor::giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
+
 // Called in write thread when the IO layer has no more data to write.
 // We do nothing in the write thread, we run doOutput only on delivery
 // of doOutput requests.

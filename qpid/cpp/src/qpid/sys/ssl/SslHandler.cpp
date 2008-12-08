@@ -80,6 +80,10 @@ void SslHandler::activateOutput() {
     aio->notifyPendingWrite();
 }
 
+void SslHandler::giveReadCredit(int32_t) {
+    // FIXME aconway 2008-12-05: not yet implemented.
+}
+
 // Input side
 void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
     if (readError) {

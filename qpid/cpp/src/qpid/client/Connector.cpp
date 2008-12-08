@@ -134,7 +134,7 @@ class TCPConnector : public Connector, private sys::Runnable
     void handleClosed();
     bool closeInternal();
     
-    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
+    bool readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIOBufferBase*);
     void writebuff(qpid::sys::AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::AsynchIO&);
@@ -340,7 +340,7 @@ void TCPConnector::Writer::write(sys::AsynchIO&) {
     if (encode.getPosition() > 0) writeOne();
 }
 
-void TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
+bool TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
     framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
 
     if (!initiated) {
@@ -367,6 +367,7 @@ void TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
         // Give whole buffer back to aio subsystem
         aio.queueReadBuffer(buff);
     }
+    return true;
 }
 
 void TCPConnector::writebuff(AsynchIO& aio_) {

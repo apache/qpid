@@ -265,6 +265,7 @@ public:
     virtual void notifyPendingWrite();
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
+    virtual void startReading();
     virtual BufferBase* getQueuedBuffer();
 
 private:
@@ -381,6 +382,10 @@ bool AsynchIO::writeQueueEmpty() {
     return writeQueue.empty();
 }
 
+void AsynchIO::startReading() {
+    DispatchHandle::rewatchRead();
+}
+
 /** Return a queued buffer if there are enough
  * to spare
  */
@@ -418,7 +423,12 @@ void AsynchIO::readable(DispatchHandle& h) {
                 threadReadTotal += rc;
                 readTotal += rc;
 
-                readCallback(*this, buff);
+                if (!readCallback(*this, buff)) {
+                    // We were told to flow control reading at this point
+                    h.unwatchRead();
+                    break;
+                }
+
                 if (rc != readCount) {
                     // If we didn't fill the read buffer then time to stop reading
                     break;

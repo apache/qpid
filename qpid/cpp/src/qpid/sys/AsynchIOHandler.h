@@ -23,6 +23,8 @@
 
 #include "OutputControl.h"
 #include "ConnectionCodec.h"
+#include "AtomicValue.h"
+#include "Mutex.h"
 
 namespace qpid {
 
@@ -43,6 +45,9 @@ class AsynchIOHandler : public OutputControl {
     ConnectionCodec* codec;
     bool readError;
     bool isClient;
+    AtomicValue<int32_t> readCredit;
+    static const int32_t InfiniteCredit = -1;
+    Mutex creditLock;
 
     void write(const framing::ProtocolInitiation&);
 
@@ -56,9 +61,10 @@ class AsynchIOHandler : public OutputControl {
     // Output side
     void close();
     void activateOutput();
+    void giveReadCredit(int32_t credit);
 
     // Input side
-    void readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
+    bool readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
     void eof(AsynchIO& aio);
     void disconnect(AsynchIO& aio);
 	
