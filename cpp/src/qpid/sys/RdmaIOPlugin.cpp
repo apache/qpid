@@ -59,6 +59,7 @@ class RdmaIOHandler : public OutputControl {
     // Output side
     void close();
     void activateOutput();
+    void giveReadCredit(int32_t credit);
     void initProtocolOut();
 
     // Input side
@@ -142,6 +143,10 @@ void RdmaIOHandler::error(Rdma::AsynchIO&) {
 
 void RdmaIOHandler::full(Rdma::AsynchIO&) {
     QPID_LOG(debug, "Rdma: buffer full [" << identifier << "]");
+}
+
+// TODO: Dummy implementation of read throttling 
+void RdmaIOHandler::giveReadCredit(int32_t) {
 }
 
 // The logic here is subtly different from TCP as RDMA is message oriented
