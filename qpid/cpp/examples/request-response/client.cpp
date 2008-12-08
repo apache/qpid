@@ -144,9 +144,7 @@ int main(int argc, char** argv) {
 
 	for (int i=0; i<4; i++) {
             request.setData(s[i]);
-            // Asynchronous transfer sends messages as quickly as
-            // possible without waiting for confirmation.
-            async(session).messageTransfer(arg::content=request, arg::destination="amq.direct");
+            session.messageTransfer(arg::content=request, arg::destination="amq.direct");
             std::cout << "Request: " << s[i] << std::endl;
 	}
 
