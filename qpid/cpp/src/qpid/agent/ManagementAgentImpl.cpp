@@ -745,7 +745,7 @@ void ManagementAgentImpl::periodicProcessing()
                     object->writeProperties(msgBuffer);
                 }
         
-                if (object->getInstChanged() || object->getForcePublish()) {
+                if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
                     encodeHeader(msgBuffer, 'i');
                     object->writeStatistics(msgBuffer);
                 }
