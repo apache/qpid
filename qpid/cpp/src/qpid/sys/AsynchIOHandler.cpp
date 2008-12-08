@@ -44,7 +44,8 @@ AsynchIOHandler::AsynchIOHandler(std::string id, ConnectionCodec::Factory* f) :
     factory(f),
     codec(0),
     readError(false),
-    isClient(false)
+    isClient(false),
+    readCredit(InfiniteCredit)
 {}
 
 AsynchIOHandler::~AsynchIOHandler() {
@@ -79,9 +80,22 @@ void AsynchIOHandler::activateOutput() {
 }
 
 // Input side
-void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
-    if (readError) {
+void AsynchIOHandler::giveReadCredit(int32_t credit) {
+    // Check whether we started in the don't about credit state
+    if (readCredit.boolCompareAndSwap(InfiniteCredit, credit))
         return;
+    else if (readCredit.fetchAndAdd(credit) != 0)
+        return;
+    // Lock and retest credit to make sure we don't race with decreasing credit
+    ScopedLock<Mutex> l(creditLock);
+    assert(readCredit.get() >= 0);
+    if (readCredit.get() != 0)
+        aio->startReading();
+}
+
+bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
+    if (readError) {
+        return false;
     }
     size_t decoded = 0;
     if (codec) {                // Already initiated
@@ -125,6 +139,17 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         // Give whole buffer back to aio subsystem
         aio->queueReadBuffer(buff);
     }
+    // Check here for read credit
+    if (readCredit.get() != InfiniteCredit) {
+        if (--readCredit == 0) {
+            // Lock and retest credit to make sure we don't race with increasing credit
+            ScopedLock<Mutex> l(creditLock);
+            assert(readCredit.get() >= 0);
+            if (readCredit.get() == 0)
+                return false;
+        }
+    }
+    return true;
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {

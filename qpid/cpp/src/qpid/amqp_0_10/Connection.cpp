@@ -92,6 +92,7 @@ size_t  Connection::encode(const char* buffer, size_t size) {
 }
 
 void  Connection::activateOutput() { output.activateOutput(); }
+void Connection::giveReadCredit(int32_t credit) { output.giveReadCredit(credit); }
 
 void  Connection::close() {
     // Close the output queue.

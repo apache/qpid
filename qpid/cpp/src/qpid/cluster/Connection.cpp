@@ -62,17 +62,21 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& wrappedId, ConnectionId myId)
     : cluster(c), self(myId), catchUp(false), output(*this, out),
       connection(&output, cluster.getBroker(), wrappedId)
-{
-    QPID_LOG(debug, cluster << " new connection: " << *this);
-}
+{ init(); }
 
 // Local connections
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& wrappedId, MemberId myId, bool isCatchUp)
     : cluster(c), self(myId, this), catchUp(isCatchUp), output(*this, out),
       connection(&output, cluster.getBroker(), wrappedId)
-{
+{ init(); }
+
+void Connection::init() {
     QPID_LOG(debug, cluster << " new connection: " << *this);
+    if (isLocal() && !isCatchUp()) {
+        // FIXME aconway 2008-12-05: configurable credit limit
+        output.giveReadCredit(3);
+    }
 }
 
 Connection::~Connection() {
@@ -187,6 +191,7 @@ size_t Connection::decode(const char* buffer, size_t size) {
         Buffer buf(const_cast<char*>(buffer), size);
         while (localDecoder.decode(buf))
             received(localDecoder.frame);
+        output.giveReadCredit(1);
     }
     else {                      // Multicast local connections.
         assert(isLocal());
@@ -200,6 +205,8 @@ void Connection::deliverBuffer(Buffer& buf) {
     ++deliverSeq;
     while (mcastDecoder.decode(buf))
         delivered(mcastDecoder.frame);
+    if (isLocal()) 
+        output.giveReadCredit(1);
 }
 
 broker::SessionState& Connection::sessionState() {

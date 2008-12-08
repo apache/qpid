@@ -121,6 +121,11 @@ void SessionState::activateOutput() {
         getConnection().outputTasks.activateOutput();
 }
 
+void SessionState::giveReadCredit(int32_t credit) {
+    if (isAttached()) 
+        getConnection().outputTasks.giveReadCredit(credit);
+}
+
 ManagementObject* SessionState::GetManagementObject (void) const
 {
     return (ManagementObject*) mgmtObject;

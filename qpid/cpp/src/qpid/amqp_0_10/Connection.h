@@ -62,6 +62,7 @@ class Connection  : public sys::ConnectionCodec,
     bool isClosed() const;
     bool canEncode();
     void activateOutput();
+    void giveReadCredit(int32_t);
     void closed();              // connection closed by peer.
     void close();               // closing from this end.
     void send(framing::AMQFrame&);
