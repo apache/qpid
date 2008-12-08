@@ -129,7 +129,7 @@ class ManagementObject : public ManagementItem
     bool             forcePublish;
         
     int  getThreadIndex();
-    void writeTimestamps (qpid::framing::Buffer& buf);
+    void writeTimestamps(qpid::framing::Buffer& buf);
 
   public:
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
@@ -141,32 +141,33 @@ class ManagementObject : public ManagementItem
         coreObject(_core), agent(_agent), forcePublish(false) {}
     virtual ~ManagementObject() {}
 
-    virtual writeSchemaCall_t getWriteSchemaCall (void) = 0;
+    virtual writeSchemaCall_t getWriteSchemaCall() = 0;
     virtual void writeProperties(qpid::framing::Buffer& buf) = 0;
     virtual void writeStatistics(qpid::framing::Buffer& buf,
                                  bool skipHeaders = false) = 0;
-    virtual void doMethod       (std::string&           methodName,
-                                 qpid::framing::Buffer& inBuf,
-                                 qpid::framing::Buffer& outBuf) = 0;
-    virtual void setReference   (ObjectId objectId);
+    virtual void doMethod(std::string&           methodName,
+                          qpid::framing::Buffer& inBuf,
+                          qpid::framing::Buffer& outBuf) = 0;
+    virtual void setReference(ObjectId objectId);
 
-    virtual std::string& getClassName   (void) const = 0;
-    virtual std::string& getPackageName (void) const = 0;
-    virtual uint8_t*     getMd5Sum      (void) const = 0;
+    virtual std::string& getClassName() const = 0;
+    virtual std::string& getPackageName() const = 0;
+    virtual uint8_t*     getMd5Sum() const = 0;
 
-    void         setObjectId      (ObjectId oid) { objectId = oid; }
-    ObjectId     getObjectId      (void) { return objectId; }
-    inline  bool getConfigChanged (void) { return configChanged; }
-    virtual bool getInstChanged   (void) { return instChanged; }
+    void         setObjectId(ObjectId oid) { objectId = oid; }
+    ObjectId     getObjectId() { return objectId; }
+    inline  bool getConfigChanged() { return configChanged; }
+    virtual bool getInstChanged() { return instChanged; }
+    virtual bool hasInst() { return true; }
     inline  void setForcePublish(bool f) { forcePublish = f; }
     inline  bool getForcePublish() { return forcePublish; }
     inline  void setUpdateTime() { updateTime = (uint64_t(sys::Duration(sys::now()))); }
 
-    inline void resourceDestroy  (void) {
-        destroyTime = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
+    inline void resourceDestroy() {
+        destroyTime = uint64_t (qpid::sys::Duration(qpid::sys::now()));
         deleted     = true;
     }
-    inline bool isDeleted (void) { return deleted; }
+    inline bool isDeleted() { return deleted; }
     inline void setFlags(uint32_t f) { flags = f; }
     inline uint32_t getFlags() { return flags; }
     bool isSameClass(ManagementObject& other) {

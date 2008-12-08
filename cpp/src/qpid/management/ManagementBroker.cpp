@@ -360,15 +360,13 @@ void ManagementBroker::periodicProcessing (void)
 
     for (ManagementObjectMap::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
-         iter++)
-    {
+         iter++) {
         ManagementObject* object = iter->second;
 
         if (object->getConfigChanged() || object->getInstChanged())
             object->setUpdateTime();
 
-        if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted())
-        {
+        if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
             Buffer msgBuffer (msgChars, BUFSIZE);
             encodeHeader (msgBuffer, 'c');
             object->writeProperties(msgBuffer);
@@ -379,8 +377,7 @@ void ManagementBroker::periodicProcessing (void)
             sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
-        if (object->getInstChanged() || object->getForcePublish())
-        {
+        if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
             Buffer msgBuffer (msgChars, BUFSIZE);
             encodeHeader (msgBuffer, 'i');
             object->writeStatistics(msgBuffer);
