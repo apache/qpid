@@ -79,7 +79,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Send to the cluster 
     void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&, uint32_t id);
     void mcastBuffer(const char*, size_t, const ConnectionId&, uint32_t id);
-    void mcast(const Event& e);
 
     // URLs of current cluster members.
     std::vector<Url> getUrls() const;
@@ -110,11 +109,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // The parameter makes it hard to forget since you have to have an instance of
     // a Lock to call the unlocked functions.
 
-    // Unlocked versions of public functions
-    void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&, uint32_t, Lock&);
-    void mcastControl(const framing::AMQBody& controlBody, Lock&);
-    void mcastBuffer(const char*, size_t, const ConnectionId&, uint32_t id, Lock&);
-    void mcast(const Event& e, Lock&);
+    void mcastControl(const framing::AMQBody& controlBody);
+    void mcast(const Event& e);
+
     void leave(Lock&);
     std::vector<Url> getUrls(Lock&) const;
 
