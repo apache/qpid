@@ -76,12 +76,10 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
 
     // Run the real doOutput() till we have added the requested data or there's nothing to output.
     sent = 0;
-    {
-    sys::Mutex::ScopedUnlock u(lock);
     do {
+    sys::Mutex::ScopedUnlock u(lock);
         moreOutput = parent.getBrokerConnection().doOutput();
     } while (sent < requested && moreOutput);
-    }
     sent += buf;                // Include buffered data in the sent total.
 
     QPID_LOG(trace, "Delivered doOutput: requested=" << requested << " output=" << sent << " more=" << moreOutput);

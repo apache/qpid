@@ -91,7 +91,7 @@ bool Connection::doOutput() {
 // which stocks up the write buffers with data.
 //
 void Connection::deliverDoOutput(uint32_t requested) {
-
+    assert(!catchUp);
     output.deliverDoOutput(requested);
 }
 
