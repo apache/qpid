@@ -39,6 +39,7 @@ class NoOpConnectionOutputHandler : public sys::ConnectionOutputHandler
     virtual void send(framing::AMQFrame&) {}
     virtual void close() {}
     virtual void activateOutput() {}
+    virtual void giveReadCredit(int32_t) {}
 };
 
 }} // namespace qpid::cluster

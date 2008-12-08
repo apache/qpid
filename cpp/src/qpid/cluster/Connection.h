@@ -142,6 +142,7 @@ class Connection :
     void exchange(const std::string& encoded);
     
   private:
+    void init();
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
     void deliverDoOutput(uint32_t requested);
@@ -166,6 +167,8 @@ class Connection :
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
+    
+    int FIXMEcredit;            // FIXME aconway 2008-12-05: remove
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };

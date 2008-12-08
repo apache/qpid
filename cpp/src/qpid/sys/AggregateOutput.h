@@ -43,6 +43,8 @@ namespace sys {
         AggregateOutput(OutputControl& c) : next(0), control(c) {};
         //this may be called on any thread
         void activateOutput();
+        void giveReadCredit(int32_t);
+        
         //all the following will be called on the same thread
         bool doOutput();
         bool hasOutput();

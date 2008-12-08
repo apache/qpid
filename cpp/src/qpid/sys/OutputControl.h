@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+
+#include "IntegerTypes.h"
+
 #ifndef _OutputControl_
 #define _OutputControl_
 
@@ -29,6 +32,7 @@ namespace sys {
     public:
         virtual ~OutputControl() {}
         virtual void activateOutput() = 0;
+        virtual void giveReadCredit(int32_t credit) = 0;
     };
 
 }
