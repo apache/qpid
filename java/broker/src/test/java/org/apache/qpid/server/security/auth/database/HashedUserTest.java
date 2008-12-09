@@ -29,7 +29,7 @@ import java.io.UnsupportedEncodingException;
 /*
     Note User is mainly tested by Base64MD5PFPDTest this is just to catch the extra methods
  */
-public class UserTest extends TestCase
+public class HashedUserTest extends TestCase
 {
 
     String USERNAME = "username";
@@ -40,7 +40,7 @@ public class UserTest extends TestCase
     {
         try
         {
-            User user = new User(new String[]{USERNAME, PASSWORD, USERNAME});
+            HashedUser user = new HashedUser(new String[]{USERNAME, PASSWORD, USERNAME});
             fail("Error expected");
         }
         catch (IllegalArgumentException e)
@@ -57,7 +57,7 @@ public class UserTest extends TestCase
     {
         try
         {
-            User user = new User(new String[]{USERNAME, HASHED_PASSWORD});
+            HashedUser user = new HashedUser(new String[]{USERNAME, HASHED_PASSWORD});
             assertEquals("Username incorrect", USERNAME, user.getName());
             int index = 0;
 
@@ -65,7 +65,7 @@ public class UserTest extends TestCase
 
             try
             {
-                for (byte c : user.getEncodePassword())
+                for (byte c : user.getEncodedPassword())
                 {
                     assertEquals("Password incorrect", hash[index], (char) c);
                     index++;
@@ -91,41 +91,5 @@ public class UserTest extends TestCase
             fail(e.getMessage());
         }
     }
-
-    public void testToString()
-    {
-
-        User user = new User(USERNAME, PASSWORD.toCharArray());
-
-        // Test logger debug case
-        Logger.getLogger(User.class).setLevel(Level.DEBUG);
-
-        assertEquals("User toString encoding not as expected", USERNAME, user.toString());
-
-        try
-        {
-            char[] hash = HASHED_PASSWORD.toCharArray();
-            int index = 0;
-            for (byte c : user.getEncodePassword())
-            {
-
-                assertEquals("Hash not as expected", hash[index], (char) c);
-                index++;
-            }
-        }
-        catch (Exception e)
-        {
-            fail(e.getMessage());
-        }
-
-        assertEquals("User toString encoding not as expected", USERNAME + ":" + HASHED_PASSWORD,
-                     user.toString());
-
-         Logger.getLogger(User.class).setLevel(Level.INFO);
-
-        // Test normal case
-        assertEquals("User toString encoding not as expected", USERNAME, user.toString());
-    }
-
 }
 
