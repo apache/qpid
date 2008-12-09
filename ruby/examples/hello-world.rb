@@ -18,11 +18,17 @@
 # under the License.
 #
 
-require "rubygems"
 require "qpid"
 require "socket"
 
-conn = Qpid::Connection.new(TCPSocket.new("localhost", 5672))
+broker = if ARGV.length > 0 then ARGV[0] else "localhost" end
+port = if ARGV.length > 1 then ARGV[1].to_i else 5672 end
+if ARGV.length > 2 then
+  puts "usage: hello-world.rb [ <broker> [ <port> ] ]"
+  exit 1
+end
+
+conn = Qpid::Connection.new(TCPSocket.new(broker, port))
 conn.start(10)
 
 ssn = conn.session("test")
