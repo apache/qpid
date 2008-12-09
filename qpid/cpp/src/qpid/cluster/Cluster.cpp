@@ -85,7 +85,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
-Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool useQuorum) :
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_) :
     broker(b),
     poller(b.getPoller()),
     cpg(*this),
@@ -104,7 +104,8 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     mgmtObject(0),
     state(INIT),
     lastSize(0),
-    lastBroker(false)
+    lastBroker(false),
+    readMax(readMax_)
 {
     ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
     if (agent != 0){
@@ -119,7 +120,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     deliverQueue.start();
     mcastQueue.start();
     QPID_LOG(notice, *this << " joining cluster " << name << " with url=" << myUrl);
-    if (useQuorum) quorum.init();
+    if (quorum_) quorum.init();
     cpg.join(name);
     broker.addFinalizer(boost::bind(&Cluster::brokerShutdown, this)); // Must be last for exception safety.
 }
