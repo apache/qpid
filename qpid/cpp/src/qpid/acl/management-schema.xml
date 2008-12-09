@@ -16,7 +16,7 @@
  * limitations under the License.
 -->
 
-  <class name="acl">
+  <class name="Acl">
     <property name="brokerRef"     type="objId"   references="org.apache.qpid.broker:Broker" access="RO" index="y" parentRef="y"/>
     <property name="policyFile"    type="sstr"    access="RO"    desc="Name of the policy file"/>
     <property name="enforcingAcl"  type="bool"    access="RO"    desc="Currently Enforcing ACL"/>
