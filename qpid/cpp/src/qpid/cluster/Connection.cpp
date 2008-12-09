@@ -74,8 +74,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 void Connection::init() {
     QPID_LOG(debug, cluster << " new connection: " << *this);
     if (isLocal() && !isCatchUp()) {
-        // FIXME aconway 2008-12-05: configurable credit limit
-        output.giveReadCredit(10);
+        output.giveReadCredit(cluster.getReadMax());
     }
 }
 
@@ -204,7 +203,8 @@ void Connection::deliverBuffer(Buffer& buf) {
     ++deliverSeq;
     while (mcastDecoder.decode(buf))
         delivered(mcastDecoder.frame);
-    output.giveReadCredit(1);
+    if  (cluster.getReadMax())
+        output.giveReadCredit(1);
 }
 
 broker::SessionState& Connection::sessionState() {
