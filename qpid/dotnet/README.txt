@@ -1,76 +1,57 @@
 Info
 ====
 
-There are two seperate .Net clients.
+There are two separate .NET clients: one that implements AMQP 0.9 and another that
+implements 0-10. 0-10 is required to communicate with the Qpid C++ broker.
 
-One implements the AMQP 0-10 protocol and is located in the client-010
-directory, this can communicate with the C++ broker.
+This README contains instructions for building the 0-9 client.
 
 Instructions for building and installing the 0-10 client are located in client-010/README.txt.
-
-
-The other, located in the root of the dotnet directory implements the
-0-8 protocol, which can communicate with the Java broker.
-
-Instructions for building and installing the 0-9 client are below.
-
-
-
-NOTE: The rest of this file is 0-8 specific 
-      For 0-10 go to client-010/README.txt
 
 Setup
 =====
 
-Install:
-  Microsoft Visual Studio 2005 (VS2005) or Mono 2.0
-  NAnt 0.85 - only required for builds outside VS2005 (.net 1.1, .net 2.0, mono 2.0)
-  Ant 1.6.5
-  Cygwin (or alternatively build via cmd but alter instructions below accordingly)
+Essential:
 
-Set up PATH to include Nant.exe:
+  .NET 2.0 or later
+  Ant 1.6.5 (Java build tool, http://ant.apache.org)
+  
+Either:
+  NAnt 0.85 - only required for builds outside Visual Studio
+OR
+  Microsoft Visual Studio 2008 (VS2008)
+  
+Ensure that your PATH includes ant, e.g.:
 
-  $ PATH=/cygdrive/c/WINDOWS/Microsoft.NET/Framework/v2.0.50727:$PATH
+  $ PATH=c:\java\ant\bin:%PATH%
+  
+If using nant, set up PATH to include Nant.exe, e.g.:
 
-Set up PATH to include ant:
+  $ set PATH=C:\dotnet\nant\bin;%PATH%
 
-  $ PATH=$ANT_HOME/bin:$PATH
-
+If using msbuild, it is recommended to use a "Visual Studio Command Prompt"
 
 Building
 ========
 
-Generate framing from Qpid.Common/amqp.xml specificiation file:
+Generate framing from /Qpid.Common/amqp.xml specification file by running this script:
 
-  $ build-framing
+  $ build-framing.bat
 
 Alternatively, just switch to /Qpid.Common and run "ant" there.
 
-You can build from Visual Studio 2005 normally. Alternatively, you
-can build debug releases for any supported framework from the 
-command line using Nant:
+You can build from Visual Studio 2008 or from the command-line by running msbuild.
 
-To build .NET 2.0 executables (to bin/net-2.0):
+The script build-msbuild.bat provides some standard options to do a full build.
 
-  $ build-dotnet20
-
-To build .NET 1.1 executables (to bin/net-1.1):
-
-  $ build-dotnet11
-
-To build for Mono on Linux (to bin/mono-2.0):
-
-  $ build-mono
-
+If you are using nant, the script build-nant.bat contains standard arguments that do a full build.
+ 
+To build for Mono on Linux (to bin/mono-2.0) the build-mono shell script is provided.
 
 Releasing
 =========
 
-For .NET 1.1
-
-  $ release net-1.1
-
-Generates ./bin/net-1.1/release/Qpid.NET-net-1.1-yyyyMMdd.zip
+nant can be used to create a release zip archive. A script is provided:
 
 For .NET 2.0
 
@@ -83,3 +64,4 @@ For Mono
   $ release mono-2.0
 
 Generates ./bin/mono-2.0/release/Qpid.NET-mono-2.0-yyyyMMdd.zip
+
