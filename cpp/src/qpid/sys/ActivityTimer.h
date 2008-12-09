@@ -94,7 +94,11 @@ class ActivityTimer
 
     void report(const char* fn, const char* file, int line) {
         uint64_t secs = (Duration(now())-data.start)/TIME_SEC;
-        printf("[%lu]%s:%d: %s: rate=%llu/sec active=%llu inactive=%llu\n", Thread::current().id(), file, line, fn, data.active.count/secs, data.active.mean()/TIME_USEC, data.inactive.mean()/TIME_USEC);
+        printf("[%lu]%s:%d: %s: rate=%ld/sec active=%ld inactive=%ld\n",
+               Thread::current().id(), file, line, fn,
+               long(data.active.count/secs),
+               long(data.active.mean()/TIME_USEC),
+               long(data.inactive.mean()/TIME_USEC));
         data.reset();
     }
 };
@@ -106,6 +110,6 @@ class ActivityTimer
  */
 #define ACTIVITY_TIMER(REPORT_INTERVAL_SECS) \
     static __thread ::qpid::sys::ActivityTimer::Data qpid__ActivityTimerData__ = { 0, 0, 0, { 0, 0 }, { 0, 0 } }; \
-    ActivityTimer qpid__ActivityTimerInstance__(qpid__ActivityTimerData__, BOOST_CURRENT_FUNCTION, __FILE__, __LINE__, 2*TIME_SEC)
+    ::qpid::sys::ActivityTimer qpid__ActivityTimerInstance__(qpid__ActivityTimerData__, BOOST_CURRENT_FUNCTION, __FILE__, __LINE__, 2*::qpid::sys::TIME_SEC)
 
 #endif  /*!QPID_SYS_ACTIVITYTIMER_H*/
