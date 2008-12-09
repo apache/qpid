@@ -37,7 +37,7 @@ If access rights are omitted for a property, they are assumed to be RO.
 
   -->
 
-  <class name="cluster">
+  <class name="Cluster">
     <property name="brokerRef"        type="objId"  references="Broker" access="RC" index="y" parentRef="y"/>
     <property name="clusterName"      type="sstr"   access="RC" desc="Name of cluster this server is a member of"/>
     <property name="clusterID"        type="sstr"   access="RO" desc="Globally uniquie ID (UUID) for this cluster instance"/>
