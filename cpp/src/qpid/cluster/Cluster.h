@@ -64,11 +64,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef std::vector<ConnectionPtr> Connections;
     
     /**
-     * Join a cluster.
-     * @param name of the cluster.
-     * @param url of this broker, sent to the cluster.
+     * Join a cluster. 
      */
-    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum);
+    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum, size_t readMax);
 
     virtual ~Cluster();
 
@@ -95,6 +93,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     boost::function<bool ()> isQuorate;
     void checkQuorum();
+
+    size_t getReadMax() { return readMax; }
     
   private:
     typedef sys::LockPtr<Cluster,sys::Monitor> LockPtr;
@@ -215,6 +215,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::shared_ptr<FailoverExchange> failoverExchange;
 
     Quorum quorum;
+    size_t readMax;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

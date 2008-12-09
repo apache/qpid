@@ -56,7 +56,7 @@ struct Args : public qpid::TestOptions {
     bool durable;
     string base;
 
-    Args() : size(256), count(1000), rate(0), reportFrequency(100),
+    Args() : size(256), count(1000), rate(0), reportFrequency(1000),
     	     timeLimit(0), queues(1), 
              prefetch(100), ack(0),
              durable(false), base("latency-test")
