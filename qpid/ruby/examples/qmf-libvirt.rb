@@ -18,7 +18,6 @@
 # under the License.
 #
 
-require "rubygems"
 require "qpid"
 
 s = Qpid::Qmf::Session.new()
