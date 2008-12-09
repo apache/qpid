@@ -8,9 +8,9 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 
-public class User implements Principal
+public class HashedUser implements Principal
 {
-    private static final Logger _logger = Logger.getLogger(User.class);
+    private static final Logger _logger = Logger.getLogger(HashedUser.class);
 
     String _name;
     char[] _password;
@@ -18,7 +18,7 @@ public class User implements Principal
     private boolean _modified = false;
     private boolean _deleted = false;
 
-    User(String[] data) throws UnsupportedEncodingException
+    HashedUser(String[] data) throws UnsupportedEncodingException
     {
         if (data.length != 2)
         {
@@ -43,7 +43,7 @@ public class User implements Principal
         }
     }
 
-    public User(String name, char[] password)
+    public HashedUser(String name, char[] password)
     {
         _name = name;
         setPassword(password);
@@ -56,14 +56,7 @@ public class User implements Principal
 
     public String toString()
     {
-        if (_logger.isDebugEnabled())
-        {
-            return getName() + ((_encodedPassword == null) ? "" : ":" + new String(_encodedPassword));
-        }
-        else
-        {
-            return _name;
-        }
+        return _name;
     }
 
     char[] getPassword()
@@ -78,7 +71,7 @@ public class User implements Principal
         _encodedPassword = null;
     }
 
-    byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
+    byte[] getEncodedPassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
     {
         if (_encodedPassword == null)
         {
