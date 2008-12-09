@@ -17,12 +17,23 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import sys
 from qpid.connection import Connection
 from qpid.util import connect
 from qpid.datatypes import uuid4, Message
 
+broker = "127.0.0.1"
+port = 5672
+
+if len(sys.argv) > 1: broker = sys.argv[1]
+if len(sys.argv) > 2: port = int(sys.argv[2])
+
+if len(sys.argv) > 3:
+  print >> sys.stderr, "usage: hello-world [ <broker> [ <port> ] ]"
+  sys.exit(1)
+
 # connect to the server and start a session
-conn = Connection(connect("127.0.0.1", 5672))
+conn = Connection(connect(broker, port))
 conn.start()
 ssn = conn.session(str(uuid4()))
 
